@@ -136,7 +136,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
             if (hostProvisioner.isPresent()) {
-                hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getProvisionInfo().getHosts());
+                hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getAllocatedHosts().getHosts());
             }
             transaction.commit();
             session.waitUntilActivated(timeoutBudget);

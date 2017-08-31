@@ -17,13 +17,13 @@ import java.util.regex.Pattern;
 /**
  * A response for use with {@link com.yahoo.application.container.JDisc#handleRequest(Request)}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.15
+ * @author Einar M R Rosenvinge
  * @see Request
  */
 @Immutable
 @Beta
 public class Response {
+
     private final static Pattern charsetPattern = Pattern.compile("charset=([^\\s\\;]+)", Pattern.CASE_INSENSITIVE);
     private final int status;
     private final Headers headers = new Headers();
@@ -122,4 +122,5 @@ public class Response {
         }
         return Utf8.getCharset();
     }
+
 }

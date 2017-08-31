@@ -120,19 +120,19 @@ public class LocalSessionTest {
 
     @Test(expected = IllegalStateException.class)
     public void require_that_no_provision_info_throws_exception() throws Exception {
-        createSession(TenantName.defaultName(), 3).getProvisionInfo();
+        createSession(TenantName.defaultName(), 3).getAllocatedHosts();
     }
 
     @Test
     public void require_that_provision_info_can_be_read() throws Exception {
-        ProvisionInfo input = ProvisionInfo.withHosts(Collections.singleton(new HostSpec("myhost", Collections.<String>emptyList())));
+        AllocatedHosts input = AllocatedHosts.withHosts(Collections.singleton(new HostSpec("myhost", Collections.<String>emptyList())));
 
         LocalSession session = createSession(TenantName.defaultName(), 3, new SessionTest.MockSessionPreparer(), Optional.of(input));
         ApplicationId origId = new ApplicationId.Builder()
                                .tenant("tenant")
                                .applicationName("foo").instanceName("quux").build();
         doPrepare(session, new PrepareParams.Builder().applicationId(origId).build(), Instant.now());
-        ProvisionInfo info = session.getProvisionInfo();
+        AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
         assertTrue(info.getHosts().contains(new HostSpec("myhost", Collections.emptyList())));
@@ -151,18 +151,18 @@ public class LocalSessionTest {
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer) throws Exception {
-        return createSession(tenant, sessionId, preparer, Optional.<ProvisionInfo>empty());
+        return createSession(tenant, sessionId, preparer, Optional.<AllocatedHosts>empty());
     }
 
-    private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<ProvisionInfo> provisionInfo) throws Exception {
+    private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<AllocatedHosts> allocatedHosts) throws Exception {
         Path appPath = Path.fromString("/" + sessionId);
-        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, appPath, provisionInfo);
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, appPath, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
         ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, appPath);
-        if (provisionInfo.isPresent()) {
-            zkClient.feedProvisionInfos(Collections.singletonMap(Version.fromIntValues(0, 0, 0), provisionInfo.get()));
+        if (allocatedHosts.isPresent()) {
+            zkClient.write(allocatedHosts.get());
         }
-        zkClient.feedZKFileRegistries(Collections.singletonMap(Version.fromIntValues(0, 0, 0), new MockFileRegistry()));
+        zkClient.write(Collections.singletonMap(Version.fromIntValues(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.path(), String.valueOf(sessionId));
         sessionDir.createNewFile();
         return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryTenantApplications(), new HostRegistry<>(), superModelGenerationCounter));

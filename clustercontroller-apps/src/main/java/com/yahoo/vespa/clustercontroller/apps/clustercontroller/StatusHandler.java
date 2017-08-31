@@ -8,6 +8,7 @@ import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscHttpReq
 import java.util.concurrent.Executor;
 
 public class StatusHandler extends JDiscHttpRequestHandler {
+
     private final com.yahoo.vespa.clustercontroller.core.status.StatusHandler statusHandler;
 
     @Inject
@@ -19,4 +20,5 @@ public class StatusHandler extends JDiscHttpRequestHandler {
         super(handler, executor, accessLog);
         this.statusHandler = handler;
     }
+
 }

@@ -3,12 +3,13 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Attempts redeployment of failed jobs and deployments.
@@ -16,6 +17,8 @@ import java.util.List;
  * @author bratseth
  */
 public class FailureRedeployer extends Maintainer {
+
+    private final static Duration jobTimeout = Duration.ofHours(12);
     
     public FailureRedeployer(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl);
@@ -23,20 +26,61 @@ public class FailureRedeployer extends Maintainer {
 
     @Override
     public void maintain() {
-        ApplicationList applications = ApplicationList.from(controller().applications().asList()).isDeploying();
-        List<Application> toTrigger = new ArrayList<>();
+        List<Application> applications = controller().applications().asList();
+        retryFailingJobs(applications);
+        retryStuckJobs(applications);
+    }
 
-        // Applications with deployment failures for current change and no running jobs
-        toTrigger.addAll(applications.hasDeploymentFailures()
-                                 .notRunningJob()
-                                 .asList());
+    private void retryFailingJobs(List<Application> applications) {
+        for (Application application : applications) {
+            if (!application.deploying().isPresent()) {
+                continue;
+            }
+            if (application.deploymentJobs().inProgress()) {
+                continue;
+            }
+            Optional<JobStatus> failingJob = jobFailingFor(application);
+            failingJob.ifPresent(job -> triggerFailing(application, "Job " + job.type().id() +
+                    " has been failing since " + job.firstFailing().get()));
+        }
+    }
 
-        // Applications with jobs that have been in progress for more than 12 hours
-        Instant twelveHoursAgo = controller().clock().instant().minus(Duration.ofHours(12));
-        toTrigger.addAll(applications.jobRunningSince(twelveHoursAgo).asList());
+    private void retryStuckJobs(List<Application> applications) {
+        Instant maxAge = controller().clock().instant().minus(jobTimeout);
+        for (Application application : applications) {
+            if (!application.deploying().isPresent()) {
+                continue;
+            }
+            Optional<JobStatus> job = oldestRunningJob(application);
+            if (!job.isPresent()) {
+                continue;
+            }
+            // Ignore job if it doesn't belong to a zone in this system
+            if (!job.get().type().zone(controller().system()).isPresent()) {
+                continue;
+            }
+            if (job.get().lastTriggered().get().at().isBefore(maxAge)) {
+                triggerFailing(application, "Job " + job.get().type().id() +
+                        " has been running for more than " + jobTimeout);
+            }
+        }
+    }
 
-        toTrigger.forEach(application -> controller().applications().deploymentTrigger()
-                .triggerFailing(application.id()));
+    private Optional<JobStatus> jobFailingFor(Application application) {
+        return application.deploymentJobs().jobStatus().values().stream()
+                .filter(status -> !status.isSuccess() && status.lastCompletedFor(application.deploying().get()))
+                .findFirst();
+    }
+
+    private Optional<JobStatus> oldestRunningJob(Application application) {
+        return application.deploymentJobs().jobStatus().values().stream()
+                .filter(JobStatus::inProgress)
+                .sorted(Comparator.comparing(status -> status.lastTriggered().get().at()))
+                .findFirst();
+    }
+
+    private void triggerFailing(Application application, String cause) {
+        controller().applications().deploymentTrigger().triggerFailing(application.id(), cause);
     }
 
 }

@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "docsum_by_slime.h"
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -23,7 +23,7 @@ using vespalib::slime::ArrayTraverser;
 using vespalib::SimpleBuffer;
 using vespalib::DataBuffer;
 using vespalib::ConstBufferRef;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 
 namespace {
 
@@ -99,8 +99,8 @@ DocsumByRPC::DocsumByRPC(DocsumBySlime & slimeDocsumServer) :
 void
 DocsumByRPC::getDocsums(FRT_RPCRequest & req)
 {
-    using document::compression::decompress;
-    using document::compression::compress;
+    using vespalib::compression::decompress;
+    using vespalib::compression::compress;
     FRT_Values &arg = *req.GetParams();
     uint8_t encoding = arg[0]._intval8;
     uint32_t uncompressedSize = arg[1]._intval32;

@@ -27,8 +27,7 @@ import java.util.concurrent.Executors;
 /**
  * Builder for helping out with tenant creation. Each of a tenants dependencies may be overridden for testing.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class TenantBuilder {
 

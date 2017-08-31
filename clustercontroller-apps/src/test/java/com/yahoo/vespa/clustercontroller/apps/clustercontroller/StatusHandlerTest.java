@@ -16,4 +16,5 @@ public class StatusHandlerTest extends TestCase {
         StatusHandler handler = new StatusHandler(controller, executor, AccessLog.voidAccessLog());
         executor.shutdown();
     }
+
 }

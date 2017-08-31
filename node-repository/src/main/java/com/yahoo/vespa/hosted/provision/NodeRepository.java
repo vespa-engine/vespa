@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -466,27 +467,88 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    /**
-     * Removes a node. A node must be in a legal state before it can be removed.
+    /*
+     * This method is used to enable a smooth rollout of dynamic docker flavor allocations. Once we have switch
+     * everything this can be simplified to only deleting the node.
      *
-     * @return true if the node was removed, false if it was not found in one of the legal states
+     * Should only be called by node-admin for docker containers
      */
-    public boolean remove(String hostname) {
-
-        Node.State[] legalStates = {Node.State.provisioned, Node.State.failed, Node.State.parked};
-        Node.State[] legalDynamicStates = {Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty};
-
-        Optional<Node> nodeToRemove = getNode(hostname, dynamicAllocationEnabled() ? legalDynamicStates : legalStates);
-        if ( ! nodeToRemove.isPresent()) return false;
-
-        // Only docker nodes are allowed to be deleted in state dirty.
-        if ( nodeToRemove.get().state().equals(Node.State.dirty)) {
-            if (!(nodeToRemove.get().flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))) return false;
+    public List<Node> markNodeAvailableForNewAllocation(String hostname) {
+        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+        if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER) {
+            throw new IllegalArgumentException(
+                    "Cannot make " + hostname + " available for new allocation, must be a docker container node");
+        } else if (node.state() != Node.State.dirty) {
+            throw new IllegalArgumentException(
+                    "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
         }
 
-        try (Mutex lock = lock(nodeToRemove.get())) {
-            return db.removeNode(nodeToRemove.get().state(), hostname);
+        if (dynamicAllocationEnabled()) {
+            return removeRecursively(node, true);
+        } else {
+            return setReady(Collections.singletonList(node));
         }
+    }
+
+    /**
+     * Removes all the nodes that are children of hostname before finally removing the hostname itself.
+     *
+     * @return List of all the nodes that have been removed
+     */
+    public List<Node> removeRecursively(String hostname) {
+        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+        return removeRecursively(node, false);
+    }
+
+    private List<Node> removeRecursively(Node node, boolean force) {
+        try (Mutex lock = lockUnallocated()) {
+            List<Node> removed = node.type() != NodeType.host ?
+                    new ArrayList<>() :
+                    getChildNodes(node.hostname()).stream()
+                            .filter(child -> force || verifyRemovalIsAllowed(child, true))
+                            .collect(Collectors.toList());
+
+            if (force || verifyRemovalIsAllowed(node, false)) removed.add(node);
+            db.removeNodes(removed);
+
+            return removed;
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Failed to delete " + node.hostname(), e);
+        }
+    }
+
+    /**
+     * Allowed to a node delete if:
+     *  Non-docker-container node: iff in state provisioned|failed|parked
+     *  Docker-container-node:
+     *    If only removing the container node: node in state ready
+     *    If also removing the parent node: child is in state provisioned|failed|parked|ready
+     */
+    private boolean verifyRemovalIsAllowed(Node nodeToRemove, boolean deletingAsChild) {
+        // TODO: Enable once controller no longer deletes child nodes manually
+        /*if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
+            if (nodeToRemove.state() != Node.State.ready) {
+                throw new IllegalArgumentException(
+                        String.format("Docker container node %s can only be removed when in state ready", nodeToRemove.hostname()));
+            }
+
+        } else */ if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+            List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.ready);
+
+            if (! legalStates.contains(nodeToRemove.state())) {
+                throw new IllegalArgumentException(String.format("Child node %s can only be removed from following states: %s",
+                        nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+            }
+        } else {
+            List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked);
+
+            if (! legalStates.contains(nodeToRemove.state())) {
+                throw new IllegalArgumentException(String.format("Node %s can only be removed from following states: %s",
+                        nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+            }
+        }
+
+        return true;
     }
 
     /**

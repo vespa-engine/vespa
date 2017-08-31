@@ -40,4 +40,5 @@ public class ConfigId {
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }

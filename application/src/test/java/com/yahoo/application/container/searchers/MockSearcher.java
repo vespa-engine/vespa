@@ -9,7 +9,6 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- *
  * @author Christian Andersen
  */
 public class MockSearcher extends Searcher {

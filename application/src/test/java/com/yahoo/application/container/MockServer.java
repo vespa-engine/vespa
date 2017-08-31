@@ -5,10 +5,10 @@ import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 /**
- *
  * @author Christian Andersen
  */
 public class MockServer extends AbstractServerProvider {
+
     private boolean started = false;
 
     public MockServer(CurrentContainer container) {
@@ -28,4 +28,5 @@ public class MockServer extends AbstractServerProvider {
     public boolean isStarted() {
         return started;
     }
+
 }

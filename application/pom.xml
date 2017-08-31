@@ -80,18 +80,6 @@
       <artifactId>scala-xml_${scala.major-version}</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!-- All dependencies that should be visible in test classpath, but not compile classpath,
-         for user projects must be added in compile scope here.
-         These dependencies are explicitly excluded (or set to non-compile scope) in the container-dev module. -->
-    <dependency>
-      <groupId>org.antlr</groupId>
-      <artifactId>antlr-runtime</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.antlr</groupId>
-      <artifactId>antlr4-runtime</artifactId>
-    </dependency>
   </dependencies>
 
   <build>

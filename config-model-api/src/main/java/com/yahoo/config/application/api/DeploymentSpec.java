@@ -15,10 +15,13 @@ import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +60,7 @@ public class DeploymentSpec {
         this.upgradePolicy = upgradePolicy;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
+        validateZones(this.steps);
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -68,7 +72,21 @@ public class DeploymentSpec {
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
                                                " but max 24 hours is allowed");
     }
+
+    /** Throw an IllegalArgumentException if any production zone is declared multiple times */
+    private void validateZones(List<Step> steps) {
+        Set<DeclaredZone> zones = new HashSet<>();
+
+        for (Step step : steps)
+            for (DeclaredZone zone : step.zones())
+                ensureUnique(zone, zones);
+    }
     
+    private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
+        if ( ! zones.add(zone))
+            throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
+    }
+
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<Step> completeSteps(List<Step> steps) {
         // Ensure no duplicate deployments to the same zone
@@ -123,7 +141,7 @@ public class DeploymentSpec {
     public List<Step> steps() { return steps; }
 
     /** Returns only the DeclaredZone deployment steps of this in the order they will be performed */
-    public List<DeclaredZone> zones() { 
+    public List<DeclaredZone> zones() {
         return steps.stream().filter(step -> step instanceof DeclaredZone).map(DeclaredZone.class::cast)
                              .collect(Collectors.toList());
     }
@@ -168,17 +186,21 @@ public class DeploymentSpec {
 
             if (environment == Environment.prod) {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
-                    if (stepTag.getTagName().equals("delay"))
-                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours",   stepTag) * 60 * 60 +
+                    if (stepTag.getTagName().equals("delay")) {
+                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
                                                                longAttribute("minutes", stepTag) * 60 +
                                                                longAttribute("seconds", stepTag))));
-                    else // a region: deploy step
-                        steps.add(new DeclaredZone(environment,
-                                                   Optional.of(RegionName.from(XML.getValue(stepTag).trim())),
-                                                   readActive(stepTag)));
+                    } else if (stepTag.getTagName().equals("parallel")) {
+                        List<DeclaredZone> zones = new ArrayList<>();
+                        for (Element regionTag : XML.getChildren(stepTag)) {
+                            zones.add(readDeclaredZone(environment, regionTag));
+                        }
+                        steps.add(new ParallelZones(zones));
+                    } else { // a region: deploy step
+                        steps.add(readDeclaredZone(environment, stepTag));
+                    }
                 }
-            }
-            else {
+            } else {
                 steps.add(new DeclaredZone(environment));
             }
 
@@ -205,6 +227,11 @@ public class DeploymentSpec {
 
     private static boolean isEnvironmentName(String tagName) {
         return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
+    }
+
+    private static DeclaredZone readDeclaredZone(Environment environment, Element regionTag) {
+        return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
+                                readActive(regionTag));
     }
 
     private static Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -290,6 +317,9 @@ public class DeploymentSpec {
         /** Returns whether this step deploys to the given environment, and (if specified) region */
         public abstract boolean deploysTo(Environment environment, Optional<RegionName> region);
 
+        /** Returns the zones deployed to in this step */
+        public List<DeclaredZone> zones() { return Collections.emptyList(); }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -340,15 +370,13 @@ public class DeploymentSpec {
         public boolean active() { return active; }
 
         @Override
+        public List<DeclaredZone> zones() { return Collections.singletonList(this); }
+
+        @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) {
             if (environment != this.environment) return false;
             if (region.isPresent() && ! region.equals(this.region)) return false;
             return true;
-        }
-
-        // TODO: Remove when no version older than 6.111 is deployed anywhere
-        public boolean matches(Environment environment, Optional<RegionName> region) {
-            return deploysTo(environment, region);
         }
 
         @Override
@@ -365,7 +393,43 @@ public class DeploymentSpec {
             if ( ! this.region.equals(other.region())) return false;
             return true;
         }
+        
+        @Override
+        public String toString() {
+            return environment + ( region.isPresent() ? "." + region.get() : "");
+        }
 
+    }
+
+    /** A deployment step which is to run deployment to multiple zones in parallel */
+    public static class ParallelZones extends Step {
+
+        private final List<DeclaredZone> zones;
+
+        public ParallelZones(List<DeclaredZone> zones) {
+            this.zones = ImmutableList.copyOf(zones);
+        }
+
+        @Override
+        public List<DeclaredZone> zones() { return this.zones; }
+
+        @Override
+        public boolean deploysTo(Environment environment, Optional<RegionName> region) {
+            return zones.stream().anyMatch(zone -> zone.deploysTo(environment, region));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ParallelZones)) return false;
+            ParallelZones that = (ParallelZones) o;
+            return Objects.equals(zones, that.zones);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(zones);
+        }
     }
 
     /** Controls when this application will be upgraded to new Vespa versions */

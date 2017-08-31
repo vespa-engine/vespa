@@ -14,7 +14,7 @@ Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
 ## Get started developing
 
 ### Setup build environment
-C++ building is supported on CentOS 7.
+C++ building is supported on CentOS 7. The Java source can be built on any platform having Java 8 and Maven installed. 
 We recommend using the following environment: [Create C++ dev environment on CentOS using VirtualBox and Vagrant](vagrant/README.md).
 You can also setup CentOS 7 natively and install the following build dependencies:
 
@@ -25,10 +25,10 @@ You can also setup CentOS 7 natively and install the following build dependencie
     yum-builddep -y <vespa-source>/dist/vespa.spec
 
 ### Build Java modules
-Java modules can be built on any environment having Java 8 and Maven:
 
-    sh bootstrap.sh
-    mvn install
+    export MAVEN_OPTS="-Xms128m -Xmx512m"
+    sh bootstrap.sh java
+    mvn -T <num-threads> install
 
 ### Build C++ modules
 Replace `<build-dir>` with the name of the directory in which you'd like to build Vespa.

@@ -12,6 +12,7 @@ import java.util.Set;
  * @author bjorncs
  */
 public class ServiceCluster<STATUS> {
+
     private final ClusterId clusterId;
     private final ServiceType serviceType;
     private final Set<ServiceInstance<STATUS>> serviceInstances;
@@ -60,4 +61,5 @@ public class ServiceCluster<STATUS> {
     public int hashCode() {
         return Objects.hash(clusterId, serviceType, serviceInstances);
     }
+
 }

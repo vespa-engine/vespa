@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.*;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -19,8 +20,7 @@ import java.util.logging.Logger;
  * A RemoteSession represents a session created on another config server. This session can
  * be regarded as read only, and this interface only allows reading information about a session.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class RemoteSession extends Session {
 
@@ -57,6 +57,7 @@ public class RemoteSession extends Session {
         return ApplicationSet.fromList(applicationLoader.buildModels(zooKeeperClient.readApplicationId(),
                                                                      zooKeeperClient.readVespaVersion(),
                                                                      zooKeeperClient.loadApplicationPackage(),
+                                                                     new SettableOptional<>(),
                                                                      clock.instant()));
     }
 

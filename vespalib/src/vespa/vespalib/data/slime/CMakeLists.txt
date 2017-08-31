@@ -9,6 +9,9 @@ vespa_add_library(vespalib_vespalib_data_slime OBJECT
     convenience.cpp
     cursor.cpp
     empty_value_factory.cpp
+    external_data_value.cpp
+    external_data_value_factory.cpp
+    external_memory.cpp
     inject.cpp
     inserter.cpp
     inspector.cpp

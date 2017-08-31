@@ -21,7 +21,6 @@ import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Iterator;
@@ -228,6 +227,7 @@ public class Dispatcher extends AbstractComponent {
         }
 
         private void fill(FastHit hit, Inspector summary) {
+            hit.reserve(summary.fieldCount());
             summary.traverse((String name, Inspector value) -> {
                 hit.setField(name, nativeTypeOf(value));
             });

@@ -81,6 +81,8 @@ public:
         _buffer(Alloc::alloc(0))
     { }
 
+    ~DataBuffer();
+
     /**
      * @return a pointer to the dead part of this buffer.
      **/

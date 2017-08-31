@@ -4,8 +4,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstddef>
+#include <cstring>
 
-namespace document {
+namespace vespalib::compression {
 
 struct CompressionConfig {
     enum Type {
@@ -50,6 +51,14 @@ struct CompressionConfig {
         case 7: return ZSTD;
         default: return NONE;
         }
+    }
+    static Type toType(const char * val) {
+        if (strncasecmp(val, "lz4", 3) == 0) {
+            return LZ4;
+        } if (strncasecmp(val, "zstd", 4) == 0) {
+            return ZSTD;
+        }
+        return NONE;
     }
     static bool isCompressed(Type type) {
         return (type != CompressionConfig::NONE &&

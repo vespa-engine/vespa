@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -14,14 +13,11 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Information about which deployment jobs an application should run and their current status.
@@ -118,22 +114,32 @@ public class DeploymentJobs {
         return status.values().stream().anyMatch(JobStatus::inProgress);
     }
 
-    /** Returns whether any job is failing for the given change */
-    public boolean failingOn(Change change) {
-        return status.values().stream().anyMatch(jobStatus -> !jobStatus.isSuccess() && jobStatus.lastCompletedFor(change));
-    }
-
     /** Returns whether change can be deployed to the given environment */
     public boolean isDeployableTo(Environment environment, Optional<Change> change) {
         if (environment == null || !change.isPresent()) {
             return true;
         }
         if (environment == Environment.staging) {
-            return isSuccessful(JobType.systemTest, change.get());
+            return isSuccessful(change.get(), JobType.systemTest);
         } else if (environment == Environment.prod) {
-            return isSuccessful(JobType.stagingTest, change.get());
+            return isSuccessful(change.get(), JobType.stagingTest);
         }
         return true; // other environments do not have any preconditions
+    }
+
+    /** Returns whether change has been deployed completely */
+    public boolean isDeployed(Change change) {
+        return status.values().stream()
+                .filter(status -> status.type().isProduction())
+                .allMatch(status -> isSuccessful(change, status.type()));
+    }
+
+    /** Returns whether job has completed successfully */
+    public boolean isSuccessful(Change change, JobType jobType) {
+        return Optional.ofNullable(jobStatus().get(jobType))
+                .filter(JobStatus::isSuccess)
+                .filter(status -> status.lastCompletedFor(change))
+                .isPresent();
     }
     
     /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
@@ -147,15 +153,6 @@ public class DeploymentJobs {
         return failingSince;
     }
 
-    /** Returns the time at which the oldest running job started */
-    public Optional<Instant> runningSince() {
-        return jobStatus().values().stream()
-                .filter(JobStatus::inProgress)
-                .sorted(Comparator.comparing(jobStatus -> jobStatus.lastTriggered().get().at()))
-                .map(jobStatus -> jobStatus.lastTriggered().get().at())
-                .findFirst();
-    }
-
     /**
      * Returns the id of the Screwdriver project running these deployment jobs 
      * - or empty when this is not known or does not exist.
@@ -164,13 +161,6 @@ public class DeploymentJobs {
     public Optional<Long> projectId() { return projectId; }
 
     public Optional<String> jiraIssueId() { return jiraIssueId; }
-
-    private boolean isSuccessful(JobType jobType, Change change) {
-        return Optional.ofNullable(jobStatus().get(jobType))
-                .filter(JobStatus::isSuccess)
-                .filter(status -> status.lastCompletedFor(change))
-                .isPresent();
-    }
 
     /** Job types that exist in the build system */
     public enum JobType {
@@ -225,8 +215,8 @@ public class DeploymentJobs {
         }
 
         /** Returns the region of this job type, or null if it does not have a region */
-        public RegionName region(SystemName system) {
-            return zone(system).map(Zone::region).orElse(null);
+        public Optional<RegionName> region(SystemName system) {
+            return zone(system).map(Zone::region);
         }
 
         public static JobType fromId(String id) {
@@ -265,14 +255,6 @@ public class DeploymentJobs {
                 case staging: return stagingTest;
             }
             return from(system, new com.yahoo.config.provision.Zone(environment, region));
-        }
-
-        /** Returns the trigger order to use according to deployment spec */
-        public static List<JobType> triggerOrder(SystemName system, DeploymentSpec deploymentSpec) {
-            return deploymentSpec.zones().stream()
-                    .map(declaredZone -> JobType.from(system, declaredZone.environment(),
-                                                      declaredZone.region().orElse(null)))
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         }
 
         private static Zone zone(SystemName system, String environment, String region) {

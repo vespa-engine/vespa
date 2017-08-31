@@ -11,10 +11,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.11
+ * @author Ulf Lilleengen
  */
 public class HostSpecTest {
+
     @Test
     public void testEquals() {
         HostSpec h1 = new HostSpec("foo", Collections.<String>emptyList());
@@ -42,4 +42,5 @@ public class HostSpecTest {
         assertFalse(h4.equals(h3));
         assertTrue(h4.equals(h4));
     }
+
 }

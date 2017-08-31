@@ -44,7 +44,9 @@ public:
         _removes.emplace_back(docTypeName, keepNames);
     }
 
-    virtual void notifyGidToLidChange(document::GlobalId, uint32_t)  override { }
+    virtual void notifyPut(document::GlobalId, uint32_t, SerialNum)  override { }
+    virtual void notifyRemove(document::GlobalId, SerialNum)  override { }
+    virtual void notifyRemoveDone(document::GlobalId, SerialNum)  override { }
 
     void assertAdds(const std::vector<AddEntry> &expAdds)
     {

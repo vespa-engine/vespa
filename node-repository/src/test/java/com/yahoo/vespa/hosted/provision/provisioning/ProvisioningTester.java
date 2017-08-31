@@ -132,6 +132,7 @@ public class ProvisioningTester implements AutoCloseable {
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, String flavor) {
         return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor)), groups);
     }
+
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));

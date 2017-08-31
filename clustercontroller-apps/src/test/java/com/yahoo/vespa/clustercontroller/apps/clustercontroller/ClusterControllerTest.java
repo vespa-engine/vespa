@@ -13,6 +13,7 @@ import junit.framework.TestCase;
 import java.util.Map;
 
 public class ClusterControllerTest extends TestCase {
+
     private FleetControllerOptions options = new FleetControllerOptions("storage");
     private Metric metric = new Metric() {
         @Override

@@ -5,7 +5,8 @@ import com.google.common.annotations.Beta;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.application.provider.SchemaValidator;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.vespa.model.VespaModel;
@@ -102,11 +103,10 @@ public class TestDriver {
         if (!validate) {
             return;
         }
-        SchemaValidator validator = SchemaValidator.createTestValidatorHosts(new Version(6));
+        SchemaValidators schemaValidators = new SchemaValidators(new Version(6), new BaseDeployLogger());
         if (appPkg.getHosts() != null) {
-            validator.validate(appPkg.getHosts());
+            schemaValidators.hostsXmlValidator().validate(appPkg.getHosts());
         }
-        validator = SchemaValidator.createTestValidatorServices(new Version(6));
-        validator.validate(appPkg.getServices());
+        schemaValidators.servicesXmlValidator().validate(appPkg.getServices());
     }
 }

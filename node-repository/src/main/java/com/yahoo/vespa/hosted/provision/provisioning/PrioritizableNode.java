@@ -23,7 +23,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** True if the node is allocated to a host that should be dedicated as a spare */
     boolean violatesSpares;
 
-    /** True if the node is allocated on slots that should be dedicated to headroom */
+    /** True if the node is (or would be) allocated on slots that should be dedicated to headroom */
     boolean violatesHeadroom;
 
     /** True if this is a node that has been retired earlier in the allocation process */

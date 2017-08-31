@@ -15,7 +15,7 @@ import com.yahoo.data.access.simple.Value.StringValue;
  * A regular hit from a Vespa backend
  *
  * @author bratseth
- * @author steinar
+ * @author Steinar Knutsen
  */
 public class FastHit extends Hit {
 
@@ -271,12 +271,14 @@ public class FastHit extends Hit {
 
     public void addSummary(Docsum docsum) {
         LazyDocsumValue lazyDocsumValue = new LazyDocsumValue(docsum);
+        reserve(docsum.getDefinition().getFieldCount());
         for (DocsumField field : docsum.getDefinition().getFields()) {
             setDocsumFieldIfNotPresent(field.getName(), lazyDocsumValue);
         }
     }
 
     void addSummary(DocsumDefinition docsumDef, Inspector value) {
+        reserve(docsumDef.getFieldCount());
         for (DocsumField field : docsumDef.getFields()) {
             String fieldName = field.getName();
             if (value.type() == Type.STRING &&
@@ -322,10 +324,6 @@ public class FastHit extends Hit {
             needXmlEscape = ! (fieldType instanceof XMLField);
             this.contents = contents;
         }
-        public RawField(byte [] contents) {
-            needXmlEscape = true;
-            this.contents = contents;
-        }
 
         public byte [] getUtf8() { return contents; }
         public boolean needXmlEscape() { return needXmlEscape; }
@@ -357,10 +355,6 @@ public class FastHit extends Hit {
      */
     public QueryPacketData getQueryPacketData() {
         return queryPacketData;
-    }
-
-    public void clearQueryPacketData() {
-        queryPacketData = null;
     }
 
     CacheKey getCacheKey() {

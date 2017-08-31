@@ -153,7 +153,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private QueryContext context = null;
 
     /** Used for downstream session caches */
-    private final AtomicReference<UniqueRequestId> sessionId = new AtomicReference<>();
+    private UniqueRequestId requestId = null;
 
     //--------------- Owned sub-objects containing query properties ----------------
 
@@ -936,6 +936,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.setOffset(getOffset());
         clone.setNoCache(getNoCache());
         clone.setGroupingSessionCache(getGroupingSessionCache());
+        clone.requestId = null; // Each clone should have their own requestId.
     }
 
     /** Returns the presentation to be used for this query, never null */
@@ -962,18 +963,13 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @return the session id of this query, or null if not set and create is false
      */
     public SessionId getSessionId(boolean create) {
-        UniqueRequestId uniqId = sessionId.get();
-        if (uniqId == null && ! create) return null;
+        if (requestId == null && ! create) return null;
 
-        if (uniqId == null && create) {
-            uniqId = UniqueRequestId.next();
-            sessionId.compareAndSet(null, uniqId);
-            uniqId = sessionId.get();
+        if (requestId == null && create) {
+            requestId = UniqueRequestId.next();
         }
 
-        String rankProfile = getRanking().getProfile();
-
-        return new SessionId(uniqId, rankProfile);
+        return new SessionId(requestId, getRanking().getProfile());
     }
 
     public boolean hasEncodableProperties() {

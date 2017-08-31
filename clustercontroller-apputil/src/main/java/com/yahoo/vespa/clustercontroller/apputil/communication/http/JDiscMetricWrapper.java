@@ -7,6 +7,7 @@ import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import java.util.logging.Logger;
 
 public class JDiscMetricWrapper implements MetricReporter {
+
     private final Object lock = new Object();
     private Metric m;
 
@@ -47,4 +48,5 @@ public class JDiscMetricWrapper implements MetricReporter {
             return new ContextWrapper(m.createContext(stringMap));
         }
     }
+
 }

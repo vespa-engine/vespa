@@ -17,12 +17,15 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
@@ -216,33 +219,44 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    public ActivateResult deployApplication(ApplicationId applicationId, com.yahoo.config.provision.Zone zone,
+    public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // Determine what we are doing
             Application application = get(applicationId).orElse(new Application(applicationId));
-            DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
-            Version version = decideVersion(application, zone, options);
-            ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
+
+            // Decide version to deploy, if applicable.
+            Version version;
+            if (options.deployCurrentVersion)
+                version = application.currentVersion(controller, zone);
+            else if (application.deploymentJobs().isSelfTriggering()) // legacy mode: let the client decide
+                version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
+            else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
+                return unexpectedDeployment(applicationId, zone, applicationPackage);
+            else
+                version = application.currentDeployVersion(controller, zone);
 
             // Ensure that the deploying change is tested
             // FIXME: For now only for non-self-triggering applications - VESPA-8418
-            if (!application.deploymentJobs().isSelfTriggering() && !zone.environment().isManuallyDeployed() && !application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
+            if ( ! application.deploymentJobs().isSelfTriggering() && 
+                 ! zone.environment().isManuallyDeployed() && 
+                 ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
                 throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                           " as pending " + application.deploying().get() +
-                                                           " is untested");
-            }
+                                                   " as pending " + application.deploying().get() +
+                                                   " is untested");
 
-            // Don't update/store applicationpackage information when deploying previous application package (initial staging step)
-            if(! options.deployCurrentVersion) {
-                // Add missing information to application
+            DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
+            ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
+
+            if( ! options.deployCurrentVersion) {
+                // Add missing information to application (unless we're deploying the previous version (initial staging step)
                 application = application.with(applicationPackage.deploymentSpec());
                 application = application.with(applicationPackage.validationOverrides());
                 if (options.screwdriverBuildJob.isPresent() && options.screwdriverBuildJob.get().screwdriverId != null)
                     application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if (!triggeredWith(revision, application, jobType) && !zone.environment().isManuallyDeployed() && jobType != null) {
+                if ( ! triggeredWith(revision, application, jobType) && !zone.environment().isManuallyDeployed() && jobType != null) {
                     // Triggering information is used to store which changes were made or attempted
                     // - For self-triggered applications we don't have any trigger information, so we add it here.
                     // - For all applications, we don't have complete control over which revision is actually built,
@@ -271,24 +285,21 @@ public class ApplicationController {
             application = application.with(new Deployment(zone, revision, version, clock.instant()));
             store(application, lock);
 
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.messages(), preparedApplication.prepareResponse());
+            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
         }
     }
-    
-    private Version decideVersion(Application application, Zone zone, DeployOptions options) {
-        if (options.deployCurrentVersion)
-            return application.currentVersion(controller, zone);
 
-        if (application.deploymentJobs().isSelfTriggering()) // legacy mode: let the client decide
-            return options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
-
-        if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone + 
-                                               " as a deployment is not currently expected");
-
-        return application.currentDeployVersion(controller, zone);
+    private ActivateResult unexpectedDeployment(ApplicationId applicationId, Zone zone, ApplicationPackage applicationPackage) {
+        Log logEntry = new Log();
+        logEntry.level = "WARNING";
+        logEntry.time = clock.instant().toEpochMilli();
+        logEntry.message = "Ignoring deployment of " + get(applicationId) + " to " + zone + " as a deployment is not currently expected";
+        PrepareResponse prepareResponse = new PrepareResponse();
+        prepareResponse.log = Collections.singletonList(logEntry);
+        prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
+        return new ActivateResult(new RevisionId(applicationPackage.hash()), prepareResponse);
     }
-    
+
     private Application deleteRemovedDeployments(Application application) {
         List<Deployment> deploymentsToRemove = application.deployments().values().stream()
                 .filter(deployment -> deployment.zone().environment() == Environment.prod)
@@ -316,20 +327,14 @@ public class ApplicationController {
 
     private Application deleteUnreferencedDeploymentJobs(Application application) {
         for (DeploymentJobs.JobType job : application.deploymentJobs().jobStatus().keySet()) {
-            if (!job.isProduction()) {
-                continue;
-            }
             Optional<Zone> zone = job.zone(controller.system());
-            if (!zone.isPresent()) {
+            if ( ! job.isProduction() || (zone.isPresent() && application.deploymentSpec().includes(zone.get().environment(), zone.map(Zone::region))))
                 continue;
-            }
-            if (!application.deploymentSpec().includes(zone.get().environment(), zone.map(Zone::region))) {
-                application = application.withoutDeploymentJob(job);
-            }
+            application = application.withoutDeploymentJob(job);
         }
         return application;
     }
-    
+
     private boolean triggeredWith(ApplicationRevision revision, Application application, DeploymentJobs.JobType jobType) {
         if (jobType == null) return false;
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
@@ -486,8 +491,7 @@ public class ApplicationController {
 
     public Application deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
         try (Lock lock = lock(application.id())) {
-            // TODO: ignore no application errors for config server client,
-            // only return such errors from sherpa client.
+            // TODO: ignore no application errors for config server client, only return such errors from sherpa client.
             if (requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment,
                                                                                   clock.instant()))
                 return application;

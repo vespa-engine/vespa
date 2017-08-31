@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
@@ -49,7 +48,7 @@ public class ZooKeeperAccessMaintainerTest {
         assertEquals(asSet("host1,host2,host3,host4,host5,server1,server2"), ZooKeeperServer.getAllowedClientHostnames());
 
         tester.nodeRepository().park("host2", Agent.system, "Parking to unit test");
-        assertTrue(tester.nodeRepository().remove("host2"));
+        tester.nodeRepository().removeRecursively("host2");
         maintainer.maintain();
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());

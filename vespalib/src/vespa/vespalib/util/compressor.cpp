@@ -7,11 +7,8 @@
 #include <vespa/vespalib/data/databuffer.h>
 
 using vespalib::alloc::Alloc;
-using vespalib::ConstBufferRef;
-using vespalib::DataBuffer;
-using vespalib::make_string;
 
-namespace document::compression {
+namespace vespalib::compression {
 
 CompressionConfig::Type
 compress(ICompressor & compressor, const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
@@ -129,10 +126,10 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const C
 
 size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t payloadSize) {
     if (type == CompressionConfig::LZ4) {
-        document::LZ4Compressor lz4;
+        LZ4Compressor lz4;
         return lz4.adjustProcessLen(0, payloadSize);
     } else if (type == CompressionConfig::ZSTD) {
-        document::ZStdCompressor zstd;
+        ZStdCompressor zstd;
         return zstd.adjustProcessLen(0, payloadSize);
     }
     return payloadSize;

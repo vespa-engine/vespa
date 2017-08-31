@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
@@ -44,7 +44,7 @@ public class ModelStub implements Model {
     }
 
     @Override
-    public Optional<ProvisionInfo> getProvisionInfo() {
+    public AllocatedHosts allocatedHosts() {
         return null;
     }
 

@@ -9,7 +9,7 @@
 
 using vespalib::alloc::Alloc;
 
-namespace document {
+namespace vespalib::compression {
 
 namespace {
 

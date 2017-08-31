@@ -4,8 +4,7 @@ package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 /**
  * Abstraction we can depend on providing us with a zookeeper server being up.
  *
- * @author lulf
- * @since 5.25
+ * @author Ulf Lilleengen
  */
 public interface ZooKeeperProvider {
 }

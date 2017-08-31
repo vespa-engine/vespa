@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
@@ -46,8 +47,8 @@ public class ZooKeeperClientTest extends TestWithCurator {
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.setupZooKeeper();
-        zkc.feedZooKeeper(app);
-        zkc.feedZKFileRegistries(fileRegistries);
+        zkc.write(app);
+        zkc.write(fileRegistries);
     }
 
     private Map<Version, FileRegistry> createFileRegistries() {
@@ -174,23 +175,15 @@ public class ZooKeeperClientTest extends TestWithCurator {
         Path app = Path.fromString("/1");
         ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, true, app);
         zooKeeperClient.setupZooKeeper();
-        zooKeeperClient.feedProvisionInfos(createProvisionInfos());
+        HostSpec host1 = new HostSpec("host1.yahoo.com", Collections.emptyList());
+        HostSpec host2 = new HostSpec("host2.yahoo.com", Collections.emptyList());
+        ImmutableSet<HostSpec> hosts = ImmutableSet.of(host1, host2);
+        zooKeeperClient.write(AllocatedHosts.withHosts(hosts));
         Path hostsPath = app.append(ZKApplicationPackage.allocatedHostsNode);
         assertTrue(zk.exists(hostsPath.getAbsolute()));
-        assertEquals(0, zk.getBytes(hostsPath.getAbsolute()).length); // Changed from null
-        assertTrue(zk.exists(hostsPath.append("1.2.3").getAbsolute()));
-        assertTrue(zk.exists(hostsPath.append("3.2.1").getAbsolute()));
-        assertTrue(zk.getBytes(hostsPath.append("1.2.3").getAbsolute()).length > 0);
-        assertTrue(zk.getBytes(hostsPath.append("3.2.1").getAbsolute()).length > 0);
-    }
-
-    private Map<Version, ProvisionInfo> createProvisionInfos() {
-        Map<Version, ProvisionInfo> provisionInfoMap = new HashMap<>();
-        ProvisionInfo a = ProvisionInfo.withHosts(Collections.singleton(new HostSpec("host.yahoo.com", Collections.emptyList())));
-        ProvisionInfo b = ProvisionInfo.withHosts(Collections.singleton(new HostSpec("host2.yahoo.com", Collections.emptyList())));
-        provisionInfoMap.put(Version.fromIntValues(1, 2, 3), a);
-        provisionInfoMap.put(Version.fromIntValues(3, 2, 1), b);
-        return provisionInfoMap;
+        
+        AllocatedHosts deserialized = AllocatedHosts.fromJson(zk.getBytes(hostsPath.getAbsolute()), Optional.empty());
+        assertEquals(hosts, deserialized.getHosts());
     }
 
 }

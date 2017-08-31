@@ -117,8 +117,8 @@ struct Fixture
         _listener = std::make_unique<GidToLidChangeListener>(_writer, _attr, _refCount, "test", "testdoc");
     }
 
-    void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
-        _listener->notifyGidToLidChange(gid, referencedDoc);
+    void notifyPut(const GlobalId &gid, uint32_t referencedDoc) {
+        _listener->notifyPut(gid, referencedDoc);
     }
 
     void notifyListenerRegistered() {
@@ -137,9 +137,9 @@ TEST_F("Test that we can use gid to lid change listener", Fixture)
     TEST_DO(f.assertRefLid(0, 2));
     TEST_DO(f.assertRefLid(0, 3));
     f.allocListener();
-    f.notifyGidToLidChange(toGid(doc1), 10);
-    f.notifyGidToLidChange(toGid(doc2), 20);
-    f.notifyGidToLidChange(toGid(doc3), 30);
+    f.notifyPut(toGid(doc1), 10);
+    f.notifyPut(toGid(doc2), 20);
+    f.notifyPut(toGid(doc3), 30);
     TEST_DO(f.assertRefLid(10, 1));
     TEST_DO(f.assertRefLid(20, 2));
     TEST_DO(f.assertRefLid(10, 3));

@@ -7,7 +7,7 @@ import com.yahoo.component.ComponentId;
 /**
  * For using non-component model classes with ComponentRegistry.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class ComponentAdaptor<T> extends AbstractComponent {
 

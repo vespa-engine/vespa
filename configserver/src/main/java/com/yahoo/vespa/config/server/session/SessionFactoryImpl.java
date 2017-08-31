@@ -170,7 +170,8 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                                             defRepo,
                                                                             serverId,
                                                                             nodeFlavors);
-        SessionContext context = new SessionContext(applicationPackage, sessionZKClient, sessionDir, applicationRepo, hostRegistry, superModelGenerationCounter);
+        SessionContext context = new SessionContext(applicationPackage, sessionZKClient, sessionDir, applicationRepo, 
+                                                    hostRegistry, superModelGenerationCounter);
         return new LocalSession(tenant, sessionId, sessionPreparer, context);
     }
 

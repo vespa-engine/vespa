@@ -611,16 +611,17 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const DocumentId
                 op.getLid() != op.getPrevLid())
             {
                 moveMetaData(_metaStore, docId, op);
-                notifyGidToLidChange(docId.getGlobalId(), op.getLid());
+                notifyPutGidToLidChange(docId.getGlobalId(), op.getLid(), serialNum);
             } else {
                 putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
                 if (op.getDbDocumentId() != op.getPrevDbDocumentId()) {
-                    notifyGidToLidChange(docId.getGlobalId(), op.getLid());
+                    notifyPutGidToLidChange(docId.getGlobalId(), op.getLid(), serialNum);
                 }
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             removeMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
-            notifyGidToLidChange(docId.getGlobalId(), 0u);
+            notifyRemoveGidToLidChange(docId.getGlobalId(), serialNum);
+            notifyRemoveDoneGidToLidChange(docId.getGlobalId(), serialNum);
         }
         _metaStore.commit(serialNum, serialNum);
     }
@@ -651,7 +652,8 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         std::vector<document::GlobalId> gidsToRemove(getGidsToRemove(_metaStore, lidsToRemove));
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         for (const auto &gid : gidsToRemove) {
-            notifyGidToLidChange(gid, 0u);
+            notifyRemoveGidToLidChange(gid, serialNum);
+            notifyRemoveDoneGidToLidChange(gid, serialNum);
         }
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
@@ -806,6 +808,12 @@ StoreOnlyFeedView::getDocumentMetaStorePtr() const
 }
 
 void
-StoreOnlyFeedView::notifyGidToLidChange(const document::GlobalId &, uint32_t ) {}
+StoreOnlyFeedView::notifyPutGidToLidChange(const document::GlobalId &, uint32_t, SerialNum) {}
+
+void
+StoreOnlyFeedView::notifyRemoveGidToLidChange(const document::GlobalId &, SerialNum) {}
+
+void
+StoreOnlyFeedView::notifyRemoveDoneGidToLidChange(const document::GlobalId &, SerialNum) {}
 
 } // namespace proton

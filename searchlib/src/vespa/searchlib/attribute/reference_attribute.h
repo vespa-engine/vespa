@@ -78,7 +78,8 @@ public:
     ReverseMappingRefs getReverseMappingRefs() const { return _referenceMappings.getReverseMappingRefs(); }
     const ReverseMapping &getReverseMapping() const { return _referenceMappings.getReverseMapping(); }
 
-    void notifyGidToLidChange(const GlobalId &gid, DocId referencedLid);
+    void notifyReferencedPut(const GlobalId &gid, DocId referencedLid);
+    void notifyReferencedRemove(const GlobalId &gid);
     void populateReferencedLids();
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
     virtual void onShrinkLidSpace() override;

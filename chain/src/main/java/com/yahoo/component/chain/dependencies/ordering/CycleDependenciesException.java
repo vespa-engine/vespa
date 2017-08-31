@@ -10,10 +10,11 @@ import java.util.Set;
  * representation of the cycle is available to help solve the problem (<a
  * href="http://graphviz.org/">GraphViz</a>).
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("serial")
 public class CycleDependenciesException extends RuntimeException {
+
     public Map<String, NameProvider> cycleNodes;
 
     CycleDependenciesException(Map<String, NameProvider> cycleNodes) {
@@ -40,6 +41,5 @@ public class CycleDependenciesException extends RuntimeException {
     public String dotString() {
         return createDotString(cycleNodes);
     }
-
 
 }

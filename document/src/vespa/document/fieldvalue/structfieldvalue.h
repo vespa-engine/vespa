@@ -52,7 +52,9 @@ private:
     mutable bool            _hasChanged;
 
 public:
-    typedef std::unique_ptr<StructFieldValue> UP;
+    using UP = std::unique_ptr<StructFieldValue>;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+
     StructFieldValue(const DataType &type);
     ~StructFieldValue();
     void swap(StructFieldValue & rhs);

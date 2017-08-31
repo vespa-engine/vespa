@@ -14,7 +14,7 @@ import com.yahoo.container.core.ChainsConfig;
 /**
  * Builds a chains model from config.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ChainsModelBuilder {
 

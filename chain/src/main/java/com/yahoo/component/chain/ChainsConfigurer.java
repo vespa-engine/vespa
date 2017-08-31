@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.chain;
 
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.chain.model.ChainedComponentModel;

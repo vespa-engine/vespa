@@ -72,8 +72,9 @@ private:
  **/
 class CompressedBlobSet {
 public:
+    using CompressionConfig = vespalib::compression::CompressionConfig;
     CompressedBlobSet();
-    CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed);
+    CompressedBlobSet(const CompressionConfig &compression, const BlobSet & uncompressed);
     CompressedBlobSet(CompressedBlobSet && rhs) = default;
     CompressedBlobSet & operator=(CompressedBlobSet && rhs) = default;
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
@@ -83,7 +84,7 @@ public:
     bool empty() const { return _positions.empty(); }
     BlobSet getBlobSet() const;
 private:
-    document::CompressionConfig::Type _compression;
+    CompressionConfig::Type _compression;
     BlobSet::Positions                _positions;
     vespalib::MallocPtr               _buffer;
 };
@@ -95,7 +96,8 @@ private:
  **/
 class VisitCache {
 public:
-    VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression);
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+    VisitCache(IDataStore &store, size_t cacheSize, const CompressionConfig &compression);
 
     CompressedBlobSet read(const IDocumentStore::LidVector & keys) const;
     void remove(uint32_t key);
@@ -111,17 +113,17 @@ private:
      */
     class BackingStore {
     public:
-        BackingStore(IDataStore &store, const document::CompressionConfig &compression) :
+        BackingStore(IDataStore &store, const CompressionConfig &compression) :
             _backingStore(store),
             _compression(compression)
         { }
         bool read(const KeySet &key, CompressedBlobSet &blobs) const;
         void write(const KeySet &, const CompressedBlobSet &) { }
         void erase(const KeySet &) { }
-        const document::CompressionConfig &getCompression() const { return _compression; }
+        const CompressionConfig &getCompression() const { return _compression; }
     private:
         IDataStore                        &_backingStore;
-        const document::CompressionConfig  _compression;
+        const CompressionConfig  _compression;
     };
 
     using CacheParams = vespalib::CacheParam<

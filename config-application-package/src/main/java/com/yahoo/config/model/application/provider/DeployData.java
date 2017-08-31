@@ -5,7 +5,6 @@ package com.yahoo.config.model.application.provider;
  * A class for holding values generated or computed during deployment
  *
  * @author hmusum
- * @since 5.1.11
  */
 public class DeployData {
 
@@ -57,4 +56,5 @@ public class DeployData {
     public String getApplicationName() {
         return applicationName;
     }
+
 }

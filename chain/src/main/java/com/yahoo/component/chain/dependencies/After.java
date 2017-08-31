@@ -10,11 +10,13 @@ import java.lang.annotation.*;
  * See {@link com.yahoo.component.chain.dependencies.ordering.ChainBuilder}
  * for dependency handling information.
  *
- * @author  tonytv
+ * @author Tony Vaagenes
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
 public @interface After {
-    public abstract String[] value() default {};
+
+    String[] value() default {};
+
 }

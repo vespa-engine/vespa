@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 @ThreadSafe
 @Beta
@@ -156,6 +156,7 @@ final class SynchronousRequestResponseHandler {
     }
 
     private static class BlockingCompletionHandler implements CompletionHandler {
+
         private volatile Throwable throwable;
         private CountDownLatch doneLatch = new CountDownLatch(1);
 
@@ -184,5 +185,7 @@ final class SynchronousRequestResponseHandler {
                 }
             }
         }
+
     }
+
 }

@@ -30,7 +30,7 @@ struct PredefinedScorer : public HitCollector::DocumentScorer
     ScoreMap _scores;
     PredefinedScorer(const ScoreMap &scores) : _scores(scores) {}
     virtual feature_t score(uint32_t docId) override {
-        feature_t retval = 0.0;
+        feature_t retval = default_rank_value;
         auto itr = _scores.find(docId);
         if (itr != _scores.end()) {
             retval = itr->second;
@@ -436,7 +436,7 @@ TEST_F("require that result set is merged correctly with first phase ranking",
         expRh.push_back(RankedHit());
         expRh.back()._docId = i;
         // only the maxHitsSize best hits gets a score
-        expRh.back()._rankValue = (i < f.numDocs - f.maxHitsSize) ? 0 : i + 1000;
+        expRh.back()._rankValue = (i < f.numDocs - f.maxHitsSize) ? default_rank_value : i + 1000;
     }
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
     TEST_DO(checkResult(*rs.get(), expRh));
@@ -448,7 +448,7 @@ addExpectedHitForMergeTest(const MergeResultSetFixture &f, std::vector<RankedHit
     expRh.push_back(RankedHit());
     expRh.back()._docId = docId;
     if (docId < f.numDocs - f.maxHitsSize) { // only the maxHitsSize best hits gets a score
-        expRh.back()._rankValue = 0;
+        expRh.back()._rankValue = default_rank_value;
     } else if (docId < f.numDocs - f.maxHeapSize) { // only first phase ranking
         expRh.back()._rankValue = docId + 500; // adjusted with - 500
     } else { // second phase ranking on the maxHeapSize best hits
@@ -497,7 +497,7 @@ TEST("require that hits can be added out of order when passing array limit") {
     for (uint32_t i = 0; i < numHits; ++i) {
         expRh.push_back(RankedHit());
         expRh.back()._docId = i;
-        expRh.back()._rankValue = (i < 50) ? 0 : (i + 100);
+        expRh.back()._rankValue = (i < 50) ? default_rank_value : (i + 100);
     }
     // add results in reverse order
     for (uint32_t i = numHits; i-- > 0; ) {
@@ -516,7 +516,7 @@ TEST("require that hits can be added out of order only after passing array limit
     for (uint32_t i = 0; i < numHits; ++i) {
         expRh.push_back(RankedHit());
         expRh.back()._docId = i;
-        expRh.back()._rankValue = (i < 50) ? 0 : (i + 100);
+        expRh.back()._rankValue = (i < 50) ? default_rank_value : (i + 100);
     }
     // add results in reverse order
     const uint32_t numInOrder = numHits - 30;

@@ -48,17 +48,15 @@ import java.util.logging.Logger;
  * Once a tenant is deleted from zookeeper, the zookeeper watcher thread will get notified on all configservers, and
  * shutdown and delete any per-configserver state.
  *
- * @author vegardh
- * @author lulf
- * @since 5.1.26
+ * @author Vegard Havdal
+ * @author Ulf Lilleengen
  */
-//TODO Rename to TenantRepository
+// TODO: Rename to TenantRepository
 public class Tenants implements ConnectionStateListener, PathChildrenCacheListener {
+
     public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     private static final TenantName DEFAULT_TENANT = TenantName.defaultName();
-    private static final List<TenantName> SYSTEM_TENANT_NAMES = Arrays.asList(
-            DEFAULT_TENANT,
-            HOSTED_VESPA_TENANT);
+    private static final List<TenantName> SYSTEM_TENANT_NAMES = Arrays.asList(DEFAULT_TENANT, HOSTED_VESPA_TENANT);
 
     private static final Path tenantsPath = Path.fromString("/config/v2/tenants/");
     private static final Path vespaPath = Path.fromString("/vespa");

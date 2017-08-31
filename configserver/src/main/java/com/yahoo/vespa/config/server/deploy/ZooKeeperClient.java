@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
@@ -25,13 +25,12 @@ import java.util.*;
  * A class used for reading and writing application data to zookeeper.
  *
  * @author hmusum
- * @since 5.1
  */
 public class ZooKeeperClient {
 
     private final ConfigCurator configCurator;
     private final DeployLogger logger;
-    private final boolean trace;
+    private final boolean logFine;
     /* This is the generation that will be used for reading and writing application data. (1 more than last deployed application) */
     private final Path rootPath;
 
@@ -42,10 +41,10 @@ public class ZooKeeperClient {
         }
     };
 
-    public ZooKeeperClient(ConfigCurator configCurator, DeployLogger logger, boolean trace, Path rootPath) {
+    public ZooKeeperClient(ConfigCurator configCurator, DeployLogger logger, boolean logFine, Path rootPath) {
         this.configCurator = configCurator;
         this.logger = logger;
-        this.trace = trace;
+        this.logFine = logFine;
         this.rootPath = rootPath;
     }
 
@@ -62,7 +61,7 @@ public class ZooKeeperClient {
         try {
             while (retries > 0) {
                 try {
-                    trace("Setting up ZooKeeper nodes for this application");
+                    logFine("Setting up ZooKeeper nodes for this application");
                     createZooKeeperNodes();
                     break;
                 } catch (RuntimeException e) {
@@ -105,28 +104,28 @@ public class ZooKeeperClient {
      *
      * @param app the application package to feed to zookeeper
      */
-    void feedZooKeeper(ApplicationPackage app) {
-        trace("Feeding application config into ZooKeeper");
+    void write(ApplicationPackage app) {
+        logFine("Feeding application config into ZooKeeper");
         // gives lots and lots of debug output: // BasicConfigurator.configure();
         try {
-            trace("zk operations: " + configCurator.getNumberOfOperations());
-            trace("zk operations: " + configCurator.getNumberOfOperations());
-            trace("Feeding user def files into ZooKeeper");
-            feedZKUserDefs(app);
-            trace("zk operations: " + configCurator.getNumberOfOperations());
-            trace("Feeding application package into ZooKeeper");
+            logFine("zk operations: " + configCurator.getNumberOfOperations());
+            logFine("zk operations: " + configCurator.getNumberOfOperations());
+            logFine("Feeding user def files into ZooKeeper");
+            writeUserDefs(app);
+            logFine("zk operations: " + configCurator.getNumberOfOperations());
+            logFine("Feeding application package into ZooKeeper");
             // TODO 1200 zk operations done in the below method
-            feedZKAppPkg(app);
-            feedSearchDefinitions(app);
-            feedZKUserIncludeDirs(app, app.getUserIncludeDirs());
-            trace("zk operations: " + configCurator.getNumberOfOperations());
-            trace("zk read operations: " + configCurator.getNumberOfReadOperations());
-            trace("zk write operations: " + configCurator.getNumberOfWriteOperations());
-            trace("Feeding sd from docproc bundle into ZooKeeper");
-            trace("zk operations: " + configCurator.getNumberOfOperations());
-            trace("Write application metadata into ZooKeeper");
-            feedZKAppMetaData(app.getMetaData());
-            trace("zk operations: " + configCurator.getNumberOfOperations());
+            writeSomeOf(app);
+            writeSearchDefinitions(app);
+            writeUserIncludeDirs(app, app.getUserIncludeDirs());
+            logFine("zk operations: " + configCurator.getNumberOfOperations());
+            logFine("zk read operations: " + configCurator.getNumberOfReadOperations());
+            logFine("zk write operations: " + configCurator.getNumberOfWriteOperations());
+            logFine("Feeding sd from docproc bundle into ZooKeeper");
+            logFine("zk operations: " + configCurator.getNumberOfOperations());
+            logFine("Write application metadata into ZooKeeper");
+            write(app.getMetaData());
+            logFine("zk operations: " + configCurator.getNumberOfOperations());
         } catch (Exception e) {
             throw new IllegalStateException("Unable to write vespa model to config server(s) " + System.getProperty("configsources") + "\n" +
                     "Please ensure that cloudconfig_server is started on the config server node(s), " +
@@ -134,7 +133,7 @@ public class ZooKeeperClient {
         }
     }
 
-    private void feedSearchDefinitions(ApplicationPackage app) throws IOException {
+    private void writeSearchDefinitions(ApplicationPackage app) throws IOException {
         Collection<NamedReader> sds = app.getSearchDefinitions();
         if (sds.isEmpty()) {
             return;
@@ -142,7 +141,7 @@ public class ZooKeeperClient {
         Path zkPath = getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCH_DEFINITIONS_DIR);
         configCurator.createNode(zkPath.getAbsolute());
         // Ensures that ranking expressions and other files are also fed.
-        feedDirZooKeeper(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
+        writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
         for (NamedReader sd : sds) {
             String name = sd.getName();
             Reader reader = sd.getReader();
@@ -153,12 +152,12 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Puts the application package files into ZK
+     * Puts some of the application package files into ZK - see write(app).
      *
      * @param app The application package to use as input.
      * @throws java.io.IOException  if not able to write to Zookeeper
      */
-    void feedZKAppPkg(ApplicationPackage app) throws IOException {
+    void writeSomeOf(ApplicationPackage app) throws IOException {
         ApplicationFile.PathFilter srFilter = new ApplicationFile.PathFilter() {
             @Override
             public boolean accept(Path path) {
@@ -167,40 +166,40 @@ public class ZooKeeperClient {
         };
         // Copy app package files and subdirs into zk
         // TODO: We should have a way of doing this which doesn't require repeating all the content
-        feedFileZooKeeper(app.getFile(Path.fromString(ApplicationPackage.SERVICES)),
-                          getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
-        feedFileZooKeeper(app.getFile(Path.fromString(ApplicationPackage.HOSTS)),
-                          getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
-        feedFileZooKeeper(app.getFile(Path.fromString(ApplicationPackage.DEPLOYMENT_FILE.getName())),
-                          getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
-        feedFileZooKeeper(app.getFile(Path.fromString(ApplicationPackage.VALIDATION_OVERRIDES.getName())),
-                          getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(ApplicationPackage.SERVICES)),
+                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(ApplicationPackage.HOSTS)),
+                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(ApplicationPackage.DEPLOYMENT_FILE.getName())),
+                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(ApplicationPackage.VALIDATION_OVERRIDES.getName())),
+                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
 
-        feedDirZooKeeper(app.getFile(Path.fromString(ApplicationPackage.TEMPLATES_DIR)),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH),
-                         true);
-        feedDirZooKeeper(app.getFile(ApplicationPackage.RULES_DIR),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.RULES_DIR),
-                         srFilter, true);
-        feedDirZooKeeper(app.getFile(ApplicationPackage.QUERY_PROFILES_DIR),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.QUERY_PROFILES_DIR),
-                         xmlFilter, true);
-        feedDirZooKeeper(app.getFile(ApplicationPackage.PAGE_TEMPLATES_DIR),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.PAGE_TEMPLATES_DIR),
-                         xmlFilter, true);
-        feedDirZooKeeper(app.getFile(Path.fromString(ApplicationPackage.SEARCHCHAINS_DIR)),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCHCHAINS_DIR),
-                         xmlFilter, true);
-        feedDirZooKeeper(app.getFile(Path.fromString(ApplicationPackage.DOCPROCCHAINS_DIR)),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.DOCPROCCHAINS_DIR),
-                         xmlFilter, true);
-        feedDirZooKeeper(app.getFile(Path.fromString(ApplicationPackage.ROUTINGTABLES_DIR)),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.ROUTINGTABLES_DIR),
-                         xmlFilter, true);
+        writeDir(app.getFile(Path.fromString(ApplicationPackage.TEMPLATES_DIR)),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH),
+                 true);
+        writeDir(app.getFile(ApplicationPackage.RULES_DIR),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.RULES_DIR),
+                 srFilter, true);
+        writeDir(app.getFile(ApplicationPackage.QUERY_PROFILES_DIR),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.QUERY_PROFILES_DIR),
+                 xmlFilter, true);
+        writeDir(app.getFile(ApplicationPackage.PAGE_TEMPLATES_DIR),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.PAGE_TEMPLATES_DIR),
+                 xmlFilter, true);
+        writeDir(app.getFile(Path.fromString(ApplicationPackage.SEARCHCHAINS_DIR)),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCHCHAINS_DIR),
+                 xmlFilter, true);
+        writeDir(app.getFile(Path.fromString(ApplicationPackage.DOCPROCCHAINS_DIR)),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.DOCPROCCHAINS_DIR),
+                 xmlFilter, true);
+        writeDir(app.getFile(Path.fromString(ApplicationPackage.ROUTINGTABLES_DIR)),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.ROUTINGTABLES_DIR),
+                 xmlFilter, true);
     }
 
-    private void feedDirZooKeeper(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {
-        feedDirZooKeeper(file, zooKeeperAppPath, new ApplicationFile.PathFilter() {
+    private void writeDir(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {
+        writeDir(file, zooKeeperAppPath, new ApplicationFile.PathFilter() {
             @Override
             public boolean accept(Path path) {
                 return true;
@@ -208,7 +207,7 @@ public class ZooKeeperClient {
         }, recurse);
     }
 
-    private void feedDirZooKeeper(ApplicationFile dir, Path path, ApplicationFile.PathFilter filenameFilter, boolean recurse) throws IOException {
+    private void writeDir(ApplicationFile dir, Path path, ApplicationFile.PathFilter filenameFilter, boolean recurse) throws IOException {
         if (!dir.isDirectory()) {
             logger.log(LogLevel.FINE, dir.getPath().getAbsolute()+" is not a directory. Not feeding the files into ZooKeeper.");
             return;
@@ -220,10 +219,10 @@ public class ZooKeeperClient {
             if (file.isDirectory()) {
                 configCurator.createNode(path.append(name).getAbsolute());
                 if (recurse) {
-                    feedDirZooKeeper(file, path.append(name), filenameFilter, recurse);
+                    writeDir(file, path.append(name), filenameFilter, recurse);
                 }
             } else {
-                feedFileZooKeeper(file, path);
+                writeFile(file, path);
             }
         }
     }
@@ -248,7 +247,7 @@ public class ZooKeeperClient {
         return ret;
     }
 
-    private void feedFileZooKeeper(ApplicationFile file, Path zkPath) throws IOException {
+    private void writeFile(ApplicationFile file, Path zkPath) throws IOException {
         if (!file.exists()) {
             return;
         }
@@ -260,7 +259,7 @@ public class ZooKeeperClient {
         }
     }
 
-    private void feedZKUserIncludeDirs(ApplicationPackage applicationPackage, List<String> userIncludeDirs) throws IOException {
+    private void writeUserIncludeDirs(ApplicationPackage applicationPackage, List<String> userIncludeDirs) throws IOException {
         // User defined include directories
         for (String userInclude : userIncludeDirs) {
             ApplicationFile dir = applicationPackage.getFile(Path.fromString(userInclude));
@@ -268,9 +267,9 @@ public class ZooKeeperClient {
             if (files == null || files.isEmpty()) {
                 configCurator.createNode(getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + userInclude).getAbsolute());
             }
-            feedDirZooKeeper(dir,
-                    getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + userInclude),
-                    xmlFilter, true);
+            writeDir(dir,
+                     getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + userInclude),
+                     xmlFilter, true);
         }
     }
 
@@ -278,22 +277,22 @@ public class ZooKeeperClient {
      * Feeds all user-defined .def file from the application package into ZooKeeper (both into
      * /defconfigs and /userdefconfigs
      */
-    private void feedZKUserDefs(ApplicationPackage applicationPackage) {
+    private void writeUserDefs(ApplicationPackage applicationPackage) {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> configDefs = applicationPackage.getAllExistingConfigDefs();
         for (Map.Entry<ConfigDefinitionKey, UnparsedConfigDefinition> entry : configDefs.entrySet()) {
             ConfigDefinitionKey key = entry.getKey();
             String contents = entry.getValue().getUnparsedContent();
-            feedDefToZookeeper(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
-            feedDefToZookeeper(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
+            write(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
+            write(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
         }
         logger.log(LogLevel.FINE, configDefs.size() + " user config definitions");
     }
 
-    private void feedDefToZookeeper(String name, String namespace, String path, String data) {
-        feedDefToZookeeper(name, namespace, "", path, com.yahoo.text.Utf8.toBytes(data));
+    private void write(String name, String namespace, String path, String data) {
+        write(name, namespace, "", path, com.yahoo.text.Utf8.toBytes(data));
     }
 
-    private void feedDefToZookeeper(String name, String namespace, String version, String path, byte[] data) {
+    private void write(String name, String namespace, String version, String path, byte[] data) {
         configCurator.putDefData(
                 ("".equals(namespace)) ? name : (namespace + "." + name),
                 version,
@@ -301,8 +300,8 @@ public class ZooKeeperClient {
                 data);
     }
 
-    private void feedZKFileRegistry(Version vespaVersion, FileRegistry fileRegistry) {
-        trace("Feeding file registry data into ZooKeeper");
+    private void write(Version vespaVersion, FileRegistry fileRegistry) {
+        logFine("Feeding file registry data into ZooKeeper");
         String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
 
         configCurator.putData(getZooKeeperAppPath(null).append(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
@@ -316,12 +315,12 @@ public class ZooKeeperClient {
      *
      * @param metaData The application metadata.
      */
-    private void feedZKAppMetaData(ApplicationMetaData metaData) {
+    private void write(ApplicationMetaData metaData) {
         configCurator.putData(getZooKeeperAppPath(ConfigCurator.META_ZK_PATH).getAbsolute(), metaData.asJsonString());
     }
 
     void cleanupZooKeeper() {
-        trace("Exception occurred. Cleaning up ZooKeeper");
+        logFine("Exception occurred. Cleaning up ZooKeeper");
         try {
             for (String subPath : Arrays.asList(
                     ConfigCurator.DEFCONFIGS_ZK_SUBPATH,
@@ -350,26 +349,20 @@ public class ZooKeeperClient {
         }
     }
 
-    void trace(String msg) {
-        if (trace) {
+    void logFine(String msg) {
+        if (logFine) {
             logger.log(LogLevel.FINE, msg);
         }
     }
 
-    private void feedProvisionInfo(Version version, ProvisionInfo info) throws IOException {
-        byte[] json = info.toJson();
-        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).append(version.toSerializedForm()).getAbsolute(), json);
+    public void write(AllocatedHosts info) throws IOException {
+        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(), info.toJson());
     }
 
-    public void feedZKFileRegistries(Map<Version, FileRegistry> fileRegistryMap) {
+    public void write(Map<Version, FileRegistry> fileRegistryMap) {
         for (Map.Entry<Version, FileRegistry> versionFileRegistryEntry : fileRegistryMap.entrySet()) {
-            feedZKFileRegistry(versionFileRegistryEntry.getKey(), versionFileRegistryEntry.getValue());
+            write(versionFileRegistryEntry.getKey(), versionFileRegistryEntry.getValue());
         }
     }
 
-    public void feedProvisionInfos(Map<Version, ProvisionInfo> provisionInfoMap) throws IOException {
-        for (Map.Entry<Version, ProvisionInfo> versionProvisionInfoEntry : provisionInfoMap.entrySet()) {
-            feedProvisionInfo(versionProvisionInfoEntry.getKey(), versionProvisionInfoEntry.getValue());
-        }
-    }
 }

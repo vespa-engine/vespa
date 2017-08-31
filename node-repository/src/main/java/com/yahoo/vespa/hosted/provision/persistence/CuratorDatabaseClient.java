@@ -84,6 +84,8 @@ public class CuratorDatabaseClient {
         for (Node node : nodes) {
             if (node.state() != expectedState)
                 throw new IllegalArgumentException(node + " is not in the " + node.state() + " state");
+
+            node = node.with(node.history().recordStateTransition(null, expectedState, Agent.system, clock.instant()));
             curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
         }
         transaction.commit();
@@ -104,20 +106,21 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Removes a node.
+     * Removes multiple nodes in a single transaction.
      *
-     * @param state the current state of the node
-     * @param hostName the host name of the node to remove
-     * @return true if the node was removed, false if it was not found
+     * @param nodes list of the nodes to remove
      */
-    public boolean removeNode(Node.State state, String hostName) {
-        Path path = toPath(state, hostName);
+    public void removeNodes(List<Node> nodes) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
+
+        for (Node node : nodes) {
+            Path path = toPath(node.state(), node.hostname());
+            CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+            curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
+        }
+
         transaction.commit();
-        log.log(LogLevel.INFO, "Removed: " + state + " node " + hostName);
-        return true;
+        nodes.forEach(node -> log.log(LogLevel.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
 
     /**

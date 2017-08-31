@@ -2,9 +2,9 @@
 
 #include "attribute_header.h"
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/data/databuffer.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 namespace {
 
@@ -168,5 +168,4 @@ AttributeHeader::hasWeightedSetType() const
     return _collectionType.isWeightedSet();
 }
 
-} // namespace search::attribute
-} // namespace search
+}

@@ -56,11 +56,12 @@ void verifyAB(const BlobSet & a) {
 
 using B=vespalib::ConstBufferRef;
 TEST("require that BlobSet can be built") {
+    using CompressionConfig = vespalib::compression::CompressionConfig;
     BlobSet a;
     a.append(7, B("aaaaaa",6));
     a.append(9, B("bbbbb",5));
     verifyAB(a);
-    document::CompressionConfig cfg(document::CompressionConfig::LZ4);
+    CompressionConfig cfg(CompressionConfig::LZ4);
     CompressedBlobSet ca(cfg, a);
     BlobSet b = ca.getBlobSet();
     verifyAB(b);

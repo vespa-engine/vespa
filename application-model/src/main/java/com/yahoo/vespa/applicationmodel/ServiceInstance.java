@@ -9,6 +9,7 @@ import java.util.Objects;
  * @author bjorncs
  */
 public class ServiceInstance<STATUS> {
+
     private final ConfigId configId;
     private final HostName hostName;
     private final STATUS serviceStatus;
@@ -57,4 +58,5 @@ public class ServiceInstance<STATUS> {
     public int hashCode() {
         return Objects.hash(configId, hostName, serviceStatus);
     }
+
 }

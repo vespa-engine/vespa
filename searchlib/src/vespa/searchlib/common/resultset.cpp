@@ -111,7 +111,7 @@ ResultSet::mergeWithBitOverflow()
         // bitvector hits before array hits
         while (bidx < firstArrayHit) {
             tgtA->_docId = bidx;
-            tgtA->_rankValue = 0;
+            tgtA->_rankValue = default_rank_value;
             tgtA++;
             bidx = bitVector->getNextTrueBit(bidx + 1);
         }
@@ -123,7 +123,7 @@ ResultSet::mergeWithBitOverflow()
                 tgtA->_rankValue = oldA->_rankValue;
                 oldA++;
             } else {
-                tgtA->_rankValue = 0;
+                tgtA->_rankValue = default_rank_value;
             }
             tgtA++;
             bidx = bitVector->getNextTrueBit(bidx + 1);
@@ -134,7 +134,7 @@ ResultSet::mergeWithBitOverflow()
     // bitvector hits after array hits
     while (tgtA < tgtAEnd) {
         tgtA->_docId = bidx;
-        tgtA->_rankValue = 0;
+        tgtA->_rankValue = default_rank_value;
         tgtA++;
         bidx = bitVector->getNextTrueBit(bidx + 1);
     }

@@ -149,6 +149,7 @@ public class NodeRepositoryImplTest {
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         waitForJdiscContainerToServe();
 
+        nodeRepositoryApi.markAsDirty("host5.yahoo.com");
         nodeRepositoryApi.markNodeAvailableForNewAllocation("host5.yahoo.com");
 
         try {

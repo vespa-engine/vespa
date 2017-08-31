@@ -9,5 +9,13 @@
         <region active='true'>us-central-1</region>
         <delay hours='3' minutes='7' seconds='13'/>
         <region active='true'>us-east-3</region>
+        <parallel>
+            <region active='true'>us-north-1</region>
+            <region active='true'>us-south-1</region>
+        </parallel>
+        <parallel>
+            <region active='true'>us-north-2</region>
+            <region active='true'>us-south-2</region>
+        </parallel>
     </prod>
 </deployment>

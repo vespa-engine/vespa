@@ -196,7 +196,7 @@ public class ApplicationDeployTest {
 
     @Test
     public void testThatModelIsRebuiltWhenSearchDefinitionIsAdded() throws IOException {
-        File tmpDir = Files.createTempDir();
+        File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
         FilesApplicationPackage app = createAppPkg(tmpDir.getAbsolutePath());
         assertThat(getSearchDefinitions(app).size(), is(5));
@@ -208,23 +208,35 @@ public class ApplicationDeployTest {
 
     @Test
     public void testThatAppWithDeploymentXmlIsValid() throws IOException {
-        File tmpDir = Files.createTempDir();
+        File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
         createAppPkg(tmpDir.getAbsolutePath());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testThatAppWithIllegalDeploymentXmlIsNotValid() throws IOException {
-        File tmpDir = Files.createTempDir();
+        File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app_invalid_deployment_xml"), tmpDir);
         createAppPkg(tmpDir.getAbsolutePath());
     }
 
     @Test
     public void testThatAppWithIllegalEmptyProdRegion() throws IOException {
-        File tmpDir = Files.createTempDir();
+        File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "empty_prod_region_in_deployment_xml"), tmpDir);
         createAppPkg(tmpDir.getAbsolutePath());
+    }
+
+    @Test
+    public void testThatAppWithInvalidParallelDeploymentFails() throws IOException {
+        File tmpDir = tmpFolder.getRoot();
+        IOUtils.copyDirectory(new File(TESTDIR, "invalid_parallel_deployment_xml"), tmpDir);
+        try {
+            createAppPkg(tmpDir.getAbsolutePath());
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), containsString("element \"delay\" not allowed here"));
+        }
     }
 
     private List<SearchDefinition> getSearchDefinitions(FilesApplicationPackage app) {
@@ -242,9 +254,10 @@ public class ApplicationDeployTest {
     public FilesApplicationPackage createAppPkg(String appPkg, boolean validateXml) throws IOException {
         final FilesApplicationPackage filesApplicationPackage = FilesApplicationPackage.fromFile(new File(appPkg));
         if (validateXml) {
-            ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.createTestXmlValidator(new File(appPkg), new Version(6));
+            ApplicationPackageXmlFilesValidator validator =
+                    ApplicationPackageXmlFilesValidator.create(new File(appPkg), new Version(6));
             validator.checkApplication();
-            ApplicationPackageXmlFilesValidator.checkIncludedDirs(filesApplicationPackage, new Version(6));
+            validator.checkIncludedDirs(filesApplicationPackage);
         }
         return filesApplicationPackage;
     }

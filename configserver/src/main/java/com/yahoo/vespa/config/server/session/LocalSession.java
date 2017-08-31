@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -30,11 +30,10 @@ import java.util.Optional;
  * prepared. Deleting a local session will ensure that the local filesystem state and global zookeeper state is
  * cleaned for this session.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 // This is really the store of an application, whether it is active or in an edit session
-// TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer
+// TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer   -bratseth
 public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private final ApplicationPackage applicationPackage;
@@ -172,8 +171,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
 
-    public ProvisionInfo getProvisionInfo() {
-        return zooKeeperClient.getProvisionInfo();
+    public AllocatedHosts getAllocatedHosts() {
+        return zooKeeperClient.getAllocatedHosts();
     }
 
     @Override

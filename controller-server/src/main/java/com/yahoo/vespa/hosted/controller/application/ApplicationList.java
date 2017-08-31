@@ -80,19 +80,9 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> ! failingOn(version, application)));
     }
 
-    /** Returns the subset of applications which have one or more deployment jobs failing for the current change */
-    public ApplicationList hasDeploymentFailures() {
-        return listOf(list.stream().filter(application -> application.deploying().isPresent() && application.deploymentJobs().failingOn(application.deploying().get())));
-    }
-
     /** Returns the subset of applications which have at least one deployment */
     public ApplicationList hasDeployment() {
         return listOf(list.stream().filter(a -> !a.deployments().isEmpty()));
-    }
-
-    /** Returns the subset of applications that are currently deploying a change */
-    public ApplicationList isDeploying() {
-        return listOf(list.stream().filter(application -> application.deploying().isPresent()));
     }
 
     /** Returns the subset of applications which started failing after the given instant */
@@ -138,18 +128,6 @@ public class ApplicationList {
     /** Returns the subset of applications which currently do not have any job in progress for the given change */
     public ApplicationList notRunningJobFor(Change.VersionChange change) {
         return listOf(list.stream().filter(a -> !hasRunningJob(a, change)));
-    }
-
-    /** Returns the subset of applications which currently do not have any job in progress */
-    public ApplicationList notRunningJob() {
-        return listOf(list.stream().filter(a -> !a.deploymentJobs().inProgress()));
-    }
-
-    /** Returns the subset of applications which has a job that started running before the given instant */
-    public ApplicationList jobRunningSince(Instant instant) {
-        return listOf(list.stream().filter(a -> a.deploymentJobs().runningSince()
-                .map(at -> at.isBefore(instant))
-                .orElse(false)));
     }
 
     /** Returns the subset of applications which deploys to given environment and region */

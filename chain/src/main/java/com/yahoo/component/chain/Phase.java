@@ -10,10 +10,11 @@ import java.util.TreeSet;
 /**
  * Used for many to many constraints on searcher ordering.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class Phase {
+
     public final Dependencies dependencies;
 
     public Phase(String name, Set<String> before, Set<String> after) {
@@ -49,4 +50,5 @@ public class Phase {
         Dependencies union = dependencies.union(phase.dependencies);
         return new Phase(getName(), union.before(), union.after());
     }
+
 }

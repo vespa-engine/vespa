@@ -15,10 +15,11 @@ import static java.nio.file.Files.createTempDirectory;
 /**
  * Builds an application package on disk and returns a path to the result.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Beta
 public class ApplicationBuilder {
+
     private Path applicationDir = createTempDirectory("application");
     private Networking networking = Networking.disable;
 
@@ -93,4 +94,5 @@ public class ApplicationBuilder {
     Path getPath() {
         return applicationDir;
     }
+
 }

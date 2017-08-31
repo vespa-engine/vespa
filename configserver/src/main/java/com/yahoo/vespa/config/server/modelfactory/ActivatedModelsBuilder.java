@@ -5,12 +5,11 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
@@ -24,7 +23,6 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.curator.Curator;
@@ -47,7 +45,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final long appGeneration;
     private final SessionZooKeeperClient zkClient;
     private final Optional<PermanentApplicationPackage> permanentApplicationPackage;
-    private final Optional<com.yahoo.config.provision.Provisioner> hostProvisioner;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
@@ -56,7 +53,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final DeployLogger logger;
 
     public ActivatedModelsBuilder(TenantName tenant, long appGeneration, SessionZooKeeperClient zkClient, GlobalComponentRegistry globalComponentRegistry) {
-        super(globalComponentRegistry.getModelFactoryRegistry());
+        super(globalComponentRegistry.getModelFactoryRegistry(), 
+              globalComponentRegistry.getHostProvisioner().isPresent());
         this.tenant = tenant;
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
@@ -64,17 +62,17 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.configserverConfig = globalComponentRegistry.getConfigserverConfig();
         this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
-        this.hostProvisioner = globalComponentRegistry.getHostProvisioner();
         this.curator = globalComponentRegistry.getCurator();
         this.zone = globalComponentRegistry.getZone();
         this.logger = new SilentDeployLogger();
     }
 
     @Override
-    protected Application buildModelVersion(ModelFactory modelFactory, 
+    protected Application buildModelVersion(ModelFactory modelFactory,
                                             ApplicationPackage applicationPackage,
-                                            ApplicationId applicationId, 
+                                            ApplicationId applicationId,
                                             com.yahoo.component.Version wantedNodeVespaVersion,
+                                            Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.getVersion(), appGeneration, applicationId));
@@ -86,7 +84,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 logger,
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistryMap(), modelFactory.getVersion()).orElse(new MockFileRegistry()),
-                createHostProvisioner(getForVersionOrLatest(applicationPackage.getProvisionInfoMap(), modelFactory.getVersion())),
+                createStaticProvisioner(applicationPackage.getAllocatedHosts()),
                 createModelContextProperties(applicationId),
                 Optional.empty(),
                 new com.yahoo.component.Version(modelFactory.getVersion().toString()),
@@ -94,17 +92,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
         return new Application(modelFactory.createModel(modelContext), cache, appGeneration, modelFactory.getVersion(),
                                applicationMetricUpdater, applicationId);
-    }
-
-    private Optional<HostProvisioner> createHostProvisioner(Optional<ProvisionInfo> provisionInfo) {
-        if (hostProvisioner.isPresent() && provisionInfo.isPresent()) {
-            return Optional.of(createStaticProvisioner(provisionInfo.get()));
-        }
-        return Optional.empty();
-    }
-
-    private HostProvisioner createStaticProvisioner(ProvisionInfo provisionInfo) {
-        return new StaticProvisioner(provisionInfo);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {

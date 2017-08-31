@@ -12,7 +12,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 /**
  * A model of how the chains and components should be created.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ChainsModel {
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/document/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/exception.h>
@@ -20,7 +20,8 @@ class ChunkFormat
 {
 public:
     virtual ~ChunkFormat();
-    typedef std::unique_ptr<ChunkFormat> UP;
+    using UP = std::unique_ptr<ChunkFormat>;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
     vespalib::nbostream & getBuffer() { return _dataBuf; }
     const vespalib::nbostream & getBuffer() const { return _dataBuf; }
 
@@ -30,7 +31,7 @@ public:
      * @param compressed The buffer where the serialized data shall be placed.
      * @param compression What kind of compression shall be employed.
      */
-    void pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const document::CompressionConfig & compression);
+    void pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression);
     /**
      * Will deserialize and create a representation of the uncompressed data.
      * param buffer Pointer to the serialized data
@@ -44,7 +45,7 @@ public:
      * @param compression Compression config to be used.
      * @return maximum number of bytes a packet can take in serialized form.
      */
-    size_t getMaxPackSize(const document::CompressionConfig & compression) const;
+    size_t getMaxPackSize(const CompressionConfig & compression) const;
 protected:
     /**
      * Constructor used when deserializing

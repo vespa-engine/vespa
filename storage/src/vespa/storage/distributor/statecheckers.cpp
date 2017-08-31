@@ -1140,7 +1140,7 @@ GarbageCollectionStateChecker::check(Context& c)
         op->setPriority(c.distributorConfig.getMaintenancePriorities()
                         .garbageCollection);
         op->setDetailedReason(reason.c_str());
-        return Result::createStoredResult(std::move(op), MaintenancePriority::MEDIUM);
+        return Result::createStoredResult(std::move(op), MaintenancePriority::LOW);
     } else {
         return Result::noMaintenanceNeeded();
     }
