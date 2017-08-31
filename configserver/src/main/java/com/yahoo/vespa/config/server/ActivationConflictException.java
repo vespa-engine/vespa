@@ -8,8 +8,8 @@ package com.yahoo.vespa.config.server;
  *
  * @author hmusum
  */
-public class ActivationException extends RuntimeException {
-    public ActivationException(String s) {
+public class ActivationConflictException extends RuntimeException {
+    public ActivationConflictException(String s) {
         super(s);
     }
 }

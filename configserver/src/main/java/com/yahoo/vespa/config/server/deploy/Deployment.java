@@ -9,7 +9,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.ActivationException;
+import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -210,7 +210,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             if (ignoreStaleSessionFailure) {
                 log.warning(errMsg + " (Continuing because of force.)");
             } else {
-                throw new ActivationException(errMsg);
+                throw new ActivationConflictException(errMsg);
             }
         }
     }
@@ -219,7 +219,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     // increasing number
     private void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
-            throw new ActivationException("It is not possible to activate session " + sessionId +
+            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
                                           ", because it is older than current active session (" +
                                           currentActiveSessionId + ")");
         }
