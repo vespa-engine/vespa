@@ -47,7 +47,7 @@ public class DeploymentOrder {
         // At this point we have deployed to system test, so deployment spec is available
         List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
         Optional<DeploymentSpec.Step> currentStep = fromJob(job, application);
-        if (!currentStep.isPresent()) {
+        if ( ! currentStep.isPresent()) {
             return Collections.emptyList();
         }
 
@@ -65,15 +65,9 @@ public class DeploymentOrder {
         }
 
         DeploymentSpec.Step nextStep = deploymentSteps.get(currentIndex + 1);
-        if (nextStep instanceof DeploymentSpec.DeclaredZone) {
-            return Collections.singletonList(toJob((DeploymentSpec.DeclaredZone) nextStep));
-        } else if (nextStep instanceof DeploymentSpec.ParallelZones) {
-            return ((DeploymentSpec.ParallelZones) nextStep).zones().stream()
-                    .map(this::toJob)
-                    .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
-        } else {
-            throw new IllegalStateException("Unexpected step type: " + nextStep.getClass());
-        }
+        return nextStep.zones().stream()
+                .map(this::toJob)
+                .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     /** Returns whether the given job is first in a deployment */
@@ -96,15 +90,11 @@ public class DeploymentOrder {
         if (deploymentSpec.steps().isEmpty()) {
             return Arrays.asList(JobType.systemTest, JobType.stagingTest);
         }
-        List<JobType> jobs = new ArrayList<>();
-        for (DeploymentSpec.Step step : deploymentSpec.steps()) {
-            if (step instanceof DeploymentSpec.DeclaredZone) {
-                jobs.add(toJob((DeploymentSpec.DeclaredZone) step));
-            } else if (step instanceof DeploymentSpec.ParallelZones) {
-                ((DeploymentSpec.ParallelZones) step).zones().forEach(zone -> jobs.add(toJob(zone)));
-            }
-        }
-        return Collections.unmodifiableList(jobs);
+
+        return deploymentSpec.steps().stream()
+                .flatMap(step -> step.zones().stream())
+                .map(this::toJob)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     /** Resolve deployment step from job */
