@@ -93,7 +93,7 @@ ReferenceMappings::buildReverseMapping(const Reference &entry, const std::vector
 }
 
 void
-ReferenceMappings::notifyGidToLidChange(const Reference &entry, uint32_t referencedLid)
+ReferenceMappings::notifyReferencedPut(const Reference &entry, uint32_t referencedLid)
 {
     uint32_t oldReferencedLid = entry.lid();
     if (oldReferencedLid != referencedLid) {
@@ -101,6 +101,20 @@ ReferenceMappings::notifyGidToLidChange(const Reference &entry, uint32_t referen
             _reverseMappingIndices[oldReferencedLid] = EntryRef();
         }
         entry.setLid(referencedLid);
+    }
+    syncReverseMappingIndices(entry);
+    syncForwardMapping(entry);
+}
+
+void
+ReferenceMappings::notifyReferencedRemove(const Reference &entry)
+{
+    uint32_t oldReferencedLid = entry.lid();
+    if (oldReferencedLid != 0) {
+        if (oldReferencedLid < _reverseMappingIndices.size()) {
+            _reverseMappingIndices[oldReferencedLid] = EntryRef();
+        }
+        entry.setLid(0);
     }
     syncReverseMappingIndices(entry);
     syncForwardMapping(entry);

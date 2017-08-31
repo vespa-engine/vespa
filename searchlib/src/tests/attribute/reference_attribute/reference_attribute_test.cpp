@@ -182,8 +182,11 @@ struct Fixture
             iter, oldStatus.getUsed(), newStatus.getUsed());
     }
 
-    void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
-        _attr->notifyGidToLidChange(gid, referencedDoc);
+    void notifyReferencedPut(const GlobalId &gid, uint32_t referencedDoc) {
+        _attr->notifyReferencedPut(gid, referencedDoc);
+    }
+    void notifyReferencedRemove(const GlobalId &gid) {
+        _attr->notifyReferencedRemove(gid);
     }
     void populateReferencedLids() {
         _attr->populateReferencedLids();
@@ -300,7 +303,7 @@ TEST_F("require that update() uses gid-mapper to set referenced lid", Fixture)
     TEST_DO(f.assertRefLid(5, 0));
 }
 
-TEST_F("require that notifyGidToLidChange() updates lid-2-lid mapping", Fixture)
+TEST_F("require that notifyReferencedPut() updates lid-2-lid mapping", Fixture)
 {
     f.ensureDocIdLimit(4);
     f.set(1, toGid(doc1));
@@ -310,9 +313,9 @@ TEST_F("require that notifyGidToLidChange() updates lid-2-lid mapping", Fixture)
     TEST_DO(f.assertRefLid(1, 0));
     TEST_DO(f.assertRefLid(2, 0));
     TEST_DO(f.assertRefLid(3, 0));
-    f.notifyGidToLidChange(toGid(doc1), 10);
-    f.notifyGidToLidChange(toGid(doc2), 20);
-    f.notifyGidToLidChange(toGid(doc3), 30);
+    f.notifyReferencedPut(toGid(doc1), 10);
+    f.notifyReferencedPut(toGid(doc2), 20);
+    f.notifyReferencedPut(toGid(doc3), 30);
     TEST_DO(f.assertRefLid(1, 10));
     TEST_DO(f.assertRefLid(2, 20));
     TEST_DO(f.assertRefLid(3, 10));
@@ -369,18 +372,18 @@ TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-li
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
-TEST_F("Require that notifyGidToLidChange changes reverse mapping", Fixture)
+TEST_F("Require that notifyReferencedPut and notifyReferencedRemove changes reverse mapping", Fixture)
 {
     TEST_DO(preparePopulateReferencedLids(f));
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { }));
-    f.notifyGidToLidChange(toGid(doc1), 10);
+    f.notifyReferencedPut(toGid(doc1), 10);
     TEST_DO(f.assertLids(10, { 1, 3}));
     TEST_DO(f.assertLids(11, { }));
-    f.notifyGidToLidChange(toGid(doc1), 11);
+    f.notifyReferencedPut(toGid(doc1), 11);
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { 1, 3}));
-    f.notifyGidToLidChange(toGid(doc1), 0);
+    f.notifyReferencedRemove(toGid(doc1));
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { }));
 }
@@ -406,8 +409,8 @@ TEST_F("Require that reverse mapping recovers from temporary out of order glitch
     TEST_DO(f.assertRefLid(2, 17));
     TEST_DO(f.assertRefLid(3, 10));
     // Notify reference attribute about gid to lid mapping changes
-    f.notifyGidToLidChange(toGid(doc1), 0);
-    f.notifyGidToLidChange(toGid(doc3), 10);
+    f.notifyReferencedRemove(toGid(doc1));
+    f.notifyReferencedPut(toGid(doc3), 10);
     TEST_DO(f.assertRefLid(1, 0));
     TEST_DO(f.assertRefLid(2, 17));
     TEST_DO(f.assertRefLid(3, 10));

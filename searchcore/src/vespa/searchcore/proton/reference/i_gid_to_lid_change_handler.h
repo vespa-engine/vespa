@@ -5,6 +5,7 @@
 #include <set>
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/common/serialnum.h>
 
 namespace document { class GlobalId; }
 
@@ -19,14 +20,18 @@ class IGidToLidChangeListener;
 class IGidToLidChangeHandler
 {
 public:
+    using SerialNum = search::SerialNum;
+    using GlobalId = document::GlobalId;
+
     virtual ~IGidToLidChangeHandler() { }
 
     virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) = 0;
 
     virtual void removeListeners(const vespalib::string &docTypeName,
                                  const std::set<vespalib::string> &keepNames) = 0;
-    virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid)  = 0;
-
+    virtual void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
+    virtual void notifyRemove(GlobalId gid, SerialNum serialNum) = 0;
+    virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) = 0;
 };
 
 } // namespace proton

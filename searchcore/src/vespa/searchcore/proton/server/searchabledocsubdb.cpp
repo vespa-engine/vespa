@@ -49,7 +49,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
       _warmupExecutor(ctx._warmupExecutor),
-      _gidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>(&_writeService.master()))
+      _gidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>())
 { }
 
 SearchableDocSubDB::~SearchableDocSubDB()

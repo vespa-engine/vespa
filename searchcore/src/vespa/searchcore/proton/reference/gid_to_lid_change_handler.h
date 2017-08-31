@@ -5,6 +5,8 @@
 #include "i_gid_to_lid_change_handler.h"
 #include <vector>
 #include <mutex>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/document/base/globalid.h>
 
 namespace searchcorespi { namespace index { class IThreadService; } }
 
@@ -19,25 +21,27 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
                               public IGidToLidChangeHandler
 {
     using lock_guard = std::lock_guard<std::mutex>;
+    using Listeners = std::vector<std::unique_ptr<IGidToLidChangeListener>>;
     std::mutex _lock;
-    std::vector<std::unique_ptr<IGidToLidChangeListener>> _listeners;
-    searchcorespi::index::IThreadService *_master;
+    Listeners _listeners;
+    bool _closed;
+    vespalib::hash_map<GlobalId, SerialNum, GlobalId::hash> _pendingRemove;
 
-    void performAddListener(std::unique_ptr<IGidToLidChangeListener> listener);
-    void performRemoveListener(const vespalib::string &docTypeName,
-                               const std::set<vespalib::string> &keepNames);
+    void notifyPut(GlobalId gid, uint32_t lid);
+    void notifyRemove(GlobalId gid);
 public:
-    GidToLidChangeHandler(searchcorespi::index::IThreadService *master);
+    GidToLidChangeHandler();
     virtual ~GidToLidChangeHandler();
 
     /**
-     * Notify gid to lid mapping change. Called by master executor.
+     * Notify gid to lid mapping change.
      */
-    virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid) override;
+    virtual void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    virtual void notifyRemove(GlobalId gid, SerialNum serialNum) override;
+    virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
 
     /**
-     * Close handler, further notifications are blocked.  Called by master
-     * executor.
+     * Close handler, further notifications are blocked.
      */
     void close();
 

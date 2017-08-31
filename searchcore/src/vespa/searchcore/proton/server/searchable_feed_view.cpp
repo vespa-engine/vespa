@@ -262,9 +262,21 @@ SearchableFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCom
 }
 
 void
-SearchableFeedView::notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid)
+SearchableFeedView::notifyPutGidToLidChange(const document::GlobalId &gid, uint32_t lid, SerialNum serialNum)
 {
-    _gidToLidChangeHandler->notifyGidToLidChange(gid, lid);
+    _gidToLidChangeHandler->notifyPut(gid, lid, serialNum);
+}
+
+void
+SearchableFeedView::notifyRemoveGidToLidChange(const document::GlobalId &gid, SerialNum serialNum)
+{
+    _gidToLidChangeHandler->notifyRemove(gid, serialNum);
+}
+
+void
+SearchableFeedView::notifyRemoveDoneGidToLidChange(const document::GlobalId &gid, SerialNum serialNum)
+{
+    _gidToLidChangeHandler->notifyRemoveDone(gid, serialNum);
 }
 
 } // namespace proton
