@@ -64,7 +64,7 @@ public class DeploymentTrigger {
             application = application.withJobCompletion(report, clock.instant(), controller);
             
             // Handle successful first and last job
-            if (isFirstJob(report.jobType()) && report.success()) { // the first job tells us that a change occurred
+            if (order.isFirst(report.jobType()) && report.success()) { // the first job tells us that a change occurred
                 if (application.deploying().isPresent() && ! application.deploymentJobs().hasFailures()) { // postpone until the current deployment is done
                     applications().store(application.withOutstandingChange(true), lock);
                     return;
@@ -72,7 +72,7 @@ public class DeploymentTrigger {
                 else { // start a new change deployment
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                 }
-            } else if (isLastJob(report.jobType(), application) && report.success()) {
+            } else if (order.isLast(report.jobType(), application) && report.success()) {
                 application = application.withDeploying(Optional.empty());
             }
 
@@ -101,7 +101,7 @@ public class DeploymentTrigger {
                 applications().store(application, lock);
             } else {
                 // retry the failed job (with backoff)
-                for (JobType jobType : JobType.triggerOrder(controller.system(), application.deploymentSpec())) { // retry the *first* failing job
+                for (JobType jobType : order.jobsFrom(application.deploymentSpec())) { // retry the *first* failing job
                     JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                     if (isFailing(jobStatus)) {
                         if (shouldRetryNow(jobStatus)) {
@@ -178,15 +178,6 @@ public class DeploymentTrigger {
     //--- End of methods which triggers deployment jobs ----------------------------
 
     private ApplicationController applications() { return controller.applications(); }
-
-    private boolean isFirstJob(JobType jobType) {
-        return jobType == JobType.component;
-    }
-
-    private boolean isLastJob(JobType jobType, Application application) {
-        List<JobType> triggerOrder = JobType.triggerOrder(controller.system(), application.deploymentSpec());
-        return triggerOrder.isEmpty() || jobType.equals(triggerOrder.get(triggerOrder.size() - 1));
-    }
     
     private boolean isFailing(JobStatus jobStatusOrNull) {
         return jobStatusOrNull != null && !jobStatusOrNull.isSuccess();

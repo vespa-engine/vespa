@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -42,6 +43,13 @@ public class ApplicationPackageBuilder {
         environmentBody.append("    <region active='true'>");
         environmentBody.append(regionName);
         environmentBody.append("</region>\n");
+        return this;
+    }
+
+    public ApplicationPackageBuilder parallel(String... regionName) {
+        environmentBody.append("    <parallel>\n");
+        Arrays.stream(regionName).forEach(this::region);
+        environmentBody.append("    </parallel>\n");
         return this;
     }
 

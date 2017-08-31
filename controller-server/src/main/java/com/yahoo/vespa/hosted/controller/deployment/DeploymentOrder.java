@@ -3,19 +3,24 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.collectingAndThen;
 
 /**
- * This class determines order of deployments according to an application's deployment spec
+ * This class determines the order of deployments according to an application's deployment spec.
  *
  * @author mpolden
  */
@@ -31,68 +36,124 @@ public class DeploymentOrder {
         this.clock = controller.clock();
     }
 
-    /** Returns the next job(s) to trigger after the given job, or empty if none should be triggered */
-    public List<DeploymentJobs.JobType> nextAfter(DeploymentJobs.JobType jobType, Application application) {
+    /** Returns a list of jobs to trigger after the given job */
+    public List<JobType> nextAfter(JobType job, Application application) {
         // Always trigger system test after component as deployment spec might not be available yet (e.g. if this is a
         // new application with no previous deployments)
-        if (jobType == DeploymentJobs.JobType.component) {
-            return Collections.singletonList(DeploymentJobs.JobType.systemTest);
+        if (job == JobType.component) {
+            return Collections.singletonList(JobType.systemTest);
         }
 
-        // At this point we've at least deployed to system test, so deployment spec should be available
-        List<DeploymentSpec.DeclaredZone> zones = application.deploymentSpec().zones();
-        Optional<DeploymentSpec.DeclaredZone> zoneForJob = zoneForJob(application, jobType);
-        if (!zoneForJob.isPresent()) {
-            return Collections.emptyList();
-        }
-        int zoneIndex = application.deploymentSpec().zones().indexOf(zoneForJob.get());
-
-        // This is last zone
-        if (zoneIndex == zones.size() - 1) {
+        // At this point we have deployed to system test, so deployment spec is available
+        List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
+        Optional<DeploymentSpec.Step> currentStep = fromJob(job, application);
+        if (!currentStep.isPresent()) {
             return Collections.emptyList();
         }
 
-        // Skip next job if delay has not passed yet
-        Duration delay = delayAfter(application, zoneForJob.get());
-        Optional<Instant> lastSuccess = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
-                .flatMap(JobStatus::lastSuccess)
-                .map(JobStatus.JobRun::at);
-        if (lastSuccess.isPresent() && lastSuccess.get().plus(delay).isAfter(clock.instant())) {
-            log.info(String.format("Delaying next job after %s of %s by %s", jobType, application, delay));
+        // If this is the last deployment step there's nothing more to trigger
+        int currentIndex = deploymentSteps.indexOf(currentStep.get());
+        if (currentIndex == deploymentSteps.size() - 1) {
             return Collections.emptyList();
         }
 
-        DeploymentSpec.DeclaredZone nextZone = application.deploymentSpec().zones().get(zoneIndex + 1);
-        return Collections.singletonList(
-                DeploymentJobs.JobType.from(controller.system(), nextZone.environment(), nextZone.region().orElse(null))
-        );
+        // Postpone next job if delay has not passed yet
+        Duration delay = delayAfter(currentStep.get(), application);
+        if (postponeDeployment(delay, job, application)) {
+            log.info(String.format("Delaying next job after %s of %s by %s", job, application, delay));
+            return Collections.emptyList();
+        }
+
+        DeploymentSpec.Step nextStep = deploymentSteps.get(currentIndex + 1);
+        if (nextStep instanceof DeploymentSpec.DeclaredZone) {
+            return Collections.singletonList(toJob((DeploymentSpec.DeclaredZone) nextStep));
+        } else if (nextStep instanceof DeploymentSpec.ParallelZones) {
+            return ((DeploymentSpec.ParallelZones) nextStep).zones().stream()
+                    .map(this::toJob)
+                    .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+        } else {
+            throw new IllegalStateException("Unexpected step type: " + nextStep.getClass());
+        }
     }
 
-    private Duration delayAfter(Application application, DeploymentSpec.DeclaredZone zone) {
-        int stepIndex = application.deploymentSpec().steps().indexOf(zone);
+    /** Returns whether the given job is first in a deployment */
+    public boolean isFirst(JobType job) {
+        return job == JobType.component;
+    }
+
+    /** Returns whether the given job is last in a deployment */
+    public boolean isLast(JobType job, Application application) {
+        List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
+        if (deploymentSteps.isEmpty()) { // Deployment spec not yet available
+            return false;
+        }
+        DeploymentSpec.Step lastStep = deploymentSteps.get(deploymentSteps.size() - 1);
+        return fromJob(job, application).get().equals(lastStep);
+    }
+
+    /** Returns jobs for given deployment spec, in the order they are declared */
+    public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
+        if (deploymentSpec.steps().isEmpty()) {
+            return Arrays.asList(JobType.systemTest, JobType.stagingTest);
+        }
+        List<JobType> jobs = new ArrayList<>();
+        for (DeploymentSpec.Step step : deploymentSpec.steps()) {
+            if (step instanceof DeploymentSpec.DeclaredZone) {
+                jobs.add(toJob((DeploymentSpec.DeclaredZone) step));
+            } else if (step instanceof DeploymentSpec.ParallelZones) {
+                ((DeploymentSpec.ParallelZones) step).zones().forEach(zone -> jobs.add(toJob(zone)));
+            }
+        }
+        return Collections.unmodifiableList(jobs);
+    }
+
+    /** Resolve deployment step from job */
+    private Optional<DeploymentSpec.Step> fromJob(JobType job, Application application) {
+        for (DeploymentSpec.Step step : application.deploymentSpec().steps()) {
+            if (step.deploysTo(job.environment(), job.isProduction() ? job.region(controller.system()) : Optional.empty())) {
+                return Optional.of(step);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Resolve job from deployment step */
+    private JobType toJob(DeploymentSpec.DeclaredZone zone) {
+        return JobType.from(controller.system(), zone.environment(), zone.region().orElse(null));
+    }
+
+    /** Returns whether deployment should be postponed according to delay */
+    private boolean postponeDeployment(Duration delay, JobType job, Application application) {
+        Optional<Instant> lastSuccess = Optional.ofNullable(application.deploymentJobs().jobStatus().get(job))
+                .flatMap(JobStatus::lastSuccess)
+                .map(JobStatus.JobRun::at);
+        return lastSuccess.isPresent() && lastSuccess.get().plus(delay).isAfter(clock.instant());
+    }
+
+    /** Find all steps that deploy to one or more zones */
+    private static List<DeploymentSpec.Step> deploymentSteps(Application application) {
+        return application.deploymentSpec().steps().stream()
+                .filter(step -> step instanceof DeploymentSpec.DeclaredZone ||
+                                step instanceof DeploymentSpec.ParallelZones)
+                .collect(Collectors.toList());
+    }
+
+    /** Determines the delay that should pass after the given step */
+    private static Duration delayAfter(DeploymentSpec.Step step, Application application) {
+        int stepIndex = application.deploymentSpec().steps().indexOf(step);
         if (stepIndex == -1 || stepIndex == application.deploymentSpec().steps().size() - 1) {
             return Duration.ZERO;
         }
         Duration totalDelay = Duration.ZERO;
         List<DeploymentSpec.Step> remainingSteps = application.deploymentSpec().steps()
                 .subList(stepIndex + 1, application.deploymentSpec().steps().size());
-        for (DeploymentSpec.Step step : remainingSteps) {
-            if (!(step instanceof DeploymentSpec.Delay)) {
+        for (DeploymentSpec.Step s : remainingSteps) {
+            if (!(s instanceof DeploymentSpec.Delay)) {
                 break;
             }
-            totalDelay = totalDelay.plus(((DeploymentSpec.Delay) step).duration());
+            totalDelay = totalDelay.plus(((DeploymentSpec.Delay) s).duration());
         }
         return totalDelay;
-    }
-
-    private Optional<DeploymentSpec.DeclaredZone> zoneForJob(Application application, DeploymentJobs.JobType jobType) {
-        return application.deploymentSpec()
-                .zones()
-                .stream()
-                .filter(zone -> zone.deploysTo(
-                        jobType.environment(),
-                        jobType.isProduction() ? jobType.region(controller.system()) : Optional.empty()))
-                .findFirst();
     }
 
 }

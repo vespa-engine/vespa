@@ -104,8 +104,8 @@ public class ControllerTest {
         applications.notifyJobCompletion(mockReport(app1, component, true, false));
         assertFalse("Revision is currently not known",
                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision().isPresent());
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         Optional<ApplicationRevision> revision = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision();
@@ -120,7 +120,7 @@ public class ControllerTest {
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing)
-        tester.deployAndNotify(productionCorpUsEast1, app1, applicationPackage, false);
+        tester.deployAndNotify(app1, applicationPackage, false, productionCorpUsEast1);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
@@ -144,14 +144,14 @@ public class ControllerTest {
 
         // system and staging test job - succeeding
         applications.notifyJobCompletion(mockReport(app1, component, true, false));
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, revision, tester.clock().instant())
                               .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
-        tester.deployAndNotify(stagingTest, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
-        tester.deployAndNotify(productionCorpUsEast1, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
                 .withTriggering(version1, revision, tester.clock().instant())
                 .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller());
@@ -161,7 +161,7 @@ public class ControllerTest {
         assertStatus(JobStatus.initial(productionUsEast3)
                               .withTriggering( version1, revision, tester.clock().instant()), 
                      app1.id(), tester.controller());
-        tester.deployAndNotify(productionUsEast3, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
         assertEquals(5, applications.get(app1.id()).get().deploymentJobs().jobStatus().size());
         
@@ -189,7 +189,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertNull("Zone was removed",
                    applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
         assertNull("Deployment job was removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
@@ -211,9 +211,9 @@ public class ControllerTest {
 
         // First deployment: An application change
         applications.notifyJobCompletion(mockReport(app1, component, true, false));
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app1, applicationPackage, true);
-        tester.deployAndNotify(productionUsWest1, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
 
         app1 = applications.require(app1.id());
         assertEquals("First deployment gets system version", systemVersion, app1.deployedVersion().get());
@@ -234,9 +234,9 @@ public class ControllerTest {
                 .region("us-east-3")
                 .build();
         applications.notifyJobCompletion(mockReport(app1, component, true, false));
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app1, applicationPackage, true);
-        tester.deployAndNotify(productionUsWest1, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
 
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
@@ -248,7 +248,7 @@ public class ControllerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        tester.deployAndNotify(productionUsEast3, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
         assertEquals(systemVersion, tester.configServerClientMock().lastPrepareVersion.get());
@@ -256,10 +256,10 @@ public class ControllerTest {
         // Version upgrade changes system version
         Change.VersionChange change = new Change.VersionChange(newSystemVersion);
         applications.deploymentTrigger().triggerChange(app1.id(), change);
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app1, applicationPackage, true);
-        tester.deployAndNotify(productionUsWest1, app1, applicationPackage, true);
-        tester.deployAndNotify(productionUsEast3, app1, applicationPackage, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
         app1 = applications.require(app1.id());
         assertEquals("Version upgrade changes version", newSystemVersion, app1.deployedVersion().get());
@@ -326,37 +326,37 @@ public class ControllerTest {
         // Initial failure
         Instant initialFailure = tester.clock().instant();
         tester.notifyJobCompletion(component, app, true);
-        tester.deployAndNotify(systemTest, app, applicationPackage, false);
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure", 
                      initialFailure, firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(systemTest, app, applicationPackage, false);
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at second consecutive failure", 
                      initialFailure, firstFailing(app, tester).get().at());
 
         // Success resets failingSince
         tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(systemTest, app, applicationPackage, true);
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
         assertFalse(firstFailing(app, tester).isPresent());
 
         // Complete deployment
-        tester.deployAndNotify(stagingTest, app, applicationPackage, true);
-        tester.deployAndNotify(productionCorpUsEast1, app, applicationPackage, true);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
         
         // Two repeated failures again.
         // Initial failure
         tester.clock().advance(Duration.ofMillis(1000));
         initialFailure = tester.clock().instant();
         tester.notifyJobCompletion(component, app, true);
-        tester.deployAndNotify(systemTest, app, applicationPackage, false);
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure", 
                      initialFailure, firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
-        tester.deployAndNotify(systemTest, app, applicationPackage, false);
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at second consecutive failure", 
                      initialFailure, firstFailing(app, tester).get().at());
     }
@@ -435,11 +435,11 @@ public class ControllerTest {
 
         // foo: passes system test
         tester.notifyJobCompletion(component, foo, true);
-        tester.deployAndNotify(systemTest, foo, applicationPackage, true);
+        tester.deployAndNotify(foo, applicationPackage, true, systemTest);
 
         // bar: passes system test
         tester.notifyJobCompletion(component, bar, true);
-        tester.deployAndNotify(systemTest, bar, applicationPackage, true);
+        tester.deployAndNotify(bar, applicationPackage, true, systemTest);
 
         // foo and bar: staging test jobs queued
         assertEquals(2, buildSystem.jobs().size());
@@ -455,14 +455,14 @@ public class ControllerTest {
         }
 
         // bar: Completes deployment
-        tester.deployAndNotify(stagingTest, bar, applicationPackage, true);
-        tester.deployAndNotify(productionCorpUsEast1, bar, applicationPackage, true);
+        tester.deployAndNotify(bar, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(bar, applicationPackage, true, productionCorpUsEast1);
 
         // foo: 15 minutes pass, staging-test job is still failing due out of capacity, but is no longer re-queued by
         // out of capacity retry mechanism
         tester.clock().advance(Duration.ofMinutes(15));
         tester.notifyJobCompletion(component, foo, true);
-        tester.deployAndNotify(systemTest, foo, applicationPackage, true);
+        tester.deployAndNotify(foo, applicationPackage, true, systemTest);
         tester.deploy(stagingTest, foo, applicationPackage);
         assertEquals(1, buildSystem.takeJobsToRun().size());
         tester.notifyJobCompletion(stagingTest, foo, Optional.of(JobError.outOfCapacity));
@@ -470,7 +470,7 @@ public class ControllerTest {
 
         // bar: New change triggers another staging-test job
         tester.notifyJobCompletion(component, bar, true);
-        tester.deployAndNotify(systemTest, bar, applicationPackage, true);
+        tester.deployAndNotify(bar, applicationPackage, true, systemTest);
         assertEquals(1, buildSystem.jobs().size());
 
         // foo: 4 hours pass in total, staging-test job is re-queued by periodic trigger mechanism and added at the

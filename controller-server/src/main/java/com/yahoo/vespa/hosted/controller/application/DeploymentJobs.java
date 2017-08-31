@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -16,11 +15,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Information about which deployment jobs an application should run and their current status.
@@ -250,14 +247,6 @@ public class DeploymentJobs {
                 case staging: return stagingTest;
             }
             return from(system, new com.yahoo.config.provision.Zone(environment, region));
-        }
-
-        /** Returns the trigger order to use according to deployment spec */
-        public static List<JobType> triggerOrder(SystemName system, DeploymentSpec deploymentSpec) {
-            return deploymentSpec.zones().stream()
-                    .map(declaredZone -> JobType.from(system, declaredZone.environment(),
-                                                      declaredZone.region().orElse(null)))
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         }
 
         private static Zone zone(SystemName system, String environment, String region) {

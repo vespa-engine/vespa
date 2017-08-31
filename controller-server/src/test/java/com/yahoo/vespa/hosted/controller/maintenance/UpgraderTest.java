@@ -224,9 +224,9 @@ public class UpgraderTest {
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.systemTest, app, applicationPackage, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.stagingTest, app, applicationPackage, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage, true);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
 
         tester.upgrader().maintain();
         assertEquals("Application is on expected version: Nothing to do", 0,
@@ -239,10 +239,10 @@ public class UpgraderTest {
         tester.upgrader().maintain();
 
         // system-test completes successfully
-        tester.deployAndNotify(DeploymentJobs.JobType.systemTest, app, applicationPackage, true);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
 
         // staging-test fails multiple times, exhausts retries and failure is recorded
-        tester.deployAndNotify(DeploymentJobs.JobType.stagingTest, app, applicationPackage, false);
+        tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.stagingTest);
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
         tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, app, false);
@@ -282,17 +282,17 @@ public class UpgraderTest {
         // Application is on 5.0
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.systemTest, app, applicationPackage, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.stagingTest, app, applicationPackage, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.productionCorpUsEast1, app, applicationPackage, true);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionCorpUsEast1);
 
         // Canary in prod.corp-us-east-1 is upgraded to controller version
         tester.upgrader().maintain();
         assertEquals("Upgrade started", 1, tester.buildSystem().jobs().size());
         assertEquals(Vtag.currentVersion, ((Change.VersionChange) tester.application(app.id()).deploying().get()).version());
-        tester.deployAndNotify(DeploymentJobs.JobType.systemTest, app, applicationPackage, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.stagingTest, app, applicationPackage, true);
-        tester.deployAndNotify(DeploymentJobs.JobType.productionCorpUsEast1, app, applicationPackage, true);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionCorpUsEast1);
 
         // System is upgraded to newer version, no upgrade triggered for canary as version is lower than controller
         version = Version.fromString("5.1");

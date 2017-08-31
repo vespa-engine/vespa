@@ -89,9 +89,9 @@ public class DeploymentIssueReporterTest {
         for (long i = 4; i <= 10; i++) {
             Application app = tester.createApplication("application" + i, "tenant" + i, 10 * i, i);
             tester.notifyJobCompletion(component, app, true);
-            tester.deployAndNotify(systemTest, app, applicationPackage, true);
-            tester.deployAndNotify(stagingTest, app, applicationPackage, true);
-            tester.deployAndNotify(productionCorpUsEast1, app, applicationPackage, true);
+            tester.deployAndNotify(app, applicationPackage, true, systemTest);
+            tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+            tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
         }
 
         // Both the first tenants belong to the same JIRA queue. (Not sure if this is possible, but let's test it anyway.
@@ -111,17 +111,17 @@ public class DeploymentIssueReporterTest {
 
         // app1 and app3 has one failure each.
         tester.notifyJobCompletion(component, app1, true);
-        tester.deployAndNotify(systemTest, app1, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app1, applicationPackage, false);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, false, stagingTest);
 
         tester.notifyJobCompletion(component, app2, true);
-        tester.deployAndNotify(systemTest, app2, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app2, applicationPackage, true);
+        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
 
         tester.notifyJobCompletion(component, app3, true);
-        tester.deployAndNotify(systemTest, app3, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app3, applicationPackage, true);
-        tester.deployAndNotify(productionCorpUsEast1, app3, applicationPackage, false);
+        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app3, applicationPackage, false, productionCorpUsEast1);
 
         reporter.maintain();
         reporter.maintain();
@@ -157,7 +157,7 @@ public class DeploymentIssueReporterTest {
 
         // Some time passes; tenant1 leaves her issue unattended, while tenant3 starts work and updates the issue.
         // app2 also has an intermittent failure; see that we detect this as a Vespa problem, and file an issue to ourselves.
-        tester.deployAndNotify(productionCorpUsEast1, app2, applicationPackage, false);
+        tester.deployAndNotify(app2, applicationPackage, false, productionCorpUsEast1);
         tester.clock().advance(maxInactivityAge.plus(maxFailureAge));
         issues.comment(openIssuesFor(app3).get(0).id(), "We are trying to fix it!");
 
@@ -177,8 +177,8 @@ public class DeploymentIssueReporterTest {
 
 
         // app3 fixes its problem, but the ticket is left open; see the resolved ticket is not escalated when another escalation period has passed.
-        tester.deployAndNotify(productionCorpUsEast1, app2, applicationPackage, true);
-        tester.deployAndNotify(productionCorpUsEast1, app3, applicationPackage, true);
+        tester.deployAndNotify(app2, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
         tester.clock().advance(maxInactivityAge.plus(Duration.ofDays(1)));
 
         reporter.maintain();
@@ -190,9 +190,9 @@ public class DeploymentIssueReporterTest {
         // app1 still does nothing with their issue; see the terminal user gets it in the end.
         // app3 now has a new failure past max failure age; see that a new issue is filed.
         tester.notifyJobCompletion(component, app3, true);
-        tester.deployAndNotify(systemTest, app3, applicationPackage, true);
-        tester.deployAndNotify(stagingTest, app3, applicationPackage, true);
-        tester.deployAndNotify(productionCorpUsEast1, app3, applicationPackage, false);
+        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app3, applicationPackage, false, productionCorpUsEast1);
         tester.clock().advance(maxInactivityAge.plus(maxFailureAge));
 
         reporter.maintain();
