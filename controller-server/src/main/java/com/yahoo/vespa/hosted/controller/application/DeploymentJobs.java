@@ -120,9 +120,9 @@ public class DeploymentJobs {
             return true;
         }
         if (environment == Environment.staging) {
-            return isSuccessful(JobType.systemTest, change.get());
+            return isSuccessful(change.get(), JobType.systemTest);
         } else if (environment == Environment.prod) {
-            return isSuccessful(JobType.stagingTest, change.get());
+            return isSuccessful(change.get(), JobType.stagingTest);
         }
         return true; // other environments do not have any preconditions
     }
@@ -131,7 +131,15 @@ public class DeploymentJobs {
     public boolean isDeployed(Change change) {
         return status.values().stream()
                 .filter(status -> status.type().isProduction())
-                .allMatch(status -> isSuccessful(status.type(), change));
+                .allMatch(status -> isSuccessful(change, status.type()));
+    }
+
+    /** Returns whether job has completed successfully */
+    public boolean isSuccessful(Change change, JobType jobType) {
+        return Optional.ofNullable(jobStatus().get(jobType))
+                .filter(JobStatus::isSuccess)
+                .filter(status -> status.lastCompletedFor(change))
+                .isPresent();
     }
     
     /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
@@ -153,13 +161,6 @@ public class DeploymentJobs {
     public Optional<Long> projectId() { return projectId; }
 
     public Optional<String> jiraIssueId() { return jiraIssueId; }
-
-    private boolean isSuccessful(JobType jobType, Change change) {
-        return Optional.ofNullable(jobStatus().get(jobType))
-                .filter(JobStatus::isSuccess)
-                .filter(status -> status.lastCompletedFor(change))
-                .isPresent();
-    }
 
     /** Job types that exist in the build system */
     public enum JobType {

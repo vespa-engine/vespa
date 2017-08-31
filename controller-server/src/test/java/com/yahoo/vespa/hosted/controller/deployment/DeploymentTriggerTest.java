@@ -158,6 +158,7 @@ public class DeploymentTriggerTest {
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
+                .region("eu-west-1")
                 .build();
 
         // Component job finishes
@@ -171,14 +172,22 @@ public class DeploymentTriggerTest {
         assertEquals(1, tester.buildSystem().jobs().size());
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
 
-        // The two next regions are triggered in parallel
+        // Deploys in two regions in parallel
         assertEquals(2, tester.buildSystem().jobs().size());
         assertEquals(JobType.productionUsEast3.id(), tester.buildSystem().jobs().get(0).jobName());
         assertEquals(JobType.productionUsWest1.id(), tester.buildSystem().jobs().get(1).jobName());
+        tester.buildSystem().takeJobsToRun();
 
-        // Deployment completes
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1,
-                               JobType.productionUsEast3);
+        tester.deploy(JobType.productionUsWest1, application, applicationPackage, false);
+        tester.notifyJobCompletion(JobType.productionUsWest1, application, true);
+        assertTrue("No more jobs triggered at this time", tester.buildSystem().jobs().isEmpty());
+
+        tester.deploy(JobType.productionUsEast3, application, applicationPackage, false);
+        tester.notifyJobCompletion(JobType.productionUsEast3, application, true);
+
+        // Last region completes
+        assertEquals(1, tester.buildSystem().jobs().size());
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionEuWest1);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
 

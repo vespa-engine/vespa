@@ -179,7 +179,6 @@ public class DeploymentTester {
             assertEquals(job.id(), buildJob.get().jobName());
         }
         buildSystem().removeJobs(application.id());
-
     }
 
     private Optional<BuildService.BuildJob> findJob(Application application, JobType jobType) {

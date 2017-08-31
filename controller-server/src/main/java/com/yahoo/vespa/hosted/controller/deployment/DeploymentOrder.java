@@ -57,6 +57,11 @@ public class DeploymentOrder {
             return Collections.emptyList();
         }
 
+        // Postpone if step hasn't completed all it's jobs for this change
+        if (!completedSuccessfully(currentStep.get(), application)) {
+            return Collections.emptyList();
+        }
+
         // Postpone next job if delay has not passed yet
         Duration delay = delayAfter(currentStep.get(), application);
         if (postponeDeployment(delay, job, application)) {
@@ -88,9 +93,21 @@ public class DeploymentOrder {
     /** Returns jobs for given deployment spec, in the order they are declared */
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
         return deploymentSpec.steps().stream()
-                .flatMap(step -> step.zones().stream())
+                .flatMap(step -> jobsFrom(step).stream())
+                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    /** Returns jobs for the given step */
+    private List<JobType> jobsFrom(DeploymentSpec.Step step) {
+        return step.zones().stream()
                 .map(this::toJob)
                 .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    /** Returns whether all jobs have completed successfully for given step */
+    private boolean completedSuccessfully(DeploymentSpec.Step step, Application application) {
+        return jobsFrom(step).stream()
+                .allMatch(job -> application.deploymentJobs().isSuccessful(application.deploying().get(), job));
     }
 
     /** Resolve deployment step from job */
