@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -77,11 +80,12 @@ class NodePrioritizer {
      *
      * @return hostname or null if not able to do the lookup
      */
-    private static String lookupHostname(String ipAddress) {
+    static String lookupHostname(String ipAddress) {
         try {
-            return InetAddress.getByName(ipAddress).getHostName();
+            String hostname = InetAddress.getByName(ipAddress).getHostName();
+            return InetAddresses.isInetAddress(hostname) ? null : hostname;
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            Logger.getLogger(NodePrioritizer.class.getName()).log(Level.FINER, "Unable to resolve ipaddress", e);
         }
         return null;
     }
