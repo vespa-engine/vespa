@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
 import java.time.Clock;
@@ -58,7 +59,7 @@ public class MockNodeRepository extends NodeRepository {
 
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
-
+        NodePrioritizer.unitTesting = true;
         List<Node> nodes = new ArrayList<>();
 
         final List<String> ipAddressesForAllHost = Arrays.asList("127.0.0.1", "::1");

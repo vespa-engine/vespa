@@ -86,6 +86,9 @@ public class NodePrioritizerTest {
 
     @Test
     public void ignore_hosts_that_is_unresolved_in_dns() {
+        // Here we are testing the behavoir we need in production
+        NodePrioritizer.unitTesting = false;
+
         // Random IP that is not resolving
         String hostname = NodePrioritizer.lookupHostname("34.23.12.23");
         Assert.assertNull(hostname);

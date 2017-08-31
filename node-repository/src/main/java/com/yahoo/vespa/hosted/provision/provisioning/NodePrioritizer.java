@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *
  * @author smorgrav
  */
-class NodePrioritizer {
+public class NodePrioritizer {
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
     private final List<Node> allNodes;
@@ -46,6 +46,9 @@ class NodePrioritizer {
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
     private final Map<Node, ResourceCapacity> headroomHosts;
+
+    /** This is before we mock DNS to resolve on test IP that we use in tests */
+    public static boolean unitTesting = false;
 
     NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares) {
         this.allNodes = Collections.unmodifiableList(allNodes);
@@ -83,6 +86,7 @@ class NodePrioritizer {
     static String lookupHostname(String ipAddress) {
         try {
             String hostname = InetAddress.getByName(ipAddress).getHostName();
+            if (unitTesting) return hostname;
             return InetAddresses.isInetAddress(hostname) ? null : hostname;
         } catch (UnknownHostException e) {
             Logger.getLogger(NodePrioritizer.class.getName()).log(Level.FINER, "Unable to resolve ipaddress", e);
