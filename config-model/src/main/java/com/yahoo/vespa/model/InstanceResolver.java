@@ -5,25 +5,19 @@ import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.codegen.CNode;
-import com.yahoo.config.codegen.ConfigGenerator;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.config.ConfigTransformer;
-import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.yolean.Exceptions;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+
+import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 
 /**
  * <p>
@@ -159,7 +153,7 @@ class InstanceResolver {
      */
     @SuppressWarnings("unchecked")
     private static Class<? extends ConfigInstance> getConfigClass(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
-        String className = ConfigGenerator.createClassName(cKey.getName());
+        String className = createClassName(cKey.getName());
         String fullClassName = packageName(cKey) + "." + className;
         Class<?> clazz;
         try {

@@ -2,11 +2,11 @@
 package com.yahoo.config.codegen
 
 
+import com.yahoo.config.codegen.BuilderGenerator.getBuilder
+import com.yahoo.config.codegen.ConfiggenUtil.createClassName
+import com.yahoo.config.codegen.JavaClassBuilder.Indentation
 import com.yahoo.config.codegen.LeafCNode._
 import com.yahoo.config.codegen.ReservedWords.{INTERNAL_PREFIX => InternalPrefix}
-import JavaClassBuilder.Indentation
-import BuilderGenerator.getBuilder
-import util.parsing.combinator.JavaTokenParsers
 
 /**
  * @author gjoranv
@@ -449,17 +449,4 @@ object ConfigGenerator {
     }
   }
 
-  /**
-   * Create class name from def name
-   * @param defName The file name without the '.def' suffix
-   */
-  def createClassName(defName: String): String = {
-    val className = defName.split("-").map (_.capitalize).mkString + "Config"
-    val parser = new JavaTokenParsers {}
-    parser.parseAll(parser.ident, className) match {
-      case parser.NoSuccess(msg, _) =>
-        throw new CodegenRuntimeException("Illegal config definition file name '" + defName + "': " + msg)
-      case success => success.get
-    }
-  }
 }
