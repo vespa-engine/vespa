@@ -11,6 +11,7 @@ vespa_add_library(storage_teststorageserver TEST
     priorityconvertertest.cpp
     statereportertest.cpp
     changedbucketownershiphandlertest.cpp
+    service_layer_error_listener_test.cpp
     DEPENDS
     storage_storageserver
     storage_testcommon

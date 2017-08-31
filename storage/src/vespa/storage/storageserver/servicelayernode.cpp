@@ -9,6 +9,7 @@
 #include "opslogger.h"
 #include "statemanager.h"
 #include "priorityconverter.h"
+#include "service_layer_error_listener.h"
 #include <vespa/storage/visiting/messagebusvisitormessagesession.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
@@ -16,6 +17,7 @@
 #include <vespa/storage/bucketmover/bucketmover.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/storage/persistence/provider_error_wrapper.h>
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 
@@ -35,7 +37,7 @@ ServiceLayerNode::ServiceLayerNode(
       _persistenceProvider(persistenceProvider),
       _partitions(0),
       _externalVisitors(externalVisitors),
-      _fileStorManager(0),
+      _fileStorManager(nullptr),
       _init_has_been_called(false),
       _noUsablePartitionMode(false)
 {
@@ -112,7 +114,7 @@ void
 ServiceLayerNode::removeConfigSubscriptions()
 {
     StorageNode::removeConfigSubscriptions();
-    _configFetcher.reset(0);
+    _configFetcher.reset();
 }
 
 void
@@ -166,7 +168,7 @@ ServiceLayerNode::initializeNodeSpecific()
 void
 ServiceLayerNode::handleLiveConfigUpdate()
 {
-    if (_newServerConfig.get() != 0) {
+    if (_newServerConfig) {
         bool updated = false;
         vespa::config::content::core::StorServerConfigBuilder oldC(*_serverConfig);
         vespa::config::content::core::StorServerConfig& newC(*_newServerConfig);
@@ -218,9 +220,11 @@ ServiceLayerNode::configure(
         // updates
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newDevicesConfig.reset(config.release());
+        _newDevicesConfig = std::move(config);
     }
-    if (_distributionConfig.get() != 0) handleLiveConfigUpdate();
+    if (_distributionConfig) {
+        handleLiveConfigUpdate();
+    }
 }
 
 VisitorMessageSession::UP
@@ -258,8 +262,9 @@ ServiceLayerNode::createChain()
         chain->push_back(StorageLink::UP(releaseStateManager().release()));
         return chain;
     }
+    MergeThrottler* merge_throttler;
     chain->push_back(StorageLink::UP(new OpsLogger(compReg, _configUri)));
-    chain->push_back(StorageLink::UP(new MergeThrottler(_configUri, compReg)));
+    chain->push_back(StorageLink::UP(merge_throttler = new MergeThrottler(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new ChangedBucketOwnershipHandler(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new BucketIntegrityChecker(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new bucketmover::BucketMover(_configUri, compReg)));
@@ -277,6 +282,12 @@ ServiceLayerNode::createChain()
             _configUri, _partitions, _persistenceProvider,
             _context.getComponentRegister())));
     chain->push_back(StorageLink::UP(releaseStateManager().release()));
+
+    // Lifetimes of all referenced components shall outlive the last call going
+    // through the SPI, as queues are flushed and worker threads joined when
+    // the storage link chain is closed prior to destruction.
+    auto error_listener = std::make_shared<ServiceLayerErrorListener>(*_component, *merge_throttler);
+    _fileStorManager->error_wrapper().register_error_listener(std::move(error_listener));
     return chain;
 }
 

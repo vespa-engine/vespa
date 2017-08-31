@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "providershutdownwrapper.h"
+#include "provider_error_wrapper.h"
 #include "persistenceutil.h"
 #include <vespa/log/log.h>
 
@@ -20,28 +20,10 @@ ProviderErrorWrapper::checkResult(ResultType&& result) const
     return std::forward<ResultType>(result);
 }
 
-// TODO move this out as error listener instead
 void ProviderErrorWrapper::trigger_shutdown_listeners_once(vespalib::stringref reason) const {
     std::lock_guard<std::mutex> guard(_mutex);
-    // TODO decide if this behavior even belongs here. Move to dedicated listener?
-    if (_shutdownTriggered) {
-        LOG(debug,
-            "Received FATAL_ERROR from persistence provider: %s. "
-            "Node has already been instructed to shut down so "
-            "not doing anything now.",
-            reason.c_str());
-    } else {
-        for (auto& listener : _listeners) {
-            listener->on_fatal_error(reason);
-        }
-        // TODO move out
-        LOG(info,
-            "Received FATAL_ERROR from persistence provider, "
-            "shutting down node: %s",
-            reason.c_str());
-        const_cast<ProviderErrorWrapper*>(this)->
-                _component.requestShutdown(reason);
-        _shutdownTriggered = true;
+    for (auto& listener : _listeners) {
+        listener->on_fatal_error(reason);
     }
 }
 

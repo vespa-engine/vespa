@@ -23,7 +23,7 @@
 #include <vespa/config-stor-filestor.h>
 #include <vespa/storage/persistence/diskthread.h>
 
-#include <vespa/storage/persistence/providershutdownwrapper.h>
+#include <vespa/storage/persistence/provider_error_wrapper.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
@@ -55,7 +55,7 @@ class FileStorManager : public StorageLinkQueued,
     ServiceLayerComponent _component;
     const spi::PartitionStateList& _partitions;
     spi::PersistenceProvider& _providerCore;
-    ProviderErrorWrapper _providerShutdown;
+    ProviderErrorWrapper _providerErrorWrapper;
     bool _nodeUpInLastNodeStateSeenByProvider;
     spi::MetricPersistenceProvider::UP _providerMetric;
     spi::PersistenceProvider* _provider;
@@ -117,6 +117,9 @@ public:
 
     spi::PersistenceProvider& getPersistenceProvider() {
         return *_provider;
+    }
+    ProviderErrorWrapper& error_wrapper() noexcept {
+        return _providerErrorWrapper;
     }
 
     void handleNewState() override;

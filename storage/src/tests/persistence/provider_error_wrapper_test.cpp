@@ -6,11 +6,9 @@
 
 namespace storage {
 
-// TODO rename file
 class ProviderErrorWrapperTest : public SingleDiskPersistenceTestUtils {
 public:
     CPPUNIT_TEST_SUITE(ProviderErrorWrapperTest);
-    CPPUNIT_TEST(testShutdownOnFatalError);
     CPPUNIT_TEST(fatal_error_invokes_listener);
     CPPUNIT_TEST(resource_exhaustion_error_invokes_listener);
     CPPUNIT_TEST(listener_not_invoked_on_success);
@@ -18,7 +16,6 @@ public:
     CPPUNIT_TEST(multiple_listeners_can_be_registered);
     CPPUNIT_TEST_SUITE_END();
 
-    void testShutdownOnFatalError();
     void fatal_error_invokes_listener();
     void resource_exhaustion_error_invokes_listener();
     void listener_not_invoked_on_success();
@@ -29,22 +26,6 @@ public:
 CPPUNIT_TEST_SUITE_REGISTRATION(ProviderErrorWrapperTest);
 
 namespace {
-
-class TestShutdownListener
-    : public framework::defaultimplementation::ShutdownListener
-{
-public:
-    TestShutdownListener() : _reason() {}
-
-    void requestShutdown(vespalib::stringref reason) override {
-        _reason = reason;
-    }
-
-    bool shutdownRequested() const { return !_reason.empty(); }
-    const vespalib::string& getReason() const { return _reason; }
-private:
-    vespalib::string _reason;
-};
 
 struct MockErrorListener : ProviderErrorListener {
     void on_fatal_error(vespalib::stringref message) override {
@@ -73,18 +54,16 @@ struct Fixture {
         : providerWrapper(provider),
           app(),
           component(app.getComponentRegister(), "dummy"),
-          errorWrapper(providerWrapper, component)
+          errorWrapper(providerWrapper)
     {
         providerWrapper.setFailureMask(PersistenceProviderWrapper::FAIL_ALL_OPERATIONS);
     }
-    ~Fixture();
+    ~Fixture() {}
 
     void perform_spi_operation() {
         errorWrapper.getBucketInfo(spi::Bucket(document::BucketId(16, 1234), spi::PartitionId(0)));
     }
 };
-
-Fixture::~Fixture() {}
 
 }
 
@@ -155,44 +134,6 @@ void ProviderErrorWrapperTest::multiple_listeners_can_be_registered() {
 
     CPPUNIT_ASSERT(listener1->_seen_resource_exhaustion_error);
     CPPUNIT_ASSERT(listener2->_seen_resource_exhaustion_error);
-}
-
-
-
-// TODO rewrite, move component interaction testing elsewhere
-void
-ProviderErrorWrapperTest::testShutdownOnFatalError() {
-    Fixture f(getPersistenceProvider());
-
-    TestShutdownListener shutdownListener;
-
-    f.app.getComponentRegister().registerShutdownListener(shutdownListener);
-
-    f.providerWrapper.setResult(
-            spi::Result(spi::Result::FATAL_ERROR, "eject! eject!"));
-    f.providerWrapper.setFailureMask(
-            PersistenceProviderWrapper::FAIL_ALL_OPERATIONS);
-
-    CPPUNIT_ASSERT(!shutdownListener.shutdownRequested());
-    // This should cause the node to implicitly be shut down
-    f.errorWrapper.getBucketInfo(
-            spi::Bucket(document::BucketId(16, 1234),
-                        spi::PartitionId(0)));
-
-    CPPUNIT_ASSERT(shutdownListener.shutdownRequested());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("eject! eject!"),
-                         shutdownListener.getReason());
-
-    // Triggering a new error should not cause shutdown to be requested twice.
-    f.providerWrapper.setResult(
-            spi::Result(spi::Result::FATAL_ERROR, "boom!"));
-
-    f.errorWrapper.getBucketInfo(
-            spi::Bucket(document::BucketId(16, 1234),
-                        spi::PartitionId(0)));
-
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("eject! eject!"),
-                         shutdownListener.getReason());
 }
 
 } // ns storage

@@ -190,9 +190,11 @@ public:
      * When invoked, merges to the node will be BUSY-bounced by the throttler
      * for a configurable period of time instead of being processed.
      *
-     * Must not be called if _stateLock is already held, or deadlock will occur.
+     * Thread safe, but must not be called if _stateLock is already held, or
+     * deadlock will occur.
      */
-    void applyTimedBackpressure();
+    void apply_timed_backpressure();
+    bool backpressure_mode_active() const;
 
     // For unit testing only
     const ActiveMergeMap& getActiveMerges() const { return _merges; }

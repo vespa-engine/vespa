@@ -1577,7 +1577,10 @@ MergeThrottlerTest::testNewClusterStateAbortsAllOutdatedActiveMerges()
 
 void MergeThrottlerTest::backpressure_busy_bounces_merges_for_configured_duration() {
     _servers[0]->getClock().setAbsoluteTimeInSeconds(1000);
-    _throttlers[0]->applyTimedBackpressure();
+
+    CPPUNIT_ASSERT(!_throttlers[0]->backpressure_mode_active());
+    _throttlers[0]->apply_timed_backpressure();
+    CPPUNIT_ASSERT(_throttlers[0]->backpressure_mode_active());
     document::BucketId bucket(16, 6789);
 
     CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
@@ -1596,12 +1599,13 @@ void MergeThrottlerTest::backpressure_busy_bounces_merges_for_configured_duratio
     sendMerge(MergeBuilder(bucket).clusterStateVersion(10));
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
+    CPPUNIT_ASSERT(!_throttlers[0]->backpressure_mode_active());
     CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
 }
 
 void MergeThrottlerTest::source_only_merges_are_not_affected_by_backpressure() {
     _servers[2]->getClock().setAbsoluteTimeInSeconds(1000);
-    _throttlers[2]->applyTimedBackpressure();
+    _throttlers[2]->apply_timed_backpressure();
     document::BucketId bucket(16, 6789);
 
     _topLinks[2]->sendDown(MergeBuilder(bucket).clusterStateVersion(10).chain(0, 1).source_only(2).create());

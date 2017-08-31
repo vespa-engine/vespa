@@ -6,12 +6,8 @@
  * provider implementation, transparently checking the result of each
  * operation to see if the result is FATAL_ERROR or RESOURCE_EXHAUSTED.
  *
- * If FATAL_ERROR is received, the wrapper transparently initiates a
- * shutdown of the process (but still returns the response up to the caller
- * as if it were just a non-wrapped call). FIXME update comment!
- *
- * If RESOURCE_EXHAUSTED is received, the wrapper will invoke any and all
- * resource exhaustion listeners synchronously, before returning the response
+ * If FATAL_ERROR or RESOURCE_EXHAUSTED is observed, the wrapper will invoke any
+ * and all resource exhaustion listeners synchronously, before returning the response
  * to the caller as usual.
  */
 #pragma once
@@ -39,16 +35,11 @@ public:
     }
 };
 
-// TODO rename file once name is settled!
-
 class ProviderErrorWrapper : public spi::PersistenceProvider {
 public:
-    ProviderErrorWrapper(spi::PersistenceProvider& impl,
-                         ServiceLayerComponent& component)
+    explicit ProviderErrorWrapper(spi::PersistenceProvider& impl)
         : _impl(impl),
-          _component(component),
-          _mutex(),
-          _shutdownTriggered(false)
+          _mutex()
     {
     }
 
@@ -98,10 +89,8 @@ private:
     void trigger_resource_exhaustion_listeners(vespalib::stringref reason) const;
 
     spi::PersistenceProvider& _impl;
-    ServiceLayerComponent& _component;
     std::vector<std::shared_ptr<ProviderErrorListener>> _listeners;
     mutable std::mutex _mutex;
-    mutable bool _shutdownTriggered;
 };
 
 } // storage
