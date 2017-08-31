@@ -191,8 +191,8 @@ public class DeploymentSpec {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
                     if (stepTag.getTagName().equals("delay")) {
                         steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
-                                                                       longAttribute("minutes", stepTag) * 60 +
-                                                                       longAttribute("seconds", stepTag))));
+                                                               longAttribute("minutes", stepTag) * 60 +
+                                                               longAttribute("seconds", stepTag))));
                     } else if (stepTag.getTagName().equals("parallel")) {
                         List<DeclaredZone> zones = new ArrayList<>();
                         for (Element regionTag : XML.getChildren(stepTag)) {
