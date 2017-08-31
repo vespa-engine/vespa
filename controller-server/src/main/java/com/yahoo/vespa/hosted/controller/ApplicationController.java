@@ -219,7 +219,7 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
+    public PrepareResponse deployApplication(ApplicationId applicationId, Zone zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // Determine what we are doing
@@ -285,18 +285,21 @@ public class ApplicationController {
             application = application.with(new Deployment(zone, revision, version, clock.instant()));
             store(application, lock);
 
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.messages(), preparedApplication.prepareResponse());
+            return preparedApplication.prepareResponse();
         }
     }
 
-    private ActivateResult unexpectedDeployment(ApplicationId applicationId, Zone zone, ApplicationPackage applicationPackage) {
+    private PrepareResponse unexpectedDeployment(ApplicationId applicationId, Zone zone, ApplicationPackage applicationPackage) {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
         logEntry.message = "Ignoring deployment of " + get(applicationId) + " to " + zone + " as a deployment is not currently expected";
+
         PrepareResponse prepareResponse = new PrepareResponse();
+        prepareResponse.log = Collections.singletonList(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
-        return new ActivateResult(new RevisionId(applicationPackage.hash()), Collections.singletonList(logEntry), prepareResponse);
+
+        return prepareResponse;
     }
 
     private Application deleteRemovedDeployments(Application application) {
