@@ -26,7 +26,8 @@ You can also setup CentOS 7 natively and install the following build dependencie
 
 ### Build Java modules
 
-    sh bootstrap.sh
+    export MAVEN_OPTS="-Xms128m -Xmx512m"
+    sh bootstrap.sh java
     mvn -T <num-threads> install
 
 ### Build C++ modules
