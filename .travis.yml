@@ -28,5 +28,5 @@ install: true
 
 language: minimal
 
-script: travis_wait 120 ./travis/travis.sh $PLATFORM_LANGUAGE
+script: ./travis/travis.sh $PLATFORM_LANGUAGE
 
