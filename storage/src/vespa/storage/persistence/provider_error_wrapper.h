@@ -78,7 +78,7 @@ private:
     template <typename ResultType>
     ResultType checkResult(ResultType&& result) const;
 
-    void trigger_shutdown_listeners_once(vespalib::stringref reason) const;
+    void trigger_shutdown_listeners(vespalib::stringref reason) const;
     void trigger_resource_exhaustion_listeners(vespalib::stringref reason) const;
 
     spi::PersistenceProvider& _impl;

@@ -10,14 +10,14 @@ ResultType
 ProviderErrorWrapper::checkResult(ResultType&& result) const
 {
     if (result.getErrorCode() == spi::Result::FATAL_ERROR) {
-        trigger_shutdown_listeners_once(result.getErrorMessage());
+        trigger_shutdown_listeners(result.getErrorMessage());
     } else if (result.getErrorCode() == spi::Result::RESOURCE_EXHAUSTED) {
         trigger_resource_exhaustion_listeners(result.getErrorMessage());
     }
     return std::forward<ResultType>(result);
 }
 
-void ProviderErrorWrapper::trigger_shutdown_listeners_once(vespalib::stringref reason) const {
+void ProviderErrorWrapper::trigger_shutdown_listeners(vespalib::stringref reason) const {
     std::lock_guard<std::mutex> guard(_mutex);
     for (auto& listener : _listeners) {
         listener->on_fatal_error(reason);
