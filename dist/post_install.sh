@@ -62,13 +62,13 @@ mkdir -p $INSTALLPATH/var/vespa/cmdlines/
 mkdir -p $INSTALLPATH/var/zookeeper/version-2/
 mkdir -p $INSTALLPATH/sbin
 
-ln -s $PREFIX/lib/jars/config-model-fat.jar $INSTALLPATH/conf/configserver-app/components/config-model-fat.jar
-ln -s $PREFIX/lib/jars/configserver-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/configserver.jar
-ln -s $PREFIX/lib/jars/orchestrator-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/orchestrator.jar
-ln -s $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/node-repository.jar
-ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
-ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
-ln -s vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
+ln -sf $PREFIX/lib/jars/config-model-fat.jar $INSTALLPATH/conf/configserver-app/components/config-model-fat.jar
+ln -sf $PREFIX/lib/jars/configserver-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/configserver.jar
+ln -sf $PREFIX/lib/jars/orchestrator-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/orchestrator.jar
+ln -sf $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/node-repository.jar
+ln -sf $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
+ln -snf $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
+ln -sf vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
 
 # Setup default enviroment
 mkdir -p $INSTALLPATH/conf/vespa
