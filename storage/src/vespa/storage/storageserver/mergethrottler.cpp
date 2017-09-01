@@ -1236,7 +1236,6 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
 void MergeThrottler::apply_timed_backpressure() {
     vespalib::LockGuard lock(_stateLock);
     _throttle_until_time = _component.getClock().getMonotonicTime() + _backpressure_duration;
-    // TODO add exponential backoff if we deem it necessary
 }
 
 bool MergeThrottler::backpressure_mode_active() const {
