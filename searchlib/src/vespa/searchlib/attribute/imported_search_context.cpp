@@ -84,8 +84,7 @@ struct TargetWeightedResult {
     TargetWeightedResult()
         : weightedRefs(),
           sizeSum(0)
-    {
-    }
+    {}
     static TargetWeightedResult
     getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
               SearchContext &target_search_context, uint32_t committedDocIdLimit) __attribute__((noinline));

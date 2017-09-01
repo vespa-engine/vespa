@@ -58,7 +58,7 @@ public:
         BitVector &bv = *_bitVector;
         uint32_t limit = _docIdLimit;
         postingList.foreach_key([&bv, limit](uint32_t key)
-                                { if (key < limit) { bv.setBit(key); } });
+                                { if (__builtin_expect(key < limit, true)) { bv.setBit(key); } });
     }
 
     // Until diversity handling has been rewritten
