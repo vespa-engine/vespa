@@ -47,9 +47,6 @@ public class Relevance implements Comparable<Relevance> {
      */
     @Override
     public String toString() {
-        if (Double.isNaN(score) || Double.isInfinite(score)) {
-            return "0.0";
-        }
         return DoubleFormatter.stringValue(score);
     }
 

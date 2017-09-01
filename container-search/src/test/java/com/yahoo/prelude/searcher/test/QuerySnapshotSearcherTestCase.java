@@ -26,8 +26,8 @@ public class QuerySnapshotSearcherTestCase extends junit.framework.TestCase {
         Searcher searcher=new QuerySnapshotSearcher();
         Result result = doSearch(searcher, new Query(), 0,10);
         Hit hit=result.hits().get(0);
-        assertEquals(Double.POSITIVE_INFINITY, hit.getRelevance().getScore());
-        assertEquals("0.0", hit.getRelevance().toString());
+        assertEquals(String.valueOf(Double.POSITIVE_INFINITY),
+                     hit.getRelevance().toString());
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits) {
