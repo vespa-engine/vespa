@@ -8,7 +8,6 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
@@ -48,8 +47,6 @@ public class HttpHandler extends LoggingRequestHandler {
             }
         } catch (NotFoundException | com.yahoo.vespa.config.server.NotFoundException e) {
             return HttpErrorResponse.notFoundError(getMessage(e, request));
-        } catch (ActivationConflictException e) {
-            return HttpErrorResponse.conflictWhenActivating(getMessage(e, request));
         } catch (BadRequestException | IllegalArgumentException | IllegalStateException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
         } catch (OutOfCapacityException e) {
