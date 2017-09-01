@@ -4,17 +4,12 @@
 
 #include "attributevector.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
-#include <memory>
+#include <vespa/vespalib/util/arrayref.h>
 
-namespace search {
+namespace search::fef { class TermFieldMatchData; }
 
-namespace fef {
-class TermFieldMatchData;
-}
-
-namespace attribute {
+namespace search::attribute {
 
 class ReferenceAttribute;
 class ImportedAttributeVector;
@@ -44,26 +39,21 @@ class ImportedSearchContext : public ISearchContext {
         return ((referencedLid >= _referencedLidLimit) ? 0u : referencedLid);
     }
 
-    void makeMergedPostings();
+    void makeMergedPostings(bool isFilter);
 public:
     ImportedSearchContext(std::unique_ptr<QueryTermSimple> term,
                           const SearchContextParams& params,
                           const ImportedAttributeVector& imported_attribute);
     ~ImportedSearchContext();
 
-    unsigned int approximateHits() const override;
 
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
-
+    unsigned int approximateHits() const override;
     void fetchPostings(bool strict) override;
-
     bool valid() const override;
-
     Int64Range getAsIntegerTerm() const override;
-
     const QueryTermBase& queryTerm() const override;
-
     const vespalib::string& attributeName() const override;
 
     using DocId = IAttributeVector::DocId;
@@ -83,5 +73,4 @@ public:
     }
 };
 
-} // attribute
-} // search
+}

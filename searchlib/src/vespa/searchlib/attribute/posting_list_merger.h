@@ -39,9 +39,10 @@ public:
     bool emptyArray() const { return _array.empty(); }
     vespalib::ConstArrayRef<Posting> getArray() const { return _array; }
     const BitVector *getBitVector() const { return _bitVector.get(); }
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
 
     template <typename PostingListType>
-    void addToArray(const PostingListType postingList)
+    void addToArray(const PostingListType & postingList)
     {
         PostingVector &array = _array;
         postingList.foreach([&array](uint32_t key, const DataT &data)
@@ -52,7 +53,7 @@ public:
     }
 
     template <typename PostingListType>
-    void addToBitVector(const PostingListType postingList)
+    void addToBitVector(const PostingListType & postingList)
     {
         BitVector &bv = *_bitVector;
         uint32_t limit = _docIdLimit;
