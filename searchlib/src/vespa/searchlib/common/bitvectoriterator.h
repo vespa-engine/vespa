@@ -5,7 +5,6 @@
 #include "bitvector.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-
 namespace search {
 
 namespace fef { class TermFieldMatchDataArray; }
@@ -38,7 +37,4 @@ public:
     static UP create(const BitVector *const other, uint32_t docIdLimit, fef::TermFieldMatchData &matchData, bool strict);
 };
 
-
 } // namespace search
-
-

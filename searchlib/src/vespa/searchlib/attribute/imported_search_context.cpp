@@ -1,14 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_search_context.h"
-#include "attributeiterators.hpp"
 #include "imported_attribute_vector.h"
-#include "reference_attribute.h"
-#include <vespa/searchcommon/attribute/search_context_params.h>
-#include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include "dociditerator.h"
+#include "attributeiterators.hpp"
 
 using search::datastore::EntryRef;
 using search::queryeval::EmptySearch;
@@ -21,8 +17,7 @@ using ReverseMapping = ReferenceAttribute::ReverseMapping;
 using SearchContext = AttributeVector::SearchContext;
 
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 ImportedSearchContext::ImportedSearchContext(
         std::unique_ptr<QueryTermSimple> term,
@@ -59,6 +54,8 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             postings.set(&array[0], &array[array.size()]);
             return std::make_unique<AttributePostingListIteratorT<DocIt>>(true, matchData, postings);
         }
+    } else if (_merger.hasBitVector()) {
+        return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, strict);
     }
     if (!strict) {
         return std::make_unique<AttributeIteratorT<ImportedSearchContext>>(*this, matchData);
@@ -146,11 +143,15 @@ public:
         int32_t weight = _weight;
         _reverseMapping.foreach_frozen_key(_revMapIdx, [func, weight](uint32_t lid) { func(lid, weight); });
     }
+    template <typename Func>
+    void foreach_key(Func func) const {
+        _reverseMapping.foreach_frozen_key(_revMapIdx, [func](uint32_t lid) { func(lid); });
+    }
 };
 
 }
 
-void ImportedSearchContext::makeMergedPostings()
+void ImportedSearchContext::makeMergedPostings(bool isFilter)
 {
     uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimit();
     std::atomic_thread_fence(std::memory_order_acquire);
@@ -160,8 +161,16 @@ void ImportedSearchContext::makeMergedPostings()
                                               committedTargetDocIdLimit));
     _merger.reserveArray(targetResult.weightedRefs.size(), targetResult.sizeSum);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
+    if (isFilter) {
+        _merger.allocBitVector();
+    }
     for (const auto &weightedRef : targetResult.weightedRefs) {
-        _merger.addToArray(ReverseMappingPostingList(reverseMapping, weightedRef.revMapIdx, weightedRef.weight));
+        ReverseMappingPostingList rmp(reverseMapping, weightedRef.revMapIdx, weightedRef.weight);
+        if (isFilter) {
+            _merger.addToBitVector(rmp);
+        } else {
+            _merger.addToArray(rmp);
+        }
     }
     _merger.merge();
 }
@@ -170,8 +179,8 @@ void ImportedSearchContext::fetchPostings(bool strict) {
     assert(!_fetchPostingsDone);
     _fetchPostingsDone = true;
     _target_search_context->fetchPostings(strict);
-    if (strict) {
-        makeMergedPostings();
+    if (strict || _target_attribute.getConfig().getIsFilter()) {
+        makeMergedPostings(_target_attribute.getConfig().getIsFilter());
     }
 }
 
@@ -191,5 +200,4 @@ const vespalib::string& ImportedSearchContext::attributeName() const {
     return _imported_attribute.getName();
 }
 
-} // attribute
-} // search
+}
