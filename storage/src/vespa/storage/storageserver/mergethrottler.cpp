@@ -660,7 +660,7 @@ bool MergeThrottler::merge_is_backpressure_throttled(const api::MergeBucketComma
     if (merge_has_this_node_as_source_only_node(cmd)) {
         return false;
     }
-    if (_component.getClock().getMonotonicTime() < _throttle_until_time) {
+    if (backpressure_mode_active_no_lock()) {
         return true;
     }
     // Avoid sampling the clock when it can't do anything useful.
@@ -675,11 +675,25 @@ bool MergeThrottler::merge_has_this_node_as_source_only_node(const api::MergeBuc
     return std::any_of(cmd.getNodes().begin(), cmd.getNodes().end(), self_is_source_only);
 }
 
+bool MergeThrottler::backpressure_mode_active_no_lock() const {
+    return (_component.getClock().getMonotonicTime() < _throttle_until_time);
+}
+
 void MergeThrottler::bounce_backpressure_throttled_merge(const api::MergeBucketCommand& cmd, MessageGuard& guard) {
     sendReply(cmd, api::ReturnCode(api::ReturnCode::BUSY,
                                    "Node is throttling merges due to resource exhaustion"),
               guard, _metrics->local);
     _metrics->bounced_due_to_back_pressure.inc();
+}
+
+void MergeThrottler::apply_timed_backpressure() {
+    vespalib::LockGuard lock(_stateLock);
+    _throttle_until_time = _component.getClock().getMonotonicTime() + _backpressure_duration;
+}
+
+bool MergeThrottler::backpressure_mode_active() const {
+    vespalib::LockGuard lock(_stateLock);
+    return backpressure_mode_active_no_lock();
 }
 
 // Must be run from worker thread
@@ -1231,16 +1245,6 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
             activeMerge.second.setAborted(true);
         }
     }
-}
-
-void MergeThrottler::apply_timed_backpressure() {
-    vespalib::LockGuard lock(_stateLock);
-    _throttle_until_time = _component.getClock().getMonotonicTime() + _backpressure_duration;
-}
-
-bool MergeThrottler::backpressure_mode_active() const {
-    vespalib::LockGuard lock(_stateLock);
-    return (_component.getClock().getMonotonicTime() < _throttle_until_time);
 }
 
 void
