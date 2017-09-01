@@ -91,19 +91,28 @@ struct TargetWeightedResult {
               SearchContext &target_search_context, uint32_t committedDocIdLimit) __attribute__((noinline));
 };
 
-struct TargetResult {
-    std::vector<EntryRef> refs;
-    size_t sizeSum;
+class ReverseMappingBitVector
+{
+    const ReverseMapping &_reverseMapping;
+    EntryRef _revMapIdx;
+public:
+    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx)
+            : _reverseMapping(reverseMapping),
+              _revMapIdx(revMapIdx)
+    {}
+    ~ReverseMappingBitVector() { }
 
-    TargetResult()
-        : refs(),
-          sizeSum(0)
-    {
+    template <typename Func>
+    void foreach_key(Func func) const {
+        _reverseMapping.foreach_frozen_key(_revMapIdx, [func](uint32_t lid) { func(lid); });
     }
+};
 
-    static TargetResult
+struct TargetResult {
+    static void
     getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
-              SearchContext &target_search_context, uint32_t committedDocIdLimit) __attribute__((noinline));
+              SearchContext &target_search_context, uint32_t committedDocIdLimit,
+              PostingListMerger<int32_t> & merger) __attribute__((noinline));
 };
 
 TargetWeightedResult
@@ -141,11 +150,11 @@ TargetWeightedResult::getResult(ReverseMappingRefs reverseMappingRefs, const Rev
     return targetResult;
 }
 
-TargetResult
+void
 TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
-                        SearchContext &target_search_context, uint32_t committedDocIdLimit)
+                        SearchContext &target_search_context, uint32_t committedDocIdLimit,
+                        PostingListMerger<int32_t> & merger)
 {
-    TargetResult targetResult;
     fef::TermFieldMatchData matchData;
     auto targetItr = target_search_context.createIterator(&matchData, true);
     uint32_t docIdLimit = reverseMappingRefs.size();
@@ -158,9 +167,7 @@ TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapp
         if (targetItr->seek(lid)) {
             EntryRef revMapIdx = reverseMappingRefs[lid];
             if (revMapIdx.valid()) {
-                uint32_t size = reverseMapping.frozenSize(revMapIdx);
-                targetResult.sizeSum += size;
-                targetResult.refs.emplace_back(revMapIdx);
+                merger.addToBitVector(ReverseMappingBitVector(reverseMapping, revMapIdx));
             }
             ++lid;
         } else {
@@ -171,7 +178,6 @@ TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapp
             }
         }
     }
-    return targetResult;
 }
 
 class ReverseMappingPostingList
@@ -194,23 +200,6 @@ public:
 
 };
 
-class ReverseMappingBitVector
-{
-    const ReverseMapping &_reverseMapping;
-    EntryRef _revMapIdx;
-public:
-    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx)
-        : _reverseMapping(reverseMapping),
-          _revMapIdx(revMapIdx)
-    {}
-    ~ReverseMappingBitVector() { }
-
-    template <typename Func>
-    void foreach_key(Func func) const {
-        _reverseMapping.foreach_frozen_key(_revMapIdx, [func](uint32_t lid) { func(lid); });
-    }
-};
-
 }
 
 void ImportedSearchContext::makeMergedPostings(bool isFilter)
@@ -219,14 +208,10 @@ void ImportedSearchContext::makeMergedPostings(bool isFilter)
     std::atomic_thread_fence(std::memory_order_acquire);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
     if (isFilter) {
-        TargetResult targetResult(TargetResult::getResult(_reference_attribute.getReverseMappingRefs(),
-                                                          _reference_attribute.getReverseMapping(),
-                                                          *_target_search_context,
-                                                          committedTargetDocIdLimit));
         _merger.allocBitVector();
-        for (EntryRef ref : targetResult.refs) {
-            _merger.addToBitVector(ReverseMappingBitVector(reverseMapping, ref));
-        }
+        TargetResult::getResult(_reference_attribute.getReverseMappingRefs(),
+                                _reference_attribute.getReverseMapping(),
+                                *_target_search_context, committedTargetDocIdLimit, _merger);
     } else {
         TargetWeightedResult targetResult(TargetWeightedResult::getResult(_reference_attribute.getReverseMappingRefs(),
                                                                           _reference_attribute.getReverseMapping(),
