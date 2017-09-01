@@ -47,13 +47,14 @@ private:
     double                        total_time_s;
     double                        match_time_s;
     double                        wait_time_s;
+    bool                          match_with_ranking;
 
     class Context {
     public:
         Context(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
                 uint32_t num_threads) __attribute__((noinline));
         void rankHit(uint32_t docId);
-        void addHit(uint32_t docId) { _hits.addHit(docId, search::default_rank_value); }
+        void addHit(uint32_t docId) { _hits.addHit(docId, search::zero_rank_value); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool   atSoftDoom() const { return _softDoom.doom(); }
@@ -94,6 +95,9 @@ private:
     void processResult(const Doom & hardDoom, search::ResultSet::UP result, ResultProcessor::Context &context);
 
     bool isFirstThread() const { return thread_id == 0; }
+
+    search::HitRank fallback_rank_value() const { return match_with_ranking ? search::default_rank_value : search::zero_rank_value; }
+
 public:
     MatchThread(size_t thread_id_in,
                 size_t num_threads_in,

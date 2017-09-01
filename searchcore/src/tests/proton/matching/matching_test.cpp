@@ -494,11 +494,11 @@ TEST("require that sortspec can be used (multi-threaded)") {
         SearchReply::UP reply = world.performSearch(request, threads);
         ASSERT_EQUAL(9u, reply->hits.size());
         EXPECT_EQUAL(document::DocumentId("doc::100").getGlobalId(),  reply->hits[0].gid);
-        EXPECT_EQUAL(default_rank_value, reply->hits[0].metric);
+        EXPECT_EQUAL(zero_rank_value, reply->hits[0].metric);
         EXPECT_EQUAL(document::DocumentId("doc::200").getGlobalId(),  reply->hits[1].gid);
-        EXPECT_EQUAL(default_rank_value, reply->hits[1].metric);
+        EXPECT_EQUAL(zero_rank_value, reply->hits[1].metric);
         EXPECT_EQUAL(document::DocumentId("doc::300").getGlobalId(),  reply->hits[2].gid);
-        EXPECT_EQUAL(default_rank_value, reply->hits[2].metric);
+        EXPECT_EQUAL(zero_rank_value, reply->hits[2].metric);
     }
 }
 

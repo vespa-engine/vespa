@@ -38,7 +38,7 @@ public:
     const BitVector * getBitOverflow() const { return _bitOverflow.get(); }
     BitVector *       getBitOverflow()       { return _bitOverflow.get(); }
     unsigned int getNumHits() const;
-    void mergeWithBitOverflow();
+    void mergeWithBitOverflow(HitRank default_value = default_rank_value);
 
     /* isEmpty() is allowed to return false even if bitmap has no hits */
     bool isEmpty() const { return (_bitOverflow == NULL && _elemsUsedInRankedHitsArray == 0); }

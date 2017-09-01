@@ -252,7 +252,7 @@ mergeHitsIntoResultSet(const std::vector<HitCollector::Hit> &hits, ResultSet &re
 }
 
 std::unique_ptr<ResultSet>
-HitCollector::getResultSet()
+HitCollector::getResultSet(HitRank default_value)
 {
     Scores &initHeapScores = _ranges.first;
     Scores &finalHeapScores = _ranges.second;
@@ -306,7 +306,7 @@ HitCollector::getResultSet()
                     rh[j]._rankValue = getReScore(_hits[i].second);
                     ++i;
                 } else {
-                    rh[j]._rankValue = default_rank_value;
+                    rh[j]._rankValue = default_value;
                 }
             }
         } else {
@@ -317,7 +317,7 @@ HitCollector::getResultSet()
                     rh[j]._rankValue = _hits[i].second;
                     ++i;
                 } else {
-                    rh[j]._rankValue = default_rank_value;
+                    rh[j]._rankValue = default_value;
                 }
             }
         }
