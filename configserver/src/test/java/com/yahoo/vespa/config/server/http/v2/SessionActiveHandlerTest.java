@@ -67,12 +67,8 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.Response.Status.CONFLICT;
-import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
+import static com.yahoo.jdisc.Response.Status.*;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
-import static com.yahoo.jdisc.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -158,7 +154,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ActivateRequest activateRequest = new ActivateRequest(sessionId, 1, "", Clock.systemUTC()).invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         String message = getRenderedString(actResponse);
-        assertThat(message, actResponse.getStatus(), Is.is(CONFLICT));
+        assertThat(message, actResponse.getStatus(), Is.is(BAD_REQUEST));
         assertThat(message,
                    containsString("Cannot activate session 3 because the currently active session (2) has changed since session 3 was created (was 1 at creation time)"));
     }
@@ -182,8 +178,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         Clock clock = Clock.systemUTC();
         activateAndAssertOK(90l, 0l, clock);
         activateAndAssertError(92l, 89l, clock,
-                               Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_FAILED,
-                               "tenant:" + tenant + " app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
+                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                "tenant:"+tenant+" app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
     }
 
     @Test
@@ -213,7 +209,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     public void require_that_handler_gives_error_when_provisioner_activated_fails() throws Exception {
         hostProvisioner = new FailingMockProvisioner();
         hostProvisioner.activated = false;
-        activateAndAssertError(1, 0, Clock.systemUTC(), BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
+        activateAndAssertError(1, 0, Clock.systemUTC(), HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
         assertFalse(hostProvisioner.activated);
     }
 
@@ -253,13 +249,12 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         return activateRequest;
     }
 
-    private ActivateRequest activateAndAssertErrorPut(long sessionId, long previousSessionId, Clock clock,
-                                                      int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
+    private ActivateRequest activateAndAssertErrorPut(long sessionId, long previousSessionId, Clock clock, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
         ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "", clock);
         activateRequest.invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
-        assertThat(actResponse.getStatus(), Is.is(statusCode));
+        assertThat(actResponse.getStatus(), Is.is(BAD_REQUEST));
         String message = getRenderedString(actResponse);
         assertThat(message, Is.is("{\"error-code\":\"" + errorCode.name() + "\",\"message\":\"" + expectedError + "\"}"));
         assertThat(session.getStatus(), Is.is(Session.Status.PREPARE));
@@ -358,9 +353,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         assertThat(hostProvisioner.lastHosts.size(), is(1));
     }
 
-    private void activateAndAssertError(long sessionId, long previousSessionId, Clock clock, int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
+    private void activateAndAssertError(long sessionId, long previousSessionId, Clock clock, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
         hostProvisioner.activated = false;
-        activateAndAssertErrorPut(sessionId, previousSessionId, clock, statusCode, errorCode, expectedError);
+        activateAndAssertErrorPut(sessionId, previousSessionId, clock, errorCode, expectedError);
         assertFalse(hostProvisioner.activated);
     }
 
