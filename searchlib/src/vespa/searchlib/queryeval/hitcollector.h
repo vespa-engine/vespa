@@ -191,8 +191,9 @@ public:
      * ranked hits and the match data heap.
      *
      * @param auto pointer to the result set
+     * @param default_value rank value to be used for results without rank value
      **/
-    std::unique_ptr<ResultSet> getResultSet();
+    std::unique_ptr<ResultSet> getResultSet(HitRank default_value = default_rank_value);
 
 private:
     HitCollector(const HitCollector &);  // Not implemented

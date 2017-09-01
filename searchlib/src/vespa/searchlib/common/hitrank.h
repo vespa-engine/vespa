@@ -9,6 +9,7 @@ namespace search {
 typedef double HitRank;
 typedef double SignedHitRank;
 constexpr HitRank default_rank_value = -HUGE_VAL;
+constexpr HitRank zero_rank_value = 0.0;
 
 } // namespace search
 

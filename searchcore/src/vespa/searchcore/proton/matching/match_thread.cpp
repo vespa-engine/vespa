@@ -250,7 +250,7 @@ MatchThread::findMatches(MatchTools &matchTools)
         LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", search->asString().c_str());
     }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize, matchParams.heapSize);
-    if (matchTools.has_first_phase_rank() && ((matchParams.arraySize + matchParams.heapSize) != 0)) {
+    if (match_with_ranking) {
         match_loop_helper<SearchIterator::UP, true>(matchTools, std::move(search), *ranking, hits);
     } else {
         if ((dynamic_cast<const OptimizedAndNotForBlackListing *>(search.get()) != 0) &&
@@ -283,7 +283,7 @@ MatchThread::findMatches(MatchTools &matchTools)
             hits.setRanges(ranges);
         }
     }
-    return hits.getResultSet();
+    return hits.getResultSet(fallback_rank_value());
 }
 
 void
@@ -294,7 +294,7 @@ MatchThread::processResult(const Doom & hardDoom,
     if (hardDoom.doom()) return;
     bool hasGrouping = (context.grouping.get() != 0);
     if (context.sort->hasSortData() || hasGrouping) {
-        result->mergeWithBitOverflow();
+        result->mergeWithBitOverflow(fallback_rank_value());
     }
     if (hardDoom.doom()) return;
     size_t             totalHits = result->getNumHits();
@@ -369,7 +369,8 @@ MatchThread::MatchThread(size_t thread_id_in,
     thread_stats(),
     total_time_s(0.0),
     match_time_s(0.0),
-    wait_time_s(0.0)
+    wait_time_s(0.0),
+    match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores())
 {
 }
 

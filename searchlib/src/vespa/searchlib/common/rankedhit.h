@@ -11,8 +11,8 @@
 namespace search {
 
 struct RankedHit {
-    RankedHit() : _docId(0), _rankValue(default_rank_value) { }
-    RankedHit(unsigned int docId, HitRank rank = default_rank_value) : _docId(docId), _rankValue(rank) { }
+    RankedHit() : _docId(0), _rankValue(zero_rank_value) { }
+    RankedHit(unsigned int docId, HitRank rank = zero_rank_value) : _docId(docId), _rankValue(rank) { }
     unsigned int getDocId() const { return _docId & 0x7fffffff; }
     bool hasMore()          const { return _docId & 0x80000000; }
     HitRank getRank()       const { return _rankValue; }

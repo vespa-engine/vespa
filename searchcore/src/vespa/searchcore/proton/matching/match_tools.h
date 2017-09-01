@@ -55,7 +55,6 @@ public:
     createSearch(search::fef::MatchData &matchData) const {
         return _query.createSearch(matchData);
     }
-    bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
     bool has_second_phase_rank() const { return !_rankSetup.getSecondPhaseRank().empty(); }
     search::fef::RankProgram::UP first_phase_program() const;
     search::fef::RankProgram::UP second_phase_program() const;
@@ -97,6 +96,7 @@ public:
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
+    bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
 };
 
 }
