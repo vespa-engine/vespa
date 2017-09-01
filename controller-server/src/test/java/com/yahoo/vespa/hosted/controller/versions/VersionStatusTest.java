@@ -273,10 +273,8 @@ public class VersionStatusTest {
                 application.id(),
                 jobType,
                 application.deploymentJobs().projectId().get(),
-                1L,
                 JobError.from(success),
-                false,
-                true
+                false
         );
     }
 
