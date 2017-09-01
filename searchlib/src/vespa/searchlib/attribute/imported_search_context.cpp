@@ -92,6 +92,12 @@ TargetResult
 getTargetResult(ReverseMappingRefs reverseMappingRefs,
                 const ReverseMapping &reverseMapping,
                 SearchContext &target_search_context,
+                uint32_t committedDocIdLimit) __attribute__((noinline));
+
+TargetResult
+getTargetResult(ReverseMappingRefs reverseMappingRefs,
+                const ReverseMapping &reverseMapping,
+                SearchContext &target_search_context,
                 uint32_t committedDocIdLimit)
 {
     TargetResult targetResult;
