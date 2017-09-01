@@ -34,12 +34,17 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>documentapi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-dev</artifactId>
+            <artifactId>predicate-search-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
