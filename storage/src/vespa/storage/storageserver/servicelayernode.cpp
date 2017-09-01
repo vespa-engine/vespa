@@ -262,9 +262,9 @@ ServiceLayerNode::createChain()
         chain->push_back(StorageLink::UP(releaseStateManager().release()));
         return chain;
     }
-    MergeThrottler* merge_throttler;
     chain->push_back(StorageLink::UP(new OpsLogger(compReg, _configUri)));
-    chain->push_back(StorageLink::UP(merge_throttler = new MergeThrottler(_configUri, compReg)));
+    auto* merge_throttler = new MergeThrottler(_configUri, compReg);
+    chain->push_back(StorageLink::UP(merge_throttler));
     chain->push_back(StorageLink::UP(new ChangedBucketOwnershipHandler(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new BucketIntegrityChecker(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new bucketmover::BucketMover(_configUri, compReg)));
