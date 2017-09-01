@@ -179,7 +179,7 @@ void ImportedSearchContext::fetchPostings(bool strict) {
     assert(!_fetchPostingsDone);
     _fetchPostingsDone = true;
     _target_search_context->fetchPostings(strict);
-    if (strict || _target_attribute.getConfig().getIsFilter()) {
+    if (strict || _target_attribute.getConfig().fastSearch()) {
         makeMergedPostings(_target_attribute.getConfig().getIsFilter());
     }
 }
