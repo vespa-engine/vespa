@@ -7,8 +7,7 @@ import com.yahoo.config.ConfigInstance.Builder;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.codegen.ConfigGenerator;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRegistry;
@@ -30,6 +29,8 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.clients.Clients;
@@ -62,7 +63,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.text.StringUtilities.quote;
 
 /**
@@ -358,7 +358,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     public ConfigInstance.Builder createBuilder(ConfigDefinitionKey key, ConfigDefinition targetDef) {
-        String className = createClassName(key.getName());
+        String className = ConfigGenerator.createClassName(key.getName());
         Class<?> clazz;
 
         final String fullClassName = InstanceResolver.packageName(key) + "." + className;
