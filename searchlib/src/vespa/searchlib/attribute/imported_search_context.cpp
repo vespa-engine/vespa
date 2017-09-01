@@ -96,8 +96,8 @@ class ReverseMappingBitVector
     EntryRef _revMapIdx;
 public:
     ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx)
-            : _reverseMapping(reverseMapping),
-              _revMapIdx(revMapIdx)
+        : _reverseMapping(reverseMapping),
+          _revMapIdx(revMapIdx)
     {}
     ~ReverseMappingBitVector() { }
 
@@ -155,26 +155,16 @@ TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapp
                         PostingListMerger<int32_t> & merger)
 {
     fef::TermFieldMatchData matchData;
-    auto targetItr = target_search_context.createIterator(&matchData, true);
+    auto it = target_search_context.createIterator(&matchData, true);
     uint32_t docIdLimit = reverseMappingRefs.size();
     if (docIdLimit > committedDocIdLimit) {
         docIdLimit = committedDocIdLimit;
     }
-    uint32_t lid = 1;
-    targetItr->initRange(1, docIdLimit);
-    while (lid < docIdLimit) {
-        if (targetItr->seek(lid)) {
-            EntryRef revMapIdx = reverseMappingRefs[lid];
-            if (revMapIdx.valid()) {
-                merger.addToBitVector(ReverseMappingBitVector(reverseMapping, revMapIdx));
-            }
-            ++lid;
-        } else {
-            ++lid;
-            uint32_t nextLid = targetItr->getDocId();
-            if (nextLid > lid) {
-                lid = nextLid;
-            }
+    it->initRange(1, docIdLimit);
+    for (uint32_t lid = it->seekFirst(1); !it->isAtEnd(); lid = it->seekNext(lid+1)) {
+        EntryRef revMapIdx = reverseMappingRefs[lid];
+        if (__builtin_expect(revMapIdx.valid(), true)) {
+            merger.addToBitVector(ReverseMappingBitVector(reverseMapping, revMapIdx));
         }
     }
 }
