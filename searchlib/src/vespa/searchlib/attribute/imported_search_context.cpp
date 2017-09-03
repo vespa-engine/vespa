@@ -77,58 +77,86 @@ struct WeightedRef {
     }
 };
 
-struct TargetResult {
+struct TargetWeightedResult {
     std::vector<WeightedRef> weightedRefs;
     size_t sizeSum;
 
-    TargetResult()
+    TargetWeightedResult()
         : weightedRefs(),
           sizeSum(0)
-    {
+    {}
+    static TargetWeightedResult
+    getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
+              SearchContext &target_search_context, uint32_t committedDocIdLimit) __attribute__((noinline));
+};
+
+class ReverseMappingBitVector
+{
+    const ReverseMapping &_reverseMapping;
+    EntryRef _revMapIdx;
+public:
+    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx)
+        : _reverseMapping(reverseMapping),
+          _revMapIdx(revMapIdx)
+    {}
+    ~ReverseMappingBitVector() { }
+
+    template <typename Func>
+    void foreach_key(Func func) const {
+        _reverseMapping.foreach_frozen_key(_revMapIdx, [func](uint32_t lid) { func(lid); });
     }
 };
 
-TargetResult
-getTargetResult(ReverseMappingRefs reverseMappingRefs,
-                const ReverseMapping &reverseMapping,
-                SearchContext &target_search_context,
-                uint32_t committedDocIdLimit) __attribute__((noinline));
+struct TargetResult {
+    static void
+    getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
+              SearchContext &target_search_context, uint32_t committedDocIdLimit,
+              PostingListMerger<int32_t> & merger) __attribute__((noinline));
+};
 
-TargetResult
-getTargetResult(ReverseMappingRefs reverseMappingRefs,
-                const ReverseMapping &reverseMapping,
-                SearchContext &target_search_context,
-                uint32_t committedDocIdLimit)
+TargetWeightedResult
+TargetWeightedResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
+                                SearchContext &target_search_context, uint32_t committedDocIdLimit)
 {
-    TargetResult targetResult;
+    TargetWeightedResult targetResult;
     fef::TermFieldMatchData matchData;
-    auto targetItr = target_search_context.createIterator(&matchData, true);
+    auto it = target_search_context.createIterator(&matchData, true);
     uint32_t docIdLimit = reverseMappingRefs.size();
     if (docIdLimit > committedDocIdLimit) {
         docIdLimit = committedDocIdLimit;
     }
-    uint32_t lid = 1;
-    targetItr->initRange(1, docIdLimit);
-    while (lid < docIdLimit) {
-        if (targetItr->seek(lid)) {
-            EntryRef revMapIdx = reverseMappingRefs[lid];
-            if (revMapIdx.valid()) {
-                uint32_t size = reverseMapping.frozenSize(revMapIdx);
-                targetResult.sizeSum += size;
-                targetItr->unpack(lid);
-                int32_t weight = matchData.getWeight();
-                targetResult.weightedRefs.emplace_back(revMapIdx, weight);
-            }
-            ++lid;
-        } else {
-            ++lid;
-            uint32_t nextLid = targetItr->getDocId();
-            if (nextLid > lid) {
-                lid = nextLid;
-            }
+    it->initRange(1, docIdLimit);
+    for (uint32_t lid = it->seekFirst(1); !it->isAtEnd(); lid = it->seekNext(lid+1)) {
+        EntryRef revMapIdx = reverseMappingRefs[lid];
+        if (__builtin_expect(revMapIdx.valid(), true)) {
+            uint32_t size = reverseMapping.frozenSize(revMapIdx);
+            targetResult.sizeSum += size;
+            it->doUnpack(lid);
+            int32_t weight = matchData.getWeight();
+            targetResult.weightedRefs.emplace_back(revMapIdx, weight);
         }
     }
     return targetResult;
+}
+
+void
+TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapping &reverseMapping,
+                        SearchContext &target_search_context, uint32_t committedDocIdLimit,
+                        PostingListMerger<int32_t> & merger)
+{
+    fef::TermFieldMatchData matchData;
+    auto it = target_search_context.createIterator(&matchData, true);
+    uint32_t docIdLimit = reverseMappingRefs.size();
+    if (docIdLimit > committedDocIdLimit) {
+        docIdLimit = committedDocIdLimit;
+    }
+    it->initRange(1, docIdLimit);
+    for (uint32_t lid = it->seekFirst(1); !it->isAtEnd(); lid = it->seekNext(lid+1)) {
+        EntryRef revMapIdx = reverseMappingRefs[lid];
+        if (__builtin_expect(revMapIdx.valid(), true)) {
+            merger.addToBitVector(ReverseMappingBitVector(reverseMapping, revMapIdx));
+        }
+    }
 }
 
 class ReverseMappingPostingList
@@ -141,18 +169,14 @@ public:
         : _reverseMapping(reverseMapping),
           _revMapIdx(revMapIdx),
           _weight(weight)
-    {
-    }
+    {}
     ~ReverseMappingPostingList() { }
     template <typename Func>
     void foreach(Func func) const {
         int32_t weight = _weight;
         _reverseMapping.foreach_frozen_key(_revMapIdx, [func, weight](uint32_t lid) { func(lid, weight); });
     }
-    template <typename Func>
-    void foreach_key(Func func) const {
-        _reverseMapping.foreach_frozen_key(_revMapIdx, [func](uint32_t lid) { func(lid); });
-    }
+
 };
 
 }
@@ -161,21 +185,20 @@ void ImportedSearchContext::makeMergedPostings(bool isFilter)
 {
     uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimit();
     std::atomic_thread_fence(std::memory_order_acquire);
-    TargetResult targetResult(getTargetResult(_reference_attribute.getReverseMappingRefs(),
-                                              _reference_attribute.getReverseMapping(),
-                                              *_target_search_context,
-                                              committedTargetDocIdLimit));
-    _merger.reserveArray(targetResult.weightedRefs.size(), targetResult.sizeSum);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
     if (isFilter) {
         _merger.allocBitVector();
-    }
-    for (const auto &weightedRef : targetResult.weightedRefs) {
-        ReverseMappingPostingList rmp(reverseMapping, weightedRef.revMapIdx, weightedRef.weight);
-        if (isFilter) {
-            _merger.addToBitVector(rmp);
-        } else {
-            _merger.addToArray(rmp);
+        TargetResult::getResult(_reference_attribute.getReverseMappingRefs(),
+                                _reference_attribute.getReverseMapping(),
+                                *_target_search_context, committedTargetDocIdLimit, _merger);
+    } else {
+        TargetWeightedResult targetResult(TargetWeightedResult::getResult(_reference_attribute.getReverseMappingRefs(),
+                                                                          _reference_attribute.getReverseMapping(),
+                                                                          *_target_search_context,
+                                                                          committedTargetDocIdLimit));
+        _merger.reserveArray(targetResult.weightedRefs.size(), targetResult.sizeSum);
+        for (const auto &weightedRef : targetResult.weightedRefs) {
+            _merger.addToArray(ReverseMappingPostingList(reverseMapping, weightedRef.revMapIdx, weightedRef.weight));
         }
     }
     _merger.merge();
