@@ -192,6 +192,9 @@ struct Fixture
         _attr->setGidToLidMapperFactory(factory);
         _attr->populateReferencedLids();
     }
+    uint32_t getUniqueGids() {
+        return getStatus().getNumUniqueValues();
+    }
 };
 
 TEST_F("require that we can instantiate reference attribute", Fixture)
@@ -386,6 +389,37 @@ TEST_F("Require that notifyReferencedPut and notifyReferencedRemove changes reve
     f.notifyReferencedRemove(toGid(doc1));
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { }));
+}
+
+TEST_F("Require that we track unique gids", Fixture)
+{
+    EXPECT_EQUAL(0u, f.getUniqueGids());
+    f.notifyReferencedPut(toGid(doc1), 10);
+    EXPECT_EQUAL(1u, f.getUniqueGids());
+    f.ensureDocIdLimit(3);
+    f.set(1, toGid(doc1));
+    f.commit();
+    EXPECT_EQUAL(1u, f.getUniqueGids());
+    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertLids(10, { 1 }));
+    f.set(2, toGid(doc2));
+    f.commit();
+    EXPECT_EQUAL(2u, f.getUniqueGids());
+    TEST_DO(f.assertRefLid(2, 0));
+    f.notifyReferencedPut(toGid(doc2), 17);
+    EXPECT_EQUAL(2u, f.getUniqueGids());
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertLids(17, { 2 }));
+    f.clear(1);
+    f.notifyReferencedRemove(toGid(doc2));
+    EXPECT_EQUAL(2u, f.getUniqueGids());
+    TEST_DO(f.assertNoRefLid(1));
+    TEST_DO(f.assertRefLid(2, 0));
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(17, { }));
+    f.clear(2);
+    f.notifyReferencedRemove(toGid(doc1));
+    EXPECT_EQUAL(0u, f.getUniqueGids());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
