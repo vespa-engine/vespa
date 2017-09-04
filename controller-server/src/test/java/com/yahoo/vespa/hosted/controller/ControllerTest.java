@@ -499,10 +499,8 @@ public class ControllerTest {
                 application.id(),
                 jobType,
                 application.deploymentJobs().projectId().get(),
-                1L,
                 jobError,
-                selfTriggering,
-                true
+                selfTriggering
         );
     }
 

@@ -66,8 +66,6 @@ public class ApplicationSerializer {
     // JobStatus field
     private final String jobTypeField = "jobType";
     private final String errorField = "jobError";
-    private final String completionTimeField = "completionTime";
-    private final String failingSinceField = "failingSince";
     private final String lastTriggeredField = "lastTriggered";
     private final String lastCompletedField = "lastCompleted";
     private final String firstFailingField = "firstFailing";
@@ -171,7 +169,7 @@ public class ApplicationSerializer {
         
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString());
-        ValidationOverrides validationOverrides = validationOverridesFromSlime(root.field(validationOverridesField));
+        ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
         Optional<Change> deploying = changeFromSlime(root.field(deployingField));
@@ -180,12 +178,7 @@ public class ApplicationSerializer {
         return new Application(id, deploymentSpec, validationOverrides, deployments, 
                                deploymentJobs, deploying, outstandingChange);
     }
-    
-    private ValidationOverrides validationOverridesFromSlime(Inspector field) {
-        if ( ! field.valid()) return ValidationOverrides.empty; // TODO: Remove this line (and inline function) after June 2017
-        return ValidationOverrides.fromXml(field.asString());
-    }
-    
+
     private List<Deployment> deploymentsFromSlime(Inspector array) {
         List<Deployment> deployments = new ArrayList<>();
         array.traverse((ArrayTraverser) (int i, Inspector item) -> deployments.add(deploymentFromSlime(item)));
@@ -252,31 +245,11 @@ public class ApplicationSerializer {
         if (object.field(errorField).valid())
             jobError = Optional.of(JobError.valueOf(object.field(errorField).asString()));
 
-        Inspector versionFieldValue = object.field(versionField);
-        if (versionFieldValue.valid()) { // TODO: Read legacy JobStatus content: Remove after June 2017
-            // Read stored information in old data model
-            Instant completionTime = Instant.ofEpochMilli(object.field(completionTimeField).asLong());
-            Optional<Instant> failingSinceTime = optionalLong(object.field(failingSinceField)).map(Instant::ofEpochMilli);
-            Optional<Instant> lastTriggeredTime = optionalLong(object.field(lastTriggeredField)).map(Instant::ofEpochMilli);
-            Version version = new Version(versionFieldValue.asString());
-            
-            // Best-effort conversion to new data model
-            Optional<JobStatus.JobRun> lastTriggered = lastTriggeredTime.map(at -> new JobStatus.JobRun(version, Optional.empty(), at));
-            Optional<JobStatus.JobRun> lastCompleted = Optional.of(new JobStatus.JobRun(version, Optional.empty(), completionTime));
-            Optional<JobStatus.JobRun> firstFailing = failingSinceTime.map(at -> new JobStatus.JobRun(version, Optional.empty(), at));
-            Optional<JobStatus.JobRun> lastSuccess = Optional.of(new JobStatus.JobRun(version, Optional.empty(), completionTime));;
-            
-            return new JobStatus(jobType, jobError,
-                                 lastTriggered, lastCompleted, firstFailing, lastSuccess);
-        }
-        else { // read current format
-            return new JobStatus(jobType, jobError,
-                                 jobRunFromSlime(object.field(lastTriggeredField)),
-                                 jobRunFromSlime(object.field(lastCompletedField)),
-                                 jobRunFromSlime(object.field(firstFailingField)),
-                                 jobRunFromSlime(object.field(lastSuccessField)));
-                                                
-        }
+        return new JobStatus(jobType, jobError,
+                             jobRunFromSlime(object.field(lastTriggeredField)),
+                             jobRunFromSlime(object.field(lastCompletedField)),
+                             jobRunFromSlime(object.field(firstFailingField)),
+                             jobRunFromSlime(object.field(lastSuccessField)));
     }
     
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {

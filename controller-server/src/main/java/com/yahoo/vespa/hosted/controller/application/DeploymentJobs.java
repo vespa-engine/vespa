@@ -272,32 +272,26 @@ public class DeploymentJobs {
         private final ApplicationId applicationId;
         private final JobType jobType;
         private final long projectId;
-        private final long buildNumber;
         private final Optional<JobError> jobError;
         private final boolean selfTriggering;
-        private final boolean gitChanges;
 
-        public JobReport(ApplicationId applicationId, JobType jobType, long projectId, long buildNumber, Optional<JobError> jobError, boolean selfTriggering, boolean gitChanges) {
+        public JobReport(ApplicationId applicationId, JobType jobType, long projectId, Optional<JobError> jobError, boolean selfTriggering) {
             Objects.requireNonNull(applicationId, "ApplicationId can not be null.");
             Objects.requireNonNull(jobType, "JobType can not be null.");
 
             this.applicationId = applicationId;
             this.projectId = projectId;
             this.jobType = jobType;
-            this.buildNumber = buildNumber;
             this.jobError = jobError;
             this.selfTriggering = selfTriggering;
-            this.gitChanges = gitChanges;
         }
 
         public ApplicationId applicationId() { return applicationId; }
         public JobType jobType() { return jobType; }
         public long projectId() { return projectId; }
-        public long buildNumber() { return buildNumber; }
         public boolean success() { return !jobError.isPresent(); }
         public Optional<JobError> jobError() { return jobError; }
         public boolean selfTriggering() { return selfTriggering; }
-        public boolean gitChanges() { return gitChanges; }
 
     }
 
