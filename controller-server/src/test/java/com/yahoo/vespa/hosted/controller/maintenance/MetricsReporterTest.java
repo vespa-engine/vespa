@@ -28,8 +28,9 @@ import java.util.Map;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
-import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -54,7 +55,7 @@ public class MetricsReporterTest {
         assertDimension(metricContext, "tenantName", "ciintegrationtests");
         assertDimension(metricContext, "app", "restart.default");
         assertDimension(metricContext, "zone", "prod.cd-us-east-1");
-        assertThat(metricEntry.getValue().get(MetricsReporter.convergeMetric).longValue()).isEqualTo(727);
+        assertEquals(727, metricEntry.getValue().get(MetricsReporter.convergeMetric).longValue());
     }
 
     @Test
@@ -95,11 +96,11 @@ public class MetricsReporterTest {
         ControllerTester tester = new ControllerTester();
         String hostname = "fake-node2.test";
         MapContext metricContext = getMetricsForHost(tester.controller(), hostname);
-        assertThat(metricContext.getDimensions().get("zone")).isNull();
+        assertNull(metricContext.getDimensions().get("zone"));
     }
 
     private void assertDimension(MapContext metricContext, String dimensionName, String expectedValue) {
-        assertThat(metricContext.getDimensions().get(dimensionName)).isNotNull().isEqualTo(expectedValue);
+        assertEquals(expectedValue, metricContext.getDimensions().get(dimensionName));
     }
 
     private MetricsReporter setupMetricsReporter(Controller controller, MetricsMock metricsMock, SystemName system) throws IOException {
@@ -120,10 +121,10 @@ public class MetricsReporterTest {
         MetricsReporter metricsReporter = setupMetricsReporter(controller, metricsMock, SystemName.main);
         metricsReporter.maintain();
 
-        assertThat(metricsMock.getMetrics()).isNotEmpty();
+        assertFalse(metricsMock.getMetrics().isEmpty());
 
         Map<MapContext, Map<String, Number>> metrics = metricsMock.getMetricsFilteredByHost(hostname);
-        assertThat(metrics).hasSize(1);
+        assertEquals(1, metrics.size());
         Map.Entry<MapContext, Map<String, Number>> metricEntry = metrics.entrySet().iterator().next();
         return metricEntry.getKey();
     }

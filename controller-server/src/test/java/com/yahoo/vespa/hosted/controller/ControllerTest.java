@@ -31,6 +31,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -46,8 +48,6 @@ import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -68,7 +68,6 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
-import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -385,8 +384,8 @@ public class ControllerTest {
         tester.controller().applications().createApplication(applicationId, Optional.empty());
 
         // Verify that Athens domain does not have any relations to tenant/application yet
-        assertThat(mockDomain.applications.keySet()).isEmpty();
-        assertThat(mockDomain.isVespaTenant).isFalse();
+        assertTrue(mockDomain.applications.keySet().isEmpty());
+        assertFalse(mockDomain.isVespaTenant);
 
         // Migrate tenant to Athens
         NToken nToken = new NTokenMock("token");
@@ -395,15 +394,12 @@ public class ControllerTest {
 
         // Verify that tenant is migrated
         Tenant tenant = tester.controller().tenants().tenant(tenantId).get();
-        assertThat(tenant.isAthensTenant())
-                .isTrue();
-        assertThat(tenant.getAthensDomain().get())
-                .isEqualTo(athensDomain);
+        assertTrue(tenant.isAthensTenant());
+        assertEquals(athensDomain, tenant.getAthensDomain().get());
         // Verify that domain knows about tenant and application
-        assertThat(mockDomain.isVespaTenant)
-                .isTrue();
-        assertThat(mockDomain.applications.keySet())
-                .contains(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationName));
+        assertTrue(mockDomain.isVespaTenant);
+        assertTrue(mockDomain.applications.keySet().contains(
+                new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationName)));
     }
 
     @Test
