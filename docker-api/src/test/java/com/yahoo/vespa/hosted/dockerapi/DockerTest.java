@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
@@ -29,21 +28,6 @@ public class DockerTest {
     private DockerImpl docker;
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
     private static final String MANAGER_NAME = "docker-test";
-
-    // It is ignored since it is a bit slow and unstable, at least on Mac.
-    @Ignore
-    @Test
-    public void testDockerImagePullDelete() throws ExecutionException, InterruptedException {
-        DockerImage dockerImage = new DockerImage("busybox:1.24.0");
-
-        // Pull the image and wait for the pull to complete
-        docker.pullImageAsync(dockerImage).get();
-        assertTrue("Failed to download " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
-
-        // Remove the image
-        docker.deleteImage(dockerImage);
-        assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
-    }
 
     // Ignored because the test is very slow (several minutes) when swap is enabled, to disable: (Linux)
     // $ sudo swapoff -a

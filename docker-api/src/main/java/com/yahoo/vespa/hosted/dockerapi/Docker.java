@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * API to simplify the com.github.dockerjava API for clients,
@@ -60,9 +59,14 @@ public interface Docker {
 
     Optional<Container> getContainer(ContainerName containerName);
 
-    CompletableFuture<DockerImage> pullImageAsync(DockerImage image);
-
-    boolean imageIsDownloaded(DockerImage image);
+    /**
+     * Checks if the image is currently being pulled or is already pulled, if not, starts an async
+     * pull of the image
+     *
+     * @param image Docker image to pull
+     * @return true iff image being pulled, false otherwise
+     */
+    boolean pullImageAsyncIfNeeded(DockerImage image);
 
     void deleteImage(DockerImage dockerImage);
 

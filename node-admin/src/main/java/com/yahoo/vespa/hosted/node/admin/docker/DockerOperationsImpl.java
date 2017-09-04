@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -169,12 +168,6 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.deleteContainer(containerName);
     }
 
-    // Returns true if scheduling download
-    @Override
-    public boolean shouldScheduleDownloadOfImage(final DockerImage dockerImage) {
-        return !docker.imageIsDownloaded(dockerImage);
-    }
-
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         return docker.getContainer(containerName);
@@ -212,18 +205,8 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void scheduleDownloadOfImage(ContainerName containerName, DockerImage dockerImage, Runnable callback) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-
-        logger.info("Schedule async download of " + dockerImage);
-        final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(dockerImage);
-        asyncPullResult.whenComplete((image, throwable) -> {
-            if (throwable != null) {
-                logger.warning("Failed to pull " + dockerImage, throwable);
-                return;
-            }
-            callback.run();
-        });
+    public boolean pullImageAsyncIfNeeded(DockerImage dockerImage) {
+        return docker.pullImageAsyncIfNeeded(dockerImage);
     }
 
     ProcessResult executeCommandInContainer(ContainerName containerName, String... command) {

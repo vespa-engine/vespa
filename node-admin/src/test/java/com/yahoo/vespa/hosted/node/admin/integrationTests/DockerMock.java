@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -111,28 +110,11 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public CompletableFuture<DockerImage> pullImageAsync(DockerImage image) {
+    public boolean pullImageAsyncIfNeeded(DockerImage image) {
         synchronized (monitor) {
-            callOrderVerifier.add("pullImageAsync with " + image);
-            final CompletableFuture<DockerImage> completableFuture = new CompletableFuture<>();
-            new Thread() {
-                public void run() {
-                    try {
-                        Thread.sleep(500);
-                        completableFuture.complete(image);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }.start();
-            return completableFuture;
+            callOrderVerifier.add("pullImageAsyncIfNeeded with " + image);
+            return false;
         }
-    }
-
-    @Override
-    public boolean imageIsDownloaded(DockerImage image) {
-        return true;
     }
 
     @Override
