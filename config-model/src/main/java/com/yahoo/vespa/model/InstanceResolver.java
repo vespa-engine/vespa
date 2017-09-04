@@ -61,7 +61,7 @@ class InstanceResolver {
             if (targetDef != null) applyDef(builder, targetDef);
             Class<? extends ConfigInstance> clazz = getConfigClass(defKey, builder.getClass().getClassLoader());
             return clazz.getConstructor(builder.getClass()).newInstance(builder);
-        } catch (Exception e) {
+        } catch (Throwable e) { // We might get an Error here if there are class loading issues, so catch Throwable
             throw new ConfigurationRuntimeException(e);
         }
     }
