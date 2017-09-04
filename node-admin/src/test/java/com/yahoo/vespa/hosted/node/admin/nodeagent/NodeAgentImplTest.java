@@ -114,7 +114,7 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
-        verify(dockerOperations, never()).scheduleDownloadOfImage(eq(containerName), any(), any());
+        verify(dockerOperations, never()).pullImageAsyncIfNeeded(any());
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
@@ -147,14 +147,15 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+        when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
 
         nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
-        verify(dockerOperations, never()).scheduleDownloadOfImage(eq(containerName), any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
+        inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(aclMaintainer, times(1)).run();
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
@@ -185,7 +186,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
+        when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
 
         nodeAgent.converge();
 
@@ -194,8 +195,7 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).removeContainer(any());
 
         final InOrder inOrder = inOrder(dockerOperations);
-        inOrder.verify(dockerOperations, times(1)).shouldScheduleDownloadOfImage(eq(newDockerImage));
-        inOrder.verify(dockerOperations, times(1)).scheduleDownloadOfImage(eq(containerName), eq(newDockerImage), any());
+        inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(newDockerImage));
     }
 
     @Test

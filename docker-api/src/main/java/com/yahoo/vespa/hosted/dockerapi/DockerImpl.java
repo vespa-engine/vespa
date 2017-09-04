@@ -37,10 +37,11 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -63,7 +64,7 @@ public class DockerImpl implements Docker {
 
     private final Object monitor = new Object();
     @GuardedBy("monitor")
-    private final Map<DockerImage, CompletableFuture<DockerImage>> scheduledPulls = new HashMap<>();
+    private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
     // Exposed for testing.
     final DockerClient dockerClient;
@@ -159,37 +160,30 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
-        final CompletableFuture<DockerImage> completionListener;
-        synchronized (monitor) {
-            if (scheduledPulls.containsKey(image)) {
-                return scheduledPulls.get(image);
-            }
-            completionListener = new CompletableFuture<>();
-            scheduledPulls.put(image, completionListener);
-        }
-
+    public boolean pullImageAsyncIfNeeded(final DockerImage image) {
         try {
-            dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+            synchronized (monitor) {
+                if (scheduledPulls.contains(image)) return true;
+                if (imageIsDownloaded(image)) return false;
+                dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+                return false;
+            }
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to pull image '" + image.asString() + "'", e);
         }
-
-        return completionListener;
     }
 
-    private CompletableFuture<DockerImage> removeScheduledPoll(final DockerImage image) {
+    private void removeScheduledPoll(final DockerImage image) {
         synchronized (monitor) {
-            return scheduledPulls.remove(image);
+            scheduledPulls.remove(image);
         }
     }
 
     /**
      * Check if a given image is already in the local registry
      */
-    @Override
-    public boolean imageIsDownloaded(final DockerImage dockerImage) {
+    private boolean imageIsDownloaded(final DockerImage dockerImage) {
         return inspectImage(dockerImage).isPresent();
     }
 
@@ -448,7 +442,8 @@ public class DockerImpl implements Docker {
 
         @Override
         public void onError(Throwable throwable) {
-            removeScheduledPoll(dockerImage).completeExceptionally(throwable);
+            removeScheduledPoll(dockerImage);
+            throw new DockerClientException("Could not download image: " + dockerImage);
         }
 
 
@@ -457,10 +452,9 @@ public class DockerImpl implements Docker {
             Optional<Image> image = inspectImage(dockerImage);
             if (image.isPresent()) { // Download successful, update image GC with the newly downloaded image
                 dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(image.get().getId()));
-                removeScheduledPoll(dockerImage).complete(dockerImage);
+                removeScheduledPoll(dockerImage);
             } else {
-                removeScheduledPoll(dockerImage).completeExceptionally(
-                        new DockerClientException("Could not download image: " + dockerImage));
+                throw new DockerClientException("Could not download image: " + dockerImage);
             }
         }
     }
