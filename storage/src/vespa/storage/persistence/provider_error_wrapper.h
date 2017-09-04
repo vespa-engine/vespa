@@ -1,34 +1,43 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * \class storage::ProviderShutdownWrapper
+ * \class storage::ProviderErrorWrapper
  *
  * \brief Utility class which forwards all calls to the real persistence
  * provider implementation, transparently checking the result of each
- * operation to see if the result is FATAL_ERROR. If so, it initiates a
- * shutdown of the process (but still returns the response up to the caller
- * as if it were just a non-wrapped call).
+ * operation to see if the result is FATAL_ERROR or RESOURCE_EXHAUSTED.
  *
+ * If FATAL_ERROR or RESOURCE_EXHAUSTED is observed, the wrapper will invoke any
+ * and all resource exhaustion listeners synchronously, before returning the response
+ * to the caller as usual.
  */
 #pragma once
 
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vector>
 #include <string>
-#include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/vespalib/util/sync.h>
+#include <memory>
+#include <mutex>
 
 namespace storage {
 
 class ServiceLayerComponent;
 
-class ProviderShutdownWrapper : public spi::PersistenceProvider
-{
+class ProviderErrorListener {
 public:
-    ProviderShutdownWrapper(spi::PersistenceProvider& impl,
-                            ServiceLayerComponent& component)
+    virtual ~ProviderErrorListener() = default;
+    virtual void on_fatal_error(vespalib::stringref message) {
+        (void)message;
+    }
+    virtual void on_resource_exhaustion_error(vespalib::stringref message) {
+        (void)message;
+    }
+};
+
+class ProviderErrorWrapper : public spi::PersistenceProvider {
+public:
+    explicit ProviderErrorWrapper(spi::PersistenceProvider& impl)
         : _impl(impl),
-          _component(component),
-          _shutdownLock(),
-          _shutdownTriggered(false)
+          _mutex()
     {
     }
 
@@ -63,19 +72,18 @@ public:
     const spi::PersistenceProvider& getProviderImplementation() const {
         return _impl;
     }
+
+    void register_error_listener(std::shared_ptr<ProviderErrorListener> listener);
 private:
-    /**
-     * Check whether result has a FATAL_ERROR return code and invoke
-     * requestShutdown with its error string if so. Will const_cast
-     * internally since it calls non-const on _component.
-     */
     template <typename ResultType>
     ResultType checkResult(ResultType&& result) const;
 
+    void trigger_shutdown_listeners(vespalib::stringref reason) const;
+    void trigger_resource_exhaustion_listeners(vespalib::stringref reason) const;
+
     spi::PersistenceProvider& _impl;
-    ServiceLayerComponent& _component;
-    vespalib::Lock _shutdownLock;
-    mutable bool _shutdownTriggered;
+    std::vector<std::shared_ptr<ProviderErrorListener>> _listeners;
+    mutable std::mutex _mutex;
 };
 
 } // storage

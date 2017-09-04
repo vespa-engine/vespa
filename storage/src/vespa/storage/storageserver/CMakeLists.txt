@@ -23,6 +23,7 @@ vespa_add_library(storage_storageserver
     statereporter.cpp
     storagemetricsset.cpp
     changedbucketownershiphandler.cpp
+    service_layer_error_listener.cpp
     INSTALL lib64
     DEPENDS
     storage

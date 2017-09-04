@@ -18,6 +18,7 @@
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/config/config.h>
+#include <chrono>
 
 namespace storage {
 
@@ -29,8 +30,7 @@ class MergeThrottler : public framework::Runnable,
                        private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>
 {
 public:
-    class MergeFailureMetrics : public metrics::MetricSet
-    {
+    class MergeFailureMetrics : public metrics::MetricSet {
     public:
         metrics::SumMetric<metrics::LongCountMetric> sum;
         metrics::LongCountMetric notready;
@@ -47,8 +47,7 @@ public:
         ~MergeFailureMetrics();
     };
 
-    class MergeOperationMetrics : public metrics::MetricSet
-    {
+    class MergeOperationMetrics : public metrics::MetricSet {
     public:
         metrics::LongCountMetric ok;
         MergeFailureMetrics failures;
@@ -57,10 +56,10 @@ public:
         ~MergeOperationMetrics();
     };
 
-    class Metrics : public metrics::MetricSet
-    {
+    class Metrics : public metrics::MetricSet {
     public:
         metrics::DoubleAverageMetric averageQueueWaitingTime;
+        metrics::LongCountMetric bounced_due_to_back_pressure;
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;
 
@@ -71,8 +70,7 @@ public:
 private:
     // TODO: make PQ with stable ordering into own, generic class
     template <class MessageType>
-    struct StablePriorityOrderingWrapper
-    {
+    struct StablePriorityOrderingWrapper {
         MessageType _msg;
         metrics::MetricTimer _startTimer;
         uint64_t _sequence;
@@ -95,8 +93,7 @@ private:
         }
     };
 
-    struct ChainedMergeState
-    {
+    struct ChainedMergeState {
         api::StorageMessage::SP _cmd;
         std::string _cmdString; // For being able to print message even when we don't own it
         uint64_t _clusterStateVersion;
@@ -167,6 +164,8 @@ private:
     StorageComponent _component;
     framework::Thread::UP _thread;
     RendezvousState _rendezvous;
+    mutable std::chrono::steady_clock::time_point _throttle_until_time;
+    std::chrono::steady_clock::duration _backpressure_duration;
     bool _closing;
 public:
     /**
@@ -174,7 +173,7 @@ public:
      * than 1 as their window size.
      */
     MergeThrottler(const config::ConfigUri & configUri, StorageComponentRegister&);
-    ~MergeThrottler();
+    ~MergeThrottler() override;
 
     /** Implements document::Runnable::run */
     void run(framework::ThreadHandle&) override;
@@ -186,6 +185,16 @@ public:
     bool onDown(const std::shared_ptr<api::StorageMessage>& msg) override;
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& stateCmd) override;
+
+    /*
+     * When invoked, merges to the node will be BUSY-bounced by the throttler
+     * for a configurable period of time instead of being processed.
+     *
+     * Thread safe, but must not be called if _stateLock is already held, or
+     * deadlock will occur.
+     */
+    void apply_timed_backpressure();
+    bool backpressure_mode_active() const;
 
     // For unit testing only
     const ActiveMergeMap& getActiveMerges() const { return _merges; }
@@ -206,8 +215,7 @@ private:
     friend class ThreadRendezvousGuard; // impl in .cpp file
 
     // Simple helper class for centralizing chaining logic
-    struct MergeNodeSequence
-    {
+    struct MergeNodeSequence {
         const api::MergeBucketCommand& _cmd;
         std::vector<api::MergeBucketCommand::Node> _sortedNodes;
         std::size_t _sortedIndex; // Index of current storage node in the sorted node sequence
@@ -327,6 +335,11 @@ private:
      * merge can be processed.
      */
     bool canProcessNewMerge() const;
+
+    bool merge_is_backpressure_throttled(const api::MergeBucketCommand& cmd) const;
+    void bounce_backpressure_throttled_merge(const api::MergeBucketCommand& cmd, MessageGuard& guard);
+    bool merge_has_this_node_as_source_only_node(const api::MergeBucketCommand& cmd) const;
+    bool backpressure_mode_active_no_lock() const;
 
     void sendReply(const api::MergeBucketCommand& cmd,
                    const api::ReturnCode& result,

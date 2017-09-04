@@ -1,10 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <cppunit/extensions/HelperMacros.h>
-#include <memory>
-#include <iterator>
-#include <vector>
-#include <algorithm>
-#include <ctime>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <tests/common/testhelper.h>
@@ -16,6 +11,13 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <unordered_set>
+#include <memory>
+#include <iterator>
+#include <vector>
+#include <algorithm>
+#include <chrono>
+#include <thread>
 
 using namespace document;
 using namespace storage::api;
@@ -24,12 +26,12 @@ namespace storage {
 
 namespace {
 
-struct MergeBuilder
-{
+struct MergeBuilder {
     document::BucketId _bucket;
     api::Timestamp _maxTimestamp;
     std::vector<uint16_t> _nodes;
     std::vector<uint16_t> _chain;
+    std::unordered_set<uint16_t> _source_only;
     uint64_t _clusterStateVersion;
 
     MergeBuilder(const document::BucketId& bucket)
@@ -40,6 +42,8 @@ struct MergeBuilder
     {
         nodes(0, 1, 2);
     }
+
+    ~MergeBuilder();
 
     MergeBuilder& nodes(uint16_t n0) {
         _nodes.push_back(n0);
@@ -82,11 +86,17 @@ struct MergeBuilder
         _chain.push_back(n2);
         return *this;
     }
+    MergeBuilder& source_only(uint16_t node) {
+        _source_only.insert(node);
+        return *this;
+    }
 
     api::MergeBucketCommand::SP create() const {
         std::vector<api::MergeBucketCommand::Node> n;
         for (uint32_t i = 0; i < _nodes.size(); ++i) {
-            n.push_back(_nodes[i]);
+            uint16_t node = _nodes[i];
+            bool source_only = (_source_only.find(node) != _source_only.end());
+            n.emplace_back(node, source_only);
         }
         std::shared_ptr<MergeBucketCommand> cmd(
                 new MergeBucketCommand(_bucket, n, _maxTimestamp,
@@ -97,6 +107,8 @@ struct MergeBuilder
     }
 };
 
+MergeBuilder::~MergeBuilder() {}
+
 std::shared_ptr<api::SetSystemStateCommand>
 makeSystemStateCmd(const std::string& state)
 {
@@ -106,8 +118,7 @@ makeSystemStateCmd(const std::string& state)
 
 } // anon ns
 
-class MergeThrottlerTest : public CppUnit::TestFixture
-{
+class MergeThrottlerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(MergeThrottlerTest);
     CPPUNIT_TEST(testMergesConfig);
     CPPUNIT_TEST(testChain);
@@ -133,6 +144,8 @@ class MergeThrottlerTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testGetBucketDiffCommandNotInActiveSetIsRejected);
     CPPUNIT_TEST(testApplyBucketDiffCommandNotInActiveSetIsRejected);
     CPPUNIT_TEST(testNewClusterStateAbortsAllOutdatedActiveMerges);
+    CPPUNIT_TEST(backpressure_busy_bounces_merges_for_configured_duration);
+    CPPUNIT_TEST(source_only_merges_are_not_affected_by_backpressure);
     CPPUNIT_TEST_SUITE_END();
 public:
     void setUp() override;
@@ -162,6 +175,8 @@ public:
     void testGetBucketDiffCommandNotInActiveSetIsRejected();
     void testApplyBucketDiffCommandNotInActiveSetIsRejected();
     void testNewClusterStateAbortsAllOutdatedActiveMerges();
+    void backpressure_busy_bounces_merges_for_configured_duration();
+    void source_only_merges_are_not_affected_by_backpressure();
 private:
     static const int _storageNodeCount = 3;
     static const int _messageWaitTime = 100;
@@ -247,7 +262,7 @@ checkChain(const StorageMessage::SP& msg,
 
 void waitUntilMergeQueueIs(MergeThrottler& throttler, std::size_t sz, int timeout)
 {
-    std::time_t start = std::time(0);
+    const auto start = std::chrono::steady_clock::now();
     while (true) {
         std::size_t count;
         {
@@ -257,14 +272,14 @@ void waitUntilMergeQueueIs(MergeThrottler& throttler, std::size_t sz, int timeou
         if (count == sz) {
             break;
         }
-        std::time_t now = std::time(0);
-        if (now - start > timeout) {
+        auto now = std::chrono::steady_clock::now();
+        if (now - start > std::chrono::seconds(timeout)) {
             std::ostringstream os;
             os << "Timeout while waiting for merge queue with " << sz << " items. Had "
                << count << " at timeout.";
             throw vespalib::IllegalStateException(os.str(), VESPA_STRLOC);
         }
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -1491,8 +1506,7 @@ MergeThrottlerTest::sendAndExpectReply(
     _topLinks[0]->waitForMessage(expectedReplyType, _messageWaitTime);
     StorageMessage::SP reply(_topLinks[0]->getAndRemoveMessage(
                     expectedReplyType));
-    api::StorageReply& storageReply(
-            dynamic_cast<api::StorageReply&>(*reply));
+    auto& storageReply = dynamic_cast<api::StorageReply&>(*reply);
     CPPUNIT_ASSERT_EQUAL(expectedResultCode,
                          storageReply.getResult().getResult());
 }
@@ -1559,6 +1573,45 @@ MergeThrottlerTest::testNewClusterStateAbortsAllOutdatedActiveMerges()
                            api::MessageType::GETBUCKETDIFF_REPLY,
                            api::ReturnCode::ABORTED);
     }
+}
+
+void MergeThrottlerTest::backpressure_busy_bounces_merges_for_configured_duration() {
+    _servers[0]->getClock().setAbsoluteTimeInSeconds(1000);
+
+    CPPUNIT_ASSERT(!_throttlers[0]->backpressure_mode_active());
+    _throttlers[0]->apply_timed_backpressure();
+    CPPUNIT_ASSERT(_throttlers[0]->backpressure_mode_active());
+    document::BucketId bucket(16, 6789);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().local.failures.busy.getValue());
+
+    sendAndExpectReply(MergeBuilder(bucket).clusterStateVersion(10).create(),
+                       api::MessageType::MERGEBUCKET_REPLY,
+                       api::ReturnCode::BUSY);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().local.failures.busy.getValue());
+
+    _servers[0]->getClock().addSecondsToTime(15); // Test-config has duration set to 15 seconds
+    // Backpressure has now been lifted. New merges should be forwarded
+    // to next node in chain as expected instead of being bounced with a reply.
+    sendMerge(MergeBuilder(bucket).clusterStateVersion(10));
+    _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
+
+    CPPUNIT_ASSERT(!_throttlers[0]->backpressure_mode_active());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+}
+
+void MergeThrottlerTest::source_only_merges_are_not_affected_by_backpressure() {
+    _servers[2]->getClock().setAbsoluteTimeInSeconds(1000);
+    _throttlers[2]->apply_timed_backpressure();
+    document::BucketId bucket(16, 6789);
+
+    _topLinks[2]->sendDown(MergeBuilder(bucket).clusterStateVersion(10).chain(0, 1).source_only(2).create());
+    _topLinks[2]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
 }
 
 // TODO test message queue aborting (use rendezvous functionality--make guard)

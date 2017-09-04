@@ -7,7 +7,7 @@
 #include "mergehandler.h"
 #include "diskmoveoperationhandler.h"
 #include "persistenceutil.h"
-#include "providershutdownwrapper.h"
+#include "provider_error_wrapper.h"
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
 
