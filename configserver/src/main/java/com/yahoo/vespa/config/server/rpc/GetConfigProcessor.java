@@ -112,7 +112,7 @@ class GetConfigProcessor implements Runnable {
         } catch (UnknownConfigIdException e) {
             handleError(request, ErrorCode.ILLEGAL_CONFIGID, "Illegal config id " + request.getConfigKey().getConfigId());
             return;
-        } catch (Exception e) {
+        } catch (Exception | Error e) {
             log.log(Level.SEVERE, "Unexpected error handling config request", e);
             handleError(request, ErrorCode.INTERNAL_ERROR, "Internal error " + e.getMessage());
             return;
