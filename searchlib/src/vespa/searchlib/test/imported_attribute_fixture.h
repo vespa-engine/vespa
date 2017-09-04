@@ -101,6 +101,11 @@ struct ImportedAttributeFixture {
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
         assert(from_lid < reference_attr->getNumDocs());
         mapper_factory->_map[via_gid] = to_lid;
+        if (to_lid != 0) {
+            reference_attr->notifyReferencedPut(via_gid, to_lid);
+        } else {
+            reference_attr->notifyReferencedRemove(via_gid);
+        }
         reference_attr->update(from_lid, via_gid);
         reference_attr->commit();
     }

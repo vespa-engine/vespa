@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <map>
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_listener_test");
@@ -19,6 +20,7 @@ using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+using search::attribute::test::MockGidToLidMapperFactory;
 
 namespace proton {
 
@@ -32,38 +34,13 @@ vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
 vespalib::string doc3("id:test:music::3");
 
-using MockGidToLidMap = std::map<GlobalId, uint32_t>;
-
-struct MyGidToLidMapper : public search::IGidToLidMapper
+struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
 {
-    const MockGidToLidMap &_map;
-    MyGidToLidMapper(const MockGidToLidMap &map)
-        : _map(map)
-    {
-    }
-    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override {
-        auto itr = _map.find(gid);
-        if (itr != _map.end()) {
-            return itr->second;
-        } else {
-            return 0u;
-        }
-    }
-};
-
-struct MyGidToLidMapperFactory : public search::IGidToLidMapperFactory
-{
-    MockGidToLidMap _map;
-
     MyGidToLidMapperFactory()
-        : _map()
+        : MockGidToLidMapperFactory()
     {
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
-    }
-
-    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const override {
-        return std::make_unique<MyGidToLidMapper>(_map);
     }
 };
 

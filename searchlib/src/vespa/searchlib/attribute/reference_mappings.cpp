@@ -54,13 +54,6 @@ ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
 }
 
 void
-ReferenceMappings::syncMappings(const Reference &entry)
-{
-    syncReverseMappingIndices(entry);
-    syncForwardMapping(entry);
-}
-
-void
 ReferenceMappings::removeReverseMapping(const Reference &entry, uint32_t lid)
 {
     EntryRef revMapIdx = entry.revMapIdx();
