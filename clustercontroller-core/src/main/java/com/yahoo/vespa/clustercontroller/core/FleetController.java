@@ -23,7 +23,16 @@ import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import java.io.FileNotFoundException;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
