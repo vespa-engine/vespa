@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -9,9 +8,8 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +37,7 @@ public class NodePrioritizer {
     private final NodeSpec requestedNodes;
     private final ApplicationId appId;
     private final ClusterSpec clusterSpec;
-
+    private final NameResolver nameResolver;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
@@ -50,12 +46,12 @@ public class NodePrioritizer {
     /** This is before we mock DNS to resolve on test IP that we use in tests */
     public static boolean unitTesting = false;
 
-    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares) {
+    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares, NameResolver nameResolver) {
         this.allNodes = Collections.unmodifiableList(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
-
+        this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, spares);
         this.headroomHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
 
@@ -76,22 +72,6 @@ public class NodePrioritizer {
 
         this.isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
         this.isDocker = isDocker();
-    }
-
-    /**
-     * From ipAddress - get hostname
-     *
-     * @return hostname or null if not able to do the lookup
-     */
-    static String lookupHostname(String ipAddress) {
-        try {
-            String hostname = InetAddress.getByName(ipAddress).getHostName();
-            if (unitTesting) return hostname;
-            return InetAddresses.isInetAddress(hostname) ? null : hostname;
-        } catch (UnknownHostException e) {
-            Logger.getLogger(NodePrioritizer.class.getName()).log(Level.FINER, "Unable to resolve ipaddress", e);
-        }
-        return null;
     }
 
     /**
@@ -213,10 +193,10 @@ public class NodePrioritizer {
                     Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
                     if (ipAddresses.isEmpty()) continue;
                     String ipAddress = ipAddresses.stream().findFirst().get();
-                    String hostname = lookupHostname(ipAddress);
-                    if (hostname == null) continue;
+                    Optional<String> hostname = nameResolver.getHostname(ipAddress);
+                    if (!hostname.isPresent()) continue;
                     Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
-                            Collections.emptySet(), hostname, Optional.of(node.hostname()), getFlavor(requestedNodes), NodeType.tenant);
+                            Collections.emptySet(), hostname.get(), Optional.of(node.hostname()), getFlavor(requestedNodes), NodeType.tenant);
                     PrioritizableNode nodePri = toNodePriority(newNode, false, true);
                     if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                         nodes.put(newNode, nodePri);
