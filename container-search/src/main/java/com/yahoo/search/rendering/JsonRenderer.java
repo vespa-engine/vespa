@@ -488,7 +488,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         if (id != null)
             generator.writeStringField(ID, id);
 
-        generator.writeNumberField(RELEVANCE, hit.getRelevance().getScore());
+        generator.writeFieldName(RELEVANCE);
+        generator.writeNumber(hit.getRelevance().toString());
 
         if (hit.types().size() > 0) { // TODO: Remove types rendering on Vespa 7
             generator.writeArrayFieldStart(TYPES);
