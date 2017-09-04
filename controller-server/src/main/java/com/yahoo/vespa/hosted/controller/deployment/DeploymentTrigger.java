@@ -280,11 +280,6 @@ public class DeploymentTrigger {
             return application;
         }
 
-        if (application.deploymentJobs().isSelfTriggering()) {
-            log.info("Not triggering " + jobType + " for self-triggering " + application);
-            return application;
-        }
-
         log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                cause));

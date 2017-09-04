@@ -147,8 +147,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 JobType.fromId(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
-                jobError,
-                report.field("selfTriggering").asBool()
+                jobError
         );
     }
 
