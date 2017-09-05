@@ -47,7 +47,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 public class StorageMaintainer {
     private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static Optional<String> kernelVersion = Optional.empty();
 
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
@@ -231,11 +230,7 @@ public class StorageMaintainer {
         attributes.put("region", environment.getRegion());
         attributes.put("environment", environment.getEnvironment());
         attributes.put("flavor", nodeSpec.nodeFlavor);
-        try {
-            attributes.put("kernel_version", getKernelVersion());
-        } catch (Throwable ignored) {
-            attributes.put("kernel_version", "unknown");
-        }
+        attributes.put("kernel_version", System.getProperty("os.version"));
 
         nodeSpec.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
         nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
@@ -319,21 +314,6 @@ public class StorageMaintainer {
                 .map(configServer -> "http://" +  configServer + ":" + 4080)
                 .collect(Collectors.joining(","));
         return executeMaintainer("com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier", configServers);
-    }
-
-
-
-    private String getKernelVersion() throws IOException, InterruptedException {
-        if (! kernelVersion.isPresent()) {
-            Pair<Integer, String> result = new ProcessExecuter().exec(new String[]{"uname", "-r"});
-            if (result.getFirst() == 0) {
-                kernelVersion = Optional.of(result.getSecond().trim());
-            } else {
-                throw new RuntimeException("Failed to get kernel version\n" + result);
-            }
-        }
-
-        return kernelVersion.orElse("unknown");
     }
 
 
