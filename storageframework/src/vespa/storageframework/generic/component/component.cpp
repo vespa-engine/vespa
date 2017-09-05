@@ -4,10 +4,8 @@
 #include "componentregister.h"
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
-#include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 void
 Component::open()
@@ -137,6 +135,4 @@ Component::requestShutdown(vespalib::stringref reason)
     _componentRegister->requestShutdown(reason);
 }
 
-} // framework
-} // storage
-
+}

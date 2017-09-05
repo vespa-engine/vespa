@@ -56,7 +56,7 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
     int newPort = config->httpport;
         // If server is already running, ignore config updates that doesn't
         // alter port, or suggests random port.
-    if (_httpServer.get() != 0) {
+    if (_httpServer) {
         if (newPort == 0 || newPort == _port) return;
     }
         // Try to create new server before destroying old.
@@ -88,21 +88,23 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
         if (!started) {
             std::ostringstream ost;
             ost << "Failed to start status HTTP server using port " << newPort << ".";
-            if (_httpServer.get() != 0) {
+            if (_httpServer) {
                 ost << " Status server still running on port " << _port << " instead of suggested port " << newPort;
             }
             LOG(fatal, "%s.", ost.str().c_str());
             _component->requestShutdown(ost.str());
+            _httpServer.reset();
+            return;
         }
             // Now that we know config update went well, update internal state
         _port = server->getListenPort();
         LOG(config, "Status pages now available on port %u", _port);
-        if (_httpServer.get() != 0) {
+        if (_httpServer) {
             LOG(debug, "Shutting down old status server.");
-            _httpServer.reset(0);
+            _httpServer.reset();
             LOG(debug, "Done shutting down old status server.");
         }
-    } else if (_httpServer.get() != 0) {
+    } else if (_httpServer) {
         LOG(info, "No longer running status server as negative port was given "
                   "in config, indicating not to run a server.");
     }
