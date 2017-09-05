@@ -32,6 +32,10 @@ mv pom.xml pom.xml.hide
 tito init
 tito tag --use-version=$VERSION --no-auto-changelog
 
+# Create git release tag
+git tag $VERSION $GITREF
+git push $VERSION
+
 # Push changes and tag to branc
 git push -u origin --follow-tags $RPM_BRANCH
 
