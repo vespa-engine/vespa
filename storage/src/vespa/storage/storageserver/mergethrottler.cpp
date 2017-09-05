@@ -520,13 +520,11 @@ MergeThrottler::rejectOutdatedQueuedMerges(
         uint32_t rejectLessThanVersion)
 {
     // Flush all queued merges that have an outdated version
-    MergePriorityQueue::iterator queueEnd = _queue.end();
-    for (MergePriorityQueue::iterator i = _queue.begin(); i != queueEnd;) {
-        MergePriorityQueue::iterator erase_iter = i;
+    auto queueEnd = _queue.end();
+    for (auto i = _queue.begin(); i != queueEnd;) {
+        auto erase_iter = i;
         ++i;
-        if (rejectMergeIfOutdated(
-                    erase_iter->_msg, rejectLessThanVersion, msgGuard))
-        {
+        if (rejectMergeIfOutdated(erase_iter->_msg, rejectLessThanVersion, msgGuard)){
             _queue.erase(erase_iter);
         }
     }
@@ -687,8 +685,17 @@ void MergeThrottler::bounce_backpressure_throttled_merge(const api::MergeBucketC
 }
 
 void MergeThrottler::apply_timed_backpressure() {
-    vespalib::LockGuard lock(_stateLock);
+    MessageGuard msg_guard(_stateLock, *this);
     _throttle_until_time = _component.getClock().getMonotonicTime() + _backpressure_duration;
+    backpressure_bounce_all_queued_merges(msg_guard);
+}
+
+void MergeThrottler::backpressure_bounce_all_queued_merges(MessageGuard& guard) {
+    for (auto& qm : _queue) {
+        auto& merge_cmd = dynamic_cast<api::MergeBucketCommand&>(*qm._msg);
+        bounce_backpressure_throttled_merge(merge_cmd, guard);
+    }
+    _queue.clear();
 }
 
 bool MergeThrottler::backpressure_mode_active() const {
