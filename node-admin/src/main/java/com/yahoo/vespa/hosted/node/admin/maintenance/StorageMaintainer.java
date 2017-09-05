@@ -187,16 +187,18 @@ public class StorageMaintainer {
                 maintainerExecutor.addJob("delete-files")
                         .withArgument("basePath", path)
                         .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                        .withArgument("fileNameRegex", ".*\\.log\\..+")
-                        .withArgument("recursive", false);
-
-                maintainerExecutor.addJob("delete-files")
-                        .withArgument("basePath", path)
-                        .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                        .withArgument("fileNameRegex", ".*QueryAccessLog.*")
+                        .withArgument("fileNameRegex", ".*\\.log.+")
                         .withArgument("recursive", false);
             }
         }
+
+        Path qrsDir = environment.pathInNodeAdminFromPathInNode(
+                containerName, getDefaults().underVespaHome("logs/vespa/qrs"));
+        maintainerExecutor.addJob("delete-files")
+                .withArgument("basePath", qrsDir)
+                .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
+                .withArgument("fileNameRegex", ".*QueryAccessLog.*")
+                .withArgument("recursive", false);
 
         Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(
                 containerName, getDefaults().underVespaHome("logs/vespa/logarchive"));
