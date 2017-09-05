@@ -16,10 +16,12 @@ import org.junit.rules.ExpectedException;
 
 import java.io.StringReader;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import static org.fest.assertions.Assertions.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Oyvind Gronnesby
@@ -111,14 +113,14 @@ public class ControllerRotationRepositoryTest {
     public void application_with_rotation_reused() {
         Set<Rotation> rotations = repository.getOrAssignRotation(applicationId, deploymentSpec);
         Rotation assignedRotation = new Rotation(new RotationId("foo-1"), "foo-1.com");
-        assertThat(rotations).containsOnly(assignedRotation);
+        assertContainsOnly(assignedRotation, rotations);
     }
     
     @Test
     public void names_stripped() {        
         Set<Rotation> rotations = repositoryWhitespaces.getOrAssignRotation(applicationId, deploymentSpec);
         Rotation assignedRotation = new Rotation(new RotationId("foo-1"), "foo-1.com");
-        assertThat(rotations).containsOnly(assignedRotation);
+        assertContainsOnly(assignedRotation, rotations);
     }
 
     @Test
@@ -126,7 +128,7 @@ public class ControllerRotationRepositoryTest {
         ApplicationId other = ApplicationId.from("othertenant", "otherapplication", "default");
         Set<Rotation> rotations = repository.getOrAssignRotation(other, deploymentSpec);
         Rotation assignedRotation = new Rotation(new RotationId("foo-2"), "foo-2.com");
-        assertThat(rotations).containsOnly(assignedRotation);
+        assertContainsOnly(assignedRotation, rotations);
     }
 
     @Test
@@ -154,30 +156,28 @@ public class ControllerRotationRepositoryTest {
     public void application_with_rotation_but_does_not_qualify() {
         Set<Rotation> rotations = repository.getOrAssignRotation(applicationId, deploymentSpecOneRegion);
         Rotation assignedRotation = new Rotation(new RotationId("foo-1"), "foo-1.com");
-        assertThat(rotations).containsOnly(assignedRotation);
+        assertContainsOnly(assignedRotation, rotations);
     }
 
     @Test
     public void application_with_rotation_is_listed() {
         repository.getOrAssignRotation(applicationId, deploymentSpec);
         Set<URI> uris = repository.getRotationUris(applicationId);
-        assertThat(uris).isEqualTo(
-            Collections.singleton(URI.create("http://tumblr-search.msbe.global.vespa.yahooapis.com:4080/"))
-        );
+        assertEquals(Collections.singleton(URI.create("http://tumblr-search.msbe.global.vespa.yahooapis.com:4080/")), uris);
     }
 
     @Test
     public void application_without_rotation_is_empty() {
         ApplicationId other = ApplicationId.from("othertenant", "otherapplication", "default");
         Set<URI> uris = repository.getRotationUris(other);
-        assertThat(uris).isEmpty();
+        assertTrue(uris.isEmpty());
     }
 
     @Test
     public void application_without_serviceid_and_two_regions() {
         ApplicationId other = ApplicationId.from("othertenant", "otherapplication", "default");
         Set<Rotation> rotations = repository.getOrAssignRotation(other, deploymentSpecNoServiceId);
-        assertThat(rotations).isEmpty();
+        assertTrue(rotations.isEmpty());
     }
 
     @Test
@@ -194,7 +194,12 @@ public class ControllerRotationRepositoryTest {
     public void application_with_corp_region_and_two_non_corp_region() {
         ApplicationId other = ApplicationId.from("othertenant", "otherapplication", "default");
         Set<Rotation> rotations = repository.getOrAssignRotation(other, deploymentSpecWithAdditionalCorpZone);
-        assertThat(rotations).containsOnly(new Rotation(new RotationId("foo-2"), "foo-2.com"));
+        assertContainsOnly(new Rotation(new RotationId("foo-2"), "foo-2.com"), rotations);
+    }
+
+    private static <T> void assertContainsOnly(T item, Collection<T> items) {
+        assertTrue("Collection contains only " + item.toString(),
+                   items.size() == 1 && items.contains(item));
     }
 
 }
