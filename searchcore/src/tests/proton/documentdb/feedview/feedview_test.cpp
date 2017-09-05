@@ -755,13 +755,14 @@ struct SearchableFeedViewFixture : public FixtureBase
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
                 _dmsc,
+                *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
                 _lidReuseDelayer,
                 _commitTimeTracker),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit),
-           SearchableFeedView::Context(iw, _gidToLidChangeHandler))
+           SearchableFeedView::Context(iw))
     {
         runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
@@ -776,6 +777,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
                 _dmsc,
+                *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
                 _lidReuseDelayer,

@@ -8,8 +8,6 @@
 
 namespace proton {
 
-class IGidToLidChangeHandler;
-
 /**
  * The feed view used by the searchable sub database.
  *
@@ -25,17 +23,14 @@ public:
 
     struct Context {
         const IIndexWriter::SP &_indexWriter;
-        const std::shared_ptr<IGidToLidChangeHandler> &_gidToLidChangeHandler;
 
-        Context(const IIndexWriter::SP &indexWriter,
-                const std::shared_ptr<IGidToLidChangeHandler> &gidToLidChangeHandler);
+        Context(const IIndexWriter::SP &indexWriter);
         ~Context();
     };
 
 private:
     const IIndexWriter::SP    _indexWriter;
     const bool                _hasIndexedFields;
-    const std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
 
@@ -96,7 +91,7 @@ public:
 
     virtual ~SearchableFeedView();
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
-    const std::shared_ptr<IGidToLidChangeHandler> &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
+//    const std::shared_ptr<IGidToLidChangeHandler> &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
     void sync() override;
 };
 

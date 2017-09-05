@@ -47,12 +47,13 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
             StoreOnlyFeedView::Context(summaryAdapter,
                     schema,
                     searchView->getDocumentMetaStore(),
+                    curr->getGidToLidChangeHandler(),
                     repo,
                     curr->getWriteService(),
                     curr->getLidReuseDelayer(), curr->getCommitTimeTracker()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(attrWriter, curr->getDocIdLimit()),
-            SearchableFeedView::Context(indexWriter, curr->getGidToLidChangeHandler()))));
+            SearchableFeedView::Context(indexWriter))));
 }
 
 void
