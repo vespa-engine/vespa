@@ -1,6 +1,5 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ## Commands per search definition to be applied to query terms per index before searching
-version=2
 namespace=search.config
 
 ## The name of the search definition this index info applies to
