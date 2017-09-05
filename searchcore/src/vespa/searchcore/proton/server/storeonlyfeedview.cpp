@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
+#include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -612,17 +613,17 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const DocumentId
                 op.getLid() != op.getPrevLid())
             {
                 moveMetaData(_metaStore, docId, op);
-                notifyPutGidToLidChange(docId.getGlobalId(), op.getLid(), serialNum);
+                _gidToLidChangeHandler.notifyPut(docId.getGlobalId(), op.getLid(), serialNum);
             } else {
                 putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
                 if (op.getDbDocumentId() != op.getPrevDbDocumentId()) {
-                    notifyPutGidToLidChange(docId.getGlobalId(), op.getLid(), serialNum);
+                    _gidToLidChangeHandler.notifyPut(docId.getGlobalId(), op.getLid(), serialNum);
                 }
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             removeMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
-            notifyRemoveGidToLidChange(docId.getGlobalId(), serialNum);
-            notifyRemoveDoneGidToLidChange(docId.getGlobalId(), serialNum);
+            _gidToLidChangeHandler.notifyRemove(docId.getGlobalId(), serialNum);
+            _gidToLidChangeHandler.notifyRemoveDone(docId.getGlobalId(), serialNum);
         }
         _metaStore.commit(serialNum, serialNum);
     }
@@ -653,8 +654,8 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         std::vector<document::GlobalId> gidsToRemove(getGidsToRemove(_metaStore, lidsToRemove));
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         for (const auto &gid : gidsToRemove) {
-            notifyRemoveGidToLidChange(gid, serialNum);
-            notifyRemoveDoneGidToLidChange(gid, serialNum);
+            _gidToLidChangeHandler.notifyRemove(gid, serialNum);
+            _gidToLidChangeHandler.notifyRemoveDone(gid, serialNum);
         }
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
@@ -807,14 +808,5 @@ StoreOnlyFeedView::getDocumentMetaStorePtr() const
 {
     return &_documentMetaStoreContext->get();
 }
-
-void
-StoreOnlyFeedView::notifyPutGidToLidChange(const document::GlobalId &, uint32_t, SerialNum) {}
-
-void
-StoreOnlyFeedView::notifyRemoveGidToLidChange(const document::GlobalId &, SerialNum) {}
-
-void
-StoreOnlyFeedView::notifyRemoveDoneGidToLidChange(const document::GlobalId &, SerialNum) {}
 
 } // namespace proton
