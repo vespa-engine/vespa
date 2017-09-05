@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.buildergen;
 
 import com.google.common.io.Files;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.codegen.ConfigGenerator;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 
-import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static junit.framework.TestCase.assertNotNull;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -43,7 +43,7 @@ public class ConfigBuilderGeneratorTest {
         root.setString("intval", "3");
         root.setString("stringval", "Hello, world");
         payloadApplier.applyPayload(new ConfigPayload(slime));
-        String className = createClassName(key.getName());
+        String className = ConfigGenerator.createClassName(key.getName());
         ConfigInstance instance = (ConfigInstance) builder.getClass().getClassLoader().loadClass("com.yahoo." + key.getNamespace() + "." + className).getConstructor(new Class<?>[]{builder.getClass()}).newInstance(builder);
         assertNotNull(instance);
         assertThat(instance.toString(), is("intval 3\nstringval \"Hello, world\""));
