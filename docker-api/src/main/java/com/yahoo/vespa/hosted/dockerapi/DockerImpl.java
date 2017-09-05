@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
+import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
@@ -165,8 +166,10 @@ public class DockerImpl implements Docker {
             synchronized (monitor) {
                 if (scheduledPulls.contains(image)) return true;
                 if (imageIsDownloaded(image)) return false;
+
+                scheduledPulls.add(image);
                 dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
-                return false;
+                return true;
             }
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
@@ -183,14 +186,15 @@ public class DockerImpl implements Docker {
     /**
      * Check if a given image is already in the local registry
      */
-    private boolean imageIsDownloaded(final DockerImage dockerImage) {
+    boolean imageIsDownloaded(final DockerImage dockerImage) {
         return inspectImage(dockerImage).isPresent();
     }
 
-    private Optional<Image> inspectImage(DockerImage dockerImage) {
+    private Optional<InspectImageResponse> inspectImage(DockerImage dockerImage) {
         try {
-            return dockerClient.listImagesCmd().withShowAll(true)
-                    .withImageNameFilter(dockerImage.asString()).exec().stream().findFirst();
+            return Optional.of(dockerClient.inspectImageCmd(dockerImage.asString()).exec());
+        } catch (NotFoundException e) {
+            return Optional.empty();
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to inspect image '" + dockerImage.asString() + "'", e);
@@ -449,7 +453,7 @@ public class DockerImpl implements Docker {
 
         @Override
         public void onComplete() {
-            Optional<Image> image = inspectImage(dockerImage);
+            Optional<InspectImageResponse> image = inspectImage(dockerImage);
             if (image.isPresent()) { // Download successful, update image GC with the newly downloaded image
                 dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(image.get().getId()));
                 removeScheduledPoll(dockerImage);
@@ -515,7 +519,7 @@ public class DockerImpl implements Docker {
                 .withDockerCmdExecFactory(dockerFactory);
     }
 
-    private void setMetrics(MetricReceiverWrapper metricReceiver) {
+    void setMetrics(MetricReceiverWrapper metricReceiver) {
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
     }
