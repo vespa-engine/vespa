@@ -4,11 +4,14 @@
 
 #include "operationdonecontext.h"
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/document/base/globalid.h>
+#include <vespa/searchlib/common/serialnum.h>
 
 namespace proton
 {
 
 class IDocumentMetaStore;
+class IGidToLidChangeHandler;
 
 
 /**
@@ -23,6 +26,9 @@ class RemoveDoneContext : public OperationDoneContext
 {
     vespalib::Executor &_executor;
     std::unique_ptr<vespalib::Executor::Task> _task;
+    IGidToLidChangeHandler &_gidToLidChangeHandler;
+    document::GlobalId _gid;
+    search::SerialNum _serialNum;
 
 public:
     RemoveDoneContext(std::unique_ptr<FeedToken> token,
@@ -30,7 +36,10 @@ public:
                       PerDocTypeFeedMetrics &metrics,
                       vespalib::Executor &executor,
                       IDocumentMetaStore &documentMetaStore,
-                      uint32_t lid);
+                      IGidToLidChangeHandler &gidToLidChangeHandler,
+                      const document::GlobalId &gid,
+                      uint32_t lid,
+                      search::SerialNum serialNum);
 
     virtual ~RemoveDoneContext();
 };
