@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
-#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".status");
@@ -92,8 +91,8 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
             if (_httpServer.get() != 0) {
                 ost << " Status server still running on port " << _port << " instead of suggested port " << newPort;
             }
-            LOG(fatal, "Failed to start status HTTP server using port %u. Old port was %u. Exiting.", newPort, _port);
-            std::quick_exit(67);
+            LOG(fatal, "%s.", ost.str().c_str());
+            _component->requestShutdown(ost.str());
         }
             // Now that we know config update went well, update internal state
         _port = server->getListenPort();
