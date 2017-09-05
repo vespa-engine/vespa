@@ -60,6 +60,8 @@ my $VESPA_HOME = $ENV{'VESPA_HOME'};
 
 # END perl environment bootstrap section
 
+# TODO: Remove on Vespa 7
+
 use 5.006_001;
 use strict;
 use warnings;
