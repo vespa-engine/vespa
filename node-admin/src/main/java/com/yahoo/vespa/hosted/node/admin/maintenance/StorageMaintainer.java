@@ -143,12 +143,6 @@ public class StorageMaintainer {
             throw new RuntimeException("Disk usage command timedout, aborting.");
         }
         String output = IOUtils.readAll(new InputStreamReader(duCommand.getInputStream()));
-        String error = IOUtils.readAll(new InputStreamReader(duCommand.getErrorStream()));
-
-        if (! error.isEmpty()) {
-            throw new RuntimeException("Disk usage wrote to error log: " + error);
-        }
-
         String[] results = output.split("\t");
         if (results.length != 2) {
             throw new RuntimeException("Result from disk usage command not as expected: " + output);
