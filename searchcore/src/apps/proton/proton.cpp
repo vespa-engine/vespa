@@ -11,8 +11,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/app.h>
-
-#include <string>
 #include <iostream>
 
 #include <vespa/log/log.h>

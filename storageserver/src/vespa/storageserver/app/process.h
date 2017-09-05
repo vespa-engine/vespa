@@ -19,7 +19,6 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/subscription/configsubscriber.h>
 
-
 namespace document { class DocumentTypeRepo; }
 
 namespace storage {
