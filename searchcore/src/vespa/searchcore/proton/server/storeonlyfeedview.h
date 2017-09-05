@@ -170,7 +170,7 @@ private:
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
-    bool lookupDocId(const document::DocumentId &gid, Lid & lid) const;
+    bool lookupDocId(const document::DocumentId &docId, Lid & lid) const;
     void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
