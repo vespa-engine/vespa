@@ -31,6 +31,7 @@ class OperationDoneContext;
 class PutDoneContext;
 class RemoveDoneContext;
 class CommitTimeTracker;
+class IGidToLidChangeHandler;
 
 namespace documentmetastore { class ILidReuseDelayer; }
 
@@ -68,6 +69,7 @@ public:
         const ISummaryAdapter::SP               &_summaryAdapter;
         const search::index::Schema::SP         &_schema;
         const IDocumentMetaStoreContext::SP     &_documentMetaStoreContext;
+        IGidToLidChangeHandler                  &_gidToLidChangeHandler;
         const document::DocumentTypeRepo::SP    &_repo;
         searchcorespi::index::IThreadingService &_writeService;
         documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
@@ -76,6 +78,7 @@ public:
         Context(const ISummaryAdapter::SP &summaryAdapter,
                 const search::index::Schema::SP &schema,
                 const IDocumentMetaStoreContext::SP &documentMetaStoreContext,
+                IGidToLidChangeHandler &gidToLidChangeHandler,
                 const document::DocumentTypeRepo::SP &repo,
                 searchcorespi::index::IThreadingService &writeService,
                 documentmetastore::ILidReuseDelayer &lidReuseDelayer,
@@ -83,6 +86,7 @@ public:
             : _summaryAdapter(summaryAdapter),
               _schema(schema),
               _documentMetaStoreContext(documentMetaStoreContext),
+              _gidToLidChangeHandler(gidToLidChangeHandler),
               _repo(repo),
               _writeService(writeService),
               _lidReuseDelayer(lidReuseDelayer),
@@ -143,6 +147,7 @@ protected:
     searchcorespi::index::IThreadingService &_writeService;
     PersistentParams                         _params;
     IDocumentMetaStore                      &_metaStore;
+    IGidToLidChangeHandler                  &_gidToLidChangeHandler;
 
 private:
     searchcorespi::index::IThreadService & summaryExecutor() {
@@ -229,6 +234,7 @@ public:
     searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
     documentmetastore::ILidReuseDelayer &getLidReuseDelayer() { return _lidReuseDelayer; }
     CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
+    IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
 
     /**
      * Implements IFeedView.

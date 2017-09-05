@@ -37,10 +37,8 @@ bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone, uint32_t tr
 
 }
 
-SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter,
-                                     const std::shared_ptr<IGidToLidChangeHandler> &gidToLidChangeHandler)
-    : _indexWriter(indexWriter),
-      _gidToLidChangeHandler(gidToLidChangeHandler)
+SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter)
+    : _indexWriter(indexWriter)
 {}
 
 
@@ -52,8 +50,7 @@ SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOn
                                        Context ctx)
     : Parent(storeOnlyCtx, params, fastUpdateCtx),
       _indexWriter(ctx._indexWriter),
-      _hasIndexedFields(_schema->getNumIndexFields() > 0),
-      _gidToLidChangeHandler(ctx._gidToLidChangeHandler)
+      _hasIndexedFields(_schema->getNumIndexFields() > 0)
 { }
 
 SearchableFeedView::~SearchableFeedView() {}
@@ -264,19 +261,19 @@ SearchableFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCom
 void
 SearchableFeedView::notifyPutGidToLidChange(const document::GlobalId &gid, uint32_t lid, SerialNum serialNum)
 {
-    _gidToLidChangeHandler->notifyPut(gid, lid, serialNum);
+    _gidToLidChangeHandler.notifyPut(gid, lid, serialNum);
 }
 
 void
 SearchableFeedView::notifyRemoveGidToLidChange(const document::GlobalId &gid, SerialNum serialNum)
 {
-    _gidToLidChangeHandler->notifyRemove(gid, serialNum);
+    _gidToLidChangeHandler.notifyRemove(gid, serialNum);
 }
 
 void
 SearchableFeedView::notifyRemoveDoneGidToLidChange(const document::GlobalId &gid, SerialNum serialNum)
 {
-    _gidToLidChangeHandler->notifyRemoveDone(gid, serialNum);
+    _gidToLidChangeHandler.notifyRemoveDone(gid, serialNum);
 }
 
 } // namespace proton

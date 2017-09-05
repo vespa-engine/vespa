@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
+#include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
@@ -67,7 +68,17 @@ DocumentTypeRepo::SP myGetDocumentTypeRepo() {
     return repo;
 }
 
-struct MyMinimalFeedView : public StoreOnlyFeedView {
+struct MyMinimalFeedViewBase
+{
+    std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler;
+
+    MyMinimalFeedViewBase()
+        : gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
+    {
+    }
+};
+
+struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedView {
     using UP = std::unique_ptr<MyMinimalFeedView>;
 
     int removeMultiAttributesCount;
@@ -83,10 +94,12 @@ struct MyMinimalFeedView : public StoreOnlyFeedView {
                       CommitTimeTracker &commitTimeTracker,
                       const PersistentParams &params,
                       int &outstandingMoveOps_) :
+        MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
                           search::index::Schema::SP(),
                           DocumentMetaStoreContext::SP(
                                   new DocumentMetaStoreContext(metaStore)),
+                                                     *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
                                                      writeService,
                                                      lidReuseDelayer,
