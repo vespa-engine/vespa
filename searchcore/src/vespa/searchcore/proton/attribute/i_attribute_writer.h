@@ -61,7 +61,7 @@ public:
     /**
      * Commit all underlying attribute vectors with the given serial number.
      */
-    virtual void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
+    virtual void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
 };

@@ -328,8 +328,7 @@ FastAccessDocSubDB::onReprocessDone(SerialNum serialNum)
     IFeedView::SP feedView = _iFeedView.get();
     IAttributeWriter::SP attrWriter =
         static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
-    attrWriter->commit(serialNum,
-                       std::shared_ptr<search::IDestructorCallback>());
+    attrWriter->forceCommit(serialNum, std::shared_ptr<search::IDestructorCallback>());
     _writeService.attributeFieldWriter().sync();
     _writeService.summary().sync();
     Parent::onReprocessDone(serialNum);

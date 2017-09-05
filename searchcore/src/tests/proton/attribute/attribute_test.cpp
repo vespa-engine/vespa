@@ -152,7 +152,7 @@ struct Fixture
         _aw->remove(serialNum, lid, immediateCommit, emptyCallback);
     }
     void commit(SerialNum serialNum) {
-        _aw->commit(serialNum, emptyCallback);
+        _aw->forceCommit(serialNum, emptyCallback);
     }
     void assertExecuteHistory(std::vector<uint32_t> expExecuteHistory) {
         EXPECT_EQUAL(expExecuteHistory, _attributeFieldWriter.getExecuteHistory());
@@ -345,14 +345,14 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
     awDelayed.put(5, *doc, 4, false, emptyCallback);
     EXPECT_EQUAL(5u, a1->getNumDocs());
     EXPECT_EQUAL(3u, a1->getStatus().getLastSyncToken());
-    awDelayed.commit(6, emptyCallback);
+    awDelayed.forceCommit(6, emptyCallback);
     EXPECT_EQUAL(6u, a1->getStatus().getLastSyncToken());
 
     AttributeWriter awDelayedShort(f._m);
     awDelayedShort.put(7, *doc, 2, false, emptyCallback);
     EXPECT_EQUAL(6u, a1->getStatus().getLastSyncToken());
     awDelayedShort.put(8, *doc, 2, false, emptyCallback);
-    awDelayedShort.commit(8, emptyCallback);
+    awDelayedShort.forceCommit(8, emptyCallback);
     EXPECT_EQUAL(8u, a1->getStatus().getLastSyncToken());
 
     verifyAttributeContent(*a1, 2, "10");
@@ -364,7 +364,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
             2, false, emptyCallback);
     EXPECT_EQUAL(8u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "10");
-    awDelayed.commit(12, emptyCallback);
+    awDelayed.forceCommit(12, emptyCallback);
     EXPECT_EQUAL(12u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "30");
     

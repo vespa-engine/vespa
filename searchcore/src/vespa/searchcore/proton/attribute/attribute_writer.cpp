@@ -459,7 +459,7 @@ AttributeWriter::heartBeat(SerialNum serialNum)
 
 
 void
-AttributeWriter::commit(SerialNum serialNum, OnWriteDoneType onWriteDone)
+AttributeWriter::forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone)
 {
     for (const auto &wc : _writeContexts) {
         auto commitTask = std::make_unique<CommitTask>(wc, serialNum, onWriteDone);

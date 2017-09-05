@@ -106,7 +106,7 @@ void
 FastAccessFeedView::forceCommit(SerialNum serialNum,
                                 OnForceCommitDoneType onCommitDone)
 {
-    _attributeWriter->commit(serialNum, onCommitDone);
+    _attributeWriter->forceCommit(serialNum, onCommitDone);
     onCommitDone->registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(), &_docIdLimit);
     Parent::forceCommit(serialNum, onCommitDone);
 }

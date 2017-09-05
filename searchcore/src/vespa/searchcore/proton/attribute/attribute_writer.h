@@ -74,7 +74,7 @@ public:
     const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;
     }
-    void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
+    void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
 
     virtual void onReplayDone(uint32_t docIdLimit) override;
 };
