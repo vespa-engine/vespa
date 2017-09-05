@@ -89,7 +89,7 @@ class InvocationClient implements ReplyHandler, Runnable {
         if (!conn.cancelReply(this)) {
             return;
         }
-        req.setError(ErrorCode.TIMEOUT, "Request timed out");
+        req.setError(ErrorCode.TIMEOUT, "Request timed out after " + timeout + " seconds.");
         reqWaiter.handleRequestDone(req);
     }
 }

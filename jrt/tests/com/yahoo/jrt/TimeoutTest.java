@@ -56,6 +56,7 @@ public class TimeoutTest extends junit.framework.TestCase {
 
         assertTrue(req.isError());
         assertEquals(ErrorCode.TIMEOUT, req.errorCode());
+        assertEquals("Request timed out after 0.1 seconds.", req.errorMessage());
         assertEquals(0, req.returnValues().size());
     }
 
