@@ -54,12 +54,11 @@ class GroupPreparer {
 
                 // Create a prioritized set of nodes
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeRepository.getNodes(),
-                        application,
-                        cluster,
-                        requestedNodes,
-                        nodeRepository.getAvailableFlavors(),
-                        nofSpares,
-                        nodeRepository.nameResolver());
+                                                                  application,
+                                                                  cluster,
+                                                                  requestedNodes,
+                                                                  nodeRepository.getAvailableFlavors(),
+                                                                  nofSpares);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);

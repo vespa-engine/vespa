@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -45,11 +44,6 @@ import static org.junit.Assert.fail;
  * @author mortent
  */
 public class DynamicDockerProvisioningTest {
-
-    @Before
-    public void setup() {
-        NodePrioritizer.unitTesting = true;
-    }
 
     /**
      * Test relocation of nodes that violate headroom.

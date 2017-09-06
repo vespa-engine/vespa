@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
 import java.time.Clock;
@@ -59,13 +58,9 @@ public class MockNodeRepository extends NodeRepository {
 
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
-        NodePrioritizer.unitTesting = true;
+
         List<Node> nodes = new ArrayList<>();
 
-        MockNameResolver nameResolver = (MockNameResolver)nameResolver();
-        nameResolver.addRecord("docker-node-1", "::2");
-        nameResolver.addRecord("docker-node-2", "::3");
-        nameResolver.addRecord("docker-node-3", "::4");
         final List<String> ipAddressesForAllHost = Arrays.asList("127.0.0.1", "::1");
         Collections.sort(ipAddressesForAllHost);
         final HashSet<String> ipAddresses = new HashSet<>(ipAddressesForAllHost);
