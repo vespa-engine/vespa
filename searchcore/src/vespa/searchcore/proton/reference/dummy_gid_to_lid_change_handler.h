@@ -13,35 +13,20 @@ namespace searchcorespi { namespace index { class IThreadService; } }
 namespace proton {
 
 /*
- * Class for registering listeners that get notification when
- * gid to lid mapping changes. Also handles notifications which have
- * to be executed by master thread service.
+ * Dummy class for registering listeners that get notification when
+ * gid to lid mapping changes.
  */
-class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChangeHandler>,
-                              public IGidToLidChangeHandler
+class DummyGidToLidChangeHandler : public IGidToLidChangeHandler
 {
-    using lock_guard = std::lock_guard<std::mutex>;
-    using Listeners = std::vector<std::unique_ptr<IGidToLidChangeListener>>;
-    std::mutex _lock;
-    Listeners _listeners;
     bool _closed;
-    vespalib::hash_map<GlobalId, SerialNum, GlobalId::hash> _pendingRemove;
 
-    void notifyPut(GlobalId gid, uint32_t lid);
-    void notifyRemove(GlobalId gid);
 public:
-    GidToLidChangeHandler();
-    virtual ~GidToLidChangeHandler();
+    DummyGidToLidChangeHandler();
+    virtual ~DummyGidToLidChangeHandler();
 
     virtual void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
     virtual void notifyRemove(GlobalId gid, SerialNum serialNum) override;
     virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
-
-    /**
-     * Close handler, further notifications are blocked.
-     */
-    void close();
-
     virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
     virtual void removeListeners(const vespalib::string &docTypeName,
                                  const std::set<vespalib::string> &keepNames) override;
