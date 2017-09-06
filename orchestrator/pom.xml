@@ -34,12 +34,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.auto.value</groupId>
-      <artifactId>auto-value</artifactId>
-      <version>1.0-rc1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jaxrs_client_utils</artifactId>
       <version>${project.version}</version>
