@@ -75,6 +75,7 @@ public:
     const std::shared_ptr<BitVectorSearchCache> &getSearchCache() const {
         return _search_cache;
     }
+    void clearSearchCache();
 
     /*
      * Create an imported attribute with a snapshot of lid to lid mapping.

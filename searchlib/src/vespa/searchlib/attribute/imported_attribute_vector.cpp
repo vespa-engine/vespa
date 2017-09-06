@@ -145,6 +145,12 @@ bool ImportedAttributeVector::hasEnum() const {
     return _target_attribute->hasEnum();
 }
 
+void ImportedAttributeVector::clearSearchCache() {
+    if (_search_cache) {
+        _search_cache->clear();
+    }
+}
+
 long ImportedAttributeVector::onSerializeForAscendingSort(DocId doc,
                                                           void *serTo,
                                                           long available,

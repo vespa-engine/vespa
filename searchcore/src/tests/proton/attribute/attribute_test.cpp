@@ -2,44 +2,45 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
 
-#include <vespa/fastos/file.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/config-attributes.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/fastos/file.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/bitvector_search_cache.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
+#include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/predicate/predicate_hash.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-
-#include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/predicate/predicate_hash.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
-#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
-#include <vespa/searchlib/test/directory_handler.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/config-attributes.h>
-
+#include <vespa/vespalib/testkit/testapp.h>
 
 namespace vespa { namespace config { namespace search {}}}
 
@@ -50,8 +51,12 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search;
 
+using proton::ImportedAttributesRepo;
 using proton::test::AttributeUtils;
 using search::TuneFileAttributes;
+using search::attribute::BitVectorSearchCache;
+using search::attribute::ImportedAttributeVector;
+using search::attribute::ReferenceAttribute;
 using search::index::DummyFileHeaderContext;
 using search::index::schema::CollectionType;
 using search::predicate::PredicateHash;
@@ -710,6 +715,34 @@ TEST_F("require that attribute writer spreads write over 2 write contexts", Fixt
 TEST_F("require that attribute writer spreads write over 3 write contexts", Fixture(8))
 {
     TEST_DO(putAttributes(f, {0, 1, 2}));
+}
+
+ImportedAttributeVector::SP
+createImportedAttribute(const vespalib::string &name)
+{
+    auto result = std::make_shared<ImportedAttributeVector>(name,
+                                                            ReferenceAttribute::SP(),
+                                                            AttributeVector::SP(),
+                                                            true);
+    result->getSearchCache()->insert("foo", BitVectorSearchCache::Entry::SP());
+    return result;
+}
+
+ImportedAttributesRepo::UP
+createImportedAttributesRepo()
+{
+    auto result = std::make_unique<ImportedAttributesRepo>();
+    result->add("imported_a", createImportedAttribute("imported_a"));
+    result->add("imported_b", createImportedAttribute("imported_b"));
+    return result;
+}
+
+TEST_F("require that AttributeWriter::forceCommit() clears search cache in imported attribute vectors", Fixture)
+{
+    f._m->setImportedAttributes(createImportedAttributesRepo());
+    f.commit(10);
+    EXPECT_EQUAL(0u, f._m->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
+    EXPECT_EQUAL(0u, f._m->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
 }
 
 TEST_MAIN()
