@@ -63,12 +63,14 @@ public final class ControllerTester {
     private final ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock();
     private final GitHubMock gitHubMock = new GitHubMock();
     private final CuratorDb curator = new MockCuratorDb();
-    private Controller controller = createController(db, curator, configServerClientMock, clock, gitHubMock, zoneRegistryMock, athensDb);
+    private final MemoryNameService memoryNameService = new MemoryNameService();
+    private Controller controller = createController(db, curator, configServerClientMock, clock, gitHubMock,
+                                                     zoneRegistryMock, athensDb, memoryNameService);
     
     private static final Controller createController(ControllerDb db, CuratorDb curator,
                                                      ConfigServerClientMock configServerClientMock, ManualClock clock,
                                                      GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
-                                                     AthensDbMock athensDb) {
+                                                     AthensDbMock athensDb, MemoryNameService nameService) {
         Controller controller = new Controller(db,
                                                curator,
                                                new MemoryRotationRepository(),
@@ -80,7 +82,7 @@ public final class ControllerTester {
                                                new CostMock(new MockInsightBackend()),
                                                configServerClientMock,
                                                new MockMetricsService(),
-                                               new MemoryNameService(),
+                                               nameService,
                                                new MockRoutingGenerator(),
                                                new ChefMock(),
                                                clock,
@@ -93,10 +95,12 @@ public final class ControllerTester {
     public CuratorDb curator() { return curator; }
     public ManualClock clock() { return clock; }
     public AthensDbMock athensDb() { return athensDb; }
+    public MemoryNameService nameService() { return memoryNameService; }
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(db, curator, configServerClientMock, clock, gitHubMock, zoneRegistryMock, athensDb);
+        controller = createController(db, curator, configServerClientMock, clock, gitHubMock, zoneRegistryMock,
+                                      athensDb, memoryNameService);
     }
 
     public ZoneRegistryMock getZoneRegistryMock() { return zoneRegistryMock; }

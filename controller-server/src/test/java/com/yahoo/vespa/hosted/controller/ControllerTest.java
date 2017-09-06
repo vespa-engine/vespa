@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -607,7 +608,6 @@ public class ControllerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");
-        Version oldVersion = Version.fromString("6.98.12");
         tester.configServerClientMock().setDefaultConfigServerVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
@@ -659,6 +659,25 @@ public class ControllerTest {
 
         assertEquals("Irrelevant (main) job data is removed.", 0, newMainJobsCount);
         assertEquals("Relevant (cd) data is not removed.", cdJobsCount, newCdJobsCount);
+    }
+
+    @Test
+    public void testDnsAliasRegistration() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .region("us-central-1") // Two deployments should result in DNS alias being registered once
+                .build();
+
+        tester.deployCompletely(application, applicationPackage);
+        assertEquals(1, tester.controllerTester().nameService().records().size());
+        Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, "app1.tenant1.global.vespa.yahooapis.com");
+        assertTrue(record.isPresent());
+        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name());
+        assertEquals("fake-global-rotation-tenant1.app1", record.get().value());
     }
 
 }
