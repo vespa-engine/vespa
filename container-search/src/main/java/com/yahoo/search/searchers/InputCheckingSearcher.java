@@ -29,7 +29,7 @@ import com.yahoo.search.searchchain.Execution;
  * Check whether the query tree seems to be "well formed". In other words, run heurestics against
  * the input data to see whether the query should sent to the search backend.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class InputCheckingSearcher extends Searcher {
 
