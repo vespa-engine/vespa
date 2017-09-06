@@ -224,9 +224,12 @@ struct Fixture {
         oldAttrMgr.addReferenceAttribute("parent2_ref");
         oldAttrMgr.addReferenceAttribute("parent3_ref");
     }
-    ImportedAttributesRepo::UP resolve() {
+    ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay) {
         DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
-        return resolver.resolve(attrMgr, oldAttrMgr);
+        return resolver.resolve(attrMgr, oldAttrMgr, visibilityDelay);
+    }
+    ImportedAttributesRepo::UP resolve() {
+        return resolve(fastos::TimeStamp(0));
     }
     void teardown() {
         DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
@@ -238,11 +241,13 @@ struct Fixture {
     void assertImportedAttribute(const vespalib::string &name,
                                  const vespalib::string &referenceField,
                                  const vespalib::string &targetField,
+                                 bool useSearchCache,
                                  ImportedAttributeVector::SP attr) {
         ASSERT_TRUE(attr.get());
         EXPECT_EQUAL(name, attr->getName());
         EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), attr->getReferenceAttribute().get());
         EXPECT_EQUAL(parentReference->getAttribute(targetField).get(), attr->getTargetAttribute().get());
+        EXPECT_EQUAL(useSearchCache, attr->getSearchCache().get() != nullptr);
     }
 
     MockGidToLidChangeHandler &getGidToLidChangeHandler(const vespalib::string &referencedDocTypeName) {
@@ -272,12 +277,20 @@ TEST_F("require that reference attributes are connected to gid mapper", Fixture)
     EXPECT_EQUAL(f.factory.get(), f.getMapperFactoryPtr("other_ref"));
 }
 
-TEST_F("require that imported attributes are instantiated", Fixture)
+TEST_F("require that imported attributes are instantiated without search cache as default", Fixture)
 {
     auto repo = f.resolve();
     EXPECT_EQUAL(2u, repo->size());
-    f.assertImportedAttribute("imported_a", "ref", "target_a", repo->get("imported_a"));
-    f.assertImportedAttribute("imported_b", "other_ref", "target_b", repo->get("imported_b"));
+    f.assertImportedAttribute("imported_a", "ref", "target_a", false, repo->get("imported_a"));
+    f.assertImportedAttribute("imported_b", "other_ref", "target_b", false, repo->get("imported_b"));
+}
+
+TEST_F("require that imported attributes are instantiated with search cache if visibility delay > 0", Fixture)
+{
+    auto repo = f.resolve(fastos::TimeStamp::Seconds(1.0));
+    EXPECT_EQUAL(2u, repo->size());
+    f.assertImportedAttribute("imported_a", "ref", "target_a", true, repo->get("imported_a"));
+    f.assertImportedAttribute("imported_b", "other_ref", "target_b", true, repo->get("imported_b"));
 }
 
 TEST_F("require that listeners are added", Fixture)

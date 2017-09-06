@@ -36,7 +36,8 @@ private:
     GidToLidChangeRegistrator &getRegistrator(const vespalib::string &docTypeName);
     std::shared_ptr<IDocumentDBReference> getTargetDocumentDB(const vespalib::string &refAttrName) const;
     void connectReferenceAttributesToGidMapper(const search::IAttributeManager &attrMgr);
-    std::unique_ptr<ImportedAttributesRepo> createImportedAttributesRepo(const search::IAttributeManager &attrMgr);
+    std::unique_ptr<ImportedAttributesRepo> createImportedAttributesRepo(const search::IAttributeManager &attrMgr,
+                                                                         bool useSearchCache);
     void detectOldListeners(const search::IAttributeManager &attrMgr);
     void listenToGidToLidChanges(const search::IAttributeManager &attrMgr);
 
@@ -49,7 +50,9 @@ public:
                                 search::ISequencedTaskExecutor &attributeFieldWriter);
     ~DocumentDBReferenceResolver();
 
-    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr, const search::IAttributeManager &oldAttrMgr) override;
+    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
+                                                            const search::IAttributeManager &oldAttrMgr,
+                                                            fastos::TimeStamp visibilityDelay) override;
     virtual void teardown(const search::IAttributeManager &oldAttrMgr) override;
 };
 

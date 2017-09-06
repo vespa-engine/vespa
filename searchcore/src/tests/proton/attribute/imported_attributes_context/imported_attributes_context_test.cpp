@@ -70,7 +70,8 @@ struct Fixture {
     Fixture &addAttribute(const vespalib::string &name) {
         auto attr = std::make_shared<ImportedAttributeVector>(name,
                                                               createReferenceAttribute(name + "_ref"),
-                                                              createTargetAttribute(name + "_target"));
+                                                              createTargetAttribute(name + "_target"),
+                                                              false);
         repo.add(name, attr);
         return *this;
     }

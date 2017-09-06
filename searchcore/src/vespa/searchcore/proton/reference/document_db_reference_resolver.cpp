@@ -135,13 +135,15 @@ DocumentDBReferenceResolver::listenToGidToLidChanges(const IAttributeManager &at
 }
 
 ImportedAttributesRepo::UP
-DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManager &attrMgr)
+DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManager &attrMgr,
+                                                          bool useSearchCache)
 {
     auto result = std::make_unique<ImportedAttributesRepo>();
     for (const auto &attr : _importedFieldsCfg.attribute) {
         ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
         AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
-        ImportedAttributeVector::SP importedAttr = std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr);
+        ImportedAttributeVector::SP importedAttr =
+                std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr, useSearchCache);
         result->add(importedAttr->getName(), importedAttr);
     }
     return result;
@@ -169,12 +171,14 @@ DocumentDBReferenceResolver::~DocumentDBReferenceResolver()
 }
 
 ImportedAttributesRepo::UP
-DocumentDBReferenceResolver::resolve(const IAttributeManager &newAttrMgr, const IAttributeManager &oldAttrMgr)
+DocumentDBReferenceResolver::resolve(const IAttributeManager &newAttrMgr,
+                                     const IAttributeManager &oldAttrMgr,
+                                     fastos::TimeStamp visibilityDelay)
 {
     connectReferenceAttributesToGidMapper(newAttrMgr);
     detectOldListeners(oldAttrMgr);
     listenToGidToLidChanges(newAttrMgr);
-    return createImportedAttributesRepo(newAttrMgr);
+    return createImportedAttributesRepo(newAttrMgr, (visibilityDelay > 0));
 }
 
 void

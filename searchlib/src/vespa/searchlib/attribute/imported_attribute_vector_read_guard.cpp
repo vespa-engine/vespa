@@ -9,8 +9,9 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
         vespalib::stringref name,
         std::shared_ptr<ReferenceAttribute> reference_attribute,
         std::shared_ptr<AttributeVector> target_attribute,
+        std::shared_ptr<BitVectorSearchCache> search_cache,
         bool stableEnumGuard)
-    : ImportedAttributeVector(name, std::move(reference_attribute), std::move(target_attribute)),
+    : ImportedAttributeVector(name, std::move(reference_attribute), std::move(target_attribute), std::move(search_cache)),
       _referencedLids(),
       _referencedLidLimit(0u),
       _reference_attribute_guard(_reference_attribute),

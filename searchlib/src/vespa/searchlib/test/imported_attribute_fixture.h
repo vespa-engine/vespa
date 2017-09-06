@@ -116,7 +116,7 @@ struct ImportedAttributeFixture {
 
     std::shared_ptr<ImportedAttributeVector>
     create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name()) {
-        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr);
+        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr, false);
     }
 
     template<typename AttrVecType>

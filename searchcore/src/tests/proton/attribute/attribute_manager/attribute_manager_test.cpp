@@ -133,7 +133,7 @@ struct ImportedAttributesRepoBuilder {
     void add(const vespalib::string &name) {
         auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref", AVConfig(BasicType::REFERENCE));
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
-        auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr);
+        auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr, false);
         _repo->add(name, importedAttr);
     }
     ImportedAttributesRepo::UP build() {
