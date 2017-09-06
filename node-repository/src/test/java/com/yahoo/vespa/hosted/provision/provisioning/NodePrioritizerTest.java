@@ -83,26 +83,4 @@ public class NodePrioritizerTest {
         b.addFlavor("d2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
         return b.build();
     }
-
-    @Test
-    public void ignore_hosts_that_is_unresolved_in_dns() {
-        // Here we are testing the behavoir we need in production
-        NodePrioritizer.unitTesting = false;
-
-        // Random IP that is not resolving
-        String hostname = NodePrioritizer.lookupHostname("34.23.12.23");
-        Assert.assertNull(hostname);
-
-        // Localhost is always resolving
-        hostname = NodePrioritizer.lookupHostname("127.0.0.1");
-        Assert.assertNotNull(hostname);
-
-        // IPv6 Localhost is always resolving to a hostname
-        hostname = NodePrioritizer.lookupHostname("::1");
-        Assert.assertNotNull(hostname);
-
-        // Unspecified IPv6 should not resolve to a hostname
-        hostname = NodePrioritizer.lookupHostname("::");
-        Assert.assertNull(hostname);
-    }
 }

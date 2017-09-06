@@ -59,6 +59,7 @@ public class MockNameResolver implements NameResolver {
         if (mockAnyLookup) {
             Set<String> ipAddresses = Collections.singleton(randomIpAddress());
             records.put(hostname, ipAddresses);
+            return ipAddresses;
         }
         throw new RuntimeException(new UnknownHostException("Could not resolve: " + hostname));
     }
