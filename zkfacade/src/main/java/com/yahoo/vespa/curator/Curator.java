@@ -21,6 +21,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
+import java.io.Closeable;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * @author vegardh
  * @author bratseth
  */
-public class Curator {
+public class Curator implements AutoCloseable {
 
     private static final long UNKNOWN_HOST_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(30);
     private static final int ZK_SESSION_TIMEOUT = 30000;
@@ -267,6 +268,11 @@ public class Curator {
     /** Returns the curator framework API */
     public CuratorFramework framework() {
         return curatorFramework;
+    }
+
+    @Override
+    public void close() {
+        curatorFramework.close();
     }
 
     /**
