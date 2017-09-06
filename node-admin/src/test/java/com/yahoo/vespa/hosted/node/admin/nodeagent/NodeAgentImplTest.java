@@ -109,7 +109,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
 
@@ -553,7 +553,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
-        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(42547019776L));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(39625000000L));
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
