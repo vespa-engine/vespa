@@ -248,7 +248,7 @@ public class ApplicationController {
             DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
 
-            if( ! options.deployCurrentVersion) {
+            if ( ! options.deployCurrentVersion) {
                 // Add missing information to application (unless we're deploying the previous version (initial staging step)
                 application = application.with(applicationPackage.deploymentSpec());
                 application = application.with(applicationPackage.validationOverrides());
@@ -264,14 +264,14 @@ public class ApplicationController {
                     application = application.with(application.deploymentJobs().withTriggering(jobType, version, Optional.of(revision), clock.instant()));
                 }
 
-                store(application, lock); // store missing information even if we fail deployment below
-
                 // Delete zones not listed in DeploymentSpec, if allowed
                 // We do this at deployment time to be able to return a validation failure message when necessary
                 application = deleteRemovedDeployments(application);
 
                 // Clean up deployment jobs that are no longer referenced by deployment spec
                 application = deleteUnreferencedDeploymentJobs(application);
+
+                store(application, lock); // store missing information even if we fail deployment below
             }
 
             // Carry out deployment
@@ -280,7 +280,8 @@ public class ApplicationController {
                                                                                                         applicationPackage));
             options = withVersion(version, options);            
             ConfigServerClient.PreparedApplication preparedApplication = 
-                    configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), applicationPackage.zippedContent());
+                    configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), 
+                                               applicationPackage.zippedContent());
             preparedApplication.activate();
             application = application.with(new Deployment(zone, revision, version, clock.instant()));
             store(application, lock);

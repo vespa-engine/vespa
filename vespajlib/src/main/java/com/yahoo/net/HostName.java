@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * Utilities for getting the hostname of the system running the JVM.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  * @author hakon
  */
