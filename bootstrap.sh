@@ -45,9 +45,11 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 # The 'full' mode also builds modules needed by C++ tests.
 
 # must install parent pom first:
+echo "Downloading all dependencies. This make take a few of minutes with an empty Maven cache."
 mvn_install -N
 
 # and build plugins first:
+echo "Building Vespa Maven plugins."
 mvn_install -f maven-plugins/pom.xml
 
 # now everything else should just work with normal maven dependency resolution:
@@ -56,9 +58,11 @@ case "$MODE" in
     java)
         ;;
     full)
+	echo "Building full set of dependencies."
         mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus
         ;;
     default)
+	echo "Building default set of dependencies."
         mvn_install -am -pl filedistributionmanager
         ;;
 esac
