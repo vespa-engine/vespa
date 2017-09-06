@@ -111,7 +111,7 @@ private:
 
         // First components that doesn't depend on others
     std::unique_ptr<StatusWebServer>           _statusWebServer;
-    std::shared_ptr<StorageMetricSet>        _metrics;
+    std::shared_ptr<StorageMetricSet>          _metrics;
     std::unique_ptr<metrics::MetricManager>    _metricManager;
 
         // Depends on bucket databases and stop() functionality
@@ -122,8 +122,7 @@ private:
     std::unique_ptr<StatusMetricConsumer>      _statusMetrics;
         // Depends on metric manager
     std::unique_ptr<StateReporter>             _stateReporter;
-
-    std::unique_ptr<StateManager> _stateManager;
+    std::unique_ptr<StateManager>              _stateManager;
 
         // The storage chain can depend on anything.
     std::unique_ptr<StorageLink>               _chain;

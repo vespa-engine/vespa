@@ -103,13 +103,13 @@ StorageNode::subscribeToConfigs()
 void
 StorageNode::initialize()
 {
+    _context.getComponentRegister().registerShutdownListener(*this);
+
     // Fetch configs needed first. These functions will just grab the config
     // and store them away, while having the config lock.
     subscribeToConfigs();
 
-    _context.getMemoryManager().setMaximumMemoryUsage(
-            _serverConfig->memorytouse);
-    _context.getComponentRegister().registerShutdownListener(*this);
+    _context.getMemoryManager().setMaximumMemoryUsage(_serverConfig->memorytouse);
     updateUpgradeFlag(*_clusterConfig);
 
     // First update some basics that doesn't depend on anything else to be

@@ -11,8 +11,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/app.h>
-
-#include <string>
 #include <iostream>
 
 #include <vespa/log/log.h>
@@ -224,9 +222,9 @@ App::Main()
                 proton.getMetricManager().init(params.identity, proton.getThreadPool());
             }
             EV_STARTED("proton");
-            while (!(SIG::INT.check() || SIG::TERM.check())) {
+            while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
                 FastOS_Thread::Sleep(1000);
-                if (spiProton.get() && spiProton->configUpdated()) {
+                if (spiProton && spiProton->configUpdated()) {
                     storage::ResumeGuard guard(spiProton->getNode().pause());
                     spiProton->updateConfig();
                 }
@@ -247,7 +245,7 @@ App::Main()
                     }
                 }
             }
-            if (spiProton.get()) {
+            if (spiProton) {
                 spiProton->getNode().requestShutdown("controlled shutdown");
                 spiProton->shutdown();
                 EV_STOPPING("servicelayer", "clean shutdown");

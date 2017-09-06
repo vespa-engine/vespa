@@ -5,9 +5,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 ComponentRegisterImpl::ComponentRegisterImpl()
     : _componentLock(),
@@ -184,6 +182,4 @@ ComponentRegisterImpl::registerShutdownListener(ShutdownListener& listener)
     _shutdownListener = &listener;
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

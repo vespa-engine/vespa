@@ -13,8 +13,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class ManagedComponent;
 
@@ -25,6 +24,4 @@ struct ComponentRegister {
     virtual void requestShutdown(vespalib::stringref reason) = 0;
 };
 
-} // framework
-} // storage
-
+}
