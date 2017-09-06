@@ -6,6 +6,7 @@ vespa_define_module(
     APPS
     src/apps/eval_expr
     src/apps/make_tensor_binary_format_test_spec
+    src/apps/tensor_conformance
 
     TESTS
     src/tests/eval/aggr
