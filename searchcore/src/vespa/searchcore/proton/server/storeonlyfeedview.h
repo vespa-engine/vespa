@@ -181,7 +181,7 @@ private:
                            bool immediateCommit);
 
     void internalRemove(FeedTokenUP token, SerialNum serialNum, const document::GlobalId &gid, Lid lid,
-                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+                        FeedOperation::Type opType, bool enableNotifyRemoveDone, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);

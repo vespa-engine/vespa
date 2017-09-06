@@ -29,6 +29,7 @@ class RemoveDoneContext : public OperationDoneContext
     IGidToLidChangeHandler &_gidToLidChangeHandler;
     document::GlobalId _gid;
     search::SerialNum _serialNum;
+    bool _enableNotifyRemoveDone;
 
 public:
     RemoveDoneContext(std::unique_ptr<FeedToken> token,
@@ -39,7 +40,8 @@ public:
                       IGidToLidChangeHandler &gidToLidChangeHandler,
                       const document::GlobalId &gid,
                       uint32_t lid,
-                      search::SerialNum serialNum);
+                      search::SerialNum serialNum,
+                      bool enableNotifyRemoveDone);
 
     virtual ~RemoveDoneContext();
 };

@@ -120,8 +120,9 @@ public:
                              const document::GlobalId &gid,
                              uint32_t lid,
                              SerialNum serialNum,
+                             bool enableNotifyRemoveDone,
                              IDestructorCallback::SP moveDoneCtx)
-        : RemoveDoneContext(std::move(token), opType, metrics, executor, documentMetaStore, gidToLidChangeHandler, gid, lid, serialNum),
+        : RemoveDoneContext(std::move(token), opType, metrics, executor, documentMetaStore, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyRemoveDone),
               _moveDoneCtx(std::move(moveDoneCtx))
     {}
     virtual ~RemoveDoneContextForMove() {}
@@ -135,14 +136,15 @@ createRemoveDoneContext(std::unique_ptr<FeedToken> token, const FeedOperation::T
                         const document::GlobalId &gid,
                         uint32_t lid,
                         SerialNum serialNum,
+                        bool enableNotifyRemoveDone,
                         IDestructorCallback::SP moveDoneCtx)
 {
     if (moveDoneCtx) {
         return std::make_shared<RemoveDoneContextForMove>
-            (std::move(token), opType, metrics, executor, documentMetaStore, gidToLidChangeHandler, gid, lid, serialNum, std::move(moveDoneCtx));
+            (std::move(token), opType, metrics, executor, documentMetaStore, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyRemoveDone, std::move(moveDoneCtx));
     } else {
         return std::make_shared<RemoveDoneContext>
-            (std::move(token), opType, metrics, executor, documentMetaStore, gidToLidChangeHandler, gid, lid, serialNum);
+            (std::move(token), opType, metrics, executor, documentMetaStore, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyRemoveDone);
     }
 }
 
@@ -313,7 +315,7 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token, const PutOperation &putOp)
     if (docAlreadyExists && putOp.changedDbdId()) {
         assert(!putOp.getValidDbdId(_params._subDbId));
         const document::GlobalId &gid = docId.getGlobalId();
-        internalRemove(std::move(token), serialNum, gid, putOp.getPrevLid(), putOp.getType(), IDestructorCallback::SP());
+        internalRemove(std::move(token), serialNum, gid, putOp.getPrevLid(), putOp.getType(), useDocumentMetaStore(serialNum), IDestructorCallback::SP());
     }
     if (token.get() != NULL) {
         token->ack(putOp.getType(), _params._metrics);
@@ -591,7 +593,7 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rm
         if (rmOp.changedDbdId()) {
             assert(!rmOp.getValidDbdId(_params._subDbId));
             const document::GlobalId &gid = docId.getGlobalId();
-            internalRemove(std::move(token), serialNum, gid, rmOp.getPrevLid(), rmOp.getType(), IDestructorCallback::SP());
+            internalRemove(std::move(token), serialNum, gid, rmOp.getPrevLid(), rmOp.getType(), useDocumentMetaStore(serialNum), IDestructorCallback::SP());
         }
     }
     if (token.get() != NULL) {
@@ -601,18 +603,13 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rm
 
 void
 StoreOnlyFeedView::internalRemove(FeedToken::UP token, SerialNum serialNum, const document::GlobalId &gid, Lid lid,
-                                  FeedOperation::Type opType, IDestructorCallback::SP moveDoneCtx)
+                                  FeedOperation::Type opType, bool enableNotifyRemoveDone, IDestructorCallback::SP moveDoneCtx)
 {
     removeSummary(serialNum, lid);
     bool explicitReuseLid = _lidReuseDelayer.delayReuse(lid);
     std::shared_ptr<RemoveDoneContext> onWriteDone;
-    if (explicitReuseLid || token) {
-        onWriteDone = createRemoveDoneContext(std::move(token), opType, _params._metrics, _writeService.master(),
-                                              _metaStore, _gidToLidChangeHandler, gid, (explicitReuseLid ? lid : 0u), serialNum, moveDoneCtx);
-    } else if (moveDoneCtx) {
-        onWriteDone = createRemoveDoneContext(FeedToken::UP(), opType, _params._metrics, _writeService.master(),
-                                              _metaStore, _gidToLidChangeHandler, gid, 0u, serialNum, moveDoneCtx);
-    }
+    onWriteDone = createRemoveDoneContext(std::move(token), opType, _params._metrics, _writeService.master(),
+                                          _metaStore, _gidToLidChangeHandler, gid, (explicitReuseLid ? lid : 0u), serialNum, enableNotifyRemoveDone, moveDoneCtx);
     bool immediateCommit = _commitTimeTracker.needCommit();
     removeAttributes(serialNum, lid, immediateCommit, onWriteDone);
     removeIndexedFields(serialNum, lid, immediateCommit, onWriteDone);
@@ -770,7 +767,8 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     }
     if (docAlreadyExists && moveOp.changedDbdId()) {
         const document::GlobalId &gid = docId.getGlobalId();
-        internalRemove(FeedToken::UP(), serialNum, gid, moveOp.getPrevLid(), moveOp.getType(), doneCtx);
+        bool enableNotifyRemoveDone = useDocumentMetaStore(serialNum) && !moveOp.getValidDbdId(_params._subDbId);
+        internalRemove(FeedToken::UP(), serialNum, gid, moveOp.getPrevLid(), moveOp.getType(), enableNotifyRemoveDone, doneCtx);
     }
 }
 
