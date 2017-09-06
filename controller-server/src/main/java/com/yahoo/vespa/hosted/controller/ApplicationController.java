@@ -373,7 +373,7 @@ public class ApplicationController {
         Rotation rotation = applicationRotation.rotations().iterator().next(); // at this time there should be only one rotation assigned
         String endpointName = alias.toString();
         try {
-            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, rotation.rotationName);
+            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, endpointName);
             if (!record.isPresent()) {
                 RecordId recordId = nameService.createCname(endpointName, rotation.rotationName);
                 log.info("Registered mapping with record ID " + recordId.id() + ": " +

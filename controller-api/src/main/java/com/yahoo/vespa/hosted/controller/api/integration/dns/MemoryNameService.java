@@ -2,9 +2,10 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -14,11 +15,15 @@ import java.util.UUID;
  */
 public class MemoryNameService implements NameService {
 
-    private final Set<Record> records = new HashSet<>();
+    private final List<Record> records = new ArrayList<>();
+
+    public List<Record> records() {
+        return Collections.unmodifiableList(records);
+    }
 
     @Override
     public RecordId createCname(String alias, String canonicalName) {
-        records.add(new Record("CNAME", alias, canonicalName));
+        records.add(new Record(Record.Type.CNAME.name(), alias, canonicalName));
         return new RecordId(UUID.randomUUID().toString());
     }
 
