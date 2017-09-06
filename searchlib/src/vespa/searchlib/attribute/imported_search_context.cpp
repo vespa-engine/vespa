@@ -28,7 +28,6 @@ ImportedSearchContext::ImportedSearchContext(
       _target_attribute(*_imported_attribute.getTargetAttribute()),
       _target_search_context(_target_attribute.getSearch(std::move(term), params)),
       _referencedLids(_reference_attribute.getReferencedLids()),
-      _referencedLidLimit(_target_attribute.getCommittedDocIdLimit()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
       _fetchPostingsDone(false)
 {

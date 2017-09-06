@@ -35,6 +35,7 @@ class ReferenceMappings
     ReverseMapping _reverseMapping;
     // vector containing referenced lid given referencing lid
     RcuVectorBase<uint32_t> _referencedLids;
+    const uint32_t &_committedDocIdLimit;
 
     void syncForwardMapping(const Reference &entry);
     void syncReverseMappingIndices(const Reference &entry);
@@ -43,7 +44,7 @@ public:
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
     using ReverseMappingRefs = vespalib::ConstArrayRef<EntryRef>;
 
-    ReferenceMappings(GenerationHolder &genHolder);
+    ReferenceMappings(GenerationHolder &genHolder, const uint32_t &committedDocIdLimit);
 
     ~ReferenceMappings();
 
@@ -78,7 +79,11 @@ public:
     void
     foreach_lid(uint32_t referencedLid, FunctionType &&func) const;
 
-    ReferencedLids getReferencedLids() const { return ReferencedLids(&_referencedLids[0], _referencedLids.size()); }
+    ReferencedLids getReferencedLids() const {
+        uint32_t committedDocIdLimit = _committedDocIdLimit;
+        std::atomic_thread_fence(std::memory_order_acquire);
+        return ReferencedLids(&_referencedLids[0], committedDocIdLimit);
+    }
     uint32_t getReferencedLid(uint32_t doc) const { return _referencedLids[doc]; }
     ReverseMappingRefs getReverseMappingRefs() const {
         uint32_t referencedLidLimit = _referencedLidLimit;

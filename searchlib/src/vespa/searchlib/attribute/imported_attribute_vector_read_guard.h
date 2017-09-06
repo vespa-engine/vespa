@@ -17,14 +17,12 @@ class ImportedAttributeVectorReadGuard : public ImportedAttributeVector
 {
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
     ReferencedLids                      _referencedLids;
-    uint32_t                            _referencedLidLimit;
     AttributeGuard                      _reference_attribute_guard;
     AttributeGuard                      _target_attribute_guard;
     AttributeEnumGuard                  _target_attribute_enum_guard;
 
     uint32_t getReferencedLid(uint32_t lid) const {
-        uint32_t referencedLid = _referencedLids[lid];
-        return ((referencedLid >= _referencedLidLimit) ? 0u : referencedLid);
+        return _referencedLids[lid];
     }
 
 public:

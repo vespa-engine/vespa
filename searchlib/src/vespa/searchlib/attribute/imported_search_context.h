@@ -30,13 +30,11 @@ class ImportedSearchContext : public ISearchContext {
     const AttributeVector&                          _target_attribute;
     std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
     ReferencedLids                                  _referencedLids;
-    uint32_t                                        _referencedLidLimit;
     PostingListMerger<int32_t>                      _merger;
     bool                                            _fetchPostingsDone;
 
     uint32_t getReferencedLid(uint32_t lid) const {
-        uint32_t referencedLid = _referencedLids[lid];
-        return ((referencedLid >= _referencedLidLimit) ? 0u : referencedLid);
+        return _referencedLids[lid];
     }
 
     void makeMergedPostings(bool isFilter);
