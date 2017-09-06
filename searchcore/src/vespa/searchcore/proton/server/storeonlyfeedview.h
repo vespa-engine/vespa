@@ -22,8 +22,6 @@
 
 namespace search { class IDestructorCallback; }
 
-namespace document { class GLobalId; }
-
 namespace proton {
 
 class IReplayConfig;
@@ -33,7 +31,6 @@ class OperationDoneContext;
 class PutDoneContext;
 class RemoveDoneContext;
 class CommitTimeTracker;
-class IGidToLidChangeHandler;
 
 namespace documentmetastore { class ILidReuseDelayer; }
 
@@ -71,7 +68,6 @@ public:
         const ISummaryAdapter::SP               &_summaryAdapter;
         const search::index::Schema::SP         &_schema;
         const IDocumentMetaStoreContext::SP     &_documentMetaStoreContext;
-        IGidToLidChangeHandler                  &_gidToLidChangeHandler;
         const document::DocumentTypeRepo::SP    &_repo;
         searchcorespi::index::IThreadingService &_writeService;
         documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
@@ -80,7 +76,6 @@ public:
         Context(const ISummaryAdapter::SP &summaryAdapter,
                 const search::index::Schema::SP &schema,
                 const IDocumentMetaStoreContext::SP &documentMetaStoreContext,
-                IGidToLidChangeHandler &gidToLidChangeHandler,
                 const document::DocumentTypeRepo::SP &repo,
                 searchcorespi::index::IThreadingService &writeService,
                 documentmetastore::ILidReuseDelayer &lidReuseDelayer,
@@ -88,7 +83,6 @@ public:
             : _summaryAdapter(summaryAdapter),
               _schema(schema),
               _documentMetaStoreContext(documentMetaStoreContext),
-              _gidToLidChangeHandler(gidToLidChangeHandler),
               _repo(repo),
               _writeService(writeService),
               _lidReuseDelayer(lidReuseDelayer),
@@ -149,7 +143,6 @@ protected:
     searchcorespi::index::IThreadingService &_writeService;
     PersistentParams                         _params;
     IDocumentMetaStore                      &_metaStore;
-    IGidToLidChangeHandler                  &_gidToLidChangeHandler;
 
 private:
     searchcorespi::index::IThreadService & summaryExecutor() {
@@ -172,7 +165,7 @@ private:
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
-    bool lookupDocId(const document::DocumentId &docId, Lid & lid) const;
+    bool lookupDocId(const document::DocumentId &gid, Lid & lid) const;
     void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
@@ -180,11 +173,15 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token, SerialNum serialNum, const document::GlobalId &gid, Lid lid,
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, Lid lid,
                         FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
+
+    virtual void notifyPutGidToLidChange(const document::GlobalId &gid, uint32_t lid, SerialNum serialNum);
+    virtual void notifyRemoveGidToLidChange(const document::GlobalId &gid, SerialNum serialNum);
+    virtual void notifyRemoveDoneGidToLidChange(const document::GlobalId &gid, SerialNum serialNum);
 
     void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP upd,
             OnOperationDoneType onWriteDone,PromisedDoc promisedDoc, PromisedStream promisedStream);
@@ -232,7 +229,6 @@ public:
     searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
     documentmetastore::ILidReuseDelayer &getLidReuseDelayer() { return _lidReuseDelayer; }
     CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
-    IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
 
     /**
      * Implements IFeedView.

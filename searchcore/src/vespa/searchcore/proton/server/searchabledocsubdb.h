@@ -83,7 +83,7 @@ private:
     SearchableDocSubDBConfigurer                _configurer;
     const size_t                                _numSearcherThreads;
     vespalib::ThreadExecutor                   &_warmupExecutor;
-    std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
+    std::shared_ptr<GidToLidChangeHandler>      _gidToLidChangeHandler;
 
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>

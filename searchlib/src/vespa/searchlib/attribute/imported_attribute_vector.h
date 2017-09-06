@@ -66,6 +66,21 @@ public:
         return _target_attribute;
     }
 
+    /**
+     * Acquire an opaque composite guard that covers both the target attribute and
+     * the reference attribute. Note that these are not directly accessible via the
+     * returned guard object itself; it does not expose a valid pointer (i.e. get() will
+     * return nullptr).
+     */
+    std::unique_ptr<AttributeGuard> acquireGuard() const;
+    /**
+     * Acquires a composite guard similar to acquireGuard(), but the target attribute is
+     * covered by an AttributeEnumGuard instead of a regular AttributeGuard.
+     *
+     * The reference attribute is _not_ covered by an enum guard.
+     */
+    std::unique_ptr<AttributeEnumGuard> acquireEnumGuard() const;
+
     /*
      * Create an imported attribute with a snapshot of lid to lid mapping.
      */

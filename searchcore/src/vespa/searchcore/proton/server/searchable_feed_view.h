@@ -8,6 +8,8 @@
 
 namespace proton {
 
+class IGidToLidChangeHandler;
+
 /**
  * The feed view used by the searchable sub database.
  *
@@ -23,14 +25,17 @@ public:
 
     struct Context {
         const IIndexWriter::SP &_indexWriter;
+        const std::shared_ptr<IGidToLidChangeHandler> &_gidToLidChangeHandler;
 
-        Context(const IIndexWriter::SP &indexWriter);
+        Context(const IIndexWriter::SP &indexWriter,
+                const std::shared_ptr<IGidToLidChangeHandler> &gidToLidChangeHandler);
         ~Context();
     };
 
 private:
     const IIndexWriter::SP    _indexWriter;
     const bool                _hasIndexedFields;
+    const std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
 
@@ -81,12 +86,17 @@ private:
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
     void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
+    virtual void notifyPutGidToLidChange(const document::GlobalId &gid, uint32_t lid, SerialNum serialNum) override;
+    virtual void notifyRemoveGidToLidChange(const document::GlobalId &gid, SerialNum serialNum) override;
+    virtual void notifyRemoveDoneGidToLidChange(const document::GlobalId &gid, SerialNum serialNum) override;
+
 public:
     SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx);
 
     virtual ~SearchableFeedView();
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
+    const std::shared_ptr<IGidToLidChangeHandler> &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
     void sync() override;
 };
 

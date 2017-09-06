@@ -44,7 +44,7 @@ FastAccessFeedView::putAttributes(SerialNum serialNum,
 {
     _attributeWriter->put(serialNum, doc, lid, immediateCommit, onWriteDone);
     if (immediateCommit && onWriteDone) {
-        onWriteDone->registerPutLid(&_docIdLimit);
+        onWriteDone->registerPutLid(lid, &_docIdLimit);
     }
 }
 
