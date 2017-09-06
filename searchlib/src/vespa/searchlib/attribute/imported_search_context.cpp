@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "bitvector_search_cache.h"
 #include "imported_search_context.h"
 #include "imported_attribute_vector.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -24,6 +25,10 @@ ImportedSearchContext::ImportedSearchContext(
         const SearchContextParams& params,
         const ImportedAttributeVector& imported_attribute)
     : _imported_attribute(imported_attribute),
+      _queryTerm(term->getTerm()),
+      _useSearchCache(_imported_attribute.getSearchCache().get() != nullptr),
+      _searchCacheLookup((_useSearchCache ? _imported_attribute.getSearchCache()->find(_queryTerm) :
+                          std::shared_ptr<BitVectorSearchCache::Entry>())),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(*_imported_attribute.getTargetAttribute()),
       _target_search_context(_target_attribute.getSearch(std::move(term), params)),
@@ -43,6 +48,9 @@ unsigned int ImportedSearchContext::approximateHits() const {
 
 std::unique_ptr<queryeval::SearchIterator>
 ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool strict) {
+    if (_searchCacheLookup) {
+        return BitVectorIterator::create(_searchCacheLookup->bitVector.get(), _searchCacheLookup->docIdLimit, *matchData, strict);
+    }
     if (_merger.hasArray()) {
         if (_merger.emptyArray()) {
             return SearchIterator::UP(new EmptySearch());
@@ -204,12 +212,24 @@ void ImportedSearchContext::makeMergedPostings(bool isFilter)
     _merger.merge();
 }
 
+void
+ImportedSearchContext::considerAddSearchCacheEntry()
+{
+    if (_useSearchCache && _merger.hasBitVector()) {
+        auto cacheEntry = std::make_shared<BitVectorSearchCache::Entry>(_merger.getBitVectorSP(), _merger.getDocIdLimit());
+        _imported_attribute.getSearchCache()->insert(_queryTerm, std::move(cacheEntry));
+    }
+}
+
 void ImportedSearchContext::fetchPostings(bool strict) {
     assert(!_fetchPostingsDone);
     _fetchPostingsDone = true;
-    _target_search_context->fetchPostings(strict);
-    if (strict || _target_attribute.getConfig().fastSearch()) {
-        makeMergedPostings(_target_attribute.getConfig().getIsFilter());
+    if (!_searchCacheLookup) {
+        _target_search_context->fetchPostings(strict);
+        if (strict || _target_attribute.getConfig().fastSearch()) {
+            makeMergedPostings(_target_attribute.getConfig().getIsFilter());
+            considerAddSearchCacheEntry();
+        }
     }
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attributevector.h"
+#include "bitvector_search_cache.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <vespa/vespalib/util/arrayref.h>
@@ -26,6 +27,9 @@ class SearchContextParams;
 class ImportedSearchContext : public ISearchContext {
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
     const ImportedAttributeVector&                  _imported_attribute;
+    vespalib::string                                _queryTerm;
+    bool                                            _useSearchCache;
+    BitVectorSearchCache::Entry::SP                 _searchCacheLookup;
     const ReferenceAttribute&                       _reference_attribute;
     const AttributeVector&                          _target_attribute;
     std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
@@ -40,6 +44,7 @@ class ImportedSearchContext : public ISearchContext {
     }
 
     void makeMergedPostings(bool isFilter);
+    void considerAddSearchCacheEntry();
 public:
     ImportedSearchContext(std::unique_ptr<QueryTermSimple> term,
                           const SearchContextParams& params,

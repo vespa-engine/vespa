@@ -22,9 +22,17 @@ class BitVectorSearchCache {
 public:
     using BitVectorSP = std::shared_ptr<BitVector>;
 
+    struct Entry {
+        using SP = std::shared_ptr<Entry>;
+        BitVectorSP bitVector;
+        uint32_t docIdLimit;
+        Entry(BitVectorSP bitVector_, uint32_t docIdLimit_)
+            : bitVector(std::move(bitVector_)), docIdLimit(docIdLimit_) {}
+    };
+
 private:
     using LockGuard = std::lock_guard<std::mutex>;
-    using Cache = vespalib::hash_map<vespalib::string, BitVectorSP>;
+    using Cache = vespalib::hash_map<vespalib::string, Entry::SP>;
 
     mutable std::mutex _mutex;
     Cache _cache;
@@ -32,8 +40,8 @@ private:
 public:
     BitVectorSearchCache();
     ~BitVectorSearchCache();
-    void insert(const vespalib::string &term, BitVectorSP bitVector);
-    BitVectorSP find(const vespalib::string &term) const;
+    void insert(const vespalib::string &term, Entry::SP entry);
+    Entry::SP find(const vespalib::string &term) const;
     size_t size() const;
     void clear();
 };

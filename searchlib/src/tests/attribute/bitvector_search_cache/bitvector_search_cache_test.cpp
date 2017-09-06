@@ -8,48 +8,49 @@ using namespace search;
 using namespace search::attribute;
 
 using BitVectorSP = BitVectorSearchCache::BitVectorSP;
+using Entry = BitVectorSearchCache::Entry;
 
-BitVectorSP
-makeBitVector()
+Entry::SP
+makeEntry()
 {
-    return BitVectorSP(BitVector::create(5).release());
+    return std::make_shared<Entry>(BitVector::create(5), 10);
 }
 
 struct Fixture {
     BitVectorSearchCache cache;
-    BitVectorSP vec1;
-    BitVectorSP vec2;
+    Entry::SP entry1;
+    Entry::SP entry2;
     Fixture()
         : cache(),
-          vec1(makeBitVector()),
-          vec2(makeBitVector())
+          entry1(makeEntry()),
+          entry2(makeEntry())
     {}
 };
 
 TEST_F("require that bit vectors can be inserted and retrieved", Fixture)
 {
     EXPECT_EQUAL(0u, f.cache.size());
-    f.cache.insert("foo", f.vec1);
-    f.cache.insert("bar", f.vec2);
+    f.cache.insert("foo", f.entry1);
+    f.cache.insert("bar", f.entry2);
     EXPECT_EQUAL(2u, f.cache.size());
 
-    EXPECT_EQUAL(f.vec1, f.cache.find("foo"));
-    EXPECT_EQUAL(f.vec2, f.cache.find("bar"));
+    EXPECT_EQUAL(f.entry1, f.cache.find("foo"));
+    EXPECT_EQUAL(f.entry2, f.cache.find("bar"));
     EXPECT_TRUE(f.cache.find("baz").get() == nullptr);
 }
 
 TEST_F("require that insert() doesn't replace existing bit vector", Fixture)
 {
-    f.cache.insert("foo", f.vec1);
-    f.cache.insert("foo", f.vec2);
+    f.cache.insert("foo", f.entry1);
+    f.cache.insert("foo", f.entry2);
     EXPECT_EQUAL(1u, f.cache.size());
-    EXPECT_EQUAL(f.vec1, f.cache.find("foo"));
+    EXPECT_EQUAL(f.entry1, f.cache.find("foo"));
 }
 
 TEST_F("require that cache can be cleared", Fixture)
 {
-    f.cache.insert("foo", f.vec1);
-    f.cache.insert("bar", f.vec2);
+    f.cache.insert("foo", f.entry1);
+    f.cache.insert("bar", f.entry2);
     EXPECT_EQUAL(2u, f.cache.size());
     f.cache.clear();
 

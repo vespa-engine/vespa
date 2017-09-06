@@ -19,13 +19,13 @@ BitVectorSearchCache::~BitVectorSearchCache()
 }
 
 void
-BitVectorSearchCache::insert(const vespalib::string &term, BitVectorSP bitVector)
+BitVectorSearchCache::insert(const vespalib::string &term, Entry::SP entry)
 {
     LockGuard guard(_mutex);
-    _cache.insert(std::make_pair(term, std::move(bitVector)));
+    _cache.insert(std::make_pair(term, std::move(entry)));
 }
 
-BitVectorSP
+BitVectorSearchCache::Entry::SP
 BitVectorSearchCache::find(const vespalib::string &term) const
 {
     LockGuard guard(_mutex);
@@ -33,7 +33,7 @@ BitVectorSearchCache::find(const vespalib::string &term) const
     if (itr != _cache.end()) {
         return itr->second;
     }
-    return BitVectorSP();
+    return Entry::SP();
 }
 
 size_t

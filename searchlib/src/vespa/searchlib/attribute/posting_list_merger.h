@@ -21,7 +21,7 @@ class PostingListMerger
 
     PostingVector  _array;
     StartVector    _startPos;
-    std::unique_ptr<BitVector> _bitVector;
+    std::shared_ptr<BitVector> _bitVector;
     uint32_t       _docIdLimit;
     bool           _arrayValid;
 
@@ -39,6 +39,7 @@ public:
     bool emptyArray() const { return _array.empty(); }
     vespalib::ConstArrayRef<Posting> getArray() const { return _array; }
     const BitVector *getBitVector() const { return _bitVector.get(); }
+    const std::shared_ptr<BitVector> &getBitVectorSP() const { return _bitVector; }
     uint32_t getDocIdLimit() const { return _docIdLimit; }
 
     template <typename PostingListType>

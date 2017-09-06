@@ -1,21 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/test/imported_attribute_fixture.h>
+#include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/attribute/imported_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchcommon/attribute/search_context_params.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/test/imported_attribute_fixture.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 namespace search::attribute {
 
 using fef::TermFieldMatchData;
+using queryeval::SearchIterator;
+using queryeval::SimpleResult;
 using vespalib::Trinary;
 
 struct Fixture : ImportedAttributeFixture {
+
+    Fixture(bool useSearchCache = false) : ImportedAttributeFixture(useSearchCache) {}
+
     std::unique_ptr<ImportedSearchContext> create_context(std::unique_ptr<QueryTermSimple> term) {
         return std::make_unique<ImportedSearchContext>(std::move(term), SearchContextParams(), *imported_attr);
     }
 
-    std::unique_ptr<queryeval::SearchIterator> create_iterator(
+    std::unique_ptr<SearchIterator> create_iterator(
             ImportedSearchContext& ctx,
             TermFieldMatchData& match,
             bool strict) {
@@ -25,16 +32,20 @@ struct Fixture : ImportedAttributeFixture {
         return iter;
     }
 
-    std::unique_ptr<queryeval::SearchIterator> create_non_strict_iterator(
+    std::unique_ptr<SearchIterator> create_non_strict_iterator(
             ImportedSearchContext& ctx,
             TermFieldMatchData& match) {
         return create_iterator(ctx, match, false);
     }
 
-    std::unique_ptr<queryeval::SearchIterator> create_strict_iterator(
+    std::unique_ptr<SearchIterator> create_strict_iterator(
             ImportedSearchContext& ctx,
             TermFieldMatchData& match) {
         return create_iterator(ctx, match, true);
+    }
+
+    void assertSearch(const std::vector<uint32_t> &expDocIds, SearchIterator &iter) {
+        EXPECT_EQUAL(SimpleResult(expDocIds), SimpleResult().searchStrict(iter, imported_attr->getNumDocs()));
     }
 };
 
@@ -337,6 +348,63 @@ TEST_F("Multiple iterators can be created from the same context", SingleValueFix
 TEST_F("queryTerm() returns term context was created with", WsetValueFixture) {
     auto ctx = f.create_context(word_term("helloworld"));
     EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm().getTerm()));
+}
+
+struct SearchCacheFixture : Fixture {
+    SearchCacheFixture() : Fixture(true) {
+        reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
+                BasicType::INT32,
+                {{DocId(3), dummy_gid(5), DocId(5), 5678},
+                 {DocId(4), dummy_gid(6), DocId(6), 1234},
+                 {DocId(5), dummy_gid(8), DocId(8), 5678},
+                 {DocId(7), dummy_gid(9), DocId(9), 4321}},
+                FastSearchConfig::ExplicitlyEnabled,
+                FilterConfig::ExplicitlyEnabled);
+    }
+};
+
+BitVectorSearchCache::Entry::SP
+makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)
+{
+    std::shared_ptr<BitVector> bitVector = BitVector::create(docIdLimit);
+    for (uint32_t docId : docIds) {
+        bitVector->setBit(docId);
+    }
+    return std::make_shared<BitVectorSearchCache::Entry>(bitVector, docIdLimit);
+}
+
+TEST_F("Bit vector from search cache is used if found", SearchCacheFixture)
+{
+    f.imported_attr->getSearchCache()->insert("5678",
+                                              makeSearchCacheEntry({2, 6}, f.imported_attr->getNumDocs()));
+    auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(true);
+    TermFieldMatchData match;
+    auto iter = f.create_strict_iterator(*ctx, match);
+    TEST_DO(f.assertSearch({2, 6}, *iter)); // Note: would be {3, 5} if cache was not used
+}
+
+void
+assertBitVector(const std::vector<uint32_t> &expDocIds, const BitVector &bitVector)
+{
+    std::vector<uint32_t> actDocsIds;
+    bitVector.foreach_truebit([&](uint32_t docId){ actDocsIds.push_back(docId); });
+    EXPECT_EQUAL(expDocIds, actDocsIds);
+}
+
+TEST_F("Entry is inserted into search cache if bit vector posting list is used", SearchCacheFixture)
+{
+    EXPECT_EQUAL(0u, f.imported_attr->getSearchCache()->size());
+    auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(true);
+    TermFieldMatchData match;
+    auto iter = f.create_strict_iterator(*ctx, match);
+    TEST_DO(f.assertSearch({3, 5}, *iter));
+
+    EXPECT_EQUAL(1u, f.imported_attr->getSearchCache()->size());
+    auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
+    EXPECT_EQUAL(cacheEntry->docIdLimit, f.imported_attr->getNumDocs());
+    TEST_DO(assertBitVector({3, 5}, *cacheEntry->bitVector));
 }
 
 }
