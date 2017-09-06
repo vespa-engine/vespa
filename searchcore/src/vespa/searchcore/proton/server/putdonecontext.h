@@ -3,15 +3,12 @@
 #pragma once
 
 #include "operationdonecontext.h"
-#include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/serialnum.h>
 
 namespace proton
 {
 
 
 class DocIdLimit;
-class IGidToLidChangeHandler;
 
 /**
  * Context class for document put operations that acks operation when
@@ -24,25 +21,17 @@ class PutDoneContext : public OperationDoneContext
 {
     uint32_t _lid;
     DocIdLimit *_docIdLimit;
-    IGidToLidChangeHandler &_gidToLidChangeHandler;
-    document::GlobalId _gid;
-    search::SerialNum _serialNum;
-    bool _changedDbdId; // lid or document subdb changed
 
 public:
     PutDoneContext(std::unique_ptr<FeedToken> token,
                    const FeedOperation::Type opType,
-                   PerDocTypeFeedMetrics &metrics,
-                   IGidToLidChangeHandler &gidToLidChangeHandler,
-                   const document::GlobalId &gid,
-                   uint32_t lid,
-                   search::SerialNum serialNum,
-                   bool changedDbdId);
+                   PerDocTypeFeedMetrics &metrics);
 
     virtual ~PutDoneContext();
 
-    void registerPutLid(DocIdLimit *docIdLimit)
+    void registerPutLid(uint32_t lid, DocIdLimit *docIdLimit)
     {
+        _lid = lid;
         _docIdLimit = docIdLimit;
     }
 };

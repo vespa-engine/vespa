@@ -49,10 +49,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
       _warmupExecutor(ctx._warmupExecutor),
-      _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>())
-{
-    _gidToLidChangeHandler = _realGidToLidChangeHandler;
-}
+      _gidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>())
+{ }
 
 SearchableDocSubDB::~SearchableDocSubDB()
 {
@@ -246,7 +244,7 @@ SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
     SearchableFeedView::UP feedView(new SearchableFeedView(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
             FastAccessFeedView::Context(attrWriter, _docIdLimit),
-            SearchableFeedView::Context(getIndexWriter())));
+            SearchableFeedView::Context(getIndexWriter(), _gidToLidChangeHandler)));
 
     // XXX: Not exception safe.
     _rFeedView.set(SearchableFeedView::SP(feedView.release()));
@@ -353,7 +351,7 @@ SearchableDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
 void
 SearchableDocSubDB::close()
 {
-    _realGidToLidChangeHandler->close();
+    _gidToLidChangeHandler->close();
     Parent::close();
 }
 

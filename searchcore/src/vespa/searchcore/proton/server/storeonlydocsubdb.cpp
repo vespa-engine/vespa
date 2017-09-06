@@ -19,7 +19,6 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/searchlib/util/fileheadertk.h>
@@ -136,8 +135,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _subDbType(cfg._subDbType),
       _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
       _lidReuseDelayer(),
-      _commitTimeTracker(TimeStamp::Seconds(3600.0)),
-      _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
+      _commitTimeTracker(TimeStamp::Seconds(3600.0))
 {
     vespalib::mkdir(_baseDir, false); // Assume parent is created.
 }
@@ -389,7 +387,6 @@ StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const DocumentDBConfig &configSna
     return StoreOnlyFeedView::Context(getSummaryAdapter(),
             configSnapshot.getSchemaSP(),
             _metaStoreCtx,
-            *_gidToLidChangeHandler,
             configSnapshot.getDocumentTypeRepoSP(),
             _writeService,
             *_lidReuseDelayer, _commitTimeTracker);

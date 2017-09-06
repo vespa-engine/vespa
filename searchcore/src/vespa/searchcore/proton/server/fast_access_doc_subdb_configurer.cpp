@@ -24,7 +24,6 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
             StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
                     schema,
                     curr->getDocumentMetaStore(),
-                    curr->getGidToLidChangeHandler(),
                     repo,
                     curr->getWriteService(),
                     curr->getLidReuseDelayer(),

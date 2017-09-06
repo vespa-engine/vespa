@@ -176,7 +176,6 @@ protected:
     StoreOnlySubDBFileHeaderContext _fileHeaderContext;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker               _commitTimeTracker;
-    std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     std::shared_ptr<initializer::InitializerTask>
     createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,

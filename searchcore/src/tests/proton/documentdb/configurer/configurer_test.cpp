@@ -24,7 +24,6 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
-#include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -96,7 +95,6 @@ struct ViewSet
     search::transactionlog::NoSyncProxy _noTlSyncer;
     ISummaryManager::SP _summaryMgr;
     IDocumentMetaStoreContext::SP _dmsc;
-    std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker _commitTimeTracker;
     VarHolder<SearchView::SP> searchView;
@@ -125,7 +123,6 @@ ViewSet::ViewSet()
       _noTlSyncer(),
       _summaryMgr(),
       _dmsc(),
-      _gidToLidChangeHandler(),
       _lidReuseDelayer(),
       _commitTimeTracker(TimeStamp()),
       searchView(),
@@ -214,7 +211,7 @@ Fixture::initViewSet(ViewSet &views)
     IIndexWriter::SP indexWriter(new IndexWriter(indexMgr));
     AttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
     ISummaryAdapter::SP summaryAdapter(new SummaryAdapter(summaryMgr));
-    views._gidToLidChangeHandler = std::make_shared<MockGidToLidChangeHandler>();
+    std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler(std::make_shared<MockGidToLidChangeHandler>());
     Schema::SP schema(new Schema());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
@@ -239,7 +236,6 @@ Fixture::initViewSet(ViewSet &views)
                     new SearchableFeedView(StoreOnlyFeedView::Context(summaryAdapter,
                             schema,
                             views.searchView.get()->getDocumentMetaStore(),
-                            *views._gidToLidChangeHandler,
                             views.repo,
                             views._writeService,
                             *views._lidReuseDelayer,
@@ -252,7 +248,7 @@ Fixture::initViewSet(ViewSet &views)
                                     0u /* subDbId */,
                                     SubDbType::READY),
                             FastAccessFeedView::Context(attrWriter, views._docIdLimit),
-                            SearchableFeedView::Context(indexWriter))));
+                            SearchableFeedView::Context(indexWriter, gidToLidChangeHandler))));
 }
 
 
@@ -267,7 +263,6 @@ struct MyFastAccessFeedView
     HwInfo _hwInfo;
 
     IDocumentMetaStoreContext::SP _dmsc;
-    std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker                 _commitTimeTracker;
     VarHolder<FastAccessFeedView::SP> _feedView;
@@ -279,7 +274,6 @@ struct MyFastAccessFeedView
           _writeService(writeService),
           _hwInfo(),
           _dmsc(),
-          _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>()),
           _lidReuseDelayer(),
           _commitTimeTracker(TimeStamp()),
           _feedView()
@@ -299,7 +293,7 @@ struct MyFastAccessFeedView
                 new documentmetastore::LidReuseDelayer(_writeService,
                                                        docMetaCtx->get()));
         DocumentTypeRepo::SP repo = createRepo();
-        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, docMetaCtx, *_gidToLidChangeHandler, repo, _writeService, *_lidReuseDelayer, _commitTimeTracker);
+        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, docMetaCtx, repo, _writeService, *_lidReuseDelayer, _commitTimeTracker);
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), _metrics, 0, SubDbType::NOTREADY);
         AttributeManager::SP mgr(new AttributeManager(BASE_DIR, "test.subdb",
                                                       TuneFileAttributes(),
