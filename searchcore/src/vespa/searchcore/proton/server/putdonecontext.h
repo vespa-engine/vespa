@@ -27,7 +27,7 @@ class PutDoneContext : public OperationDoneContext
     IGidToLidChangeHandler &_gidToLidChangeHandler;
     document::GlobalId _gid;
     search::SerialNum _serialNum;
-    bool _changedDbdId; // lid or document subdb changed
+    bool _enableNotifyPut;
 
 public:
     PutDoneContext(std::unique_ptr<FeedToken> token,
@@ -37,7 +37,7 @@ public:
                    const document::GlobalId &gid,
                    uint32_t lid,
                    search::SerialNum serialNum,
-                   bool changedDbdId);
+                   bool enableNotifyPut);
 
     virtual ~PutDoneContext();
 

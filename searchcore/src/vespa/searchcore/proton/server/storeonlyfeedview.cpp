@@ -61,8 +61,8 @@ public:
                           PerDocTypeFeedMetrics &metrics,
                           IGidToLidChangeHandler &gidToLidChangeHandler,
                           const document::GlobalId &gid,
-                          uint32_t lid, search::SerialNum serialNum, bool changedDbdId, IDestructorCallback::SP moveDoneCtx)
-        : PutDoneContext(std::move(token), opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, changedDbdId),
+                          uint32_t lid, search::SerialNum serialNum, bool enableNotifyPut, IDestructorCallback::SP moveDoneCtx)
+        : PutDoneContext(std::move(token), opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut),
           _moveDoneCtx(std::move(moveDoneCtx))
     {}
     virtual ~PutDoneContextForMove() {}
@@ -72,23 +72,23 @@ std::shared_ptr<PutDoneContext>
 createPutDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics,
                      IGidToLidChangeHandler &gidToLidChangeHandler,
                      const document::GlobalId &gid, uint32_t lid,
-                     SerialNum serialNum, bool changedDbdId,
+                     SerialNum serialNum, bool enableNotifyPut,
                      IDestructorCallback::SP moveDoneCtx)
 {
     std::shared_ptr<PutDoneContext> result;
     if (moveDoneCtx) {
-        result = std::make_shared<PutDoneContextForMove>(std::move(token), opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, changedDbdId, std::move(moveDoneCtx));
+        result = std::make_shared<PutDoneContextForMove>(std::move(token), opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut, std::move(moveDoneCtx));
     } else {
-        result = std::make_shared<PutDoneContext>(std::move(token), opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, changedDbdId);
+        result = std::make_shared<PutDoneContext>(std::move(token), opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut);
     }
     return result;
 }
 
 std::shared_ptr<PutDoneContext>
 createPutDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics, IGidToLidChangeHandler &gidToLidChangeHandler,
-                     const document::GlobalId &gid, uint32_t lid, SerialNum serialNum, bool changedDbdId)
+                     const document::GlobalId &gid, uint32_t lid, SerialNum serialNum, bool enableNotifyPut)
 {
-    return createPutDoneContext(token, opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, changedDbdId, IDestructorCallback::SP());
+    return createPutDoneContext(token, opType, metrics, gidToLidChangeHandler, gid, lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
 }
 
 std::shared_ptr<UpdateDoneContext>
@@ -305,7 +305,7 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token, const PutOperation &putOp)
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(token, putOp.getType(), _params._metrics,
-                                 _gidToLidChangeHandler, gid, putOp.getLid(), serialNum, putOp.changedDbdId());
+                                 _gidToLidChangeHandler, gid, putOp.getLid(), serialNum, putOp.changedDbdId() && useDocumentMetaStore(serialNum));
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, putOp.getLid(), *doc, immediateCommit, onWriteDone);
         putIndexedFields(serialNum, putOp.getLid(), doc, immediateCommit, onWriteDone);
@@ -763,7 +763,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(token, moveOp.getType(), _params._metrics,
                                  _gidToLidChangeHandler, gid, moveOp.getLid(),
-                                 serialNum, moveOp.changedDbdId(), doneCtx);
+                                 serialNum, moveOp.changedDbdId() && useDocumentMetaStore(serialNum), doneCtx);
         putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, moveOp.getLid(), *doc, immediateCommit, onWriteDone);
         putIndexedFields(serialNum, moveOp.getLid(), doc, immediateCommit, onWriteDone);

@@ -14,14 +14,14 @@ PutDoneContext::PutDoneContext(std::unique_ptr<FeedToken> token,
                                const document::GlobalId &gid,
                                uint32_t lid,
                                search::SerialNum serialNum,
-                               bool changedDbdId)
+                               bool enableNotifyPut)
     : OperationDoneContext(std::move(token), opType, metrics),
       _lid(lid),
       _docIdLimit(nullptr),
       _gidToLidChangeHandler(gidToLidChangeHandler),
       _gid(gid),
       _serialNum(serialNum),
-      _changedDbdId(changedDbdId)
+      _enableNotifyPut(enableNotifyPut)
 {
 }
 
@@ -30,7 +30,7 @@ PutDoneContext::~PutDoneContext()
     if (_docIdLimit != nullptr) {
         _docIdLimit->bumpUpLimit(_lid + 1);
     }
-    if (_changedDbdId) {
+    if (_enableNotifyPut) {
         _gidToLidChangeHandler.notifyPut(_gid, _lid, _serialNum);
     }
 }
