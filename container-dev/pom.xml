@@ -37,6 +37,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_http_service</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -86,6 +92,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -102,6 +114,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -113,6 +131,10 @@
       <artifactId>container-search-and-docproc</artifactId>
       <version>${project.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.antlr</groupId>
           <artifactId>antlr4-runtime</artifactId>
