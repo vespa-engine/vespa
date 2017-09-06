@@ -2,30 +2,61 @@
 package com.yahoo.vespa.orchestrator.resources;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.auto.value.AutoValue;
-
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.Map;
+import java.util.Objects;
 
 /*
  * @author andreer
  */
-@AutoValue
-public abstract class InstanceStatusResponse {
+public class InstanceStatusResponse {
 
-    @JsonProperty("applicationInstance")
-    public abstract ApplicationInstance<ServiceMonitorStatus> applicationInstance();
+    private final ApplicationInstance<ServiceMonitorStatus> applicationInstance;
+    private final Map<HostName, String> hostStates;
 
-    @JsonProperty("hostStates")
-    public abstract Map<HostName, String> hostStates();
-
-    public static InstanceStatusResponse create(
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance,
-        Map<HostName, String> hostStates) {
-        return new AutoValue_InstanceStatusResponse(applicationInstance, hostStates);
+    private InstanceStatusResponse(ApplicationInstance<ServiceMonitorStatus> applicationInstance, Map<HostName, String> hostStates) {
+        this.applicationInstance = applicationInstance;
+        this.hostStates = hostStates;
     }
 
+    public static InstanceStatusResponse create(
+            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            Map<HostName, String> hostStates) {
+        return new InstanceStatusResponse(applicationInstance, hostStates);
+    }
+
+    @JsonProperty("applicationInstance")
+    public ApplicationInstance<ServiceMonitorStatus> applicationInstance() {
+        return applicationInstance;
+    }
+
+    @JsonProperty("hostStates")
+    public Map<HostName, String> hostStates() {
+        return hostStates;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceStatusResponse{" +
+                "applicationInstance=" + applicationInstance +
+                ", hostStates=" + hostStates +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        InstanceStatusResponse that = (InstanceStatusResponse) o;
+        return Objects.equals(applicationInstance, that.applicationInstance) &&
+                Objects.equals(hostStates, that.hostStates);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(applicationInstance, hostStates);
+    }
 }
