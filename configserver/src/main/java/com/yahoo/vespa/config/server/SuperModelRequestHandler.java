@@ -121,9 +121,12 @@ public class SuperModelRequestHandler implements RequestHandler {
 
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
-        log.log(LogLevel.DEBUG, "SuperModelRequestHandler resolving " + req + " for app id '" + appId + "'");
+        log.log(LogLevel.DEBUG, () -> "SuperModelRequestHandler resolving " + req + " for app id '" + appId + "'");
         if (handler != null) {
-            return handler.resolveConfig(req);
+            ConfigResponse configResponse = handler.resolveConfig(req);
+            log.log(LogLevel.DEBUG, () -> "SuperModelRequestHandler returning response for config " + req +
+                    " with generation " + configResponse.getGeneration());
+            return configResponse;
         }
         return null;
     }
