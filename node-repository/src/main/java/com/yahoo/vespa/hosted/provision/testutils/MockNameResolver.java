@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -68,6 +69,10 @@ public class MockNameResolver implements NameResolver {
     public Optional<String> getHostname(String ipAddress) {
         for (String host : records.keySet()) {
             if (records.get(host).contains(ipAddress)) return Optional.of(host);
+        }
+        if (mockAnyLookup) {
+            String hostname = UUID.randomUUID().toString();
+            records.put(hostname, Collections.singleton(ipAddress));
         }
         return Optional.empty();
     }
