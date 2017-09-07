@@ -207,4 +207,17 @@ TEST("Access subqueries") {
     EXPECT_EQUAL(0ULL, state.f3->getSubqueries());
 }
 
+TEST("require that TermFieldMatchData can be tagged as needed or not") {
+    TermFieldMatchData tfmd;
+    tfmd.setFieldId(123);
+    EXPECT_EQUAL(tfmd.getFieldId(),123u);
+    EXPECT_TRUE(!tfmd.isNotNeeded());
+    tfmd.tagAsNotNeeded();
+    EXPECT_EQUAL(tfmd.getFieldId(),123u);
+    EXPECT_TRUE(tfmd.isNotNeeded());
+    tfmd.tagAsNeeded();
+    EXPECT_EQUAL(tfmd.getFieldId(),123u);
+    EXPECT_TRUE(!tfmd.isNotNeeded());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
