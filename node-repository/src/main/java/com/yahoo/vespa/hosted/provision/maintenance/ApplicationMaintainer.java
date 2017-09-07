@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author bratseth
+ * @author mpolden
  */
 public abstract class ApplicationMaintainer extends Maintainer {
 
@@ -33,43 +34,22 @@ public abstract class ApplicationMaintainer extends Maintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected final void maintain() {
         Set<ApplicationId> applications = applicationsNeedingMaintenance();
         for (ApplicationId application : applications) {
-            try {
-                // An application might change it's state between the time the set of applications is retrieved and the
-                // time deployment happens. Lock on application and check if it's still active.
-                //
-                // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
-                try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
-                    if ( ! isActive(application)) continue; // became inactive since we started the loop
-                    Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
-                    if ( ! deployment.isPresent()) continue; // this will be done at another config server
-
-                    deploy(application, deployment.get());
-                }
-                throttle(applications.size());
-            }
-            catch (RuntimeException e) {
-                log.log(Level.WARNING, "Exception on maintenance redeploy of " + application, e);
-            }
+            deploy(application);
+            throttle(applications.size());
         }
     }
 
     /**
-     * Redeploy this application using the provided deployer.
+     * Redeploy this application.
+     *
      * The default implementation deploys asynchronously to make sure we do all applications timely 
      * even when deployments are slow.
      */
-    protected void deploy(ApplicationId applicationId, Deployment deployment) {
-        deploymentExecutor.execute(() -> {
-            try {
-                deployment.activate();
-            }
-            catch (RuntimeException e) {
-                log.log(Level.WARNING, "Exception on maintenance redeploy", e);
-            }
-        });
+    protected void deploy(ApplicationId application) {
+        deploymentExecutor.execute(() -> deployWithLock(application));
     }
 
     /** Block in this method until the next application should be maintained */
@@ -81,12 +61,30 @@ public abstract class ApplicationMaintainer extends Maintainer {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    /** 
+    /**
      * Returns the nodes whose applications should be maintained by this now. 
      * This should be some subset of the allocated nodes. 
      */
     protected abstract List<Node> nodesNeedingMaintenance();
 
+    /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
+    final void deployWithLock(ApplicationId application) {
+        // An application might change it's state between the time the set of applications is retrieved and the
+        // time deployment happens. Lock the application and check if it's still active.
+        //
+        // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
+        try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
+            if ( ! isActive(application)) return; // became inactive since deployment was requested
+            Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
+            if ( ! deployment.isPresent()) return; // this will be done at another config server
+
+            deployment.get().activate();
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, "Exception on maintenance redeploy", e);
+        }
+    }
+
+    /** Returns true when application has at least one active node */
     private boolean isActive(ApplicationId application) {
         return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
     }
