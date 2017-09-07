@@ -16,6 +16,7 @@
     <name>${project.artifactId}</name>
     <dependencies>
         <dependency>
+            <!-- Newer version than the one in rt.jar, including the ElementTraversal class needed by Xerces (Aug. 2015)-->
             <groupId>xml-apis</groupId>
             <artifactId>xml-apis</artifactId>
             <version>1.4.01</version>
