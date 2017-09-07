@@ -273,6 +273,7 @@ public class VersionStatusTest {
                 application.id(),
                 jobType,
                 application.deploymentJobs().projectId().get(),
+                42,
                 JobError.from(success),
                 false
         );
