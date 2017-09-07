@@ -43,9 +43,6 @@ public class NodePrioritizer {
     private final Set<Node> spareHosts;
     private final Map<Node, ResourceCapacity> headroomHosts;
 
-    /** This is before we mock DNS to resolve on test IP that we use in tests */
-    public static boolean unitTesting = false;
-
     NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares, NameResolver nameResolver) {
         this.allNodes = Collections.unmodifiableList(allNodes);
         this.requestedNodes = nodeSpec;
@@ -221,7 +218,7 @@ public class NodePrioritizer {
     }
 
     /**
-     * Add nodes already provisioned, but not allocatied to any application
+     * Add nodes already provisioned, but not allocated to any application
      */
     void addReadyNodes() {
         allNodes.stream()

@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Interface for a basic name to IP address resolver.
+ * Interface for a hostname/ip resolver.
  *
  * @author mpolden
  */
@@ -20,7 +20,7 @@ public interface NameResolver {
     Set<String> getAllByNameOrThrow(String hostname);
 
     /**
-     * Get hostname from IP address
+     * Get hostname from IP address.
      *
      * @param ipAddress The IPv4 or IPv6 address for the host
      * @return Empty if the IP does not resolve or the hostname if it does
