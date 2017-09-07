@@ -2,6 +2,7 @@
 #pragma once
 
 #include "idestructorcallback.h"
+#include <vespa/vespalib/util/executor.h>
 
 namespace search
 {

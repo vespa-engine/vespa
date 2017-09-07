@@ -77,6 +77,7 @@ vespa_add_library(searchcore_server STATIC
     pruneremoveddocumentsjob.cpp
     putdonecontext.cpp
     reconfig_params.cpp
+    remove_batch_done_context.cpp
     removedonecontext.cpp
     removedonetask.cpp
     replaypacketdispatcher.cpp

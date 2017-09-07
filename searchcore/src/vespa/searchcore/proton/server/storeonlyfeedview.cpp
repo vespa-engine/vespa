@@ -7,6 +7,7 @@
 #include "removedonecontext.h"
 #include "storeonlyfeedview.h"
 #include "updatedonecontext.h"
+#include "remove_batch_done_context.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -658,25 +659,26 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     const LidVector &lidsToRemove(ctx->getLidVector());
     bool useDMS = useDocumentMetaStore(serialNum);
     bool explicitReuseLids = false;
+    std::vector<document::GlobalId> gidsToRemove;
     if (useDMS) {
-        std::vector<document::GlobalId> gidsToRemove(getGidsToRemove(_metaStore, lidsToRemove));
+        gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
         for (const auto &gid : gidsToRemove) {
             _gidToLidChangeHandler.notifyRemove(gid, serialNum);
         }
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         _metaStore.commit(serialNum, serialNum);
-        for (const auto &gid : gidsToRemove) {
-            _gidToLidChangeHandler.notifyRemoveDone(gid, serialNum);
-        }
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
     std::shared_ptr<search::IDestructorCallback> onWriteDone;
+    vespalib::Executor::Task::UP removeBatchDoneTask;
+    if (explicitReuseLids) {
+        removeBatchDoneTask = makeLambdaTask([=]() { _metaStore.removeBatchComplete(lidsToRemove); });
+    } else {
+        removeBatchDoneTask = makeLambdaTask([]() {});
+    }
+    onWriteDone = std::make_shared<RemoveBatchDoneContext>(_writeService.master(), std::move(removeBatchDoneTask),
+                                                           _gidToLidChangeHandler, std::move(gidsToRemove), serialNum);
     if (remove_index_and_attributes) {
-        if (explicitReuseLids) {
-            onWriteDone = std::make_shared<search::ScheduleTaskCallback>(
-                    _writeService.master(),
-                    makeLambdaTask([=]() { _metaStore.removeBatchComplete(lidsToRemove); }));
-        }
         removeIndexedFields(serialNum, lidsToRemove, immediateCommit, onWriteDone);
         removeAttributes(serialNum, lidsToRemove, immediateCommit, onWriteDone);
     }
@@ -684,9 +686,6 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         for (const auto &lid : lidsToRemove) {
             removeSummary(serialNum, lid);
         }
-    }
-    if (explicitReuseLids && !onWriteDone) {
-        _metaStore.removeBatchComplete(lidsToRemove);
     }
     return lidsToRemove.size();
 }
