@@ -21,7 +21,8 @@ createAttr(const vespalib::string &name)
 {
     return std::make_shared<ImportedAttributeVector>(name,
                                                      ReferenceAttribute::SP(),
-                                                     AttributeVector::SP());
+                                                     AttributeVector::SP(),
+                                                     false);
 }
 
 struct Fixture {

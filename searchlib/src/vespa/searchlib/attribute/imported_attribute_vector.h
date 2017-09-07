@@ -14,6 +14,8 @@ class AttributeEnumGuard;
 
 namespace attribute {
 
+class BitVectorSearchCache;
+
 /**
  * Attribute vector which does not store values of its own, but rather serves as a
  * convenient indirection wrapper towards a target vector, usually in another
@@ -29,7 +31,12 @@ public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<AttributeVector> target_attribute);
+                            std::shared_ptr<AttributeVector> target_attribute,
+                            bool use_search_cache);
+    ImportedAttributeVector(vespalib::stringref name,
+                            std::shared_ptr<ReferenceAttribute> reference_attribute,
+                            std::shared_ptr<AttributeVector> target_attribute,
+                            std::shared_ptr<BitVectorSearchCache> search_cache);
     ~ImportedAttributeVector();
 
     const vespalib::string & getName() const override;
@@ -65,6 +72,10 @@ public:
     const std::shared_ptr<AttributeVector>& getTargetAttribute() const noexcept {
         return _target_attribute;
     }
+    const std::shared_ptr<BitVectorSearchCache> &getSearchCache() const {
+        return _search_cache;
+    }
+    void clearSearchCache();
 
     /*
      * Create an imported attribute with a snapshot of lid to lid mapping.
@@ -77,9 +88,10 @@ protected:
                                       const common::BlobConverter * bc) const override;
 
 
-    vespalib::string                    _name;
-    std::shared_ptr<ReferenceAttribute> _reference_attribute;
-    std::shared_ptr<AttributeVector>    _target_attribute;
+    vespalib::string                      _name;
+    std::shared_ptr<ReferenceAttribute>   _reference_attribute;
+    std::shared_ptr<AttributeVector>      _target_attribute;
+    std::shared_ptr<BitVectorSearchCache> _search_cache;
 };
 
 } // attribute

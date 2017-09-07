@@ -3,7 +3,7 @@
 #include "imported_attribute_vector.h"
 #include "imported_attribute_vector_read_guard.h"
 #include "imported_search_context.h"
-#include "attributeguard.h"
+#include "bitvector_search_cache.h"
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -13,10 +13,24 @@ namespace attribute {
 ImportedAttributeVector::ImportedAttributeVector(
             vespalib::stringref name,
             std::shared_ptr<ReferenceAttribute> reference_attribute,
-            std::shared_ptr<AttributeVector> target_attribute)
+            std::shared_ptr<AttributeVector> target_attribute,
+            bool use_search_cache)
     : _name(name),
       _reference_attribute(std::move(reference_attribute)),
-      _target_attribute(std::move(target_attribute))
+      _target_attribute(std::move(target_attribute)),
+      _search_cache(use_search_cache ? std::make_shared<BitVectorSearchCache>() :
+                    std::shared_ptr<BitVectorSearchCache>())
+{
+}
+
+ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
+                                                 std::shared_ptr<ReferenceAttribute> reference_attribute,
+                                                 std::shared_ptr<AttributeVector> target_attribute,
+                                                 std::shared_ptr<BitVectorSearchCache> search_cache)
+    : _name(name),
+      _reference_attribute(std::move(reference_attribute)),
+      _target_attribute(std::move(target_attribute)),
+      _search_cache(std::move(search_cache))
 {
 }
 
@@ -27,7 +41,7 @@ std::unique_ptr<ImportedAttributeVector>
 ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
     return std::make_unique<ImportedAttributeVectorReadGuard>
-        (getName(), getReferenceAttribute(), getTargetAttribute(), stableEnumGuard);
+        (getName(), getReferenceAttribute(), getTargetAttribute(), getSearchCache(), stableEnumGuard);
 }
 
 const vespalib::string& search::attribute::ImportedAttributeVector::getName() const {
@@ -129,6 +143,12 @@ CollectionType::Type ImportedAttributeVector::getCollectionType() const {
 
 bool ImportedAttributeVector::hasEnum() const {
     return _target_attribute->hasEnum();
+}
+
+void ImportedAttributeVector::clearSearchCache() {
+    if (_search_cache) {
+        _search_cache->clear();
+    }
 }
 
 long ImportedAttributeVector::onSerializeForAscendingSort(DocId doc,

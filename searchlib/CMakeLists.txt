@@ -73,6 +73,7 @@ vespa_define_module(
     src/tests/attribute/attributemanager
     src/tests/attribute/benchmark
     src/tests/attribute/bitvector
+    src/tests/attribute/bitvector_search_cache
     src/tests/attribute/changevector
     src/tests/attribute/compaction
     src/tests/attribute/comparator

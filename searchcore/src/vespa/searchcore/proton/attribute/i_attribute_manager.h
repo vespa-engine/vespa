@@ -101,6 +101,8 @@ struct IAttributeManager : public search::IAttributeManager
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const = 0;
 
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) = 0;
+
+    virtual const ImportedAttributesRepo *getImportedAttributes() const = 0;
 };
 
 } // namespace proton

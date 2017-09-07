@@ -384,6 +384,9 @@ struct MyAttributeManager : public proton::IAttributeManager
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo>) override {
         abort();
     }
+    virtual const ImportedAttributesRepo *getImportedAttributes() const override {
+        abort();
+    }
 };
 
 struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler

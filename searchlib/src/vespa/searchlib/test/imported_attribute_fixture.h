@@ -44,34 +44,47 @@ enum class FastSearchConfig {
     Default
 };
 
+enum class FilterConfig {
+    ExplicitlyEnabled,
+    Default
+};
+
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_typed_attribute(BasicType basic_type,
                                                     CollectionType collection_type,
                                                     FastSearchConfig fast_search = FastSearchConfig::Default,
+                                                    FilterConfig filter = FilterConfig::Default,
                                                     vespalib::stringref name = "parent") {
     Config cfg(basic_type, collection_type);
     if (fast_search == FastSearchConfig::ExplicitlyEnabled) {
         cfg.setFastSearch(true);
+    }
+    if (filter == FilterConfig::ExplicitlyEnabled) {
+        cfg.setIsFilter(true);
     }
     return std::dynamic_pointer_cast<AttrVecType>(
             AttributeFactory::createAttribute(name, std::move(cfg)));
 }
 
 template<typename AttrVecType>
-std::shared_ptr<AttrVecType> create_single_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::SINGLE, FastSearchConfig::Default, name);
+std::shared_ptr<AttrVecType> create_single_attribute(BasicType type,
+                                                     FastSearchConfig fast_search = FastSearchConfig::Default,
+                                                     FilterConfig filter = FilterConfig::Default,
+                                                     vespalib::stringref name = "parent") {
+    return create_typed_attribute<AttrVecType>(type, CollectionType::SINGLE, fast_search, filter, name);
 }
 
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::ARRAY, FastSearchConfig::Default, name);
+    return create_typed_attribute<AttrVecType>(type, CollectionType::ARRAY,
+                                               FastSearchConfig::Default, FilterConfig::Default, name);
 }
 
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type,
                                                    FastSearchConfig fast_search = FastSearchConfig::Default,
                                                    vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, name);
+    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, FilterConfig::Default, name);
 }
 
 template<typename VectorType>
@@ -89,12 +102,13 @@ std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
 }
 
 struct ImportedAttributeFixture {
+    bool use_search_cache;
     std::shared_ptr<AttributeVector> target_attr;
     std::shared_ptr<ReferenceAttribute> reference_attr;
     std::shared_ptr<ImportedAttributeVector> imported_attr;
     std::shared_ptr<MockGidToLidMapperFactory> mapper_factory;
 
-    ImportedAttributeFixture();
+    ImportedAttributeFixture(bool use_search_cache_ = false);
 
     virtual ~ImportedAttributeFixture();
 
@@ -116,7 +130,7 @@ struct ImportedAttributeFixture {
 
     std::shared_ptr<ImportedAttributeVector>
     create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name()) {
-        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr);
+        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr, use_search_cache);
     }
 
     template<typename AttrVecType>
@@ -169,8 +183,10 @@ struct ImportedAttributeFixture {
     template<typename AttrVecType, typename ValueType>
     void reset_with_single_value_reference_mappings(
             BasicType type,
-            const std::vector<LidToLidMapping<ValueType>> &mappings) {
-        reset_with_new_target_attr(create_single_attribute<AttrVecType>(type));
+            const std::vector<LidToLidMapping<ValueType>> &mappings,
+            FastSearchConfig fast_search = FastSearchConfig::Default,
+            FilterConfig filter = FilterConfig::Default) {
+        reset_with_new_target_attr(create_single_attribute<AttrVecType>(type, fast_search, filter));
         // Fun experiment: rename `auto& mapping` to `auto& m` and watch GCC howl about
         // shadowing a variable... that exists in the set_up_and_map function!
         set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
@@ -205,8 +221,9 @@ struct ImportedAttributeFixture {
     }
 };
 
-ImportedAttributeFixture::ImportedAttributeFixture()
-        : target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
+ImportedAttributeFixture::ImportedAttributeFixture(bool use_search_cache_)
+        : use_search_cache(use_search_cache_),
+          target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
           reference_attr(create_reference_attribute()),
           imported_attr(create_attribute_vector_from_members()),
           mapper_factory(std::make_shared<MockGidToLidMapperFactory>()) {
@@ -240,8 +257,10 @@ template<typename AttrVecType, typename ValueType>
 void reset_with_single_value_reference_mappings(
         ImportedAttributeFixture &f,
         BasicType type,
-        const std::vector<ImportedAttributeFixture::LidToLidMapping<ValueType>> &mappings) {
-    f.reset_with_single_value_reference_mappings<AttrVecType, ValueType>(type, mappings);
+        const std::vector<ImportedAttributeFixture::LidToLidMapping<ValueType>> &mappings,
+        FastSearchConfig fast_search = FastSearchConfig::Default,
+        FilterConfig filter = FilterConfig::Default) {
+    f.reset_with_single_value_reference_mappings<AttrVecType, ValueType>(type, mappings, fast_search, filter);
 }
 
 template<typename AttrVecType, typename ValueType>

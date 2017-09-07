@@ -49,6 +49,7 @@ public:
         bool tuneFileDocumentDBChanged;
         bool schemaChanged;
         bool maintenanceChanged;
+        bool visibilityDelayChanged;
 
         ComparisonResult();
         ComparisonResult &setRankProfilesChanged(bool val) { rankProfilesChanged = val; return *this; }
@@ -64,6 +65,7 @@ public:
         ComparisonResult &setTuneFileDocumentDBChanged(bool val) { tuneFileDocumentDBChanged = val; return *this; }
         ComparisonResult &setSchemaChanged(bool val) { schemaChanged = val; return *this; }
         ComparisonResult &setMaintenanceChanged(bool val) { maintenanceChanged = val; return *this; }
+        ComparisonResult &setVisibilityDelayChanged(bool val) { visibilityDelayChanged = val; return *this; }
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;

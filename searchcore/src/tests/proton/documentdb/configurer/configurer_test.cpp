@@ -141,7 +141,9 @@ struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
 };
 
 struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
-    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &, const search::IAttributeManager &) override {
+    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &,
+                                                    const search::IAttributeManager &,
+                                                    fastos::TimeStamp) override {
         return std::make_unique<ImportedAttributesRepo>();
     }
     void teardown(const search::IAttributeManager &) override { }
@@ -657,9 +659,15 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     }
 }
 
-TEST("require that attribute manager should change when imported fields has changed")
+TEST("require that attribute manager (imported attributes) should change when imported fields has changed")
 {
     ReconfigParams params(CCR().setImportedFieldsChanged(true));
+    EXPECT_TRUE(params.shouldAttributeManagerChange());
+}
+
+TEST("require that attribute manager (imported attributes) should change when visibility delay has changed")
+{
+    ReconfigParams params(CCR().setVisibilityDelayChanged(true));
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }
 

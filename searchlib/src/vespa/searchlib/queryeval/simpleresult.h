@@ -23,6 +23,11 @@ public:
     SimpleResult() : _hits() {}
 
     /**
+     * Create a result with the given hits.
+     */
+    SimpleResult(const std::vector<uint32_t> &hits) : _hits(hits) {}
+
+    /**
      * Obtain the number of hits
      *
      * @return number of hits
@@ -58,8 +63,8 @@ public:
      *
      * @param sb search object
      **/
-    void search(SearchIterator &sb);
-    void searchStrict(SearchIterator &sb, uint32_t docIdLimit);
+    SimpleResult &search(SearchIterator &sb);
+    SimpleResult &searchStrict(SearchIterator &sb, uint32_t docIdLimit);
 
     /**
      * Fill this result with all the hits returned by the given search
@@ -69,7 +74,7 @@ public:
      * @param sb search object
      * @param docIdLimit the end of the docId range for this search iterator
      **/
-    void search(SearchIterator &sb, uint32_t docIdLimit);
+    SimpleResult &search(SearchIterator &sb, uint32_t docIdLimit);
 
     /**
      * Test of we contain the same hits as rhs.

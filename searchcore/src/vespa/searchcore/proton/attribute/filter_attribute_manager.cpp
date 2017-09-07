@@ -213,4 +213,10 @@ FilterAttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributes
     throw vespalib::IllegalArgumentException("Not implemented");
 }
 
+const ImportedAttributesRepo *
+FilterAttributeManager::getImportedAttributes() const
+{
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+
 }

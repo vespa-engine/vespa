@@ -210,7 +210,8 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
     if (params.shouldAttributeManagerChange()) {
         IAttributeManager::SP newAttrMgr = attrMgr->create(attrSpec);
-        newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr));
+        newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
+                                                           newConfig.getMaintenanceConfigSP()->getVisibilityDelay()));
         IAttributeManager::SP oldAttrMgr = attrMgr;
         attrMgr = newAttrMgr;
         shouldMatchViewChange = true;

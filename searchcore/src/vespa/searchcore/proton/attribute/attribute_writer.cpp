@@ -2,18 +2,20 @@
 
 #include "attribute_writer.h"
 #include "attributemanager.h"
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <vespa/document/datatype/documenttype.h>
 
 #include <vespa/log/log.h>
-#include <vespa/document/base/exceptions.h>
-
 LOG_SETUP(".proton.server.attributeadapter");
 
 using namespace document;
 using namespace search;
+using search::attribute::ImportedAttributeVector;
 
 namespace proton {
 
@@ -459,8 +461,15 @@ AttributeWriter::heartBeat(SerialNum serialNum)
 
 
 void
-AttributeWriter::commit(SerialNum serialNum, OnWriteDoneType onWriteDone)
+AttributeWriter::forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone)
 {
+    if (_mgr->getImportedAttributes() != nullptr) {
+        std::vector<std::shared_ptr<ImportedAttributeVector>> importedAttrs;
+        _mgr->getImportedAttributes()->getAll(importedAttrs);
+        for (const auto &attr : importedAttrs) {
+            attr->clearSearchCache();
+        }
+    }
     for (const auto &wc : _writeContexts) {
         auto commitTask = std::make_unique<CommitTask>(wc, serialNum, onWriteDone);
         _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(commitTask));

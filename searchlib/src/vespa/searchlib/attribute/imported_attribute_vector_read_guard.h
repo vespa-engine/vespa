@@ -7,6 +7,8 @@
 
 namespace search::attribute {
 
+class BitVectorSearchCache;
+
 /*
  * Short lived attribute vector that does not store values on its own.
  *
@@ -31,6 +33,7 @@ public:
     ImportedAttributeVectorReadGuard(vespalib::stringref name,
                                      std::shared_ptr<ReferenceAttribute> reference_attribute,
                                      std::shared_ptr<AttributeVector> target_attribute,
+                                     std::shared_ptr<BitVectorSearchCache> search_cache,
                                      bool stableEnumGuard);
     ~ImportedAttributeVectorReadGuard();
 
