@@ -22,6 +22,8 @@
 
 namespace search { class IDestructorCallback; }
 
+namespace document { class GLobalId; }
+
 namespace proton {
 
 class IReplayConfig;
@@ -178,8 +180,8 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token, SerialNum serialNum, Lid lid,
-                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, const document::GlobalId &gid, Lid lid,
+                        FeedOperation::Type opType, bool enableNotifyRemoveDone, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
