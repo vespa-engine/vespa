@@ -99,7 +99,7 @@ class SlobrokAndConfigIntersector(
   instancesObservables.slobroksPerInstance.subscribe { slobrokServiceMap =>
     val nextSlobrokMonitorMap = slobrokServiceMap.map { case (instanceReference, slobrokServices) =>
       val slobrokMonitor = latestSlobrokMonitorMap.getOrElse(instanceReference, new SlobrokMonitor())
-      slobrokMonitor.setSlobrokConnectionSpecs(asConnectionSpecs(slobrokServices))
+      slobrokMonitor.setSlobrokConnectionSpecs(asConnectionSpecs(slobrokServices).toList.asJava)
       (instanceReference, slobrokMonitor)
     }
     val removedSlobrokMonitors = (latestSlobrokMonitorMap -- nextSlobrokMonitorMap.keySet).values
