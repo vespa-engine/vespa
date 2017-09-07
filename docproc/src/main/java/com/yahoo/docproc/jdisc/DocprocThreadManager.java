@@ -11,9 +11,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 class DocprocThreadManager {
+
     private static Logger log = Logger.getLogger(DocprocThreadManager.class.getName());
 
     private final long maxConcurrentByteSize;

@@ -20,9 +20,10 @@ import java.util.List;
  * A document processor to call - an item on a {@link com.yahoo.docproc.CallStack}.
  *
  * @author bratseth
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class Call implements Cloneable {
+
     private final DocumentProcessor processor;
     private final Counter docCounter;
     private final String docCounterName;
@@ -34,17 +35,19 @@ public class Call implements Cloneable {
         this(processor, Statistics.nullImplementation, new NullMetric());
     }
 
-    /** Creates a new call to a processor with no arguments.
-     * @param processor the document processor to call */
+    /**
+     * Creates a new call to a processor with no arguments.
+     *
+     * @param processor the document processor to call
+     */
     public Call(DocumentProcessor processor, Statistics manager, Metric metric) {
         this(processor, "", manager, metric);
     }
 
     public Call(DocumentProcessor processor, String chainName, Statistics manager, Metric metric) {
         this.processor = processor;
-        if (chainName == null) {
+        if (chainName == null)
             chainName = "";
-        }
         chainName = chainName.replaceAll("[^\\p{Alnum}]", "_");
         docCounterName = "docprocessor_" + chainName + "_" +
                          getDocumentProcessorId().stringValue().replaceAll("[^\\p{Alnum}]", "_") + "_documents";
@@ -176,4 +179,5 @@ public class Call implements Cloneable {
         procTimeCounter.increment(increment);
         metric.add(procTimeCounterName, increment, null);
     }
+
 }

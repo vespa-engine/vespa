@@ -36,7 +36,7 @@ import java.util.Set;
  * into account a schema map of field names. <li>We support mapping into struct fields of arbitrary depth using
  * from→mystruct.mystruct.myfield </ul> We also enforce the @Accesses annotation(s) of the doc proc which uses this.
  *
- * @author <a href="mailto:vegardh@yahoo-inc.com">Vegard Havdal</a>
+ * @author Vegard Havdal
  */
 public class ProxyDocument extends Document implements DocumentOperationWrapper {
 

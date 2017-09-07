@@ -20,7 +20,7 @@ import static com.yahoo.docproc.util.SplitterDocumentProcessor.validate;
 import static com.yahoo.docproc.util.SplitterDocumentProcessor.doProcessOuterDocument;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class JoinerDocumentProcessor extends DocumentProcessor {
 
@@ -28,7 +28,7 @@ public class JoinerDocumentProcessor extends DocumentProcessor {
     private String documentTypeName;
     private String arrayFieldName;
     private String contextFieldName;
-    DocumentTypeManager manager;
+    private DocumentTypeManager manager;
 
     public JoinerDocumentProcessor(SplitterJoinerDocumentProcessorConfig cfg, DocumentmanagerConfig documentmanagerConfig) {
         super();
@@ -68,4 +68,5 @@ public class JoinerDocumentProcessor extends DocumentProcessor {
         processing.removeVariable(contextFieldName);
         return Progress.DONE;
     }
+
 }

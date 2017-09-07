@@ -2,12 +2,12 @@
 package com.yahoo.docproc;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface ProcessingEndpoint {
 
-    public void processingDone(Processing processing);
+    void processingDone(Processing processing);
 
-    public void processingFailed(Processing processing, Exception exception);
+    void processingFailed(Processing processing, Exception exception);
 
 }

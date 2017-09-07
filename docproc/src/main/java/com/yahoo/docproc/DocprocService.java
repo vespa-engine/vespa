@@ -31,9 +31,8 @@ public class DocprocService extends AbstractComponent {
 
     private static Logger log = Logger.getLogger(DocprocService.class.getName());
     private volatile DocprocExecutor executor;
-    /**
-     * The processings currently in progress at this service
-     */
+
+    /** The processings currently in progress at this service */
     private final LinkedBlockingQueue<Processing> queue;
     /** The current state of this service */
     private boolean inService = false;
@@ -138,8 +137,8 @@ public class DocprocService extends AbstractComponent {
     /**
      * Returns the processing chain of this service. This stack can not be modified.
      * To change the stack, set a new one.
-     * TODO: Enforce unmodifiability
      */
+    // TODO: Enforce unmodifiability
     public CallStack getCallStack() {
         DocprocExecutor ex = getExecutor();
         return (ex == null) ? null : ex.getCallStack();
@@ -225,13 +224,12 @@ public class DocprocService extends AbstractComponent {
     }
 
     private void addProcessing(Processing processing) {
-        if (!isAcceptingNewProcessings()) {
-            throw new IllegalStateException("Docproc service " + getName() + " is not accepting new incoming processings. Cannot add " + processing + " ");
-        }
+        if ( ! isAcceptingNewProcessings())
+            throw new IllegalStateException("Docproc service " + getName() + 
+                                            " is not accepting new incoming processings. Cannot add " + processing + " ");
 
-        if (!queue.offer(processing)) {
+        if ( ! queue.offer(processing))
             throw new RejectedExecutionException("Docproc service " + getName() + " is busy, please try later");
-        }
     }
 
     /**
@@ -370,4 +368,5 @@ public class DocprocService extends AbstractComponent {
 
     private class NoCallStackException extends RuntimeException {
     }
+
 }

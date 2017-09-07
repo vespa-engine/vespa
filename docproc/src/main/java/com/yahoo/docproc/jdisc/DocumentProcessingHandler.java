@@ -40,7 +40,7 @@ import static com.yahoo.component.chain.model.ChainsModelBuilder.buildFromConfig
 /**
  * TODO: Javadoc
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentProcessingHandler extends AbstractRequestHandler {
 
@@ -232,4 +232,5 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     public DocumentTypeManager getDocumentTypeManager() {
         return documentTypeManager;
     }
+
 }

@@ -17,6 +17,7 @@ import java.util.logging.Logger;
  * 
  * @author bratseth
  */
+@SuppressWarnings("unused") // created by dependency injection
 public class LoggingIssues implements Issues {
 
     private static final Logger log = Logger.getLogger(LoggingIssues.class.getName());

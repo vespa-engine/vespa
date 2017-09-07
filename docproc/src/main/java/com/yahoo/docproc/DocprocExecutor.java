@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * An executor executed incoming processings on its CallStack
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocprocExecutor {
 
