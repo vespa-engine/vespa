@@ -109,7 +109,7 @@ RankProgram::run_const(FeatureExecutor *executor)
 }
 
 void
-RankProgram::unbox(BlueprintResolver::FeatureRef seed)
+RankProgram::unbox(BlueprintResolver::FeatureRef seed, const MatchData &md)
 {
     FeatureExecutor *input_executor = _executors[seed.executor];
     const NumberOrObject *input_value = input_executor->outputs().get_raw(seed.output);
@@ -122,7 +122,7 @@ RankProgram::unbox(BlueprintResolver::FeatureRef seed)
         FeatureExecutor &unboxer = _hot_stash.create<UnboxingExecutor>();        
         unboxer.bind_inputs(inputs);
         unboxer.bind_outputs(outputs);
-        unboxer.bind_match_data(*_match_data);
+        unboxer.bind_match_data(md);
         _unboxed_seeds.emplace(input_value, LazyValue(&outputs[0], &unboxer));
     }
 }
@@ -153,7 +153,6 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
-      _match_data(),
       _hot_stash(32768),
       _cold_stash(),
       _executors(),
@@ -165,12 +164,11 @@ RankProgram::RankProgram(BlueprintResolver::SP resolver)
 RankProgram::~RankProgram() {}
 
 void
-RankProgram::setup(const MatchDataLayout &mdl_in,
+RankProgram::setup(const MatchData &md,
                    const IQueryEnvironment &queryEnv,
                    const Properties &featureOverrides)
 {
     assert(_executors.empty());
-    _match_data = mdl_in.createMatchData();
     std::vector<Override> overrides = prepare_overrides(_resolver->getFeatureMap(), featureOverrides);
     auto override = overrides.begin();
     auto override_end = overrides.end();
@@ -204,7 +202,7 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
         }
         executor->bind_inputs(inputs);
         executor->bind_outputs(outputs);
-        executor->bind_match_data(*_match_data);
+        executor->bind_match_data(md);
         _executors.push_back(executor);
         if (is_const) {
             run_const(executor);
@@ -213,7 +211,7 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     for (const auto &seed_entry: _resolver->getSeedMap()) {
         auto seed = seed_entry.second;
         if (specs[seed.executor].output_types[seed.output]) {
-            unbox(seed);
+            unbox(seed, md);
         }
     }
     assert(_executors.size() == specs.size());

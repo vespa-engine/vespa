@@ -98,7 +98,7 @@ private:
 protected:
     virtual void handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
     virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
-    virtual void handle_bind_match_data(MatchData &md);
+    virtual void handle_bind_match_data(const MatchData &md);
 
     /**
      * Execute this feature executor for the given document.
@@ -117,7 +117,7 @@ public:
     // bind order per executor: inputs, outputs, match_data
     void bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
     void bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
-    void bind_match_data(MatchData &md);
+    void bind_match_data(const MatchData &md);
 
     const Inputs &inputs() const { return _inputs; }
     const Outputs &outputs() const { return _outputs; }

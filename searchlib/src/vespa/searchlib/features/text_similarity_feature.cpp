@@ -158,7 +158,7 @@ TextSimilarityExecutor::execute(uint32_t docId)
 }
 
 void
-TextSimilarityExecutor::handle_bind_match_data(fef::MatchData &md)
+TextSimilarityExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

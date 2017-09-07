@@ -16,7 +16,7 @@ private:
     HandleVector _handles;
     const fef::MatchData *_md;
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     ItemRawScoreExecutor(HandleVector handles)
@@ -30,7 +30,7 @@ private:
     fef::TermFieldHandle _handle;
     const fef::MatchData *_md;
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     SimpleItemRawScoreExecutor(fef::TermFieldHandle handle)

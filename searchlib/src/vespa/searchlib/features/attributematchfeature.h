@@ -69,12 +69,12 @@ private:
         feature_t getWeight() const;
         feature_t getSignificance() const;
         feature_t getImportance() const { return (getWeight() + getSignificance()) * 0.5; }
-        void bind_match_data(fef::MatchData &md) { _md = &md; }
+        void bind_match_data(const fef::MatchData &md) { _md = &md; }
     };
 
     Computer _cmp;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    virtual void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     /**
