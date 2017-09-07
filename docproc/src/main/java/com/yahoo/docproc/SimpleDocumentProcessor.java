@@ -22,7 +22,7 @@ import com.yahoo.log.LogLevel;
  * <p>SimpleDocumentProcessor is for the <em>simple</em> cases. For complete control over document processing,
  * like returning instances of {@link DocumentProcessor.LaterProgress}, subclass {@link DocumentProcessor} instead.</p>
  *
- * @author Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @author havardpe
  */
 public class SimpleDocumentProcessor extends DocumentProcessor {
