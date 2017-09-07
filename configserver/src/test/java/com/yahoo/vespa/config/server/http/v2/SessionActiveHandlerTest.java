@@ -182,7 +182,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         Clock clock = Clock.systemUTC();
         activateAndAssertOK(90l, 0l, clock);
         activateAndAssertError(92l, 89l, clock,
-                               Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_FAILED,
+                               Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_CONFLICT,
                                "tenant:" + tenant + " app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
     }
 
