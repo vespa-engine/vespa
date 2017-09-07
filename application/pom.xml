@@ -75,11 +75,6 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-xml_${scala.major-version}</artifactId>
-      <scope>test</scope>
-    </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,
          for user projects must be added in compile scope here.

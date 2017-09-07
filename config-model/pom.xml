@@ -308,11 +308,6 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-xml_${scala.major-version}</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
