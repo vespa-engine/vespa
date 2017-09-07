@@ -17,6 +17,7 @@ import java.util.logging.Logger;
  * 
  * @author bratseth
  */
+@SuppressWarnings("unused") // created by dependency injection
 public class LoggingIssues implements Issues {
 
     private static final Logger log = Logger.getLogger(LoggingIssues.class.getName());
@@ -43,9 +44,15 @@ public class LoggingIssues implements Issues {
     public String file(Issue issue) {
         log.info("Want to file " + issue);
         String issueId = "issue-" + issueIdSequence.getAndIncrement();
-        issues.put(issueId, issue);
-        issueInfos.put(issueId, new IssueInfo(issueId, null, Instant.now(), null, IssueInfo.Status.noCategory));
+        file(issueId, issue);
         return issueId;
+    }
+        
+    private IssueInfo file(String issueId, Issue issue) {
+        IssueInfo issueInfo = new IssueInfo(issueId, null, Instant.now(), null, IssueInfo.Status.noCategory);
+        issues.put(issueId, issue);
+        issueInfos.put(issueId, issueInfo);
+        return issueInfo;
     }
 
     @Override
@@ -79,9 +86,10 @@ public class LoggingIssues implements Issues {
 
     private IssueInfo requireInfo(String issueId) {
         IssueInfo info = issueInfos.get(issueId);
-        if (info == null)
-            throw new IllegalArgumentException("No issue info with id '" + issueId + "'");
-        return info;
+        if (info != null) // we still remember this issue
+            return info;
+        else // we forgot this issue (due to restart) - recreate it here to avoid log noise
+            return file(issueId, new Issue("(Forgotten)", ""));
     }
 
 }

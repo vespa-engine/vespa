@@ -14,15 +14,12 @@ import java.util.logging.Logger;
 /**
  * Can be used to map field names from input doc into names used in a docproc that was
  * written with generic field names.
+ * 
  * @author vegardh
- *
  */
 public class SchemaMap implements ConfigSubscriber.SingleSubscriber<SchemamappingConfig> {
-    /**
-     * Map key. Doctype can be null, not the others.
-     * @author vegardh
-     *
-     */
+
+    /** Map key. Doctype can be null, not the others. */
     class SchemaMapKey {
 
         private final String chain;
@@ -126,6 +123,5 @@ public class SchemaMap implements ConfigSubscriber.SingleSubscriber<Schemamappin
         }
         return ret;
     }
-
 
 }

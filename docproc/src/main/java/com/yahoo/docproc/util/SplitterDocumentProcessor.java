@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SplitterDocumentProcessor extends DocumentProcessor {
 

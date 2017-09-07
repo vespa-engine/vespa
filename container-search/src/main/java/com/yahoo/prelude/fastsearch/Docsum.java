@@ -9,7 +9,7 @@ import java.nio.ByteOrder;
  * An instance of a document summary, backed by binary data, which decodes and returns fields on request,
  * using the (shared) definition of this docsum.
  *
- * @author  <a href="mailt:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class Docsum {
 

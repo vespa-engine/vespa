@@ -4,8 +4,10 @@ package com.yahoo.docproc;
 import com.yahoo.document.DocumentOperation;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface DocumentOperationWrapper {
-    public DocumentOperation getWrappedDocumentOperation();
+
+    DocumentOperation getWrappedDocumentOperation();
+
 }

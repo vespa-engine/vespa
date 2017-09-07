@@ -24,9 +24,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentProcessingTask implements Comparable<DocumentProcessingTask>, Runnable {
+
     private static Logger log = Logger.getLogger(DocumentProcessingTask.class.getName());
     private final List<Processing> processings = new ArrayList<>();
     private final List<Processing> processingsDone = new ArrayList<>();
@@ -232,4 +233,5 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
             log.log(LogLevel.DEBUG, "Failed to process " + processing + ": " + backtrace.toString());
         }
     }
+
 }

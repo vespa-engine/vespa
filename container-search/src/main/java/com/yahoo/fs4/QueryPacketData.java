@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * fetch for a Vespa hit. Used to avoid to tagging Vespa summary hits with
  * the entire query as an immutable.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class QueryPacketData {
 

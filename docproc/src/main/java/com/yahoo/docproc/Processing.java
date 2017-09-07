@@ -18,10 +18,8 @@ import java.util.Map;
  * @author bratseth
  */
 public class Processing {
-    /**
-     * The name of the service which owns this processing.
-     * Null is the same as "default"
-     */
+
+    /** The name of the service which owns this processing. Null is the same as "default" */
     private String service = null;
 
     /** The processors to call the next work is done on this processing */
@@ -44,7 +42,7 @@ public class Processing {
     private ProcessingEndpoint endpoint = null;
 
     /** The registry of docproc services. */
-    ComponentRegistry<DocprocService> docprocServiceRegistry = null;
+    private ComponentRegistry<DocprocService> docprocServiceRegistry = null;
     private boolean getNumDocsCalled = false;
 
     /**

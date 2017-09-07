@@ -18,15 +18,16 @@ import java.util.Set;
  * in IdentityHashMap, where the key set is often used as an identity set.
  * </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author baldersheim
- * @since 5.1.4
  *
  * @param <E>
  *            the type contained in the Set
  */
 public final class ArraySet<E> implements Set<E> {
+
     private class ArrayIterator<T> implements Iterator<E> {
+
         private int i = -1;
         private boolean removed = false;
 

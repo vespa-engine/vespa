@@ -12,15 +12,11 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * <p>
- * A stack of the processors to call next in this processing. To push which
+ * <p>A stack of the processors to call next in this processing. To push which
  * processor to call next, call addNext, to get and remove the next processor,
- * call pop.
- * </p>
+ * call pop.</p>
  *
- * <p>
- * This is not thread safe.
- * </p>
+ * <p>This is not thread safe.</p>
  *
  * @author bratseth
  */
@@ -376,20 +372,20 @@ public class CallStack {
 
     @Override
     public String toString() {
-        final StringBuffer buffer = new StringBuffer();
-        buffer.append("callstack");
+        StringBuilder b = new StringBuilder();
+        b.append("callstack");
         if (name != null) {
-            buffer.append(" ");
-            buffer.append(name);
+            b.append(" ");
+            b.append(name);
         }
-        buffer.append(":");
-        for (final Iterator<Call> i = iterator(); i.hasNext();) {
-            buffer.append("\n");
-            buffer.append("  ");
-            buffer.append(i.next().toString());
+        b.append(":");
+        for (Iterator<Call> i = iterator(); i.hasNext();) {
+            b.append("\n");
+            b.append("  ");
+            b.append(i.next().toString());
         }
-        buffer.append("\n");
-        return buffer.toString();
+        b.append("\n");
+        return b.toString();
     }
 
     public Statistics getStatistics() {
@@ -399,4 +395,5 @@ public class CallStack {
     public Metric getMetric() {
         return metric;
     }
+
 }

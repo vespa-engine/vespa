@@ -58,7 +58,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** The relevance of this hit */
     private Relevance relevance;
 
-    /** Says whether this hit is cached or not */
+    /** Says whether this hit is cached */
     private boolean cached = false;
 
     /**
@@ -95,58 +95,10 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private boolean auxiliary=false;
 
     /**
-     * The hit field used to store rank features. TODO: Remove
+     * The hit field used to store rank features. TODO: Remove on Vespa 7
      */
     public static final String RANKFEATURES_FIELD = "rankfeatures";
     public static final String SDDOCNAME_FIELD = "sddocname";
-
-    private Map<String,Object> getFieldMap() {
-        return getFieldMap(16);
-    }
-    private Map<String,Object> getFieldMap(int minSize) {
-        if (fields == null) {
-            // Compensate for loadfactor and then some, rounded up....
-            fields = new LinkedHashMap<>(2*minSize);
-        }
-        return fields;
-    }
-
-    private Map<String,Object> getUnmodifiableFieldMap() {
-        if (unmodifiableFieldMap == null) {
-            if (fields == null) {
-                return Collections.emptyMap();
-            } else {
-                unmodifiableFieldMap = Collections.unmodifiableMap(fields);
-            }
-        }
-        return unmodifiableFieldMap;
-    }
-
-    public static String stripCharacter(char strip, String toStripFrom) {
-        StringBuilder builder = null;
-
-        int lastBadChar = 0;
-        for (int i = 0; i < toStripFrom.length(); i++) {
-            if (toStripFrom.charAt(i) == strip) {
-                if (builder == null) {
-                    builder = new StringBuilder(toStripFrom.length());
-                }
-
-                builder.append(toStripFrom, lastBadChar, i);
-                lastBadChar = i + 1;
-            }
-        }
-
-        if (builder == null) {
-            return toStripFrom;
-        } else {
-            if (lastBadChar < toStripFrom.length()) {
-                builder.append(toStripFrom, lastBadChar, toStripFrom.length());
-            }
-
-            return builder.toString();
-        }
-    }
 
     /** Creates an (invalid) empty hit. Id and relevance must be set before handoff */
     protected Hit() {}
@@ -461,8 +413,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /**
      * Fields
-     * @return An iterator for traversing the fields
-     * @since 5.1.3
+     * 
+     * @return an iterator for traversing the fields of this hit
      */
     public final Iterator<Map.Entry<String,Object>> fieldIterator() { return getFieldMap().entrySet().iterator(); }
 
@@ -470,21 +422,23 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     public Object getField(String value) { return fields != null ? fields.get(value) : null; }
 
     /**
-     * Generate a HitField from a field if the field exists. Does the
-     * same as getField() in earlier versions.
-     *
-     * @since 3.0
+     * Generate a HitField from a field if the field exists. 
+     * 
+     * @deprecated do not use
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public HitField buildHitField(String key) {
         return buildHitField(key, false);
     }
 
     /**
-     * Generate a HitField from a field if the field exists. Does the
-     * same as getField() in earlier versions.
+     * Generate a HitField from a field if the field exists. 
      *
-     * @since 3.0
+     * @deprecated do not use
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public HitField buildHitField(String key, boolean forceNoPreTokenize) {
         return buildHitField(key, forceNoPreTokenize, false);
     }
@@ -796,6 +750,54 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     protected final Set<String> getFilledInternal() {
         return filled;
+    }
+
+    private Map<String,Object> getFieldMap() {
+        return getFieldMap(16);
+    }
+    private Map<String,Object> getFieldMap(int minSize) {
+        if (fields == null) {
+            // Compensate for loadfactor and then some, rounded up....
+            fields = new LinkedHashMap<>(2*minSize);
+        }
+        return fields;
+    }
+
+    private Map<String,Object> getUnmodifiableFieldMap() {
+        if (unmodifiableFieldMap == null) {
+            if (fields == null) {
+                return Collections.emptyMap();
+            } else {
+                unmodifiableFieldMap = Collections.unmodifiableMap(fields);
+            }
+        }
+        return unmodifiableFieldMap;
+    }
+
+    public static String stripCharacter(char strip, String toStripFrom) {
+        StringBuilder builder = null;
+
+        int lastBadChar = 0;
+        for (int i = 0; i < toStripFrom.length(); i++) {
+            if (toStripFrom.charAt(i) == strip) {
+                if (builder == null) {
+                    builder = new StringBuilder(toStripFrom.length());
+                }
+
+                builder.append(toStripFrom, lastBadChar, i);
+                lastBadChar = i + 1;
+            }
+        }
+
+        if (builder == null) {
+            return toStripFrom;
+        } else {
+            if (lastBadChar < toStripFrom.length()) {
+                builder.append(toStripFrom, lastBadChar, toStripFrom.length());
+            }
+
+            return builder.toString();
+        }
     }
 
 }

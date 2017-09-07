@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocprocThreadPoolExecutor extends ThreadPoolExecutor {
 
@@ -55,4 +55,5 @@ public class DocprocThreadPoolExecutor extends ThreadPoolExecutor {
     boolean isAboveLimit() {
         return threadManager.isAboveLimit();
     }
+
 }

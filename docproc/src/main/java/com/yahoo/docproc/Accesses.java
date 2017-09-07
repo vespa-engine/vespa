@@ -8,13 +8,14 @@ import java.lang.annotation.Target;
 
 /**
  * Docprocs tagged with this will read and/or write annotations on the given field(s).
+ * 
  * @author vegardh
- *
  */
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Accesses {
+
     Field[] value();
 
     /**
