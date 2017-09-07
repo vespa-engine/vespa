@@ -3,23 +3,14 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -62,6 +53,7 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                 .anyMatch(event -> event.agent() == Agent.operator && event.at().isAfter(instant));
     }
 
+    @Override
     protected void throttle(int applicationCount) { }
 
     /** 
@@ -69,9 +61,9 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
      * longer to deploy than the (short) maintenance interval of this
      */
     @Override
-    protected void deploy(ApplicationId applicationId, Deployment deployment) {
-        deployment.activate();
-        log.info("Redeployed application " + applicationId.toShortString() + 
+    protected void deploy(ApplicationId application) {
+        deployWithLock(application);
+        log.info("Redeployed application " + application.toShortString() +
                  " as a manual change was made to its nodes");
     }
 
