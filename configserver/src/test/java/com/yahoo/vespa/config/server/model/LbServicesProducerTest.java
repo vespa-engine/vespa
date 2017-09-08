@@ -190,7 +190,7 @@ public class LbServicesProducerTest {
                 "  </prod>" +
                 "</deployment>";
 
-        return new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).withDeploymentInfo(deploymentInfo).build();
+        return new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).withDeploymentSpec(deploymentInfo).build();
     }
 
     private Model createVespaModel(ApplicationPackage applicationPackage, DeployState.Builder deployStateBuilder) throws IOException, SAXException {
