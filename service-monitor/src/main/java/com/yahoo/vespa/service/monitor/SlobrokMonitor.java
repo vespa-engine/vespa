@@ -8,12 +8,12 @@ import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SlobrokMonitor {
+class SlobrokMonitor {
     private final Supervisor supervisor = new Supervisor(new Transport());
     private final SlobrokList slobrokList = new SlobrokList();
     private final Mirror mirror = new Mirror(supervisor, slobrokList);
@@ -24,11 +24,11 @@ public class SlobrokMonitor {
 
     Map<SlobrokServiceName, SlobrokServiceSpec> getRegisteredServices() {
         if (!mirror.ready()) {
-            return new HashMap<>();
+            return Collections.emptyMap();
         }
 
         Mirror.Entry[] mirrorEntries = mirror.lookup("**");
-        return Arrays.asList(mirrorEntries).stream().collect(Collectors.toMap(
+        return Arrays.stream(mirrorEntries).collect(Collectors.toMap(
                 entry -> new SlobrokServiceName(entry.getName()),
                 entry -> new SlobrokServiceSpec(entry.getSpec())));
     }
@@ -41,7 +41,7 @@ public class SlobrokMonitor {
         mirror.shutdown();
     }
 
-    public static class SlobrokServiceName {
+    static class SlobrokServiceName {
         private final String name;
 
         SlobrokServiceName(String name) {
@@ -49,7 +49,7 @@ public class SlobrokMonitor {
         }
 
         // TODO: Fix spec
-        public String s() {
+        String s() {
             return name;
         }
 
@@ -69,7 +69,7 @@ public class SlobrokMonitor {
         }
     }
 
-    public static class SlobrokServiceSpec {
+    static class SlobrokServiceSpec {
         private final String spec;
 
         SlobrokServiceSpec(String spec) {
@@ -77,7 +77,7 @@ public class SlobrokMonitor {
         }
 
         // TODO: Fix name
-        public String s() {
+        String s() {
             return spec;
         }
 
