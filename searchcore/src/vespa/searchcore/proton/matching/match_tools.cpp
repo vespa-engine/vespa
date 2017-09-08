@@ -33,16 +33,17 @@ tagMatchData(const HandleRecorder::HandleSet & handles, MatchData & md)
 }
 
 search::fef::RankProgram::UP setup_program(search::fef::RankProgram::UP program,
-                                           const MatchDataLayout &mdl,
+                                           MatchData &match_data,
                                            const QueryEnvironment &queryEnv,
                                            const Properties &featureOverrides)
 {
+    match_data.soft_reset();
     HandleRecorder recorder;
     {
         HandleRecorder::Binder bind(recorder);
-        program->setup(mdl, queryEnv, featureOverrides);
+        program->setup(match_data, queryEnv, featureOverrides);
     }
-    tagMatchData(recorder.getHandles(), program->match_data());
+    tagMatchData(recorder.getHandles(), match_data);
     return program;
 }
 
@@ -65,39 +66,41 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
       _queryEnv(queryEnv),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
-      _mdl(mdl),
-      _handleRecorder()
+      _match_data(mdl.createMatchData())
 {
-    HandleRecorder::Binder bind(_handleRecorder);
 }
 
 MatchTools::~MatchTools() {}
 
 search::fef::RankProgram::UP
-MatchTools::first_phase_program() const {
+MatchTools::first_phase_program()
+{
     auto program = setup_program(_rankSetup.create_first_phase_program(),
-                                 _mdl, _queryEnv, _featureOverrides);
-    program->match_data().set_termwise_limit(TermwiseLimit::lookup(_queryEnv.getProperties(),
-                                                                   _rankSetup.get_termwise_limit()));
+                                 *_match_data, _queryEnv, _featureOverrides);
+    _match_data->set_termwise_limit(TermwiseLimit::lookup(_queryEnv.getProperties(),
+                                                          _rankSetup.get_termwise_limit()));
     return program;
 }
 
 search::fef::RankProgram::UP
-MatchTools::second_phase_program() const {
+MatchTools::second_phase_program()
+{
     return setup_program(_rankSetup.create_second_phase_program(),
-                         _mdl, _queryEnv, _featureOverrides);
+                         *_match_data, _queryEnv, _featureOverrides);
 }
 
 search::fef::RankProgram::UP
-MatchTools::summary_program() const {
+MatchTools::summary_program()
+{
     return setup_program(_rankSetup.create_summary_program(),
-                         _mdl, _queryEnv, _featureOverrides);
+                         *_match_data, _queryEnv, _featureOverrides);
 }
 
 search::fef::RankProgram::UP
-MatchTools::dump_program() const {
+MatchTools::dump_program()
+{
     return setup_program(_rankSetup.create_dump_program(),
-                         _mdl, _queryEnv, _featureOverrides);
+                         *_match_data, _queryEnv, _featureOverrides);
 }
 
 //-----------------------------------------------------------------------------

@@ -31,8 +31,7 @@ private:
     const QueryEnvironment             & _queryEnv;
     const search::fef::RankSetup       & _rankSetup;
     const search::fef::Properties      & _featureOverrides;
-    search::fef::MatchDataLayout         _mdl;
-    HandleRecorder                       _handleRecorder;
+    search::fef::MatchData::UP           _match_data;
 public:
     typedef std::unique_ptr<MatchTools> UP;
     MatchTools(const MatchTools &) = delete;
@@ -51,15 +50,18 @@ public:
     const vespalib::Doom &getHardDoom() const { return _hardDoom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
     MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
-    search::queryeval::SearchIterator::UP
-    createSearch(search::fef::MatchData &matchData) const {
-        return _query.createSearch(matchData);
+    search::queryeval::SearchIterator::UP createSearch() {
+        return _query.createSearch(*_match_data);
     }
     bool has_second_phase_rank() const { return !_rankSetup.getSecondPhaseRank().empty(); }
-    search::fef::RankProgram::UP first_phase_program() const;
-    search::fef::RankProgram::UP second_phase_program() const;
-    search::fef::RankProgram::UP summary_program() const;
-    search::fef::RankProgram::UP dump_program() const;
+    const search::fef::MatchData &match_data() const { return *_match_data; }
+    // NOTE: since rank programs share a single match data, creating a
+    // new program will invalidate the underlying match data and thus
+    // also any previously created rank programs.
+    search::fef::RankProgram::UP first_phase_program();
+    search::fef::RankProgram::UP second_phase_program();
+    search::fef::RankProgram::UP summary_program();
+    search::fef::RankProgram::UP dump_program();
 };
 
 class MatchToolsFactory : public vespalib::noncopyable

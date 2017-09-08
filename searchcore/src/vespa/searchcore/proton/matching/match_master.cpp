@@ -121,7 +121,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     }
     FeatureSet &fs = *retval.get();
 
-    SearchIterator::UP search = matchTools->createSearch(rankProgram->match_data());
+    SearchIterator::UP search = matchTools->createSearch();
     search->initRange(docs.front(), docs.back()+1);
     for (uint32_t i = 0; i < docs.size(); ++i) {
         if (search->seek(docs[i])) {

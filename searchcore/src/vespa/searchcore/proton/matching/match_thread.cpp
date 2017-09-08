@@ -241,7 +241,7 @@ search::ResultSet::UP
 MatchThread::findMatches(MatchTools &matchTools)
 {
     RankProgram::UP ranking = matchTools.first_phase_program();
-    SearchIterator::UP search = matchTools.createSearch(ranking->match_data());
+    SearchIterator::UP search = matchTools.createSearch();
     if (isFirstThread()) {
         LOG(spam, "SearchIterator: %s", search->asString().c_str());
     }
@@ -264,7 +264,7 @@ MatchThread::findMatches(MatchTools &matchTools)
     if (matchTools.has_second_phase_rank()) {
         { // 2nd phase ranking
             ranking = matchTools.second_phase_program();
-            search = matchTools.createSearch(ranking->match_data());
+            search = matchTools.createSearch();
             DocidRange docid_range = scheduler.total_span(thread_id);
             search->initRange(docid_range.begin, docid_range.end);
             auto sorted_scores = hits.getSortedHeapScores();
