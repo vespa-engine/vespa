@@ -6,15 +6,15 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/time.h>
+#include <vespa/defaults.h>
 
 namespace ns_log {
 
 static const char *defcomponent = "logger";
 static const char *defservice = "-";
-static char defhostname[256] = "localhost";
 
 LLParser::LLParser()
-    : _defHostname(defhostname),
+    : _defHostname(vespa::Defaults::vespaHostname()),
       _defService(defservice),
       _defComponent(defcomponent),
       _defLevel(Logger::info),
@@ -36,9 +36,6 @@ LLParser::LLParser()
 	}
         delete _target;
         _target = target;
-    }
-    if (gethostname(defhostname, 256) == 0) {
-	_defHostname = defhostname;
     }
     snprintf(_defPid, 10, "%d", (int)getpid());
 }

@@ -72,6 +72,8 @@ use warnings;
 use File::Copy;
 use File::Temp;
 
+my $myHostname = `vespa-print-default hostname`;
+chomp $myHostname;
 my $default_configproxy_port = "19090";
 my $default_configserver_port = "19070";
 my $zk_client_port;
@@ -155,10 +157,7 @@ sub printConfigServerPort {
 sub getConfigServers {
     my @ret;
 
-    my $hostname = `hostname`;
-    chomp $hostname;
-
-    my $addr = getVar('addr_configserver', $hostname, 1);
+    my $addr = getVar('addr_configserver', $myHostname, 1);
     my $port = getVar('port_configserver_rpc', $default_configserver_port, 0);
 
     my $h;
@@ -253,9 +252,7 @@ sub makeFiledistributorDistributorConfig {
     my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filedistributor.cfg";
     open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
     print CFG "torrentport 19093\n";
-    my $hostname = `hostname`;
-    chomp $hostname;
-    print CFG "hostname \"$hostname\"\n";
+    print CFG "hostname \"$myHostname\"\n";
     print CFG "filedbpath \"$VESPA_HOME" . "/var/db/vespa/filedistribution\"\n";
     print CFG "maxdownloadspeed 0\n";
     print CFG "maxuploadspeed 0\n";
@@ -268,9 +265,7 @@ sub makeFiledistributorDistributorConfig {
 sub makeFiledistributorRpcConfig {
     my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filedistributorrpc.cfg";
     open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
-    my $hostname = `hostname`;
-    chomp $hostname;
-    print CFG "connectionspec \"tcp/$hostname:19092\"\n";
+    print CFG "connectionspec \"tcp/$myHostname:19092\"\n";
     close(CFG);
     rename("${cfgFile}.new", ${cfgFile})
         or die "Cannot rename '${cfgFile}.new' -> '${cfgFile}': $!\n";
@@ -294,8 +289,6 @@ sub makeFiledistributorConfig {
 }
 
 sub isThisAConfigServer {
-    my $hostnameForThisHost = `hostname`;
-    chomp $hostnameForThisHost;
     my $addr;
     foreach $addr (getConfigServers()) {
         my $host = "";
@@ -303,7 +296,7 @@ sub isThisAConfigServer {
         if ($addr =~ /(.*):(\d+)$/) {
             $host = $1;
         }
-        if ($hostnameForThisHost eq $host or $host eq "localhost") {
+        if ($myHostname eq $host or $host eq "localhost") {
           print "yes\n";
           exit 0;
         }

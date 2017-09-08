@@ -13,7 +13,7 @@ Flags & Flags::operator=(const Flags &) = default;
 Flags::Flags()
     : method("cache"),
       args(),
-      hostname("localhost"),
+      targethost("localhost"),
       portnumber(19090)
 { }
 Flags::~Flags() { }
@@ -62,7 +62,7 @@ void ProxyCmd::printArray(FRT_Values *rvals) {
 }
 
 vespalib::string ProxyCmd::makeSpec() {
-    return vespalib::make_string("tcp/%s:%d", _flags.hostname.c_str(), _flags.portnumber);
+    return vespalib::make_string("tcp/%s:%d", _flags.targethost.c_str(), _flags.portnumber);
 }
 
 void ProxyCmd::autoPrint() {

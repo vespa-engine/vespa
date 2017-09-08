@@ -12,7 +12,7 @@ class FRT_Values;
 struct Flags {
     vespalib::string method;
     std::vector<vespalib::string> args;
-    vespalib::string hostname;
+    vespalib::string targethost;
     int portnumber;
     Flags(const Flags &);
     Flags & operator=(const Flags &);

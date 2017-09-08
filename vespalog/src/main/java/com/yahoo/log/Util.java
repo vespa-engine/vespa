@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
@@ -13,28 +14,8 @@ import java.net.InetAddress;
  */
 public class Util {
 
-    /**
-     * We do not have direct access to the <code>gethostname</code>
-     * system call, so we have to fake it.
-     */
     public static String getHostName () {
-        String hostname = "-";
-        try {
-            Process p = Runtime.getRuntime().exec("hostname");
-            BufferedReader r = new BufferedReader(
-                    new InputStreamReader(p.getInputStream(), "UTF-8"));
-            hostname = r.readLine();
-            if (hostname != null) {
-                return hostname;
-            }
-        }
-        catch (java.io.IOException e) {}
-        try {
-            hostname = InetAddress.getLocalHost().getHostName();
-            return hostname;
-        }
-        catch (java.net.UnknownHostException e) {}
-        return "-";
+        return getDefaults().vespaHostname();
     }
 
     /**
