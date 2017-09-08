@@ -14,6 +14,7 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
 import com.yahoo.messagebus.shared.SharedSourceSession;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
@@ -23,8 +24,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -75,12 +74,7 @@ class ClientFeederV3 {
         this.metric = metric;
         this.threadsAvailableForFeeding = threadsAvailableForFeeding;
         this.streamReaderV3 = new StreamReaderV3(feedReaderFactory, docTypeManager);
-        try {
-            this.hostName = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            log.info("Could not find hostname, randomizing. " + e.getMessage());
-            hostName = "UNKNOWNHOSTNAME" + System.nanoTime() % 10000;
-        }
+        this.hostName = HostName.getLocalhost();
     }
 
     public boolean timedOut() {

@@ -8,8 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import com.yahoo.net.HostName;
 
 /**
  * @author <a href="mailto:vikasp@yahoo-inc.com">Vikas Panwar</a>
@@ -100,10 +99,6 @@ class ConsoleLogListener implements LogListener {
     }
 
     static String getHostname() {
-        try {
-            return InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            return null;
-        }
+        return HostName.getLocalhost();
     }
 }
