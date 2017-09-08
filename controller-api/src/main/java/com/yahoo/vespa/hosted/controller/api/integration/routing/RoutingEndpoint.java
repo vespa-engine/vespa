@@ -8,23 +8,32 @@ public class RoutingEndpoint {
 
     private final boolean isGlobal;
     private final String endpoint;
+    private final String hostname;
 
     public RoutingEndpoint(String endpoint, boolean isGlobal) {
         this.endpoint = endpoint;
+        this.hostname = null;
         this.isGlobal = isGlobal;
     }
 
-    /**
-     * @return True if the endpoint is global
-     */
+    public RoutingEndpoint(String endpoint, String hostname, boolean isGlobal) {
+        this.endpoint = endpoint;
+        this.hostname = hostname;
+        this.isGlobal = isGlobal;
+    }
+
+    /** @return True if the endpoint is global */
     public boolean isGlobal() {
         return isGlobal;
     }
 
-    /*
-     * @return The URI for the endpoint
-     */
+    /* @return The URI for the endpoint */
     public String getEndpoint() {
         return endpoint;
+    }
+
+    /** @return The hostname for this endpoint */
+    public String getHostname() {
+        return hostname;
     }
 }
