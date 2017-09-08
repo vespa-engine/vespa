@@ -73,7 +73,7 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
         docsumRequest->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
     }
 
-    Memory d = request[DOCUMENTTYPE].asData();
+    Memory d = request[DOCUMENTTYPE].asString();
     if (d.size > 0) {
         docsumRequest->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", d.make_string());
     }
