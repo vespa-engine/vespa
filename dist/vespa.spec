@@ -23,6 +23,10 @@ BuildRequires: devtoolset-6-libatomic-devel
 BuildRequires: devtoolset-6-binutils
 %define _devtoolset_enable /opt/rh/devtoolset-6/enable
 %endif
+%if 0%{?fedora}
+BuildRequires: gcc-c++
+BuildRequires: libatomic
+%endif
 BuildRequires: Judy-devel
 %if 0%{?centos}
 BuildRequires: cmake3
