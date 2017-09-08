@@ -13,8 +13,12 @@
 
 namespace {
 
+#define HOST_BUF_SZ 1024
+
 const char *defaultHome = "/opt/vespa";
 const char *defaultUser = "vespa";
+const char *defaultHost = "localhost";
+char hostbuf[HOST_BUF_SZ];
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;
 int defaultPortConfigServerRpc = 19070;
@@ -61,6 +65,16 @@ void findDefaults() {
             fprintf(stderr, "warning\tbad VESPA_USER '%s' (ignored)\n", env);
         } else {
             defaultUser = env;
+        }
+    }
+    env = getenv("VESPA_HOSTNAME");
+    if (env != NULL) {
+        defaultHost = env;
+    } else {
+        int err = gethostname(hostbuf, HOST_BUF_SZ);
+        hostbuf[HOST_BUF_SZ-1] = '\0';
+        if (err == 0 && strlen(hostbuf) > 0 && strlen(hostbuf) < HOST_BUF_SZ-1) {
+            defaultHost = hostbuf;
         }
     }
     long p = getNumFromEnv("VESPA_WEB_SERVICE_PORT");
@@ -178,6 +192,13 @@ Defaults::vespaUser()
 {
     findDefaults();
     return defaultUser;
+}
+
+const char *
+Defaults::vespaHostname()
+{
+    findDefaults();
+    return defaultHost;
 }
 
 int

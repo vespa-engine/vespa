@@ -1,8 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.defaults;
 
-import java.util.Optional;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
+import java.util.Optional;
+
+
 
 /**
  * The defaults of basic Vespa configuration variables.
@@ -18,12 +24,14 @@ public class Defaults {
 
     private final String vespaHome;
     private final String vespaUser;
+    private final String vespaHost;
     private final int vespaWebServicePort;
     private final int vespaPortBase;
 
     private Defaults() {
         vespaHome = findVespaHome();
         vespaUser = findVespaUser();
+        vespaHost = findVespaHostname();
         vespaWebServicePort = findVespaWebServicePort();
         vespaPortBase = 19000; // TODO
     }
@@ -40,6 +48,23 @@ public class Defaults {
             vespaHome = vespaHome.substring(0, sz);
         }
         return vespaHome;
+    }
+
+    static private String findVespaHostname() {
+        Optional<String> vespaHostEnv = Optional.ofNullable(System.getenv("VESPA_HOSTNAME"));
+        if (vespaHostEnv.isPresent() && ! vespaHostEnv.get().trim().isEmpty()) {
+            return vespaHostEnv.get().trim();
+        }
+        try {
+            Process p = Runtime.getRuntime().exec("hostname");
+            BufferedReader r = new BufferedReader(
+                    new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
+            String line = r.readLine();
+            if (line != null && ! line.trim().isEmpty()) {
+                return line;
+            }
+        } catch (java.io.IOException e) {}
+        return "localhost";
     }
 
     static private String findVespaUser() {
@@ -71,6 +96,13 @@ public class Defaults {
      * @return the vespa user name
      **/
     public String vespaUser() { return vespaUser; }
+
+
+    /**
+     * Compute the host name that identifies myself
+     * @return the vespa host name
+     **/
+    public String vespaHostname() { return vespaHost; }
 
     /**
      * Returns the path to the root under which Vespa should read and write files.
