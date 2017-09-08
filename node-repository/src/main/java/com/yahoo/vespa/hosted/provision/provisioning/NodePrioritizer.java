@@ -8,9 +8,8 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
  *
  * @author smorgrav
  */
-class NodePrioritizer {
+public class NodePrioritizer {
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
     private final List<Node> allNodes;
@@ -38,18 +37,18 @@ class NodePrioritizer {
     private final NodeSpec requestedNodes;
     private final ApplicationId appId;
     private final ClusterSpec clusterSpec;
-
+    private final NameResolver nameResolver;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
     private final Map<Node, ResourceCapacity> headroomHosts;
 
-    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares) {
+    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares, NameResolver nameResolver) {
         this.allNodes = Collections.unmodifiableList(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
-
+        this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, spares);
         this.headroomHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
 
@@ -70,20 +69,6 @@ class NodePrioritizer {
 
         this.isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
         this.isDocker = isDocker();
-    }
-
-    /**
-     * From ipAddress - get hostname
-     *
-     * @return hostname or null if not able to do the lookup
-     */
-    private static String lookupHostname(String ipAddress) {
-        try {
-            return InetAddress.getByName(ipAddress).getHostName();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     /**
@@ -205,10 +190,10 @@ class NodePrioritizer {
                     Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
                     if (ipAddresses.isEmpty()) continue;
                     String ipAddress = ipAddresses.stream().findFirst().get();
-                    String hostname = lookupHostname(ipAddress);
-                    if (hostname == null) continue;
+                    Optional<String> hostname = nameResolver.getHostname(ipAddress);
+                    if (!hostname.isPresent()) continue;
                     Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
-                            Collections.emptySet(), hostname, Optional.of(node.hostname()), getFlavor(requestedNodes), NodeType.tenant);
+                            Collections.emptySet(), hostname.get(), Optional.of(node.hostname()), getFlavor(requestedNodes), NodeType.tenant);
                     PrioritizableNode nodePri = toNodePriority(newNode, false, true);
                     if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                         nodes.put(newNode, nodePri);
@@ -233,7 +218,7 @@ class NodePrioritizer {
     }
 
     /**
-     * Add nodes already provisioned, but not allocatied to any application
+     * Add nodes already provisioned, but not allocated to any application
      */
     void addReadyNodes() {
         allNodes.stream()

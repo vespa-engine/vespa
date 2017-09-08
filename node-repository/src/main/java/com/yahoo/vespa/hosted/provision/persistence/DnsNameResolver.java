@@ -2,14 +2,19 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.InetAddresses;
+import com.yahoo.log.LogLevel;
 
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Implementation of a name resolver that always uses a DNS server to resolve the given name. The intention is to avoid
@@ -19,7 +24,8 @@ import java.util.Set;
  */
 public class DnsNameResolver implements NameResolver {
 
-    /** Resolve IP addresses for given host name */
+    private static Logger logger = Logger.getLogger(DnsNameResolver.class.getName());
+
     @Override
     public Set<String> getAllByNameOrThrow(String hostname) {
         try {
@@ -37,6 +43,18 @@ public class DnsNameResolver implements NameResolver {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Optional<String> getHostname(String ipAddress) {
+        try {
+            String hostname = InetAddress.getByName(ipAddress).getHostName();
+            return InetAddresses.isInetAddress(hostname) ? Optional.empty() : Optional.of(hostname);
+        } catch (UnknownHostException e) {
+            // This is not an exceptional state hence the debug level
+            logger.log(LogLevel.DEBUG, "Unable to resolve ipaddress", e);
+        }
+        return Optional.empty();
     }
 
     private Optional<String> lookupName(String name, Type type) throws NamingException {

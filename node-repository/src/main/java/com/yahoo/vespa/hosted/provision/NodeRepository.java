@@ -111,7 +111,10 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the Docker image to use for nodes in this */
     public DockerImage dockerImage() { return dockerImage; }
-    
+
+    /** @return The name resolver used to resolve hostname and ip addresses */
+    public NameResolver nameResolver() { return nameResolver; }
+
     // ---------------- Query API ----------------------------------------------------------------
 
     /**
@@ -258,6 +261,7 @@ public class NodeRepository extends AbstractComponent {
         if (ipAddresses.isEmpty()) {
             ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
         }
+
         return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), additionalIpAddresses, hostname, parentHostname, flavor, type);
     }
 

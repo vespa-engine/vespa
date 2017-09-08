@@ -105,6 +105,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.remove(7);
         nodes = setDirty(nodes);
         setReady(nodes);
+
         fail("host5.yahoo.com", Agent.system, "Failing to unit test");
         setDirty("host55.yahoo.com");
 

@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +42,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -63,6 +61,9 @@ public class ProvisioningTester implements AutoCloseable {
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
     private final List<AllocationSnapshot> allocationSnapshots = new ArrayList<>();
+
+    private int nextHost = 0;
+    private int nextIP = 0;
 
     public ProvisioningTester(Zone zone) {
         this(zone, createConfig());
@@ -89,7 +90,7 @@ public class ProvisioningTester implements AutoCloseable {
         }
     }
 
-    public static FlavorsConfig createConfig() {
+    static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
         b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
@@ -160,11 +161,11 @@ public class ProvisioningTester implements AutoCloseable {
         deactivateTransaction.commit();
     }
 
-    public Set<String> toHostNames(Set<HostSpec> hosts) {
+    Set<String> toHostNames(Set<HostSpec> hosts) {
         return hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
     }
 
-    public Set<String> toHostNames(List<Node> nodes) {
+    Set<String> toHostNames(List<Node> nodes) {
         return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
@@ -172,7 +173,7 @@ public class ProvisioningTester implements AutoCloseable {
      * Asserts that each active node in this application has a restart count equaling the
      * number of matches to the given filters
      */
-    public void assertRestartCount(ApplicationId application, HostFilter... filters) {
+    void assertRestartCount(ApplicationId application, HostFilter... filters) {
         for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
             int expectedRestarts = 0;
             for (HostFilter filter : filters)
@@ -189,7 +190,7 @@ public class ProvisioningTester implements AutoCloseable {
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }
 
-    public void assertMembersOf(ClusterSpec requestedCluster, Collection<HostSpec> hosts) {
+    void assertMembersOf(ClusterSpec requestedCluster, Collection<HostSpec> hosts) {
         Set<Integer> indices = new HashSet<>();
         for (HostSpec host : hosts) {
             ClusterSpec nodeCluster = host.membership().get().cluster();
@@ -204,14 +205,14 @@ public class ProvisioningTester implements AutoCloseable {
         assertEquals("Indexes in " + requestedCluster + " are disjunct", hosts.size(), indices.size());
     }
 
-    public HostSpec removeOne(Set<HostSpec> hosts) {
+    HostSpec removeOne(Set<HostSpec> hosts) {
         Iterator<HostSpec> i = hosts.iterator();
         HostSpec removed = i.next();
         i.remove();
         return removed;
     }
 
-    public ApplicationId makeApplicationId() {
+    ApplicationId makeApplicationId() {
         return ApplicationId.from(
                 TenantName.from(UUID.randomUUID().toString()),
                 ApplicationName.from(UUID.randomUUID().toString()),
@@ -222,25 +223,48 @@ public class ProvisioningTester implements AutoCloseable {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
 
-    public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
+    List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
         return makeReadyNodes(n, flavor, type, 0);
     }
 
-    public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
-        return makeReadyNodes(n, UUID.randomUUID().toString(), flavor, type, additionalIps);
-    }
-
-    public List<Node> makeProvisionedNodes(int n, String prefix, String flavor, NodeType type, int additionalIps) {
+    List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int additionalIps) {
         List<Node> nodes = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            Set<String> ips = IntStream.range(additionalIps * i, additionalIps * (i+1))
-                    .mapToObj(j -> String.format("127.0.0.%d", j))
-                    .collect(Collectors.toSet());
 
-            nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
-                    prefix + i,
-                    Collections.emptySet(),
-                    ips,
+
+        for (int i = 0; i < n; i++) {
+            nextHost++;
+            nextIP++;
+
+            // One test involves two provision testers - to detect this we check if the
+            // name resolver already contains the next host - if this is the case - bump the indices and move on
+            String testIp = String.format("127.0.0.%d", nextIP);
+            MockNameResolver nameResolver = (MockNameResolver)nodeRepository().nameResolver();
+            if (nameResolver.getHostname(testIp).isPresent()) {
+                nextHost += 100;
+                nextIP += 100;
+            }
+
+            String hostname = String.format("host-%d.yahoo.com", nextHost);
+            String ipv4 = String.format("127.0.0.%d", nextIP);
+            String ipv6 = String.format("::%d", nextIP);
+
+            nameResolver.addRecord(hostname, ipv4, ipv6);
+            HashSet<String> hostIps = new HashSet<>();
+            hostIps.add(ipv4);
+            hostIps.add(ipv6);
+
+            Set<String> addips = new HashSet<>();
+            for (int ipSeq = 1; ipSeq < additionalIps; ipSeq++) {
+                nextIP++;
+                String ipv6node = String.format("::%d", nextIP);
+                addips.add(ipv6node);
+                nameResolver.addRecord(String.format("node-%d-of-%s",ipSeq, hostname), ipv6node);
+            }
+
+            nodes.add(nodeRepository.createNode(hostname,
+                    hostname,
+                    hostIps,
+                    addips,
                     Optional.empty(),
                     nodeFlavors.getFlavorOrThrow(flavor),
                     type));
@@ -249,19 +273,19 @@ public class ProvisioningTester implements AutoCloseable {
         return nodes;
     }
 
-    public List<Node> makeReadyNodes(int n, String prefix, String flavor, NodeType type, int additionalIps) {
-        List<Node> nodes = makeProvisionedNodes(n, prefix, flavor, type, additionalIps);
+    List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
+        List<Node> nodes = makeProvisionedNodes(n, flavor, type, additionalIps);
         nodes = nodeRepository.setDirty(nodes);
         return nodeRepository.setReady(nodes);
     }
 
     /** Creates a set of virtual docker nodes on a single docker host */
-    public List<Node> makeReadyDockerNodes(int n, String flavor, String dockerHostId) {
+    List<Node> makeReadyDockerNodes(int n, String flavor, String dockerHostId) {
         return makeReadyVirtualNodes(n, flavor, Optional.of(dockerHostId));
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    public List<Node> makeReadyVirtualNodes(int n, String flavor, Optional<String> parentHostId) {
+    List<Node> makeReadyVirtualNodes(int n, String flavor, Optional<String> parentHostId) {
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             final String hostname = UUID.randomUUID().toString();
@@ -274,16 +298,16 @@ public class ProvisioningTester implements AutoCloseable {
         return nodes;
     }
 
-    public List<Node> makeReadyVirtualNodes(int n, String flavor, String parentHostId) {
+    List<Node> makeReadyVirtualNodes(int n, String flavor, String parentHostId) {
         return makeReadyVirtualNodes(n, flavor, Optional.of(parentHostId));
     }
 
     /** Returns the hosts from the input list which are not retired */
-    public List<HostSpec> nonretired(Collection<HostSpec> hosts) {
+    List<HostSpec> nonretired(Collection<HostSpec> hosts) {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
     }
 
-    public void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
+    void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
         long actualNodesWithFlavor = hostSpecs.stream()
                 .map(HostSpec::hostname)
                 .map(this::getNodeFlavor)

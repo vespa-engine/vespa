@@ -58,7 +58,8 @@ class GroupPreparer {
                                                                   cluster,
                                                                   requestedNodes,
                                                                   nodeRepository.getAvailableFlavors(),
-                                                                  nofSpares);
+                                                                  nofSpares,
+                                                                  nodeRepository.nameResolver());
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);

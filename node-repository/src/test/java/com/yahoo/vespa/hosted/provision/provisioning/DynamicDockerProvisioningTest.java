@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -64,7 +63,7 @@ public class DynamicDockerProvisioningTest {
     public void relocate_nodes_from_headroom_hosts() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
         enableDynamicAllocation(tester);
-        tester.makeReadyNodes(4, "host", "host-small", NodeType.host, 32);
+        tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
@@ -112,7 +111,7 @@ public class DynamicDockerProvisioningTest {
     public void relocate_nodes_from_spare_hosts() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
         enableDynamicAllocation(tester);
-        tester.makeReadyNodes(4, "host", "host-small", NodeType.host, 32);
+        tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
@@ -158,7 +157,7 @@ public class DynamicDockerProvisioningTest {
     public void new_docker_nodes_are_marked_as_headroom_violations() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
         enableDynamicAllocation(tester);
-        tester.makeReadyNodes(4, "host", "host-small", NodeType.host, 32);
+        tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
         Flavor flavorD2 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-2");
@@ -214,7 +213,7 @@ public class DynamicDockerProvisioningTest {
     public void only_preferred_container_is_moved_from_hosts_with_headroom_violations() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
         enableDynamicAllocation(tester);
-        tester.makeReadyNodes(4, "host", "host-medium", NodeType.host, 32);
+        tester.makeReadyNodes(4, "host-medium", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
         Flavor flavorD2 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-2");
@@ -283,7 +282,7 @@ public class DynamicDockerProvisioningTest {
     public void reloacte_failed_nodes() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
         enableDynamicAllocation(tester);
-        tester.makeReadyNodes(5, "host", "host-small", NodeType.host, 32);
+        tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
@@ -342,7 +341,7 @@ public class DynamicDockerProvisioningTest {
     public void do_not_relocate_nodes_from_spare_if_no_where_to_reloacte_them() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
         enableDynamicAllocation(tester);
-        tester.makeReadyNodes(2, "host", "host-small", NodeType.host, 32);
+        tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
@@ -452,7 +451,7 @@ public class DynamicDockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
         enableDynamicAllocation(tester);
 
-        tester.makeProvisionedNodes(3, UUID.randomUUID().toString(), "host-small", NodeType.host, 32);
+        tester.makeProvisionedNodes(3, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
 
         ApplicationId application = tester.makeApplicationId();
