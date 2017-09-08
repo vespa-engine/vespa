@@ -26,13 +26,6 @@ public class ConfigDefinition {
         this.cnode = new DefParser(name, new StringReader(StringUtilities.implode(defSchema, "\n"))).getTree();
     }
 
-    // TODO: Remove once no fat bundles are using this.
-    public ConfigDefinition(InnerCNode targetDef) {
-        this.name = null;
-        this.defSchema = null;
-        this.cnode = targetDef;
-    }
-
     public InnerCNode getCNode() {
         return cnode;
     }
