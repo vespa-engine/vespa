@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
  */
 public class NodePatcher {
 
-    public static final String HARDWARE_FAILURE_TYPE = "hardwareFailureType";
     public static final String HARDWARE_FAILURE_DESCRIPTION = "hardwareFailureDescription";
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
@@ -79,14 +78,7 @@ public class NodePatcher {
         List<Node> children = nodeRepository.getChildNodes(node.hostname());
         boolean modified = false;
 
-        // TODO: Remove when all clients have switched to hardwareFailureDescription
-        if (inspector.field(HARDWARE_FAILURE_TYPE).valid()) {
-            Optional<String> hardwareFailure = asOptionalString(inspector.field(HARDWARE_FAILURE_TYPE));
-            modified = true;
-            children = children.stream()
-                    .map(node -> node.with(node.status().withHardwareFailureDescription(hardwareFailure)))
-                    .collect(Collectors.toList());
-        } else if (inspector.field(HARDWARE_FAILURE_DESCRIPTION).valid()) {
+        if (inspector.field(HARDWARE_FAILURE_DESCRIPTION).valid()) {
             Optional<String> hardwareFailure = asOptionalString(inspector.field(HARDWARE_FAILURE_DESCRIPTION));
             modified = true;
             children = children.stream()
@@ -121,7 +113,6 @@ public class NodePatcher {
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case HARDWARE_FAILURE_DESCRIPTION:
-            case HARDWARE_FAILURE_TYPE:
                 return node.with(node.status().withHardwareFailureDescription(asOptionalString(value)));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
