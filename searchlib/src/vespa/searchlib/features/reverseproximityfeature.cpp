@@ -90,7 +90,7 @@ ReverseProximityExecutor::execute(uint32_t docId)
 }
 
 void
-ReverseProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+ReverseProximityExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

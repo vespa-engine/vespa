@@ -42,7 +42,7 @@ TermDistanceExecutor::execute(uint32_t docId)
 }
 
 void
-TermDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+TermDistanceExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

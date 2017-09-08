@@ -19,7 +19,7 @@ private:
     const fieldmatch::Params              & _params;
     fieldmatch::Computer                    _cmp;
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     /**

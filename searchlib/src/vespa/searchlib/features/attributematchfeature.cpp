@@ -253,7 +253,7 @@ AttributeMatchExecutor<T>::execute(uint32_t docId)
 
 template <typename T>
 void
-AttributeMatchExecutor<T>::handle_bind_match_data(MatchData &md)
+AttributeMatchExecutor<T>::handle_bind_match_data(const MatchData &md)
 {
     _cmp.bind_match_data(md);
 }

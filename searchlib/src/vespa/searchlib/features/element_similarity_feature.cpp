@@ -230,7 +230,7 @@ public:
 
     bool isPure() override { return _terms.handles.empty(); }
 
-    void handle_bind_match_data(fef::MatchData &md) override {
+    void handle_bind_match_data(const fef::MatchData &md) override {
         _md = &md;
     }
 
