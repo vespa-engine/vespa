@@ -7,11 +7,12 @@
 
 namespace search::attribute {
 
-ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder)
+ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const uint32_t &committedDocIdLimit)
     : _reverseMappingIndices(genHolder),
       _referencedLidLimit(0),
       _reverseMapping(),
-      _referencedLids(genHolder)
+      _referencedLids(genHolder),
+      _committedDocIdLimit(committedDocIdLimit)
 {
 }
 

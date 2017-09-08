@@ -13,13 +13,11 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
         bool stableEnumGuard)
     : ImportedAttributeVector(name, std::move(reference_attribute), std::move(target_attribute), std::move(search_cache)),
       _referencedLids(),
-      _referencedLidLimit(0u),
       _reference_attribute_guard(_reference_attribute),
       _target_attribute_guard(stableEnumGuard ? std::shared_ptr<AttributeVector>() : _target_attribute),
       _target_attribute_enum_guard(stableEnumGuard ? _target_attribute : std::shared_ptr<AttributeVector>())
 {
     _referencedLids = _reference_attribute->getReferencedLids();
-    _referencedLidLimit = _target_attribute->getCommittedDocIdLimit();
 }
 
 ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() {
