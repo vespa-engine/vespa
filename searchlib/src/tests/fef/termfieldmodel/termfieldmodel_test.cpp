@@ -220,4 +220,26 @@ TEST("require that TermFieldMatchData can be tagged as needed or not") {
     EXPECT_TRUE(!tfmd.isNotNeeded());
 }
 
+TEST("require that MatchData soft_reset retains appropriate state") {    
+    auto md = MatchData::makeTestInstance(10, 10);
+    md->set_termwise_limit(0.5);
+    auto *old_term = md->resolveTermField(7); 
+    old_term->tagAsNotNeeded();
+    old_term->populate_fixed()->setElementWeight(21);
+    old_term->resetOnlyDocId(42);
+    EXPECT_EQUAL(md->get_termwise_limit(), 0.5);
+    EXPECT_TRUE(old_term->isNotNeeded());
+    EXPECT_EQUAL(old_term->getFieldId(), 7u);
+    EXPECT_EQUAL(old_term->getWeight(), 21);
+    EXPECT_EQUAL(old_term->getDocId(), 42u);
+    md->soft_reset();
+    auto *new_term = md->resolveTermField(7);
+    EXPECT_EQUAL(new_term, old_term);
+    EXPECT_EQUAL(md->get_termwise_limit(), 1.0);
+    EXPECT_TRUE(!new_term->isNotNeeded());
+    EXPECT_EQUAL(new_term->getFieldId(), 7u);
+    EXPECT_EQUAL(new_term->getWeight(), 21);
+    EXPECT_EQUAL(new_term->getDocId(), TermFieldMatchData::invalidId());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
