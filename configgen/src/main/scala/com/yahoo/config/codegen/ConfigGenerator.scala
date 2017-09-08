@@ -452,7 +452,7 @@ object ConfigGenerator {
 
   /**
     * Deprecated!
-    * TODO: Remove when no longer used in config-model
+    * TODO: Remove when no longer used by the oldest available config-model.
     */
   @deprecated("Use ConfiggenUtil.createClassName() instead", "6.143")
   def createClassName(defName: String): String = {

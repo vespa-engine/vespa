@@ -139,6 +139,13 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- TODO: Remove exclusion when scala-xml is excluded in config-bundle pom -->
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-xml_${scala.major-version}</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
