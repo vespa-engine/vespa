@@ -321,7 +321,7 @@
               <!-- TODO: The fat bundle becomes more brittle for each package added below. Use interfaces in model-api instead. -->
               com.yahoo.vespa.config,
               com.yahoo.vespa.config.buildergen,
-              com.yahoo.config.codegen <!-- TODO remove when InnerCNode is no longer exposed by model-api -->
+              com.yahoo.config.codegen <!-- TODO remove when InnerCNode is no longer exposed by config-bundle via ConfigDefinition.getCNode() -->
             </Import-Package>
           </instructions>
         </configuration>
