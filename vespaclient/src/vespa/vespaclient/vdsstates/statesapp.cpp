@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/defaults.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
@@ -339,15 +340,7 @@ struct StateApp : public FastOS_Application {
             {
                 indexes.push_back(_options._nodeIndex);
             } else {
-                std::vector<char> host(HOST_NAME_MAX);
-                int result = gethostname(&host[0], host.size());
-                if (result != 0) {
-                    std::cerr << "Failed to retrieve hostname of this node, "
-                                 "thus we cannot figure out what services run "
-                                 "on this node.\n";
-                    break;
-                }
-                std::string hostname(&host[0]);
+                std::string hostname(vespa::Defaults::vespaHostname());
                 FRT_RPCRequest* req = supervisor.AllocRPCRequest();
                 req->SetMethodName("getNodeList");
                 target->InvokeSync(req, 10.0);
