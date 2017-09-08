@@ -22,7 +22,7 @@ import java.util.*;
 /**
  * For testing purposes only
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class MockApplicationPackage implements ApplicationPackage {
 
@@ -33,17 +33,17 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final String servicesS;
     private final List<String> searchDefinitions;
     private final String searchDefinitionDir;
-    private final Optional<String> deploymentInfo;
+    private final Optional<String> deploymentSpec;
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
 
     private MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
-                                   String deploymentInfo, String validationOverrides, boolean failOnValidateXml) {
+                                   String deploymentSpec, String validationOverrides, boolean failOnValidateXml) {
         this.hostsS = hosts;
         this.servicesS = services;
         this.searchDefinitions = searchDefinitions;
         this.searchDefinitionDir = searchDefinitionDir;
-        this.deploymentInfo = Optional.ofNullable(deploymentInfo);
+        this.deploymentSpec = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
         this.failOnValidateXml = failOnValidateXml;
     }
@@ -111,7 +111,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Optional<Reader> getDeployment() {
-        return deploymentInfo.map(StringReader::new);
+        return deploymentSpec.map(StringReader::new);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         private String services = null;
         private List<String> searchDefinitions = Collections.emptyList();
         private String searchDefinitionDir = null;
-        private String deploymentInfo = null;
+        private String deploymentSpec = null;
         private String validationOverrides = null;
         private boolean failOnValidateXml = false;
 
@@ -191,8 +191,8 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
-        public Builder withDeploymentInfo(String deploymentInfo) {
-            this.deploymentInfo = deploymentInfo;
+        public Builder withDeploymentSpec(String deploymentSpec) {
+            this.deploymentSpec = deploymentSpec;
             return this;
         }
 
@@ -208,7 +208,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
         public ApplicationPackage build() {
                 return new MockApplicationPackage(hosts, services, searchDefinitions, searchDefinitionDir,
-                                                  deploymentInfo, validationOverrides, failOnValidateXml);
+                                                  deploymentSpec, validationOverrides, failOnValidateXml);
         }
     }
 
