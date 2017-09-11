@@ -89,7 +89,7 @@ public class LoggingIssues implements Issues {
         if (info != null) // we still remember this issue
             return info;
         else // we forgot this issue (due to restart) - recreate it here to avoid log noise
-            return file(issueId, new Issue("(Forgotten)", ""));
+            return file(issueId, new Issue("(Forgotten)", "(Forgotten)"));
     }
 
 }
