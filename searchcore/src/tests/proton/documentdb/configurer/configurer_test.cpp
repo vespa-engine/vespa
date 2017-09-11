@@ -95,7 +95,7 @@ struct ViewSet
     DocIdLimit _docIdLimit;
     search::transactionlog::NoSyncProxy _noTlSyncer;
     ISummaryManager::SP _summaryMgr;
-    IDocumentMetaStoreContext::SP _dmsc;
+    proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker _commitTimeTracker;
@@ -268,7 +268,7 @@ struct MyFastAccessFeedView
     IThreadingService &_writeService;
     HwInfo _hwInfo;
 
-    IDocumentMetaStoreContext::SP _dmsc;
+    proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker                 _commitTimeTracker;
