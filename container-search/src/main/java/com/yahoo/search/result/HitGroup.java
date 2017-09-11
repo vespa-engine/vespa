@@ -106,7 +106,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * @param id the id of this hit - any string, it is convenient to make this unique in the result containing this
      * @param relevance the relevance of this group of hits, preferably a number between 0 and 1
      */
-    public HitGroup(String id,double relevance) {
+    public HitGroup(String id, double relevance) {
         this(id,new Relevance(relevance));
     }
 
@@ -389,6 +389,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /** Adds an error to this result */
     public void addError(ErrorMessage error) {
+        getError(); // update the list of errors
         if (errorHit == null)
             add((Hit)createErrorHit(error));
         else
@@ -399,6 +400,19 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     public ErrorHit getErrorHit() {
         getError(); // Make sure the error hit is updated
         return errorHit;
+    }
+
+    /** 
+     * Removes the error hit of this.
+     * This removes all error messages of this and the query producing it.
+     *
+     * @return the error hit which was removed, or null if there were no errors
+     */
+    public ErrorHit removeErrorHit() {
+        updateHits(); // Consume and remove from the query producing this as well
+        ErrorHit removed = errorHit;
+        errorHit = null;
+        return removed;
     }
     
     /**
@@ -442,17 +456,17 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * Merges errors from the query if there is one set for this group
      */
     private void updateHits() {
-        if (getQuery()==null) return;
+        if (getQuery() == null) return;
 
         if (getQuery().errors().size() == 0) return;
 
-        if (errorHit == null) // Creates an error hit where the first error is "main"
+        if (errorHit == null)
             add((Hit)createErrorHit(toSearchError(getQuery().errors().get(0))));
 
         // Add the rest of the errors
-        for (int i=1; i<getQuery().errors().size(); i++)
+        for (int i = 1; i < getQuery().errors().size(); i++)
             errorHit.addError(toSearchError(getQuery().errors().get(i)));
-        getQuery().errors().clear(); // TODO: Really clear them from here?
+        getQuery().errors().clear();
     }
 
     protected ErrorHit createErrorHit(ErrorMessage errorMessage) {
@@ -461,8 +475,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /** Compatibility */
     private ErrorMessage toSearchError(com.yahoo.processing.request.ErrorMessage error) {
-        if (error instanceof ErrorMessage) return (ErrorMessage)error;
-        else return new ErrorMessage(error.getCode(),error.getMessage(),error.getDetailedMessage(),error.getCause());
+        if (error instanceof ErrorMessage) 
+            return (ErrorMessage)error;
+        else 
+            return new ErrorMessage(error.getCode(),error.getMessage(),error.getDetailedMessage(),error.getCause());
     }
 
     /**
