@@ -15,16 +15,7 @@ import java.util.Collection;
  * @author lulf
  * @since 5.1
  */
-public interface ReloadListener {
-    
-    /**
-     * Signal the listener that config has been reloaded.
-     *
-     * @param tenant Name of tenant for which config was reloaded.
-     * @param application the {@link com.yahoo.vespa.config.server.application.Application} that will be reloaded
-     */
-    public void configReloaded(TenantName tenant, ApplicationSet application);
-
+public interface ReloadListener extends ApplicationListener {
     /**
      * Signal the listener that hosts used by by a particular tenant.
      *
@@ -35,18 +26,10 @@ public interface ReloadListener {
 
     /**
      * Verify that given hosts are available for use by tenant.
-     * TODO: Does not belong here...
      *
      * @param tenant tenant that wants to allocate hosts.
      * @param newHosts a {@link java.util.Collection} of hosts that tenant wants to allocate.
      * @throws java.lang.IllegalArgumentException if one or more of the hosts are in use by another tenant.
      */
     void verifyHostsAreAvailable(TenantName tenant, Collection<String> newHosts);
-
-    /**
-     * Notifies listener that application with id {@link ApplicationId} has been removed.
-     *
-     * @param applicationId The {@link ApplicationId} of the removed application.
-     */
-    void applicationRemoved(ApplicationId applicationId);
 }

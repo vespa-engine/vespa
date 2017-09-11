@@ -75,7 +75,7 @@ public class RpcServerTest extends TestWithRpc {
         generationCounter.increment();
         Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 2l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
         ApplicationSet appSet = ApplicationSet.fromSingle(app);
-        rpcServer.configReloaded(TenantName.defaultName(), appSet);
+        rpcServer.configActivated(TenantName.defaultName(), appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");
         JRTClientConfigRequest clientReq = JRTClientConfigRequestV3.createFromRaw(new RawConfig(key, LbServicesConfig.CONFIG_DEF_MD5), 120_000, Trace.createDummy(), CompressionType.UNCOMPRESSED, Optional.empty());
         assertTrue(clientReq.validateParameters());
