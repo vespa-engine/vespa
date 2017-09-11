@@ -110,6 +110,7 @@ struct MyMetricsWireService : public DummyWireService
 struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
     std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &,
 													const search::IAttributeManager &,
+													const std::shared_ptr<search::IDocumentMetaStoreContext> &,
                                                     fastos::TimeStamp) override {
         return std::make_unique<ImportedAttributesRepo>();
 	}

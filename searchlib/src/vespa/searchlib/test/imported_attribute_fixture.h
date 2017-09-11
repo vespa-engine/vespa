@@ -12,6 +12,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -23,6 +24,27 @@
 #include <vector>
 
 namespace search {
+
+struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext {
+
+    struct MockReadGuard : public IDocumentMetaStoreContext::IReadGuard {
+        virtual const search::IDocumentMetaStore &get() const override {
+            search::IDocumentMetaStore *nullStore = nullptr;
+            return static_cast<search::IDocumentMetaStore &>(*nullStore);
+        }
+    };
+
+    mutable size_t get_read_guard_cnt;
+
+    using SP = std::shared_ptr<MockDocumentMetaStoreContext>;
+    MockDocumentMetaStoreContext() : get_read_guard_cnt(0) {}
+
+    virtual IReadGuard::UP getReadGuard() const override {
+        ++get_read_guard_cnt;
+        return std::make_unique<MockReadGuard>();
+    }
+};
+
 namespace attribute {
 
 using document::DocumentId;
@@ -37,6 +59,10 @@ using test::MockGidToLidMapperFactory;
 
 std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringref name = "ref") {
     return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
+}
+
+MockDocumentMetaStoreContext::SP create_document_meta_store() {
+    return std::make_shared<MockDocumentMetaStoreContext>();
 }
 
 enum class FastSearchConfig {
@@ -105,6 +131,7 @@ struct ImportedAttributeFixture {
     bool use_search_cache;
     std::shared_ptr<AttributeVector> target_attr;
     std::shared_ptr<ReferenceAttribute> reference_attr;
+    MockDocumentMetaStoreContext::SP document_meta_store;
     std::shared_ptr<ImportedAttributeVector> imported_attr;
     std::shared_ptr<MockGidToLidMapperFactory> mapper_factory;
 
@@ -130,7 +157,7 @@ struct ImportedAttributeFixture {
 
     std::shared_ptr<ImportedAttributeVector>
     create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name()) {
-        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr, use_search_cache);
+        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr, document_meta_store, use_search_cache);
     }
 
     template<typename AttrVecType>
@@ -225,6 +252,7 @@ ImportedAttributeFixture::ImportedAttributeFixture(bool use_search_cache_)
         : use_search_cache(use_search_cache_),
           target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
           reference_attr(create_reference_attribute()),
+          document_meta_store(create_document_meta_store()),
           imported_attr(create_attribute_vector_from_members()),
           mapper_factory(std::make_shared<MockGidToLidMapperFactory>()) {
     reference_attr->setGidToLidMapperFactory(mapper_factory);

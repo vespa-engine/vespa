@@ -31,6 +31,7 @@ public:
     ImportedAttributeVectorReadGuard(vespalib::stringref name,
                                      std::shared_ptr<ReferenceAttribute> reference_attribute,
                                      std::shared_ptr<AttributeVector> target_attribute,
+                                     std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                      std::shared_ptr<BitVectorSearchCache> search_cache,
                                      bool stableEnumGuard);
     ~ImportedAttributeVectorReadGuard();

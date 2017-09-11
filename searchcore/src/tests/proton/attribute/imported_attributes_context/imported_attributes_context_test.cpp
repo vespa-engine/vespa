@@ -71,6 +71,7 @@ struct Fixture {
         auto attr = std::make_shared<ImportedAttributeVector>(name,
                                                               createReferenceAttribute(name + "_ref"),
                                                               createTargetAttribute(name + "_target"),
+                                                              std::shared_ptr<search::IDocumentMetaStoreContext>(),
                                                               false);
         repo.add(name, attr);
         return *this;
