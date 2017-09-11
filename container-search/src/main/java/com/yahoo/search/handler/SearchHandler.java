@@ -375,8 +375,7 @@ public class SearchHandler extends LoggingRequestHandler {
         Renderer<Result> renderer = rendererRegistry.getRenderer(query.getPresentation().getRenderer());
 
         // docsumClass null means "unset", so we set it (it might be null
-        // here too in which case it will still be "unset" after we
-        // set it :-)
+        // here too in which case it will still be "unset" after we set it :-)
         if (query.getPresentation().getSummary() == null && renderer instanceof com.yahoo.search.rendering.Renderer)
             query.getPresentation().setSummary(((com.yahoo.search.rendering.Renderer) renderer).getDefaultSummaryClass());
 
@@ -472,7 +471,7 @@ public class SearchHandler extends LoggingRequestHandler {
         } catch (Exception e) {
             Result result = new Result(query);
             log(request, query, e);
-            result.hits().setError(
+            result.hits().addError(
                     ErrorMessage.createUnspecifiedError("Failed searching: " + Exceptions.toMessageString(e), e));
             return result;
         }

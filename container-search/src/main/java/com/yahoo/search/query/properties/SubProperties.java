@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * A wrapper around a chain of property objects that prefixes all gets/sets with a given path
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class SubProperties extends com.yahoo.search.query.Properties {
 

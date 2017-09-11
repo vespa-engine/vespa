@@ -300,7 +300,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             Result result = new Result(query);
 
             if (result.hits().getErrorHit() == null) {
-                result.hits().setError(ErrorMessage.createBackendCommunicationError(
+                result.hits().addError(ErrorMessage.createBackendCommunicationError(
                                             "Fast Search (" + getName() + ") failed: " + e.getMessage()));
             }
             if (query.getTraceLevel() >= 1) {

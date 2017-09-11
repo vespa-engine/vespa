@@ -35,9 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Some methods have retries and/or reconnect. This is necessary because ZK will throw on certain scenarios,
  * even though it will recover from it itself, @see http://wiki.apache.org/hadoop/ZooKeeper/ErrorHandling
  *
- * @author vegardh
+ * @author Vegard Havdal
  * @author bratseth
- * @since 5.0
  */
 public class ConfigCurator {
 

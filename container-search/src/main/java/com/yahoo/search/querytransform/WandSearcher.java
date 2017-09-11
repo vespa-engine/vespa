@@ -22,7 +22,6 @@ import com.yahoo.yolean.Exceptions;
  * Searcher that will create a Vespa WAND item from a list of tokens with weights.
  * IndexFacts is used to determine which WAND to create.
  *
- * @since 5.1.11
  * @author geirst
  * @author bratseth
  */

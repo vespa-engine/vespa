@@ -65,7 +65,7 @@ import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceP
  * This searcher takes a set of sources, looks them up in config and fire off the correct searchchains.
  *
  * @author Arne Bergene Fossaa
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bratseth
  */
 @Provides(FederationSearcher.FEDERATION)

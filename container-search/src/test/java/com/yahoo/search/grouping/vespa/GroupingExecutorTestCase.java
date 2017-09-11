@@ -650,7 +650,7 @@ public class GroupingExecutorTestCase {
                 return ret;
             }
             if (passnum == failOnPassN) {
-                ret.hits().setError(ErrorMessage.createTimeout("timeout"));
+                ret.hits().addError(ErrorMessage.createTimeout("timeout"));
             }
             passnum++;
             return ret;

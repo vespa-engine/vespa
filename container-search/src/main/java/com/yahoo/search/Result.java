@@ -81,7 +81,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     /** Create a result containing an error */
     public Result(Query query, ErrorMessage errorMessage) {
         this(query);
-        hits.setError(errorMessage);
+        hits.addError(errorMessage);
     }
 
     /**

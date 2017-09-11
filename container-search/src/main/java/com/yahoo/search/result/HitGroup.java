@@ -376,12 +376,15 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return hit;
     }
 
-    /** Sets the main error of this result. Prefer addError to add some error information. */
+    /** 
+     * Sets the main error of this result
+     * 
+     * @deprecated prefer addError to add some error information.
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public void setError(ErrorMessage error) {
-        if (errorHit == null)
-            add((Hit)createErrorHit(error));
-        else
-            errorHit.addError(error);
+        addError(error);
     }
 
     /** Adds an error to this result */
@@ -392,15 +395,12 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             errorHit.addError(error);
     }
 
-    /**
-     * Returns the error hit containing all error information,
-     * or null if no error has occurred
-     */
+    /** Returns the error hit containing all error information, or null if no error has occurred */
     public ErrorHit getErrorHit() {
         getError(); // Make sure the error hit is updated
         return errorHit;
     }
-
+    
     /**
      * Returns the first error in this result,
      * or null if no searcher has produced an error AND the query doesn't contain an error

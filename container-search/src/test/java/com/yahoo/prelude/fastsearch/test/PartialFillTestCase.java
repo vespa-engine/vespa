@@ -44,7 +44,7 @@ public class PartialFillTestCase extends junit.framework.TestCase {
         }
         protected void doPartialFill(Result result, String summaryClass) {
             if (result.hits().getErrorHit() == null) {
-                result.hits().setError(ErrorMessage.createUnspecifiedError("error"));
+                result.hits().addError(ErrorMessage.createUnspecifiedError("error"));
             }
         }
     }

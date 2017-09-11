@@ -27,10 +27,10 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 /**
  * A request to get config, bound to tenant and app id. Used by both v1 and v2 of the config REST API.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
+
     private static final String HTTP_PROPERTY_NOCACHE = "noCache";
     private final ConfigKey<?> key;
     private final ApplicationId appId;

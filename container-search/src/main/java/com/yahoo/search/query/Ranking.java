@@ -17,7 +17,7 @@ import com.yahoo.search.result.ErrorMessage;
 /**
  * The ranking (hit ordering) settings of a query
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  * @author bratseth
  */
 public class Ranking implements Cloneable {

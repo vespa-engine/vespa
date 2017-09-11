@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * Holds the settings for the soft-timeout feature.
  *
- * @author balder
+ * @author baldersheim
  */
 public class SoftTimeout implements Cloneable {
     /** The type representing the property arguments consumed by this */

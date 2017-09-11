@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * Holds the settings for the matching feature.
  *
- * @author balder
+ * @author baldersheim
  */
 public class Matching implements Cloneable {
     /** The type representing the property arguments consumed by this */

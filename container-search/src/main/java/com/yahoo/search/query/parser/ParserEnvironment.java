@@ -13,8 +13,7 @@ import com.yahoo.search.searchchain.Execution;
  * This class encapsulates the environment of a {@link Parser}. In case you are creating a parser from within a
  * {@link Searcher}, you can use the {@link #fromExecutionContext(Execution.Context)} factory for convenience.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- * @since 5.1.4
+ * @author Simon Thoresen
  */
 public final class ParserEnvironment {
 

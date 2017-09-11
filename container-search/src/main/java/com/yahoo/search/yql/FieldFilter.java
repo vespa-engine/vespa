@@ -20,7 +20,7 @@ import com.yahoo.search.searchchain.Execution;
  * Remove fields which are not explicitly requested, if any field is explicitly
  * requested. Disable using FieldFilter.disable=true in request.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Beta
 @After(MinimalQueryInserter.EXTERNAL_YQL)

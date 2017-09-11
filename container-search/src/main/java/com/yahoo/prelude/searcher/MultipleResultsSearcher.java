@@ -43,7 +43,7 @@ public class MultipleResultsSearcher extends Searcher {
             return hitsRetriever.createMultipleResultSets();
         } catch(ParameterException exception) {
             Result result = new Result(query);
-            result.hits().setError(ErrorMessage.createInvalidQueryParameter(exception.msg));
+            result.hits().addError(ErrorMessage.createInvalidQueryParameter(exception.msg));
             return result;
         }
     }
