@@ -30,6 +30,7 @@ namespace {
 Memory SESSIONID("sessionid");
 Memory RANKING("ranking");
 Memory SUMMARYCLASS("class");
+Memory DOCUMENTTYPE("doctype");
 Memory GIDS("gids");
 Memory DOCSUM("docsum");
 Memory DOCSUMS("docsums");
@@ -64,12 +65,19 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
     DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
 
     docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
+
     Memory m = request[SESSIONID].asData();
     if (m.size > 0) {
         docsumRequest->sessionId.resize(m.size);
         memcpy(&docsumRequest->sessionId[0], m.data, m.size);
         docsumRequest->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
     }
+
+    Memory d = request[DOCUMENTTYPE].asString();
+    if (d.size > 0) {
+        docsumRequest->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", d.make_string());
+    }
+
     docsumRequest->ranking = request[RANKING].asString().make_string();
     Inspector & gids = request[GIDS];
     docsumRequest->hits.reserve(gids.entries());
