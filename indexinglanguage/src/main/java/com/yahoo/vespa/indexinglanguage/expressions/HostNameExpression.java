@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.net.HostName;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
@@ -13,7 +13,7 @@ public class HostNameExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(normalizeHostName(HostName.getLocalhost())));
+        ctx.setValue(new StringFieldValue(normalizeHostName(getDefaults().vespaHostname())));
     }
 
     @Override
