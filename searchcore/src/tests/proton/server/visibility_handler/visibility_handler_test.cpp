@@ -99,9 +99,10 @@ public:
     testCommit(double visibilityDelay, bool internal,
                uint32_t expForceCommitCount, SerialNum expCommittedSerialNum,
                uint32_t expMasterExecuteCnt,
-               uint32_t expAttributeFieldWriterSyncCnt)
+               uint32_t expAttributeFieldWriterSyncCnt,
+               SerialNum currSerialNum = 10u)
     {
-        _getSerialNum.setSerialNum(10u);
+        _getSerialNum.setSerialNum(currSerialNum);
         _visibilityHandler.setVisibilityDelay(TimeStamp::Seconds(visibilityDelay));
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
@@ -122,9 +123,10 @@ public:
                       uint32_t expForceCommitCount,
                       SerialNum expCommittedSerialNum,
                       uint32_t expMasterExecuteCnt,
-                      uint32_t expAttributeFieldWriterSyncCnt)
+                      uint32_t expAttributeFieldWriterSyncCnt,
+                      SerialNum currSerialNum = 10u)
     {
-        _getSerialNum.setSerialNum(10u);
+        _getSerialNum.setSerialNum(currSerialNum);
         _visibilityHandler.setVisibilityDelay(TimeStamp::Seconds(visibilityDelay));
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
@@ -154,6 +156,11 @@ TEST_F("Check external commit with nonzero visibility delay", Fixture)
     f.testCommit(1.0, false, 1u, 10u, 1u, 0u);
 }
 
+TEST_F("Check external commit with nonzero visibility delay and no new feed operation", Fixture)
+{
+    f.testCommit(1.0, false, 1u, 0u, 1u, 0u, 0u);
+}
+
 TEST_F("Check internal commit with zero visibility delay", Fixture)
 {
     f.testCommit(0.0, true, 0u, 0u, 1u, 0u);
@@ -162,6 +169,11 @@ TEST_F("Check internal commit with zero visibility delay", Fixture)
 TEST_F("Check internal commit with nonzero visibility delay", Fixture)
 {
     f.testCommit(1.0, true, 1u, 10u, 1u, 0u);
+}
+
+TEST_F("Check internal commit with nonzero visibility delay and no new feed operation", Fixture)
+{
+    f.testCommit(1.0, true, 1u, 0u, 1u, 0u, 0u);
 }
 
 TEST_F("Check external commitAndWait with zero visibility delay", Fixture)
@@ -174,6 +186,11 @@ TEST_F("Check external commitAndWait with nonzero visibility delay", Fixture)
     f.testCommitAndWait(1.0, false, 1u, 10u, 1u, 1u);
 }
 
+TEST_F("Check external commitAndWait with nonzero visibility delay and no new feed operation", Fixture)
+{
+    f.testCommitAndWait(1.0, false, 0u, 0u, 0u, 1u, 0u);
+}
+
 TEST_F("Check internal commitAndWait with zero visibility delay", Fixture)
 {
     f.testCommitAndWait(0.0, true, 0u, 0u, 1u, 1u);
@@ -182,6 +199,11 @@ TEST_F("Check internal commitAndWait with zero visibility delay", Fixture)
 TEST_F("Check internal commitAndWait with nonzero visibility delay", Fixture)
 {
     f.testCommitAndWait(1.0, true, 1u, 10u, 1u, 1u);
+}
+
+TEST_F("Check internal commitAndWait with nonzero visibility delay and no new feed operation", Fixture)
+{
+    f.testCommitAndWait(1.0, true, 0u, 0u, 1u, 1u, 0u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
