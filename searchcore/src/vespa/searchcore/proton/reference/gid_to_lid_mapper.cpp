@@ -16,17 +16,6 @@ GidToLidMapper::~GidToLidMapper()
 {
 }
 
-uint32_t
-GidToLidMapper::mapGidToLid(const document::GlobalId &gid) const
-{
-    uint32_t lid = 0;
-    if (_dms.getLid(gid, lid)) {
-        return lid;
-    } else {
-        return 0u;
-    }
-}
-
 void
 GidToLidMapper::foreach(const search::IGidToLidMapperVisitor &visitor) const
 {

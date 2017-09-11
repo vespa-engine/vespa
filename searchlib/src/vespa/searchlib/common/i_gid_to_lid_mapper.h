@@ -29,7 +29,6 @@ class IGidToLidMapper
 {
 public:
     virtual ~IGidToLidMapper() { }
-    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const = 0;
     virtual void foreach(const IGidToLidMapperVisitor &visitor) const = 0;
 };
 
