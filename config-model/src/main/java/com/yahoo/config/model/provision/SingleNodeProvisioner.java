@@ -4,11 +4,9 @@ package com.yahoo.config.model.provision;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.*;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.model.HostSystem;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.net.UnknownHostException;
 
 /**
  * A host provisioner used when there is no hosts.xml file (using localhost as the only host)
@@ -25,13 +23,8 @@ public class SingleNodeProvisioner implements HostProvisioner {
     private int counter = 0;
 
     public SingleNodeProvisioner() {
-        try {
-            host = new Host(HostSystem.lookupCanonicalHostname(HostName.getLocalhost()));
-            this.hostSpec = new HostSpec(host.hostname(), host.aliases());
-        }
-        catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        host = new Host(HostName.getLocalhost());
+        this.hostSpec = new HostSpec(host.hostname(), host.aliases());
     }
 
     @Override

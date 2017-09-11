@@ -95,7 +95,7 @@ public class VespaModelTestCase {
         LogdConfig.Builder b = new LogdConfig.Builder();
         b = (LogdConfig.Builder) model.getConfig(b, "");
         LogdConfig c = new LogdConfig(b);
-        assertEquals(HostSystem.lookupCanonicalHostname(HostName.getLocalhost()), c.logserver().host());
+        assertEquals(HostName.getLocalhost(), c.logserver().host());
 
         SlobroksConfig.Builder sb = new SlobroksConfig.Builder();
         sb = (com.yahoo.cloud.config.SlobroksConfig.Builder) model.getConfig(sb, "");
@@ -106,7 +106,7 @@ public class VespaModelTestCase {
         zb = (ZookeepersConfig.Builder) model.getConfig(zb, "");
         ZookeepersConfig zc = new ZookeepersConfig(zb);
         assertEquals(zc.zookeeperserverlist().split(",").length, 2);
-        assertTrue(zc.zookeeperserverlist().startsWith(HostSystem.lookupCanonicalHostname(HostName.getLocalhost())));
+        assertTrue(zc.zookeeperserverlist().startsWith(HostName.getLocalhost()));
 
         ApplicationIdConfig.Builder appIdBuilder = new ApplicationIdConfig.Builder();
         appIdBuilder = (ApplicationIdConfig.Builder) model.getConfig(appIdBuilder, "");
