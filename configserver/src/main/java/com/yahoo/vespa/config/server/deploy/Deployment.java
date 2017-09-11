@@ -129,7 +129,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             log.log(LogLevel.DEBUG, "Trying to acquire lock " + activateLock + " for session " + sessionId);
             boolean acquired = activateLock.acquire(timeoutBudget, ignoreLockFailure);
             if ( ! acquired) {
-                log.log(LogLevel.DEBUG, "Acquiring " + activateLock + " for session " + sessionId + " returned false");
+                throw new InternalServerException("Did not get activate lock for session " + sessionId + " within " + timeout);
             }
 
             log.log(LogLevel.DEBUG, "Lock acquired " + activateLock + " for session " + sessionId);
