@@ -1329,6 +1329,26 @@ public class StateChangeTest extends FleetControllerTest {
             ctrl.tick(); // Cluster state recompute iteration and send
             ctrl.tick(); // Iff ACKs were received, process version dependent task(s)
         }
+
+        // Only makes sense for tests with more than 1 controller
+        void winLeadership() throws Exception {
+            Map<Integer, Integer> leaderVotes = new HashMap<>();
+            leaderVotes.put(0, 0);
+            leaderVotes.put(1, 0);
+            leaderVotes.put(2, 0);
+            ctrl.handleFleetData(leaderVotes);
+            ctrl.tick();
+        }
+
+        void loseLeadership() throws Exception {
+            // Receive leadership loss event; other nodes not voting for us anymore.
+            Map<Integer, Integer> leaderVotes = new HashMap<>();
+            leaderVotes.put(0, 0);
+            leaderVotes.put(1, 1);
+            leaderVotes.put(2, 1);
+            ctrl.handleFleetData(leaderVotes);
+            ctrl.tick();
+        }
     }
 
     private static FleetControllerOptions defaultOptions() {
@@ -1432,12 +1452,7 @@ public class StateChangeTest extends FleetControllerTest {
         options.fleetControllerCount = 3;
         RemoteTaskFixture fixture = createFixtureWith(options);
 
-        Map<Integer, Integer> leaderVotes = new HashMap<>();
-        leaderVotes.put(0, 0);
-        leaderVotes.put(1, 0);
-        leaderVotes.put(2, 0);
-        ctrl.handleFleetData(leaderVotes);
-        ctrl.tick();
+        fixture.winLeadership();
         markAllNodesAsUp(options);
 
         MockTask task = fixture.scheduleNonIdempotentVersionDependentTask();
@@ -1450,11 +1465,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertFalse(task.isCompleted());
         assertFalse(task.isLeadershipLost());
 
-        // Receive leadership loss event; other nodes not voting for us anymore.
-        leaderVotes.put(1, 1);
-        leaderVotes.put(2, 1);
-        ctrl.handleFleetData(leaderVotes);
-        ctrl.tick();
+        fixture.loseLeadership();
 
         assertTrue(task.isCompleted());
         assertTrue(task.isLeadershipLost());
