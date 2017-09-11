@@ -5,6 +5,8 @@
 #include "imported_attribute_vector.h"
 #include "attributeguard.h"
 
+namespace search { class IGidToLidMapper; }
+
 namespace search::attribute {
 
 class BitVectorSearchCache;
@@ -22,6 +24,7 @@ class ImportedAttributeVectorReadGuard : public ImportedAttributeVector
     AttributeGuard                      _reference_attribute_guard;
     AttributeGuard                      _target_attribute_guard;
     AttributeEnumGuard                  _target_attribute_enum_guard;
+    std::unique_ptr<IGidToLidMapper>    _mapper;
 
     uint32_t getReferencedLid(uint32_t lid) const {
         return _referencedLids[lid];

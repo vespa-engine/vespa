@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_attribute_vector_read_guard.h"
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 
 namespace search {
 namespace attribute {
@@ -15,7 +17,8 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
       _referencedLids(),
       _reference_attribute_guard(_reference_attribute),
       _target_attribute_guard(stableEnumGuard ? std::shared_ptr<AttributeVector>() : _target_attribute),
-      _target_attribute_enum_guard(stableEnumGuard ? _target_attribute : std::shared_ptr<AttributeVector>())
+      _target_attribute_enum_guard(stableEnumGuard ? _target_attribute : std::shared_ptr<AttributeVector>()),
+      _mapper(_reference_attribute->getGidToLidMapperFactory()->getMapper())
 {
     _referencedLids = _reference_attribute->getReferencedLids();
 }
