@@ -50,7 +50,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
             deployLogger().log(Level.WARNING, "Unable to find canonical hostname of host: " + hostname);
         }
         if ((null != canonical) && (! hostname.equals(canonical))) {
-            deployLogger().log(Level.WARNING, "Host named '" + hostname + "' will not receive any config " +
+            deployLogger().log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
                                               "since it does not match its canonical hostname: " + canonical);
         }
     }
