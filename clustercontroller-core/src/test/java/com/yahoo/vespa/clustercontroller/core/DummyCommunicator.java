@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,6 +17,12 @@ public class DummyCommunicator implements Communicator, NodeLookup {
 
     List<Node> newNodes;
     Timer timer;
+    private boolean shouldDeferDistributorClusterStateAcks = false;
+    private List<Pair<Waiter<SetClusterStateRequest>, DummySetClusterStateRequest>> deferredClusterStateAcks = new ArrayList<>();
+
+    public void setShouldDeferDistributorClusterStateAcks(boolean shouldDeferDistributorClusterStateAcks) {
+        this.shouldDeferDistributorClusterStateAcks = shouldDeferDistributorClusterStateAcks;
+    }
 
     public class DummyGetNodeStateRequest extends GetNodeStateRequest {
         Waiter<GetNodeStateRequest> waiter;
@@ -82,7 +90,26 @@ public class DummyCommunicator implements Communicator, NodeLookup {
         DummySetClusterStateRequest req = new DummySetClusterStateRequest(node, state);
         node.setSystemStateVersionSent(state);
         req.setReply(new SetClusterStateRequest.Reply());
-        waiter.done(req);
+        if (node.isStorage() || !shouldDeferDistributorClusterStateAcks) {
+            waiter.done(req);
+        } else {
+            deferredClusterStateAcks.add(new Pair<>(waiter, req));
+        }
+    }
+
+    public void sendAllDeferredDistributorClusterStateAcks() {
+        deferredClusterStateAcks.forEach(reqAndWaiter -> reqAndWaiter.getFirst().done(reqAndWaiter.getSecond()));
+        deferredClusterStateAcks.clear();
+    }
+
+    public void sendPartialDeferredDistributorClusterStateAcks() {
+        if (deferredClusterStateAcks.isEmpty()) {
+            throw new IllegalStateException("Tried to send partial ACKs with no ACKs deferred");
+        }
+        List<Pair<Waiter<SetClusterStateRequest>, DummySetClusterStateRequest>> toAck =
+                deferredClusterStateAcks.subList(0, deferredClusterStateAcks.size() - 1);
+        toAck.forEach(reqAndWaiter -> reqAndWaiter.getFirst().done(reqAndWaiter.getSecond()));
+        deferredClusterStateAcks.removeAll(toAck);
     }
 
     @Override

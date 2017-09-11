@@ -5,14 +5,18 @@ import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperatio
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncUtils;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
-import com.yahoo.vespa.clustercontroller.utils.communication.http.JsonHttpResult;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.*;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.RestApiHandler;
 import com.yahoo.vespa.clustercontroller.utils.test.TestTransport;
-import junit.framework.TestCase;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Test;
 
-public class StateRestAPITest extends TestCase {
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class StateRestAPITest {
 
     private static void populateDummyBackend(DummyBackend backend) {
         backend.addCluster(new DummyBackend.Cluster("foo")
@@ -68,6 +72,7 @@ public class StateRestAPITest extends TestCase {
         return (JSONObject) result.getContent();
     }
 
+    @Test
     public void testTopLevelList() throws Exception {
         setupDummyStateApi();
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
@@ -80,6 +85,7 @@ public class StateRestAPITest extends TestCase {
         assertEquals(expected, ((JSONObject) result.getContent()).toString(2));
     }
 
+    @Test
     public void testClusterState() throws Exception {
         setupDummyStateApi();
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo"));
@@ -92,6 +98,7 @@ public class StateRestAPITest extends TestCase {
         assertEquals(expected, ((JSONObject) result.getContent()).toString(2));
     }
 
+    @Test
     public void testNodeState() throws Exception {
         setupDummyStateApi();
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo/3"));
@@ -108,6 +115,7 @@ public class StateRestAPITest extends TestCase {
         assertEquals(expected, ((JSONObject) result.getContent()).toString(2));
     }
 
+    @Test
     public void testRecursiveMode() throws Exception {
         setupDummyStateApi();
         {
@@ -198,6 +206,25 @@ public class StateRestAPITest extends TestCase {
         }
     }
 
+    private String retireAndExpectHttp200Response(Optional<String> responseWait) throws Exception {
+        JSONObject json = new JSONObject()
+                .put("state", new JSONObject()
+                        .put("current", new JSONObject()
+                                .put("state", "retired")
+                                .put("reason", "No reason")))
+                .put("condition", "FORCE");
+        if (responseWait.isPresent()) {
+            json.put("response-wait", responseWait.get());
+        }
+        HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo/3").setPostContent(json));
+        assertEquals(result.toString(true), 200, result.getHttpReturnCode());
+        assertEquals(result.toString(true), "application/json", result.getHeader("Content-Type"));
+        StringBuilder print = new StringBuilder();
+        result.printContent(print);
+        return print.toString();
+    }
+
+    @Test
     public void testSetNodeState() throws Exception {
         setupDummyStateApi();
         {
@@ -240,26 +267,41 @@ public class StateRestAPITest extends TestCase {
                     + "}";
             assertEquals(json.toString(2), expected, json.toString(2));
         }
+    }
+
+    @Test
+    public void set_node_state_response_wait_type_is_propagated_to_handler() throws Exception {
+        setupDummyStateApi();
         {
-            JSONObject json = new JSONObject()
-                    .put("state", new JSONObject()
-                            .put("current", new JSONObject()
-                                    .put("state", "retired")
-                                    .put("reason", "No reason")))
-                    .put("condition", "FORCE");
-            HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo/3").setPostContent(json));
-            assertEquals(result.toString(true), 200, result.getHttpReturnCode());
-            assertEquals(result.toString(true), "application/json", result.getHeader("Content-Type"));
-            StringBuilder print = new StringBuilder();
-            result.printContent(print);
-            assertEquals(print.toString(),
+            String result = retireAndExpectHttp200Response(Optional.of("wait-until-cluster-acked"));
+            assertEquals(result,
                     "JSON: {\n" +
                             "  \"wasModified\": true,\n" +
-                            "  \"reason\": \"DummyStateAPI\"\n" +
+                            "  \"reason\": \"DummyStateAPI wait-until-cluster-acked call\"\n" +
+                            "}");
+        }
+        {
+            String result = retireAndExpectHttp200Response(Optional.of("no-wait"));
+            assertEquals(result,
+                    "JSON: {\n" +
+                            "  \"wasModified\": true,\n" +
+                            "  \"reason\": \"DummyStateAPI no-wait call\"\n" +
                             "}");
         }
     }
 
+    @Test
+    public void set_node_state_response_wait_type_is_cluster_acked_by_default() throws Exception {
+        setupDummyStateApi();
+        String result = retireAndExpectHttp200Response(Optional.empty());
+        assertEquals(result,
+                "JSON: {\n" +
+                        "  \"wasModified\": true,\n" +
+                        "  \"reason\": \"DummyStateAPI wait-until-cluster-acked call\"\n" +
+                        "}");
+    }
+
+    @Test
     public void testMissingUnits() throws Exception {
         setupDummyStateApi();
         {
@@ -278,6 +320,7 @@ public class StateRestAPITest extends TestCase {
         }
     }
 
+    @Test
     public void testUnknownMaster() throws Exception {
         setupDummyStateApi();
         stateApi.induceException(new UnknownMasterException());
@@ -290,6 +333,7 @@ public class StateRestAPITest extends TestCase {
         assertTrue(result.getHeader("Location") == null);
     }
 
+    @Test
     public void testOtherMaster() throws Exception {
         setupDummyStateApi();
         {
@@ -314,6 +358,7 @@ public class StateRestAPITest extends TestCase {
         }
     }
 
+    @Test
     public void testRuntimeException() throws Exception {
         setupDummyStateApi();
         stateApi.induceException(new RuntimeException("Moahaha"));
@@ -325,6 +370,7 @@ public class StateRestAPITest extends TestCase {
         assertEquals(expected, result.getContent().toString());
     }
 
+    @Test
     public void testClientFailures() throws Exception {
         setupDummyStateApi();
         {
@@ -358,6 +404,7 @@ public class StateRestAPITest extends TestCase {
         }
     }
 
+    @Test
     public void testInternalFailure() throws Exception {
         setupDummyStateApi();
         {
@@ -371,6 +418,7 @@ public class StateRestAPITest extends TestCase {
         }
     }
 
+    @Test
     public void testInvalidRecursiveValues() throws Exception {
         setupDummyStateApi();
         {
@@ -391,6 +439,7 @@ public class StateRestAPITest extends TestCase {
         }
     }
 
+    @Test
     public void testInvalidJsonInSetStateRequest() throws Exception {
         setupDummyStateApi();
         {
@@ -437,24 +486,34 @@ public class StateRestAPITest extends TestCase {
             assertTrue(result.toString(true), result.getContent().toString().contains("value of state->current->reason is not a string"));
         }
         {
-            JSONObject json = new JSONObject()
-                    .put("state", new JSONObject()
-                            .put("current", new JSONObject()
-                                    .put("state", "retired")
-                                    .put("reason", "No reason")))
-                    .put("condition", "Non existing condition");
-            HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo/3").setPostContent(json));
-            assertEquals(result.toString(true), 500, result.getHttpReturnCode());
-            assertEquals(result.toString(true), "application/json", result.getHeader("Content-Type"));
-            StringBuilder print = new StringBuilder();
-            result.printContent(print);
-            assertEquals(print.toString(),
-                    "JSON: {\"message\": \"java.lang.IllegalArgumentException: No enum constant " +
-                            "com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest." +
-                            "Condition.Non existing condition\"}");
+            String result = retireAndExpectHttp400Response("Non existing condition", "no-wait");
+            assertEquals(result,
+                    "JSON: {\"message\": \"Invalid value for condition: 'Non existing condition', expected one of 'force', 'safe'\"}");
+        }
+        {
+            String result = retireAndExpectHttp400Response("FORCE", "banana");
+            assertEquals(result,
+                    "JSON: {\"message\": \"Invalid value for response-wait: 'banana', expected one of 'wait-until-cluster-acked', 'no-wait'\"}");
         }
     }
 
+    private String retireAndExpectHttp400Response(String condition, String responseWait) throws Exception {
+        JSONObject json = new JSONObject()
+                .put("state", new JSONObject()
+                        .put("current", new JSONObject()
+                                .put("state", "retired")
+                                .put("reason", "No reason")))
+                .put("condition", condition)
+                .put("response-wait", responseWait);
+        HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo/3").setPostContent(json));
+        assertEquals(result.toString(true), 400, result.getHttpReturnCode());
+        assertEquals(result.toString(true), "application/json", result.getHeader("Content-Type"));
+        StringBuilder print = new StringBuilder();
+        result.printContent(print);
+        return print.toString();
+    }
+
+    @Test
     public void testInvalidPathPrefix() throws Exception {
         DummyBackend backend = new DummyBackend();
         stateApi = new DummyStateApi(backend);

@@ -58,18 +58,20 @@ public class RestApiHandler implements HttpRequestHandler {
                 });
                 return new JsonHttpResult().setJson(jsonWriter.createJson(data));
             } else {
-                final JsonReader.SetRequestData setRequestdata = jsonReader.getStateRequestData(request);
+                final JsonReader.SetRequestData setRequestData = jsonReader.getStateRequestData(request);
                 SetResponse setResponse = restApi.setUnitState(new SetUnitStateRequest() {
                     @Override
                     public Map<String, UnitState> getNewState() {
-                        return setRequestdata.stateMap;
+                        return setRequestData.stateMap;
                     }
                     @Override
                     public String[] getUnitPath() {
                         return unitPath;
                     }
                     @Override
-                    public Condition getCondition() { return setRequestdata.condition; }
+                    public Condition getCondition() { return setRequestData.condition; }
+                    @Override
+                    public ResponseWait getResponseWait() { return setRequestData.responseWait; }
                 });
                 return new JsonHttpResult().setJson(jsonWriter.createJson(setResponse));
             }

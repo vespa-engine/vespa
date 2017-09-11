@@ -10,7 +10,6 @@ import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.MissingIdException;
@@ -29,6 +28,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     private final Id.Node id;
     private final Map<String, UnitState> newStates;
     private final SetUnitStateRequest.Condition condition;
+    private final SetUnitStateRequest.ResponseWait responseWait;
 
 
     public SetNodeStateRequest(Id.Node id, SetUnitStateRequest setUnitStateRequest) {
@@ -36,6 +36,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         this.id = id;
         this.newStates = setUnitStateRequest.getNewState();
         this.condition = setUnitStateRequest.getCondition();
+        this.responseWait = setUnitStateRequest.getResponseWait();
     }
 
     @Override
@@ -62,6 +63,11 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             default: throw new InvalidContentException("Invalid user state '" + newState.getId() + "' given.");
         }
         return new NodeState(n.getType(), state).setDescription(newState.getReason());
+    }
+
+    @Override
+    public boolean hasVersionAckDependency() {
+        return (this.responseWait == SetUnitStateRequest.ResponseWait.WAIT_UNTIL_CLUSTER_ACKED);
     }
 
     static SetResponse setWantedState(

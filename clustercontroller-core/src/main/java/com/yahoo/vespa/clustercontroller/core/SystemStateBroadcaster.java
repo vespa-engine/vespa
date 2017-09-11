@@ -91,16 +91,17 @@ public class SystemStateBroadcaster {
         {
             return false; // No point in sending system state to nodes that can't receive messages or don't want them
         }
-        if (node.getNewestSystemStateVersionSent() == systemState.getVersion()) {
-            return false; // No point in sending if we already have done so
-        }
         return true;
     }
 
-    private List<NodeInfo> resolveStateVersionSendSet(DatabaseHandler.Context dbContext) {
+    private List<NodeInfo> resolveStateVersionCandidateSendSet(DatabaseHandler.Context dbContext) {
         return dbContext.getCluster().getNodeInfo().stream()
                 .filter(this::nodeNeedsClusterState)
                 .collect(Collectors.toList());
+    }
+
+    private boolean newestStateAlreadySentToNode(NodeInfo node) {
+        return (node.getNewestSystemStateVersionSent() == systemState.getVersion());
     }
 
     public boolean broadcastNewState(DatabaseHandler database,
@@ -109,7 +110,7 @@ public class SystemStateBroadcaster {
                                      FleetController fleetController) throws InterruptedException {
         if (systemState == null) return false;
 
-        List<NodeInfo> recipients = resolveStateVersionSendSet(dbContext);
+        List<NodeInfo> recipients = resolveStateVersionCandidateSendSet(dbContext);
         if (!systemState.isOfficial()) {
             systemState.setOfficial(true);
         }
@@ -118,6 +119,9 @@ public class SystemStateBroadcaster {
         for (NodeInfo node : recipients) {
             if (node.isDistributor()) {
                 anyOutdatedDistributorNodes = true;
+            }
+            if (newestStateAlreadySentToNode(node)) {
+                continue; // No need to send anything more, but still have to mark node as outdated.
             }
             if (nodeNeedsToObserveStartupTimestamps(node)) {
                 ClusterState newState = buildModifiedClusterState(dbContext);
@@ -138,6 +142,8 @@ public class SystemStateBroadcaster {
         }
         return !recipients.isEmpty();
     }
+
+    public int lastClusterStateVersionInSync() { return lastClusterStateInSync; }
 
     private boolean nodeNeedsToObserveStartupTimestamps(NodeInfo node) {
         return node.getStartTimestamp() != 0 && node.getWentDownWithStartTime() == node.getStartTimestamp();
