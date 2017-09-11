@@ -194,6 +194,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       "",
                                       Request.Method.DELETE),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
+
+        // DELETE (deactivate) a deployment is idempotent
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default",
+                                      "",
+                                      Request.Method.DELETE),
+                              "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
+
         // DELETE an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.DELETE),
                               "");

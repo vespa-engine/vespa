@@ -796,13 +796,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
-        
+
         Zone zone = new Zone(Environment.from(environment), RegionName.from(region));
         Deployment deployment = application.deployments().get(zone);
-        if (deployment == null)
-            return ErrorResponse.notFoundError("Could not deactivate: " + application + " is not deployed in " + zone);
-
-        controller.applications().deactivate(application, deployment, false);
+        if (deployment == null) {
+            // Attempt to deactivate application even if the deployment is not known by the controller
+            controller.applications().deactivate(application, zone);
+        } else {
+            controller.applications().deactivate(application, deployment, false);
+        }
 
         // TODO: Change to return JSON
         return new StringResponse("Deactivated " + path(TenantResource.API_PATH, tenantName,
