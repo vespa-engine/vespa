@@ -868,7 +868,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
                 firstAllowedStateBroadcast = Long.MAX_VALUE;
                 metricUpdater.noLongerMaster();
-                failAllVersionDependentTasks(); // TODO test
+                failAllVersionDependentTasks();
             }
             wantedStateChanged = false;
             isMaster = false;
@@ -892,7 +892,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             System.exit(1);
         } finally {
             running.set(false);
-            failAllVersionDependentTasks(); // TODO test....
+            failAllVersionDependentTasks();
             synchronized (monitor) { monitor.notifyAll(); }
         }
     }

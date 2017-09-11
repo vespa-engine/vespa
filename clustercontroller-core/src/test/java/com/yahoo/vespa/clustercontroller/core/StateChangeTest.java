@@ -52,7 +52,12 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl = new FleetController(timer, eventLog, cluster, stateGatherer, communicator, null, null, communicator, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
 
         ctrl.tick();
+        if (options.fleetControllerCount == 1) {
+            markAllNodesAsUp(options);
+        }
+    }
 
+    private void markAllNodesAsUp(FleetControllerOptions options) throws Exception {
         for (int i = 0; i < options.nodes.size(); ++i) {
             communicator.setNodeState(new Node(NodeType.STORAGE, i), State.UP, "");
             communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, i), State.UP, "");
@@ -1242,11 +1247,17 @@ public class StateChangeTest extends FleetControllerTest {
 
     private static abstract class MockTask extends RemoteClusterControllerTask {
         boolean invoked = false;
+        boolean leadershipLost = false;
 
         boolean isInvoked() { return invoked; }
 
+        boolean isLeadershipLost() { return leadershipLost; }
+
         @Override
         public boolean hasVersionAckDependency() { return true; }
+
+        @Override
+        public void handleLeadershipLost() { this.leadershipLost = true; }
     }
 
     // We create an explicit mock task class instead of using mock() simply because of
@@ -1313,6 +1324,11 @@ public class StateChangeTest extends FleetControllerTest {
             communicator.sendAllDeferredDistributorClusterStateAcks();
             ctrl.tick();
         }
+
+        void processScheduledTask() throws Exception {
+            ctrl.tick(); // Cluster state recompute iteration and send
+            ctrl.tick(); // Iff ACKs were received, process version dependent task(s)
+        }
     }
 
     private static FleetControllerOptions defaultOptions() {
@@ -1349,8 +1365,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertFalse(task.isCompleted());
         communicator.setShouldDeferDistributorClusterStateAcks(true);
 
-        ctrl.tick(); // Cluster state recompute iteration. New state generated, but not ACKed by nodes
-        ctrl.tick(); // Ensure that we're deferring ACKs. Otherwise, this tick would process ACKs and complete tasks.
+        fixture.processScheduledTask(); // New state generated, but not ACKed by nodes since we're deferring.
         assertFalse(task.isCompleted());
 
         fixture.sendPartialDeferredDistributorClusterStateAcks();
@@ -1369,8 +1384,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
 
-        ctrl.tick(); // Cluster state recompute iteration. New state _not_ generated
-        ctrl.tick(); // Deferred tasks processing; should complete tasks
+        fixture.processScheduledTask(); // Deferred tasks processing; should complete tasks
         assertTrue(task.isCompleted());
     }
 
@@ -1385,8 +1399,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
 
-        ctrl.tick(); // Cluster state recompute iteration. New state _not_ generated
-        ctrl.tick(); // Deferred task processing; version not satisfied yet
+        fixture.processScheduledTask(); // Deferred task processing; version not satisfied yet
         assertFalse(task.isCompleted());
 
         fixture.sendAllDeferredDistributorClusterStateAcks();
@@ -1409,11 +1422,42 @@ public class StateChangeTest extends FleetControllerTest {
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
 
-        ctrl.tick(); // Cluster state recompute iteration. New state _not_ generated
-        ctrl.tick(); // Deferred tasks processing; should complete tasks
+        fixture.processScheduledTask(); // Deferred tasks processing; should complete tasks
         assertTrue(task.isCompleted());
+    }
 
+    @Test
+    public void synchronous_task_immediately_failed_when_leadership_lost() throws Exception {
+        FleetControllerOptions options = optionsWithZeroTransitionTime();
+        options.fleetControllerCount = 3;
+        RemoteTaskFixture fixture = createFixtureWith(options);
 
+        Map<Integer, Integer> leaderVotes = new HashMap<>();
+        leaderVotes.put(0, 0);
+        leaderVotes.put(1, 0);
+        leaderVotes.put(2, 0);
+        ctrl.handleFleetData(leaderVotes);
+        ctrl.tick();
+        markAllNodesAsUp(options);
+
+        MockTask task = fixture.scheduleNonIdempotentVersionDependentTask();
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+        fixture.processScheduledTask();
+        assertFalse(task.isCompleted());
+        assertFalse(task.isLeadershipLost());
+
+        // Receive leadership loss event; other nodes not voting for us anymore.
+        leaderVotes.put(1, 1);
+        leaderVotes.put(2, 1);
+        ctrl.handleFleetData(leaderVotes);
+        ctrl.tick();
+
+        assertTrue(task.isCompleted());
+        assertTrue(task.isLeadershipLost());
     }
 
 }
