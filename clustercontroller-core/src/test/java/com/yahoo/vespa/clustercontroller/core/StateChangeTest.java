@@ -1447,6 +1447,24 @@ public class StateChangeTest extends FleetControllerTest {
     }
 
     @Test
+    public void multiple_tasks_may_be_scheduled_and_answered_at_the_same_time() throws Exception {
+        RemoteTaskFixture fixture = createDefaultFixture();
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+
+        MockTask task1 = fixture.scheduleNonIdempotentVersionDependentTask();
+        MockTask task2 = fixture.scheduleNonIdempotentVersionDependentTask();
+
+        fixture.processScheduledTask();
+        assertFalse(task1.isCompleted());
+        assertFalse(task2.isCompleted());
+
+        fixture.sendAllDeferredDistributorClusterStateAcks();
+
+        assertTrue(task1.isCompleted());
+        assertTrue(task2.isCompleted());
+    }
+
+    @Test
     public void synchronous_task_immediately_failed_when_leadership_lost() throws Exception {
         FleetControllerOptions options = optionsWithZeroTransitionTime();
         options.fleetControllerCount = 3;

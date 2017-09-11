@@ -692,7 +692,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         while (!taskCompletionQueue.isEmpty()) {
             VersionDependentTaskCompletion taskCompletion = taskCompletionQueue.peek();
             if (publishedVersion >= taskCompletion.getMinimumVersion()) {
-                log.info(() -> String.format("Deferred task of type '%s' has minimum version %d, published is %d; completing",
+                log.fine(() -> String.format("Deferred task of type '%s' has minimum version %d, published is %d; completing",
                         taskCompletion.getTask().getClass().getName(), taskCompletion.getMinimumVersion(), publishedVersion));
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
