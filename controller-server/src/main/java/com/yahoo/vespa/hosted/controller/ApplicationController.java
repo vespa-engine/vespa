@@ -22,6 +22,10 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -31,10 +35,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -490,20 +490,30 @@ public class ApplicationController {
         }
     }
 
+    /** Deactivate application in the given zone */
+    public Application deactivate(Application application, Zone zone) {
+        return deactivate(application, zone, Optional.empty(), false);
+    }
+
+    /** Deactivate a known deployment of the given application */
     public Application deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
+        return deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
+    }
+
+    private Application deactivate(Application application, Zone zone, Optional<Deployment> deployment,
+                                   boolean requireThatDeploymentHasExpired) {
         try (Lock lock = lock(application.id())) {
-            // TODO: ignore no application errors for config server client, only return such errors from sherpa client.
-            if (requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment,
-                                                                                  clock.instant()))
+            if (deployment.isPresent() && requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(
+                    controller.zoneRegistry(), deployment.get(), clock.instant())) {
                 return application;
+            }
 
             try { 
-                configserverClient.deactivate(new DeploymentId(application.id(), deployment.zone())); 
-            } 
-            catch (NoInstanceException e) {
+                configserverClient.deactivate(new DeploymentId(application.id(), zone));
+            }  catch (NoInstanceException ignored) {
                 // ok; already gone
             }
-            application = application.withoutDeploymentIn(deployment.zone());
+            application = application.withoutDeploymentIn(zone);
             store(application, lock);
             return application;
         }
