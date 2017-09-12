@@ -35,6 +35,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -58,6 +59,7 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
 using search::attribute::ReferenceAttribute;
+using search::attribute::test::MockGidToLidMapperFactory;
 using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateIndex;
 using search::predicate::PredicateTreeAnnotations;
@@ -132,6 +134,7 @@ struct ImportedAttributesRepoBuilder {
     ImportedAttributesRepoBuilder() : _repo(std::make_unique<ImportedAttributesRepo>()) {}
     void add(const vespalib::string &name) {
         auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref", AVConfig(BasicType::REFERENCE));
+        refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr, false);
         _repo->add(name, importedAttr);

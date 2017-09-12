@@ -37,10 +37,6 @@ BucketId toBucketId(const GlobalId &gid) {
     return bucketId;
 }
 
-void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, const vespalib::string &docId, uint32_t lid) {
-    EXPECT_EQUAL(lid, mapper->mapGidToLid(toGid(docId)));
-}
-
 using GidMap = std::map<GlobalId, uint32_t>;
 
 struct GidCollector : public search::IGidToLidMapperVisitor
@@ -64,6 +60,13 @@ GidMap collectGids(const std::unique_ptr<search::IGidToLidMapper> &mapper)
 void assertGids(const GidMap &expGids, const GidMap &gids)
 {
     EXPECT_EQUAL(expGids, gids);
+}
+
+void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, const vespalib::string &docId, uint32_t lid) {
+    auto gids = collectGids(mapper);
+    auto itr = gids.find(toGid(docId));
+    uint32_t foundLid = (itr != gids.end()) ? itr->second : 0u;
+    EXPECT_EQUAL(lid, foundLid);
 }
 
 }
@@ -138,15 +141,6 @@ struct Fixture
         TEST_DO(assertGenerations(currentGeneration, firstUsedGeneration));
     }
 };
-
-TEST_F("Test that we can use gid mapper to get lids", Fixture)
-{
-    auto factory = f.getGidToLidMapperFactory();
-    auto mapper = factory->getMapper();
-    TEST_DO(assertLid(mapper, doc1, 4));
-    TEST_DO(assertLid(mapper, doc2, 7));
-    TEST_DO(assertLid(mapper, doc3, 0));
-}
 
 TEST_F("Test that mapper holds read guard", Fixture)
 {

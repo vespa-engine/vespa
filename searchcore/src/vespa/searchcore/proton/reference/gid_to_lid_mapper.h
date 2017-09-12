@@ -21,7 +21,6 @@ public:
     GidToLidMapper(vespalib::GenerationHandler::Guard &&guard,
                    const DocumentMetaStore &dms);
     virtual ~GidToLidMapper();
-    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override;
     virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
 };
 
