@@ -42,6 +42,12 @@ public class ZmsClientFactoryMock extends AbstractComponent implements ZmsClient
         return new ZmsClientMock(athens);
     }
 
+    @Override
+    public ZmsClient createClientWithoutPrincipal() {
+        log("createClientWithoutPrincipal()");
+        return new ZmsClientMock(athens);
+    }
+
     private static void log(String format, Object... args) {
         log.log(Level.INFO, String.format(format, args));
     }

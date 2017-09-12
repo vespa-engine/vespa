@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.InvalidTokenException;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.NTokenValidator;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.UnauthorizedZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
 
 /**
@@ -22,10 +23,12 @@ public class AthensMock extends AbstractComponent implements Athens {
     private static final AthensDomain screwdriverDomain = new AthensDomain("screwdriver-domain");
 
     private final ZmsClientFactory zmsClientFactory;
+    private final UnauthorizedZmsClient unauthorizedZmsClient;
     private final NTokenValidator nTokenValidator;
 
     public AthensMock(AthensDbMock athensDb, NTokenValidator nTokenValidator) {
         this.zmsClientFactory = new ZmsClientFactoryMock(athensDb);
+        this.unauthorizedZmsClient = new UnauthorizedZmsClient(zmsClientFactory);
         this.nTokenValidator = nTokenValidator;
     }
 
@@ -61,6 +64,11 @@ public class AthensMock extends AbstractComponent implements Athens {
     @Override
     public NToken nTokenFrom(String rawToken) {
         return new NTokenMock(rawToken);
+    }
+
+    @Override
+    public UnauthorizedZmsClient unauthorizedZmsClient() {
+        return unauthorizedZmsClient;
     }
 
     @Override
