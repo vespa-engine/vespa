@@ -774,27 +774,28 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 stateWasChanged = true;
             }
         }
-        scheduleVersionDependentTasksForFutureCompletion();
+        /*
+         * This works transparently for tasks that end up changing the current cluster state (i.e.
+         * requiring a new state to be published) and for those whose changes are no-ops (because
+         * the changes they request are already part of the current state). In the former case the
+         * tasks will depend on the version that was generated based upon them. In the latter case
+         * the tasks will depend on the version that is already published (or in the process of
+         * being published).
+         */
+        scheduleVersionDependentTasksForFutureCompletion(stateVersionTracker.getCurrentVersion());
         return stateWasChanged;
     }
 
     /**
      * Move tasks that are dependent on the most recently generated state being published into
-     * a completion queue with a dependency on the current version. Once that version
+     * a completion queue with a dependency on the provided version argument. Once that version
      * has been ACKed by all distributors in the system, those tasks will be marked as completed.
-     *
-     * This works transparently for tasks that end up changing the current cluster state (i.e.
-     * requiring a new state to be published) and for those whose changes are no-ops (because
-     * the changes they request are already part of the current state). In the former case the
-     * tasks will depend on the version that was generated based upon them. In the latter case
-     * the tasks will depend on the version that is already published (or in the process of
-     * being published).
      */
-    private void scheduleVersionDependentTasksForFutureCompletion() {
+    private void scheduleVersionDependentTasksForFutureCompletion(int completeAtVersion) {
         for (RemoteClusterControllerTask task : tasksPendingStateRecompute) {
-            log.finest(() -> String.format("Adding task of type '%s' to be acked at version %d",
-                    task.getClass().getName(), stateVersionTracker.getCurrentVersion()));
-            taskCompletionQueue.add(new VersionDependentTaskCompletion(stateVersionTracker.getCurrentVersion(), task));
+            log.finest(() -> String.format("Adding task of type '%s' to be completed at version %d",
+                    task.getClass().getName(), completeAtVersion));
+            taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task));
         }
         tasksPendingStateRecompute.clear();
     }
