@@ -29,6 +29,8 @@ ImportedSearchContext::ImportedSearchContext(
       _useSearchCache(_imported_attribute.getSearchCache().get() != nullptr),
       _searchCacheLookup((_useSearchCache ? _imported_attribute.getSearchCache()->find(_queryTerm) :
                           std::shared_ptr<BitVectorSearchCache::Entry>())),
+      _dmsReadGuard((_useSearchCache && !_searchCacheLookup) ? imported_attribute.getDocumentMetaStore()->getReadGuard() :
+                    std::unique_ptr<IDocumentMetaStoreContext::IReadGuard>()),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(*_imported_attribute.getTargetAttribute()),
       _target_search_context(_target_attribute.getSearch(std::move(term), params)),
@@ -36,6 +38,7 @@ ImportedSearchContext::ImportedSearchContext(
       _merger(_reference_attribute.getCommittedDocIdLimit()),
       _fetchPostingsDone(false)
 {
+
 }
 
 ImportedSearchContext::~ImportedSearchContext() {
@@ -215,7 +218,8 @@ void
 ImportedSearchContext::considerAddSearchCacheEntry()
 {
     if (_useSearchCache && _merger.hasBitVector()) {
-        auto cacheEntry = std::make_shared<BitVectorSearchCache::Entry>(_merger.getBitVectorSP(), _merger.getDocIdLimit());
+        assert(_dmsReadGuard);
+        auto cacheEntry = std::make_shared<BitVectorSearchCache::Entry>(std::move(_dmsReadGuard), _merger.getBitVectorSP(), _merger.getDocIdLimit());
         _imported_attribute.getSearchCache()->insert(_queryTerm, std::move(cacheEntry));
     }
 }

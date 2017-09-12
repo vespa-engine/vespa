@@ -226,7 +226,7 @@ struct Fixture {
     }
     ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay) {
         DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
-        return resolver.resolve(attrMgr, oldAttrMgr, visibilityDelay);
+        return resolver.resolve(attrMgr, oldAttrMgr, std::shared_ptr<search::IDocumentMetaStoreContext>(), visibilityDelay);
     }
     ImportedAttributesRepo::UP resolve() {
         return resolve(fastos::TimeStamp(0));

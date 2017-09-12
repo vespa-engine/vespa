@@ -370,7 +370,7 @@ makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)
     for (uint32_t docId : docIds) {
         bitVector->setBit(docId);
     }
-    return std::make_shared<BitVectorSearchCache::Entry>(bitVector, docIdLimit);
+    return std::make_shared<BitVectorSearchCache::Entry>(IDocumentMetaStoreContext::IReadGuard::UP(), bitVector, docIdLimit);
 }
 
 TEST_F("Bit vector from search cache is used if found", SearchCacheFixture)
@@ -382,6 +382,7 @@ TEST_F("Bit vector from search cache is used if found", SearchCacheFixture)
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
     TEST_DO(f.assertSearch({2, 6}, *iter)); // Note: would be {3, 5} if cache was not used
+    EXPECT_EQUAL(0u, f.document_meta_store->get_read_guard_cnt);
 }
 
 void
@@ -405,6 +406,7 @@ TEST_F("Entry is inserted into search cache if bit vector posting list is used",
     auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
     EXPECT_EQUAL(cacheEntry->docIdLimit, f.imported_attr->getNumDocs());
     TEST_DO(assertBitVector({3, 5}, *cacheEntry->bitVector));
+    EXPECT_EQUAL(1u, f.document_meta_store->get_read_guard_cnt);
 }
 
 }

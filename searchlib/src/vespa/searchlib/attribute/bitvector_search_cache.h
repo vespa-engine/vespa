@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
@@ -21,13 +22,17 @@ namespace attribute {
 class BitVectorSearchCache {
 public:
     using BitVectorSP = std::shared_ptr<BitVector>;
+    using ReadGuardUP = IDocumentMetaStoreContext::IReadGuard::UP;
 
     struct Entry {
         using SP = std::shared_ptr<Entry>;
+        // We need to keep a document meta store read guard to ensure that no lids that are cached
+        // in the bit vector are re-used until the guard is released.
+        ReadGuardUP dmsReadGuard;
         BitVectorSP bitVector;
         uint32_t docIdLimit;
-        Entry(BitVectorSP bitVector_, uint32_t docIdLimit_)
-            : bitVector(std::move(bitVector_)), docIdLimit(docIdLimit_) {}
+        Entry(ReadGuardUP dmsReadGuard_, BitVectorSP bitVector_, uint32_t docIdLimit_)
+            : dmsReadGuard(std::move(dmsReadGuard_)), bitVector(std::move(bitVector_)), docIdLimit(docIdLimit_) {}
     };
 
 private:

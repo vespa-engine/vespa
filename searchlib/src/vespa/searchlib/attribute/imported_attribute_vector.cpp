@@ -14,10 +14,12 @@ ImportedAttributeVector::ImportedAttributeVector(
             vespalib::stringref name,
             std::shared_ptr<ReferenceAttribute> reference_attribute,
             std::shared_ptr<AttributeVector> target_attribute,
+            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
             bool use_search_cache)
     : _name(name),
       _reference_attribute(std::move(reference_attribute)),
       _target_attribute(std::move(target_attribute)),
+      _document_meta_store(std::move(document_meta_store)),
       _search_cache(use_search_cache ? std::make_shared<BitVectorSearchCache>() :
                     std::shared_ptr<BitVectorSearchCache>())
 {
@@ -26,10 +28,12 @@ ImportedAttributeVector::ImportedAttributeVector(
 ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
                                                  std::shared_ptr<ReferenceAttribute> reference_attribute,
                                                  std::shared_ptr<AttributeVector> target_attribute,
+                                                 std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                                  std::shared_ptr<BitVectorSearchCache> search_cache)
     : _name(name),
       _reference_attribute(std::move(reference_attribute)),
       _target_attribute(std::move(target_attribute)),
+      _document_meta_store(std::move(document_meta_store)),
       _search_cache(std::move(search_cache))
 {
 }
@@ -41,7 +45,7 @@ std::unique_ptr<ImportedAttributeVector>
 ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
     return std::make_unique<ImportedAttributeVectorReadGuard>
-        (getName(), getReferenceAttribute(), getTargetAttribute(), getSearchCache(), stableEnumGuard);
+        (getName(), getReferenceAttribute(), getTargetAttribute(), getDocumentMetaStore(), getSearchCache(), stableEnumGuard);
 }
 
 const vespalib::string& search::attribute::ImportedAttributeVector::getName() const {

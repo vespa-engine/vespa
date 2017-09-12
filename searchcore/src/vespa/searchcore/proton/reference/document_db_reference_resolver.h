@@ -7,7 +7,8 @@
 #include <map>
 
 namespace document { class DocumentType; class DocumentTypeRepo; }
-namespace search { class ISequencedTaskExecutor; class IAttributeManager; namespace attribute { class IAttributeVector; class ReferenceAttribute; } }
+namespace search { class ISequencedTaskExecutor; class IAttributeManager; class IDocumentMetaStoreContext;
+    namespace attribute { class IAttributeVector; class ReferenceAttribute; } }
 namespace vespa { namespace config { namespace search { namespace internal { class InternalImportedFieldsType; } } } }
 
 namespace proton {
@@ -37,6 +38,7 @@ private:
     std::shared_ptr<IDocumentDBReference> getTargetDocumentDB(const vespalib::string &refAttrName) const;
     void connectReferenceAttributesToGidMapper(const search::IAttributeManager &attrMgr);
     std::unique_ptr<ImportedAttributesRepo> createImportedAttributesRepo(const search::IAttributeManager &attrMgr,
+                                                                         const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
                                                                          bool useSearchCache);
     void detectOldListeners(const search::IAttributeManager &attrMgr);
     void listenToGidToLidChanges(const search::IAttributeManager &attrMgr);
@@ -52,6 +54,7 @@ public:
 
     virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
                                                             const search::IAttributeManager &oldAttrMgr,
+                                                            const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
                                                             fastos::TimeStamp visibilityDelay) override;
     virtual void teardown(const search::IAttributeManager &oldAttrMgr) override;
 };

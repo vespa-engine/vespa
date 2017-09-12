@@ -11,6 +11,7 @@ namespace search {
 
 class AttributeGuard;
 class AttributeEnumGuard;
+class IDocumentMetaStoreContext;
 
 namespace attribute {
 
@@ -32,10 +33,12 @@ public:
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
                             std::shared_ptr<AttributeVector> target_attribute,
+                            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             bool use_search_cache);
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
                             std::shared_ptr<AttributeVector> target_attribute,
+                            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                             std::shared_ptr<BitVectorSearchCache> search_cache);
     ~ImportedAttributeVector();
 
@@ -72,6 +75,9 @@ public:
     const std::shared_ptr<AttributeVector>& getTargetAttribute() const noexcept {
         return _target_attribute;
     }
+    const std::shared_ptr<IDocumentMetaStoreContext> &getDocumentMetaStore() const {
+        return _document_meta_store;
+    }
     const std::shared_ptr<BitVectorSearchCache> &getSearchCache() const {
         return _search_cache;
     }
@@ -88,10 +94,11 @@ protected:
                                       const common::BlobConverter * bc) const override;
 
 
-    vespalib::string                      _name;
-    std::shared_ptr<ReferenceAttribute>   _reference_attribute;
-    std::shared_ptr<AttributeVector>      _target_attribute;
-    std::shared_ptr<BitVectorSearchCache> _search_cache;
+    vespalib::string                           _name;
+    std::shared_ptr<ReferenceAttribute>        _reference_attribute;
+    std::shared_ptr<AttributeVector>           _target_attribute;
+    std::shared_ptr<IDocumentMetaStoreContext> _document_meta_store;
+    std::shared_ptr<BitVectorSearchCache>      _search_cache;
 };
 
 } // attribute

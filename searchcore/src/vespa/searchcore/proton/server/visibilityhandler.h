@@ -32,8 +32,8 @@ public:
     void commit() override;
     virtual void commitAndWait() override;
 private:
-    bool startCommit(const LockGuard & unused);
-    void performCommit();
+    bool startCommit(const LockGuard &unused, bool force);
+    void performCommit(bool force);
     const IGetSerialNum  & _serial;
     IThreadingService    & _writeService;
     const FeedViewHolder & _feedView;

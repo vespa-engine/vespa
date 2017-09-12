@@ -211,6 +211,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     if (params.shouldAttributeManagerChange()) {
         IAttributeManager::SP newAttrMgr = attrMgr->create(attrSpec);
         newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
+                                                           searchView->getDocumentMetaStore(),
                                                            newConfig.getMaintenanceConfigSP()->getVisibilityDelay()));
         IAttributeManager::SP oldAttrMgr = attrMgr;
         attrMgr = newAttrMgr;
