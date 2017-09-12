@@ -65,6 +65,10 @@ Options:
  -s                       : Create less verbose output.
  --show-hidden            : Also show hidden undocumented debug options.
 
+Options related to operation visibility:
+ -n --no-wait             : Do not wait for node state changes to be visible in
+                            the cluster before returning.
+
 Node selection options. By default, nodes running locally will be selected:
  -c --cluster             : Cluster name of cluster to query. If unspecified,
                             and vespa is installed on current node, information
