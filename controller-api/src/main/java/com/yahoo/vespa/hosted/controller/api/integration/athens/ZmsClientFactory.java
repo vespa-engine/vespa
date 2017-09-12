@@ -8,6 +8,4 @@ public interface ZmsClientFactory {
     ZmsClient createClientWithServicePrincipal();
 
     ZmsClient createClientWithAuthorizedServiceToken(NToken authorizedServiceToken);
-
-    ZmsClient createClientWithoutPrincipal();
 }
