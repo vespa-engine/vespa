@@ -8,14 +8,15 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A hit which holds information on error conditions in a result.
- * En error hit maintains a main error - the main error of the result.
+ * A hit which holds a list of error conditions in a result.
  *
  * @author bratseth
  * @author Steinar Knutsen
  */
 public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
 
+    // TODO: Check that nobody implements ErrorHit, rename this to ErrorHit, and make an empty, deprecated subclass DefaultErrorHit
+    
     /**
      * A list of unique error messages, where the first is considered the "main"
      * error. It should always contain at least one error.
@@ -23,14 +24,26 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
     private List<ErrorMessage> errors = new ArrayList<>();
 
     /**
-     * Creates an error hit with a main error
+     * Creates an error hit with one error
      *
      * @param source the name of the source or backend of this hit
-     * @param error an initial main error to add to this hit, cannot be null
+     * @param error an initial error to add to this hit, cannot be null
      */
     public DefaultErrorHit(String source, ErrorMessage error) {
         super("error:" + source, new Relevance(Double.POSITIVE_INFINITY), source);
         addError(error);
+    }
+
+    /**
+     * Creates an error hit with a list of errors
+     *
+     * @param source the name of the source or backend of this hit
+     * @param errors a list of errors for this to hold. The list will not be modified or retained.
+     */
+    public DefaultErrorHit(String source, List<ErrorMessage> errors) {
+        super("error:" + source, new Relevance(Double.POSITIVE_INFINITY), source);
+        for (ErrorMessage error : errors)
+            addError(error);
     }
 
     public void setSource(String source) {
@@ -47,10 +60,11 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
     /**
      * Returns the main error of this result, never null.
      *
-     * @deprecated since 5.18, use {@link #errors()}
+     * @deprecated use {@link #errors()}
      */
     @Override
     @Deprecated
+    // TODO: Remove on Vespa 7
     public ErrorMessage getMainError() {
         return errors.get(0);
     }
@@ -63,14 +77,10 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
         errors.add(error);
     }
 
-    /**
-     * Adds an error to this. This may change the main error
-     * and/or the list of detailed errors
-     */
+    /** Adds an error to this */
     public void addError(ErrorMessage error) {
-        if (error.getSource() == null) {
+        if (error.getSource() == null)
             error.setSource(getSource());
-        }
         removeAndAdd(error);
     }
 
@@ -97,6 +107,7 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
         return s;
     }
 
+    @Override
     public String toString() {
         return "Error: " + errors.get(0).toString();
     }

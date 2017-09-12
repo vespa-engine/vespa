@@ -2,6 +2,7 @@
 package com.yahoo.search.result.test;
 
 import com.yahoo.search.Query;
+import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -9,6 +10,8 @@ import com.yahoo.search.result.HitGroup;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,7 +35,7 @@ public class HitGroupTestCase {
     }
     
     @Test
-    public void testErrors() {
+    public void testErrorsConsistencyUsingErrorOperations() {
         HitGroup hits = new HitGroup();
 
         Query query = new Query();
@@ -45,11 +48,41 @@ public class HitGroupTestCase {
         
         assertEquals(4, hits.getErrorHit().errors().size());
         assertEquals(0, query.errors().size());
+        assertEquals(Optional.of(hits.getErrorHit()), errorHitIn(hits.asList()));
         
-        ErrorHit errors = hits.removeErrorHit();
-        assertNotNull(errors);
-        assertEquals(4, errors.errors().size());
+        DefaultErrorHit removedErrors = hits.removeErrorHit();
+        assertNotNull(removedErrors);
+        assertEquals(4, removedErrors.errors().size());
+        assertNull(hits.get(removedErrors.getId().toString()));
+        assertFalse(errorHitIn(hits.asList()).isPresent());
+
         assertNull(hits.removeErrorHit());
+    }
+
+    @Test
+    public void testErrorsConsistencyUsingHitOperations() {
+        HitGroup hits = new HitGroup();
+
+        Query query = new Query();
+        query.errors().add(ErrorMessage.createIllegalQuery("test1"));
+        query.errors().add(ErrorMessage.createTimeout("test2"));
+        hits.setQuery(query);
+
+        DefaultErrorHit errors = new DefaultErrorHit("source", ErrorMessage.createForbidden("test3"));
+        errors.addError(ErrorMessage.createUnspecifiedError("test4"));
+        hits.add(errors);
+
+        assertEquals(4, hits.getErrorHit().errors().size());
+        assertEquals(0, query.errors().size());
+        assertEquals(Optional.of(hits.getErrorHit()), errorHitIn(hits.asList()));
+
+        DefaultErrorHit removedErrors = (DefaultErrorHit)hits.remove(errors.getId());
+        assertNotNull(removedErrors);
+        assertEquals(4, removedErrors.errors().size());
+        assertNull(hits.get(removedErrors.getId().toString()));
+        assertFalse(errorHitIn(hits.asList()).isPresent());
+
+        assertNull(hits.remove(errors.getId()));
     }
 
     @Test
@@ -220,6 +253,11 @@ public class HitGroupTestCase {
         assertNotNull(hg.getFilled());
         assertFalse(hg.isFilled("anyclass"));
         assertTrue(hg.getFilled().isEmpty());
+    }
+    
+    /** Returns the (first) error hit in the given list, or empty if none */
+    private Optional<ErrorHit> errorHitIn(List<Hit> hits) {
+        return hits.stream().filter(h -> h instanceof ErrorHit).map(ErrorHit.class::cast).findFirst();
     }
 
 }
