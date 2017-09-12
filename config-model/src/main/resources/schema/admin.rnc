@@ -116,15 +116,9 @@ ClusterControllers = element cluster-controllers {
 }
 
 LogForwarding = element logforwarding {
-    element forward {
-        attribute type {xsd:string } &
-        element source {
-            element log {  "access"| "vespa" }+
-        } &
-        element destination {
-            element endpoint { xsd:string } &
-            element index { xsd:string }
-        }
-    }+
-
+    element splunk {
+        attribute deployment-server {xsd:string } &
+        attribute management-port {xsd:positiveInteger } &
+        attribute client-name {xsd:string }
+    }
 }
