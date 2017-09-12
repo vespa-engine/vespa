@@ -54,7 +54,7 @@ bool VisibilityHandler::startCommit(const LockGuard &unused, bool force)
 {
     (void) unused;
     SerialNum current = _serial.getSerialNum();
-    if (current > _lastCommitSerialNum || force) {
+    if ((current > _lastCommitSerialNum) || force) {
         _writeService.master().execute(makeTask(makeClosure(this,
              &VisibilityHandler::performCommit, force)));
         return true;
@@ -66,7 +66,7 @@ void VisibilityHandler::performCommit(bool force)
 {
     // Called by master thread
     SerialNum current = _serial.getSerialNum();
-    if (current > _lastCommitSerialNum || force) {
+    if ((current > _lastCommitSerialNum) || force) {
         IFeedView::SP feedView(_feedView.get());
         feedView->forceCommit(current);
         _lastCommitSerialNum = current;
