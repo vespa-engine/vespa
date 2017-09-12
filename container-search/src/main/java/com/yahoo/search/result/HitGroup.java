@@ -226,7 +226,6 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      */
     @Override
     public Hit add(Hit hit) {
-        System.out.println("Source of incoming hit: " + hit.getSource());
         if (hit.isMeta() && hit instanceof DefaultErrorHit) {
             if (errorHit != null) {
                 errorHit.addErrors((DefaultErrorHit)hit);
@@ -239,7 +238,6 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         }
         handleNewHit(hit);
         hits.add(hit);
-        System.out.println("Source of hit added: " + hit.getSource());
         return hit;
     }
 
@@ -357,7 +355,6 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     public Hit remove(URI uri) {
         for (Iterator<Hit> it = hits.iterator(); it.hasNext(); ) {
             Hit hit = it.next();
-            System.out.println("Is " + uri + " equal to " + hit.getId() + "?");
             if (uri.equals(hit.getId())) {
                 it.remove();
                 handleRemovedHit(hit);
