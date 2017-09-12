@@ -18,7 +18,7 @@ git checkout master
 git pull --rebase
 
 # Delete existing branch if exists and create new one
-git push --delete origin &> /dev/null || true
+git push --delete origin $RPM_BRANCH &> /dev/null || true
 git branch -D $RPM_BRANCH &> /dev/null || true 
 git checkout -b $RPM_BRANCH $GITREF
 
