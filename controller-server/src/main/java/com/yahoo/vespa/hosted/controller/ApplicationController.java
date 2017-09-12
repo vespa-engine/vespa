@@ -145,7 +145,7 @@ public class ApplicationController {
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
      *
-     * @return The conanical endpoint altered if any
+     * @return The canonical endpoint altered if any
      * @throws IOException if rotation status cannot be updated
      */
     public List<String> setGlobalRotationStatus(DeploymentId deploymentId, EndpointStatus status) throws IOException {
@@ -179,16 +179,16 @@ public class ApplicationController {
     }
 
     /**
-     * Global rotations (plural as we can aliases) map to exactly one service endpoint.
+     * Global rotations (plural as we can have aliases) map to exactly one service endpoint.
      * This method finds that one service endpoint and strips the URI part that
-     * the routingGenerator is wrapping the endpoint in.
+     * the routingGenerator is wrapping around the endpoint.
      *
      * @param deploymentId The deployment to retrieve global service endpoint for
      * @return Empty if no global endpoint exist, otherwise the service endpoint ([clustername.]app.tenant.region.env)
      */
     Optional<String> getCanonicalGlobalEndpoint(DeploymentId deploymentId) throws IOException {
         Map<String, RoutingEndpoint> hostToGlobalEndpoint = new HashMap<>();
-        Map<String, String> hostToCanocicalEndpoint = new HashMap<>();
+        Map<String, String> hostToCanonicalEndpoint = new HashMap<>();
 
         for (RoutingEndpoint endpoint : routingGenerator.endpoints(deploymentId)) {
             try {
@@ -208,12 +208,12 @@ public class ApplicationController {
                     if (endpoint.isGlobal()) {
                         hostToGlobalEndpoint.put(hostname, endpoint);
                     } else {
-                        hostToCanocicalEndpoint.put(hostname, canonicalEndpoint);
+                        hostToCanonicalEndpoint.put(hostname, canonicalEndpoint);
                     }
 
                     // Return as soon as we have a map between a global and a canonical endpoint
-                    if (hostToGlobalEndpoint.containsKey(hostname) && hostToCanocicalEndpoint.containsKey(hostname)) {
-                        return Optional.of(hostToCanocicalEndpoint.get(hostname));
+                    if (hostToGlobalEndpoint.containsKey(hostname) && hostToCanonicalEndpoint.containsKey(hostname)) {
+                        return Optional.of(hostToCanonicalEndpoint.get(hostname));
                     }
                 }
             } catch (URISyntaxException use) {
