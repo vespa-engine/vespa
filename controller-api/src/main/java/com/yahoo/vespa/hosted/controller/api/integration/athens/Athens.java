@@ -17,7 +17,6 @@ public interface Athens {
     AthensPrincipal principalFrom(UserId userId);
     NTokenValidator validator();
     NToken nTokenFrom(String rawToken);
-    UnauthorizedZmsClient unauthorizedZmsClient();
     ZmsClientFactory zmsClientFactory();
     AthensDomain screwdriverDomain();
 

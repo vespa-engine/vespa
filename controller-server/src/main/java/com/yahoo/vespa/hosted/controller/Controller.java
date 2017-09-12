@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
@@ -85,6 +86,7 @@ public class Controller extends AbstractComponent {
     private final MetricsService metricsService;
     private final Chef chefClient;
     private final Athens athens;
+    private final ZmsClient zmsClient;
 
     /**
      * Creates a controller 
@@ -140,6 +142,7 @@ public class Controller extends AbstractComponent {
         this.chefClient = chefClient;
         this.clock = clock;
         this.athens = athens;
+        this.zmsClient = athens.zmsClientFactory().createClientWithServicePrincipal();
 
         applicationController = new ApplicationController(this, db, curator, rotationRepository, athens.zmsClientFactory(),
                                                           nameService, configServerClient, routingGenerator, clock);
@@ -154,7 +157,7 @@ public class Controller extends AbstractComponent {
     public ApplicationController applications() { return applicationController; }
 
     public List<AthensDomain> getDomainList(String prefix) {
-        return athens.unauthorizedZmsClient().getDomainList(prefix);
+        return zmsClient.getDomainList(prefix);
     }
 
     public Athens athens() {
