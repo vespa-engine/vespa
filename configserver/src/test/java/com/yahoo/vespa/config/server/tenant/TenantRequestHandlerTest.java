@@ -242,7 +242,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
         public AtomicInteger removed = new AtomicInteger(0);
         public Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
         @Override
-        public void configReloaded(TenantName tenant, ApplicationSet application) {
+        public void configActivated(TenantName tenant, ApplicationSet application) {
             reloaded.incrementAndGet();
         }
 

@@ -68,7 +68,7 @@ public class SuperModelController {
         }
     }
 
-    SuperModel getSuperModel() {
+    public SuperModel getSuperModel() {
         return model;
     }
 
