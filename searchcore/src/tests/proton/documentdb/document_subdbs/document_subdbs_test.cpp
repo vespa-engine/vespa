@@ -84,7 +84,7 @@ struct MySubDBOwner : public IDocumentSubDBOwner
 
 struct MySyncProxy : public SyncProxy
 {
-	virtual void sync(SerialNum) override {}
+    virtual void sync(SerialNum) override {}
 };
 
 
@@ -95,60 +95,60 @@ struct MyGetSerialNum : public IGetSerialNum
 
 struct MyFileHeaderContext : public FileHeaderContext
 {
-	virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
+    virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
 };
 
 struct MyMetricsWireService : public DummyWireService
 {
-	std::set<vespalib::string> _attributes;
-	MyMetricsWireService() : _attributes() {}
-	virtual void addAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &name) override {
-		_attributes.insert(name);
-	}
+    std::set<vespalib::string> _attributes;
+    MyMetricsWireService() : _attributes() {}
+    virtual void addAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &name) override {
+        _attributes.insert(name);
+    }
 };
 
 struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
     std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &,
-													const search::IAttributeManager &,
-													const std::shared_ptr<search::IDocumentMetaStoreContext> &,
+                                                    const search::IAttributeManager &,
+                                                    const std::shared_ptr<search::IDocumentMetaStoreContext> &,
                                                     fastos::TimeStamp) override {
         return std::make_unique<ImportedAttributesRepo>();
-	}
+    }
     void teardown(const search::IAttributeManager &) override { }
 };
 
 struct MyStoreOnlyConfig
 {
-	StoreOnlyConfig _cfg;
-	MyStoreOnlyConfig()
-	    : _cfg(DocTypeName(DOCTYPE_NAME),
-			  SUB_NAME,
-			  BASE_DIR,
-			  GrowStrategy(),
+    StoreOnlyConfig _cfg;
+    MyStoreOnlyConfig()
+        : _cfg(DocTypeName(DOCTYPE_NAME),
+              SUB_NAME,
+              BASE_DIR,
+              GrowStrategy(),
                    0, 0, SubDbType::READY)
-	{
-	}
+    {
+    }
 };
 
 struct MyStoreOnlyContext
 {
-	MySubDBOwner _owner;
-	MySyncProxy _syncProxy;
-	MyGetSerialNum _getSerialNum;
-	MyFileHeaderContext _fileHeader;
-	LegacyDocumentDBMetrics _metrics;
-        std::mutex       _configMutex;
-        HwInfo           _hwInfo;
-	StoreOnlyContext _ctx;
-	MyStoreOnlyContext(IThreadingService &writeService,
-	                   ThreadStackExecutorBase &summaryExecutor,
+    MySubDBOwner _owner;
+    MySyncProxy _syncProxy;
+    MyGetSerialNum _getSerialNum;
+    MyFileHeaderContext _fileHeader;
+    LegacyDocumentDBMetrics _metrics;
+    std::mutex       _configMutex;
+    HwInfo           _hwInfo;
+    StoreOnlyContext _ctx;
+    MyStoreOnlyContext(IThreadingService &writeService,
+                       ThreadStackExecutorBase &summaryExecutor,
                        std::shared_ptr<BucketDBOwner> bucketDB,
                        IBucketDBHandlerInitializer &
                        bucketDBHandlerInitializer);
-	~MyStoreOnlyContext();
-	const MySubDBOwner &getOwner() const {
-	    return _owner;
-	}
+    ~MyStoreOnlyContext();
+    const MySubDBOwner &getOwner() const {
+        return _owner;
+    }
 };
 
 MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService, ThreadStackExecutorBase &summaryExecutor,
@@ -165,32 +165,32 @@ MyStoreOnlyContext::~MyStoreOnlyContext() {}
 template <bool FastAccessAttributesOnly>
 struct MyFastAccessConfig
 {
-	FastAccessConfig _cfg;
-	MyFastAccessConfig()
-	    : _cfg(MyStoreOnlyConfig()._cfg, true, true, FastAccessAttributesOnly)
-	{
-	}
+    FastAccessConfig _cfg;
+    MyFastAccessConfig()
+        : _cfg(MyStoreOnlyConfig()._cfg, true, true, FastAccessAttributesOnly)
+    {
+    }
 };
 
 struct MyFastAccessContext
 {
-	MyStoreOnlyContext _storeOnlyCtx;
-	AttributeMetrics _attributeMetrics;
-	LegacyAttributeMetrics _legacyAttributeMetrics;
-	AttributeMetricsCollection _attributeMetricsCollection;
-	MyMetricsWireService _wireService;
-	FastAccessContext _ctx;
-	MyFastAccessContext(IThreadingService &writeService,
-	                    ThreadStackExecutorBase &summaryExecutor,
+    MyStoreOnlyContext _storeOnlyCtx;
+    AttributeMetrics _attributeMetrics;
+    LegacyAttributeMetrics _legacyAttributeMetrics;
+    AttributeMetricsCollection _attributeMetricsCollection;
+    MyMetricsWireService _wireService;
+    FastAccessContext _ctx;
+    MyFastAccessContext(IThreadingService &writeService,
+                        ThreadStackExecutorBase &summaryExecutor,
                         std::shared_ptr<BucketDBOwner> bucketDB,
                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MyFastAccessContext();
-	const MyMetricsWireService &getWireService() const {
-	    return _wireService;
-	}
-	const MySubDBOwner &getOwner() const {
-	    return _storeOnlyCtx.getOwner();
-	}
+    const MyMetricsWireService &getWireService() const {
+        return _wireService;
+    }
+    const MySubDBOwner &getOwner() const {
+        return _storeOnlyCtx.getOwner();
+    }
 };
 
 MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService, ThreadStackExecutorBase &summaryExecutor,
@@ -206,30 +206,30 @@ MyFastAccessContext::~MyFastAccessContext() {}
 
 struct MySearchableConfig
 {
-	SearchableConfig _cfg;
-	MySearchableConfig()
-	    : _cfg(MyFastAccessConfig<false>()._cfg, 1)
-	{
-	}
+    SearchableConfig _cfg;
+    MySearchableConfig()
+        : _cfg(MyFastAccessConfig<false>()._cfg, 1)
+    {
+    }
 };
 
 struct MySearchableContext
 {
-	MyFastAccessContext _fastUpdCtx;
-	QueryLimiter _queryLimiter;
-	vespalib::Clock _clock;
-	SearchableContext _ctx;
-	MySearchableContext(IThreadingService &writeService,
-	                    ThreadStackExecutorBase &executor,
+    MyFastAccessContext _fastUpdCtx;
+    QueryLimiter _queryLimiter;
+    vespalib::Clock _clock;
+    SearchableContext _ctx;
+    MySearchableContext(IThreadingService &writeService,
+                        ThreadStackExecutorBase &executor,
                         std::shared_ptr<BucketDBOwner> bucketDB,
                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MySearchableContext();
-	const MyMetricsWireService &getWireService() const {
-	    return _fastUpdCtx.getWireService();
-	}
-	const MySubDBOwner &getOwner() const {
-	    return _fastUpdCtx.getOwner();
-	}
+    const MyMetricsWireService &getWireService() const {
+        return _fastUpdCtx.getWireService();
+    }
+    const MySubDBOwner &getOwner() const {
+        return _fastUpdCtx.getOwner();
+    }
 };
 
 
@@ -244,88 +244,88 @@ MySearchableContext::~MySearchableContext() {}
 
 struct OneAttrSchema : public Schema
 {
-	OneAttrSchema() {
-		addAttributeField(Schema::AttributeField("attr1", Schema::DataType::INT32));
-	}
+    OneAttrSchema() {
+        addAttributeField(Schema::AttributeField("attr1", Schema::DataType::INT32));
+    }
 };
 
 struct TwoAttrSchema : public OneAttrSchema
 {
-	TwoAttrSchema() {
-		addAttributeField(Schema::AttributeField("attr2", Schema::DataType::INT32));
-	}
+    TwoAttrSchema() {
+        addAttributeField(Schema::AttributeField("attr2", Schema::DataType::INT32));
+    }
 };
 
 struct MyConfigSnapshot
 {
     typedef std::unique_ptr<MyConfigSnapshot> UP;
     Schema _schema;
-	DocBuilder _builder;
-	DocumentDBConfig::SP _cfg;
-	MyConfigSnapshot(const Schema &schema,
-			         const vespalib::string &cfgDir)
-	    : _schema(schema),
-	      _builder(_schema),
-	      _cfg()
-	{
-		DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig
-		    (new DocumenttypesConfig(_builder.getDocumenttypesConfig()));
-		TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB());
-		BootstrapConfig::SP bootstrap
-		    (new BootstrapConfig(1,
+    DocBuilder _builder;
+    DocumentDBConfig::SP _cfg;
+    MyConfigSnapshot(const Schema &schema,
+                     const vespalib::string &cfgDir)
+        : _schema(schema),
+          _builder(_schema),
+          _cfg()
+    {
+        DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig
+            (new DocumenttypesConfig(_builder.getDocumenttypesConfig()));
+        TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB());
+        BootstrapConfig::SP bootstrap
+            (new BootstrapConfig(1,
                                  documenttypesConfig,
                                  _builder.getDocumentTypeRepo(),
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
                                  tuneFileDocumentDB));
-		config::DirSpec spec(cfgDir);
-		DocumentDBConfigHelper mgr(spec, "searchdocument");
-		mgr.forwardConfig(bootstrap);
-		mgr.nextGeneration(1);
-		_cfg = mgr.getConfig();
-	}
+        config::DirSpec spec(cfgDir);
+        DocumentDBConfigHelper mgr(spec, "searchdocument");
+        mgr.forwardConfig(bootstrap);
+        mgr.nextGeneration(1);
+        _cfg = mgr.getConfig();
+    }
 };
 
 template <typename Traits>
 struct FixtureBase
 {
-	ExecutorThreadingService _writeService;
-	ThreadStackExecutor _summaryExecutor;
-	typename Traits::Config _cfg;
+    ExecutorThreadingService _writeService;
+    ThreadStackExecutor _summaryExecutor;
+    typename Traits::Config _cfg;
         std::shared_ptr<BucketDBOwner> _bucketDB;
         BucketDBHandler _bucketDBHandler;
-	typename Traits::Context _ctx;
-	typename Traits::Schema _baseSchema;
-	MyConfigSnapshot::UP _snapshot;
-	DirectoryHandler _baseDir;
-	typename Traits::SubDB _subDb;
-	IFeedView::SP _tmpFeedView;
-	FixtureBase()
-	    : _writeService(),
-	      _summaryExecutor(1, 64 * 1024),
-	      _cfg(),
+    typename Traits::Context _ctx;
+    typename Traits::Schema _baseSchema;
+    MyConfigSnapshot::UP _snapshot;
+    DirectoryHandler _baseDir;
+    typename Traits::SubDB _subDb;
+    IFeedView::SP _tmpFeedView;
+    FixtureBase()
+        : _writeService(),
+          _summaryExecutor(1, 64 * 1024),
+          _cfg(),
               _bucketDB(std::make_shared<BucketDBOwner>()),
               _bucketDBHandler(*_bucketDB),
-	      _ctx(_writeService, _summaryExecutor, _bucketDB,
+          _ctx(_writeService, _summaryExecutor, _bucketDB,
                    _bucketDBHandler),
-	      _baseSchema(),
-	      _snapshot(new MyConfigSnapshot(_baseSchema, Traits::ConfigDir::dir())),
-	      _baseDir(BASE_DIR + "/" + SUB_NAME, BASE_DIR),
-	      _subDb(_cfg._cfg, _ctx._ctx),
+          _baseSchema(),
+          _snapshot(new MyConfigSnapshot(_baseSchema, Traits::ConfigDir::dir())),
+          _baseDir(BASE_DIR + "/" + SUB_NAME, BASE_DIR),
+          _subDb(_cfg._cfg, _ctx._ctx),
               _tmpFeedView()
-	{
-	    init();
-	}
-	~FixtureBase() {
-	    _writeService.sync();
+    {
+        init();
+    }
+    ~FixtureBase() {
+        _writeService.sync();
             _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
-	    _writeService.sync();
-	}
+        _writeService.sync();
+    }
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
         proton::test::runInMaster(_writeService, func);
     }
-	void init() {
+    void init() {
                 DocumentSubDbInitializer::SP task =
                     _subDb.createInitializer(*_snapshot->_cfg,
                                              Traits::configSerial(),
@@ -334,59 +334,59 @@ struct FixtureBase
                 vespalib::ThreadStackExecutor executor(1, 1024 * 1024);
                 initializer::TaskRunner taskRunner(executor);
                 taskRunner.runTask(task);
-		SessionManager::SP sessionMgr(new SessionManager(1));
-		runInMaster([&] () { _subDb.initViews(*_snapshot->_cfg, sessionMgr); });
-	}
-	void basicReconfig(SerialNum serialNum) {
-	    runInMaster([&] () { performReconfig(serialNum, TwoAttrSchema(), ConfigDir2::dir()); });
-	}
-	void reconfig(SerialNum serialNum,
-	              const Schema &reconfigSchema,
-	              const vespalib::string &reconfigConfigDir) {
-	    runInMaster([&] () { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
+        SessionManager::SP sessionMgr(new SessionManager(1));
+        runInMaster([&] () { _subDb.initViews(*_snapshot->_cfg, sessionMgr); });
+    }
+    void basicReconfig(SerialNum serialNum) {
+        runInMaster([&] () { performReconfig(serialNum, TwoAttrSchema(), ConfigDir2::dir()); });
+    }
+    void reconfig(SerialNum serialNum,
+                  const Schema &reconfigSchema,
+                  const vespalib::string &reconfigConfigDir) {
+        runInMaster([&] () { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
         }
-	void performReconfig(SerialNum serialNum,
-	              const Schema &reconfigSchema,
-	              const vespalib::string &reconfigConfigDir) {
-	    MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
-	    DocumentDBConfig::ComparisonResult cmpResult;
-	    cmpResult.attributesChanged = true;
-	    cmpResult.documenttypesChanged = true;
-	    cmpResult.documentTypeRepoChanged = true;
-		MyDocumentDBReferenceResolver resolver;
-	    IReprocessingTask::List tasks =
-	            _subDb.applyConfig(*newCfg->_cfg,
-	                    *_snapshot->_cfg,
-	                    serialNum,
-	                    ReconfigParams(cmpResult),
-						resolver);
-	    _snapshot = std::move(newCfg);
-	    if (!tasks.empty()) {
-	        ReprocessingRunner runner;
-	        runner.addTasks(tasks);
-	        runner.run();
-	    }
-	    _subDb.onReprocessDone(serialNum);
-	}
-	void sync() {
-	    _writeService.master().sync();
-	}
-	proton::IAttributeManager::SP getAttributeManager() {
-		return _subDb.getAttributeManager();
-	}
-	const typename Traits::FeedView *getFeedView() {
-		_tmpFeedView = _subDb.getFeedView();
-		const typename Traits::FeedView *retval =
-		        dynamic_cast<typename Traits::FeedView *>(_tmpFeedView.get());
-		ASSERT_TRUE(retval != NULL);
-		return retval;
-	}
-	const MyMetricsWireService &getWireService() const {
-	    return _ctx.getWireService();
-	}
-	const MySubDBOwner &getOwner() const {
-	    return _ctx.getOwner();
-	}
+    void performReconfig(SerialNum serialNum,
+                  const Schema &reconfigSchema,
+                  const vespalib::string &reconfigConfigDir) {
+        MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
+        DocumentDBConfig::ComparisonResult cmpResult;
+        cmpResult.attributesChanged = true;
+        cmpResult.documenttypesChanged = true;
+        cmpResult.documentTypeRepoChanged = true;
+        MyDocumentDBReferenceResolver resolver;
+        IReprocessingTask::List tasks =
+                _subDb.applyConfig(*newCfg->_cfg,
+                        *_snapshot->_cfg,
+                        serialNum,
+                        ReconfigParams(cmpResult),
+                        resolver);
+        _snapshot = std::move(newCfg);
+        if (!tasks.empty()) {
+            ReprocessingRunner runner;
+            runner.addTasks(tasks);
+            runner.run();
+        }
+        _subDb.onReprocessDone(serialNum);
+    }
+    void sync() {
+        _writeService.master().sync();
+    }
+    proton::IAttributeManager::SP getAttributeManager() {
+        return _subDb.getAttributeManager();
+    }
+    const typename Traits::FeedView *getFeedView() {
+        _tmpFeedView = _subDb.getFeedView();
+        const typename Traits::FeedView *retval =
+                dynamic_cast<typename Traits::FeedView *>(_tmpFeedView.get());
+        ASSERT_TRUE(retval != NULL);
+        return retval;
+    }
+    const MyMetricsWireService &getWireService() const {
+        return _ctx.getWireService();
+    }
+    const MySubDBOwner &getOwner() const {
+        return _ctx.getOwner();
+    }
 };
 
 template <typename SchemaT, typename ConfigDirT, uint32_t ConfigSerial = CFG_SERIAL>
@@ -447,82 +447,82 @@ typedef FixtureBase<SearchableTraits> SearchableFixture;
 void
 assertAttributes1(const AttributeGuardList &attributes)
 {
-	EXPECT_EQUAL(1u, attributes.size());
-	EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQUAL(1u, attributes.size());
+    EXPECT_EQUAL("attr1", attributes[0]->getName());
 }
 
 void
 assertAttributes1(const std::vector<search::AttributeVector *> &attributes)
 {
-	EXPECT_EQUAL(1u, attributes.size());
-	EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQUAL(1u, attributes.size());
+    EXPECT_EQUAL("attr1", attributes[0]->getName());
 }
 
 void
 assertAttributes2(const AttributeGuardList &attributes)
 {
-	EXPECT_EQUAL(2u, attributes.size());
-	EXPECT_EQUAL("attr1", attributes[0]->getName());
-	EXPECT_EQUAL("attr2", attributes[1]->getName());
+    EXPECT_EQUAL(2u, attributes.size());
+    EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQUAL("attr2", attributes[1]->getName());
 }
 
 void
 assertAttributes2(const std::vector<search::AttributeVector *> &attributes)
 {
-	EXPECT_EQUAL(2u, attributes.size());
-	EXPECT_EQUAL("attr1", attributes[0]->getName());
-	EXPECT_EQUAL("attr2", attributes[1]->getName());
+    EXPECT_EQUAL(2u, attributes.size());
+    EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQUAL("attr2", attributes[1]->getName());
 }
 
 TEST_F("require that managers and components are instantiated", StoreOnlyFixture)
 {
-	EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
-	EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
-	EXPECT_TRUE(f._subDb.getAttributeManager().get() == NULL);
-	EXPECT_TRUE(f._subDb.getIndexManager().get() == NULL);
-	EXPECT_TRUE(f._subDb.getIndexWriter().get() == NULL);
-	EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
-	EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
-	EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(f._subDb.getFeedView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
+    EXPECT_TRUE(f._subDb.getAttributeManager().get() == NULL);
+    EXPECT_TRUE(f._subDb.getIndexManager().get() == NULL);
+    EXPECT_TRUE(f._subDb.getIndexWriter().get() == NULL);
+    EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
+    EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
+    EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(f._subDb.getFeedView().get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
 }
 
 TEST_F("require that managers and components are instantiated", FastAccessFixture)
 {
-	EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
-	EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
-	EXPECT_TRUE(f._subDb.getAttributeManager().get() != NULL);
-	EXPECT_TRUE(f._subDb.getIndexManager().get() == NULL);
-	EXPECT_TRUE(f._subDb.getIndexWriter().get() == NULL);
-	EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
-	EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
-	EXPECT_TRUE(dynamic_cast<FastAccessFeedView *>(f._subDb.getFeedView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
+    EXPECT_TRUE(f._subDb.getAttributeManager().get() != NULL);
+    EXPECT_TRUE(f._subDb.getIndexManager().get() == NULL);
+    EXPECT_TRUE(f._subDb.getIndexWriter().get() == NULL);
+    EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
+    EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
+    EXPECT_TRUE(dynamic_cast<FastAccessFeedView *>(f._subDb.getFeedView().get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
 }
 
 TEST_F("require that managers and components are instantiated", SearchableFixture)
 {
-	EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
-	EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
-	EXPECT_TRUE(f._subDb.getAttributeManager().get() != NULL);
-	EXPECT_TRUE(f._subDb.getIndexManager().get() != NULL);
-	EXPECT_TRUE(f._subDb.getIndexWriter().get() != NULL);
-	EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
-	EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
-	EXPECT_TRUE(dynamic_cast<SearchableFeedView *>(f._subDb.getFeedView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<SearchView *>(f._subDb.getSearchView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
+    EXPECT_TRUE(f._subDb.getAttributeManager().get() != NULL);
+    EXPECT_TRUE(f._subDb.getIndexManager().get() != NULL);
+    EXPECT_TRUE(f._subDb.getIndexWriter().get() != NULL);
+    EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
+    EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
+    EXPECT_TRUE(dynamic_cast<SearchableFeedView *>(f._subDb.getFeedView().get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<SearchView *>(f._subDb.getSearchView().get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
 }
 
 template<typename Fixture>
 void
 requireThatAttributeManagerIsInstantiated(Fixture &f)
 {
-	std::vector<AttributeGuard> attributes;
-	f.getAttributeManager()->getAttributeList(attributes);
-	assertAttributes1(attributes);
+    std::vector<AttributeGuard> attributes;
+    f.getAttributeManager()->getAttributeList(attributes);
+    assertAttributes1(attributes);
 }
 
 TEST_F("require that attribute manager is instantiated", FastAccessFixture)
@@ -539,7 +539,7 @@ template <typename Fixture>
 void
 requireThatAttributesAreAccessibleViaFeedView(Fixture &f)
 {
-	assertAttributes1(f.getFeedView()->getAttributeWriter()->getWritableAttributes());
+    assertAttributes1(f.getFeedView()->getAttributeWriter()->getWritableAttributes());
 }
 
 TEST_F("require that attributes are accessible via feed view", FastAccessFixture)
@@ -556,10 +556,10 @@ template <typename Fixture>
 void
 requireThatAttributeManagerCanBeReconfigured(Fixture &f)
 {
-	f.basicReconfig(10);
-	std::vector<AttributeGuard> attributes;
-	f.getAttributeManager()->getAttributeList(attributes);
-	assertAttributes2(attributes);
+    f.basicReconfig(10);
+    std::vector<AttributeGuard> attributes;
+    f.getAttributeManager()->getAttributeList(attributes);
+    assertAttributes2(attributes);
 }
 
 TEST_F("require that attribute manager can be reconfigured", FastAccessFixture)
@@ -576,8 +576,8 @@ template <typename Fixture>
 void
 requireThatReconfiguredAttributesAreAccessibleViaFeedView(Fixture &f)
 {
-	f.basicReconfig(10);
-	assertAttributes2(f.getFeedView()->getAttributeWriter()->getWritableAttributes());
+    f.basicReconfig(10);
+    assertAttributes2(f.getFeedView()->getAttributeWriter()->getWritableAttributes());
 }
 
 TEST_F("require that reconfigured attributes are accessible via feed view", FastAccessFixture)
@@ -594,9 +594,9 @@ template <typename Fixture>
 void
 requireThatOwnerIsNotifiedWhenFeedViewChanges(Fixture &f)
 {
-	EXPECT_EQUAL(0u, f.getOwner()._syncCnt);
-	f.basicReconfig(10);
-	EXPECT_EQUAL(1u, f.getOwner()._syncCnt);
+    EXPECT_EQUAL(0u, f.getOwner()._syncCnt);
+    f.basicReconfig(10);
+    EXPECT_EQUAL(1u, f.getOwner()._syncCnt);
 }
 
 TEST_F("require that owner is noticed when feed view changes", StoreOnlyFixture)
@@ -611,19 +611,19 @@ TEST_F("require that owner is noticed when feed view changes", FastAccessFixture
 
 TEST_F("require that owner is noticed when feed view changes", SearchableFixture)
 {
-	EXPECT_EQUAL(1u, f.getOwner()._syncCnt); // NOTE: init also notifies owner
-	f.basicReconfig(10);
-	EXPECT_EQUAL(2u, f.getOwner()._syncCnt);
+    EXPECT_EQUAL(1u, f.getOwner()._syncCnt); // NOTE: init also notifies owner
+    f.basicReconfig(10);
+    EXPECT_EQUAL(2u, f.getOwner()._syncCnt);
 }
 
 template <typename Fixture>
 void
 requireThatAttributeMetricsAreRegistered(Fixture &f)
 {
-	EXPECT_EQUAL(2u, f.getWireService()._attributes.size());
-	auto itr = f.getWireService()._attributes.begin();
-	EXPECT_EQUAL("[documentmetastore]", *itr++);
-	EXPECT_EQUAL("attr1", *itr);
+    EXPECT_EQUAL(2u, f.getWireService()._attributes.size());
+    auto itr = f.getWireService()._attributes.begin();
+    EXPECT_EQUAL("[documentmetastore]", *itr++);
+    EXPECT_EQUAL("attr1", *itr);
 }
 
 TEST_F("require that attribute metrics are registered", FastAccessFixture)
@@ -640,12 +640,12 @@ template <typename Fixture>
 void
 requireThatAttributeMetricsCanBeReconfigured(Fixture &f)
 {
-	f.basicReconfig(10);
-	EXPECT_EQUAL(3u, f.getWireService()._attributes.size());
-	auto itr = f.getWireService()._attributes.begin();
-	EXPECT_EQUAL("[documentmetastore]", *itr++);
-	EXPECT_EQUAL("attr1", *itr++);
-	EXPECT_EQUAL("attr2", *itr);
+    f.basicReconfig(10);
+    EXPECT_EQUAL(3u, f.getWireService()._attributes.size());
+    auto itr = f.getWireService()._attributes.begin();
+    EXPECT_EQUAL("[documentmetastore]", *itr++);
+    EXPECT_EQUAL("attr1", *itr++);
+    EXPECT_EQUAL("attr2", *itr);
 }
 
 TEST_F("require that attribute metrics can be reconfigured", FastAccessFixture)
@@ -662,11 +662,11 @@ template <typename Fixture>
 IFlushTarget::List
 getFlushTargets(Fixture &f)
 {
-	IFlushTarget::List targets = (static_cast<IDocumentSubDB &>(f._subDb)).getFlushTargets();
-	std::sort(targets.begin(), targets.end(),
-	        [](const IFlushTarget::SP &lhs, const IFlushTarget::SP &rhs) {
-	    return lhs->getName() < rhs->getName(); });
-	return targets;
+    IFlushTarget::List targets = (static_cast<IDocumentSubDB &>(f._subDb)).getFlushTargets();
+    std::sort(targets.begin(), targets.end(),
+            [](const IFlushTarget::SP &lhs, const IFlushTarget::SP &rhs) {
+        return lhs->getName() < rhs->getName(); });
+    return targets;
 }
 
 typedef IFlushTarget::Type FType;
@@ -686,38 +686,38 @@ assertTarget(const vespalib::string &name,
 
 TEST_F("require that flush targets can be retrieved", FastAccessFixture)
 {
-	IFlushTarget::List targets = getFlushTargets(f);
-	EXPECT_EQUAL(7u, targets.size());
-	EXPECT_EQUAL("subdb.attribute.flush.attr1", targets[0]->getName());
-	EXPECT_EQUAL("subdb.attribute.shrink.attr1", targets[1]->getName());
-	EXPECT_EQUAL("subdb.documentmetastore.flush", targets[2]->getName());
-	EXPECT_EQUAL("subdb.documentmetastore.shrink", targets[3]->getName());
-	EXPECT_EQUAL("subdb.summary.compact", targets[4]->getName());
-	EXPECT_EQUAL("subdb.summary.flush", targets[5]->getName());
-	EXPECT_EQUAL("subdb.summary.shrink", targets[6]->getName());
+    IFlushTarget::List targets = getFlushTargets(f);
+    EXPECT_EQUAL(7u, targets.size());
+    EXPECT_EQUAL("subdb.attribute.flush.attr1", targets[0]->getName());
+    EXPECT_EQUAL("subdb.attribute.shrink.attr1", targets[1]->getName());
+    EXPECT_EQUAL("subdb.documentmetastore.flush", targets[2]->getName());
+    EXPECT_EQUAL("subdb.documentmetastore.shrink", targets[3]->getName());
+    EXPECT_EQUAL("subdb.summary.compact", targets[4]->getName());
+    EXPECT_EQUAL("subdb.summary.flush", targets[5]->getName());
+    EXPECT_EQUAL("subdb.summary.shrink", targets[6]->getName());
 }
 
 TEST_F("require that flush targets can be retrieved", SearchableFixture)
 {
-	IFlushTarget::List targets = getFlushTargets(f);
-	EXPECT_EQUAL(9u, targets.size());
-	EXPECT_TRUE(assertTarget("subdb.attribute.flush.attr1", FType::SYNC, FComponent::ATTRIBUTE, *targets[0]));
-	EXPECT_TRUE(assertTarget("subdb.attribute.shrink.attr1", FType::GC, FComponent::ATTRIBUTE, *targets[1]));
-	EXPECT_TRUE(assertTarget("subdb.documentmetastore.flush", FType::SYNC, FComponent::ATTRIBUTE, *targets[2]));
-	EXPECT_TRUE(assertTarget("subdb.documentmetastore.shrink", FType::GC, FComponent::ATTRIBUTE, *targets[3]));
-	EXPECT_TRUE(assertTarget("subdb.memoryindex.flush", FType::FLUSH, FComponent::INDEX, *targets[4]));
-	EXPECT_TRUE(assertTarget("subdb.memoryindex.fusion", FType::GC, FComponent::INDEX, *targets[5]));
-	EXPECT_TRUE(assertTarget("subdb.summary.compact", FType::GC, FComponent::DOCUMENT_STORE, *targets[6]));
-	EXPECT_TRUE(assertTarget("subdb.summary.flush", FType::SYNC, FComponent::DOCUMENT_STORE, *targets[7]));
-	EXPECT_TRUE(assertTarget("subdb.summary.shrink", FType::GC, FComponent::DOCUMENT_STORE, *targets[8]));
+    IFlushTarget::List targets = getFlushTargets(f);
+    EXPECT_EQUAL(9u, targets.size());
+    EXPECT_TRUE(assertTarget("subdb.attribute.flush.attr1", FType::SYNC, FComponent::ATTRIBUTE, *targets[0]));
+    EXPECT_TRUE(assertTarget("subdb.attribute.shrink.attr1", FType::GC, FComponent::ATTRIBUTE, *targets[1]));
+    EXPECT_TRUE(assertTarget("subdb.documentmetastore.flush", FType::SYNC, FComponent::ATTRIBUTE, *targets[2]));
+    EXPECT_TRUE(assertTarget("subdb.documentmetastore.shrink", FType::GC, FComponent::ATTRIBUTE, *targets[3]));
+    EXPECT_TRUE(assertTarget("subdb.memoryindex.flush", FType::FLUSH, FComponent::INDEX, *targets[4]));
+    EXPECT_TRUE(assertTarget("subdb.memoryindex.fusion", FType::GC, FComponent::INDEX, *targets[5]));
+    EXPECT_TRUE(assertTarget("subdb.summary.compact", FType::GC, FComponent::DOCUMENT_STORE, *targets[6]));
+    EXPECT_TRUE(assertTarget("subdb.summary.flush", FType::SYNC, FComponent::DOCUMENT_STORE, *targets[7]));
+    EXPECT_TRUE(assertTarget("subdb.summary.shrink", FType::GC, FComponent::DOCUMENT_STORE, *targets[8]));
 }
 
 TEST_F("require that only fast-access attributes are instantiated", FastAccessOnlyFixture)
 {
-	std::vector<AttributeGuard> attrs;
-	f.getAttributeManager()->getAttributeList(attrs);
-	EXPECT_EQUAL(1u, attrs.size());
-	EXPECT_EQUAL("attr1", attrs[0]->getName());
+    std::vector<AttributeGuard> attrs;
+    f.getAttributeManager()->getAttributeList(attrs);
+    EXPECT_EQUAL(1u, attrs.size());
+    EXPECT_EQUAL("attr1", attrs[0]->getName());
 }
 
 template <typename FixtureType>
@@ -804,12 +804,12 @@ assertAttribute(const AttributeGuard &attr,
                 SerialNum createSerialNum,
                 SerialNum lastSerialNum)
 {
-	EXPECT_EQUAL(name, attr->getName());
-	EXPECT_EQUAL(numDocs, attr->getNumDocs());
-	EXPECT_EQUAL(doc1Value, attr->getInt(1));
-	EXPECT_EQUAL(doc2Value, attr->getInt(2));
-	EXPECT_EQUAL(createSerialNum, attr->getCreateSerialNum());
-	EXPECT_EQUAL(lastSerialNum, attr->getStatus().getLastSyncToken());
+    EXPECT_EQUAL(name, attr->getName());
+    EXPECT_EQUAL(numDocs, attr->getNumDocs());
+    EXPECT_EQUAL(doc1Value, attr->getInt(1));
+    EXPECT_EQUAL(doc2Value, attr->getInt(2));
+    EXPECT_EQUAL(createSerialNum, attr->getCreateSerialNum());
+    EXPECT_EQUAL(lastSerialNum, attr->getStatus().getLastSyncToken());
 }
 
 void
@@ -834,9 +834,9 @@ TEST_F("require that fast-access attributes are populated during feed", FastAcce
     DocumentHandler<FastAccessOnlyFixture> handler(f);
     handler.putDocs();
 
-	std::vector<AttributeGuard> attrs;
-	f.getAttributeManager()->getAttributeList(attrs);
-	EXPECT_EQUAL(1u, attrs.size());
+    std::vector<AttributeGuard> attrs;
+    f.getAttributeManager()->getAttributeList(attrs);
+    EXPECT_EQUAL(1u, attrs.size());
     assertAttribute1(attrs[0], CFG_SERIAL, 20);
 }
 
