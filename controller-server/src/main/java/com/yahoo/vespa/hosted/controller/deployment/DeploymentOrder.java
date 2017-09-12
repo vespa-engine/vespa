@@ -87,7 +87,7 @@ public class DeploymentOrder {
             return false;
         }
         DeploymentSpec.Step lastStep = deploymentSteps.get(deploymentSteps.size() - 1);
-        return fromJob(job, application).get().equals(lastStep);
+        return fromJob(job, application).map(s -> s.equals(lastStep)).orElse(false);
     }
 
     /** Returns jobs for given deployment spec, in the order they are declared */
