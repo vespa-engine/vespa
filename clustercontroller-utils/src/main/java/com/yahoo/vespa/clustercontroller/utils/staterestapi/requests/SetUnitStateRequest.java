@@ -31,8 +31,15 @@ public interface SetUnitStateRequest extends UnitRequest {
     Condition getCondition();
 
     enum ResponseWait {
-        WAIT_UNTIL_CLUSTER_ACKED("wait-until-cluster-acked"), // Wait for state change to be ACKed by cluster
-        NO_WAIT("no-wait"); // Return without waiting for state change to be ACKed by cluster
+        /**
+         * Wait for state change to be ACKed by cluster. Default unless request
+         * explicitly specifies otherwise.
+         */
+        WAIT_UNTIL_CLUSTER_ACKED("wait-until-cluster-acked"),
+        /**
+         * Return without waiting for state change to be ACKed by cluster.
+         */
+        NO_WAIT("no-wait");
 
         private final String name;
 
