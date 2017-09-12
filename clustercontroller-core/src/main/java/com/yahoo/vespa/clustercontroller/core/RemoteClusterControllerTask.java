@@ -25,7 +25,7 @@ public abstract class RemoteClusterControllerTask {
      * version representing the changes made by the task has been ACKed by
      * all distributors.
      *
-     * Note that if a task performs an idempotent state change (e.g. setting maintenance
+     * Note that if a task performs a no-op state change (e.g. setting maintenance
      * mode on a node already in maintenance mode), the task may be considered complete
      * immediately if its effective changes have already been ACKed.
      */

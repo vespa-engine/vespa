@@ -1263,7 +1263,7 @@ public class StateChangeTest extends FleetControllerTest {
     // We create an explicit mock task class instead of using mock() simply because of
     // the utter pain that mocking void functions (doRemoteFleetControllerTask()) is
     // when using Mockito.
-    private static class MockSynchronousTask extends MockTask {
+    private static class MockSynchronousTaskWithSideEffects extends MockTask {
         @Override
         public void doRemoteFleetControllerTask(Context ctx) {
             // Trigger a state transition edge that requires a state to be published and ACKed
@@ -1275,7 +1275,7 @@ public class StateChangeTest extends FleetControllerTest {
         }
     }
 
-    private static class MockIdempotentSynchronousTask extends MockTask {
+    private static class MockNoOpSynchronousTask extends MockTask {
         @Override
         public void doRemoteFleetControllerTask(Context ctx) {
             // Tests scheduling this task shall have ensured that node storage.0 already is DOWN,
@@ -1302,12 +1302,12 @@ public class StateChangeTest extends FleetControllerTest {
             return task;
         }
 
-        MockTask scheduleNonIdempotentVersionDependentTask() throws Exception {
-            return scheduleTask(new MockSynchronousTask());
+        MockTask scheduleVersionDependentTaskWithSideEffects() throws Exception {
+            return scheduleTask(new MockSynchronousTaskWithSideEffects());
         }
 
-        MockTask scheduleIdempotentVersionDependentTask() throws Exception {
-            return scheduleTask(new MockIdempotentSynchronousTask());
+        MockTask scheduleNoOpVersionDependentTask() throws Exception {
+            return scheduleTask(new MockNoOpSynchronousTask());
         }
 
         void markStorageNodeDown(int index) throws Exception {
@@ -1379,7 +1379,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void synchronous_remote_task_is_completed_when_state_is_acked_by_cluster() throws Exception {
         RemoteTaskFixture fixture = createDefaultFixture();
-        MockTask task = fixture.scheduleNonIdempotentVersionDependentTask();
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
 
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
@@ -1396,10 +1396,10 @@ public class StateChangeTest extends FleetControllerTest {
     }
 
     @Test
-    public void idempotent_synchronous_remote_task_can_complete_immediately_if_current_state_already_acked() throws Exception {
+    public void no_op_synchronous_remote_task_can_complete_immediately_if_current_state_already_acked() throws Exception {
         RemoteTaskFixture fixture = createFixtureWith(optionsWithZeroTransitionTime());
         fixture.markStorageNodeDown(0);
-        MockTask task = fixture.scheduleIdempotentVersionDependentTask(); // Tries to set node 0 into Down; already in that state
+        MockTask task = fixture.scheduleNoOpVersionDependentTask(); // Tries to set node 0 into Down; already in that state
 
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
@@ -1409,12 +1409,12 @@ public class StateChangeTest extends FleetControllerTest {
     }
 
     @Test
-    public void idempotent_synchronous_remote_task_waits_until_current_state_is_acked() throws Exception {
+    public void no_op_synchronous_remote_task_waits_until_current_state_is_acked() throws Exception {
          RemoteTaskFixture fixture = createFixtureWith(optionsWithZeroTransitionTime());
 
         communicator.setShouldDeferDistributorClusterStateAcks(true);
         fixture.markStorageNodeDown(0);
-        MockTask task = fixture.scheduleIdempotentVersionDependentTask(); // Tries to set node 0 into Down; already in that state
+        MockTask task = fixture.scheduleNoOpVersionDependentTask(); // Tries to set node 0 into Down; already in that state
 
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
@@ -1430,14 +1430,14 @@ public class StateChangeTest extends FleetControllerTest {
     // When the cluster is down no intermediate states will be published to the nodes
     // unless the state triggers a cluster Up edge. To avoid hanging task responses
     // for an indeterminate amount of time in this scenario, we effectively treat
-    // tasks running in such a context as if they were idempotent. I.e. we only require
+    // tasks running in such a context as if they were no-ops. I.e. we only require
     // the cluster down-state to have been published.
     @Test
     public void immediately_complete_sync_remote_task_when_cluster_is_down() throws Exception {
         RemoteTaskFixture fixture = createFixtureWith(optionsAllowingZeroNodesDown());
         // Controller options require 10/10 nodes up, so take one down to trigger a cluster Down edge.
         fixture.markStorageNodeDown(1);
-        MockTask task = fixture.scheduleNonIdempotentVersionDependentTask();
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
 
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
@@ -1451,8 +1451,8 @@ public class StateChangeTest extends FleetControllerTest {
         RemoteTaskFixture fixture = createDefaultFixture();
         communicator.setShouldDeferDistributorClusterStateAcks(true);
 
-        MockTask task1 = fixture.scheduleNonIdempotentVersionDependentTask();
-        MockTask task2 = fixture.scheduleNonIdempotentVersionDependentTask();
+        MockTask task1 = fixture.scheduleVersionDependentTaskWithSideEffects();
+        MockTask task2 = fixture.scheduleVersionDependentTaskWithSideEffects();
 
         fixture.processScheduledTask();
         assertFalse(task1.isCompleted());
@@ -1473,7 +1473,7 @@ public class StateChangeTest extends FleetControllerTest {
         fixture.winLeadership();
         markAllNodesAsUp(options);
 
-        MockTask task = fixture.scheduleNonIdempotentVersionDependentTask();
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
 
         assertTrue(task.isInvoked());
         assertFalse(task.isCompleted());
@@ -1497,7 +1497,7 @@ public class StateChangeTest extends FleetControllerTest {
         // Have to increment timer here to be able to send state generated by the scheduled task
         timer.advanceTime(10_000);
 
-        MockTask task = fixture.scheduleNonIdempotentVersionDependentTask();
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
         communicator.setShouldDeferDistributorClusterStateAcks(true);
         fixture.processScheduledTask();
         assertFalse(task.isCompleted()); // Not yet acked by all nodes

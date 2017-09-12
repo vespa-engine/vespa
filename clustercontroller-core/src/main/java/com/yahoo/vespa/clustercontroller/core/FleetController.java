@@ -784,10 +784,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      * has been ACKed by all distributors in the system, those tasks will be marked as completed.
      *
      * This works transparently for tasks that end up changing the current cluster state (i.e.
-     * requiring a new state to be published) and for those whose changes are idempotent. In the
-     * former case the tasks will depend on the version that was generated based upon them. In
-     * the latter case the tasks will depend on the version that is already published (or in the
-     * process of being published).
+     * requiring a new state to be published) and for those whose changes are no-ops (because
+     * the changes they request are already part of the current state). In the former case the
+     * tasks will depend on the version that was generated based upon them. In the latter case
+     * the tasks will depend on the version that is already published (or in the process of
+     * being published).
      */
     private void scheduleVersionDependentTasksForFutureCompletion() {
         for (RemoteClusterControllerTask task : tasksPendingStateRecompute) {
