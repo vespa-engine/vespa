@@ -516,22 +516,20 @@ public class ControllerTest {
 
         // Check initial rotation status
         Map<String, EndpointStatus> rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
-        assertEquals(2, rotationStatus.size());
+        assertEquals(1, rotationStatus.size());
 
-        assertTrue(rotationStatus.get("global-endpoint").getStatus().equals(EndpointStatus.Status.in));
-        assertTrue(rotationStatus.get("alias-endpoint").getStatus().equals(EndpointStatus.Status.in));
+        assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.in));
 
         // Set the global rotations out of service
         EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "Testing I said", "Test", tester.clock().instant().getEpochSecond());
         List<String> overrides = tester.controller().applications().setGlobalRotationStatus(deployId, status);
-        assertEquals(2, overrides.size());
+        assertEquals(1, overrides.size());
 
         // Recheck the override rotation status
         rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
-        assertEquals(2, rotationStatus.size());
-        assertTrue(rotationStatus.get("global-endpoint").getStatus().equals(EndpointStatus.Status.out));
-        assertTrue(rotationStatus.get("alias-endpoint").getStatus().equals(EndpointStatus.Status.out));
-        assertTrue(rotationStatus.get("alias-endpoint").getReason().equals("Testing I said"));
+        assertEquals(1, rotationStatus.size());
+        assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.out));
+        assertTrue(rotationStatus.get("qrs-endpoint").getReason().equals("Testing I said"));
     }
 
     @Test
