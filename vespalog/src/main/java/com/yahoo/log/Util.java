@@ -4,11 +4,10 @@ package com.yahoo.log;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
 
 /**
  *
- * @author  Bjorn Borud
+ * @author Bjorn Borud
  * @author arnej27959
  *
  */
@@ -39,4 +38,5 @@ public class Util {
         }
         return "-";
     }
+
 }

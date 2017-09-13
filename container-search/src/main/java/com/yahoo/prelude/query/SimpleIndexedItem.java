@@ -44,6 +44,7 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
         if (index == null) {
             index = "";
         }
+        
         this.index = index;
     }
 

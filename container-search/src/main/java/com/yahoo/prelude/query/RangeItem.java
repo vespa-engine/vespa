@@ -11,7 +11,6 @@ package com.yahoo.prelude.query;
  *
  * @author baldersheim
  * @author bratseth
- * @since  5.1.23
  */
 // Note that this is just a convenience subclass of IntItem - it does not add any functionality not available in it.
 public class RangeItem extends IntItem {

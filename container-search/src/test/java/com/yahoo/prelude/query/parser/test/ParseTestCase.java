@@ -303,8 +303,24 @@ public class ParseTestCase {
     }
 
     @Test
+    public void testGreaterNumericWithIndex() {
+        IntItem item = (IntItem)tester.assertParsed("score:<454", "score:<454", Query.Type.ANY);
+        assertEquals("score", item.getIndexName());
+        assertEquals(454L, item.getToLimit().number());
+        assertFalse(item.getToLimit().isInclusive());
+    }
+
+    @Test
     public void testSmallerNumeric() {
         tester.assertParsed(">454", ">454", Query.Type.ANY);
+    }
+
+    @Test
+    public void testSmallerNumericWithIndex() {
+        IntItem item = (IntItem)tester.assertParsed("score:>454", "score:>454", Query.Type.ANY);
+        assertEquals("score", item.getIndexName());
+        assertEquals(454L, item.getFromLimit().number());
+        assertFalse(item.getFromLimit().isInclusive());
     }
 
     @Test
@@ -312,6 +328,7 @@ public class ParseTestCase {
         tester.assertParsed("[34;454]", "[34;454]", Query.Type.ANY);
     }
 
+    @Test
     public void testFullRangeLimit() {
         tester.assertParsed("[34;454;7]", "[34;454;7]", Query.Type.ANY);
         tester.assertParsed("[34;454;-7]", "[34;454;-7]", Query.Type.ANY);
@@ -351,7 +368,7 @@ public class ParseTestCase {
                 Query.Type.ANY);
     }
 
-    /** Test 50. Semantics changed: Old parser: OR to be or not */
+    @Test
     public void testEmptyPhrase() {
         tester.assertParsed("\"to be or not\"", "\"\"to be or not", Query.Type.ANY);
     }
@@ -1889,7 +1906,6 @@ public class ParseTestCase {
                 Query.Type.ALL);
     }
 
-    // Ticket 523571
     @Test
     public void testParensInQuotes() {
         tester.assertParsed("AND ringtone (OR a:\"Delivery SMAF large max 150kB 063\" a:\"RealMusic Delivery\")",
@@ -2146,7 +2162,6 @@ public class ParseTestCase {
                 Query.Type.ADVANCED);
     }
 
-    // bug 2530430
     // This test is here instead of in the query parser because
     // this needs to become series of tests where the tokenizer
     // and parser will step on each other's toes.
@@ -2301,7 +2316,6 @@ public class ParseTestCase {
         tester.assertParsed(null, "-12.2", Query.Type.WEB);
     }
 
-    /** These additions should be done by the YstSearcher */
     @Test
     public void testDefaultWebIndices() {
         tester.assertParsed("\"notanindex b\"","notanindex:b",Query.Type.WEB);
@@ -2457,7 +2471,7 @@ public class ParseTestCase {
 
     @Test
     public void testTwoRanges() {
-        tester.assertParsed("AND score:[1.25;2.18] age:[25;30]","score:[1.25;2.18] AND age:[25;30]",Query.Type.ADVANCED);
+        tester.assertParsed("AND score:[1.25;2.18] age:[25;30]","score:[1.25;2.18] AND age:[25;30]", Query.Type.ADVANCED);
     }
 
     @Test

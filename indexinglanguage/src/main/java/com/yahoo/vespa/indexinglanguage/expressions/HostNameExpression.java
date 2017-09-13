@@ -7,7 +7,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class HostNameExpression extends Expression {
 
