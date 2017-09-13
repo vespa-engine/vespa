@@ -54,8 +54,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         catch (UncheckedTimeoutException e) {
             // another controller instance is running this job at the moment; ok
         }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", e);
+        catch (Throwable t) {
+            log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", t);
         }
     }
 
