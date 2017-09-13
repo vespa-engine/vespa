@@ -78,7 +78,7 @@ public:
                             bool validate, bool verbose);
     void dropPostings();
     void dropTasks();
-    void resetTasks();	// Prepare for rerun
+    void resetTasks();  // Prepare for rerun
     void setupTasks(unsigned int numTasks);
     Task *getTask();
     unsigned int getNumDocs() const { return _numDocs; }

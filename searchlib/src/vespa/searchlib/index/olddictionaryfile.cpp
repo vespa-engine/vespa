@@ -81,7 +81,7 @@ OldDictionaryIndexMapping::setupHelper(const Schema &schema)
          ++i, ++localId)
     {
         if (*i == Schema::UNKNOWN_FIELD_ID)
-            continue;		// Field on file not in current schema
+            continue;       // Field on file not in current schema
         assert(*i < schema.getNumIndexFields());
         (void) schema;
         while (_fieldIdToLocalId.size() <= *i)

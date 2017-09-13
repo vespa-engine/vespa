@@ -111,7 +111,7 @@ enum getdocsums_flags {
 const uint32_t SLIME_MAGIC_ID = 0x55555555;
 
 enum monitorquery_features {
-    MQF_QFLAGS		    = 0x00000002,			
+    MQF_QFLAGS          = 0x00000002,
 };
 
 enum monitorquery_flags {
@@ -119,33 +119,33 @@ enum monitorquery_flags {
 };
 
 enum monitorresult_features {
-    MRF_MLD		    = 0x00000001,
-    MRF_RFLAGS		= 0x00000008,
-    MRF_ACTIVEDOCS	= 0x00000010,
+    MRF_MLD         = 0x00000001,
+    MRF_RFLAGS      = 0x00000008,
+    MRF_ACTIVEDOCS  = 0x00000010,
 };
 
 /**
  * Codes for packets between dispatch nodes and search nodes.
  * general packet (i.e. message) format:
  * uint32_t  packetLength- length in bytes, EXCLUDING this length field
- * packetcode pCode	- see the enum below; same length as uint32_t
- * packetData		- variable length
+ * packetcode pCode - see the enum below; same length as uint32_t
+ * packetData       - variable length
  */
 enum packetcode {
-    PCODE_EOL = 200,	/* ..fdispatch <-> ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!*/
+    PCODE_EOL = 200,    /* ..fdispatch <-> ..fsearch.   PacketData:
+             *0 {uint32_t queryId,} - only in new format!*/
     PCODE_QUERY_NOTUSED = 201,
     PCODE_QUERYRESULT_NOTUSED = 202,
     PCODE_ERROR = 203,          /* ..fdispatch <-  ..fsearch/..fdispatch
-                           *	{uint32_t queryId,}	- only in new format!
+                           *    {uint32_t queryId,} - only in new format!
                            *      uint32_t  error_code  [see common/errorcodes.h]
                            *      uint32_t  message_len
                            *      char[]    message     (UTF-8)   */
     PCODE_GETDOCSUMS_NOTUSED = 204,
-    PCODE_DOCSUM = 205,		/* ..fdispatch <-  ..fsearch.
-                                 *0	{uint32_t queryId,}	- only in new format!
-                                 *1	uint32_t location
-                                 *2	char[] <title, incipit, URL, ...>
+    PCODE_DOCSUM = 205,     /* ..fdispatch <-  ..fsearch.
+                                 *0 {uint32_t queryId,} - only in new format!
+                                 *1 uint32_t location
+                                 *2 char[] <title, incipit, URL, ...>
                                  */
     PCODE_MONITORQUERY_NOTUSED = 206,
     PCODE_MONITORRESULT_NOTUSED = 207,
@@ -159,14 +159,14 @@ enum packetcode {
     PCODE_MLD_GETDOCSUMS2_NOTUSED = 215,
     PCODE_QUEUELEN_NOTUSED = 216,
 
-    PCODE_QUERYRESULTX = 217,	/*
-			 *      {uint32_t queryId,}    - only if persistent
+    PCODE_QUERYRESULTX = 217,   /*
+             *      {uint32_t queryId,}    - only if persistent
                          *      uint32_t featureflags, - see 'queryresult_features'
-			 *      uint32_t offset,
-			 *      uint32_t numDocs,
-			 *      uint32_t totNumDocs,
-			 *      search::HitRank maxRank,
-			 *      uint32_t docstamp,
+             *      uint32_t offset,
+             *      uint32_t numDocs,
+             *      uint32_t totNumDocs,
+             *      search::HitRank maxRank,
+             *      uint32_t docstamp,
                          *      uint32_t[numDocs] sortIndex   - if QRF_SORTDATA
                          *      char[sidx[n - 1]] sortData    - if QRF_SORTDATA
                          *      uint32_t           groupDataLen - if QRF_GROUPDATA
@@ -174,19 +174,19 @@ enum packetcode {
                          *      uint64_t coverageDocs  - if QRF_COVERAGE
                          *      uint32_t coverageNodes - if QRF_COVERAGE
                          *      uint32_t coverageFull  - if QRF_COVERAGE
-			 *      numDocs * hit {
-			 *	    uint32_t docid,
-			 *	    search::HitRank metric,
+             *      numDocs * hit {
+             *      uint32_t docid,
+             *      search::HitRank metric,
                          *          uint32_t partid,   - if QRF_MLD
                          *          uint32_t docstamp, - if QRF_MLD
-			 *	}			     */
-    PCODE_QUERYX = 218,	        /*
-                                 * 	{uint32_t queryId,}          - only if persistent
+             *  }                */
+    PCODE_QUERYX = 218,         /*
+                                 *  {uint32_t queryId,}          - only if persistent
                                  *      uint32_t featureflags,       - see 'query_features'
-                                 * 	uint32_t querytype
-                                 * 	uint32_t offset,
-                                 * 	uint32_t maxhits,
-                                 * 	uint32_t qflags,
+                                 *  uint32_t querytype
+                                 *  uint32_t offset,
+                                 *  uint32_t maxhits,
+                                 *  uint32_t qflags,
                                  *      uint32_t minhits,            - if QF_MINHITS
                                  *      uint32_t numProperties       - if QF_PROPERTIES
                                  *      numProperties * props {      - if QF_PROPERTIES
@@ -207,7 +207,7 @@ enum packetcode {
                                  *      uint32_t locationLen         - if QF_LOCATION
                                  *      char[locationLen] location   - if QF_LOCATION
                                  *      uint32_t numStackItems,      - if QF_PARSEDQUERY
-                                 *	multiple encoded stackitems: - if QF_PARSEDQUERY
+                                 *  multiple encoded stackitems: - if QF_PARSEDQUERY
                                  - uint32_t OR|AND|NOT|RANK
                                  uint32_t arity
                                  - uint32_t PHRASE
@@ -220,10 +220,10 @@ enum packetcode {
                                  uint32_t termLen
                                  char[]   term
                                  */
-    PCODE_GETDOCSUMSX = 219,	/*
-			 *      {uint32_t queryId,}           - only if persistent
+    PCODE_GETDOCSUMSX = 219,    /*
+             *      {uint32_t queryId,}           - only if persistent
                          *      uint32_t featureflags,        - see 'getdocsums_features'
-			 *      uint32_t docstamp,
+             *      uint32_t docstamp,
                          *      uint32_t rankprofile,         - if GDF_RANKP_QFLAGS
                          *      uint32_t qflags,              - if GDF_RANKP_QFLAGS
                          *      uint32_t resClassNameLen      - if GDF_RESCLASSNAME
@@ -240,30 +240,30 @@ enum packetcode {
                          *          char[valueLen] value
                          *        }
                          *      }
-			 *      uint32_t stackItems,          - if GDF_STACKDUMP
-			 *      uint32_t stackDumpLen,        - if GDF_STACKDUMP
-			 *      char[stackDumpLen] stackDump, - if GDF_STACKDUMP
+             *      uint32_t stackItems,          - if GDF_STACKDUMP
+             *      uint32_t stackDumpLen,        - if GDF_STACKDUMP
+             *      char[stackDumpLen] stackDump, - if GDF_STACKDUMP
                          *      uint32_t locationLen          - if GDF_LOCATION
                          *      char[locationLen] location    - if GDF_LOCATION
-			 *      N * doc {
-			 *          uint32_t docid,
-			 *          uint32_t partid,          - if GDF_MLD
-			 *          uint32_t docstamp,        - if GDF_MLD
+             *      N * doc {
+             *          uint32_t docid,
+             *          uint32_t partid,          - if GDF_MLD
+             *          uint32_t docstamp,        - if GDF_MLD
                          *      }
                          */
     PCODE_MONITORQUERYX = 220,  /*
-                           *	uint32_t featureFlags;
-                           *		- see monitorquery_features
+                           *    uint32_t featureFlags;
+                           *        - see monitorquery_features
                            */
     PCODE_MONITORRESULTX = 221, /*
-                           *	uint32_t featureFlags;
-                           *		- see monitorresult_features
-                           *	uint32_t partitionId;
-                           *	uint32_t timestamp;
-                           *	uint32_t totalNodes;	      - if MRF_MLD
-                           *	uint32_t activeNodes;	      - if MRF_MLD
-                           *	uint32_t totalParts;	      - if MRF_MLD
-                           *	uint32_t activeParts;	      - if MRF_MLD
+                           *    uint32_t featureFlags;
+                           *        - see monitorresult_features
+                           *    uint32_t partitionId;
+                           *    uint32_t timestamp;
+                           *    uint32_t totalNodes;          - if MRF_MLD
+                           *    uint32_t activeNodes;         - if MRF_MLD
+                           *    uint32_t totalParts;          - if MRF_MLD
+                           *    uint32_t activeParts;         - if MRF_MLD
                            */
     PCODE_TRACEREPLY = 222,  /*
                          *      numProperties * props {
@@ -278,7 +278,7 @@ enum packetcode {
                          *        }
                          *      }
                          */
-    PCODE_LastCode = 223	// Used for consistency checking only, must be last.
+    PCODE_LastCode = 223    // Used for consistency checking only, must be last.
 };
 
 }

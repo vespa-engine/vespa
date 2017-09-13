@@ -55,7 +55,7 @@ public:
     /**
      * Setup alignment
      *
-     * @param elements	suggested number of elements in buffer
+     * @param elements  suggested number of elements in buffer
      * @param elemSize  size of each elements
      * @param file      File interface for IO
      * @param preferredFileAlignment prefered alignment for IO

@@ -65,7 +65,7 @@ SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
     const Schema::IndexField &oldField =
         oldSchema.getIndexField(oldFieldId);
     if (oldField.getDataType() != newField.getDataType())
-        return false;	// wrong data type
+        return false;   // wrong data type
     if (!phrases)
         return true;
     return oldField.hasPhrases();

@@ -337,7 +337,7 @@ public:
     {
         destroyIterators();
         removeHandlers(); // Block calls to document db from engine
-        close();	  // Block upcalls to engine from document db
+        close();      // Block upcalls to engine from document db
     }
 };
 

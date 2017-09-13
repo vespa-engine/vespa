@@ -83,10 +83,10 @@ FeedHandler::handleMessage(mbus::Message::UP message)
     documentapi::DocumentMessage::UP msg((documentapi::DocumentMessage*)message.release());
     switch (msg->getType()) {
     case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
- 	handleDocumentPut(((documentapi::PutDocumentMessage&)(*msg)).getDocumentSP());
- 	break;
+    handleDocumentPut(((documentapi::PutDocumentMessage&)(*msg)).getDocumentSP());
+    break;
     default:
- 	break;
+    break;
     }
     reply = msg->createReply(); // use default reply for all messages
     msg->swapState(*reply);

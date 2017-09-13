@@ -57,7 +57,7 @@ OrderedDocumentInserter::flushWord()
                            &_removes[0],
                            &_removes[0] + _removes.size());
     if (pidx.ref() != _dItr.getData()) {
-	// Before updating ref
+        // Before updating ref
         std::atomic_thread_fence(std::memory_order_release);
         _dItr.writeData(pidx.ref());
     }

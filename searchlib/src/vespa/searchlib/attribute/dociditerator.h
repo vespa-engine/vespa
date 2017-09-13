@@ -62,7 +62,7 @@ template <>
 inline int32_t
 DocIdIterator<AttributePosting>::getData() const
 {
-    return 1;	// default weight 1 for single value attributes
+    return 1;   // default weight 1 for single value attributes
 }
 
 

@@ -37,7 +37,7 @@ public:
 class WordDocFieldFeatures
 {
 public:
-    uint32_t _numElements;	// Number of array indexes
+    uint32_t _numElements;  // Number of array indexes
     // TODO: add support for user features
 
     WordDocFieldFeatures()
@@ -57,7 +57,7 @@ public:
 class WordDocElementFeatures
 {
 public:
-    uint32_t _elementId;	// Array index
+    uint32_t _elementId;    // Array index
     uint32_t _numOccs;
     int32_t _weight;
     uint32_t _elementLen;
@@ -129,7 +129,7 @@ public:
 class DocIdAndFeatures
 {
 public:
-    uint32_t _docId;			// Current Docid
+    uint32_t _docId;            // Current Docid
     // generic feature data, flattened to avoid excessive allocator usage
     WordDocFeatures _wordDocFeatures;
     std::vector<WordDocElementFeatures> _elements;
@@ -142,10 +142,10 @@ public:
     // interleaved with predefined features (word position, word weight)
 #endif
     // raw data (file format specific, packed)
-    std::vector<uint64_t> _blob;	// Feature data for (word, docid) pair
-    uint32_t _bitOffset;		// Offset of feature start ([0..63])
-    uint32_t _bitLength;		// Length of features
-    bool _raw;				//
+    std::vector<uint64_t> _blob; // Feature data for (word, docid) pair
+    uint32_t _bitOffset;         // Offset of feature start ([0..63])
+    uint32_t _bitLength;         // Length of features
+    bool _raw;                   //
 
     DocIdAndFeatures();
     DocIdAndFeatures(const DocIdAndFeatures &);
@@ -189,7 +189,7 @@ public:
     /**
      * Append features from a single field to a field collection.
      *
-     * @param rhs	    features for a single field
+     * @param rhs       features for a single field
      * @param localFieldId  local field id for the field
      */
     void append(const DocIdAndFeatures &rhs, uint32_t localFieldId);

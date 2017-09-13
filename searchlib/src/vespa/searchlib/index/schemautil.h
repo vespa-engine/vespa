@@ -15,7 +15,7 @@ public:
     class IndexSettings
     {
         schema::DataType _dataType;
-        bool _error;		// Schema is bad.
+        bool _error;        // Schema is bad.
         bool _prefix;
         bool _phrases;
         bool _positions;
@@ -129,8 +129,8 @@ public:
          * with matching data type.  If we want phrases then all input
          * fields usable for terms must also be usable for phrases.
          *
-         * @param oldSchema	old schema, present in an input index
-         * @param phrases	ask for phrase files
+         * @param oldSchema old schema, present in an input index
+         * @param phrases   ask for phrase files
          */
         bool hasOldFields(const Schema &oldSchema, bool phrases) const;
 
@@ -140,8 +140,8 @@ public:
          * Field collections must have same set of fields which must
          * also match between new and old schema.
          *
-         * @param oldSchema	old schema, present in an input index
-         * @param phrases	ask for phrase files
+         * @param oldSchema old schema, present in an input index
+         * @param phrases   ask for phrase files
          */
         bool hasMatchingOldFields(const Schema &oldSchema, bool phrases) const;
     };

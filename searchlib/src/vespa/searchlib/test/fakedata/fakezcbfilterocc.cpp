@@ -38,21 +38,21 @@ zcbEncode(std::vector<uint8_t> &bytes,
 }
 
 
-#define ZCBDECODE(valI, resop)						\
-do {									\
-    if (__builtin_expect((valI[0] & 1) != 0, true)) {			\
-        resop (valI[0] >> 1);						\
-        valI += 1;							\
-    } else if (__builtin_expect((valI[0] & 2) != 0, true)) {		\
-        resop (((*(const uint32_t *) valI) >> 2) & ((1 << 14) - 1));	\
-        valI += 2;							\
-    } else if (__builtin_expect((valI[0] & 4) != 0, true)) {		\
-        resop (((*(const uint32_t *) valI) >> 3) & ((1 << 21) - 1));	\
-        valI += 3;							\
-    } else {								\
-        resop ((*(const uint32_t *) valI) >> 4);			\
-        valI += 4;							\
-    }									\
+#define ZCBDECODE(valI, resop)                                       \
+do {                                                                 \
+    if (__builtin_expect((valI[0] & 1) != 0, true)) {                \
+        resop (valI[0] >> 1);                                        \
+        valI += 1;                                                   \
+    } else if (__builtin_expect((valI[0] & 2) != 0, true)) {         \
+        resop (((*(const uint32_t *) valI) >> 2) & ((1 << 14) - 1)); \
+        valI += 2;                                                   \
+    } else if (__builtin_expect((valI[0] & 4) != 0, true)) {         \
+        resop (((*(const uint32_t *) valI) >> 3) & ((1 << 21) - 1)); \
+        valI += 3;                                                   \
+    } else {                                                         \
+        resop ((*(const uint32_t *) valI) >> 4);                     \
+        valI += 4;                                                   \
+    }                                                                \
 } while (0)
 
 FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)

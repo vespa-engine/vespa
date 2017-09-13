@@ -23,17 +23,17 @@ class PostingListHandle
 public:
     typedef std::unique_ptr<PostingListHandle> UP;
     // Key portion
-    PostingListFileRandRead *_file;	// File containing posting list
-    uint64_t _bitOffset;	// posting list start relative to start of file
-    uint64_t _bitLength;	// Length of posting list, in bits
+    PostingListFileRandRead *_file; // File containing posting list
+    uint64_t _bitOffset;    // posting list start relative to start of file
+    uint64_t _bitLength;    // Length of posting list, in bits
 
     // Value portion
-    uint32_t _firstSegment;	// First segment for word
-    uint32_t _numSegments;	// Number of segments
-    uint64_t _bitOffsetMem;	// _mem relative to start of file
-    const void *_mem;		// Memory backing posting list after read/mmap
-    void *_allocMem;		// What to free after posting list
-    size_t _allocSize;		// Size of allocated memory
+    uint32_t _firstSegment; // First segment for word
+    uint32_t _numSegments;  // Number of segments
+    uint64_t _bitOffsetMem; // _mem relative to start of file
+    const void *_mem;       // Memory backing posting list after read/mmap
+    void *_allocMem;        // What to free after posting list
+    size_t _allocSize;      // Size of allocated memory
 
     PostingListHandle()
     : _file(NULL),

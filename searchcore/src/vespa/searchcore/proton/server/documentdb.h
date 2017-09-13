@@ -173,7 +173,7 @@ private:
      *
      * Called by executor thread.
      *
-     * @param feedView	shared pointer to feed view to be dropped.
+     * @param feedView  shared pointer to feed view to be dropped.
      */
     void performDropFeedView(IFeedView::SP feedView);
     void performDropFeedView2(IFeedView::SP feedView);
@@ -375,8 +375,8 @@ public:
     virtual SerialNum
     getCurrentSerialNumber() const
     {
-	// Called by flush scheduler thread, by executor task or
-	// visitor callback.
+        // Called by flush scheduler thread, by executor task or
+        // visitor callback.
         // XXX: Contains future value during replay.
         return _feedHandler.getSerialNum();
     }

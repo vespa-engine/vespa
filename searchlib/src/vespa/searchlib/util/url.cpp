@@ -140,8 +140,8 @@ URL::IsTokenChar(unsigned char c) // According to FAST URL tokenization
 template <bool (*IsPartChar)(unsigned char c)>
 unsigned char *
 URL::ParseURLPart(unsigned char *src,
-			unsigned char *dest,
-			unsigned int destsize)
+            unsigned char *dest,
+            unsigned int destsize)
 {
     unsigned char *p = src;
     unsigned int len = 0;

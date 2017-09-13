@@ -25,7 +25,7 @@ private:
     typedef B::generation_t generation_t;
 
 protected:
-    typedef uint32_t Word;	// Large enough to contain numDocs.
+    typedef uint32_t Word;  // Large enough to contain numDocs.
 private:
     Word _valueMask;            // 0x01, 0x03 or 0x0f
     uint32_t _valueShiftShift;  // 0x00, 0x01 or 0x02

@@ -29,8 +29,8 @@ private:
     FastOS_Mutex      _stampLock;
     FastS_AppContext *_appCtx;
     uint32_t          _mldPartit;
-    uint32_t          _mldDocStamp;	// Bumped for all cache flushes
-    uint32_t	      _mldDocStampMin;	// Bumped for global cache flush
+    uint32_t          _mldDocStamp; // Bumped for all cache flushes
+    uint32_t          _mldDocStampMin;  // Bumped for global cache flush
     uint32_t          _gencnt;
 
     FastS_QueryPerf   _queryPerf;

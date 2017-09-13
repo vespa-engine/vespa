@@ -189,7 +189,7 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 void
 DataStoreBase::trimHoldLists(generation_t usedGen)
 {
-    trimElemHoldList(usedGen);	// Trim entries before trimming buffers
+    trimElemHoldList(usedGen);  // Trim entries before trimming buffers
 
     _genHolder.trimHoldLists(usedGen);
 }
@@ -232,7 +232,7 @@ void
 DataStoreBase::holdBuffer(uint32_t bufferId)
 {
     _states[bufferId].onHold();
-    size_t holdBytes = 0u;	// getMemStats() still accounts held buffers
+    size_t holdBytes = 0u;  // getMemStats() still accounts held buffers
     GenerationHeldBase::UP hold(new BufferHold(holdBytes, *this, bufferId));
     _genHolder.hold(std::move(hold));
 }

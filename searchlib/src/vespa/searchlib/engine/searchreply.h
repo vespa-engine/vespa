@@ -24,10 +24,10 @@ public:
         void setDistributionKey(uint32_t key) { _distributionKey = key; }
         uint32_t getDistributionKey() const { return _distributionKey; }
         document::GlobalId gid;
-        search::HitRank	metric;
-        uint32_t	path;      // wide
+        search::HitRank    metric;
+        uint32_t           path; // wide
     private:
-        int32_t	        _distributionKey;  // wide
+        int32_t            _distributionKey; // wide
     };
 
     class Coverage {

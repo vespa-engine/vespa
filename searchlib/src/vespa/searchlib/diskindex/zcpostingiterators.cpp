@@ -343,7 +343,7 @@ ZcPostingIteratorBase::doChunkSkipSeek(uint32_t docId)
         _featureSeekPos = 0;
         featureSeek(_featuresSize);
         _chunkNo++;
-        readWordStart(getDocIdLimit());	// Read word start for next chunk
+        readWordStart(getDocIdLimit()); // Read word start for next chunk
     }
     if (docId > _chunk._lastDocId) {
         _l4._skipDocId = _l3._skipDocId = _l2._skipDocId = _l1._skipDocId = search::endDocId;

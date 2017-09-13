@@ -63,7 +63,7 @@ public:
     {
     public:
         double   _drainRate;       // Queue drain rate
-        double   _drainMax;	       // Max queue drain at once
+        double   _drainMax;        // Max queue drain at once
         uint32_t _minouractive;    // minimum active requests from us
         uint32_t _maxouractive;    // maximum active requests from us (queue)
         uint32_t _cutoffouractive; // cutoff active requests
@@ -140,8 +140,8 @@ public:
         queryQueue_t(const queryQueue_t &);
         queryQueue_t& operator=(const queryQueue_t &);
 
-        queryQueued_t	  *_head;
-        queryQueued_t	  *_tail;
+        queryQueued_t     *_head;
+        queryQueued_t     *_tail;
         unsigned int           _queueLen;
         unsigned int           _active;
 
@@ -175,7 +175,7 @@ protected:
 
     // Total cost as seen by referencing objects
     std::atomic<uint32_t>  _totalrefcost;
-    uint32_t	 _mldDocStamp;
+    uint32_t     _mldDocStamp;
 
 public:
     FastS_DataSetBase(FastS_AppContext *appCtx,

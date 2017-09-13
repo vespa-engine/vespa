@@ -388,7 +388,7 @@ ShowPostingListSubApp::readWordList(const SchemaUtil::IndexIterator &index)
     PostingListCounts counts;
     uint64_t wordNum = noWordNum();
     wr.readWord(word, wordNum, counts);
-    words.push_back("");	// Word number 0 is special here.
+    words.push_back("");    // Word number 0 is special here.
     while (wordNum != noWordNumHigh()) {
         assert(wordNum == words.size());
         words.push_back(word);
@@ -595,7 +595,7 @@ ShowPostingListSubApp::showPostingList()
     handle->second._bitOffset = offsetAndCounts._offset;
     handle->second._bitLength = handle->first._bitLength;
     const uint32_t first_segment = 0;
-    const uint32_t num_segments = 0;	// means all segments
+    const uint32_t num_segments = 0;    // means all segments
     handle->second._file = postingfile.get();
     handle->second._file->readPostingList(handle->first,
                                        first_segment,

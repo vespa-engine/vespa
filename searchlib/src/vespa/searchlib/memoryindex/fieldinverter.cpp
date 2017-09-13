@@ -203,7 +203,7 @@ FieldInverter::sortWords()
     // TODO: shrink word buffer to only contain unique words
     std::vector<uint32_t>::const_iterator w(_wordRefs.begin() + 1);
     std::vector<uint32_t>::const_iterator we(_wordRefs.end());
-    uint32_t wordNum = 1;	// First valid word number
+    uint32_t wordNum = 1;   // First valid word number
     const char *lastWord = getWordFromRef(*w);
     updateWordNum(*w, wordNum);
     for (++w; w != we; ++w) {
@@ -229,7 +229,7 @@ FieldInverter::sortWords()
 void
 FieldInverter::startElement(int32_t weight)
 {
-    _elems.push_back(ElemInfo(weight));	// Fill in length later
+    _elems.push_back(ElemInfo(weight)); // Fill in length later
 }
 
 
@@ -493,7 +493,7 @@ FieldInverter::pushDocuments(IOrderedDocumentInserter &inserter)
 
     if (_positions.empty()) {
         reset();
-        return;				// All documents with words aborted
+        return;             // All documents with words aborted
     }
 
     sortWords();

@@ -37,14 +37,14 @@ public:
 
 private:
     vespalib::geo::ZCurve::BoundingBox _zBoundingBox;
-    int32_t  _x;		/* Query X position */
-    int32_t  _y;		/* Query Y position */
-    uint32_t _xAspect;		/* X distance multiplier fraction */
-    uint32_t _radius;		/* Radius for euclidian distance */
-    int32_t  _minx;		/* Min X coordinate */
-    int32_t  _maxx;		/* Max X coordinate */
-    int32_t  _miny;		/* Min Y coordinate */
-    int32_t  _maxy;		/* Max Y coordinate */
+    int32_t  _x;        /* Query X position */
+    int32_t  _y;        /* Query Y position */
+    uint32_t _xAspect;      /* X distance multiplier fraction */
+    uint32_t _radius;       /* Radius for euclidian distance */
+    int32_t  _minx;     /* Min X coordinate */
+    int32_t  _maxx;     /* Max X coordinate */
+    int32_t  _miny;     /* Min Y coordinate */
+    int32_t  _maxy;     /* Max Y coordinate */
 
     bool _rankOnDistance;
     bool _pruneOnDistance;

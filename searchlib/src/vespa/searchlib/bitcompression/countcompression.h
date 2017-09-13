@@ -17,11 +17,11 @@ class PostingListCountFileDecodeContext : public FeatureDecodeContext<true>
 public:
     typedef FeatureDecodeContext<true> ParentClass;
     typedef index::PostingListCounts PostingListCounts;
-    uint32_t _avgBitsPerDoc;	// Average number of bits per document
-    uint32_t _minChunkDocs;	// Minimum number of documents for chunking
-    uint32_t _docIdLimit;	// Limit for document ids (docId < docIdLimit)
-    uint64_t _numWordIds;	// Number of words in dictionary
-    uint64_t _minWordNum;	// Minimum word number
+    uint32_t _avgBitsPerDoc;    // Average number of bits per document
+    uint32_t _minChunkDocs; // Minimum number of documents for chunking
+    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
+    uint64_t _numWordIds;   // Number of words in dictionary
+    uint64_t _minWordNum;   // Minimum word number
 
     PostingListCountFileDecodeContext()
         : ParentClass(),
@@ -51,11 +51,11 @@ class PostingListCountFileEncodeContext : public FeatureEncodeContext<true>
 public:
     typedef FeatureEncodeContext<true> ParentClass;
     typedef index::PostingListCounts PostingListCounts;
-    uint32_t _avgBitsPerDoc;	// Average number of bits per document
-    uint32_t _minChunkDocs;	// Minimum number of documents for chunking
-    uint32_t _docIdLimit;	// Limit for document ids (docId < docIdLimit)
-    uint64_t _numWordIds;	// Number of words in dictionary
-    uint64_t _minWordNum;	// Mininum word number
+    uint32_t _avgBitsPerDoc;    // Average number of bits per document
+    uint32_t _minChunkDocs; // Minimum number of documents for chunking
+    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
+    uint64_t _numWordIds;   // Number of words in dictionary
+    uint64_t _minWordNum;   // Mininum word number
 
     PostingListCountFileEncodeContext()
         : ParentClass(),

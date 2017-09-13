@@ -28,7 +28,7 @@ private:
     DocumentInverter(const DocumentInverter &) = delete;
     DocumentInverter &operator=(const DocumentInverter &) = delete;
 
-    const index::Schema			&_schema;
+    const index::Schema &_schema;
 
     typedef index::DocTypeBuilder DocTypeBuilder;
     typedef DocTypeBuilder::UriField UriField;
@@ -54,7 +54,7 @@ private:
     typedef document::Field FieldPath;
     typedef std::vector<std::unique_ptr<FieldPath> > IndexedFieldPaths;
     IndexedFieldPaths                   _indexedFieldPaths;
-    const document::DataType *		    _dataType;
+    const document::DataType *          _dataType;
 
     DocTypeBuilder::SchemaIndexFields  _schemaIndexFields;
 

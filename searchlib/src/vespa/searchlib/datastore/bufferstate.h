@@ -49,7 +49,7 @@ private:
     // For simple types this is 0.
     size_t        _extraHoldBytes;
     FreeList      _freeList;
-    FreeListList *_freeListList;	// non-NULL if free lists are enabled
+    FreeListList *_freeListList;    // non-NULL if free lists are enabled
 
     // NULL pointers if not on circular list of buffer states with free elems
     BufferState    *_nextHasFree;
@@ -73,11 +73,11 @@ public:
     /**
      * Transition from FREE to ACTIVE state.
      *
-     * @param bufferId		Id of buffer to be active.
-     * @param typeId		registered data type for buffer.
-     * @param typeHandler	type handler for registered data type.
-     * @param sizeNeeded	Number of elements needed to be free
-     * @param buffer		start of buffer.
+     * @param bufferId      Id of buffer to be active.
+     * @param typeId        registered data type for buffer.
+     * @param typeHandler   type handler for registered data type.
+     * @param sizeNeeded    Number of elements needed to be free
+     * @param buffer        start of buffer.
      */
     void onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
                   size_t sizeNeeded, void *&buffer);
@@ -95,8 +95,8 @@ public:
     /**
      * Set list of buffer states with nonempty free lists.
      *
-     * @param freeListList	List of buffer states.  If NULL then free lists
-     *				are disabled.
+     * @param freeListList  List of buffer states.  If NULL then free lists
+     *              are disabled.
      */
     void setFreeListList(FreeListList *freeListList);
 

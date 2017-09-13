@@ -20,7 +20,7 @@ enum ErrorCode {
     ECODE_OVERLOADED          = 5,
     ECODE_NOT_IMPLEMENTED     = 6,
     ECODE_QUERY_NOT_ALLOWED   = 7,
-    ECODE_TIMEOUT	      = 8			
+    ECODE_TIMEOUT             = 8
 };
 
 /**

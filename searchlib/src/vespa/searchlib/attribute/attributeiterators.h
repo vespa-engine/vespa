@@ -258,7 +258,7 @@ AttributePostingListIteratorT<
                               btree::BTreeDefaultTraits> >::
 getWeight()
 {
-    return 1;	// default weight 1 for single value attributes
+    return 1;   // default weight 1 for single value attributes
 }
 
 template <>

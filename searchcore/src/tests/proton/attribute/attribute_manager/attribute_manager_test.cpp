@@ -289,13 +289,13 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = amf.addAttribute("a1");
-        EXPECT_EQUAL(1u, a1->getNumDocs());	// Resized to size of attributemanager
+        EXPECT_EQUAL(1u, a1->getNumDocs()); // Resized to size of attributemanager
         fillAttribute(a1, 1, 3, 2, 100);
-        EXPECT_EQUAL(3u, a1->getNumDocs());	// Resized to size of attributemanager
+        EXPECT_EQUAL(3u, a1->getNumDocs()); // Resized to size of attributemanager
         AttributeVector::SP a2 = amf.addAttribute("a2");
-        EXPECT_EQUAL(1u, a2->getNumDocs());	// Not resized to size of attributemanager
+        EXPECT_EQUAL(1u, a2->getNumDocs()); // Not resized to size of attributemanager
         fillAttribute(a2, 1, 5, 4, 100);
-        EXPECT_EQUAL(5u, a2->getNumDocs());	// Increased
+        EXPECT_EQUAL(5u, a2->getNumDocs()); // Increased
         EXPECT_TRUE(!ia1.load());
         EXPECT_TRUE(!ia2.load());
         EXPECT_TRUE(!ia3.load());

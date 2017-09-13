@@ -123,11 +123,11 @@ class PageDict4SSWriter : public PageDict4PageParams
     typedef EC SSEC;
 
 private:
-    EC &_eL6;			// L6 stream
-    vespalib::string _l6Word;	// L6 word
-    StartOffset _l6StartOffset;	// file offsets + accnum
-    uint64_t _l6PageNum;	// Page number for last L6 entry
-    uint32_t _l6SparsePageNum;	// Sparse page number for last L6 entry
+    EC &_eL6;           // L6 stream
+    vespalib::string _l6Word;   // L6 word
+    StartOffset _l6StartOffset; // file offsets + accnum
+    uint64_t _l6PageNum;    // Page number for last L6 entry
+    uint32_t _l6SparsePageNum;  // Sparse page number for last L6 entry
     uint64_t _l6WordNum;
 
 public:
@@ -194,19 +194,19 @@ class PageDict4SPWriter : public PageDict4PageParams
     typedef PageDict4SSWriter SSWriter;
 
 private:
-    EC _eL3;			// L3 stream
+    EC _eL3;            // L3 stream
     ComprFileWriteContext _wcL3;// L3 buffer
-    EC _eL4;			// L4 stream
+    EC _eL4;            // L4 stream
     ComprFileWriteContext _wcL4;// L4 buffer
-    EC _eL5;			// L5 stream
+    EC _eL5;            // L5 stream
     ComprFileWriteContext _wcL5;// L5 buffer
-    vespalib::string _l3Word;	// last L3 word written
-    vespalib::string _l4Word;	// last L4 word written
-    vespalib::string _l5Word;	// last L5 word written
-    vespalib::string _l6Word;	// word before this sparse page
-    uint32_t _l3WordOffset;	// Offset for next L3 word to write
-    uint32_t _l4WordOffset;	// Offset for last L4 word written
-    uint32_t _l5WordOffset;	// Offset for last L5 word written
+    vespalib::string _l3Word;   // last L3 word written
+    vespalib::string _l4Word;   // last L4 word written
+    vespalib::string _l5Word;   // last L5 word written
+    vespalib::string _l6Word;   // word before this sparse page
+    uint32_t _l3WordOffset; // Offset for next L3 word to write
+    uint32_t _l4WordOffset; // Offset for last L4 word written
+    uint32_t _l5WordOffset; // Offset for last L5 word written
 
     // file offsets
     StartOffset _l3StartOffset;
@@ -220,31 +220,31 @@ private:
     // Offsets in data files for last L6 entry
     StartOffset _l6StartOffset;
 
-    uint64_t _l3WordNum;	// word number next L3 entry to write
-    uint64_t _l4WordNum;	// word number last L4 entry
-    uint64_t _l5WordNum;	// word number last L5 entry
-    uint64_t _l6WordNum;	// word number last L6 entry
+    uint64_t _l3WordNum;    // word number next L3 entry to write
+    uint64_t _l4WordNum;    // word number last L4 entry
+    uint64_t _l5WordNum;    // word number last L5 entry
+    uint64_t _l6WordNum;    // word number last L6 entry
 
-    uint32_t _curL3OffsetL4;	// Offset in L3 for last L4 entry
-    uint32_t _curL3OffsetL5;	// Offset in L3 for last L5 entry
-    uint32_t _curL4OffsetL5;	// Offset in L4 for last L5 entry
+    uint32_t _curL3OffsetL4;    // Offset in L3 for last L4 entry
+    uint32_t _curL3OffsetL5;    // Offset in L3 for last L5 entry
+    uint32_t _curL4OffsetL5;    // Offset in L4 for last L5 entry
 
-    uint32_t _headerSize;	// Size of page header
+    uint32_t _headerSize;   // Size of page header
 
-    uint32_t _l3Entries;	// Number of L3 entries on page
-    uint32_t _l4StrideCheck;	// L3 entries since last L4 entry
-    uint32_t _l5StrideCheck;	// L4 entries since last L5 entry
+    uint32_t _l3Entries;    // Number of L3 entries on page
+    uint32_t _l4StrideCheck;    // L3 entries since last L4 entry
+    uint32_t _l5StrideCheck;    // L4 entries since last L5 entry
 
-    uint32_t _l3Size;		// Size of L3 entries
-    uint32_t _l4Size;		// Size of L4 entries
-    uint32_t _l5Size;		// Size of L5 entries
-    uint32_t _prevL3Size;	// Previous size of L3 entries
-    uint32_t _prevL4Size;	// Previous size of L4 entries
-    uint32_t _prevL5Size;	// Previous size of L5 entries
-    uint32_t _prevWordsSize;	// previous size of words
+    uint32_t _l3Size;       // Size of L3 entries
+    uint32_t _l4Size;       // Size of L4 entries
+    uint32_t _l5Size;       // Size of L5 entries
+    uint32_t _prevL3Size;   // Previous size of L3 entries
+    uint32_t _prevL4Size;   // Previous size of L4 entries
+    uint32_t _prevL5Size;   // Previous size of L5 entries
+    uint32_t _prevWordsSize;    // previous size of words
     uint32_t _sparsePageNum;
-    uint32_t _l3PageNum;	// Page number for last L3 entry
-    std::vector<char> _words;	// Word buffer
+    uint32_t _l3PageNum;    // Page number for last L3 entry
+    std::vector<char> _words;   // Word buffer
 
     // Sparse sparse entries and counts that don't fit in a page
     SSWriter &_ssWriter;
@@ -348,20 +348,20 @@ public:
     typedef PostingListCountFileEncodeContext EC;
 
 private:
-    EC _eCounts;	// counts stream (sparse counts)
+    EC _eCounts;    // counts stream (sparse counts)
     ComprFileWriteContext _wcCounts;// counts buffer
-    EC _eL1;			// L1 stream
+    EC _eL1;            // L1 stream
     ComprFileWriteContext _wcL1;// L1 buffer
-    EC _eL2;			// L2 stream
+    EC _eL2;            // L2 stream
     ComprFileWriteContext _wcL2;// L2 buffer
-    vespalib::string _countsWord;	// last counts on page
-    vespalib::string _l1Word;	// Last L1 word written
-    vespalib::string _l2Word;	// Last L2 word written
-    vespalib::string _l3Word;	// word before this page
+    vespalib::string _countsWord;   // last counts on page
+    vespalib::string _l1Word;   // Last L1 word written
+    vespalib::string _l2Word;   // Last L2 word written
+    vespalib::string _l3Word;   // word before this page
     vespalib::string _pendingCountsWord; // pending counts word (counts written)
-    uint32_t _countsWordOffset;	// Offset for next counts word to write
-    uint32_t _l1WordOffset;	// Offset of last L1 word written
-    uint32_t _l2WordOffset;	// Offset of last L2 word written
+    uint32_t _countsWordOffset; // Offset for next counts word to write
+    uint32_t _l1WordOffset; // Offset of last L1 word written
+    uint32_t _l2WordOffset; // Offset of last L2 word written
 
     // file offsets
     StartOffset _countsStartOffset;
@@ -375,25 +375,25 @@ private:
     // Offsets in data files for last L3 entry
     StartOffset _l3StartOffset;
 
-    uint32_t _curCountOffsetL1;	// Offset in eCounts for last L1 entry
+    uint32_t _curCountOffsetL1; // Offset in eCounts for last L1 entry
     uint32_t _curCountOffsetL2; // Offset in eCounts for last L2 entry
-    uint32_t _curL1OffsetL2;	// Offset in eL1 for last L2 entry
+    uint32_t _curL1OffsetL2;    // Offset in eL1 for last L2 entry
 
-    uint32_t _headerSize;	// Size of page header
+    uint32_t _headerSize;   // Size of page header
 
-    uint32_t _countsEntries;	// Number of count entries on page
-    uint32_t _l1StrideCheck;	// Count entries since last L1 entry
-    uint32_t _l2StrideCheck;	// L1 entries since last L2 entry
+    uint32_t _countsEntries;    // Number of count entries on page
+    uint32_t _l1StrideCheck;    // Count entries since last L1 entry
+    uint32_t _l2StrideCheck;    // L1 entries since last L2 entry
 
-    uint32_t _countsSize;	// Size of counts
-    uint32_t _l1Size;		// Size of L1 entries
-    uint32_t _l2Size;		// Size of L2 entries
-    uint32_t _prevL1Size;	// Previous size of L1 entries
-    uint32_t _prevL2Size;	// Previous size of L2 entries
-    uint64_t _pageNum;		// Page number.
-    uint64_t _l3WordNum;	// last L3 word num written
-    uint64_t _wordNum;		// current word number
-    std::vector<char> _words;	// Word buffer
+    uint32_t _countsSize;   // Size of counts
+    uint32_t _l1Size;       // Size of L1 entries
+    uint32_t _l2Size;       // Size of L2 entries
+    uint32_t _prevL1Size;   // Previous size of L1 entries
+    uint32_t _prevL2Size;   // Previous size of L2 entries
+    uint64_t _pageNum;      // Page number.
+    uint64_t _l3WordNum;    // last L3 word num written
+    uint64_t _wordNum;      // current word number
+    std::vector<char> _words;   // Word buffer
     SPWriter &_spWriter;
     // Encode context where paged counts go
     EC &_pe;
@@ -462,14 +462,14 @@ public:
     using Counts = index::PostingListCounts;
     typedef PageDict4StartOffset StartOffset;
 
-    vespalib::string _l6Word;	// last L6 word before key
-    vespalib::string _lastWord;	// L6 or overflow word >= key
-    StartOffset      _l6StartOffset;	// File offsets
-    Counts      _counts;	// Counts valid if overflow
+    vespalib::string _l6Word;   // last L6 word before key
+    vespalib::string _lastWord; // L6 or overflow word >= key
+    StartOffset      _l6StartOffset;    // File offsets
+    Counts      _counts;    // Counts valid if overflow
     uint64_t _pageNum;
     uint64_t _sparsePageNum;
-    uint64_t _l6WordNum;			// wordnum if overflow
-    StartOffset      _startOffset;		// valid if overflow
+    uint64_t _l6WordNum;            // wordnum if overflow
+    StartOffset      _startOffset;      // valid if overflow
     bool _res;
     bool _overflow;
 
@@ -494,12 +494,12 @@ public:
     {
     public:
         vespalib::string _l7Word;
-        StartOffset      _l7StartOffset;	// Offsets in data files
+        StartOffset      _l7StartOffset;    // Offsets in data files
         uint64_t _l7WordNum;
-        uint64_t _l6Offset;	// Offset in L6+overflow stream
+        uint64_t _l6Offset; // Offset in L6+overflow stream
         uint32_t _sparsePageNum;// page number for sparse file
-        uint64_t _pageNum;	// page number in full file
-        uint32_t _l7Ref;	// L7 entry before overflow, or self-ref if L6
+        uint64_t _pageNum;  // page number in full file
+        uint32_t _l7Ref;    // L7 entry before overflow, or self-ref if L6
 
         L7Entry()
             : _l7Word(),
@@ -546,7 +546,7 @@ public:
     {
     public:
         uint64_t _wordNum;
-        uint32_t _l7Ref;	// overflow entry in L7 table
+        uint32_t _l7Ref;    // overflow entry in L7 table
 
         OverflowRef()
             : _wordNum(0),
@@ -574,13 +574,13 @@ public:
     };
 
     ComprBuffer _cb;
-    uint64_t _ssFileBitLen;	// File size in bits
-    uint32_t _ssStartOffset;	// Header size in bits
+    uint64_t _ssFileBitLen; // File size in bits
+    uint32_t _ssStartOffset;    // Header size in bits
 
     typedef std::vector<L7Entry> L7Vector;
     L7Vector _l7;// Uncompressed skip list for sparse sparse file
 
-    DC _ssd;	// used to store compression parameters
+    DC _ssd;    // used to store compression parameters
     uint64_t _spFileBitLen;
     uint64_t _pFileBitLen;
     uint32_t _spStartOffset;
@@ -634,7 +634,7 @@ class PageDict4SPLookupRes : public PageDict4PageParams
 
 public:
     vespalib::string _l3Word;
-    vespalib::string _lastWord;	// L3 word >= key
+    vespalib::string _lastWord; // L3 word >= key
     StartOffset      _l3StartOffset;
     uint64_t _pageNum;
     uint64_t _l3WordNum;

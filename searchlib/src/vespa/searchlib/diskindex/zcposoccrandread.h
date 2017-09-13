@@ -15,13 +15,13 @@ class ZcPosOccRandRead : public index::PostingListFileRandRead
 {
 protected:
     std::unique_ptr<FastOS_FileInterface> _file;
-    uint64_t	     _fileSize;
+    uint64_t         _fileSize;
 
-    uint32_t _minChunkDocs;	// # of documents needed for chunking
-    uint32_t _minSkipDocs;	// # of documents needed for skipping
-    uint32_t _docIdLimit;	// Limit for document ids (docId < docIdLimit)
+    uint32_t _minChunkDocs; // # of documents needed for chunking
+    uint32_t _minSkipDocs;  // # of documents needed for skipping
+    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
 
-    uint64_t _numWords;		// Number of words in file
+    uint64_t _numWords;     // Number of words in file
     uint64_t _fileBitSize;
     uint64_t _headerBitSize;
     bitcompression::PosOccFieldsParams _fieldsParams;

@@ -103,7 +103,7 @@ Zc4PostingSeqRead::
 readCommonWordDocIdAndFeatures(DocIdAndFeatures &features)
 {
     if (_zcDocIds._valI >= _zcDocIds._valE && _hasMore)
-        readWordStart();	// Read start of next chunk
+        readWordStart();    // Read start of next chunk
     // Split docid & features.
     assert(_zcDocIds._valI < _zcDocIds._valE);
     uint32_t docIdPos = _zcDocIds.pos();
@@ -480,7 +480,7 @@ Zc4PostingSeqRead::readWordStart()
 void
 Zc4PostingSeqRead::readCounts(const PostingListCounts &counts)
 {
-    assert(!_hasMore);	// Previous words must have been read.
+    assert(!_hasMore);  // Previous words must have been read.
 
     _counts = counts;
 
@@ -646,7 +646,7 @@ Zc4PostingSeqRead::setPostingOffset(uint64_t offset,
                                     uint64_t endOffset,
                                     uint64_t readAheadOffset)
 {
-    assert(_residue == 0);	// Only to be called between posting lists
+    assert(_residue == 0);  // Only to be called between posting lists
 
     FeatureDecodeContextBE &d = *_decodeContext;
 
@@ -743,7 +743,7 @@ Zc4PostingSeqWrite::flushWord()
 void
 Zc4PostingSeqWrite::checkPointWrite(nbostream &out)
 {
-    _writeContext.writeComprBuffer(true);	// Also flush slack
+    _writeContext.writeComprBuffer(true);   // Also flush slack
     out << _numWords;
     _writeContext.checkPointWrite(out);
     _featureWriteContext.checkPointWrite(out);
@@ -852,9 +852,9 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
     e.smallAlign(64);
     e.flush();
     uint32_t headerLen = header.getSize();
-    headerLen += (-headerLen & 7);		// Then to uint64_t
+    headerLen += (-headerLen & 7);      // Then to uint64_t
     assert(e.getWriteOffset() == headerLen * 8);
-    assert((e.getWriteOffset() & 63) == 0);	// Header must be word aligned
+    assert((e.getWriteOffset() & 63) == 0); // Header must be word aligned
 }
 
 
@@ -916,7 +916,7 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
         _writePos = e.getWriteOffset();
     } else {
         assert(bufferStartFilePos >= 8u);
-        uint32_t headerSize = readHeader(name);	// Read existing header
+        uint32_t headerSize = readHeader(name); // Read existing header
         assert(bufferStartFilePos >= headerSize);
         (void) headerSize;
         e.afterWrite(_writeContext, 0, bufferStartFilePos);
@@ -928,7 +928,7 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
     _l2Skip.maybeExpand();
     _l3Skip.maybeExpand();
     _l4Skip.maybeExpand();
-    return true;	// Assume success
+    return true;    // Assume success
 }
 
 
@@ -950,7 +950,7 @@ Zc4PostingSeqWrite::close()
     e.padBits(128);
     e.alignDirectIO();
     e.flush();
-    e.writeComprBuffer(); 	// Also flushes slack
+    e.writeComprBuffer();   // Also flushes slack
 
     _writeContext.dropComprBuf();
     _file.Sync();
@@ -1220,7 +1220,7 @@ Zc4PostingSeqWrite::flushWordWithSkip(bool hasMore)
                           K_VALUE_ZCPOSTING_LASTDOCID);
     }
 
-    e.smallAlign(8);	// Byte align
+    e.smallAlign(8);    // Byte align
 
     uint8_t *docIds = _zcDocIds._mallocStart;
     e.writeBits(reinterpret_cast<const uint64_t *>(docIds),

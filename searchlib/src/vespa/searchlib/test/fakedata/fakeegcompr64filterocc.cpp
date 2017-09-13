@@ -499,44 +499,44 @@ lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const
     return 0;
 }
 
-#define UC64_FILTEROCC_READ_RESIDUE(val, valI, preRead, cacheInt,	\
-				    residue, EC)			\
-  do {									\
-    UC64_DECODEEXPGOLOMB(val, valI, preRead, cacheInt,			\
-			 K_VALUE_FILTEROCC_RESIDUE, EC);		\
-    residue = val64;							\
+#define UC64_FILTEROCC_READ_RESIDUE(val, valI, preRead, cacheInt, \
+                    residue, EC)                                  \
+  do {                                                            \
+    UC64_DECODEEXPGOLOMB(val, valI, preRead, cacheInt,            \
+             K_VALUE_FILTEROCC_RESIDUE, EC);                      \
+    residue = val64;                                              \
   } while (0)
 
 
-#define UC64_FILTEROCC_READ_FIRST_DOC(val, valI, preRead, cacheInt,	\
-				      docId, EC)			\
-  do {									\
-    UC64_DECODEEXPGOLOMB(val, valI, preRead, cacheInt,			\
-			 K_VALUE_FILTEROCC_FIRST_DOCID, EC);		\
-    docId = val64 + 1;							\
+#define UC64_FILTEROCC_READ_FIRST_DOC(val, valI, preRead, cacheInt, \
+                      docId, EC)                                    \
+  do {                                                              \
+    UC64_DECODEEXPGOLOMB(val, valI, preRead, cacheInt,              \
+             K_VALUE_FILTEROCC_FIRST_DOCID, EC);                    \
+    docId = val64 + 1;                                              \
   } while (0)
 
 
-#define UC64_FILTEROCC_READ_NEXT_DOC(val, valI, preRead, cacheInt,	\
-				     docId, EC)				\
-  do {									\
-    UC64_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt,		\
-			       K_VALUE_FILTEROCC_DELTA_DOCID, EC);	\
-    docId += val64 + 1;							\
+#define UC64_FILTEROCC_READ_NEXT_DOC(val, valI, preRead, cacheInt, \
+                     docId, EC)                                    \
+  do {                                                             \
+    UC64_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt,       \
+                   K_VALUE_FILTEROCC_DELTA_DOCID, EC);             \
+    docId += val64 + 1;                                            \
   } while (0)
 
 
-#define UC64_FILTEROCC_READ_NEXT_DOC_NS(prefix, EC)			\
-  do {									\
-    UC64_FILTEROCC_READ_NEXT_DOC(prefix ## Val, prefix ## Compr,	\
-				 prefix ## PreRead,			\
-				 prefix ## CacheInt,			\
-				 prefix ## DocId, EC);			\
+#define UC64_FILTEROCC_READ_NEXT_DOC_NS(prefix, EC)              \
+  do {                                                           \
+    UC64_FILTEROCC_READ_NEXT_DOC(prefix ## Val, prefix ## Compr, \
+                 prefix ## PreRead,                              \
+                 prefix ## CacheInt,                             \
+                 prefix ## DocId, EC);                           \
   } while (0)
 
 
-#define UC64_FILTEROCC_DECODECONTEXT					\
-  uint64_t val64;							\
+#define UC64_FILTEROCC_DECODECONTEXT \
+  uint64_t val64;                    \
   unsigned int length;
 
 
@@ -861,7 +861,7 @@ public:
             int compressedL3SkipBitOffset,
             const uint64_t *compressedL4SkipOccurrences,
             int compressedL4SkipBitOffset,
-            const std::string &name,	
+            const std::string &name,
             const fef::TermFieldMatchDataArray &matchData);
 
     ~FakeFilterOccEGCompressed64SkipArrayIterator();
@@ -892,7 +892,7 @@ FakeFilterOccEGCompressed64SkipArrayIterator(const uint64_t *compressedOccurrenc
         int compressedL3SkipBitOffset,
         const uint64_t *compressedL4SkipOccurrences,
         int compressedL4SkipBitOffset,
-        const std::string &name,	
+        const std::string &name,
         const fef::TermFieldMatchDataArray &matchData)
     : queryeval::RankedSearchIteratorBase(matchData),
       _docIdBits(compressedOccurrences, compressedBitOffset),

@@ -330,10 +330,10 @@ FastS_EngineBase::HandlePingResponse(uint32_t partid,
                 _config._name,
                 (uint32_t)_reported._docstamp,
                 (uint32_t)docstamp);
-	    if (docstamp == 0) {
-	      LOG(warning, "Search node %s (partid %d) went bad (docstamp 0)",
-		  _config._name, partid);
-	    }
+            if (docstamp == 0) {
+                LOG(warning, "Search node %s (partid %d) went bad (docstamp 0)",
+                    _config._name, partid);
+            }
         }
     }
 

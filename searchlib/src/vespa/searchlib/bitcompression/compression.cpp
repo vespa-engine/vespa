@@ -178,7 +178,7 @@ readBytes(uint8_t *buf, size_t len)
         const uint8_t *rbuf = reinterpret_cast<const uint8_t *>(getCompr()) +
                               (getBitOffset() >> 3);
         const uint8_t *rbufE = reinterpret_cast<const uint8_t *>(_realValE);
-        size_t rbufSize = rbufE - rbuf;	// Size of buffer to read from
+        size_t rbufSize = rbufE - rbuf; // Size of buffer to read from
         // How much to copy in this iteration of the loop
         size_t copySize = std::min(rbufSize, len);
         // Something must be copied during each iteration

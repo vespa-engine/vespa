@@ -50,9 +50,9 @@ public:
     Partition *_partitions;
     uint32_t   _partBits;
     uint32_t   _rowBits;
-    uint32_t   _num_partitions;	 // Number of partitions (active)
+    uint32_t   _num_partitions;  // Number of partitions (active)
     uint32_t   _first_partition;   // From partitions-file 'firstpart' (active)
-    uint32_t   _minchildparts;	 // Minimum partitions live to avoid tempfail
+    uint32_t   _minchildparts;   // Minimum partitions live to avoid tempfail
     uint32_t   _maxNodesDownPerFixedRow;
     bool       _useRoundRobinForFixedRow;
     uint32_t   _childnodes;
@@ -61,7 +61,7 @@ public:
     uint32_t   _childparts;
     uint32_t   _childmaxpartsNow;
     uint32_t   _childmaxpartsSinceReload;
-    uint32_t   _mpp;		// Number of engines needed per partition
+    uint32_t   _mpp;        // Number of engines needed per partition
 
     std::vector<uint32_t> _numPartitions;
 
@@ -117,15 +117,15 @@ protected:
     double       _slowQueryLimitBias;
     double       _slowDocsumLimitFactor;
     double       _slowDocsumLimitBias;
-    double	 _monitorInterval;
-    double	 _higherCoverageMaxSearchWait;
-    double	 _higherCoverageMinSearchWait;
-    double	 _higherCoverageBaseSearchWait;
-    double	 _minimalSearchCoverage;
-    double	 _higherCoverageMaxDocSumWait;
-    double	 _higherCoverageMinDocSumWait;
-    double	 _higherCoverageBaseDocSumWait;
-    double	 _minimalDocSumCoverage;
+    double       _monitorInterval;
+    double       _higherCoverageMaxSearchWait;
+    double       _higherCoverageMinSearchWait;
+    double       _higherCoverageBaseSearchWait;
+    double       _minimalSearchCoverage;
+    double       _higherCoverageMaxDocSumWait;
+    double       _higherCoverageMinDocSumWait;
+    double       _higherCoverageBaseDocSumWait;
+    double       _minimalDocSumCoverage;
     uint32_t     _maxHitsPerNode;     // Max hits requested from single node
     uint32_t     _estimateParts;      // number of partitions used for estimate
     uint32_t     _estimatePartCutoff; // First partition not used for estimate
