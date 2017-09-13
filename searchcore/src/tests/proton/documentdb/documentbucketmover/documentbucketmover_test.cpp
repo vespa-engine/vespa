@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
@@ -22,6 +23,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::GlobalId;
+using proton::bucketdb::BucketCreateNotifier;
 using search::DocumentIdT;
 using search::DocumentMetaData;
 using search::IDestructorCallback;
@@ -546,6 +548,7 @@ struct ControllerFixtureBase
     MySubDb                     _ready;
     MySubDb                     _notReady;
     MyFrozenBucketHandler       _fbh;
+    BucketCreateNotifier        _bucketCreateNotifier;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
     BucketMoveJob               _bmj;
     MyCountJobRunner            _runner;
@@ -610,9 +613,10 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
       _fbh(),
+      _bucketCreateNotifier(),
       _diskMemUsageNotifier(),
       _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
-           _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
+           _notReady._subDb, _fbh, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
            _diskMemUsageNotifier, blockableConfig,
            "test"),
       _runner(_bmj)

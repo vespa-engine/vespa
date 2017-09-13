@@ -4,8 +4,9 @@
 
 namespace proton::bucketdb {
 
-BucketSessionBase::BucketSessionBase(BucketDBOwner &bucketDB)
-    : _bucketDB(bucketDB.takeGuard())
+BucketSessionBase::BucketSessionBase(BucketDBOwner &bucketDB, IBucketCreateNotifier &bucketCreateNotifier)
+    : _bucketDB(bucketDB.takeGuard()),
+      _bucketCreateNotifier(bucketCreateNotifier)
 {
 }
 
