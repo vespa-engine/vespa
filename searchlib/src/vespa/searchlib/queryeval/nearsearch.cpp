@@ -279,7 +279,7 @@ ONearSearch::Matcher::match(uint32_t docId)
             }
             curTermPos = *pos[i];
             if (lastAllowed < curTermPos) {
-		// outside window
+                // outside window
                 break;
             }
             LOG(spam, "Current position for term %d is %d.", i, curTermPos.getPosition());

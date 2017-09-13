@@ -17,7 +17,7 @@ class DocIdMapping
 {
 public:
     uint32_t _docIdLimit;
-    const SelectorArray *_selector;	// External ownership
+    const SelectorArray *_selector; // External ownership
     uint8_t _selectorId;
 
     DocIdMapping();

@@ -573,9 +573,9 @@ TEST("testGetDocsumsX") {
         EXPECT_EQUAL(fastos::TimeStamp(2*fastos::TimeStamp::MS), ptr->getTimeout());
         if (ptr->_features & GDF_RANKP_QFLAGS) {
             EXPECT_EQUAL("four", ptr->_ranking);
-	} else {
+        } else {
             EXPECT_EQUAL("", ptr->_ranking);
-	}
+        }
         EXPECT_EQUAL(ptr->_features & GDF_RANKP_QFLAGS ? 5u : 0u, ptr->_qflags);
         EXPECT_EQUAL(ptr->_features & GDF_QUERYSTACK ? 7u : 0u, ptr->_stackItems);
         if (ptr->_features & GDF_PROPERTIES) {

@@ -111,7 +111,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
                     fprintf(stderr, "Cannot fallbackResize enumStore\n");
                     abort();
                 }
-                break;	// fallback resize performed instead of compaction.
+                break;  // fallback resize performed instead of compaction.
             }
 
             // update underlying structure with new EnumIndex values.

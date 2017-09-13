@@ -216,11 +216,11 @@ protected:
      * parent of the leaf node)
      */
     PathElement _path[PATH_SIZE];
-    size_t      _pathSize;	
+    size_t      _pathSize;
 
     const NodeAllocatorType *_allocator;
 
-    const LeafNodeType *_leafRoot;	// Root node for small tree/array
+    const LeafNodeType *_leafRoot;  // Root node for small tree/array
 
     // Temporary leaf node when iterating over short arrays
     std::unique_ptr<LeafNodeTempType> _compatLeafNode;

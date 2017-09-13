@@ -1301,7 +1301,7 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
     WeightedSetStringExtAttribute * ea = static_cast<WeightedSetStringExtAttribute *>(d.get());
     EXPECT_TRUE(!ea->hasEnum());
     uint32_t docId;
-    ea->addDoc(docId);	// reserved doc
+    ea->addDoc(docId);  // reserved doc
     ea->addDoc(docId);
     ea->add("a", 10);
     ea->add("b", 20);

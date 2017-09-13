@@ -63,7 +63,7 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
 BTreeStore<KeyT, DataT, AggrT, CompareT,TraitsT, AggrCalcT>::~BTreeStore()
 {
     _builder.clear();
-    _store.dropBuffers();	// Drop buffers before type handlers are dropped
+    _store.dropBuffers();   // Drop buffers before type handlers are dropped
 }
 
 
@@ -238,7 +238,7 @@ insert(EntryRef &ref,
             const KeyDataType *olde = old + clusterSize;
             const KeyDataType *oldi = lower_bound(old, olde, key, comp);
             if (oldi < olde && !comp(key, oldi->_key))
-                retVal = false;	// key already present
+                retVal = false; // key already present
         }
     }
     KeyDataType addition(key, data);
@@ -265,7 +265,7 @@ insert(EntryRef &ref,
     const KeyDataType *olde = old + clusterSize;
     const KeyDataType *oldi = lower_bound(old, olde, key, comp);
     if (oldi < olde && !comp(key, oldi->_key))
-        return false;	// key already present
+        return false;   // key already present
     if (clusterSize < clusterLimit) {
         // Grow array
         KeyDataTypeRefPair kPair(allocKeyData(clusterSize + 1));
@@ -332,7 +332,7 @@ remove(EntryRef &ref,
 #ifdef FORCE_APPLY
     bool retVal = true;
     if (!ref.valid())
-        retVal = false;	// not found
+        retVal = false; // not found
     else {
         RefType iRef(ref);
         uint32_t clusterSize = getClusterSize(iRef);
@@ -346,7 +346,7 @@ remove(EntryRef &ref,
             const KeyDataType *olde = old + clusterSize;
             const KeyDataType *oldi = lower_bound(old, olde, key, comp);
             if (oldi == olde || comp(key, oldi->_key))
-                retVal = false;	// not found
+                retVal = false; // not found
         }
     }
     std::vector<KeyDataType> additions;
@@ -359,7 +359,7 @@ remove(EntryRef &ref,
     return retVal;
 #else
     if (!ref.valid())
-        return false;	// not found
+        return false;   // not found
     RefType iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize != 0) {
@@ -367,7 +367,7 @@ remove(EntryRef &ref,
         const KeyDataType *olde = old + clusterSize;
         const KeyDataType *oldi = lower_bound(old, olde, key, comp);
         if (oldi == olde || comp(key, oldi->_key))
-            return false;	// not found
+            return false;   // not found
         if (clusterSize == 1) {
             _store.holdElem(ref, 1);
             ref = EntryRef();
@@ -393,7 +393,7 @@ remove(EntryRef &ref,
     }
     BTreeType *tree = getWTreeEntry(iRef);
     if (!tree->remove(key, _allocator, comp, _aggrCalc))
-        return false;	// not found
+        return false;   // not found
     EntryRef root = tree->getRoot();
     assert(NodeAllocatorType::isValidRef(root));
     if (!_allocator.isLeafRef(root))
@@ -766,7 +766,7 @@ normalizeTree(EntryRef &ref,
     assert(treeSize > 0);
     if (treeSize > clusterLimit)
         return;
-    assert(!wasArray);	// Should never have used tree
+    assert(!wasArray);  // Should never have used tree
     (void) wasArray;
     // Convert from tree to short array
     makeArray(ref, root, lNode);

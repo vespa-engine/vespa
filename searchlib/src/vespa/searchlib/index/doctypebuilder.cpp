@@ -295,7 +295,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         const Schema::AttributeField &field = _schema.getAttributeField(i);
         UsedFields::const_iterator usf = usedFields.find(field.getName());
         if (usf != usedFields.end())
-            continue;	// taken as index field
+            continue;   // taken as index field
 
         const DataType *primitiveType = convert(field.getDataType());
         header_struct.addField(field.getName(), type_cache.getType(
@@ -308,7 +308,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         const Schema::SummaryField &field = _schema.getSummaryField(i);
         UsedFields::const_iterator usf = usedFields.find(field.getName());
         if (usf != usedFields.end())
-            continue;	// taken as index field or attribute field
+            continue;   // taken as index field or attribute field
         const DataType *primitiveType(convert(field.getDataType()));
         header_struct.addField(field.getName(), type_cache.getType(
                         primitiveType->getId(), field.getCollectionType()));

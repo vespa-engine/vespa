@@ -82,7 +82,7 @@ void
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
 normalize()
 {
-    std::vector<NodeRef> leftInodes;	// left to rightmost nodes in tree
+    std::vector<NodeRef> leftInodes;    // left to rightmost nodes in tree
     LeafNodeType *leftLeaf;
     NodeRef child;
     unsigned int level;

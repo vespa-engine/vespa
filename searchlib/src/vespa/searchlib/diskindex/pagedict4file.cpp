@@ -556,7 +556,7 @@ PageDict4FileSeqWrite::makePHeader(const FileHeaderContext &fileHeaderContext)
     uint32_t headerLen = header.getSize();
     headerLen += (-headerLen & 7);
     assert(e.getWriteOffset() == headerLen * 8);
-    assert((e.getWriteOffset() & 63) == 0);	// Header must be word aligned
+    assert((e.getWriteOffset() & 63) == 0); // Header must be word aligned
     if (_pHeaderLen != 0) {
         assert(_pHeaderLen == headerLen);
     }
@@ -588,7 +588,7 @@ PageDict4FileSeqWrite::makeSPHeader(const FileHeaderContext &fileHeaderContext)
     uint32_t headerLen = header.getSize();
     headerLen += (-headerLen & 7);
     assert(e.getWriteOffset() == headerLen * 8);
-    assert((e.getWriteOffset() & 63) == 0);	// Header must be word aligned
+    assert((e.getWriteOffset() & 63) == 0); // Header must be word aligned
     if (_spHeaderLen != 0) {
         assert(_spHeaderLen == headerLen);
     }
@@ -620,7 +620,7 @@ PageDict4FileSeqWrite::makeSSHeader(const FileHeaderContext &fileHeaderContext)
     uint32_t headerLen = header.getSize();
     headerLen += (-headerLen & 7);
     assert(e.getWriteOffset() == headerLen * 8);
-    assert((e.getWriteOffset() & 63) == 0);	// Header must be word aligned
+    assert((e.getWriteOffset() & 63) == 0); // Header must be word aligned
     if (_ssHeaderLen != 0) {
         assert(_ssHeaderLen == headerLen);
     }

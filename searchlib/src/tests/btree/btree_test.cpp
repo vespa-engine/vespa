@@ -91,8 +91,8 @@ typedef MyTree::LeafNodeType          MyLeafNode;
 typedef MyTree::InternalNodeType      MyInternalNode;
 typedef MyTree::NodeAllocatorType     MyNodeAllocator;
 typedef std::pair<MyKey, std::string> LeafPair;
-typedef MyTreeStore::KeyDataType	MyKeyData;
-typedef MyTreeStore::KeyDataTypeRefPair	MyKeyDataRefPair;
+typedef MyTreeStore::KeyDataType    MyKeyData;
+typedef MyTreeStore::KeyDataTypeRefPair MyKeyDataRefPair;
 
 typedef BTree<int, BTreeNoLeafData, btree::NoAggregated> SetTreeB;
 

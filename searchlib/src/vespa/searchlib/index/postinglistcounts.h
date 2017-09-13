@@ -30,9 +30,9 @@ public:
     class Segment
     {
     public:
-        uint64_t _bitLength;	// Length of segment
-        uint32_t _numDocs;	// Number of documents in segment
-        uint32_t _lastDoc;	// Last document id in segment
+        uint64_t _bitLength; // Length of segment
+        uint32_t _numDocs;   // Number of documents in segment
+        uint32_t _lastDoc;   // Last document id in segment
 
         Segment()
             : _bitLength(0),
@@ -60,8 +60,8 @@ public:
      * for prefix search), numDocs is then sum of documents for each posting
      * list, which segment info is absent.
      */
-    uint64_t _numDocs;		// Number of documents for word(s)
-    uint64_t _bitLength;	// Length of postings for word(s)
+    uint64_t _numDocs;      // Number of documents for word(s)
+    uint64_t _bitLength;    // Length of postings for word(s)
 
     /**
      * Very large posting lists with skip info are split into multiple
@@ -107,7 +107,7 @@ class PostingListOffsetAndCounts
 {
 public:
     uint64_t _offset;
-    uint64_t _accNumDocs;	// Used by prefix search for now.
+    uint64_t _accNumDocs;   // Used by prefix search for now.
     PostingListCounts _counts;
 
     PostingListOffsetAndCounts()

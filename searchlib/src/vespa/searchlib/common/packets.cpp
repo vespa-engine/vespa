@@ -695,7 +695,7 @@ FS4Packet_MONITORQUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
     return true;
  error:
     src->DataToDead(len);
-    return false;			// FAIL
+    return false;           // FAIL
 }
 
 
@@ -808,10 +808,10 @@ FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     if (len != 0)
         goto error;
 
-    return true;			// OK
+    return true;            // OK
  error:
     src->DataToDead(len);
-    return false;			// FAIL
+    return false;           // FAIL
 }
 
 

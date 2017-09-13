@@ -15,7 +15,7 @@ private:
 public:
     void *_comprBuf;
     size_t _comprBufSize;
-    uint32_t _unitSize;	// Size of unit in bytes, doubles up as alignment
+    uint32_t _unitSize; // Size of unit in bytes, doubles up as alignment
     bool _padBefore;
     void *_comprBufMalloc;
     FileAlign _aligner;

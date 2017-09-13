@@ -666,7 +666,7 @@ void
 AttributeVector::addReservedDoc()
 {
     uint32_t docId = 42;
-    addDoc(docId);		// Reserved
+    addDoc(docId);      // Reserved
     assert(docId == 0u);
     assert(docId < getNumDocs());
     clearDoc(docId);

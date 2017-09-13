@@ -144,7 +144,7 @@ DataStore<EntryType, RefT>::DataStore()
 template <typename EntryType, typename RefT>
 DataStore<EntryType, RefT>::~DataStore()
 {
-    dropBuffers();	// Drop buffers before type handlers are dropped
+    dropBuffers();  // Drop buffers before type handlers are dropped
 }
 
 template <typename EntryType, typename RefT>

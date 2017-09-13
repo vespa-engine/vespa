@@ -154,7 +154,7 @@ PageDict4RandRead::lookup(const vespalib::stringref &word,
     if (!ssRes._res) {
         offsetAndCounts._offset = ssRes._l6StartOffset._fileOffset;
         offsetAndCounts._accNumDocs = ssRes._l6StartOffset._accNumDocs;
-        wordNum = ssRes._l6WordNum;	// XXX ?
+        wordNum = ssRes._l6WordNum; // XXX ?
         offsetAndCounts._counts.clear();
         return false;
     }

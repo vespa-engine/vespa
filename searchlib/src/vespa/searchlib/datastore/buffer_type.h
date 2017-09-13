@@ -14,16 +14,16 @@ namespace search::datastore {
 class BufferTypeBase
 {
 protected:
-    uint32_t _clusterSize;	// Number of elements in an allocation unit
-    uint32_t _minClusters;	// Minimum number of clusters to allocate
-    uint32_t _maxClusters;	// Maximum number of clusters to allocate
+    uint32_t _clusterSize;  // Number of elements in an allocation unit
+    uint32_t _minClusters;  // Minimum number of clusters to allocate
+    uint32_t _maxClusters;  // Maximum number of clusters to allocate
     // Number of clusters needed before allocating a new buffer
     // instead of just resizing the first one
     uint32_t _numClustersForNewBuffer;
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
-    size_t _activeUsedElems;	// used elements in all but last active buffer
-    size_t _holdUsedElems;	// used elements in all held buffers
+    size_t _activeUsedElems;    // used elements in all but last active buffer
+    size_t _holdUsedElems;  // used elements in all held buffers
     const size_t *_lastUsedElems; // used elements in last active buffer
 
 public:

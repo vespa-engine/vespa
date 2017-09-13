@@ -115,7 +115,7 @@ FieldReader::earlyOpen(const vespalib::string &prefix,
     FastOS_StatInfo statInfo;
     bool statres;
 
-    bool dynamicKPosOccFormat = false;	// Will autodetect anyway
+    bool dynamicKPosOccFormat = false;  // Will autodetect anyway
     statres = FastOS_File::Stat(name.c_str(), &statInfo);
     if (!statres) {
         LOG(error,
@@ -246,11 +246,11 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
 {
     assert(index.isValid());
     if (index.hasMatchingOldFields(oldSchema, false))
-        return std::make_unique<FieldReader>();	 	 // The common case
+        return std::make_unique<FieldReader>();      // The common case
     if (!index.hasOldFields(oldSchema, false))
         return std::make_unique<FieldReaderEmpty>(index); // drop data
     // field exists in old schema with different collection type setting
-    return std::make_unique<FieldReaderStripInfo>(index);	// degraded
+    return std::make_unique<FieldReaderStripInfo>(index);   // degraded
 }
 
 
@@ -345,7 +345,7 @@ FieldReaderStripInfo::read()
             }
         } else {
             if (element->getElementId() != 0)
-                continue;	// Drop this entry, try to read new entry
+                continue;   // Drop this entry, try to read new entry
             element->setWeight(1);
             features._wordPositions.resize(element->getNumOccs());
             if (numElements > 1) {

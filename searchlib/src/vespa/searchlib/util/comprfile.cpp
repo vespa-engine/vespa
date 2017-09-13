@@ -27,7 +27,7 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
 
  retry:
     if (decodeContext.lastChunk())
-        return;			// Already reached end of file.
+        return;         // Already reached end of file.
     int remainingUnits = decodeContext.remainingUnits();
 
     // There's a good amount of data here already.
@@ -53,7 +53,7 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
     if (readAll)
         stopOffset = fileSize << 3;
     else if (!isretryread) {
-        stopOffset += 8 * cbuf.getUnitBitSize();	// XXX: Magic integer
+        stopOffset += 8 * cbuf.getUnitBitSize();    // XXX: Magic integer
         // Realign stop offset to direct IO alignment boundary
         uint64_t fileDirectIOBitAlign =
             static_cast<uint64_t>(fileDirectIOAlign) << 3;
@@ -144,7 +144,7 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
         decodeContext.endOfChunk() &&
         isMore) {
         isretryread = true;
-        goto retry;		// Alignment caused too short read
+        goto retry;     // Alignment caused too short read
     }
 
     if (bitOffset != -1) {
@@ -517,7 +517,7 @@ ComprFileReadContext::checkPointRead(nbostream &in)
     ComprBuffer::checkPointRead(in);
     ComprFileDecodeContext &d = *_decodeContext;
     d.checkPointRead(in);
-    in >> _checkPointOffset;	// Cannot seek until file is opened
+    in >> _checkPointOffset;    // Cannot seek until file is opened
     _checkPointOffsetValid = true;
 }
 

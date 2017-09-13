@@ -115,8 +115,8 @@ typedef MyTree::NodeAllocatorType     MyNodeAllocator;
 typedef MyTree::Builder::Aggregator   MyAggregator;
 typedef MyTree::AggrCalcType             MyAggrCalc;
 typedef std::pair<MyKey, int32_t> LeafPair;
-typedef MyTreeStore::KeyDataType	MyKeyData;
-typedef MyTreeStore::KeyDataTypeRefPair	MyKeyDataRefPair;
+typedef MyTreeStore::KeyDataType    MyKeyData;
+typedef MyTreeStore::KeyDataTypeRefPair MyKeyDataRefPair;
 
 typedef BTree<int, BTreeNoLeafData, btree::NoAggregated> SetTreeB;
 
@@ -211,7 +211,7 @@ MyTreeForceApplyStore::insert(EntryRef &ref,
             const KeyDataType *olde = old + clusterSize;
             const KeyDataType *oldi = lower_bound(old, olde, key, comp);
             if (oldi < olde && !comp(key, oldi->_key))
-                retVal = false;	// key already present
+                retVal = false; // key already present
         }
     }
     KeyDataType addition(key, data);
@@ -228,7 +228,7 @@ MyTreeForceApplyStore::remove(EntryRef &ref, const KeyType &key,
 {
     bool retVal = true;
     if (!ref.valid())
-        retVal = false;	// not found
+        retVal = false; // not found
     else {
         RefType iRef(ref);
         uint32_t clusterSize = getClusterSize(iRef);
@@ -243,7 +243,7 @@ MyTreeForceApplyStore::remove(EntryRef &ref, const KeyType &key,
             const KeyDataType *olde = old + clusterSize;
             const KeyDataType *oldi = lower_bound(old, olde, key, comp);
             if (oldi == olde || comp(key, oldi->_key))
-                retVal = false;	// not found
+                retVal = false; // not found
         }
     }
     std::vector<KeyDataType> additions;

@@ -9,7 +9,7 @@ namespace search::datastore {
 
 BufferState::FreeListList::~FreeListList()
 {
-    assert(_head == NULL);	// Owner should have disabled free lists
+    assert(_head == NULL);  // Owner should have disabled free lists
 }
 
 

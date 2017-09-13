@@ -35,8 +35,8 @@ public:
     /**
      * Increase number of dead elements in buffer.
      *
-     * @param ref		Reference to dead stored features
-     * @param dead		Number of newly dead elements
+     * @param ref       Reference to dead stored features
+     * @param dead      Number of newly dead elements
      */
     void incDead(EntryRef ref, uint64_t dead) {
         RefType intRef(ref);
@@ -56,7 +56,7 @@ public:
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.
      *
-     * @param usedGen		lowest generation that is still used.
+     * @param usedGen       lowest generation that is still used.
      */
     void trimElemHoldList(generation_t usedGen) override;
 

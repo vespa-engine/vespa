@@ -32,8 +32,8 @@ vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
 
 namespace {
 
-vespalib::string EG64PosOccId = "EG64PosOcc.3";	// Dynamic k values
-vespalib::string EG64PosOccId2 = "EG64PosOcc.2";	// Fixed k values
+vespalib::string EG64PosOccId = "EG64PosOcc.3"; // Dynamic k values
+vespalib::string EG64PosOccId2 = "EG64PosOcc.2";    // Fixed k values
 
 }
 

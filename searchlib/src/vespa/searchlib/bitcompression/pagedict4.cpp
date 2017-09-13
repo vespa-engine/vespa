@@ -270,7 +270,7 @@ PageDict4SSWriter::addL6Skip(const vespalib::stringref &word,
         startOffset[0]._fileOffset,
         _eL6.getWriteOffset());
 #endif
-    _eL6.writeBits(0, 1);	// Selector bit
+    _eL6.writeBits(0, 1);   // Selector bit
     writeStartOffset(_eL6,
                      startOffset,
                      _l6StartOffset,
@@ -331,7 +331,7 @@ addOverflowCounts(const vespalib::stringref &word,
         txtStartOffset.str().c_str(),
         txtL6StartOffset.str().c_str());
 #endif
-    _eL6.writeBits(1, 1);	// Selector bit
+    _eL6.writeBits(1, 1);   // Selector bit
     writeStartOffset(_eL6,
                      startOffset,
                      _l6StartOffset,
@@ -986,8 +986,8 @@ addCounts(const vespalib::stringref &word,
             (int) _headerSize);
 #endif
         if (_l1StrideCheck == 0u) {
-            _l1Size = _prevL1Size;	// Undo L1
-            _l2Size = _prevL2Size;	// Undo L2
+            _l1Size = _prevL1Size;  // Undo L1
+            _l2Size = _prevL2Size;  // Undo L2
         }
         if (_countsEntries > 0) {
             flushPage();
@@ -1054,7 +1054,7 @@ PageDict4PWriter::addOverflowCounts(const vespalib::stringref &word,
     e.writeBits(0, 12);
     e.smallAlign(64);
     e.writeComprBufferIfNeeded();
-    e.writeBits(_wordNum, 64);	// Identifies overflow for later read
+    e.writeBits(_wordNum, 64);  // Identifies overflow for later read
 #if 0
     LOG(info,
         "AddOverflowCounts wordnum %d", (int) _wordNum);
@@ -1075,8 +1075,8 @@ PageDict4PWriter::addOverflowCounts(const vespalib::stringref &word,
 void
 PageDict4PWriter::addL1Skip(size_t &lcp)
 {
-    _prevL1Size = _l1Size;	// Prepare for undo
-    _prevL2Size = _l2Size;	// Prepare for undo
+    _prevL1Size = _l1Size;  // Prepare for undo
+    _prevL2Size = _l2Size;  // Prepare for undo
     size_t tlcp = getLCP(_pendingCountsWord, _l1Word);
     assert(tlcp <= lcp);
     if (tlcp < lcp)
@@ -1284,7 +1284,7 @@ PageDict4SSReader::setup(DC &ssd)
     uint64_t pageNum = _pFirstPageNum;
     uint32_t sparsePageNum = _spFirstPageNum;
     uint32_t l7StrideCheck = 0;
-    uint32_t l7Ref = noL7Ref();	// Last L6 entry not after this L7 entry
+    uint32_t l7Ref = noL7Ref(); // Last L6 entry not after this L7 entry
 
     uint64_t l6Offset = dL6.getReadOffset();
     uint64_t l6WordNum = 1;
@@ -1317,7 +1317,7 @@ PageDict4SSReader::setup(DC &ssd)
             (l7StrideCheck > 0 && (overflow || forceL7Entry))) {
             // Don't update l7Ref if this L7 entry points to an overflow entry
             if (!forceL7Entry)
-                l7Ref = _l7.size();	// Self-ref if referencing L6 entry
+                l7Ref = _l7.size(); // Self-ref if referencing L6 entry
             _l7.push_back(L7Entry(word, startOffset, l6WordNum,
                                   l6Offset, sparsePageNum, pageNum, l7Ref));
             l7StrideCheck = 0;
@@ -1381,7 +1381,7 @@ PageDict4SSReader::setup(DC &ssd)
     }
     if (l7StrideCheck > 0) {
         if (!forceL7Entry)
-            l7Ref = _l7.size();	// Self-ref if referencing L6 entry
+            l7Ref = _l7.size(); // Self-ref if referencing L6 entry
         _l7.push_back(L7Entry(word, startOffset, l6WordNum,
                               l6Offset, sparsePageNum, pageNum, l7Ref));
     }
@@ -1413,9 +1413,9 @@ lookup(const vespalib::stringref &key)
     uint64_t l6WordNum = 1;
     uint64_t wordNum = l6WordNum;
 
-    vespalib::string l6Word;			// Last L6 entry word
+    vespalib::string l6Word;            // Last L6 entry word
     vespalib::string word;
-    StartOffset l6StartOffset;	// Last L6 entry file offset
+    StartOffset l6StartOffset;  // Last L6 entry file offset
 
     // Setup for decoding of L6+overflow stream
     if (l7Pos > 0) {
@@ -1504,16 +1504,16 @@ lookup(const vespalib::stringref &key)
                     res._overflow = true;
                     res._counts = counts;
                     res._startOffset = startOffset;
-                    l6WordNum = wordNum - 1;	// overloaded meaning
+                    l6WordNum = wordNum - 1;    // overloaded meaning
                 }
-                break;	// key < counts
+                break;  // key < counts
             }
             LOG(error, "FATAL: Missing L7 entry for overflow entry");
-            abort();	// counts < key, should not happen (missing L7 entry)
+            abort();    // counts < key, should not happen (missing L7 entry)
         } else {
             bool l6NotLessThanKey = !(word < key);
             if (l6NotLessThanKey)
-                break;	// key <= counts
+                break;  // key <= counts
             UC64_DECODECONTEXT_LOAD(o, dL6._);
             UC64_DECODEEXPGOLOMB_NS(o,
                                     K_VALUE_COUNTFILE_L6_PAGENUM,
@@ -1530,7 +1530,7 @@ lookup(const vespalib::stringref &key)
     assert(l6Offset <= _ssFileBitLen);
     res._l6Word = l6Word;
     if (l6Offset >= _ssFileBitLen)
-        res._lastWord.clear();	// Mark that word is beyond end of dictionary
+        res._lastWord.clear();  // Mark that word is beyond end of dictionary
     else
         res._lastWord = word;
     res._l6StartOffset = l6StartOffset;
@@ -1718,9 +1718,9 @@ lookup(const SSReader &ssReader,
 {
 //    const uint64_t *p = static_cast<const uint64_t *>(sparsePage);
 
-    DC dL3;	// L3 stream
-    DC dL4;	// L4 stream
-    DC dL5;	// L5 stream
+    DC dL3; // L3 stream
+    DC dL4; // L4 stream
+    DC dL5; // L5 stream
 
     dL3.copyParams(ssReader.getSSD());
     dL4.copyParams(ssReader.getSSD());
@@ -1913,9 +1913,9 @@ lookup(const SSReader &ssReader,
        const StartOffset &l3StartOffset,
        uint64_t l3WordNum)
 {
-    DC dCounts;	// counts stream (sparse counts)
-    DC dL1;			// L1 stream
-    DC dL2;			// L2 stream
+    DC dCounts; // counts stream (sparse counts)
+    DC dL1;         // L1 stream
+    DC dL2;         // L2 stream
 
     dCounts.copyParams(ssReader.getSSD());
     dL1.copyParams(ssReader.getSSD());
