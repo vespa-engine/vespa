@@ -276,7 +276,7 @@ reconfigure(vespalib::Closure0<bool>::UP closure)
     bool ret = true;
 
     if (closure.get() != NULL)
-        ret = closure->call();	// Perform index manager reconfiguration now
+        ret = closure->call();  // Perform index manager reconfiguration now
     reconfigureIndexSearchable();
     return ret;
 }

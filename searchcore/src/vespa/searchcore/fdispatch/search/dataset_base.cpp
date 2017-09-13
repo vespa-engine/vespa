@@ -176,7 +176,7 @@ FastS_DataSetBase::CheckQueryQueue_HasLock(FastS_TimeKeeper *timeKeeper)
     double delay;
     double fnow;
 
-    active = _queryQueue.GetActiveQueries();		// active from us
+    active = _queryQueue.GetActiveQueries();        // active from us
     estactive = CalculateQueueLens_HasLock(dispatchnodes);// active from us and others
 
     if (dispatchnodes == 0)
@@ -210,7 +210,7 @@ FastS_DataSetBase::CheckQueryQueue_HasLock(FastS_TimeKeeper *timeKeeper)
         }
 
         if (active >= _queryQueue._overload._maxouractive)
-            return;				// hard limit for how much we queue
+            return;             // hard limit for how much we queue
 
         if (active >= _queryQueue._overload._minouractive &&
             estactive >= _queryQueue._overload._minestactive)
@@ -220,10 +220,10 @@ FastS_DataSetBase::CheckQueryQueue_HasLock(FastS_TimeKeeper *timeKeeper)
         SetActiveQuery_HasLock();
         DeQueueHeadWakeup_HasLock();
 
-        active++;				// one more active from us
-        estactive += dispatchnodes;		// Assume other nodes do likewise
+        active++;               // one more active from us
+        estactive += dispatchnodes;     // Assume other nodes do likewise
         if (_queryQueue._drainAllowed >= (double) dispatchnodes)
-            _queryQueue._drainAllowed -= dispatchnodes;	// Rate limitation
+            _queryQueue._drainAllowed -= dispatchnodes; // Rate limitation
         else
             _queryQueue._drainAllowed = 0.0;
     }

@@ -164,7 +164,7 @@ FastS_NodeManager::SubscribePartMap(const config::ConfigUri & configUri)
 
 uint32_t
 FastS_NodeManager::SetPartMap(const PartitionsConfig& partmap,
-			      unsigned int waitms)
+                              unsigned int waitms)
 {
     LockConfig();
     FastS_DataSetCollDesc *configDesc = new FastS_DataSetCollDesc();

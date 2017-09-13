@@ -220,7 +220,7 @@ SelectPruner::visitComparison(const Compare &expr)
         }
         return;
     }
-    _resultSet.fill();	// should be less if const
+    _resultSet.fill();  // should be less if const
     addNodeCount(lhs);
     addNodeCount(rhs);
 }

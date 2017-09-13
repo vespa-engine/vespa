@@ -129,9 +129,9 @@ private:
     uint32_t _unitRefCost;           // Cost to reference us
     uint32_t _partBits;              // # bits used to encode part id
     uint32_t _rowBits;               // # bits used to encode row id
-    uint32_t _numParts;	           // Number of partitions
+    uint32_t _numParts;            // Number of partitions
     uint32_t _firstPart;             // First partition
-    uint32_t _minChildParts;	   // Minimum partitions live to avoid tempfail
+    uint32_t _minChildParts;       // Minimum partitions live to avoid tempfail
     uint32_t _maxNodesDownPerFixedRow; // max number of nodes down in a row before considering another row.
     bool     _useRoundRobinForFixedRow; // Either plain roundrobin or random.
     uint32_t _maxHitsPerNode;        // max hits requested from single node
@@ -165,7 +165,7 @@ private:
     FastS_EngineDesc *_enginesHead;  // first engine in dataset
     FastS_EngineDesc *_enginesTail;  // last engine in dataset
 
-    uint32_t _mpp;	// Minimum number of engines per partition
+    uint32_t _mpp;  // Minimum number of engines per partition
 public:
     explicit FastS_DataSetDesc(uint32_t datasetid);
     ~FastS_DataSetDesc();

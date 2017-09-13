@@ -149,14 +149,14 @@ Fdispatch::CheckTempFail()
     FNETLiveCounter = _FNET_adapter.GetLiveCounter();
     if (FNETLiveCounter == _lastFNETLiveCounter) {
         if (_FNETLiveCounterFailed) {
-            failflag = true;				// Still failure
+            failflag = true;                // Still failure
         } else if (!_FNETLiveCounterDanger) {
             _FNETLiveCounterDanger = true;
             _FNETLiveCounterDangerStart.SetNow();
         } else if (_FNETLiveCounterDangerStart.MilliSecsToNow() >= 6000) {
             LOG(error, "fdispatch::Fdispatch::CheckTempFail: FNET inactive for 6 seconds, deadlock ?");
-            _FNETLiveCounterFailed = true;		// Note that we failed
-            failflag = true;				// Force temporary failure
+            _FNETLiveCounterFailed = true;      // Note that we failed
+            failflag = true;                // Force temporary failure
         } else if (_FNETLiveCounterDangerStart.MilliSecsToNow() >= 3000 &&
                    !_FNETLiveCounterWarned) {
             _FNETLiveCounterWarned = true;

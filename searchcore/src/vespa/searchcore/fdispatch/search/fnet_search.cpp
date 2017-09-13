@@ -12,10 +12,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet_search");
 
-#define IS_MLD_PART(part)		((part) > mldpartidmask)
-#define MLD_PART_TO_PARTID(part)	((part) & mldpartidmask)
-#define ENCODE_MLD_PART(part)		(((part) + 1) << partbits)
-#define DECODE_MLD_PART(part)		(((part) >> partbits) - 1)
+#define IS_MLD_PART(part)           ((part) > mldpartidmask)
+#define MLD_PART_TO_PARTID(part)    ((part) & mldpartidmask)
+#define ENCODE_MLD_PART(part)       (((part) + 1) << partbits)
+#define DECODE_MLD_PART(part)       (((part) >> partbits) - 1)
 
 using fdispatch::SearchPath;
 using vespalib::nbostream;
@@ -530,7 +530,7 @@ FastS_FNET_Search::EncodePartIDs(uint32_t partid, uint32_t rowid, bool mld,
 
 FastS_FNET_Search::FastS_FNET_Search(FastS_DataSetCollection *dsc,
                                      FastS_FNET_DataSet *dataset,
-				     FastS_TimeKeeper *timeKeeper)
+                                     FastS_TimeKeeper *timeKeeper)
     : FastS_AsyncSearch(dataset->GetID()),
       _lock(),
       _timeKeeper(timeKeeper),
@@ -642,7 +642,7 @@ FastS_FNET_Search::GotDocsum(FastS_FNET_SearchNode *node,
         node->_pendingDocsums--;
         _pendingDocsums--;
         if ( ! _resbuf[offset]._buf.empty())
-            _goodDocsums++;	// Only nonempty docsum is considered good
+            _goodDocsums++; // Only nonempty docsum is considered good
         if (node->_pendingDocsums == 0) {
             node->_docsumTime = (GetTimeKeeper()->GetTime() - _startTime - node->_queryTime);
             _pendingDocsumNodes--;
@@ -1246,7 +1246,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                         node->_docsumRow = row;
                     } else if (!node->_flags._docsumMld || row != node->_docsumRow) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(true, row, rowbits);
                     }
                     node->_docidCnt++;
@@ -1258,7 +1258,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                         node->_docsumRow = row;
                     } else if (node->_flags._docsumMld || row != node->_docsumRow) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(false, row, rowbits);
                     }
                     node->_docidCnt++;
@@ -1276,7 +1276,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                         node->_flags._docsumMld = true;// Only accept MLD from now on
                     } else if (!node->_flags._docsumMld) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(true, 0, 0);
                     }
                     node->_docidCnt++;
@@ -1287,7 +1287,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                     if (node->_docidCnt == 0) {
                     } else if (node->_flags._docsumMld) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(false, 0, 0);
                     }
                     node->_docidCnt++;
@@ -1326,7 +1326,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                     node = getNode(partid);
                     if (!node->_flags._docsumMld || row != node->_docsumRow) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(true, row, rowbits);
                     }
 
@@ -1340,7 +1340,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                     node = getNode(partid0);
                     if (node->_flags._docsumMld || row != node->_docsumRow) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(false, row, rowbits);
                     }
 
@@ -1359,7 +1359,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                     node = getNode(partid);
                     if (!node->_flags._docsumMld) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(true, 0, 0);
                     }
 
@@ -1373,7 +1373,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
                     node = getNode(p->_partition);
                     if (node->_flags._docsumMld) {
                         if (_nodesConnected)
-                            continue;			// Drop (inconsistent)
+                            continue;           // Drop (inconsistent)
                         node = node->allocExtraDocsumNode(false, 0, 0);
                     }
 

@@ -239,7 +239,7 @@ public:
 class MyExecutor: public vespalib::ThreadStackExecutor
 {
 public:
-    FastOS_ThreadId		  _threadId;
+    FastOS_ThreadId       _threadId;
 
     MyExecutor();
 

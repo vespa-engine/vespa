@@ -96,8 +96,8 @@ FastS_TimeStatHistory::getRecentStats(double tsince,
 double
 FastS_TimeStatHistory::getLoadTime(double tsince, double tnow)
 {
-    const uint32_t holeSize = 2;	// 2 missing slots => hole
-    const uint32_t minSlotLoad = 4;	// Mininum load for not being "missing"
+    const uint32_t holeSize = 2;    // 2 missing slots => hole
+    const uint32_t minSlotLoad = 4; // Mininum load for not being "missing"
     uint32_t sinceTimeIdx = getTimeIdx(tsince);
     uint32_t timeIdx = getTimeIdx(tnow);
     uint32_t slotCount = _slotCount;
@@ -106,9 +106,9 @@ FastS_TimeStatHistory::getLoadTime(double tsince, double tnow)
     for (; slotCount > 0u; --slotCount, slotIdx = prevTimeSlot(slotIdx)) {
         TimeSlot &ts = _timeSlots[slotIdx];
         if (ts._timeIdx + holeSize < doneTimeIdx)
-            break;	// Found hole, i.e. holeSize missing slots
+            break;  // Found hole, i.e. holeSize missing slots
         if (ts._timeIdx + holeSize < sinceTimeIdx)
-            break;	// No point in looking further back
+            break;  // No point in looking further back
         if (ts._count >= minSlotLoad)
             doneTimeIdx = ts._timeIdx;
     }

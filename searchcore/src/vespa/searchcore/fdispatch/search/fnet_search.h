@@ -222,9 +222,9 @@ private:
     Timeout                  _timeout;
     FastS_QueryCacheUtil     _util;
     std::unique_ptr<search::grouping::MergingManager> _groupMerger;
-    FastS_DataSetCollection *_dsc;	// owner keeps this alive
+    FastS_DataSetCollection *_dsc;  // owner keeps this alive
     FastS_FNET_DataSet      *_dataset;
-    bool		     _datasetActiveCostRef;
+    bool             _datasetActiveCostRef;
     std::vector<FastS_FNET_SearchNode> _nodes;
     bool                     _nodesConnected;
 
@@ -233,27 +233,27 @@ private:
 
     FNETMode                 _FNET_mode;
 
-    uint32_t                 _pendingQueries;	// # nodes with query left
-    uint32_t		     _goodQueries;	// # queries good
-    uint32_t                 _pendingDocsums;	// # docsums left
+    uint32_t                 _pendingQueries;   // # nodes with query left
+    uint32_t                 _goodQueries;  // # queries good
+    uint32_t                 _pendingDocsums;   // # docsums left
     uint32_t                 _pendingDocsumNodes; // # nodes with docsums left
-    uint32_t		     _requestedDocsums; // # docsums requested
-    uint32_t                 _goodDocsums;	// # docsums good
-    uint32_t                 _queryNodes;	  // #nodes with query
+    uint32_t                 _requestedDocsums; // # docsums requested
+    uint32_t                 _goodDocsums;  // # docsums good
+    uint32_t                 _queryNodes;     // #nodes with query
     uint32_t                 _queryNodesTimedOut;  // #nodes with query timeout
-    uint32_t                 _docsumNodes;	  // #nodes with docsums
+    uint32_t                 _docsumNodes;    // #nodes with docsums
     uint32_t                 _docsumNodesTimedOut; // #nodes with docsum timeout
     uint32_t                 _docsumsTimedOut;
     bool                     _queryTimeout;
     bool                     _docsumTimeout;
 
-    double		     _queryStartTime;
+    double                   _queryStartTime;
     double                   _queryMinWait;
     double                   _queryMaxWait;
     bool                     _queryWaitCalculated;
-    double		     _adjustedQueryTimeOut;
-    double		     _docSumStartTime;
-    double		     _adjustedDocSumTimeOut;
+    double                   _adjustedQueryTimeOut;
+    double                   _docSumStartTime;
+    double                   _adjustedDocSumTimeOut;
     uint32_t                 _fixedRow;
 
     std::vector<FastS_fullresult>  _resbuf;

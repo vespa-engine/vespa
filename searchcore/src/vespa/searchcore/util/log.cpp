@@ -9,9 +9,9 @@ LOG_SETUP(".searchcore.util.log");
  * assert and abort functions.
  */
 void __FastS_assert_fail(const char *assertion,
-			 const char *file,
-			 unsigned int line,
-			 const char * function)
+                         const char *file,
+                         unsigned int line,
+                         const char * function)
 {
     const char *vtag = V_TAG;
     if (function != NULL) {
@@ -30,9 +30,9 @@ void __FastS_assert_fail(const char *assertion,
 }
 
 void __FastS_abort(const char *message,
-		   const char *file,
-		   unsigned int line,
-		   const char * function)
+                   const char *file,
+                   unsigned int line,
+                   const char * function)
 {
     const char *vtag = V_TAG;
     if (function != NULL) {

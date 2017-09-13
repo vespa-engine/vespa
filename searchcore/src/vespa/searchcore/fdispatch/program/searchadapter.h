@@ -28,7 +28,7 @@ private:
     FastS_DataSetCollection   *_dsc;
     FastS_ISearch             *_search;
     FastS_SearchInfo          *_searchInfo;
-    FastS_QueryResult	      *_queryResult;
+    FastS_QueryResult         *_queryResult;
 
     void handleRequest();
     SearchReply::UP createReply();

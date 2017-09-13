@@ -56,7 +56,7 @@ FastS_QueryCacheUtil::setSearchRequest(const search::engine::SearchRequest * req
 
 void
 FastS_QueryCacheUtil::SetupQuery(uint32_t maxhits,
-				 uint32_t offset)
+                                 uint32_t offset)
 {
     FastS_assert(_queryResult._hitbuf == NULL);
     FastS_assert(_alignedHitBuf == NULL);
@@ -152,5 +152,5 @@ FastS_QueryCacheUtil::InitEstimateMode()
     _searchInfo._searchOffset = 0;
     _searchInfo._maxHits  = 0;
     _ranking.clear();
-    _dateTime	= 0;
+    _dateTime   = 0;
 }

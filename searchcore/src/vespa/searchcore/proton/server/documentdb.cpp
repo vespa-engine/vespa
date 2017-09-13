@@ -623,7 +623,7 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
 
     lock_guard guard(_configMutex);
     if (_config_store->getBestSerialNum() != 0)
-        return;				// Initial config already present
+        return;             // Initial config already present
 
     SerialNum confSerial = _feedHandler.incSerialNum();
     // Elide save of new config entry in transaction log, it would be

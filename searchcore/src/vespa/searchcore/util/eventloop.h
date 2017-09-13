@@ -8,8 +8,8 @@ class FastS_TimeOut
 {
 public:
     enum ValName {
-        maxSockSilent,		// 0
-        valCnt			// 1 - Must be last, used as array size:
+        maxSockSilent, // 0
+        valCnt         // 1 - Must be last, used as array size:
     };
     static double _val[valCnt];
 

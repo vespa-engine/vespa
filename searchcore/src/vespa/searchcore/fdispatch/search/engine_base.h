@@ -41,8 +41,8 @@ public:
         };
 
         // the node goes up and down...
-        FastOS_Time _fliptime;	  // When state changed last to UP or big chg
-        FastOS_Time _floptime;	  // When state changed last from UP
+        FastOS_Time _fliptime;    // When state changed last to UP or big chg
+        FastOS_Time _floptime;    // When state changed last from UP
 
         // search/docsum slowness
         uint32_t    _slowQueryCnt;
@@ -107,10 +107,10 @@ public:
 
     public:
         char       *_name;
-        uint32_t    _unitrefcost;	      // Cost to reference us
-        uint32_t    _confPartID;	      // Partid configured in partitions file
-        uint32_t    _confRowID;	      // What row this engine belongs to
-        bool	_confPartIDOverrides; // Ignore lower partid and use our conf value
+        uint32_t    _unitrefcost;         // Cost to reference us
+        uint32_t    _confPartID;          // Partid configured in partitions file
+        uint32_t    _confRowID;       // What row this engine belongs to
+        bool    _confPartIDOverrides; // Ignore lower partid and use our conf value
         config_t(FastS_EngineDesc *desc);
         ~config_t();
     };
@@ -133,7 +133,7 @@ protected:
 
     // Total cost as seen by referencing objects
     std::atomic<uint32_t>  _totalrefcost;
-    std::atomic<uint32_t>  _activecnt;	// Our "load" on search node
+    std::atomic<uint32_t>  _activecnt;  // Our "load" on search node
 
     FastS_PlainDataSet *_dataset; // dataset for this engine
 

@@ -314,7 +314,7 @@ TEST_F("require that attribute writer handles remove", Fixture)
     f.remove(2, 0); // same sync token as previous
     try {
         f.remove(1, 0); // lower sync token than previous
-        EXPECT_TRUE(true);	// update is ignored
+        EXPECT_TRUE(true);  // update is ignored
     } catch (vespalib::IllegalStateException & e) {
         LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
         EXPECT_TRUE(true);
@@ -430,7 +430,7 @@ TEST_F("require that attribute writer handles update", Fixture)
     f.update(2, upd, 1, immediateCommit); // same sync token as previous
     try {
         f.update(1, upd, 1, immediateCommit); // lower sync token than previous
-        EXPECT_TRUE(true);	// update is ignored
+        EXPECT_TRUE(true);  // update is ignored
     } catch (vespalib::IllegalStateException & e) {
         LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
         EXPECT_TRUE(true);

@@ -40,7 +40,7 @@ namespace documentmetastore { class LidReuseDelayerConfig; }
 class DocSubDB : public IDocumentSubDB
 {
 protected:
-    IDocumentSubDBOwner	              &_owner;
+    IDocumentSubDBOwner               &_owner;
     search::transactionlog::SyncProxy &_tlSyncer;
 
 public:
@@ -151,7 +151,7 @@ protected:
     SerialNum                     _flushedDocumentMetaStoreSerialNum;
     SerialNum                     _flushedDocumentStoreSerialNum;
     DocumentMetaStore::SP         _dms;
-    ISummaryManager::SP           _iSummaryMgr;	// Interface class
+    ISummaryManager::SP           _iSummaryMgr; // Interface class
 private:
     SummaryManager::SP            _rSummaryMgr; // Our specific subclass
     ISummaryAdapter::SP           _summaryAdapter;
