@@ -601,6 +601,10 @@ struct ControllerFixtureBase
     const BucketIdVector &calcAsked() const {
         return _calc->asked();
     }
+    void runLoop() {
+        while (!_bmj.isBlocked() && !_bmj.run()) {
+        }
+    }
 };
 
 ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts)
@@ -1217,6 +1221,25 @@ TEST_F("explicitly active not ready bucket can be moved to ready even if node is
     assertEqual(f._notReady.bucket(3), f._notReady.docs(3)[1], 2, 1, f.docsMoved()[1]);
     ASSERT_EQUAL(1u, f.bucketsModified().size());
     EXPECT_EQUAL(f._notReady.bucket(3), f.bucketsModified()[0]);
+}
+
+TEST_F("require that notifyCreateBucket works", ControllerFixture)
+{
+    EXPECT_FALSE(f._bmj.done());
+    f.addReady(f._ready.bucket(1));
+    f.addReady(f._ready.bucket(2));
+    f.runLoop();
+    EXPECT_TRUE(f._bmj.done());
+    EXPECT_TRUE(f.docsMoved().empty());
+    EXPECT_TRUE(f.bucketsModified().empty());
+    f.addReady(f._notReady.bucket(3)); // bucket 3 now ready, no notify
+    EXPECT_TRUE(f._bmj.done());        // move job still believes work done
+    f._bmj.notifyCreateBucket(f._notReady.bucket(3)); // reconsider bucket 3
+    EXPECT_FALSE(f._bmj.done());
+    f.runLoop();
+    EXPECT_TRUE(f._bmj.done());
+    EXPECT_EQUAL(1u, f.bucketsModified().size());
+    EXPECT_EQUAL(2u, f.docsMoved().size());
 }
 
 struct ResourceLimitControllerFixture : public ControllerFixture
