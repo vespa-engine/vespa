@@ -16,6 +16,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
  * for structured queries (types ANY, ALL and ADVANCED).
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 abstract class StructuredParser extends AbstractParser {
 
@@ -320,25 +321,19 @@ abstract class StructuredParser extends AbstractParser {
     private IntItem numberRange() {
         int position = tokens.getPosition();
         IntItem item = null;
-        boolean negative = false;
 
         try {
             Token initial = tokens.next();
-            if (initial.kind != LSQUAREBRACKET) {
-                return null;
-            }
+            if (initial.kind != LSQUAREBRACKET) return null;
 
             String rangeStart = "";
-
-            negative = tokens.skip(MINUS);
+            boolean negative = tokens.skip(MINUS);
 
             if (tokens.currentIs(NUMBER)) {
                 rangeStart = (negative ? "-" : "") + tokens.next().toString() + decimalPart();
             }
 
-            if (!tokens.skip(SEMICOLON)) {
-                return null;
-            }
+            if (!tokens.skip(SEMICOLON)) return null;
 
             String rangeEnd = "";
 
@@ -374,17 +369,13 @@ abstract class StructuredParser extends AbstractParser {
     private IntItem numberSmaller() {
         int position = tokens.getPosition();
         IntItem item = null;
-        boolean negative = false;
 
         try {
             Token initial = tokens.next();
-            if (initial.kind != SMALLER) {
-                return null;
-            }
-            negative = tokens.skipNoIgnore(MINUS);
-            if (!tokens.currentIs(NUMBER)) {
-                return null;
-            }
+            if (initial.kind != SMALLER) return null;
+
+            boolean negative = tokens.skipNoIgnore(MINUS);
+            if ( ! tokens.currentIs(NUMBER)) return null;
 
             item = new IntItem("<" + (negative ? "-" : "") + tokens.next() + decimalPart(), true);
             item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start,
@@ -400,22 +391,17 @@ abstract class StructuredParser extends AbstractParser {
     private IntItem numberGreater() {
         int position = tokens.getPosition();
         IntItem item = null;
-        boolean negative = false;
 
         try {
-            Token t = tokens.next();
-            if (t.kind != GREATER) {
-                return null;
-            }
+            Token initial = tokens.next();
+            if (initial.kind != GREATER) return null;
 
-            negative = tokens.skipNoIgnore(MINUS);
-            if (!tokens.currentIs(NUMBER)) {
-                return null;
-            }
+            boolean negative = tokens.skipNoIgnore(MINUS);
+            if ( ! tokens.currentIs(NUMBER)) return null;
 
-            Token number = tokens.next();
-            item = new IntItem(">" + (negative ? "-" : "") + number + decimalPart(), true);
-            item.setOrigin(new Substring(t.substring.start, tokens.currentNoIgnore().substring.start, t.getSubstring().getSuperstring())); // XXX: Unsafe end?
+            item = new IntItem(">" + (negative ? "-" : "") + tokens.next() + decimalPart(), true);
+            item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start, 
+                                         initial.getSubstring().getSuperstring())); // XXX: Unsafe end?
             return item;
         } finally {
             if (item == null) {
