@@ -18,8 +18,7 @@ import java.util.Set;
 /**
  * Parameters for prepare. Immutable.
  *
- * @author lulf
- * @since 5.1.24
+ * @author Ulf Lilleengen
  */
 public final class PrepareParams {
 

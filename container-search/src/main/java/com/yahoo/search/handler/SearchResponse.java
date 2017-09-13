@@ -15,7 +15,7 @@ import java.util.Iterator;
 /**
  * Some leftover static methods.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SearchResponse {
 

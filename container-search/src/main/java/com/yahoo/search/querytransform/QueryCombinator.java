@@ -35,7 +35,7 @@ import com.yahoo.search.searchchain.Execution;
  * <p>If the given default index does not exist in the search definition, the query part will be parsed with the
  * settings of the default index set to the "".</p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class QueryCombinator extends Searcher {
     private static final String QUERYPREFIX = "query.";

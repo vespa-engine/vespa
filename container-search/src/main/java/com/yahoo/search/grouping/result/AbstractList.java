@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class AbstractList extends HitGroup {
 
@@ -44,4 +44,5 @@ public abstract class AbstractList extends HitGroup {
     public Map<String, Continuation> continuations() {
         return continuations;
     }
+
 }

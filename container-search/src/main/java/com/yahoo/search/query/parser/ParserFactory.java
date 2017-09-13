@@ -6,10 +6,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.yql.YqlParser;
 
 /**
- * <p>Implements a factory for {@link Parser}.</p>
+ * Implements a factory for {@link Parser}.
  *
  * @author Simon Thoresen
- * @since 5.1.4
  */
 public final class ParserFactory {
 
@@ -45,4 +44,5 @@ public final class ParserFactory {
                 throw new UnsupportedOperationException(type.toString());
         }
     }
+
 }

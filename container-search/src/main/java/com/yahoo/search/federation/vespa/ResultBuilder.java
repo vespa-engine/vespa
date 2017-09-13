@@ -29,10 +29,9 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 /**
  * Parse Vespa XML results and create Result instances.
  *
- * <p> TODO: Ripe for a rewrite or major refactoring.
- *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
+// Ripe for a rewrite or major refactoring.
 @SuppressWarnings("deprecation")
 public class ResultBuilder extends DefaultHandler {
     private static final String ERROR = "error";
@@ -509,7 +508,7 @@ public class ResultBuilder extends DefaultHandler {
             if (ERROR.equals(qName)) {
                 ErrorMessage error = new ErrorMessage(Integer.valueOf(currentErrorCode),
                         fieldContent.toString());
-                hitGroups.peekFirst().setError(error);
+                hitGroups.peekFirst().addError(error);
                 currentErrorCode = null;
                 fieldContent = null;
             }

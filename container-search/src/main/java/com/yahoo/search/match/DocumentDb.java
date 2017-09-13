@@ -11,7 +11,7 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * A searchable database of documents
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class DocumentDb extends Searcher {
 

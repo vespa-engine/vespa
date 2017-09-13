@@ -10,14 +10,17 @@ import java.util.Map;
 
 /**
  * Default values for properties that are meant to be customized in query profiles.
- * @author tonytv
+ * 
+ * @author Tony Vaagenes
  */
 public final class DefaultProperties extends Properties  {
+
     public static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
     public static final CompoundName MAX_HITS = new CompoundName("maxHits");
 
 
     public static final QueryProfileType argumentType = new QueryProfileType("DefaultProperties");
+
     static {
         argumentType.setBuiltin(true);
 
@@ -37,4 +40,5 @@ public final class DefaultProperties extends Properties  {
             return super.get(name, context, substitution);
         }
     }
+
 }

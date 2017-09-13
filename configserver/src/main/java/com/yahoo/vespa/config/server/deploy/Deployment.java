@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  * Deployments are created by a {@link ApplicationRepository}.
  * Instances of this are not multithread safe.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 public class Deployment implements com.yahoo.config.provision.Deployment {

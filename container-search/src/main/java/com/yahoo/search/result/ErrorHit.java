@@ -14,8 +14,13 @@ public interface ErrorHit extends Cloneable {
 
     void setSource(String source);
 
-    /** Returns the main error of this result, never null */
-    @Deprecated // use: errors().iterator().next()
+    /** 
+     * Returns the main error of this result, never null
+     * 
+     * @deprecated use errors().iterator().next()
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated 
     ErrorMessage getMainError();
 
     /**
@@ -38,8 +43,7 @@ public interface ErrorHit extends Cloneable {
     /** Returns true - this is a meta hit containing information on other hits */
     boolean isMeta();
 
-    /** Returns true if main error is the given error code or if main error
-        is general error 8 and all suberrors are the given error code */
+    /** Returns true if all errors in this has the given error code */
     boolean hasOnlyErrorCode(int code);
 
     Object clone();

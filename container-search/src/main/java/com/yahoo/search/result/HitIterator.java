@@ -11,7 +11,7 @@ import com.yahoo.search.Result;
 /**
  * An iterator for the list of hits in a result. This iterator supports the remove operation.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HitIterator implements Iterator<Hit> {
 
