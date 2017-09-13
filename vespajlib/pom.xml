@@ -77,6 +77,14 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <Import-Package>
+            net.jpountz.lz4;version=${lz4.version}
+          </Import-Package>
+          <discPreInstallBundle>
+            lz4-${lz4.version}.jar
+          </discPreInstallBundle>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -97,6 +105,25 @@
         <artifactId>maven-install-plugin</artifactId>
         <configuration>
           <updateReleaseInfo>true</updateReleaseInfo>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <includeGroupIds>net.jpountz.lz4</includeGroupIds>
+          <overWriteReleases>false</overWriteReleases>
+          <overWriteSnapshots>false</overWriteSnapshots>
+          <excludeTransitive>true</excludeTransitive>
         </configuration>
       </plugin>
     </plugins>
