@@ -12,6 +12,8 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
         NEED_NOT_BE_MASTER
     }
 
+    // TODO a lot of this logic could be replaced with a CompleteableFuture
+
     private Exception failure = null;
     private boolean resultSet = false;
     private Result result = null;
@@ -49,14 +51,17 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
             }
             result = calculateResult(context);
             resultSet = true;
-        } catch (OtherMasterIndexException e) {
-            failure = e;
-        } catch (StateRestApiException e) {
+        } catch (OtherMasterIndexException | StateRestApiException e) {
             failure = e;
         } catch (Exception e) {
             failure = new InternalFailure("Caught unexpected exception");
             failure.initCause(e);
         }
+    }
+
+    @Override
+    public void handleLeadershipLost() {
+        failure = new UnknownMasterException("Leadership lost before request could complete");
     }
 
     public abstract Result calculateResult(Context context) throws StateRestApiException, OtherMasterIndexException;

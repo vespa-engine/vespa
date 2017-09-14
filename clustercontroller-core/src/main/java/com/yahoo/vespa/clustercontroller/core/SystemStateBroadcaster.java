@@ -91,16 +91,44 @@ public class SystemStateBroadcaster {
         {
             return false; // No point in sending system state to nodes that can't receive messages or don't want them
         }
-        if (node.getNewestSystemStateVersionSent() == systemState.getVersion()) {
-            return false; // No point in sending if we already have done so
-        }
         return true;
     }
 
     private List<NodeInfo> resolveStateVersionSendSet(DatabaseHandler.Context dbContext) {
         return dbContext.getCluster().getNodeInfo().stream()
                 .filter(this::nodeNeedsClusterState)
+                .filter(node -> !newestStateAlreadySentToNode(node))
                 .collect(Collectors.toList());
+    }
+
+    private boolean newestStateAlreadySentToNode(NodeInfo node) {
+        return (node.getNewestSystemStateVersionSent() == systemState.getVersion());
+    }
+
+    /**
+     * Checks if all distributor nodes have ACKed the most recent cluster state. Iff this
+     * is the case, triggers handleAllDistributorsInSync() on the provided FleetController
+     * object and updates the broadcaster's last known in-sync cluster state version.
+     *
+     * Returns true if distributor nodes were checked, false if cluster is already in sync
+     * or no state has been published yet.
+     */
+    boolean checkIfClusterStateIsAckedByAllDistributors(DatabaseHandler database,
+                                                        DatabaseHandler.Context dbContext,
+                                                        FleetController fleetController) throws InterruptedException {
+        if ((systemState == null) || (lastClusterStateInSync == systemState.getVersion())) {
+            return false; // Nothing to do for the current state
+        }
+        boolean anyOutdatedDistributorNodes = dbContext.getCluster().getNodeInfo().stream()
+                .filter(NodeInfo::isDistributor)
+                .anyMatch(this::nodeNeedsClusterState);
+
+        if (!anyOutdatedDistributorNodes && (systemState.getVersion() > lastClusterStateInSync)) {
+            log.log(LogLevel.DEBUG, "All distributors have newest clusterstate, updating start timestamps in zookeeper and clearing them from cluster state");
+            lastClusterStateInSync = systemState.getVersion();
+            fleetController.handleAllDistributorsInSync(database, dbContext);
+        }
+        return true;
     }
 
     public boolean broadcastNewState(DatabaseHandler database,
@@ -109,16 +137,12 @@ public class SystemStateBroadcaster {
                                      FleetController fleetController) throws InterruptedException {
         if (systemState == null) return false;
 
-        List<NodeInfo> recipients = resolveStateVersionSendSet(dbContext);
         if (!systemState.isOfficial()) {
             systemState.setOfficial(true);
         }
 
-        boolean anyOutdatedDistributorNodes = false;
+        List<NodeInfo> recipients = resolveStateVersionSendSet(dbContext);
         for (NodeInfo node : recipients) {
-            if (node.isDistributor()) {
-                anyOutdatedDistributorNodes = true;
-            }
             if (nodeNeedsToObserveStartupTimestamps(node)) {
                 ClusterState newState = buildModifiedClusterState(dbContext);
                 log.log(LogLevel.DEBUG, "Sending modified system state version " + systemState.getVersion()
@@ -131,13 +155,10 @@ public class SystemStateBroadcaster {
             }
         }
 
-        if (!anyOutdatedDistributorNodes && systemState.getVersion() > lastClusterStateInSync) {
-            log.log(LogLevel.DEBUG, "All distributors have newest clusterstate, updating start timestamps in zookeeper and clearing them from cluster state");
-            lastClusterStateInSync = systemState.getVersion();
-            fleetController.handleAllDistributorsInSync(database, dbContext);
-        }
         return !recipients.isEmpty();
     }
+
+    public int lastClusterStateVersionInSync() { return lastClusterStateInSync; }
 
     private boolean nodeNeedsToObserveStartupTimestamps(NodeInfo node) {
         return node.getStartTimestamp() != 0 && node.getWentDownWithStartTime() == node.getStartTimestamp();

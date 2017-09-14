@@ -16,7 +16,7 @@ public interface SetUnitStateRequest extends UnitRequest {
 
         public final int value;
 
-        private Condition(int value) {
+        Condition(int value) {
             this.value = value;
         }
 
@@ -24,9 +24,41 @@ public interface SetUnitStateRequest extends UnitRequest {
             try {
                 return Condition.valueOf(value.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new InvalidContentException("Invalid value for my enum Condition: " + value);
+                throw new InvalidContentException(String.format("Invalid value for condition: '%s', expected one of 'force', 'safe'", value));
             }
         }
     }
     Condition getCondition();
+
+    enum ResponseWait {
+        /**
+         * Wait for state change to be ACKed by cluster. Default unless request
+         * explicitly specifies otherwise.
+         */
+        WAIT_UNTIL_CLUSTER_ACKED("wait-until-cluster-acked"),
+        /**
+         * Return without waiting for state change to be ACKed by cluster.
+         */
+        NO_WAIT("no-wait");
+
+        private final String name;
+
+        ResponseWait(String name) { this.name = name; }
+
+        public String getName() { return this.name; }
+
+        @Override
+        public String toString() { return name; }
+
+        public static ResponseWait fromString(String value) throws InvalidContentException {
+            if (value.equalsIgnoreCase(WAIT_UNTIL_CLUSTER_ACKED.name)) {
+                return WAIT_UNTIL_CLUSTER_ACKED;
+            } else if (value.equalsIgnoreCase(NO_WAIT.name)) {
+                return NO_WAIT;
+            }
+            throw new InvalidContentException(String.format("Invalid value for response-wait: '%s', expected one of '%s', '%s'",
+                    value, WAIT_UNTIL_CLUSTER_ACKED.name, NO_WAIT.name));
+        }
+    }
+    ResponseWait getResponseWait();
 }

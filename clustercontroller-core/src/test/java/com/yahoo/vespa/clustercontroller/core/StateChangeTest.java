@@ -13,6 +13,7 @@ import org.junit.Test;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.*;
@@ -51,7 +52,12 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl = new FleetController(timer, eventLog, cluster, stateGatherer, communicator, null, null, communicator, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
 
         ctrl.tick();
+        if (options.fleetControllerCount == 1) {
+            markAllNodesAsUp(options);
+        }
+    }
 
+    private void markAllNodesAsUp(FleetControllerOptions options) throws Exception {
         for (int i = 0; i < options.nodes.size(); ++i) {
             communicator.setNodeState(new Node(NodeType.STORAGE, i), State.UP, "");
             communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, i), State.UP, "");
@@ -78,7 +84,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     }
 
-    private List<ConfiguredNode> createNodes(int count) {
+    private static List<ConfiguredNode> createNodes(int count) {
         List<ConfiguredNode> nodes = new ArrayList<>();
         for (int i = 0; i < count; i++)
             nodes.add(new ConfiguredNode(i, false));
@@ -1237,6 +1243,269 @@ public class StateChangeTest extends FleetControllerTest {
                         "Event: storage.2: Altered node state in cluster state from 'U' to 'I, i 0.100 (read)'\n" +
                         "Event: storage.2: Altered min distribution bit count from 16 to 17\n");
 
+    }
+
+    private static abstract class MockTask extends RemoteClusterControllerTask {
+        boolean invoked = false;
+        boolean leadershipLost = false;
+
+        boolean isInvoked() { return invoked; }
+
+        boolean isLeadershipLost() { return leadershipLost; }
+
+        @Override
+        public boolean hasVersionAckDependency() { return true; }
+
+        @Override
+        public void handleLeadershipLost() { this.leadershipLost = true; }
+    }
+
+    // We create an explicit mock task class instead of using mock() simply because of
+    // the utter pain that mocking void functions (doRemoteFleetControllerTask()) is
+    // when using Mockito.
+    private static class MockSynchronousTaskWithSideEffects extends MockTask {
+        @Override
+        public void doRemoteFleetControllerTask(Context ctx) {
+            // Trigger a state transition edge that requires a state to be published and ACKed
+            NodeState newNodeState = new NodeState(NodeType.STORAGE, State.MAINTENANCE);
+            NodeInfo nodeInfo = ctx.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+            nodeInfo.setWantedState(newNodeState);
+            ctx.nodeStateOrHostInfoChangeHandler.handleNewWantedNodeState(nodeInfo, newNodeState);
+            invoked = true;
+        }
+    }
+
+    private static class MockNoOpSynchronousTask extends MockTask {
+        @Override
+        public void doRemoteFleetControllerTask(Context ctx) {
+            // Tests scheduling this task shall have ensured that node storage.0 already is DOWN,
+            // so this won't trigger a new state to be published
+            NodeState newNodeState = new NodeState(NodeType.STORAGE, State.DOWN);
+            NodeInfo nodeInfo = ctx.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+            nodeInfo.setWantedState(newNodeState);
+            ctx.nodeStateOrHostInfoChangeHandler.handleNewWantedNodeState(nodeInfo, newNodeState);
+            invoked = true;
+        }
+    }
+
+    // TODO ideally we'd break this out so it doesn't depend on fields in the parent test instance, but
+    // fleet controller tests have a _lot_ of state, so risk of duplicating a lot of that...
+    class RemoteTaskFixture {
+        RemoteTaskFixture(FleetControllerOptions options) throws Exception {
+            initialize(options);
+            ctrl.tick();
+        }
+
+        MockTask scheduleTask(MockTask task) throws Exception {
+            ctrl.schedule(task);
+            ctrl.tick(); // Task processing iteration
+            return task;
+        }
+
+        MockTask scheduleVersionDependentTaskWithSideEffects() throws Exception {
+            return scheduleTask(new MockSynchronousTaskWithSideEffects());
+        }
+
+        MockTask scheduleNoOpVersionDependentTask() throws Exception {
+            return scheduleTask(new MockNoOpSynchronousTask());
+        }
+
+        void markStorageNodeDown(int index) throws Exception {
+            communicator.setNodeState(new Node(NodeType.STORAGE, index), State.DOWN, "foo"); // Auto-ACKed
+            ctrl.tick();
+        }
+
+        void sendPartialDeferredDistributorClusterStateAcks() throws Exception {
+            communicator.sendPartialDeferredDistributorClusterStateAcks();
+            ctrl.tick();
+        }
+
+        void sendAllDeferredDistributorClusterStateAcks() throws Exception {
+            communicator.sendAllDeferredDistributorClusterStateAcks();
+            ctrl.tick();
+        }
+
+        void processScheduledTask() throws Exception {
+            ctrl.tick(); // Cluster state recompute iteration and send
+            ctrl.tick(); // Iff ACKs were received, process version dependent task(s)
+        }
+
+        // Only makes sense for tests with more than 1 controller
+        void winLeadership() throws Exception {
+            Map<Integer, Integer> leaderVotes = new HashMap<>();
+            leaderVotes.put(0, 0);
+            leaderVotes.put(1, 0);
+            leaderVotes.put(2, 0);
+            ctrl.handleFleetData(leaderVotes);
+            ctrl.tick();
+        }
+
+        void loseLeadership() throws Exception {
+            // Receive leadership loss event; other nodes not voting for us anymore.
+            Map<Integer, Integer> leaderVotes = new HashMap<>();
+            leaderVotes.put(0, 0);
+            leaderVotes.put(1, 1);
+            leaderVotes.put(2, 1);
+            ctrl.handleFleetData(leaderVotes);
+            ctrl.tick();
+        }
+    }
+
+    private static FleetControllerOptions defaultOptions() {
+        return new FleetControllerOptions("mycluster", createNodes(10));
+    }
+
+    private static FleetControllerOptions optionsWithZeroTransitionTime() {
+        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        options.maxTransitionTime.put(NodeType.STORAGE, 0);
+        return options;
+    }
+
+    private static FleetControllerOptions optionsAllowingZeroNodesDown() {
+        FleetControllerOptions options = optionsWithZeroTransitionTime();
+        options.minStorageNodesUp = 10;
+        options.minDistributorNodesUp = 10;
+        return options;
+    }
+
+    private RemoteTaskFixture createFixtureWith(FleetControllerOptions options) throws Exception {
+        return new RemoteTaskFixture(options);
+    }
+
+    private RemoteTaskFixture createDefaultFixture() throws Exception {
+        return new RemoteTaskFixture(defaultOptions());
+    }
+
+    @Test
+    public void synchronous_remote_task_is_completed_when_state_is_acked_by_cluster() throws Exception {
+        RemoteTaskFixture fixture = createDefaultFixture();
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+
+        fixture.processScheduledTask(); // New state generated, but not ACKed by nodes since we're deferring.
+        assertFalse(task.isCompleted());
+
+        fixture.sendPartialDeferredDistributorClusterStateAcks();
+        assertFalse(task.isCompleted()); // Not yet acked by all nodes
+
+        fixture.sendAllDeferredDistributorClusterStateAcks();
+        assertTrue(task.isCompleted()); // Now finally acked by all nodes
+    }
+
+    @Test
+    public void no_op_synchronous_remote_task_can_complete_immediately_if_current_state_already_acked() throws Exception {
+        RemoteTaskFixture fixture = createFixtureWith(optionsWithZeroTransitionTime());
+        fixture.markStorageNodeDown(0);
+        MockTask task = fixture.scheduleNoOpVersionDependentTask(); // Tries to set node 0 into Down; already in that state
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+
+        fixture.processScheduledTask(); // Deferred tasks processing; should complete tasks
+        assertTrue(task.isCompleted());
+    }
+
+    @Test
+    public void no_op_synchronous_remote_task_waits_until_current_state_is_acked() throws Exception {
+         RemoteTaskFixture fixture = createFixtureWith(optionsWithZeroTransitionTime());
+
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+        fixture.markStorageNodeDown(0);
+        MockTask task = fixture.scheduleNoOpVersionDependentTask(); // Tries to set node 0 into Down; already in that state
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+
+        fixture.processScheduledTask(); // Deferred task processing; version not satisfied yet
+        assertFalse(task.isCompleted());
+
+        fixture.sendAllDeferredDistributorClusterStateAcks();
+        assertTrue(task.isCompleted()); // Now acked by all nodes
+
+    }
+
+    // When the cluster is down no intermediate states will be published to the nodes
+    // unless the state triggers a cluster Up edge. To avoid hanging task responses
+    // for an indeterminate amount of time in this scenario, we effectively treat
+    // tasks running in such a context as if they were no-ops. I.e. we only require
+    // the cluster down-state to have been published.
+    @Test
+    public void immediately_complete_sync_remote_task_when_cluster_is_down() throws Exception {
+        RemoteTaskFixture fixture = createFixtureWith(optionsAllowingZeroNodesDown());
+        // Controller options require 10/10 nodes up, so take one down to trigger a cluster Down edge.
+        fixture.markStorageNodeDown(1);
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+
+        fixture.processScheduledTask(); // Deferred tasks processing; should complete tasks
+        assertTrue(task.isCompleted());
+    }
+
+    @Test
+    public void multiple_tasks_may_be_scheduled_and_answered_at_the_same_time() throws Exception {
+        RemoteTaskFixture fixture = createDefaultFixture();
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+
+        MockTask task1 = fixture.scheduleVersionDependentTaskWithSideEffects();
+        MockTask task2 = fixture.scheduleVersionDependentTaskWithSideEffects();
+
+        fixture.processScheduledTask();
+        assertFalse(task1.isCompleted());
+        assertFalse(task2.isCompleted());
+
+        fixture.sendAllDeferredDistributorClusterStateAcks();
+
+        assertTrue(task1.isCompleted());
+        assertTrue(task2.isCompleted());
+    }
+
+    @Test
+    public void synchronous_task_immediately_failed_when_leadership_lost() throws Exception {
+        FleetControllerOptions options = optionsWithZeroTransitionTime();
+        options.fleetControllerCount = 3;
+        RemoteTaskFixture fixture = createFixtureWith(options);
+
+        fixture.winLeadership();
+        markAllNodesAsUp(options);
+
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+        fixture.processScheduledTask();
+        assertFalse(task.isCompleted());
+        assertFalse(task.isLeadershipLost());
+
+        fixture.loseLeadership();
+
+        assertTrue(task.isCompleted());
+        assertTrue(task.isLeadershipLost());
+    }
+
+    @Test
+    public void cluster_state_ack_is_not_dependent_on_state_send_grace_period() throws Exception {
+        FleetControllerOptions options = defaultOptions();
+        options.minTimeBetweenNewSystemStates = 10_000;
+        RemoteTaskFixture fixture = createFixtureWith(options);
+        // Have to increment timer here to be able to send state generated by the scheduled task
+        timer.advanceTime(10_000);
+
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+        fixture.processScheduledTask();
+        assertFalse(task.isCompleted()); // Not yet acked by all nodes
+        // If tracking whether ACKs are received from the cluster is dependent on the system state
+        // send grace period, we won't observe that the task may be completed even though all nodes
+        // have ACKed. Would then have to increment timer by 10s and do another tick.
+        fixture.sendAllDeferredDistributorClusterStateAcks();
+        assertTrue(task.isCompleted());
     }
 
 }
