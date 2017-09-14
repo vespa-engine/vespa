@@ -80,8 +80,8 @@ sub detectClusterController { # ()
         enableAutomaticLineBreaks($oldVal);
     }
 }
-sub setNodeUserState { # (ClusterName, NodeType, Index, State, Reason)
-    my ($cluster, $service, $index, $state, $reason) = @_;
+sub setNodeUserState { # (ClusterName, NodeType, Index, State, Reason, NoWait)
+    my ($cluster, $service, $index, $state, $reason, $no_wait) = @_;
     my @params = ();
     my @headers = (
         'Content-Type' => 'application/json'
@@ -100,6 +100,9 @@ sub setNodeUserState { # (ClusterName, NodeType, Index, State, Reason)
             }
         }
     };
+    if ($no_wait) {
+        $request->{'response-wait'} = 'no-wait';
+    }
     my $content = Json::encode($request);
 
     my $path = &getPathToNode($cluster, $service, $index);
