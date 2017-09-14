@@ -62,10 +62,6 @@
       <classifier>no_aop</classifier>
     </dependency>
     <dependency>
-      <groupId>net.jpountz.lz4</groupId>
-      <artifactId>lz4</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.main</artifactId>
     </dependency>

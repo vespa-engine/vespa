@@ -148,10 +148,6 @@
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>net.jpountz.lz4</groupId>
-          <artifactId>lz4</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

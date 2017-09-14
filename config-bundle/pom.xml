@@ -16,13 +16,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>lz4</artifactId>
-          <groupId>net.jpountz.lz4</groupId>
-        </exclusion>
-      </exclusions>
-
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -59,12 +52,6 @@
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>lz4</artifactId>
-          <groupId>net.jpountz.lz4</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
