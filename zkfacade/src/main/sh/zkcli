@@ -61,4 +61,4 @@ findroot
 sudo -u ${VESPA_USER} java \
 	-cp $VESPA_HOME/lib/jars/zkctl-jar-with-dependencies.jar \
 	-Dlog4j.configuration=file:$VESPA_HOME/etc/log4j-vespa.properties \
-	org.apache.zookeeper.ZooKeeperMain
+	org.apache.zookeeper.ZooKeeperMain "$@"
