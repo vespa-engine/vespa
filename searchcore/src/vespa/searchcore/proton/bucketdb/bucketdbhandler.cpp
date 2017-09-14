@@ -4,12 +4,18 @@
 #include "splitbucketsession.h"
 #include "joinbucketssession.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <algorithm>
 
 namespace proton::bucketdb {
 
 BucketDBHandler::BucketDBHandler(BucketDBOwner &bucketDB)
     : _bucketDB(bucketDB),
-      _dmsv()
+      _dmsv(),
+      _bucketCreateNotifier()
+{
+}
+
+BucketDBHandler::~BucketDBHandler()
 {
 }
 
@@ -42,7 +48,7 @@ BucketDBHandler::handleSplit(search::SerialNum serialNum,
         assert(!target1.contains(target2));
         assert(!target2.contains(target1));
     }
-    SplitBucketSession session(_bucketDB, source, target1, target2);
+    SplitBucketSession session(_bucketDB, _bucketCreateNotifier, source, target1, target2);
     session.setup();
     for (auto &desc : _dmsv) {
         IDocumentMetaStore *dms = desc._dms;
@@ -63,7 +69,7 @@ BucketDBHandler::handleJoin(search::SerialNum serialNum,
                             const BucketId &target)
 {
     // Called by writer thread
-    JoinBucketsSession session(_bucketDB, source1, source2, target);
+    JoinBucketsSession session(_bucketDB, _bucketCreateNotifier, source1, source2, target);
     session.setup();
     for (auto &desc : _dmsv) {
         IDocumentMetaStore *dms = desc._dms;

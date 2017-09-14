@@ -119,6 +119,9 @@ public:
     bucketdb::IBucketDBHandler &getBucketDBHandler() {
         return *_bucketDBHandler;
     }
+    bucketdb::IBucketCreateNotifier &getBucketCreateNotifier() {
+        return _bucketDBHandler->getBucketCreateNotifier();
+    }
 
     std::shared_ptr<initializer::InitializerTask>
     createInitializer(const DocumentDBConfig &configSnapshot,

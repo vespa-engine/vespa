@@ -21,6 +21,7 @@ class IBucketStateCalculator;
 class IAttributeManager;
 class AttributeUsageFilter;
 class IDiskMemUsageNotifier;
+namespace bucketdb { class IBucketCreateNotifier; }
 
 /**
  * Class that injects all concrete maintenance jobs used in document db
@@ -36,6 +37,7 @@ struct MaintenanceJobsInjector
                            const ILidSpaceCompactionHandler::Vector &lscHandlers,
                            IOperationStorer &opStorer,
                            IFrozenBucketHandler &fbHandler,
+                           bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                            const vespalib::string &docTypeName,
                            IPruneRemovedDocumentsHandler &prdHandler,
                            IDocumentMoveHandler &moveHandler,

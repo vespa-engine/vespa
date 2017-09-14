@@ -12,6 +12,7 @@
 #include "iclusterstatechangedhandler.h"
 #include "ifrozenbuckethandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <set>
 
 namespace proton
@@ -21,6 +22,7 @@ class BlockableMaintenanceJobConfig;
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
 class IDiskMemUsageNotifier;
+namespace bucketdb { class IBucketCreateNotifier; }
 
 /**
  * Class used to control the moving of buckets between the ready and
@@ -29,6 +31,7 @@ class IDiskMemUsageNotifier;
 class BucketMoveJob : public BlockableMaintenanceJob,
                       public IClusterStateChangedHandler,
                       public IBucketFreezeListener,
+                      public bucketdb::IBucketCreateListener,
                       public IBucketStateChangedHandler,
                       public IDiskMemUsageListener
 {
@@ -96,6 +99,7 @@ private:
     // Frozen buckets that cannot be moved at all.
     DelayedBucketSet                   _delayedBucketsFrozen;
     IFrozenBucketHandler              &_frozenBuckets;
+    bucketdb::IBucketCreateNotifier   &_bucketCreateNotifier;
     DocumentBucketMover                _delayedMover;
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
@@ -138,6 +142,7 @@ public:
                   const MaintenanceDocumentSubDB &ready,
                   const MaintenanceDocumentSubDB &notReady,
                   IFrozenBucketHandler &frozenBuckets,
+                  bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
                   IDiskMemUsageNotifier &diskMemUsageNotifier,
@@ -172,6 +177,9 @@ public:
                                           storage::spi::BucketInfo::ActiveState newState) override;
 
     virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
+
+    // bucketdb::IBucketCreateListener API
+    virtual void notifyCreateBucket(const document::BucketId &bucket) override;
 };
 
 } // namespace proton

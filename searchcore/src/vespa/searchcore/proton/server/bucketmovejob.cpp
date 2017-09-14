@@ -6,6 +6,7 @@
 #include "iclusterstatechangednotifier.h"
 #include "maintenancedocumentsubdb.h"
 #include "i_disk_mem_usage_notifier.h"
+#include <vespa/searchcore/proton/bucketdb/i_bucket_create_notifier.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
 #include <vespa/log/log.h>
@@ -154,6 +155,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               const MaintenanceDocumentSubDB &ready,
               const MaintenanceDocumentSubDB &notReady,
               IFrozenBucketHandler &frozenBuckets,
+              bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
               IClusterStateChangedNotifier &clusterStateChangedNotifier,
               IBucketStateChangedNotifier &bucketStateChangedNotifier,
               IDiskMemUsageNotifier &diskMemUsageNotifier,
@@ -162,6 +164,9 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
     : BlockableMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0, blockableConfig),
       IClusterStateChangedHandler(),
       IBucketFreezeListener(),
+      bucketdb::IBucketCreateListener(),
+      IBucketStateChangedHandler(),
+      IDiskMemUsageListener(),
       _calc(calc),
       _moveHandler(moveHandler),
       _modifiedHandler(modifiedHandler),
@@ -175,6 +180,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedBuckets(),
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
+      _bucketCreateNotifier(bucketCreateNotifier),
       _delayedMover(*_moveOpsLimiter),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
@@ -185,6 +191,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
     }
 
     _frozenBuckets.addListener(this);
+    _bucketCreateNotifier.addListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.addBucketStateChangedHandler(this);
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
@@ -193,6 +200,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
 BucketMoveJob::~BucketMoveJob()
 {
     _frozenBuckets.removeListener(this);
+    _bucketCreateNotifier.removeListener(this);
     _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.removeBucketStateChangedHandler(this);
     _diskMemUsageNotifier.removeDiskMemUsageListener(this);
@@ -247,6 +255,12 @@ BucketMoveJob::activateBucket(BucketId bucket)
     _delayedBuckets.insert(bucket);
 }
 
+void
+BucketMoveJob::notifyCreateBucket(const BucketId &bucket)
+{
+    _delayedBuckets.insert(bucket);
+    considerRun();
+}
 
 void
 BucketMoveJob::changedCalculator()

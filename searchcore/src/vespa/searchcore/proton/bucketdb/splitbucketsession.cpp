@@ -2,16 +2,18 @@
 
 #include "splitbucketsession.h"
 #include "bucketdeltapair.h"
+#include "i_bucket_create_notifier.h"
 #include <cassert>
 
 namespace proton::bucketdb {
 
 
 SplitBucketSession::SplitBucketSession(BucketDBOwner &bucketDB,
+                                       IBucketCreateNotifier &bucketCreateNotifier,
                                        const BucketId &source,
                                        const BucketId &target1,
                                        const BucketId &target2)
-    : BucketSessionBase(bucketDB),
+    : BucketSessionBase(bucketDB, bucketCreateNotifier),
       _target1Delta(),
       _target2Delta(),
       _sourceActive(false),
@@ -84,6 +86,12 @@ SplitBucketSession::finish()
     applyDelta(_target2Delta, sourceState, _target2);
     if (sourceState && sourceState->empty()) {
         _bucketDB->deleteEmptyBucket(_source);
+    }
+    if (!_target1Delta.empty()) {
+        _bucketCreateNotifier.notifyCreateBucket(_target1);
+    }
+    if (!_target2Delta.empty()) {
+        _bucketCreateNotifier.notifyCreateBucket(_target2);
     }
 }
 

@@ -948,6 +948,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             _lidSpaceCompactionHandlers,
             _feedHandler, // IOperationStorer
             _maintenanceController, // IFrozenBucketHandler
+            _subDBs.getBucketCreateNotifier(),
             _docTypeName.getName(),
             _feedHandler, // IPruneRemovedDocumentsHandler
             _feedHandler, // IDocumentMoveHandler
