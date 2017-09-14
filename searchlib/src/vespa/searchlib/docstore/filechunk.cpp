@@ -10,8 +10,11 @@
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/searchlib/util/filekit.h>
+#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
@@ -296,35 +299,65 @@ FileChunk::getModificationTime() const
     return _modificationTime;
 }
 
+namespace {
+
+using FutureChunk = std::future<Chunk::UP>;
+
+struct FixedParams {
+    const IGetLid & db;
+    IWriteData & dest;
+    const vespalib::GenerationHandler::Guard & lidReadGuard;
+    uint32_t fileId;
+    IFileChunkVisitorProgress *visitorProgress;
+};
+
 void
-FileChunk::appendTo(const IGetLid & db, IWriteData & dest,
-                    uint32_t numChunks,
-                    IFileChunkVisitorProgress *visitorProgress)
+appendChunks(FixedParams * args, Chunk::UP chunk)
+{
+    const Chunk::LidList ll(chunk->getUniqueLids());
+    for (const Chunk::Entry & e : ll) {
+        LidInfo lidInfo(args->fileId, chunk->getId(), e.netSize());
+        if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
+            vespalib::LockGuard guard(args->db.getLidGuard(e.getLid()));
+            if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
+                // I am still in use so I need to taken care of.
+                vespalib::ConstBufferRef data(chunk->getLid(e.getLid()));
+                args->dest.write(guard, chunk->getId(), e.getLid(), data.c_str(), data.size());
+            }
+        }
+    }
+    if (args->visitorProgress != NULL) {
+        args->visitorProgress->updateProgress();
+    }
+}
+
+}
+
+
+void
+FileChunk::appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
+                    uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress)
 {
     assert(frozen() || visitorProgress);
     vespalib::GenerationHandler::Guard lidReadGuard(db.getLidReadGuard());
     assert(numChunks <= getNumChunks());
+    FixedParams fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
+    vespalib::ThreadStackExecutor singleExecutor(1, 64*1024);
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
-        const ChunkInfo & cInfo(_chunkInfo[chunkId]);
-        vespalib::DataBuffer whole(0ul, ALIGNMENT);
-        FileRandRead::FSP keepAlive(_file->read(cInfo.getOffset(), whole, cInfo.getSize()));
-        Chunk chunk(chunkId, whole.getData(), whole.getDataLen());
-        const Chunk::LidList ll(chunk.getUniqueLids());
-        for (const Chunk::Entry & e : ll) {
-            LidInfo lidInfo(getFileId().getId(), chunk.getId(), e.netSize());
-            if (db.getLid(lidReadGuard, e.getLid()) == lidInfo) {
-                vespalib::LockGuard guard(db.getLidGuard(e.getLid()));
-                if (db.getLid(lidReadGuard, e.getLid()) == lidInfo) {
-                    // I am still in use so I need to taken care of.
-                    vespalib::ConstBufferRef data(chunk.getLid(e.getLid()));
-                    dest.write(guard, chunk.getId(), e.getLid(), data.c_str(), data.size());
-                }
-            }
-        }
-        if (visitorProgress != NULL) {
-            visitorProgress->updateProgress();
-        }
+        std::promise<Chunk::UP> promisedChunk;
+        std::future<Chunk::UP> futureChunk = promisedChunk.get_future();
+        executor.execute(makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
+            const ChunkInfo & cInfo(_chunkInfo[chunkId]);
+            vespalib::DataBuffer whole(0ul, ALIGNMENT);
+            FileRandRead::FSP keepAlive(_file->read(cInfo.getOffset(), whole, cInfo.getSize()));
+            promise.set_value(std::make_unique<Chunk>(chunkId, whole.getData(), whole.getDataLen()));
+        }));
+
+        singleExecutor.execute(makeLambdaTask([args = &fixedParams, chunk = std::move(futureChunk)]() mutable {
+            appendChunks(args, chunk.get());
+        }));
     }
+    singleExecutor.sync();
     dest.close();
 }
 

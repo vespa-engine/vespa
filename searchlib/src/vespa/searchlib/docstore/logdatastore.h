@@ -176,7 +176,7 @@ public:
     }
 
     // Implements IGetLid API
-    LidInfo getLid(Guard & guard, uint32_t lid) const override {
+    LidInfo getLid(const Guard & guard, uint32_t lid) const override {
         (void) guard;
         if (lid < getDocIdLimit()) {
             return _lidInfo[lid];
