@@ -9,11 +9,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -62,7 +62,7 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder allow(ValidationId validationId) {
         validationOverridesBody.append("  <allow until='");
-        validationOverridesBody.append(asIso8601String(Instant.now().plus(Duration.ofDays(29))));
+        validationOverridesBody.append(asIso8601Date(Instant.now().plus(Duration.ofDays(29))));
         validationOverridesBody.append("'>");
         validationOverridesBody.append(validationId.value());
         validationOverridesBody.append("</allow>\n");
@@ -113,9 +113,8 @@ public class ApplicationPackageBuilder {
         return new ApplicationPackage(zip.toByteArray());
     }
 
-    private static String asIso8601String(Instant instant) {
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE.withZone(ZoneId.systemDefault() );
-        return formatter.format(instant);
+    private static String asIso8601Date(Instant instant) {
+        return new SimpleDateFormat("yyyy-MM-dd").format(Date.from(instant));
     }
 
 }
