@@ -15,6 +15,11 @@ class ThreadExecutor : public Executor,
                        public Syncable
 {
 public:
+    /**
+     * Get number of threads in the executor pool.
+     * @return number of threads in the pool
+     */
+    virtual size_t getNumThreads() const = 0;
 };
 
 } // namespace vespalib

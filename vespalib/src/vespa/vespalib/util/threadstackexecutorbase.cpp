@@ -155,6 +155,10 @@ ThreadStackExecutorBase::start(uint32_t threads)
     }
 }
 
+size_t ThreadStackExecutorBase::getNumThreads() const {
+    return _pool->GetNumStartedThreads();
+}
+
 void
 ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {

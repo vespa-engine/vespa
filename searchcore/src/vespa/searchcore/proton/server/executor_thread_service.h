@@ -33,6 +33,7 @@ public:
         return *this;
     }
     virtual bool isCurrentThread() const override;
+    size_t getNumThreads() const override { return _executor.getNumThreads(); }
 };
 
 } // namespace proton

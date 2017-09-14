@@ -4,16 +4,16 @@
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
 #include "randreaders.h"
+#include <vespa/searchlib/util/filekit.h>
+#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/common/lambdatask.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -333,16 +333,15 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
 
 }
 
-
 void
-FileChunk::appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
+FileChunk::appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWriteData & dest,
                     uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress)
 {
     assert(frozen() || visitorProgress);
     vespalib::GenerationHandler::Guard lidReadGuard(db.getLidReadGuard());
     assert(numChunks <= getNumChunks());
     FixedParams fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
-    vespalib::ThreadStackExecutor singleExecutor(1, 64*1024);
+    vespalib::BlockingThreadStackExecutor singleExecutor(1, 64*1024, executor.getNumThreads()*2);
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
         std::promise<Chunk::UP> promisedChunk;
         std::future<Chunk::UP> futureChunk = promisedChunk.get_future();

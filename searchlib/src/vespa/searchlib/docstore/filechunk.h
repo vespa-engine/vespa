@@ -18,7 +18,7 @@ class FastOS_FileInterface;
 namespace vespalib {
     class DataBuffer;
     class GenericHeader;
-    class Executor;
+    class ThreadExecutor;
 }
 
 namespace search {
@@ -162,7 +162,7 @@ public:
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
     void compact(const IGetLid & iGetLid);
-    void appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
+    void appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWriteData & dest,
                   uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress);
     /**
      * Must be called after chunk has been created to allow correct
