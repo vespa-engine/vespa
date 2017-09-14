@@ -28,6 +28,7 @@ class MergeOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testMarkRedundantTrustedCopiesAsSourceOnly);
     CPPUNIT_TEST(onlyMarkRedundantRetiredReplicasAsSourceOnly);
     CPPUNIT_TEST(mark_post_merge_redundant_replicas_source_only);
+    CPPUNIT_TEST(merge_operation_is_blocked_by_any_busy_target_node);
     CPPUNIT_TEST_SUITE_END();
 
     std::unique_ptr<PendingMessageTracker> _pendingTracker;
@@ -41,6 +42,7 @@ protected:
     void testMarkRedundantTrustedCopiesAsSourceOnly();
     void onlyMarkRedundantRetiredReplicasAsSourceOnly();
     void mark_post_merge_redundant_replicas_source_only();
+    void merge_operation_is_blocked_by_any_busy_target_node();
 
 public:
     void setUp() override {
@@ -476,6 +478,29 @@ void MergeOperationTest::mark_post_merge_redundant_replicas_source_only() {
     CPPUNIT_ASSERT_EQUAL(
             std::string("3,5,7,6"),
             getNodeList("storage:10", 4, "3,5,7,6"));
+}
+
+void MergeOperationTest::merge_operation_is_blocked_by_any_busy_target_node() {
+    getClock().setAbsoluteTimeInSeconds(10);
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    MergeOperation op(BucketAndNodes(document::BucketId(16, 1), toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    // Should not block on nodes _not_ included in operation node set
+    _pendingTracker->getNodeInfo().setBusy(3, std::chrono::seconds(10));
+    CPPUNIT_ASSERT(!op.isBlocked(*_pendingTracker));
+
+    // Node 1 is included in operation node set and should cause a block
+    _pendingTracker->getNodeInfo().setBusy(0, std::chrono::seconds(10));
+    CPPUNIT_ASSERT(op.isBlocked(*_pendingTracker));
+
+    getClock().addSecondsToTime(11);
+    CPPUNIT_ASSERT(!op.isBlocked(*_pendingTracker)); // No longer busy
+
+    // Should block on other operation nodes than the first listed as well
+    _pendingTracker->getNodeInfo().setBusy(1, std::chrono::seconds(10));
+    CPPUNIT_ASSERT(op.isBlocked(*_pendingTracker));
 }
 
 } // distributor

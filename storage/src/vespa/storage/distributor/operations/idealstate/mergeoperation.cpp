@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergeoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
+#include <array>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.merge");
@@ -302,30 +303,36 @@ MergeOperation::onReceive(DistributorMessageSender& sender,
 
 namespace {
 
-static const uint32_t WRITE_FEED_MESSAGE_TYPES[] =
-{
+constexpr std::array<uint32_t, 7> WRITE_FEED_MESSAGE_TYPES {{
     api::MessageType::PUT_ID,
     api::MessageType::REMOVE_ID,
     api::MessageType::UPDATE_ID,
     api::MessageType::REMOVELOCATION_ID,
     api::MessageType::MULTIOPERATION_ID,
     api::MessageType::BATCHPUTREMOVE_ID,
-    api::MessageType::BATCHDOCUMENTUPDATE_ID,
-    0
-};
+    api::MessageType::BATCHDOCUMENTUPDATE_ID
+}};
 
 }
 
-bool
-MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const
-{
-    for (uint32_t i = 0; WRITE_FEED_MESSAGE_TYPES[i] != 0; ++i) {
-        if (messageType == WRITE_FEED_MESSAGE_TYPES[i]) {
+bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const {
+    for (auto blocking_type : WRITE_FEED_MESSAGE_TYPES) {
+        if (messageType == blocking_type) {
             return true;
         }
     }
 
     return IdealStateOperation::shouldBlockThisOperation(messageType, pri);
+}
+
+bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker) const {
+    const auto& node_info = pending_tracker.getNodeInfo();
+    for (auto node : getNodes()) {
+        if (node_info.isBusy(node)) {
+            return true;
+        }
+    }
+    return IdealStateOperation::isBlocked(pending_tracker);
 }
 
 }

@@ -6,21 +6,17 @@
 namespace storage::distributor {
 
 NodeInfo::NodeInfo(const framework::Clock& clock)
-        : _clock(clock) {}
+    : _clock(clock) {}
 
-uint32_t
-NodeInfo::getPendingCount(uint16_t idx) const
-{
+uint32_t NodeInfo::getPendingCount(uint16_t idx) const {
     return getNode(idx)._pending;
 }
 
-bool
-NodeInfo::isBusy(uint16_t idx) const
-{
+bool NodeInfo::isBusy(uint16_t idx) const {
     const SingleNodeInfo& info = getNode(idx);
-    if (info._busyTime.isSet()) {
-        if (_clock.getTimeInSeconds() > info._busyTime) {
-            info._busyTime = framework::SecondTime(0);
+    if (info._busyUntilTime.time_since_epoch().count() != 0) {
+        if (_clock.getMonotonicTime() > info._busyUntilTime) {
+            info._busyUntilTime = framework::MonotonicTimePoint{};
         } else {
             return true;
         }
@@ -29,22 +25,15 @@ NodeInfo::isBusy(uint16_t idx) const
     return false;
 }
 
-void
-NodeInfo::setBusy(uint16_t idx)
-{
-    getNode(idx)._busyTime = _clock.getTimeInSeconds()
-                           + framework::SecondTime(60);
+void NodeInfo::setBusy(uint16_t idx, framework::MonotonicDuration for_duration) {
+    getNode(idx)._busyUntilTime = _clock.getMonotonicTime() + for_duration;
 }
 
-void
-NodeInfo::incPending(uint16_t idx)
-{
+void NodeInfo::incPending(uint16_t idx) {
     getNode(idx)._pending++;
 }
 
-void
-NodeInfo::decPending(uint16_t idx)
-{
+void NodeInfo::decPending(uint16_t idx) {
     SingleNodeInfo& info = getNode(idx);
 
     if (info._pending > 0) {
@@ -52,28 +41,24 @@ NodeInfo::decPending(uint16_t idx)
     }
 }
 
-void
-NodeInfo::clearPending(uint16_t idx)
-{
+void NodeInfo::clearPending(uint16_t idx) {
     SingleNodeInfo& info = getNode(idx);
     info._pending = 0;
 }
 
-NodeInfo::SingleNodeInfo&
-NodeInfo::getNode(uint16_t idx)
-{
-    while ((int)_nodes.size() < idx + 1) {
-        _nodes.push_back(SingleNodeInfo());
+NodeInfo::SingleNodeInfo& NodeInfo::getNode(uint16_t idx) {
+    const auto index_lbound = static_cast<size_t>(idx) + 1;
+    while (_nodes.size() < index_lbound) {
+        _nodes.emplace_back();
     }
 
     return _nodes[idx];
 }
 
-const NodeInfo::SingleNodeInfo&
-NodeInfo::getNode(uint16_t idx) const
-{
-    while ((int)_nodes.size() < idx + 1) {
-        _nodes.push_back(SingleNodeInfo());
+const NodeInfo::SingleNodeInfo& NodeInfo::getNode(uint16_t idx) const {
+    const auto index_lbound = static_cast<size_t>(idx) + 1;
+    while (_nodes.size() < index_lbound) {
+        _nodes.emplace_back();
     }
 
     return _nodes[idx];

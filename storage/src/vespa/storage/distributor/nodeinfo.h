@@ -14,13 +14,13 @@ namespace storage::distributor {
 
 class NodeInfo {
 public:
-    NodeInfo(const framework::Clock& clock);
+    explicit NodeInfo(const framework::Clock& clock);
 
     uint32_t getPendingCount(uint16_t idx) const;
 
     bool isBusy(uint16_t idx) const;
 
-    void setBusy(uint16_t idx);
+    void setBusy(uint16_t idx, framework::MonotonicDuration for_duration);
 
     void incPending(uint16_t idx);
 
@@ -30,11 +30,10 @@ public:
 
 private:
     struct SingleNodeInfo {
-        SingleNodeInfo()
-            : _pending(0), _busyTime(0) {};
+        SingleNodeInfo() : _pending(0), _busyUntilTime() {}
 
         uint32_t _pending;
-        mutable framework::SecondTime _busyTime;
+        mutable framework::MonotonicTimePoint _busyUntilTime;
     };
 
     mutable std::vector<SingleNodeInfo> _nodes;

@@ -684,12 +684,10 @@ Distributor::doNonCriticalTick(framework::ThreadIndex)
 void
 Distributor::enableNextConfig()
 {
-    _hostInfoReporter.enableReporting(
-            getConfig().getEnableHostInfoReporting());
-    _bucketDBMetricUpdater.setMinimumReplicaCountingMode(
-            getConfig().getMinimumReplicaCountingMode());
-    _ownershipSafeTimeCalc->setMaxClusterClockSkew(
-            getConfig().getMaxClusterClockSkew());
+    _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+    _bucketDBMetricUpdater.setMinimumReplicaCountingMode(getConfig().getMinimumReplicaCountingMode());
+    _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());
+    _pendingMessageTracker.setNodeBusyDuration(getConfig().getInhibitMergesOnBusyNodeDuration());
 }
 
 void
