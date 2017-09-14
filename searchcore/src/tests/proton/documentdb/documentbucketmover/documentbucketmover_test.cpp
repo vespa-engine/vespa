@@ -1223,7 +1223,7 @@ TEST_F("explicitly active not ready bucket can be moved to ready even if node is
     EXPECT_EQUAL(f._notReady.bucket(3), f.bucketsModified()[0]);
 }
 
-TEST_F("require that notifyCreateBucket works", ControllerFixture)
+TEST_F("require that notifyCreateBucket causes bucket to be reconsidered by job", ControllerFixture)
 {
     EXPECT_FALSE(f._bmj.done());
     f.addReady(f._ready.bucket(1));
