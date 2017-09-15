@@ -15,7 +15,7 @@ namespace distributor {
 
 class DistributorConfiguration {
 public: 
-    DistributorConfiguration(StorageComponent& component);
+    explicit DistributorConfiguration(StorageComponent& component);
     ~DistributorConfiguration();
 
     struct MaintenancePriorities
@@ -225,6 +225,9 @@ public:
     std::chrono::seconds getMaxClusterClockSkew() const noexcept {
         return _maxClusterClockSkew;
     }
+    std::chrono::seconds getInhibitMergesOnBusyNodeDuration() const noexcept {
+        return _inhibitMergeSendingOnBusyNodeDuration;
+    }
 
     bool getSequenceMutatingOperations() const noexcept {
         return _sequenceMutatingOperations;
@@ -263,6 +266,7 @@ private:
 
     MaintenancePriorities _maintenancePriorities;
     std::chrono::seconds _maxClusterClockSkew;
+    std::chrono::seconds _inhibitMergeSendingOnBusyNodeDuration;
 
     bool _doInlineSplit;
     bool _enableJoinForSiblingLessBuckets;

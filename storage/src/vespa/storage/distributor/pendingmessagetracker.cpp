@@ -18,6 +18,7 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
       _nodeIndexToStats(),
       _nodeInfo(_component.getClock()),
       _statisticsForwarder(*this),
+      _nodeBusyDuration(60),
       _lock()
 {
     _component.registerStatusPage(*this);
@@ -54,15 +55,14 @@ PendingMessageTracker::currentTime() const
 namespace {
 
 template <typename Pair>
-struct PairAsRange
-{
+struct PairAsRange {
     Pair _pair;
     explicit PairAsRange(Pair pair) : _pair(std::move(pair)) {}
 
-    auto begin() -> decltype(_pair.first) { return _pair.first; }
-    auto end() -> decltype(_pair.second) { return _pair.second; }
-    auto begin() const -> decltype(_pair.first) { return _pair.first; }
-    auto end() const -> decltype(_pair.second) { return _pair.second; }
+    auto begin() { return _pair.first; }
+    auto end() { return _pair.second; }
+    auto begin() const { return _pair.first; }
+    auto end() const { return _pair.second; }
 };
 
 template <typename Pair>
@@ -133,7 +133,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         updateNodeStatsOnReply(*iter);
         api::ReturnCode::Result code = r.getResult().getResult();
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
-            _nodeInfo.setBusy(r.getAddress()->getIndex());
+            _nodeInfo.setBusy(r.getAddress()->getIndex(), _nodeBusyDuration);
         }
         LOG(debug, "Erased message with id %zu", msgId);
         msgs.erase(msgId);

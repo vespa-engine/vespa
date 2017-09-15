@@ -46,7 +46,8 @@ public:
             const document::BucketId&, MergeLimiter&,
             std::vector<MergeMetaData>&);
 
-    bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override ;
+    bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override;
+    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
 private:
     static void addIdealNodes(
             const std::vector<uint16_t>& idealNodes,

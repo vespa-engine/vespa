@@ -27,6 +27,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxVisitorsPerNodePerClientVisitor(4),
       _minBucketsPerVisitor(5),
       _maxClusterClockSkew(0),
+      _inhibitMergeSendingOnBusyNodeDuration(std::chrono::seconds(60)),
       _doInlineSplit(true),
       _enableJoinForSiblingLessBuckets(false),
       _enableInconsistentJoin(false),
@@ -149,8 +150,10 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     configureMaintenancePriorities(config);
 
     if (config.maxClusterClockSkewSec >= 0) {
-        _maxClusterClockSkew = std::chrono::seconds(
-                config.maxClusterClockSkewSec);
+        _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);
+    }
+    if (config.inhibitMergeSendingOnBusyNodeDurationSec >= 0) {
+        _inhibitMergeSendingOnBusyNodeDuration = std::chrono::seconds(config.inhibitMergeSendingOnBusyNodeDurationSec);
     }
     
     LOG(debug,

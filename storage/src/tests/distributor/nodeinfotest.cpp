@@ -57,11 +57,11 @@ NodeInfoTest::testSimple()
     CPPUNIT_ASSERT_EQUAL(1, (int)info.getPendingCount(7));
     CPPUNIT_ASSERT_EQUAL(0, (int)info.getPendingCount(5));
 
-    info.setBusy(5);
+    info.setBusy(5, std::chrono::seconds(60));
     clock.addSecondsToTime(10);
-    info.setBusy(1);
+    info.setBusy(1, std::chrono::seconds(60));
     clock.addSecondsToTime(20);
-    info.setBusy(42);
+    info.setBusy(42, std::chrono::seconds(60));
 
     CPPUNIT_ASSERT_EQUAL(true, info.isBusy(5));
     CPPUNIT_ASSERT_EQUAL(true, info.isBusy(1));
