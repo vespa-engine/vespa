@@ -53,7 +53,7 @@ public:
         EXPECT_EQUAL(_createdListeners, _destroyedListeners);
     }
 
-    void notifyPut() {
+    void notifyPutDone() {
         lock_guard guard(_lock);
         ++_putChanges;
     }
@@ -101,7 +101,7 @@ public:
         _stats.markCreatedListener();
     }
     virtual ~MyListener() { _stats.markDestroyedListener(); }
-    virtual void notifyPut(GlobalId, uint32_t) override { _stats.notifyPut(); }
+    virtual void notifyPutDone(GlobalId, uint32_t) override { _stats.notifyPutDone(); }
     virtual void notifyRemove(GlobalId) override { _stats.notifyRemove(); }
     virtual void notifyRegistered() override { _stats.markRegisteredListener(); }
     virtual const vespalib::string &getName() const override { return _name; }
@@ -138,8 +138,8 @@ struct Fixture
         _handler->addListener(std::move(listener));
     }
 
-    void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) {
-        _handler->notifyPut(gid, lid, serialNum);
+    void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) {
+        _handler->notifyPutDone(gid, lid, serialNum);
     }
 
     void notifyRemove(GlobalId gid, SerialNum serialNum) {
@@ -164,7 +164,7 @@ TEST_F("Test that we can register a listener", Fixture)
     TEST_DO(stats.assertListeners(1, 0, 0));
     f.addListener(std::move(listener));
     TEST_DO(stats.assertListeners(1, 1, 0));
-    f.notifyPut(toGid(doc1), 10, 10);
+    f.notifyPutDone(toGid(doc1), 10, 10);
     TEST_DO(stats.assertChanges(1, 0));
     f.removeListeners("testdoc", {});
     TEST_DO(stats.assertListeners(1, 1, 1));
@@ -187,7 +187,7 @@ TEST_F("Test that we can register multiple listeners", Fixture)
     TEST_DO(stats1.assertListeners(1, 1, 0));
     TEST_DO(stats2.assertListeners(1, 1, 0));
     TEST_DO(stats3.assertListeners(1, 1, 0));
-    f.notifyPut(toGid(doc1), 10, 10);
+    f.notifyPutDone(toGid(doc1), 10, 10);
     TEST_DO(stats1.assertChanges(1, 0));
     TEST_DO(stats2.assertChanges(1, 0));
     TEST_DO(stats3.assertChanges(1, 0));
@@ -222,42 +222,81 @@ TEST_F("Test that we keep old listener when registering duplicate", Fixture)
     TEST_DO(stats.assertListeners(2, 1, 1));
 }
 
-TEST_F("Test that put is ignored if we have a pending remove", Fixture)
+class StatsFixture : public Fixture
 {
-    auto &stats = f.addStats();
-    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
-    f.addListener(std::move(listener));
+    ListenerStats &_stats;
+
+public:
+    StatsFixture()
+        : Fixture(),
+          _stats(addStats())
+    {
+        addListener(std::make_unique<MyListener>(_stats, "test", "testdoc"));
+    }
+
+    ~StatsFixture()
+    {
+        removeListeners("testdoc", {});
+    }
+
+    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges)
+    {
+        TEST_DO(_stats.assertChanges(expPutChanges, expRemoveChanges));
+    }
+};
+
+TEST_F("Test that put is ignored if we have a pending remove", StatsFixture)
+{
     f.notifyRemove(toGid(doc1), 20);
-    TEST_DO(stats.assertChanges(0, 1));
-    f.notifyPut(toGid(doc1), 10, 10);
-    TEST_DO(stats.assertChanges(0, 1));
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 10, 10);
+    TEST_DO(f.assertChanges(0, 1));
     f.notifyRemoveDone(toGid(doc1), 20);
-    TEST_DO(stats.assertChanges(0, 1));
-    f.notifyPut(toGid(doc1), 11, 30);
-    TEST_DO(stats.assertChanges(1, 1));
-    f.removeListeners("testdoc", {});
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 11, 30);
+    TEST_DO(f.assertChanges(1, 1));
 }
 
-TEST_F("Test that pending removes are merged", Fixture)
+TEST_F("Test that pending removes are merged", StatsFixture)
 {
-    auto &stats = f.addStats();
-    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
-    f.addListener(std::move(listener));
     f.notifyRemove(toGid(doc1), 20);
-    TEST_DO(stats.assertChanges(0, 1));
+    TEST_DO(f.assertChanges(0, 1));
     f.notifyRemove(toGid(doc1), 40);
-    TEST_DO(stats.assertChanges(0, 1));
-    f.notifyPut(toGid(doc1), 10, 10);
-    TEST_DO(stats.assertChanges(0, 1));
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 10, 10);
+    TEST_DO(f.assertChanges(0, 1));
     f.notifyRemoveDone(toGid(doc1), 20);
-    TEST_DO(stats.assertChanges(0, 1));
-    f.notifyPut(toGid(doc1), 11, 30);
-    TEST_DO(stats.assertChanges(0, 1));
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 11, 30);
+    TEST_DO(f.assertChanges(0, 1));
     f.notifyRemoveDone(toGid(doc1), 40);
-    TEST_DO(stats.assertChanges(0, 1));
-    f.notifyPut(toGid(doc1), 12, 50);
-    TEST_DO(stats.assertChanges(1, 1));
-    f.removeListeners("testdoc", {});
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 12, 50);
+    TEST_DO(f.assertChanges(1, 1));
+}
+
+TEST_F("Test that out of order notifyRemoveDone is handled", StatsFixture)
+{
+     f.notifyRemove(toGid(doc1), 20);
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyRemove(toGid(doc1), 40);
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyRemoveDone(toGid(doc1), 40);
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 12, 50);
+    TEST_DO(f.assertChanges(1, 1));
+}
+
+TEST_F("Test that out of order notifyPutDone is handled", StatsFixture)
+{
+     f.notifyRemove(toGid(doc1), 20);
+    TEST_DO(f.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 12, 50);
+    TEST_DO(f.assertChanges(1, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(f.assertChanges(1, 1));
 }
 
 }

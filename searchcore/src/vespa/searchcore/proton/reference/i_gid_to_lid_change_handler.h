@@ -40,7 +40,7 @@ public:
     /**
      * Notify gid to lid mapping change.
      */
-    virtual void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
+    virtual void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) = 0;
     virtual void notifyRemove(GlobalId gid, SerialNum serialNum) = 0;
     virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) = 0;
 };

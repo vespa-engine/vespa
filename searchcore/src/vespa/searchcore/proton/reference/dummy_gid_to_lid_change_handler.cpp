@@ -15,7 +15,7 @@ DummyGidToLidChangeHandler::~DummyGidToLidChangeHandler()
 }
 
 void
-DummyGidToLidChangeHandler::notifyPut(GlobalId, uint32_t, SerialNum)
+DummyGidToLidChangeHandler::notifyPutDone(GlobalId, uint32_t, SerialNum)
 {
 }
 

@@ -12,18 +12,12 @@ RemoveDoneContext::RemoveDoneContext(std::unique_ptr<FeedToken> token,
                                      PerDocTypeFeedMetrics &metrics,
                                      vespalib::Executor &executor,
                                      IDocumentMetaStore &documentMetaStore,
-                                     IGidToLidChangeHandler &gidToLidChangeHandler,
-                                     const document::GlobalId &gid,
-                                     uint32_t lid,
-                                     search::SerialNum serialNum,
-                                     bool enableNotifyRemoveDone)
+                                     PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
+                                     uint32_t lid)
     : OperationDoneContext(std::move(token), opType, metrics),
       _executor(executor),
       _task(),
-      _gidToLidChangeHandler(gidToLidChangeHandler),
-      _gid(gid),
-      _serialNum(serialNum),
-      _enableNotifyRemoveDone(enableNotifyRemoveDone)
+      _pendingNotifyRemoveDone(std::move(pendingNotifyRemoveDone))
 {
     if (lid != 0) {
         _task = std::make_unique<RemoveDoneTask>(documentMetaStore, lid);
@@ -32,9 +26,7 @@ RemoveDoneContext::RemoveDoneContext(std::unique_ptr<FeedToken> token,
 
 RemoveDoneContext::~RemoveDoneContext()
 {
-    if (_enableNotifyRemoveDone) {
-        _gidToLidChangeHandler.notifyRemoveDone(_gid, _serialNum);
-    }
+    _pendingNotifyRemoveDone.invoke();
     ack();
     if (_task) {
         vespalib::Executor::Task::UP res = _executor.execute(std::move(_task));

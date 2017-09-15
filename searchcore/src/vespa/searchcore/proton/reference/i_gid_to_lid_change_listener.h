@@ -17,7 +17,7 @@ class IGidToLidChangeListener
 {
 public:
     virtual ~IGidToLidChangeListener() { }
-    virtual void notifyPut(document::GlobalId gid, uint32_t lid) = 0;
+    virtual void notifyPutDone(document::GlobalId gid, uint32_t lid) = 0;
     virtual void notifyRemove(document::GlobalId gid) = 0;
     virtual void notifyRegistered() = 0;
     virtual const vespalib::string &getName() const = 0;

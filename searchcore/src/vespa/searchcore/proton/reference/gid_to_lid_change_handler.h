@@ -22,18 +22,36 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
 {
     using lock_guard = std::lock_guard<std::mutex>;
     using Listeners = std::vector<std::unique_ptr<IGidToLidChangeListener>>;
+    struct PendingRemoveEntry {
+        SerialNum removeSerialNum;
+        SerialNum putSerialNum;
+        uint32_t  refCount;
+
+        PendingRemoveEntry(SerialNum removeSerialNum_)
+            : removeSerialNum(removeSerialNum_),
+              putSerialNum(0),
+              refCount(1)
+        {
+        }
+
+        PendingRemoveEntry()
+            : PendingRemoveEntry(0)
+        {
+        }
+    };
+
     std::mutex _lock;
     Listeners _listeners;
     bool _closed;
-    vespalib::hash_map<GlobalId, SerialNum, GlobalId::hash> _pendingRemove;
+    vespalib::hash_map<GlobalId, PendingRemoveEntry, GlobalId::hash> _pendingRemove;
 
-    void notifyPut(GlobalId gid, uint32_t lid);
+    void notifyPutDone(GlobalId gid, uint32_t lid);
     void notifyRemove(GlobalId gid);
 public:
     GidToLidChangeHandler();
     virtual ~GidToLidChangeHandler();
 
-    virtual void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    virtual void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
     virtual void notifyRemove(GlobalId gid, SerialNum serialNum) override;
     virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
 

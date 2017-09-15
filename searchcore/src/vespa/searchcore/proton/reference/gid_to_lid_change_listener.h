@@ -30,7 +30,7 @@ public:
                            const vespalib::string &name,
                            const vespalib::string &docTypeName);
     virtual ~GidToLidChangeListener();
-    virtual void notifyPut(document::GlobalId gid, uint32_t lid) override;
+    virtual void notifyPutDone(document::GlobalId gid, uint32_t lid) override;
     virtual void notifyRemove(document::GlobalId gid) override;
     virtual void notifyRegistered() override;
     virtual const vespalib::string &getName() const override;
