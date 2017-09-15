@@ -40,7 +40,8 @@
  */
 
 // Vespalib integration notice: we use static linkage on the digest processing
-// functions, as their signatures intentionally alias those of OpenSSL.
+// functions, as their signatures intentionally alias those of OpenSSL. Once we
+// start linking with OpenSSL itself, consider using its digest functions instead.
 
 #include <string.h>
 #include "md5.h"
