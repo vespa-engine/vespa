@@ -75,7 +75,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     bool shouldSend = false;
     {
         vespalib::LockGuard guard(_lock);
-        if (version == NULL) {
+        if (version == nullptr) {
             _hasError = true;
         } else if (*version < _version) {
             _version = *version;
@@ -298,7 +298,7 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                                            serviceName.c_str()));
     }
     RPCServiceAddress::UP ret = _servicePool->resolve(serviceName);
-    if (ret.get() == NULL) {
+    if (ret.get() == nullptr) {
         return Error(ErrorCode::NO_ADDRESS_FOR_SERVICE,
                      make_string("The address of service '%s' could not be resolved. It is not currently "
                                  "registered with the Vespa name server. "
@@ -306,7 +306,7 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                                  serviceName.c_str()));
     }
     RPCTarget::SP target = _targetPool->getTarget(*_orb, *ret);
-    if (target.get() == NULL) {
+    if (target.get() == nullptr) {
         return Error(ErrorCode::CONNECTION_ERROR,
                      make_string("Failed to connect to service '%s'.", serviceName.c_str()));
     }
@@ -328,7 +328,7 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
     double timeout = ctx._msg.getTimeRemainingNow() / 1000.0;
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
         RoutingNode *&recipient = ctx._recipients[i];
-        LOG_ASSERT(recipient != NULL);
+        LOG_ASSERT(recipient != nullptr);
 
         RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient->getServiceAddress());
         LOG_ASSERT(address.hasTarget());
@@ -346,7 +346,7 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
         uint64_t timeRemaining = ctx._msg.getTimeRemainingNow();
         Blob payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);
         RPCSendAdapter *adapter = getSendAdapter(ctx._version);
-        if (adapter == NULL) {
+        if (adapter == nullptr) {
             replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
                        make_string("Can not send to version '%s' recipient.", ctx._version.toString().c_str()));
         } else if (timeRemaining == 0) {

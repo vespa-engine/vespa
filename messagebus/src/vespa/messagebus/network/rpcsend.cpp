@@ -53,7 +53,7 @@ private:
 }
 
 RPCSend::RPCSend() :
-    _net(NULL),
+    _net(nullptr),
     _clientIdent("client"),
     _serverIdent("server")
 { }

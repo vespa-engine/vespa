@@ -84,7 +84,7 @@ RouteParser::createHop(stringref str)
     }
     if (len > 4 && str.substr(0, 4) == "tcp/") {
         IHopDirective::SP tcp = createTcpDirective(str.substr(4));
-        if (tcp.get() != NULL) {
+        if (tcp.get() != nullptr) {
             return Hop().addDirective(tcp);
         }
     }

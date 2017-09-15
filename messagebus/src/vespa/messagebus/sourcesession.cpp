@@ -41,9 +41,9 @@ SourceSession::send(Message::UP msg, const string &routeName, bool parseIfNotFou
 {
     bool found = false;
     RoutingTable::SP rt = _mbus.getRoutingTable(msg->getProtocol());
-    if (rt.get() != NULL) {
+    if (rt.get() != nullptr) {
         const Route *route = rt->getRoute(routeName);
-        if (route != NULL) {
+        if (route != nullptr) {
             msg->setRoute(*route);
             found = true;
         } else if (!parseIfNotFound) {
@@ -79,13 +79,13 @@ SourceSession::send(Message::UP msg)
         if (_closed) {
             return Result(Error(ErrorCode::SEND_QUEUE_CLOSED, "Source session is closed."), std::move(msg));
         }
-        if (_throttlePolicy.get() != NULL && !_throttlePolicy->canSend(*msg, _pendingCount)) {
+        if (_throttlePolicy.get() != nullptr && !_throttlePolicy->canSend(*msg, _pendingCount)) {
             return Result(Error(ErrorCode::SEND_QUEUE_FULL,
                                 make_string("Too much pending data (%d messages).", _pendingCount)),
                           std::move(msg));
         }
         msg->pushHandler(_replyHandler);
-        if (_throttlePolicy.get() != NULL) {
+        if (_throttlePolicy.get() != nullptr) {
             _throttlePolicy->processMessage(*msg);
         }
         ++_pendingCount;
@@ -108,7 +108,7 @@ SourceSession::handleReply(Reply::UP reply)
         vespalib::MonitorGuard guard(_monitor);
         assert(_pendingCount > 0);
         --_pendingCount;
-        if (_throttlePolicy.get() != NULL) {
+        if (_throttlePolicy.get() != nullptr) {
             _throttlePolicy->processReply(*reply);
         }
         done = (_closed && _pendingCount == 0);

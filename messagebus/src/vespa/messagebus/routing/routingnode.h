@@ -228,7 +228,7 @@ public:
      */
     RoutingNode(MessageBus &mbus, INetwork &net, Resender *resender,
                 IReplyHandler &replyHandler, Message &msg,
-                IDiscardHandler *discardHandler = NULL);
+                IDiscardHandler *discardHandler = nullptr);
 
     /**
      * Destructor. Frees up any allocated resources, namely all child nodes of
@@ -371,7 +371,7 @@ public:
      *
      * @return True if this node has a reply.
      */
-    bool hasReply() const { return _reply.get() != NULL; }
+    bool hasReply() const { return _reply.get() != nullptr; }
 
     /**
      * Returns the reply of this node.
@@ -421,7 +421,7 @@ public:
      *
      * @return True if an address is set.
      */
-    bool hasServiceAddress() { return _serviceAddress.get() != NULL; }
+    bool hasServiceAddress() { return _serviceAddress.get() != nullptr; }
 
     /**
      * Returns the service address of this node. This is attached by the network

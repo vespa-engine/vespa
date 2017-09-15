@@ -36,7 +36,7 @@ RPCTargetPool::flushTargets(bool force)
     TargetMap::iterator it = _targets.begin();
     while (it != _targets.end()) {
         Entry &entry = it->second;
-        if (entry._target.get() != NULL) {
+        if (entry._target.get() != nullptr) {
             if (entry._target.use_count() > 1) {
                 entry._lastUse = currentTime;
                 ++it;
