@@ -4,5 +4,7 @@ package com.yahoo.vespa.clustercontroller.core.listeners;
 import com.yahoo.vdslib.state.ClusterState;
 
 public interface SystemStateListener {
-    public void handleNewSystemState(ClusterState state);
+
+    void handleNewSystemState(ClusterState state);
+
 }

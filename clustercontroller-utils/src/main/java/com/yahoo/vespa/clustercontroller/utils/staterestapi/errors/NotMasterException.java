@@ -6,4 +6,5 @@ public abstract class NotMasterException extends StateRestApiException {
     public NotMasterException(String description) {
         super(description);
     }
+
 }

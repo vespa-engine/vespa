@@ -12,14 +12,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UnitPathResolver<T> {
+
     public interface Visitor<T> {
-        public Request<? extends T> visitGlobal() throws StateRestApiException;
-        public Request<? extends T> visitCluster(Id.Cluster id) throws StateRestApiException;
-        public Request<? extends T> visitService(Id.Service id) throws StateRestApiException;
-        public Request<? extends T> visitNode(Id.Node id) throws StateRestApiException;
-        public Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException;
+
+        Request<? extends T> visitGlobal() throws StateRestApiException;
+        Request<? extends T> visitCluster(Id.Cluster id) throws StateRestApiException;
+        Request<? extends T> visitService(Id.Service id) throws StateRestApiException;
+        Request<? extends T> visitNode(Id.Node id) throws StateRestApiException;
+        Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException;
+
     }
+
     public static abstract class AbstractVisitor<T> implements Visitor<T> {
+
         private final String path[];
         private final String failureMessage;
 
@@ -36,6 +41,7 @@ public class UnitPathResolver<T> {
         public Request<? extends T> visitService(Id.Service id) throws StateRestApiException { return fail(); }
         public Request<? extends T> visitNode(Id.Node id) throws StateRestApiException { return fail(); }
         public Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException { return fail(); }
+
     }
 
     private final Map<String, RemoteClusterControllerTaskScheduler> fleetControllers;
@@ -92,4 +98,5 @@ public class UnitPathResolver<T> {
         }
         throw new MissingUnitException(path, 4);
     }
+
 }

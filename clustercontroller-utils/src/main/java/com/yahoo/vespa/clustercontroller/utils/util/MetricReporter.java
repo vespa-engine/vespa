@@ -7,11 +7,14 @@ package com.yahoo.vespa.clustercontroller.utils.util;
  * reports on to injected jdisc implementation.
  */
 public interface MetricReporter {
+
     void set(java.lang.String s, java.lang.Number number, Context context);
 
     void add(java.lang.String s, java.lang.Number number, Context context);
 
     Context createContext(java.util.Map<java.lang.String,?> dimensions);
-    static interface Context {
+
+    interface Context {
     }
+
 }

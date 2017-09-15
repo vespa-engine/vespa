@@ -4,7 +4,6 @@ package com.yahoo.component;
 
 /**
  * A named, versioned, identifiable component.
- * <p>
  * Components can by default be ordered by their id order. Their identity is defined by the id.
  * Prefer extending AbstractComponent instead of implementing this interface directly.
  *

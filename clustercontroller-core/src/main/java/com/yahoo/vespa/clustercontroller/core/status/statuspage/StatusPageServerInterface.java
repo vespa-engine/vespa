@@ -2,9 +2,11 @@
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
 public interface StatusPageServerInterface {
-    public int getPort();
-    public void shutdown() throws InterruptedException, java.io.IOException;
-    public void setPort(int port) throws java.io.IOException, InterruptedException;
-    public StatusPageServer.HttpRequest getCurrentHttpRequest();
-    public void answerCurrentStatusRequest(StatusPageResponse r);
+
+    int getPort();
+    void shutdown() throws InterruptedException, java.io.IOException;
+    void setPort(int port) throws java.io.IOException, InterruptedException;
+    StatusPageServer.HttpRequest getCurrentHttpRequest();
+    void answerCurrentStatusRequest(StatusPageResponse r);
+
 }

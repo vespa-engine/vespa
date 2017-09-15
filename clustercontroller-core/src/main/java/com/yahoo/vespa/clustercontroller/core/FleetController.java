@@ -722,11 +722,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     /*
-    System test observations:
+      System test observations:
       - a node that stops normally (U -> S) then goes down erroneously triggers premature crash handling
       - long time before content node state convergence (though this seems to be the case for legacy impl as well)
      */
-
     private boolean resyncLocallyCachedState() throws InterruptedException {
         boolean didWork = false;
         // Let non-master state gatherers update wanted states once in a while, so states generated and shown are close to valid.
@@ -993,4 +992,5 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public EventLog getEventLog() {
         return eventLog;
     }
+
 }

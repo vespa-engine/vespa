@@ -5,9 +5,10 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageRespon
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 
 /**
-* @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+* @author Haakon Humberset
 */
 public class NodeHealthRequestHandler implements StatusPageServer.RequestHandler {
+
     private final RunDataExtractor data;
 
     public NodeHealthRequestHandler(RunDataExtractor data) {
@@ -34,4 +35,5 @@ public class NodeHealthRequestHandler implements StatusPageServer.RequestHandler
         response.writeContent(content.toString());
         return response;
     }
+
 }

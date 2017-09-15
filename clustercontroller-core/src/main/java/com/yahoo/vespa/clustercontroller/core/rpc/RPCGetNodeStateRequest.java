@@ -18,4 +18,5 @@ public class RPCGetNodeStateRequest extends GetNodeStateRequest {
     public void abort() {
         request.abort();
     }
+
 }

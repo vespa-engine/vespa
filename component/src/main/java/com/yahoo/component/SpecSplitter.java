@@ -5,11 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Splits and component id or component specification string
- * into their constituent parts.
- * @author tonytv
+ * Splits and component id or component specification string into their constituent parts.
+ * 
+ * @author Tony Vaagenes
  */
 class SpecSplitter {
+
     final String name;
     final String version;
     final ComponentId namespace;
@@ -41,4 +42,5 @@ class SpecSplitter {
             return Arrays.asList(string, null);
         }
     }
+
 }

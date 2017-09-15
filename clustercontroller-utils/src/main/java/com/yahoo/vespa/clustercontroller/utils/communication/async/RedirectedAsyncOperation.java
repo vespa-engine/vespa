@@ -5,6 +5,7 @@ package com.yahoo.vespa.clustercontroller.utils.communication.async;
  * Utility class in order to wrap com.yahoo.vespa.clustercontroller.utils.communication.async operation callbacks. Useful when translating com.yahoo.vespa.clustercontroller.utils.communication.async operations returning JSON to com.yahoo.vespa.clustercontroller.utils.communication.async operations returning specific values.
  */
 public abstract class RedirectedAsyncOperation<S, T> implements AsyncOperation<T> {
+
     protected final AsyncOperation<S> source;
     private final AsyncOperationListenImpl<T> listenImpl;
     private AsyncCallback<S> beforeCallbackTask;
@@ -60,4 +61,5 @@ public abstract class RedirectedAsyncOperation<S, T> implements AsyncOperation<T
     public void unregister(AsyncCallback<T> callback) {
         listenImpl.unregister(callback);
     }
+
 }

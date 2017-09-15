@@ -11,6 +11,7 @@ import java.util.logging.Logger;
  * Utility class to schedule HTTP requests and keeping a maximum amount of them pending at a time.
  */
 public class RequestQueue<V extends HttpResult> {
+
     private static final Logger log = Logger.getLogger(RequestQueue.class.getName());
     private final AsyncHttpClient<V> httpClient;
     private final LinkedList<Request<V>> requestQueue = new LinkedList<>();
@@ -82,4 +83,5 @@ public class RequestQueue<V extends HttpResult> {
             }
         }
     }
+
 }

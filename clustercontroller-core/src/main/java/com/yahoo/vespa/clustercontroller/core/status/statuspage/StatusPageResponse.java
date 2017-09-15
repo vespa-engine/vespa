@@ -81,4 +81,5 @@ public class StatusPageResponse {
         content.append("</body>\n")
                .append("</html>\n");
     }
+
 }

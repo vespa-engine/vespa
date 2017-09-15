@@ -6,4 +6,5 @@ public class InternalFailure extends StateRestApiException {
     public InternalFailure(String description) {
         super("Internal failure. Should not happen: " + description);
     }
+
 }

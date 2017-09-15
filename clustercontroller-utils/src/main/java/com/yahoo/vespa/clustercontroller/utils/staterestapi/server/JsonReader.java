@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JsonReader {
+
     private static class UnitStateImpl implements UnitState {
         private final String id;
         private final String reason;

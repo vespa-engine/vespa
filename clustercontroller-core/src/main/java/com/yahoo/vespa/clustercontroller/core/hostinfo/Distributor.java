@@ -7,13 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-  * Class for handling Distributor part of HostInfo.
-  * @author dybis
-  */
+ * Class for handling Distributor part of HostInfo.
+ * 
+ * @author Haakon Dybdahl
+ */
 public class Distributor {
 
     @JsonProperty("storage-nodes")
     private List<StorageNode> storageNodes = new ArrayList<>();
 
     public List<StorageNode> getStorageNodes() { return storageNodes; }
+
 }

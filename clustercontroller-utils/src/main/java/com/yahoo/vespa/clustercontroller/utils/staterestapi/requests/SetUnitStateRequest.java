@@ -61,4 +61,5 @@ public interface SetUnitStateRequest extends UnitRequest {
         }
     }
     ResponseWait getResponseWait();
+
 }

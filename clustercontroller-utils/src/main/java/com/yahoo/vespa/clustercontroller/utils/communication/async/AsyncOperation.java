@@ -2,11 +2,12 @@
 package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
 public interface AsyncOperation<T>   {
+
     /**
      * Attempt to cancel the given operation.
      * @return True if successfully cancelled. False if cancel is not supported, or operation already succeeded.
      */
-    public boolean cancel();
+    boolean cancel();
 
     /**
      * Register a callback to be called when this operation completes. If operation is already completed, this callback
@@ -24,35 +25,37 @@ public interface AsyncOperation<T>   {
     /**
      * Get the name of the operation. Useful to identify what operation this is.
      */
-    public String getName();
+    String getName();
 
     /**
      * Get a description of the operation. May be empty. If operation is complex one might want to use a short name for
      * simplicity, but have the whole request available if needed. In the HTTP case an application may for instance include
      * the URL in the name, and add the request headers to the description.
      */
-    public String getDescription();
+    String getDescription();
 
     /**
      * Get the progress as a number between 0 and 1 where 0 means not started and 1 means operation is complete.
      * A return value of null indicates that the operation is unable to track progress.
      */
-    public Double getProgress();
+    Double getProgress();
 
     /**
      * Get the result of the operation.
      * Note that some operations may not have a result if the operation failed.
      */
-    public T getResult();
+    T getResult();
 
     /** Get the cause of an operation failing. Returns null on successful operations. */
-    public Exception getCause();
+    Exception getCause();
 
     /** Returns true if operation has been successfully cancelled. */
-    public boolean isCanceled();
+    boolean isCanceled();
+
     /** Returns true if operation has completed. Regardless of whether it was a success or a failure. */
-    public boolean isDone();
+    boolean isDone();
+
     /** Returns true if the operation was a success. */
-    public boolean isSuccess();
+    boolean isSuccess();
 
 }

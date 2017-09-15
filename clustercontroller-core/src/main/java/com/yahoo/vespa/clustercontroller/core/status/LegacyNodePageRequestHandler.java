@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
-* @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+* @author Haakon Humberset
 */
 public class LegacyNodePageRequestHandler implements StatusPageServer.RequestHandler {
 

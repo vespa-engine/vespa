@@ -10,4 +10,5 @@ public class UnknownMasterException extends NotMasterException {
     public UnknownMasterException() {
         super("No known master cluster controller currently exists.");
     }
+
 }

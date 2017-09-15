@@ -11,7 +11,7 @@ public class StorageNodeStats {
     final private LatencyStats distributorPutLatency;
 
     /**
-     * @param distributorPutLatency    The "put" latency from the point of view of the distributor.
+     * @param distributorPutLatency the "put" latency from the point of view of the distributor.
      */
     public StorageNodeStats(LatencyStats distributorPutLatency) { this.distributorPutLatency = distributorPutLatency; }
     public LatencyStats getDistributorPutLatency() { return distributorPutLatency; }

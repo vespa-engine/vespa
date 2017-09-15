@@ -4,8 +4,10 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 import java.util.Map;
 
 public interface UnitResponse {
-    public UnitAttributes getAttributes();
-    public CurrentUnitState getCurrentState();
-    public Map<String, SubUnitList> getSubUnits();
-    public UnitMetrics getMetrics();
+
+    UnitAttributes getAttributes();
+    CurrentUnitState getCurrentState();
+    Map<String, SubUnitList> getSubUnits();
+    UnitMetrics getMetrics();
+
 }

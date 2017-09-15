@@ -2,6 +2,8 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 
 public interface UnitState {
-    public String getId();
-    public String getReason();
+
+    String getId();
+    String getReason();
+
 }

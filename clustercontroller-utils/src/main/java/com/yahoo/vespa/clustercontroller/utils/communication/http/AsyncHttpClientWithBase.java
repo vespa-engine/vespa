@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 
 public class AsyncHttpClientWithBase<V extends HttpResult> implements AsyncHttpClient<V> {
+
     protected final AsyncHttpClient<V> client;
     private HttpRequest baseRequest = new HttpRequest();
 
@@ -34,4 +35,5 @@ public class AsyncHttpClientWithBase<V extends HttpResult> implements AsyncHttpC
     public void close() {
         client.close();
     }
+
 }

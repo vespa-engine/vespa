@@ -23,6 +23,7 @@ import java.util.logging.Logger;
  * going through HTTP if you are using the HTTP abstraction layer in communication.http package.
  */
 public class TestTransport {
+
     private static final Logger log = Logger.getLogger(TestTransport.class.getName());
     private static class Handler {
         HttpRequestHandler handler;

@@ -6,5 +6,7 @@ package com.yahoo.vespa.clustercontroller.core;
  * tests without relying on the speed of the unit test processing.
  */
 public interface Timer {
-    public long getCurrentTimeInMillis();
+
+    long getCurrentTimeInMillis();
+
 }

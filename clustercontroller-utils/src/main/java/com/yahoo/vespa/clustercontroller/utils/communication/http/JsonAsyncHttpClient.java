@@ -10,6 +10,7 @@ import org.codehaus.jettison.json.JSONObject;
  * Wrapped for the HTTP client, converting requests to/from JSON.
  */
 public class JsonAsyncHttpClient implements AsyncHttpClient<JsonHttpResult> {
+
     private AsyncHttpClient<HttpResult> client;
     private boolean verifyRequestContentAsJson = true;
     private boolean addJsonContentType = true;
@@ -54,4 +55,5 @@ public class JsonAsyncHttpClient implements AsyncHttpClient<JsonHttpResult> {
     public void close() {
         client.close();
     }
+
 }

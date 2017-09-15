@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
 public abstract class SuccessfulAsyncCallback<Source, Target> implements AsyncCallback<Source> {
+
     private final AsyncOperationImpl<Target> target;
 
     public SuccessfulAsyncCallback(final AsyncOperationImpl<Target> target) {

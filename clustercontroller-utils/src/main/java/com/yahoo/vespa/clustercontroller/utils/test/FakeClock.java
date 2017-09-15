@@ -7,6 +7,7 @@ import java.util.logging.Logger;
  * Unit tests want to fast forward time to avoid waiting for time to pass
  */
 public class FakeClock extends SettableClock {
+
     private static final Logger logger = Logger.getLogger(FakeClock.class.getName());
     protected long currentTime = 1;
 
@@ -33,4 +34,5 @@ public class FakeClock extends SettableClock {
             currentTime = newTime;
         }
     }
+
 }

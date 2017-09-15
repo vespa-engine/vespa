@@ -139,4 +139,5 @@ public class EventLog implements EventLogInterface {
         }
         sb.append("</table>\n");
     }
+
 }

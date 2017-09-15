@@ -2,8 +2,10 @@
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
 public interface SyncHttpClient {
-    public HttpResult execute(HttpRequest r);
+
+    HttpResult execute(HttpRequest r);
 
     /** Attempt to cancel all pending operations and shut down the client. */
-    public void close();
+    void close();
+
 }

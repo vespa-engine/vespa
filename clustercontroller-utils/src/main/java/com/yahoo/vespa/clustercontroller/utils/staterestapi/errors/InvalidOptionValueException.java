@@ -8,4 +8,5 @@ public class InvalidOptionValueException extends StateRestApiException {
         setHtmlCode(400);
         setHtmlStatus("Option '" + option + "' have invalid value '" + value + "'");
     }
+
 }

@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LoggingAsyncHttpClient<T extends HttpResult> extends AsyncHttpClientWithBase<T> {
+
     private static final Logger log = Logger.getLogger(LoggingAsyncHttpClient.class.getName());
     private int requestCounter = 0;
 
@@ -38,4 +39,5 @@ public class LoggingAsyncHttpClient<T extends HttpResult> extends AsyncHttpClien
             }
         };
     }
+
 }

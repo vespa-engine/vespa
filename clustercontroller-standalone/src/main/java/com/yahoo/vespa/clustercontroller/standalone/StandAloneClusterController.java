@@ -12,6 +12,7 @@ import java.util.logging.Logger;
  * This is the class containing the main method used to run fleet controller as a stand-alone program.
  */
 public class StandAloneClusterController {
+
     private static Logger log = Logger.getLogger(StandAloneClusterController.class.getName());
 
     private final ClusterControllerConfigFetcher config;

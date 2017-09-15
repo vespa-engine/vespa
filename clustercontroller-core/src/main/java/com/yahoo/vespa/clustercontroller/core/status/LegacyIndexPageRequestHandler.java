@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.TimeZone;
 
 /**
-* @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+* @author Haakon Humberset
 */
 public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHandler {
 

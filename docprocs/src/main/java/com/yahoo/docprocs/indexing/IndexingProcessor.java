@@ -19,7 +19,7 @@ import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 @Provides({ IndexingProcessor.PROVIDED_NAME })
 @Before({ IndexingProcessor.INDEXING_END })
@@ -117,4 +117,5 @@ public class IndexingProcessor extends DocumentProcessor {
         log.log(LogLevel.DEBUG, "Not processing remove '%s'.", prev.getId());
         out.add(prev);
     }
+
 }

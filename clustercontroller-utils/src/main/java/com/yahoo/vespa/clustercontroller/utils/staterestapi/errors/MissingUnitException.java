@@ -18,4 +18,5 @@ public class MissingUnitException extends StateRestApiException {
         setHtmlCode(404);
         setHtmlStatus(getMessage());
     }
+
 }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.requests;
 
 public interface UnitStateRequest extends UnitRequest {
-    public int getRecursiveLevels();
+
+    int getRecursiveLevels();
 
 }

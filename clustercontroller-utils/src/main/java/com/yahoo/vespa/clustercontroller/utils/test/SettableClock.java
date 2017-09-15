@@ -4,6 +4,8 @@ package com.yahoo.vespa.clustercontroller.utils.test;
 import com.yahoo.vespa.clustercontroller.utils.util.Clock;
 
 public abstract class SettableClock extends Clock {
+
     public abstract void set(long newTime);
     public abstract void adjust(long adjustment);
+
 }

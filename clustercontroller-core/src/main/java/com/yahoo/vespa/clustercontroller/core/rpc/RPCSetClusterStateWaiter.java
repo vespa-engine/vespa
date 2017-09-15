@@ -54,4 +54,5 @@ public class RPCSetClusterStateWaiter implements RequestWaiter {
         this.request.setReply(reply);
         waiter.done(this.request);
     }
+
 }

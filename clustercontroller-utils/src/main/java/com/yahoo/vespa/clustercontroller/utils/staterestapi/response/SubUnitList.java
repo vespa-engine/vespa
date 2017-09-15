@@ -4,7 +4,9 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 import java.util.Map;
 
 public interface SubUnitList {
+
     /** id to link map. */
-    public Map<String, String> getSubUnitLinks();
-    public Map<String, UnitResponse> getSubUnits();
+    Map<String, String> getSubUnitLinks();
+    Map<String, UnitResponse> getSubUnits();
+
 }

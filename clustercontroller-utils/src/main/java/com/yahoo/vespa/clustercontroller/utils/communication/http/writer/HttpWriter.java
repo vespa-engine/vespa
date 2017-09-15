@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.communication.http.writer;
 
 public class HttpWriter {
+
     private final StringBuilder builder = new StringBuilder();
 
     private String title = "Untitled page";

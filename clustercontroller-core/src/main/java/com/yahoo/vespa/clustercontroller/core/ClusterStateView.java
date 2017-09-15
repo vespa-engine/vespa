@@ -23,7 +23,6 @@ import java.util.logging.Logger;
  * merges before steady-state is reached.
  *
  * @author hakonhall
- * @since 5.33
  */
 public class ClusterStateView {
 

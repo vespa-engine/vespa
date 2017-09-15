@@ -115,8 +115,7 @@ public final class Version implements Comparable<Version> {
      * </pre>
      *
      * @param versionString String representation of the version identifier
-     * @throws IllegalArgumentException If <code>version</code> is improperly
-     *         formatted.
+     * @throws IllegalArgumentException If <code>version</code> is improperly formatted.
      */
     public Version(String versionString) {
         if (! "".equals(versionString)) {
@@ -378,8 +377,8 @@ public final class Version implements Comparable<Version> {
         if (this == emptyVersion)
             return VersionSpecification.emptyVersionSpecification;
         else {
-            return new VersionSpecification(getMajor(), getMinor(), getMicro(),
-                                            getQualifier());
+            return new VersionSpecification(getMajor(), getMinor(), getMicro(), getQualifier());
         }
     }
+
 }

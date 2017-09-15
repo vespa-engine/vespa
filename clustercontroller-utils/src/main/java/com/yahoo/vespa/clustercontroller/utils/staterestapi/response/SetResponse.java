@@ -3,9 +3,11 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 
 /**
  * The response of a set operation.
- * @author dybis
+ *
+ * @author Haakon Dybdahl
  */
 public class SetResponse {
+
     private final String reason;
     private final boolean wasModified;
 
@@ -16,13 +18,16 @@ public class SetResponse {
 
     /**
      * Indicates if data was modified in a set operation.
+     *
      * @return true if modified.
      */
     public boolean getWasModified() { return wasModified; }
 
     /**
      * Human readable reason.
+     *
      * @return reason as string
      */
     public String getReason() { return reason; }
+
 }

@@ -59,4 +59,5 @@ public class RPCGetNodeStateWaiter implements RequestWaiter {
         request.setReply(convertToReply(req));
         waiter.done(request);
     }
+
 }

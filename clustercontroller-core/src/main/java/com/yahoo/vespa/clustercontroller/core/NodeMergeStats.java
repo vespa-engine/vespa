@@ -5,7 +5,6 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 
 /**
  * @author hakonhall
- * @since 5.33
  */
 public class NodeMergeStats {
 

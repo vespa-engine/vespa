@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class AnnotatedClusterState {
+
     private final ClusterState clusterState;
     private final Map<Node, NodeStateReason> nodeStateReasons;
     private final Optional<ClusterStateReason> clusterStateReason;
@@ -66,4 +67,5 @@ public class AnnotatedClusterState {
     public int hashCode() {
         return Objects.hash(clusterState, nodeStateReasons, clusterStateReason);
     }
+
 }
