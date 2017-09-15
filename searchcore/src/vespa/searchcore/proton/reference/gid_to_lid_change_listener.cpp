@@ -26,7 +26,7 @@ GidToLidChangeListener::~GidToLidChangeListener()
 }
 
 void
-GidToLidChangeListener::notifyPut(document::GlobalId gid, uint32_t lid)
+GidToLidChangeListener::notifyPutDone(document::GlobalId gid, uint32_t lid)
 {
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();

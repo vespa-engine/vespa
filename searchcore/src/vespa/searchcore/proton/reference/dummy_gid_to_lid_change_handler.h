@@ -24,7 +24,7 @@ public:
     DummyGidToLidChangeHandler();
     virtual ~DummyGidToLidChangeHandler();
 
-    virtual void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    virtual void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
     virtual void notifyRemove(GlobalId gid, SerialNum serialNum) override;
     virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
     virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;

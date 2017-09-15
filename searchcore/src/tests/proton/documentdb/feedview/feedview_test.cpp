@@ -198,7 +198,7 @@ public:
     {
     }
 
-    virtual void notifyPut(document::GlobalId gid, uint32_t lid, SerialNum)  override {
+    virtual void notifyPutDone(document::GlobalId gid, uint32_t lid, SerialNum)  override {
         _changeGid = gid;
         _changeLid = lid;
         _gidToLid[gid] = lid;

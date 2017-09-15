@@ -31,10 +31,10 @@ GidToLidChangeHandler::~GidToLidChangeHandler()
 }
 
 void
-GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid)
+GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid)
 {
     for (const auto &listener : _listeners) {
-        listener->notifyPut(gid, lid);
+        listener->notifyPutDone(gid, lid);
     }
 }
 
@@ -47,7 +47,7 @@ GidToLidChangeHandler::notifyRemove(GlobalId gid)
 }
 
 void
-GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum)
+GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto itr = _pendingRemove.find(gid);
@@ -55,7 +55,7 @@ GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum
         assert(itr->second > serialNum);
         return; // Document has already been removed later on
     }
-    notifyPut(gid, lid);
+    notifyPutDone(gid, lid);
 }
 
 void
