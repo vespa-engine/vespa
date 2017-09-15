@@ -156,7 +156,7 @@ public class RPCSendV2 extends RPCSend {
     }
 
     @Override
-    protected void createReponse(Values ret, Reply reply, Version version, byte [] payload) {
+    protected void createResponse(Values ret, Reply reply, Version version, byte [] payload) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 

@@ -40,7 +40,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
                                              long timeRemaining, byte[] payload, int traceLevel);
     protected abstract Reply createReply(Values ret, String serviceName, Trace trace);
     protected abstract Params toParams(Values req);
-    protected abstract void createReponse(Values ret, Reply reply, Version version, byte [] payload);
+    protected abstract void createResponse(Values ret, Reply reply, Version version, byte [] payload);
     @Override
     public final void attach(RPCNetwork net) {
         this.net = net;
@@ -223,7 +223,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
                         "An error occured while encoding the reply."));
             }
         }
-        createReponse(ctx.request.returnValues(), reply, ctx.version, payload);
+        createResponse(ctx.request.returnValues(), reply, ctx.version, payload);
         ctx.request.returnRequest();
     }
 

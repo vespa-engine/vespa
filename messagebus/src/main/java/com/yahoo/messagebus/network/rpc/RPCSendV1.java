@@ -130,7 +130,7 @@ public class RPCSendV1 extends RPCSend {
     }
 
     @Override
-    protected void createReponse(Values ret, Reply reply, Version version, byte [] payload) {
+    protected void createResponse(Values ret, Reply reply, Version version, byte [] payload) {
         int[] eCodes = new int[reply.getNumErrors()];
         String[] eMessages = new String[reply.getNumErrors()];
         String[] eServices = new String[reply.getNumErrors()];
