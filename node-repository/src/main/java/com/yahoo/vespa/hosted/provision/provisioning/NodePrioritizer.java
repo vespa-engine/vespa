@@ -192,8 +192,11 @@ public class NodePrioritizer {
                     String ipAddress = ipAddresses.stream().findFirst().get();
                     Optional<String> hostname = nameResolver.getHostname(ipAddress);
                     if (!hostname.isPresent()) continue;
-                    Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
-                            Collections.emptySet(), hostname.get(), Optional.of(node.hostname()), getFlavor(requestedNodes), NodeType.tenant);
+                    Node newNode = Node.createDockerNode("fake-" + hostname.get(),
+                                                         Collections.singleton(ipAddress),
+                                                         Collections.emptySet(), hostname.get(),
+                                                         Optional.of(node.hostname()), getFlavor(requestedNodes),
+                                                         NodeType.tenant);
                     PrioritizableNode nodePri = toNodePriority(newNode, false, true);
                     if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                         nodes.put(newNode, nodePri);
