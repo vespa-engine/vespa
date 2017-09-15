@@ -142,10 +142,10 @@ public:
     ParamsV2(const FRT_Values &arg)
         : _slime()
     {
-        uint8_t encoding = arg[0]._intval8;
-        uint32_t uncompressedSize = arg[1]._intval32;
-        DataBuffer uncompressed(arg[2]._data._buf, arg[2]._data._len);
-        ConstBufferRef blob(arg[2]._data._buf, arg[2]._data._len);
+        uint8_t encoding = arg[3]._intval8;
+        uint32_t uncompressedSize = arg[4]._intval32;
+        DataBuffer uncompressed(arg[5]._data._buf, arg[5]._data._len);
+        ConstBufferRef blob(arg[5]._data._buf, arg[5]._data._len);
         decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
         assert(uncompressedSize == uncompressed.getDataLen());
         BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), _slime);
@@ -188,10 +188,10 @@ std::unique_ptr<Reply>
 RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
                        Error & error, vespalib::TraceNode & rootTrace) const
 {
-    uint8_t encoding = ret[0]._intval8;
-    uint32_t uncompressedSize = ret[1]._intval32;
-    DataBuffer uncompressed(ret[2]._data._buf, ret[2]._data._len);
-    ConstBufferRef blob(ret[2]._data._buf, ret[2]._data._len);
+    uint8_t encoding = ret[3]._intval8;
+    uint32_t uncompressedSize = ret[4]._intval32;
+    DataBuffer uncompressed(ret[5]._data._buf, ret[5]._data._len);
+    ConstBufferRef blob(ret[5]._data._buf, ret[5]._data._len);
     decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
     assert(uncompressedSize == uncompressed.getDataLen());
     Slime slime;
