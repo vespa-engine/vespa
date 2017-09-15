@@ -98,7 +98,7 @@ private:
         void unblock();
     };
 
-    std::unique_ptr<FastOS_ThreadPool>  _pool;
+    std::unique_ptr<FastOS_ThreadPool>   _pool;
     Monitor                              _monitor;
     Stats                                _stats;
     Gate                                 _executorCompletion;
@@ -222,6 +222,8 @@ public:
      * @param task_count target value to wait for
      **/
     void wait_for_task_count(uint32_t task_count);
+
+    size_t getNumThreads() const override;
 
     /**
      * Shut down this executor. This will make this executor reject

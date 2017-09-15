@@ -461,7 +461,7 @@ void LogDataStore::compactFile(FileId fileId)
         compacter.reset(new docstore::Compacter(*this));
     }
 
-    fc->appendTo(*this, *compacter, fc->getNumChunks(), nullptr);
+    fc->appendTo(_executor, *this, *compacter, fc->getNumChunks(), nullptr);
 
     if (destinationFileId.isActive()) {
         flushActiveAndWait(0);
@@ -1067,7 +1067,7 @@ LogDataStore::accept(IDataStoreVisitor &visitor,
     WrapVisitorProgress wrapProgress(visitorProgress, totalChunks);
     for (FileId fcId : fileChunks) {
         FileChunk & fc = *_fileChunks[fcId.getId()];
-        fc.appendTo(*this, wrap, fc.getNumChunks(), &wrapProgress);
+        fc.appendTo(_executor, *this, wrap, fc.getNumChunks(), &wrapProgress);
         if (prune) {
             internalFlushAll();
             FileChunk::UP toDie;
@@ -1078,7 +1078,7 @@ LogDataStore::accept(IDataStoreVisitor &visitor,
             toDie->erase();
         }
     }
-    lfc.appendTo(*this, wrap, lastChunks, &wrapProgress);
+    lfc.appendTo(_executor, *this, wrap, lastChunks, &wrapProgress);
     if (prune) {
         internalFlushAll();
     }
