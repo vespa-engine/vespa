@@ -50,11 +50,11 @@ Memory SERVICE_F("service");
 
 }
 
-bool RPCSendV2::isCompatible(stringref method, stringref request, stringref respons)
+bool RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
 {
     return  (method == METHOD_NAME) &&
             (request == METHOD_PARAMS) &&
-            (respons == METHOD_RETURN);
+            (response == METHOD_RETURN);
 }
 
 void
