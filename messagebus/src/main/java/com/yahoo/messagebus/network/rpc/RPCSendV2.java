@@ -25,7 +25,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 
 /**
- * Implements the request adapter for method "mbus.sendslime".
+ * Implements the request adapter for method "mbus.slime".
  *
  * @author baldersheim
  */
