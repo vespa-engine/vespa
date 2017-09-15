@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.Contacts;
@@ -40,7 +41,7 @@ public class DeploymentIssueReporter extends Maintainer {
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivityAge = Duration.ofDays(4);
     static final String deploymentFailureLabel = "vespaDeploymentFailure";
-    static final Classification vespaOps = new Classification("VESPA", "Services", deploymentFailureLabel);
+    static final Classification vespaOps = new Classification("VESPA", "Services", deploymentFailureLabel, null);
     static final UserContact terminalUser = new UserContact("frodelu", "Frode Lundgren", admin);
 
     private final Contacts contacts;
@@ -85,7 +86,9 @@ public class DeploymentIssueReporter extends Maintainer {
                 Classification applicationOwner = null;
                 try {
                     applicationTenant= ownerOf(application);
-                    applicationOwner = jiraClassificationOf(applicationTenant);
+                    applicationOwner = applicationTenant.tenantType() == TenantType.USER
+                            ? vespaOps.withAssignee(applicationTenant.getId().id().replaceFirst("by-", ""))
+                            : jiraClassificationOf(applicationTenant);
                     fileFor(application, deploymentIssue.with(applicationOwner));
                 }
                 catch (RuntimeException e) { // Catch errors due to inconsistent or missing data in Sherpa, OpsDB, JIRA, and send to ourselves.
@@ -98,7 +101,7 @@ public class DeploymentIssueReporter extends Maintainer {
                                                 applicationTenant.getPropertyId().get() +
                                                 "&action=view] for your property was rejected by JIRA. Please check your spelling."));
                     else
-                        fileFor(application, deploymentIssue.append(e.getMessage() + "\n\nAddressee:\n" + applicationOwner));
+                        fileFor(application, deploymentIssue.with(vespaOps).append(e.getMessage() + "\n\nAddressee:\n" + applicationOwner));
                 }
             }
         }
