@@ -60,24 +60,24 @@ private:
 
     using SendAdapterMap = std::map<vespalib::Version, RPCSendAdapter*>;
 
-    INetworkOwner            *_owner;
-    Identity                  _ident;
-    std::unique_ptr<FastOS_ThreadPool>        _threadPool;
-    std::unique_ptr<FNET_Transport>           _transport;
-    std::unique_ptr<FRT_Supervisor>            _orb;
-    FNET_Scheduler           &_scheduler;
+    INetworkOwner                                *_owner;
+    Identity                                      _ident;
+    std::unique_ptr<FastOS_ThreadPool>            _threadPool;
+    std::unique_ptr<FNET_Transport>               _transport;
+    std::unique_ptr<FRT_Supervisor>               _orb;
+    FNET_Scheduler                               &_scheduler;
     std::unique_ptr<RPCTargetPool>                _targetPool;
-    TargetPoolTask            _targetPoolTask;
+    TargetPoolTask                                _targetPoolTask;
     std::unique_ptr<RPCServicePool>               _servicePool;
     std::unique_ptr<slobrok::ConfiguratorFactory> _slobrokCfgFactory;
     std::unique_ptr<slobrok::api::IMirrorAPI>     _mirror;
     std::unique_ptr<slobrok::api::RegisterAPI>    _regAPI;
     std::unique_ptr<OOSManager>                   _oosManager;
-    int                       _requestedPort;
-    std::unique_ptr<RPCSendAdapter> _sendV1;
-    std::unique_ptr<RPCSendAdapter> _sendV2;
-    SendAdapterMap            _sendAdapters;
-    CompressionConfig         _compressionConfig;
+    int                                           _requestedPort;
+    std::unique_ptr<RPCSendAdapter>               _sendV1;
+    std::unique_ptr<RPCSendAdapter>               _sendV2;
+    SendAdapterMap                                _sendAdapters;
+    CompressionConfig                             _compressionConfig;
 
     /**
      * Resolves and assigns a service address for the given recipient using the
@@ -218,8 +218,7 @@ public:
      * @param errCode The error code to return.
      * @param errMsg  The error string to return.
      */
-    void replyError(const SendContext &ctx, uint32_t errCode,
-                    const string &errMsg);
+    void replyError(const SendContext &ctx, uint32_t errCode, const string &errMsg);
 
     void attach(INetworkOwner &owner) override;
     const string getConnectionSpec() const override;
