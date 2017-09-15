@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
+#include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
@@ -168,7 +169,7 @@ private:
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
 
-    void adjustMetaStore(const DocumentOperation &op, const document::DocumentId &docId);
+    PendingNotifyRemoveDone adjustMetaStore(const DocumentOperation &op, const document::DocumentId &docId);
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
@@ -180,8 +181,8 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token, SerialNum serialNum, const document::GlobalId &gid, Lid lid,
-                        FeedOperation::Type opType, bool enableNotifyRemoveDone, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone, Lid lid,
+                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);

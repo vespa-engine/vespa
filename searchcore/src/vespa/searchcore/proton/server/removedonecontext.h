@@ -6,12 +6,12 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 
 namespace proton
 {
 
 class IDocumentMetaStore;
-class IGidToLidChangeHandler;
 
 
 /**
@@ -26,10 +26,7 @@ class RemoveDoneContext : public OperationDoneContext
 {
     vespalib::Executor &_executor;
     std::unique_ptr<vespalib::Executor::Task> _task;
-    IGidToLidChangeHandler &_gidToLidChangeHandler;
-    document::GlobalId _gid;
-    search::SerialNum _serialNum;
-    bool _enableNotifyRemoveDone;
+    PendingNotifyRemoveDone _pendingNotifyRemoveDone;
 
 public:
     RemoveDoneContext(std::unique_ptr<FeedToken> token,
@@ -37,11 +34,8 @@ public:
                       PerDocTypeFeedMetrics &metrics,
                       vespalib::Executor &executor,
                       IDocumentMetaStore &documentMetaStore,
-                      IGidToLidChangeHandler &gidToLidChangeHandler,
-                      const document::GlobalId &gid,
-                      uint32_t lid,
-                      search::SerialNum serialNum,
-                      bool enableNotifyRemoveDone);
+                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
+                      uint32_t lid);
 
     virtual ~RemoveDoneContext();
 };
