@@ -61,18 +61,18 @@ RPCSendV2::build(FRT_ReflectionBuilder & builder)
 {
     builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, true, FRT_METHOD(RPCSendV2::invoke), this);
     builder.MethodDesc("Send a message bus slime request and get a reply back.");
-    builder.ParamDesc("Body encoding", "0=raw, 6=lz4");
-    builder.ParamDesc("Body uncompressedBlobSize", "Uncompressed body blob size");
-    builder.ParamDesc("Body message", "The message body blob in slime");
-    builder.ParamDesc("Header encoding", "0=raw, 6=lz4");
-    builder.ParamDesc("Header uncompressedBlobSize", "Uncompressed header blob size");
-    builder.ParamDesc("Header message", "The message header blob in slime");
-    builder.ReturnDesc("Body encoding",  "0=raw, 6=lz4");
-    builder.ReturnDesc("Body uncompressedBlobSize", "Uncompressed body blob size");
-    builder.ReturnDesc("Body reply", "The reply body blob in slime.");
-    builder.ReturnDesc("Header encoding",  "0=raw, 6=lz4");
-    builder.ReturnDesc("Header uncompressedBlobSize", "Uncompressed header blob size");
-    builder.ReturnDesc("Header reply", "The reply header blob in slime.");
+    builder.ParamDesc("header_encoding", "0=raw, 6=lz4");
+    builder.ParamDesc("header_decoded_size", "Uncompressed header blob size");
+    builder.ParamDesc("header_payload", "The message header blob in slime");
+    builder.ParamDesc("body_encoding", "0=raw, 6=lz4");
+    builder.ParamDesc("body_decoded_size", "Uncompressed body blob size");
+    builder.ParamDesc("body_payload", "The message body blob in slime");
+    builder.ReturnDesc("header_encoding",  "0=raw, 6=lz4");
+    builder.ReturnDesc("header_decoded_size", "Uncompressed header blob size");
+    builder.ReturnDesc("header_payload", "The reply header blob in slime.");
+    builder.ReturnDesc("body_encoding",  "0=raw, 6=lz4");
+    builder.ReturnDesc("body_decoded_size", "Uncompressed body blob size");
+    builder.ReturnDesc("body_payload", "The reply body blob in slime.");
 }
 
 const char *
@@ -103,6 +103,13 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
                          const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
                          const PayLoadFiller &filler, uint64_t timeRemaining) const
 {
+    FRT_Values &args = *req.GetParams();
+    req.SetMethodName(METHOD_NAME);
+    // Place holder for auxillary data to be transfered later.
+    args.AddInt8(CompressionConfig::NONE);
+    args.AddInt32(0);
+    args.AddData("", 0);
+
     Slime slime;
     Cursor & root = slime.setObject();
 
@@ -122,16 +129,9 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     DataBuffer buf(vespalib::roundUp2inN(rBuf.getBuf().getDataLen()));
     CompressionConfig::Type type = compress(_net->getCompressionConfig(), toCompress, buf, false);
 
-    FRT_Values &args = *req.GetParams();
-    req.SetMethodName(METHOD_NAME);
     args.AddInt8(type);
     args.AddInt32(toCompress.size());
     args.AddData(buf.stealBuffer(), buf.getDataLen());
-
-    // Place holder for auxillary data to be transfered later.
-    args.AddInt8(CompressionConfig::NONE);
-    args.AddInt32(0);
-    args.AddData("", 0);
 }
 
 namespace {
@@ -222,6 +222,11 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
 void
 RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & reply, Blob payload) const
 {
+    // Place holder for auxillary data to be transfered later.
+    ret.AddInt8(CompressionConfig::NONE);
+    ret.AddInt32(0);
+    ret.AddData("", 0);
+
     Slime slime;
     Cursor & root = slime.setObject();
 
@@ -253,10 +258,6 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
     ret.AddInt32(toCompress.size());
     ret.AddData(buf.stealBuffer(), buf.getDataLen());
 
-    // Place holder for auxillary data to be transfered later.
-    ret.AddInt8(CompressionConfig::NONE);
-    ret.AddInt32(0);
-    ret.AddData("", 0);
 }
 
 } // namespace mbus
