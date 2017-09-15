@@ -24,11 +24,17 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
+        setHwInfo(builder);
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder.summary.log);
         tuneDocumentStoreNumThreads(builder.summary.log);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
+    }
+
+    private void setHwInfo(ProtonConfig.Builder builder) {
+        builder.hwinfo.disk.size((long)nodeFlavor.getMinDiskAvailableGb() * GB);
+        builder.hwinfo.memory.size((long)nodeFlavor.getMinMainMemoryAvailableGb() * GB);
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
