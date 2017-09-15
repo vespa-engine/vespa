@@ -8,20 +8,14 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
-import org.apache.curator.SessionFailRetryLoop;
-import org.apache.curator.SessionFailRetryLoop.Mode;
-import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.data.Stat;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,12 +30,6 @@ import java.util.logging.Logger;
 public class ZookeeperStatusService implements StatusService {
 
     private static final Logger log = Logger.getLogger(ZookeeperStatusService.class.getName());
-
-    //For debug purposes only: Used to check that operations depending on a lock is done from a single thread,
-    //and that a threads doing operations actually owns a corresponding lock,
-    //and that a single thread only owns a single lock (across all ZookeeperStatusServices)
-    @GuardedBy("threadsHoldingLock")
-    private static final Map<Thread, ApplicationInstanceReference> threadsHoldingLock = new HashMap<>();
 
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
@@ -108,55 +96,16 @@ public class ZookeeperStatusService implements StatusService {
     MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             ApplicationInstanceReference applicationInstanceReference,
             long timeoutSeconds) {
-        Thread currentThread = Thread.currentThread();
-
-        //Due to limitations in SessionFailRetryLoop.
-        assertThreadDoesNotHoldLock(currentThread,"Can't lock " + applicationInstanceReference);
+        String lock2Path = applicationInstanceLock2Path(applicationInstanceReference);
+        Lock lock = new Lock(lock2Path, curator);
+        lock.acquire(Duration.ofSeconds(timeoutSeconds));
 
         try {
-            SessionFailRetryLoop sessionFailRetryLoop = 
-                    curator.framework().getZookeeperClient().newSessionFailRetryLoop(Mode.FAIL);
-            sessionFailRetryLoop.start();
-            try {
-                String lockPath = applicationInstanceLockPath(applicationInstanceReference);
-                InterProcessSemaphoreMutex mutex = acquireMutexOrThrow(timeoutSeconds, TimeUnit.SECONDS, lockPath);
-
-                // TODO: Once rolled out, make this the only lock mechanism
-                Lock lock2;
-                try {
-                    String lock2Path = applicationInstanceLock2Path(applicationInstanceReference);
-                    lock2 = new Lock(lock2Path, curator);
-                    lock2.acquire(Duration.ofSeconds(timeoutSeconds));
-                } catch (Throwable t) {
-                    mutex.release();
-                    throw t;
-                }
-
-                synchronized (threadsHoldingLock) {
-                    threadsHoldingLock.put(currentThread, applicationInstanceReference);
-                }
-
-                return new ZkMutableStatusRegistry(
-                        lock2,
-                        mutex,
-                        sessionFailRetryLoop,
-                        applicationInstanceReference,
-                        currentThread);
-            } catch (Throwable t) {
-                sessionFailRetryLoop.close();
-                throw t;
-            }
-        } catch (Exception e) {
-            //TODO: IOException with explanation
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void assertThreadDoesNotHoldLock(Thread currentThread, String message) {
-        synchronized (threadsHoldingLock) {
-            if (threadsHoldingLock.containsKey(currentThread)) {
-                throw new AssertionError(message + ", already have a lock on " + threadsHoldingLock.get(currentThread));
-            }
+            return new ZkMutableStatusRegistry(lock, applicationInstanceReference);
+        } catch (Throwable t) {
+            // In case the constructor throws an exception.
+            lock.close();
+            throw t;
         }
     }
 
@@ -176,8 +125,6 @@ public class ZookeeperStatusService implements StatusService {
     private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
                                HostName hostName,
                                HostStatus status) {
-        assertThreadHoldsLock(applicationInstanceReference);
-
         String path = hostAllowedDownPath(applicationInstanceReference, hostName);
 
         try {
@@ -192,24 +139,6 @@ public class ZookeeperStatusService implements StatusService {
         } catch (Exception e) {
             //TODO: IOException with explanation
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void assertThreadHoldsLock(ApplicationInstanceReference applicationInstanceReference) {
-        synchronized (threadsHoldingLock) {
-            ApplicationInstanceReference lockedApplicationInstanceReference =
-                    threadsHoldingLock.get(Thread.currentThread());
-
-            if (lockedApplicationInstanceReference == null) {
-                throw new AssertionError("The current thread does not own any status service locks. " +
-                        "Application Instance = " + applicationInstanceReference);
-            }
-
-            if (!lockedApplicationInstanceReference.equals(applicationInstanceReference)) {
-                throw new AssertionError("The current thread does not have a lock on " +
-                        "application instance " + applicationInstanceReference +
-                        ", but instead have a lock on " + lockedApplicationInstanceReference);
-            }
         }
     }
 
@@ -259,7 +188,6 @@ public class ZookeeperStatusService implements StatusService {
     private HostStatus getHostStatusWithLock(
             final ApplicationInstanceReference applicationInstanceReference,
             final HostName hostName) {
-        assertThreadHoldsLock(applicationInstanceReference);
         return getInternalHostStatus(applicationInstanceReference, hostName);
     }
 
@@ -290,23 +218,13 @@ public class ZookeeperStatusService implements StatusService {
 
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
         private final Lock lock;
-        private final InterProcessSemaphoreMutex mutex;
-        private final SessionFailRetryLoop sessionFailRetryLoop;
         private final ApplicationInstanceReference applicationInstanceReference;
-        private final Thread lockingThread;
 
         public ZkMutableStatusRegistry(
                 Lock lock,
-                InterProcessSemaphoreMutex mutex,
-                SessionFailRetryLoop sessionFailRetryLoop,
-                ApplicationInstanceReference applicationInstanceReference,
-                Thread lockingThread) {
-
-            this.mutex = mutex;
+                ApplicationInstanceReference applicationInstanceReference) {
             this.lock = lock;
-            this.sessionFailRetryLoop = sessionFailRetryLoop;
             this.applicationInstanceReference = applicationInstanceReference;
-            this.lockingThread = lockingThread;
         }
 
         @Override
@@ -316,8 +234,6 @@ public class ZookeeperStatusService implements StatusService {
 
         @Override
         public void setApplicationInstanceStatus(ApplicationInstanceStatus applicationInstanceStatus) {
-            assertThreadHoldsLock(applicationInstanceReference);
-
             String path = applicationInstanceSuspendedPath(applicationInstanceReference);
 
             try {
@@ -349,43 +265,12 @@ public class ZookeeperStatusService implements StatusService {
         @Override
         @NoThrow
         public void close()  {
-            synchronized (threadsHoldingLock) {
-                threadsHoldingLock.remove(lockingThread, applicationInstanceReference);
-            }
-
             try {
                 lock.close();
             } catch (RuntimeException e) {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
                 log.log(LogLevel.WARNING, "Failed to close application lock for " +
                         ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue", e);
-            }
-
-            try {
-                mutex.release();
-            } catch (Exception e) {
-                if (e.getCause() instanceof SessionFailedException) {
-                    log.log(LogLevel.DEBUG, "Session expired, mutex should be freed automatically", e);
-                } else {
-                    //Failing to unlock the mutex should not fail the request,
-                    //since the status database has already been updated at this point.
-                    log.log(LogLevel.WARNING, "Failed unlocking application instance " + applicationInstanceReference, e);
-                }
-            }
-
-            //Similar precondition checked in sessionFailRetryLoop.close,
-            //but this has more useful debug output.
-            if (lockingThread != Thread.currentThread()) {
-                throw new AssertionError("LockHandle should only be used from a single thread. "
-                        + "Application instance = " + applicationInstanceReference
-                        + " Locking thread = " + lockingThread
-                        + " Current thread = " + Thread.currentThread());
-            }
-
-            try {
-                sessionFailRetryLoop.close();
-            } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Failed closing SessionRetryLoop", e);
             }
         }
     }
