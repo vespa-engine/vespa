@@ -74,22 +74,29 @@ public class DeploymentIssueReporter extends Maintainer {
             else
                 controller().applications().setJiraIssueId(application.id(), Optional.empty());
 
-        // TODO: Do this when version.confidence is BROKEN instead?
+        // TODO: Do this when version.confidence is BROKEN instead? Or, exclude above those upgrading to BROKEN version?
         if (failingApplications.size() > 0.2 * applications.size()) {
             fileOrUpdate(manyFailingDeploymentsIssueFrom(failingApplications)); // Problems with Vespa is the most likely cause when so many deployments fail.
         }
         else {
             for (Application application : failingApplications) {
                 Issue deploymentIssue = deploymentIssueFrom(application);
+                Tenant applicationTenant = null;
                 Classification applicationOwner = null;
                 try {
-                    applicationOwner = jiraClassificationOf(ownerOf(application));
+                    applicationTenant= ownerOf(application);
+                    applicationOwner = jiraClassificationOf(applicationTenant);
                     fileFor(application, deploymentIssue.with(applicationOwner));
                 }
                 catch (RuntimeException e) { // Catch errors due to inconsistent or missing data in Sherpa, OpsDB, JIRA, and send to ourselves.
                     Pattern componentError = Pattern.compile(".*Component name '.*' is not valid.*", Pattern.DOTALL);
                     if (componentError.matcher(e.getMessage()).matches()) // Several properties seem to list invalid components, in which case we simply ignore this.
-                        fileFor(application, deploymentIssue.with(applicationOwner.withComponent(null)));
+                        fileFor(application,
+                                deploymentIssue
+                                        .with(applicationOwner.withComponent(null))
+                                        .append("\n\nNote: The 'Queue Component' field in [opsdb|https://opsdb.ops.yahoo.com/properties.php?id=" +
+                                                applicationTenant.getPropertyId().get() +
+                                                "&action=view] for your property was rejected by JIRA. Please check your spelling."));
                     else
                         fileFor(application, deploymentIssue.append(e.getMessage() + "\n\nAddressee:\n" + applicationOwner));
                 }
