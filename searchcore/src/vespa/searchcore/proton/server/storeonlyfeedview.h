@@ -158,7 +158,7 @@ private:
     }
     void putSummary(SerialNum serialNum,  Lid lid, FutureStream doc, OnOperationDoneType onDone);
     void putSummary(SerialNum serialNum,  Lid lid, Document::SP doc, OnOperationDoneType onDone);
-    void removeSummary(SerialNum serialNum,  Lid lid);
+    void removeSummary(SerialNum serialNum,  Lid lid, OnWriteDoneType onDone);
     void heartBeatSummary(SerialNum serialNum);
 
 

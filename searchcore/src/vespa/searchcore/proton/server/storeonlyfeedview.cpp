@@ -392,10 +392,11 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP do
             }));
 #pragma GCC diagnostic pop
 }
-void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid) {
+void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
     _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, this] {
+            makeLambdaTask([serialNum, lid, onDone, this] {
+                (void) onDone;
                 _summaryAdapter->remove(serialNum, lid);
                 _pendingLidTracker.consume(lid);
             }));
@@ -598,11 +599,11 @@ void
 StoreOnlyFeedView::internalRemove(FeedToken::UP token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone, Lid lid,
                                   FeedOperation::Type opType, IDestructorCallback::SP moveDoneCtx)
 {
-    removeSummary(serialNum, lid);
     bool explicitReuseLid = _lidReuseDelayer.delayReuse(lid);
     std::shared_ptr<RemoveDoneContext> onWriteDone;
     onWriteDone = createRemoveDoneContext(std::move(token), opType, _params._metrics, _writeService.master(),
                                           _metaStore, std::move(pendingNotifyRemoveDone), (explicitReuseLid ? lid : 0u), moveDoneCtx);
+    removeSummary(serialNum, lid, onWriteDone);
     bool immediateCommit = _commitTimeTracker.needCommit();
     removeAttributes(serialNum, lid, immediateCommit, onWriteDone);
     removeIndexedFields(serialNum, lid, immediateCommit, onWriteDone);
@@ -679,7 +680,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     }
     if (useDocumentStore(serialNum + 1)) {
         for (const auto &lid : lidsToRemove) {
-            removeSummary(serialNum, lid);
+            removeSummary(serialNum, lid, onWriteDone);
         }
     }
     return lidsToRemove.size();
