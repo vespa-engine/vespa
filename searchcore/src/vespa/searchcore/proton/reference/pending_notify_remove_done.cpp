@@ -30,7 +30,8 @@ PendingNotifyRemoveDone::~PendingNotifyRemoveDone()
 }
 
 void
-PendingNotifyRemoveDone::setup(IGidToLidChangeHandler &gidToLidChangeHandler, document::GlobalId gid, search::SerialNum serialNum) {
+PendingNotifyRemoveDone::setup(IGidToLidChangeHandler &gidToLidChangeHandler, document::GlobalId gid, search::SerialNum serialNum)
+{
     _gidToLidChangeHandler = &gidToLidChangeHandler;
     _gid = gid;
     _serialNum = serialNum;
