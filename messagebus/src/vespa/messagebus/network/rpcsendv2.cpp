@@ -28,8 +28,8 @@ namespace mbus {
 namespace {
 
 const char *METHOD_NAME   = "mbus.slime";
-const char *METHOD_PARAMS = "bix";
-const char *METHOD_RETURN = "bix";
+const char *METHOD_PARAMS = "bixbix";
+const char *METHOD_RETURN = "bixbix";
 
 Memory VERSION_F("version");
 Memory ROUTE_F("route");
@@ -47,7 +47,6 @@ Memory CODE_F("code");
 Memory MSG_F("msg");
 Memory SERVICE_F("service");
 
-
 }
 
 bool RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
@@ -62,12 +61,18 @@ RPCSendV2::build(FRT_ReflectionBuilder & builder)
 {
     builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, true, FRT_METHOD(RPCSendV2::invoke), this);
     builder.MethodDesc("Send a message bus slime request and get a reply back.");
-    builder.ParamDesc("encoding", "0=raw, 6=lz4");
-    builder.ParamDesc("uncompressedBlobSize", "Uncompressed blob size");
-    builder.ParamDesc("message", "The message blob in slime");
-    builder.ReturnDesc("encoding",  "0=raw, 6=lz4");
-    builder.ReturnDesc("uncompressedBlobSize", "Uncompressed blob size");
-    builder.ReturnDesc("reply", "The reply blob in slime.");
+    builder.ParamDesc("Body encoding", "0=raw, 6=lz4");
+    builder.ParamDesc("Body uncompressedBlobSize", "Uncompressed body blob size");
+    builder.ParamDesc("Body message", "The message body blob in slime");
+    builder.ParamDesc("Header encoding", "0=raw, 6=lz4");
+    builder.ParamDesc("Header uncompressedBlobSize", "Uncompressed header blob size");
+    builder.ParamDesc("Header message", "The message header blob in slime");
+    builder.ReturnDesc("Body encoding",  "0=raw, 6=lz4");
+    builder.ReturnDesc("Body uncompressedBlobSize", "Uncompressed body blob size");
+    builder.ReturnDesc("Body reply", "The reply body blob in slime.");
+    builder.ReturnDesc("Header encoding",  "0=raw, 6=lz4");
+    builder.ReturnDesc("Header uncompressedBlobSize", "Uncompressed header blob size");
+    builder.ReturnDesc("Header reply", "The reply header blob in slime.");
 }
 
 const char *
@@ -122,6 +127,11 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     args.AddInt8(type);
     args.AddInt32(toCompress.size());
     args.AddData(buf.stealBuffer(), buf.getDataLen());
+
+    // Place holder for auxillary data to be transfered later.
+    args.AddInt8(CompressionConfig::NONE);
+    args.AddInt32(0);
+    args.AddData("", 0);
 }
 
 namespace {
@@ -242,6 +252,11 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
     ret.AddInt8(type);
     ret.AddInt32(toCompress.size());
     ret.AddData(buf.stealBuffer(), buf.getDataLen());
+
+    // Place holder for auxillary data to be transfered later.
+    ret.AddInt8(CompressionConfig::NONE);
+    ret.AddInt32(0);
+    ret.AddData("", 0);
 }
 
 } // namespace mbus
