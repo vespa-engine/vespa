@@ -260,6 +260,38 @@ TEST_F("Test that pending removes are merged", Fixture)
     f.removeListeners("testdoc", {});
 }
 
+TEST_F("Test that out of order notifyRemoveDone is handled", Fixture)
+{
+    auto &stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
+    f.addListener(std::move(listener));
+    f.notifyRemove(toGid(doc1), 20);
+    TEST_DO(stats.assertChanges(0, 1));
+    f.notifyRemove(toGid(doc1), 40);
+    TEST_DO(stats.assertChanges(0, 1));
+    f.notifyRemoveDone(toGid(doc1), 40);
+    TEST_DO(stats.assertChanges(0, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(stats.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 12, 50);
+    TEST_DO(stats.assertChanges(1, 1));
+    f.removeListeners("testdoc", {});
+}
+
+TEST_F("Test that out of order notifyPutDone is handled", Fixture)
+{
+    auto &stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
+    f.addListener(std::move(listener));
+    f.notifyRemove(toGid(doc1), 20);
+    TEST_DO(stats.assertChanges(0, 1));
+    f.notifyPutDone(toGid(doc1), 12, 50);
+    TEST_DO(stats.assertChanges(1, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(stats.assertChanges(1, 1));
+    f.removeListeners("testdoc", {});
+}
+
 }
 
 TEST_MAIN()
