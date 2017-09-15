@@ -289,14 +289,18 @@ TEST_F("Test that out of order notifyRemoveDone is handled", StatsFixture)
     TEST_DO(f.assertChanges(1, 1));
 }
 
-TEST_F("Test that out of order notifyPutDone is handled", StatsFixture)
+TEST_F("Test that out of order notifyPutDone is partially handled", StatsFixture)
 {
      f.notifyRemove(toGid(doc1), 20);
     TEST_DO(f.assertChanges(0, 1));
     f.notifyPutDone(toGid(doc1), 12, 50);
     TEST_DO(f.assertChanges(1, 1));
-    f.notifyRemoveDone(toGid(doc1), 20);
+    f.notifyPutDone(toGid(doc1), 11, 40);
     TEST_DO(f.assertChanges(1, 1));
+    f.notifyPutDone(toGid(doc1), 13, 55);
+    TEST_DO(f.assertChanges(2, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(f.assertChanges(2, 1));
 }
 
 }
