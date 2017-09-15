@@ -110,8 +110,8 @@ public class RPCSendV2 extends RPCSend {
 
     @Override
     protected Reply createReply(Values ret, String serviceName, Trace trace) {
-        CompressionType compression = CompressionType.valueOf(ret.get(0).asInt8());
-        byte[] slimeBytes = compressor.decompress(ret.get(2).asData(), compression, ret.get(1).asInt32());
+        CompressionType compression = CompressionType.valueOf(ret.get(3).asInt8());
+        byte[] slimeBytes = compressor.decompress(ret.get(5).asData(), compression, ret.get(4).asInt32());
         Slime slime = BinaryFormat.decode(slimeBytes);
         Inspector root = slime.get();
 
@@ -151,8 +151,8 @@ public class RPCSendV2 extends RPCSend {
     }
 
     protected Params toParams(Values args) {
-        CompressionType compression = CompressionType.valueOf(args.get(0).asInt8());
-        byte[] slimeBytes = compressor.decompress(args.get(2).asData(), compression, args.get(1).asInt32());
+        CompressionType compression = CompressionType.valueOf(args.get(3).asInt8());
+        byte[] slimeBytes = compressor.decompress(args.get(5).asData(), compression, args.get(4).asInt32());
         Slime slime = BinaryFormat.decode(slimeBytes);
         Inspector root = slime.get();
         Params p = new Params();
