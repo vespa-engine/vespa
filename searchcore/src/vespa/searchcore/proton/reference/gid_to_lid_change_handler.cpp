@@ -57,7 +57,10 @@ GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid, SerialNum seria
         if (entry.removeSerialNum > serialNum) {
             return; // Document has already been removed later on
         }
-        assert(entry.putSerialNum < serialNum);
+        assert(entry.putSerialNum != serialNum);
+        if (entry.putSerialNum > serialNum) {
+            return; // Document has already been put later on
+        }
         entry.putSerialNum = serialNum;
     }
     notifyPutDone(gid, lid);
