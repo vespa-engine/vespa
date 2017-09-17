@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.server.application.Application;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,7 +27,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
     private final Map<TenantName, Map<ApplicationId, Application>> models;
     private final LbServicesProducer lbProd;
     private final RoutingProducer zoneProd;
-    
+
     public SuperModel(Map<TenantName, Map<ApplicationId, Application>> models, Zone zone) {
         this.models = models;
         this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(models), zone);

@@ -132,13 +132,13 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
     } else {
         uint64_t endOffset = (handle._bitOffset + _headerBitSize +
                               handle._bitLength + 7) >> 3;
-	// Align end at 64-bit boundary
+        // Align end at 64-bit boundary
         endOffset += (-endOffset & 7);
 
         uint64_t vectorLen = endOffset - startOffset;
         size_t padBefore;
         size_t padAfter;
-        size_t padExtraAfter;		// Decode prefetch space
+        size_t padExtraAfter;       // Decode prefetch space
         _file->DirectIOPadding(startOffset, vectorLen, padBefore, padAfter);
         padExtraAfter = 0;
         if (padAfter < 16)

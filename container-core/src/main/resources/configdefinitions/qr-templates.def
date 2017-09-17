@@ -1,7 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Not used
 # TODO: Remove on Vespa 7
-version=8
 namespace=container.core
 
 ## Prefix to use in queries to choose a given template

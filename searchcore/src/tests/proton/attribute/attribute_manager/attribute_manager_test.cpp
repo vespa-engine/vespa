@@ -35,6 +35,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -58,6 +59,7 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
 using search::attribute::ReferenceAttribute;
+using search::attribute::test::MockGidToLidMapperFactory;
 using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateIndex;
 using search::predicate::PredicateTreeAnnotations;
@@ -132,8 +134,10 @@ struct ImportedAttributesRepoBuilder {
     ImportedAttributesRepoBuilder() : _repo(std::make_unique<ImportedAttributesRepo>()) {}
     void add(const vespalib::string &name) {
         auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref", AVConfig(BasicType::REFERENCE));
+        refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
-        auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr);
+        auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();
+        auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr, documentMetaStore, false);
         _repo->add(name, importedAttr);
     }
     ImportedAttributesRepo::UP build() {
@@ -285,13 +289,13 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = amf.addAttribute("a1");
-        EXPECT_EQUAL(1u, a1->getNumDocs());	// Resized to size of attributemanager
+        EXPECT_EQUAL(1u, a1->getNumDocs()); // Resized to size of attributemanager
         fillAttribute(a1, 1, 3, 2, 100);
-        EXPECT_EQUAL(3u, a1->getNumDocs());	// Resized to size of attributemanager
+        EXPECT_EQUAL(3u, a1->getNumDocs()); // Resized to size of attributemanager
         AttributeVector::SP a2 = amf.addAttribute("a2");
-        EXPECT_EQUAL(1u, a2->getNumDocs());	// Not resized to size of attributemanager
+        EXPECT_EQUAL(1u, a2->getNumDocs()); // Not resized to size of attributemanager
         fillAttribute(a2, 1, 5, 4, 100);
-        EXPECT_EQUAL(5u, a2->getNumDocs());	// Increased
+        EXPECT_EQUAL(5u, a2->getNumDocs()); // Increased
         EXPECT_TRUE(!ia1.load());
         EXPECT_TRUE(!ia2.load());
         EXPECT_TRUE(!ia3.load());

@@ -451,7 +451,7 @@ FileConfigManager::prune(SerialNum serialNum)
     }
     std::sort(toPrune.begin(), toPrune.end());
     if (!toPrune.empty())
-        toPrune.pop_back();	// Keep newest old entry
+        toPrune.pop_back(); // Keep newest old entry
     if (toPrune.empty())
         return;
     for (const auto &serial : toPrune) {

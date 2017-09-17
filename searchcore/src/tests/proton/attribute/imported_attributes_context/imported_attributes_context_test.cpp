@@ -8,6 +8,7 @@ LOG_SETUP("imported_attributes_context_test");
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <future>
 
 using namespace proton;
@@ -17,12 +18,15 @@ using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
 using search::attribute::ReferenceAttribute;
+using search::attribute::test::MockGidToLidMapperFactory;
 using generation_t = AttributeVector::generation_t;
 
 ReferenceAttribute::SP
 createReferenceAttribute(const vespalib::string &name)
 {
-    return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
+    auto refAttr = std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
+    refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
+    return refAttr;
 }
 
 AttributeVector::SP
@@ -70,7 +74,9 @@ struct Fixture {
     Fixture &addAttribute(const vespalib::string &name) {
         auto attr = std::make_shared<ImportedAttributeVector>(name,
                                                               createReferenceAttribute(name + "_ref"),
-                                                              createTargetAttribute(name + "_target"));
+                                                              createTargetAttribute(name + "_target"),
+                                                              std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                              false);
         repo.add(name, attr);
         return *this;
     }

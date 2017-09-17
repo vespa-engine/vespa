@@ -22,6 +22,10 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -31,10 +35,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -145,36 +145,85 @@ public class ApplicationController {
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
      *
-     * @return The list of endpoints successfully alertered
+     * @return The canonical endpoint altered if any
      * @throws IOException if rotation status cannot be updated
      */
     public List<String> setGlobalRotationStatus(DeploymentId deploymentId, EndpointStatus status) throws IOException {
         List<String> rotations = new ArrayList<>();
-        for (RoutingEndpoint endpoint : routingGenerator.endpoints(deploymentId)) {
-            if (endpoint.isGlobal()) {
-                configserverClient.setGlobalRotationStatus(deploymentId, endpoint.getEndpoint(), status);
-                rotations.add(endpoint.getEndpoint());
-            }
+        Optional<String> endpoint = getCanonicalGlobalEndpoint(deploymentId);
+
+        if (endpoint.isPresent()) {
+            configserverClient.setGlobalRotationStatus(deploymentId, endpoint.get(), status);
+            rotations.add(endpoint.get());
         }
+
         return rotations;
     }
 
     /**
-     * Get the endpoint status for rotations marked as 'global'
+     * Get the endpoint status for the global endpoint of this application
      *
-     * @return The list of endpoints successfully alertered
+     * @return Map between the endpoint and the rotation status
      * @throws IOException if global rotation status cannot be determined
      */
     public Map<String, EndpointStatus> getGlobalRotationStatus(DeploymentId deploymentId) throws IOException {
         Map<String, EndpointStatus> result = new HashMap<>();
-        for (RoutingEndpoint endpoint : routingGenerator.endpoints(deploymentId)) {
-            if (endpoint.isGlobal()) {
-                EndpointStatus status = configserverClient.getGlobalRotationStatus(deploymentId, endpoint.getEndpoint());
-                result.put(endpoint.getEndpoint(), status);
-            }
+        Optional<String> endpoint = getCanonicalGlobalEndpoint(deploymentId);
+
+        if (endpoint.isPresent()) {
+            EndpointStatus status = configserverClient.getGlobalRotationStatus(deploymentId, endpoint.get());
+            result.put(endpoint.get(), status);
         }
+
         return result;
     }
+
+    /**
+     * Global rotations (plural as we can have aliases) map to exactly one service endpoint.
+     * This method finds that one service endpoint and strips the URI part that
+     * the routingGenerator is wrapping around the endpoint.
+     *
+     * @param deploymentId The deployment to retrieve global service endpoint for
+     * @return Empty if no global endpoint exist, otherwise the service endpoint ([clustername.]app.tenant.region.env)
+     */
+    Optional<String> getCanonicalGlobalEndpoint(DeploymentId deploymentId) throws IOException {
+        Map<String, RoutingEndpoint> hostToGlobalEndpoint = new HashMap<>();
+        Map<String, String> hostToCanonicalEndpoint = new HashMap<>();
+
+        for (RoutingEndpoint endpoint : routingGenerator.endpoints(deploymentId)) {
+            try {
+                URI uri = new URI(endpoint.getEndpoint());
+                String serviceEndpoint = uri.getHost();
+                if (serviceEndpoint == null) {
+                    throw new IOException("Unexpected endpoints returned from the Routing Generator");
+                }
+                String canonicalEndpoint = serviceEndpoint.replaceAll(".vespa.yahooapis.com", "");
+                String hostname = endpoint.getHostname();
+
+                // This check is needed until the old implementations of
+                // RoutingEndpoints that lacks hostname is gone
+                if (hostname != null) {
+
+                    // Book-keeping
+                    if (endpoint.isGlobal()) {
+                        hostToGlobalEndpoint.put(hostname, endpoint);
+                    } else {
+                        hostToCanonicalEndpoint.put(hostname, canonicalEndpoint);
+                    }
+
+                    // Return as soon as we have a map between a global and a canonical endpoint
+                    if (hostToGlobalEndpoint.containsKey(hostname) && hostToCanonicalEndpoint.containsKey(hostname)) {
+                        return Optional.of(hostToCanonicalEndpoint.get(hostname));
+                    }
+                }
+            } catch (URISyntaxException use) {
+                throw new IOException(use);
+            }
+        }
+
+        return Optional.empty();
+    }
+
 
     /**
      * Creates a new application for an existing tenant.
@@ -248,7 +297,7 @@ public class ApplicationController {
             DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
 
-            if( ! options.deployCurrentVersion) {
+            if ( ! options.deployCurrentVersion) {
                 // Add missing information to application (unless we're deploying the previous version (initial staging step)
                 application = application.with(applicationPackage.deploymentSpec());
                 application = application.with(applicationPackage.validationOverrides());
@@ -264,14 +313,14 @@ public class ApplicationController {
                     application = application.with(application.deploymentJobs().withTriggering(jobType, version, Optional.of(revision), clock.instant()));
                 }
 
-                store(application, lock); // store missing information even if we fail deployment below
-
                 // Delete zones not listed in DeploymentSpec, if allowed
                 // We do this at deployment time to be able to return a validation failure message when necessary
                 application = deleteRemovedDeployments(application);
 
                 // Clean up deployment jobs that are no longer referenced by deployment spec
                 application = deleteUnreferencedDeploymentJobs(application);
+
+                store(application, lock); // store missing information even if we fail deployment below
             }
 
             // Carry out deployment
@@ -280,7 +329,8 @@ public class ApplicationController {
                                                                                                         applicationPackage));
             options = withVersion(version, options);            
             ConfigServerClient.PreparedApplication preparedApplication = 
-                    configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), applicationPackage.zippedContent());
+                    configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), 
+                                               applicationPackage.zippedContent());
             preparedApplication.activate();
             application = application.with(new Deployment(zone, revision, version, clock.instant()));
             store(application, lock);
@@ -373,7 +423,7 @@ public class ApplicationController {
         Rotation rotation = applicationRotation.rotations().iterator().next(); // at this time there should be only one rotation assigned
         String endpointName = alias.toString();
         try {
-            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, rotation.rotationName);
+            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, endpointName);
             if (!record.isPresent()) {
                 RecordId recordId = nameService.createCname(endpointName, rotation.rotationName);
                 log.info("Registered mapping with record ID " + recordId.id() + ": " +
@@ -489,20 +539,30 @@ public class ApplicationController {
         }
     }
 
+    /** Deactivate application in the given zone */
+    public Application deactivate(Application application, Zone zone) {
+        return deactivate(application, zone, Optional.empty(), false);
+    }
+
+    /** Deactivate a known deployment of the given application */
     public Application deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
+        return deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
+    }
+
+    private Application deactivate(Application application, Zone zone, Optional<Deployment> deployment,
+                                   boolean requireThatDeploymentHasExpired) {
         try (Lock lock = lock(application.id())) {
-            // TODO: ignore no application errors for config server client, only return such errors from sherpa client.
-            if (requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment,
-                                                                                  clock.instant()))
+            if (deployment.isPresent() && requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(
+                    controller.zoneRegistry(), deployment.get(), clock.instant())) {
                 return application;
+            }
 
             try { 
-                configserverClient.deactivate(new DeploymentId(application.id(), deployment.zone())); 
-            } 
-            catch (NoInstanceException e) {
+                configserverClient.deactivate(new DeploymentId(application.id(), zone));
+            }  catch (NoInstanceException ignored) {
                 // ok; already gone
             }
-            application = application.withoutDeploymentIn(deployment.zone());
+            application = application.withoutDeploymentIn(zone);
             store(application, lock);
             return application;
         }

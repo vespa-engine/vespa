@@ -44,8 +44,8 @@ private:
 public:
 
 protected:
-    uint32_t _numKeys;		// Number of bitvectors and keys
-    uint32_t _docIdLimit;	// Limit for document ids (docId < docIdLimit)
+    uint32_t _numKeys;      // Number of bitvectors and keys
+    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
     uint32_t _idxHeaderLen;
     BitVectorKeyScope _scope;
 

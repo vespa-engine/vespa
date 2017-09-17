@@ -109,12 +109,14 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
-        verify(dockerOperations, never()).scheduleDownloadOfImage(eq(containerName), any(), any());
+        verify(dockerOperations, never()).pullImageAsyncIfNeeded(any());
+        verify(storageMaintainer, never()).removeOldFilesFromNode(eq(containerName));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
@@ -129,6 +131,31 @@ public class NodeAgentImplTest {
                         .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
     }
+
+    @Test
+    public void verifyRemoveOldFilesIfDiskFull() throws Exception {
+        final long restartGeneration = 1;
+        final long rebootGeneration = 0;
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
+                .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .vespaVersion(vespaVersion)
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
+                .build();
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(217432719360L));
+
+        nodeAgent.converge();
+
+        verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
+    }
+
 
     @Test
     public void absentContainerCausesStart() throws Exception {
@@ -147,14 +174,16 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+        when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
-        verify(dockerOperations, never()).scheduleDownloadOfImage(eq(containerName), any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
+        inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(aclMaintainer, times(1)).run();
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
@@ -185,7 +214,8 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
+        when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.converge();
 
@@ -194,8 +224,7 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).removeContainer(any());
 
         final InOrder inOrder = inOrder(dockerOperations);
-        inOrder.verify(dockerOperations, times(1)).shouldScheduleDownloadOfImage(eq(newDockerImage));
-        inOrder.verify(dockerOperations, times(1)).scheduleDownloadOfImage(eq(containerName), eq(newDockerImage), any());
+        inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(newDockerImage));
     }
 
     @Test
@@ -309,7 +338,6 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
-        inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
         inOrder.verify(dockerOperations, never()).removeContainer(any());
 
         verify(orchestrator, never()).resume(any(String.class));
@@ -420,6 +448,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.tick();
 
@@ -442,6 +471,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
         doThrow(new RuntimeException("Failed 1st time"))
@@ -523,7 +553,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
-        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(42547019776L));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(39625000000L));
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));

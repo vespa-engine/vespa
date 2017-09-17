@@ -41,6 +41,15 @@ node_reliability int default=1 restart
 max_merges_per_node int default=16
 max_merge_queue_size int default=1024
 
+## If the persistence provider indicates that it has exhausted one or more
+## of its internal resources during a mutating operation, new merges will
+## be bounced for this duration. Not allowing further merges helps take
+## load off the node while it e.g. compacts its data stores or memory in
+## the background.
+## Note: this does not affect merges where the current node is marked as
+## "source only", as merges do not cause mutations on such nodes.
+resource_exhaustion_merge_back_pressure_duration_secs double default=30.0
+
 ## Whether the deadlock detector should be enabled or not. If disabled, it will
 ## still run, but it will never actually abort the process it is running in.
 enable_dead_lock_detector bool default=false restart

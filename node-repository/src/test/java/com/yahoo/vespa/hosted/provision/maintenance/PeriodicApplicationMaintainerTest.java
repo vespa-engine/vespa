@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
@@ -217,8 +216,8 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         @Override
-        protected void deploy(ApplicationId application, Deployment deployment) {
-            deployment.activate();
+        protected void deploy(ApplicationId application) {
+            deployWithLock(application);
         }
 
         protected void throttle(int applicationCount) { }

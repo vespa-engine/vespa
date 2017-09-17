@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -12,6 +13,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/query/queryterm.h>
@@ -20,6 +22,7 @@ LOG_SETUP("documentmetastore_test");
 
 using namespace document;
 using proton::bucketdb::BucketState;
+using proton::bucketdb::IBucketCreateListener;
 using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -1132,6 +1135,30 @@ struct GlobalIdEntry {
 
 typedef std::vector<GlobalIdEntry> GlobalIdVector;
 
+struct MyBucketCreateListener : public IBucketCreateListener
+{
+    std::vector<document::BucketId> _buckets;
+
+    MyBucketCreateListener();
+    ~MyBucketCreateListener();
+    virtual void notifyCreateBucket(const document::BucketId &bucket) override;
+};
+
+MyBucketCreateListener::MyBucketCreateListener()
+{
+}
+
+MyBucketCreateListener::~MyBucketCreateListener()
+{
+}
+
+
+void
+MyBucketCreateListener::notifyCreateBucket(const document::BucketId &bucket)
+{
+    _buckets.emplace_back(bucket);
+}
+
 struct SplitAndJoinEmptyFixture
 {
     DocumentMetaStore dms;
@@ -1146,12 +1173,17 @@ struct SplitAndJoinEmptyFixture
     BucketId          bid34; // contained in bid10 and bid20
     BucketId          bid36; // contained in bid10 and bid22
     bucketdb::BucketDBHandler _bucketDBHandler;
+    MyBucketCreateListener    _bucketCreateListener;
 
     SplitAndJoinEmptyFixture();
     ~SplitAndJoinEmptyFixture();
 
     BucketInfo getInfo(const BucketId &bid) const {
         return dms.getBucketDB().takeGuard()->get(bid);
+    }
+
+    void assertNotifyCreateBuckets(std::vector<document::BucketId> expBuckets) {
+        EXPECT_EQUAL(expBuckets, _bucketCreateListener._buckets);
     }
 };
 
@@ -1160,11 +1192,16 @@ SplitAndJoinEmptyFixture::SplitAndJoinEmptyFixture()
       bid10(1, 0), bid11(1, 1),
       bid20(2, 0), bid21(2, 1), bid22(2, 2), bid23(2, 3),
       bid30(3, 0), bid32(3, 2), bid34(3, 4), bid36(3, 6),
-      _bucketDBHandler(dms.getBucketDB())
+      _bucketDBHandler(dms.getBucketDB()),
+      _bucketCreateListener()
 {
     _bucketDBHandler.addDocumentMetaStore(&dms, 0);
+    _bucketDBHandler.getBucketCreateNotifier().addListener(&_bucketCreateListener);
 }
-SplitAndJoinEmptyFixture::~SplitAndJoinEmptyFixture() {}
+SplitAndJoinEmptyFixture::~SplitAndJoinEmptyFixture()
+{
+    _bucketDBHandler.getBucketCreateNotifier().removeListener(&_bucketCreateListener);
+}
 
 
 struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture
@@ -1314,6 +1351,7 @@ TEST("requireThatBucketInfoIsCorrectAfterSplit")
     EXPECT_EQUAL(bi11.getDocumentCount(),
                  bi21.getDocumentCount() +
                  bi23.getDocumentCount());
+    f.assertNotifyCreateBuckets({ f.bid21, f.bid23 });
 }
 
 TEST("requireThatActiveStateIsPreservedAfterSplit")
@@ -1460,6 +1498,7 @@ TEST("requireThatBucketInfoIsCorrectAfterJoin")
     EXPECT_EQUAL(bi21.getDocumentCount() +
                  bi23.getDocumentCount(),
                  bi11.getDocumentCount());
+    f.assertNotifyCreateBuckets({ f.bid11 });
 }
 
 TEST("requireThatActiveStateIsPreservedAfterJoin")

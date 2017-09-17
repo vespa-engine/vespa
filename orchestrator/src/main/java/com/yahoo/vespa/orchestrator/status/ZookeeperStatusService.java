@@ -6,11 +6,11 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import org.apache.curator.SessionFailRetryLoop;
 import org.apache.curator.SessionFailRetryLoop.Mode;
 import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
@@ -18,6 +18,7 @@ import org.apache.zookeeper.data.Stat;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -45,18 +46,11 @@ public class ZookeeperStatusService implements StatusService {
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
 
-    private final CuratorFramework curatorFramework;
+    private final Curator curator;
 
     @Inject
     public ZookeeperStatusService(@Component Curator curator) {
-        this(curator.framework());
-    }
-
-    /**
-     * Called via public constructor on directly on testing.
-     */
-    ZookeeperStatusService(CuratorFramework curatorFramework) {
-        this.curatorFramework = curatorFramework;
+        this.curator = curator;
     }
 
     @Override
@@ -86,7 +80,7 @@ public class ZookeeperStatusService implements StatusService {
      */
     @Override
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference) {
-        return lockApplicationInstance_forCurrentThreadOnly(applicationInstanceReference, 10, TimeUnit.SECONDS);
+        return lockApplicationInstance_forCurrentThreadOnly(applicationInstanceReference, 10);
     }
 
     @Override
@@ -95,11 +89,11 @@ public class ZookeeperStatusService implements StatusService {
             Set<ApplicationInstanceReference> resultSet = new HashSet<>();
 
             // Return empty set if the base path does not exist
-            Stat stat = curatorFramework.checkExists().forPath(APPLICATION_STATUS_BASE_PATH);
+            Stat stat = curator.framework().checkExists().forPath(APPLICATION_STATUS_BASE_PATH);
             if (stat == null) return resultSet;
 
             // The path exist and we may have children
-            for (String appRefStr : curatorFramework.getChildren().forPath(APPLICATION_STATUS_BASE_PATH)) {
+            for (String appRefStr : curator.framework().getChildren().forPath(APPLICATION_STATUS_BASE_PATH)) {
                 ApplicationInstanceReference appRef = OrchestratorUtil.parseAppInstanceReference(appRefStr);
                 resultSet.add(appRef);
             }
@@ -111,9 +105,9 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference,
-                                                                       long timeout,
-                                                                       TimeUnit timeoutTimeUnit) {
+    MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
+            ApplicationInstanceReference applicationInstanceReference,
+            long timeoutSeconds) {
         Thread currentThread = Thread.currentThread();
 
         //Due to limitations in SessionFailRetryLoop.
@@ -121,17 +115,33 @@ public class ZookeeperStatusService implements StatusService {
 
         try {
             SessionFailRetryLoop sessionFailRetryLoop = 
-                    curatorFramework.getZookeeperClient().newSessionFailRetryLoop(Mode.FAIL);
+                    curator.framework().getZookeeperClient().newSessionFailRetryLoop(Mode.FAIL);
             sessionFailRetryLoop.start();
             try {
                 String lockPath = applicationInstanceLockPath(applicationInstanceReference);
-                InterProcessSemaphoreMutex mutex = acquireMutexOrThrow(timeout, timeoutTimeUnit, lockPath);
+                InterProcessSemaphoreMutex mutex = acquireMutexOrThrow(timeoutSeconds, TimeUnit.SECONDS, lockPath);
+
+                // TODO: Once rolled out, make this the only lock mechanism
+                Lock lock2;
+                try {
+                    String lock2Path = applicationInstanceLock2Path(applicationInstanceReference);
+                    lock2 = new Lock(lock2Path, curator);
+                    lock2.acquire(Duration.ofSeconds(timeoutSeconds));
+                } catch (Throwable t) {
+                    mutex.release();
+                    throw t;
+                }
 
                 synchronized (threadsHoldingLock) {
                     threadsHoldingLock.put(currentThread, applicationInstanceReference);
                 }
 
-                return new ZkMutableStatusRegistry(mutex, sessionFailRetryLoop, applicationInstanceReference, currentThread);
+                return new ZkMutableStatusRegistry(
+                        lock2,
+                        mutex,
+                        sessionFailRetryLoop,
+                        applicationInstanceReference,
+                        currentThread);
             } catch (Throwable t) {
                 sessionFailRetryLoop.close();
                 throw t;
@@ -151,7 +161,7 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     private InterProcessSemaphoreMutex acquireMutexOrThrow(long timeout, TimeUnit timeoutTimeUnit, String lockPath) throws Exception {
-        InterProcessSemaphoreMutex mutex = new InterProcessSemaphoreMutex(curatorFramework, lockPath);
+        InterProcessSemaphoreMutex mutex = new InterProcessSemaphoreMutex(curator.framework(), lockPath);
 
         log.log(LogLevel.DEBUG, "Waiting for lock on " + lockPath);
         boolean acquired = mutex.acquire(timeout, timeoutTimeUnit);
@@ -205,7 +215,7 @@ public class ZookeeperStatusService implements StatusService {
 
     private void deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
         try {
-            curatorFramework.delete().forPath(path);
+            curator.framework().delete().forPath(path);
         } catch (NoNodeException e) {
             log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
         }
@@ -213,7 +223,7 @@ public class ZookeeperStatusService implements StatusService {
 
     private void createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) throws Exception {
         try {
-            curatorFramework.create()
+            curator.framework().create()
                     .creatingParentsIfNeeded()
                     .forPath(path);
         } catch (NodeExistsException e) {
@@ -224,7 +234,7 @@ public class ZookeeperStatusService implements StatusService {
     //TODO: Eliminate repeated calls to getHostStatus, replace with bulk operation.
     private HostStatus getInternalHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
         try {
-            Stat statOrNull = curatorFramework.checkExists().forPath(
+            Stat statOrNull = curator.framework().checkExists().forPath(
                     hostAllowedDownPath(applicationInstanceReference, hostName));
 
             return (statOrNull == null) ? HostStatus.NO_REMARKS : HostStatus.ALLOWED_TO_BE_DOWN;
@@ -237,7 +247,7 @@ public class ZookeeperStatusService implements StatusService {
     /** Common implementation for the two internal classes that sets ApplicationInstanceStatus. */
     private ApplicationInstanceStatus getInternalApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
         try {
-            Stat statOrNull = curatorFramework.checkExists().forPath(
+            Stat statOrNull = curator.framework().checkExists().forPath(
                     applicationInstanceSuspendedPath(applicationInstanceReference));
 
             return (statOrNull == null) ? ApplicationInstanceStatus.NO_REMARKS : ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
@@ -266,6 +276,10 @@ public class ZookeeperStatusService implements StatusService {
         return applicationInstancePath(applicationInstanceReference) + "/lock";
     }
 
+    private static String applicationInstanceLock2Path(ApplicationInstanceReference applicationInstanceReference) {
+        return applicationInstancePath(applicationInstanceReference) + "/lock2";
+    }
+
     private String applicationInstanceSuspendedPath(ApplicationInstanceReference applicationInstanceReference) {
         return APPLICATION_STATUS_BASE_PATH + "/" + OrchestratorUtil.toRestApiFormat(applicationInstanceReference);
     }
@@ -275,18 +289,21 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
+        private final Lock lock;
         private final InterProcessSemaphoreMutex mutex;
         private final SessionFailRetryLoop sessionFailRetryLoop;
         private final ApplicationInstanceReference applicationInstanceReference;
         private final Thread lockingThread;
 
         public ZkMutableStatusRegistry(
+                Lock lock,
                 InterProcessSemaphoreMutex mutex,
                 SessionFailRetryLoop sessionFailRetryLoop,
                 ApplicationInstanceReference applicationInstanceReference,
                 Thread lockingThread) {
 
             this.mutex = mutex;
+            this.lock = lock;
             this.sessionFailRetryLoop = sessionFailRetryLoop;
             this.applicationInstanceReference = applicationInstanceReference;
             this.lockingThread = lockingThread;
@@ -334,6 +351,14 @@ public class ZookeeperStatusService implements StatusService {
         public void close()  {
             synchronized (threadsHoldingLock) {
                 threadsHoldingLock.remove(lockingThread, applicationInstanceReference);
+            }
+
+            try {
+                lock.close();
+            } catch (RuntimeException e) {
+                // We may want to avoid logging some exceptions that may be expected, like when session expires.
+                log.log(LogLevel.WARNING, "Failed to close application lock for " +
+                        ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue", e);
             }
 
             try {

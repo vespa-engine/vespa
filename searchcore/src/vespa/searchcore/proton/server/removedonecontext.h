@@ -4,6 +4,9 @@
 
 #include "operationdonecontext.h"
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/document/base/globalid.h>
+#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 
 namespace proton
 {
@@ -23,6 +26,7 @@ class RemoveDoneContext : public OperationDoneContext
 {
     vespalib::Executor &_executor;
     std::unique_ptr<vespalib::Executor::Task> _task;
+    PendingNotifyRemoveDone _pendingNotifyRemoveDone;
 
 public:
     RemoveDoneContext(std::unique_ptr<FeedToken> token,
@@ -30,6 +34,7 @@ public:
                       PerDocTypeFeedMetrics &metrics,
                       vespalib::Executor &executor,
                       IDocumentMetaStore &documentMetaStore,
+                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
                       uint32_t lid);
 
     virtual ~RemoveDoneContext();

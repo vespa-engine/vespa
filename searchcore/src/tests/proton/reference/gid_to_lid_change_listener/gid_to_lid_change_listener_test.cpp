@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <map>
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_listener_test");
@@ -19,6 +20,7 @@ using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+using search::attribute::test::MockGidToLidMapperFactory;
 
 namespace proton {
 
@@ -32,38 +34,13 @@ vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
 vespalib::string doc3("id:test:music::3");
 
-using MockGidToLidMap = std::map<GlobalId, uint32_t>;
-
-struct MyGidToLidMapper : public search::IGidToLidMapper
+struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
 {
-    const MockGidToLidMap &_map;
-    MyGidToLidMapper(const MockGidToLidMap &map)
-        : _map(map)
-    {
-    }
-    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override {
-        auto itr = _map.find(gid);
-        if (itr != _map.end()) {
-            return itr->second;
-        } else {
-            return 0u;
-        }
-    }
-};
-
-struct MyGidToLidMapperFactory : public search::IGidToLidMapperFactory
-{
-    MockGidToLidMap _map;
-
     MyGidToLidMapperFactory()
-        : _map()
+        : MockGidToLidMapperFactory()
     {
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
-    }
-
-    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const override {
-        return std::make_unique<MyGidToLidMapper>(_map);
     }
 };
 
@@ -117,8 +94,8 @@ struct Fixture
         _listener = std::make_unique<GidToLidChangeListener>(_writer, _attr, _refCount, "test", "testdoc");
     }
 
-    void notifyPut(const GlobalId &gid, uint32_t referencedDoc) {
-        _listener->notifyPut(gid, referencedDoc);
+    void notifyPutDone(const GlobalId &gid, uint32_t referencedDoc) {
+        _listener->notifyPutDone(gid, referencedDoc);
     }
 
     void notifyListenerRegistered() {
@@ -137,9 +114,9 @@ TEST_F("Test that we can use gid to lid change listener", Fixture)
     TEST_DO(f.assertRefLid(0, 2));
     TEST_DO(f.assertRefLid(0, 3));
     f.allocListener();
-    f.notifyPut(toGid(doc1), 10);
-    f.notifyPut(toGid(doc2), 20);
-    f.notifyPut(toGid(doc3), 30);
+    f.notifyPutDone(toGid(doc1), 10);
+    f.notifyPutDone(toGid(doc2), 20);
+    f.notifyPutDone(toGid(doc3), 30);
     TEST_DO(f.assertRefLid(10, 1));
     TEST_DO(f.assertRefLid(20, 2));
     TEST_DO(f.assertRefLid(10, 3));

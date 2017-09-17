@@ -19,7 +19,8 @@
       <consumer id="my-consumer">
         <metric-set id="my-set" />
         <metric id="my-metric"/>
-        <metric id="my-metric2"/>
+        <metric id="my-metric2" display-name="my-metric3"/>
+        <metric display-name="my-metric4" id="my-metric4.avg"/>
       </consumer>
       <consumer id="my-consumer2">
         <metric-set id="my-set2" />

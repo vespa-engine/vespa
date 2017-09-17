@@ -5,6 +5,7 @@
 #include "bucket_db_owner.h"
 #include "ibucketdbhandler.h"
 #include "ibucketdbhandlerinitializer.h"
+#include "bucket_create_notifier.h"
 
 namespace proton::bucketdb {
 
@@ -30,9 +31,12 @@ private:
 
     BucketDBOwner             &_bucketDB;
     std::vector<MetaStoreDesc> _dmsv;
+    BucketCreateNotifier       _bucketCreateNotifier;
 
 public:
     BucketDBHandler(BucketDBOwner &bucketDB);
+
+    ~BucketDBHandler();
 
     void
     setBucketDB(BucketDBOwner &bucketDB);
@@ -58,6 +62,8 @@ public:
 
     virtual void
     handleDeleteBucket(const BucketId &bucketId) override;
+
+    IBucketCreateNotifier &getBucketCreateNotifier() { return _bucketCreateNotifier; }
 };
 
 }

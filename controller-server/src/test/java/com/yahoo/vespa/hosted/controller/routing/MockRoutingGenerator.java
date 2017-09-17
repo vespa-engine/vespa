@@ -16,10 +16,11 @@ public class MockRoutingGenerator implements RoutingGenerator {
     @Override
     public List<RoutingEndpoint> endpoints(DeploymentId deployment) {
         List<RoutingEndpoint> endpoints = new ArrayList<>();
-        endpoints.add(new RoutingEndpoint("qrs-endpoint", false));
-        endpoints.add(new RoutingEndpoint("feeding-endpoint", false));
-        endpoints.add(new RoutingEndpoint("global-endpoint", true));
-        endpoints.add(new RoutingEndpoint("alias-endpoint", true));
+        endpoints.add(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", false));
+        endpoints.add(new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false));
+        endpoints.add(new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false));
+        endpoints.add(new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true));
+        endpoints.add(new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true));
         return endpoints;
     }
 

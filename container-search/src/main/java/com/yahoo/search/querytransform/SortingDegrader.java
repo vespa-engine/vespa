@@ -28,7 +28,6 @@ import java.util.Set;
  *
  * @author bratseth
  */
-
 // This writes fields to query.getRanking which are moved to rank.properties during query.prepare()
 // Query.prepare is done at the same time as canonicalization (by GroupingExecutor), so use that constraint.
 // (we're not adding another constraint at this point because all this preparation and encoding business

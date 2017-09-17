@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
@@ -43,6 +44,7 @@ using document::Document;
 using document::DocumentId;
 using fastos::ClockSystem;
 using fastos::TimeStamp;
+using proton::bucketdb::BucketCreateNotifier;
 using proton::matching::ISessionCachePruner;
 using search::AttributeGuard;
 using search::DocumentIdT;
@@ -239,7 +241,7 @@ public:
 class MyExecutor: public vespalib::ThreadStackExecutor
 {
 public:
-    FastOS_ThreadId		  _threadId;
+    FastOS_ThreadId       _threadId;
 
     MyExecutor();
 
@@ -384,6 +386,9 @@ struct MyAttributeManager : public proton::IAttributeManager
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo>) override {
         abort();
     }
+    virtual const ImportedAttributesRepo *getImportedAttributes() const override {
+        abort();
+    }
 };
 
 struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
@@ -427,6 +432,7 @@ public:
     std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
     AttributeUsageFilter          _attributeUsageFilter;
     test::DiskMemUsageNotifier    _diskMemUsageNotifier;
+    BucketCreateNotifier          _bucketCreateNotifier;
     MaintenanceController         _mc;
 
     MaintenanceControllerFixture();
@@ -888,6 +894,7 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _readyAttributeManager(std::make_shared<MyAttributeManager>()),
       _notReadyAttributeManager(std::make_shared<MyAttributeManager>()),
       _attributeUsageFilter(),
+      _bucketCreateNotifier(),
       _mc(_threadService, _genericExecutor, _docTypeName)
 {
     std::vector<MyDocumentSubDB *> subDBs;
@@ -955,7 +962,7 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
         MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp,
-                                            _lscHandlers, _fh, _mc, _docTypeName.getName(),
+                                            _lscHandlers, _fh, _mc, _bucketCreateNotifier, _docTypeName.getName(),
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
                                             _calc,
                                             _diskMemUsageNotifier,

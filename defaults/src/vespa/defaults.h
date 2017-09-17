@@ -34,6 +34,12 @@ public:
     static const char *vespaUser();
 
     /**
+     * Compute the host name that identifies myself
+     * @return the vespa host name
+     **/
+    static const char *vespaHostname();
+
+    /**
      * Compute the port number where the Vespa webservice
      * container should be available.
      *

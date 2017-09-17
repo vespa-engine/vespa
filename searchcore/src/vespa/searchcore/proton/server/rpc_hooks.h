@@ -22,10 +22,10 @@ private:
     class Session {
     private:
         fastos::TimeStamp _createTime;
-        int64_t		  _numDocs;
+        int64_t           _numDocs;
         vespalib::string  _delayedConfigs;
         int64_t           _gen;
-        bool		  _down;
+        bool              _down;
     public:
         typedef std::shared_ptr<Session> SP;
         Session();

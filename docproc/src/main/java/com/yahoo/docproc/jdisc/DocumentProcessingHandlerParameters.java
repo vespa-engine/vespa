@@ -12,10 +12,11 @@ import com.yahoo.statistics.Statistics;
 /**
  * Class to hold parameters given to DocumentProcessingHandler, typically used by unit tests.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @see com.yahoo.docproc.jdisc.DocumentProcessingHandler
  */
 public class DocumentProcessingHandlerParameters {
+
     private int maxNumThreads = 0;
     private double maxConcurrentFactor = 0.2;
     private double documentExpansionFactor = 20.0;
@@ -166,4 +167,5 @@ public class DocumentProcessingHandlerParameters {
     public ContainerDocumentConfig getContainerDocConfig() {
         return containerDocConfig;
     }
+
 }

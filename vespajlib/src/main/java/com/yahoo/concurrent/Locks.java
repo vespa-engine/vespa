@@ -51,7 +51,7 @@ public class Locks<TYPE> {
     public Lock lock(TYPE key, long timeout, TimeUnit timeoutUnit) {
         try {
             ReentrantLock lock = locks.computeIfAbsent(key, k -> new ReentrantLock(true));
-            boolean acquired = lock.tryLock(timeoutMs, TimeUnit.MILLISECONDS);
+            boolean acquired = lock.tryLock(timeout, timeoutUnit);
             if ( ! acquired)
                 throw new UncheckedTimeoutException("Timed out waiting for the lock to " + key);
             return new Lock(lock);

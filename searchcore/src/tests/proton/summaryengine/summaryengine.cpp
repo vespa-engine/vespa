@@ -225,7 +225,9 @@ verify(vespalib::stringref exp, const Slime &slime) {
 Slime
 createSlimeRequestLarger(size_t num,
                          const vespalib::string & sessionId = vespalib::string(),
-                         const vespalib::string & ranking = vespalib::string()) {
+                         const vespalib::string & ranking = vespalib::string(),
+                         const vespalib::string & docType = vespalib::string())
+{
     Slime r;
     Cursor &root = r.setObject();
     root.setString("class", "your-summary");
@@ -234,6 +236,9 @@ createSlimeRequestLarger(size_t num,
     }
     if (!ranking.empty()) {
         root.setString("ranking", ranking);
+    }
+    if (!docType.empty()) {
+        root.setString("doctype", docType);
     }
     Cursor &array = root.setArray("gids");
     for (size_t i(0); i < num; i++) {
@@ -245,8 +250,9 @@ createSlimeRequestLarger(size_t num,
 
 Slime
 createSlimeRequest(const vespalib::string & sessionId = vespalib::string(),
-                   const vespalib::string & ranking = vespalib::string()) {
-    return createSlimeRequestLarger(1, sessionId, ranking);
+                   const vespalib::string & ranking = vespalib::string(),
+                   const vespalib::string & docType = vespalib::string()) {
+    return createSlimeRequestLarger(1, sessionId, ranking, docType);
 }
 
 TEST("requireThatSlimeRequestIsConvertedCorrectly") {
@@ -285,6 +291,33 @@ TEST("require that presence of sessionid affect both request.sessionid and enabl
 
     EXPECT_EQUAL(0, strncmp("1.some.key.7", &r->sessionId[0],r->sessionId.size()));
     EXPECT_TRUE(r->propertiesMap.cacheProperties().lookup("query").found());
+    EXPECT_EQUAL(2u, r->hits.size());
+    EXPECT_EQUAL(GlobalId(GID1), r->hits[0].gid);
+    EXPECT_EQUAL(GlobalId(GID2), r->hits[1].gid);
+}
+
+TEST("require that 'doctype' affects DocTypeName in a good way...") {
+    vespalib::Slime slimeRequest = createSlimeRequest("1.some.key.7", "my-rank-profile", "my-document-type");
+    TEST_DO(verify("{"
+                           "    class: 'your-summary',"
+                           "    sessionid: '0x312E736F6D652E6B65792E37',"
+                           "    ranking: 'my-rank-profile',"
+                           "    doctype: 'my-document-type',"
+                           "    gids: ["
+                           "        '0x6162636465666768696A6B6C',"
+                           "        '0x62636465666768696A6B6C6D'"
+                           "    ]"
+                           "}", slimeRequest));
+    DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
+    EXPECT_EQUAL("your-summary", r->resultClassName);
+    EXPECT_EQUAL("my-rank-profile", r->ranking);
+
+    EXPECT_EQUAL(0, strncmp("1.some.key.7", &r->sessionId[0],r->sessionId.size()));
+    EXPECT_TRUE(r->propertiesMap.cacheProperties().lookup("query").found());
+    EXPECT_TRUE(r->propertiesMap.matchProperties().lookup("documentdb.searchdoctype").found());
+    EXPECT_EQUAL(1u, r->propertiesMap.matchProperties().lookup("documentdb.searchdoctype").size());
+    EXPECT_EQUAL("my-document-type", r->propertiesMap.matchProperties().lookup("documentdb.searchdoctype").get());
+    EXPECT_EQUAL(DocTypeName("my-document-type").getName(), DocTypeName(*r).getName());
     EXPECT_EQUAL(2u, r->hits.size());
     EXPECT_EQUAL(GlobalId(GID1), r->hits[0].gid);
     EXPECT_EQUAL(GlobalId(GID2), r->hits[1].gid);

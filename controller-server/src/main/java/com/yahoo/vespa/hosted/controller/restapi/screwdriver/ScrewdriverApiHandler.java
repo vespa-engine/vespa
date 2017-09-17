@@ -111,10 +111,8 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
      *     "instance"      :   String
      *     "jobName"       :   String
      *     "projectId"     :   long
-     *     "buildNumber"   :   long
      *     "success"       :   boolean
      *     "selfTriggering":   boolean
-     *     "gitChanges"    :   boolean
      *     "vespaVersion"  :   String
      * }
      * and notify the controller of the report.
@@ -123,15 +121,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
      * @return 200
      */
     private HttpResponse handleJobReportPost(HttpRequest request) {
-        // TODO: buildNumber is unused now -- remove, or use.
-        // TODO: selfTriggering is unused now -- remove, or use.
-        // TODO: gitChanges is unused now -- remove, or use.
-        // Note: gitChanges is probably only useful for the component step, since it check the gir repo directly;
-        // for other jobs, the last component's git commit is what matters.
-        // TODO: ApplicationId (tenant, application, instance) is unused now -- remove, or use.
-
         controller.applications().notifyJobCompletion(toJobReport(toSlime(request.getData()).get()));
-
         return new StringResponse("ok");
     }
 
@@ -148,8 +138,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         Optional<JobError> jobError = Optional.empty();
         if (report.field("jobError").valid()) {
             jobError = Optional.of(JobError.valueOf(report.field("jobError").asString()));
-        } else if (report.field("success").valid()) { // TODO: Remove after May 2017
-            jobError = JobError.from(report.field("success").asBool());
         }
         return new JobReport(
                 ApplicationId.from(
@@ -160,8 +148,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
                 jobError,
-                report.field("selfTriggering").asBool(),
-                report.field("gitChanges").asBool()
+                report.field("selfTriggering").asBool()
         );
     }
 

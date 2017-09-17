@@ -28,7 +28,7 @@ removeDupAdditions(PostingChange<AttributePosting>::A &additions)
             break;
     }
     if (i == ie)
-        return;		// no dups found
+        return;     // no dups found
     for (++i; i != ie; ++i) {
         if (d->_key != i->_key) {
             ++d;
@@ -56,7 +56,7 @@ removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
             break;
     }
     if (i == ie)
-        return;		// no dups found
+        return;     // no dups found
     // sum weights together
     d->setData(d->getData() + i->getData());
     for (++i; i != ie; ++i) {
@@ -88,7 +88,7 @@ removeDupRemovals(std::vector<uint32_t> &removals)
             break;
     }
     if (i == ie)
-        return;		// no dups found
+        return;     // no dups found
     for (++i; i != ie; ++i) {
         if (*d != *i) {
             ++d;

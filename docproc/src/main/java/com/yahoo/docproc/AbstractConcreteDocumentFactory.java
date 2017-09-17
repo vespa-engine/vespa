@@ -14,11 +14,11 @@ import com.yahoo.yolean.Exceptions;
 /**
  * Subtyped by factory classes for concrete document types. The factory classes are auto-generated
  * by vespa-documentgen-plugin. This superclass is used to manage the factories in OSGI.
- * @author vegardh
- * @since 5.1
  *
+ * @author vegardh
  */
 public abstract class AbstractConcreteDocumentFactory extends com.yahoo.component.AbstractComponent {
+
     public abstract Map<String, Class<? extends Document>> documentTypes();
     public abstract Map<String, Class<? extends Struct>> structTypes();
     public abstract Map<String, Class<? extends Annotation>> annotationTypes();
@@ -41,4 +41,5 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
             throw new RuntimeException(Exceptions.toMessageString(e), e);
         }
     }
+
 }

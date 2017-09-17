@@ -44,7 +44,7 @@ FastAccessFeedView::putAttributes(SerialNum serialNum,
 {
     _attributeWriter->put(serialNum, doc, lid, immediateCommit, onWriteDone);
     if (immediateCommit && onWriteDone) {
-        onWriteDone->registerPutLid(lid, &_docIdLimit);
+        onWriteDone->registerPutLid(&_docIdLimit);
     }
 }
 
@@ -106,7 +106,7 @@ void
 FastAccessFeedView::forceCommit(SerialNum serialNum,
                                 OnForceCommitDoneType onCommitDone)
 {
-    _attributeWriter->commit(serialNum, onCommitDone);
+    _attributeWriter->forceCommit(serialNum, onCommitDone);
     onCommitDone->registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(), &_docIdLimit);
     Parent::forceCommit(serialNum, onCommitDone);
 }

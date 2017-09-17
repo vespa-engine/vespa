@@ -7,13 +7,17 @@
 int main(int argc, char **argv) {
     if (argc != 2) {
         fprintf(stderr, "usage: %s <variable>\n", argv[0]);
-        fprintf(stderr, "  the variable must be 'home' or 'portbase' currently\n");
+        fprintf(stderr, "  variable names are: home, user, hostname, portbase, configservers,\n");
+        fprintf(stderr, "                      configserver_rpc_port, configservers_rpc\n");
+        fprintf(stderr, "                      configservers_http, configsources, configproxy_rpc\n");
         return 1;
     }
     if (strcmp(argv[1], "home") == 0) {
         printf("%s\n", vespa::Defaults::vespaHome());
     } else if (strcmp(argv[1], "user") == 0) {
         printf("%s\n", vespa::Defaults::vespaUser());
+    } else if (strcmp(argv[1], "hostname") == 0) {
+        printf("%s\n", vespa::Defaults::vespaHostname());
     } else if (strcmp(argv[1], "portbase") == 0) {
         printf("%d\n", vespa::Defaults::vespaPortBase());
     } else if (strcmp(argv[1], "configserver_rpc_port") == 0) {

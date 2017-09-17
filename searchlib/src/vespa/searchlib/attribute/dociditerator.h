@@ -42,12 +42,9 @@ public:
     }
 
     void lower_bound(uint32_t docId) {
-        if (valid() && (docId > getKey())) {
-            linearSeek(docId);
-        } else {
-            _cur = _begin;
-            linearSeek(docId);
-        }
+        P keyWrap;
+        keyWrap._key = docId;
+        _cur = std::lower_bound<const P *, P>(_begin, _end, keyWrap);
     }
 
     void swap(DocIdIterator &rhs) {
@@ -65,7 +62,7 @@ template <>
 inline int32_t
 DocIdIterator<AttributePosting>::getData() const
 {
-    return 1;	// default weight 1 for single value attributes
+    return 1;   // default weight 1 for single value attributes
 }
 
 

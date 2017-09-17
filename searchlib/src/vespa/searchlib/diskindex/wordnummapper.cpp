@@ -76,7 +76,7 @@ WordNumMapper::sanityCheck(bool allowHoles)
         uint64_t prevMappedWordNum = mappedWordNum;
         mappedWordNum = map(wordNum);
         if (mappedWordNum == 0u && allowHoles)
-            continue;	// In case some words are being removed
+            continue;   // In case some words are being removed
         assert(mappedWordNum > prevMappedWordNum);
         (void) prevMappedWordNum;
     }

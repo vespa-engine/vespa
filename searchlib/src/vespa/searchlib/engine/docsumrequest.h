@@ -73,7 +73,7 @@ public:
     };
 
 public:
-    uint32_t	      _flags;
+    uint32_t          _flags;
     vespalib::string  resultClassName;
     bool              useWideHits;
 private:

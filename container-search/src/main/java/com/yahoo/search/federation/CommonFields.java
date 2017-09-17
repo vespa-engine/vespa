@@ -2,9 +2,10 @@
 package com.yahoo.search.federation;
 /**
  * A set of string constants for common hit field names.
- * @author laboisse
  *
+ * @author laboisse
  */
+// TODO: Deprecate and remove
 public class CommonFields {
 
 	public static final String TITLE = "title";
@@ -19,4 +20,5 @@ public class CommonFields {
 	public static final String THUMBNAIL_URL = "thumbnailUrl";
 	public static final String THUMBNAIL_WIDTH = "thumbnailWidth";
 	public static final String THUMBNAIL_HEIGHT = "thumbnailHeight";
+
 }

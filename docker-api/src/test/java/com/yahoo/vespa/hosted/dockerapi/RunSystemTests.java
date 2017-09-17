@@ -151,9 +151,11 @@ public class RunSystemTests {
     }
 
     private void buildVespaSystestDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException, ExecutionException, InterruptedException {
-        if (!docker.imageIsDownloaded(vespaBaseImage)) {
+        if (docker.pullImageAsyncIfNeeded(vespaBaseImage)) {
             logger.info("Pulling " + vespaBaseImage.asString() + " (This may take a while)");
-            docker.pullImageAsync(vespaBaseImage).get();
+            while (docker.pullImageAsyncIfNeeded(vespaBaseImage)) {
+                Thread.sleep(5000);
+            };
         }
 
         Path systestBuildDirectory = pathToVespaRepoInHost.resolve("docker-api/src/test/resources/systest/");

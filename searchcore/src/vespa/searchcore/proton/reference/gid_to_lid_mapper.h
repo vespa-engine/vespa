@@ -4,9 +4,10 @@
 
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/searchlib/common/idocumentmetastore.h>
 
 namespace proton {
+
+class DocumentMetaStore;
 
 /*
  * Class for mapping from gid to lid. Instances should be short lived
@@ -15,12 +16,12 @@ namespace proton {
 class GidToLidMapper : public search::IGidToLidMapper
 {
     vespalib::GenerationHandler::Guard _guard;
-    const search::IDocumentMetaStore &_dms;
+    const DocumentMetaStore &_dms;
 public:
     GidToLidMapper(vespalib::GenerationHandler::Guard &&guard,
-                   const search::IDocumentMetaStore &dms);
+                   const DocumentMetaStore &dms);
     virtual ~GidToLidMapper();
-    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override;
+    virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
 };
 
 } // namespace proton

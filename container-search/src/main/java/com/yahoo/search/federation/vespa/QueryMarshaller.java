@@ -9,10 +9,11 @@ import com.yahoo.prelude.query.*;
  * Marshal a query stack into an advanced query string suitable for
  * passing to another QRS.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:rafan@yahoo-inc.com">Rong-En Fan</a>
+ * @author Steinar Knutsen
+ * @author Rong-En Fan
  */
 public class QueryMarshaller {
+
     private boolean atRoot = true;
 
     public String marshal(Item root) {
@@ -168,4 +169,5 @@ public class QueryMarshaller {
             s.append(" )");
         }
     }
+
 }

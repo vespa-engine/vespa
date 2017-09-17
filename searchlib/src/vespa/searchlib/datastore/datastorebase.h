@@ -23,7 +23,7 @@ public:
     {
     public:
         EntryRef _ref;
-        uint64_t _len;	// Aligned length
+        uint64_t _len;  // Aligned length
 
         ElemHold1ListElem(EntryRef ref, uint64_t len)
                 : _ref(ref),
@@ -157,8 +157,8 @@ protected:
     /**
      * Get next buffer id
      *
-     * @param bufferId		current buffer id
-     * @return			next buffer id
+     * @param bufferId current buffer id
+     * @return         next buffer id
      */
     uint32_t nextBufferId(uint32_t bufferId) {
         uint32_t ret = bufferId + 1;
@@ -170,7 +170,7 @@ protected:
     /**
      * Get active buffer
      *
-     * @return			active buffer
+     * @return          active buffer
      */
     void *activeBuffer(uint32_t typeId) {
         return _buffers[_activeBufferIds[typeId]].getBuffer();
@@ -179,7 +179,7 @@ protected:
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.
      *
-     * @param usedGen		lowest generation that is still used.
+     * @param usedGen       lowest generation that is still used.
      */
     virtual void trimElemHoldList(generation_t usedGen) = 0;
 
@@ -196,8 +196,8 @@ public:
      * Ensure that active buffer has a given number of elements free at end.
      * Switch to new buffer if current buffer is too full.
      *
-     * @param typeId		registered data type for buffer.
-     * @param sizeNeeded	Number of elements needed to be free
+     * @param typeId        registered data type for buffer.
+     * @param sizeNeeded    Number of elements needed to be free
      */
     void ensureBufferCapacity(uint32_t typeId, size_t sizeNeeded) {
         if (__builtin_expect(sizeNeeded >
@@ -210,7 +210,7 @@ public:
     /**
      * Put buffer on hold list, as part of compaction.
      *
-     * @param bufferId		Id of buffer to be held.
+     * @param bufferId      Id of buffer to be held.
      */
     void holdBuffer(uint32_t bufferId);
 
@@ -218,8 +218,8 @@ public:
      * Switch to new active buffer, typically in preparation for compaction
      * or when current active buffer no longer has free space.
      *
-     * @param typeId		registered data type for buffer.
-     * @param sizeNeeded	Number of elements needed to be free
+     * @param typeId        registered data type for buffer.
+     * @param sizeNeeded    Number of elements needed to be free
      */
     void switchActiveBuffer(uint32_t typeId, size_t sizeNeeded);
 
@@ -256,7 +256,7 @@ public:
     /**
      * Trim hold lists, freeing buffers that no longer needs to be held.
      *
-     * @param usedGen		lowest generation that is still used.
+     * @param usedGen       lowest generation that is still used.
      */
     void trimHoldLists(generation_t usedGen);
 
@@ -320,9 +320,9 @@ private:
     /**
      * Switch buffer state to active.
      *
-     * @param bufferId		Id of buffer to be active.
-     * @param typeId		registered data type for buffer.
-     * @param sizeNeeded	Number of elements needed to be free
+     * @param bufferId      Id of buffer to be active.
+     * @param typeId        registered data type for buffer.
+     * @param sizeNeeded    Number of elements needed to be free
      */
     void onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded);
 public:

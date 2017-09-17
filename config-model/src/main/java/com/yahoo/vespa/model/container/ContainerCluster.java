@@ -107,7 +107,7 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
 /**
  * @author gjoranv
  * @author Einar M R Rosenvinge
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class ContainerCluster
         extends AbstractConfigProducer<AbstractConfigProducer<?>>
@@ -411,12 +411,13 @@ public final class ContainerCluster
     }
 
     private boolean zoneHasActiveRotation(Zone zone) {
-        return getDeploymentSpec()
-                .flatMap(spec -> spec.steps().stream()
-                        .filter(dz -> dz.deploysTo(zone.environment(), Optional.of(zone.region())))
-                        .findFirst())
-                .map(step -> ((DeploymentSpec.DeclaredZone)step).active())
-                .orElse(false);
+        Optional<DeploymentSpec> spec = getDeploymentSpec();
+        if (!spec.isPresent()) {
+            return false;
+        }
+        return spec.get().zones().stream()
+                .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
+                                          declaredZone.active());
     }
 
     private Optional<DeploymentSpec> getDeploymentSpec() {

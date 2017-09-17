@@ -20,7 +20,7 @@ SimpleResult::clear()
     tmp.swap(_hits);
 }
 
-void
+SimpleResult &
 SimpleResult::search(SearchIterator &sb)
 {
     clear();
@@ -30,9 +30,10 @@ SimpleResult::search(SearchIterator &sb)
         sb.unpack(sb.getDocId());
         _hits.push_back(sb.getDocId());
     }
+    return *this;
 }
 
-void
+SimpleResult &
 SimpleResult::searchStrict(SearchIterator &sb, uint32_t docIdLimit)
 {
     clear();
@@ -42,9 +43,10 @@ SimpleResult::searchStrict(SearchIterator &sb, uint32_t docIdLimit)
         sb.unpack(sb.getDocId());
         _hits.push_back(sb.getDocId());
     }
+    return *this;
 }
 
-void
+SimpleResult &
 SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
 {
     clear();
@@ -57,6 +59,7 @@ SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
             _hits.push_back(docId);
         }
     }
+    return *this;
 }
 
 std::ostream &

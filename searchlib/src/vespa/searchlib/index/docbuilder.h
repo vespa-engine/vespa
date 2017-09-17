@@ -156,15 +156,15 @@ private:
     class IndexFieldHandle : public CollectionFieldHandle
     {
         vespalib::string _str; // adjusted as word comes along
-        size_t _strSymbols;	// symbols in string, assuming UTF8
+        size_t _strSymbols; // symbols in string, assuming UTF8
         document::SpanList *_spanList; // owned by _spanTree
         document::SpanTree::UP _spanTree;
         const document::SpanNode *_lastSpan;
-        size_t _spanStart;	// start of span
-        bool _autoAnnotate;	// Add annotation when adding strings
-        bool _autoSpace;	// Add space before strings
-        bool _skipAutoSpace;	// one shot skip of adding space
-        bool _uriField;		// URI handling (special struct case)
+        size_t _spanStart;  // start of span
+        bool _autoAnnotate; // Add annotation when adding strings
+        bool _autoSpace;    // Add space before strings
+        bool _skipAutoSpace;    // one shot skip of adding space
+        bool _uriField;     // URI handling (special struct case)
         vespalib::string _subField;
         const document::FixedTypeRepo & _repo;
 

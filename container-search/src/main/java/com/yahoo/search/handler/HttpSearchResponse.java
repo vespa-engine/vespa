@@ -29,7 +29,7 @@ import com.yahoo.search.query.context.QueryContext;
 /**
  * Wrap the result of a query as an HTTP response.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HttpSearchResponse extends ExtendedResponse {
 

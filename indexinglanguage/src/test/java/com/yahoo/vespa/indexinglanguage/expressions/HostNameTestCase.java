@@ -7,8 +7,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static org.junit.Assert.*;
@@ -35,13 +34,13 @@ public class HostNameTestCase {
     }
 
     @Test
-    public void requireThatHostnameIsSet() throws UnknownHostException {
+    public void requireThatHostnameIsSet() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new HostNameExpression().execute(ctx);
 
         FieldValue val = ctx.getValue();
         assertTrue(val instanceof StringFieldValue);
-        assertEquals(HostNameExpression.normalizeHostName(InetAddress.getLocalHost().getHostName()),
+        assertEquals(HostNameExpression.normalizeHostName(getDefaults().vespaHostname()),
                      ((StringFieldValue)val).getString());
     }
 }

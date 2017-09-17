@@ -162,9 +162,9 @@ public:
     uint32_t _docRef;
     uint32_t _elRef;
     bool _valid;
-    const Schema *_schema;	// Ptr to allow being std::vector member
+    const Schema *_schema;  // Ptr to allow being std::vector member
     uint32_t _fieldId;
-    IndexBuilder *_ib;	// Ptr to allow being std::vector member
+    IndexBuilder *_ib;  // Ptr to allow being std::vector member
 
     uint32_t _lowestOKElementId;
     uint32_t _lowestOKWordPos;

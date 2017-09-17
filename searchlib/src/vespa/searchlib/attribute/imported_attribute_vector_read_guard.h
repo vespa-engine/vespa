@@ -5,7 +5,11 @@
 #include "imported_attribute_vector.h"
 #include "attributeguard.h"
 
+namespace search { class IGidToLidMapper; }
+
 namespace search::attribute {
+
+class BitVectorSearchCache;
 
 /*
  * Short lived attribute vector that does not store values on its own.
@@ -17,20 +21,21 @@ class ImportedAttributeVectorReadGuard : public ImportedAttributeVector
 {
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
     ReferencedLids                      _referencedLids;
-    uint32_t                            _referencedLidLimit;
     AttributeGuard                      _reference_attribute_guard;
     AttributeGuard                      _target_attribute_guard;
     AttributeEnumGuard                  _target_attribute_enum_guard;
+    std::unique_ptr<IGidToLidMapper>    _mapper;
 
     uint32_t getReferencedLid(uint32_t lid) const {
-        uint32_t referencedLid = _referencedLids[lid];
-        return ((referencedLid >= _referencedLidLimit) ? 0u : referencedLid);
+        return _referencedLids[lid];
     }
 
 public:
     ImportedAttributeVectorReadGuard(vespalib::stringref name,
                                      std::shared_ptr<ReferenceAttribute> reference_attribute,
                                      std::shared_ptr<AttributeVector> target_attribute,
+                                     std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+                                     std::shared_ptr<BitVectorSearchCache> search_cache,
                                      bool stableEnumGuard);
     ~ImportedAttributeVectorReadGuard();
 

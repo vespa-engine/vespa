@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
@@ -22,6 +23,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::GlobalId;
+using proton::bucketdb::BucketCreateNotifier;
 using search::DocumentIdT;
 using search::DocumentMetaData;
 using search::IDestructorCallback;
@@ -546,6 +548,7 @@ struct ControllerFixtureBase
     MySubDb                     _ready;
     MySubDb                     _notReady;
     MyFrozenBucketHandler       _fbh;
+    BucketCreateNotifier        _bucketCreateNotifier;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
     BucketMoveJob               _bmj;
     MyCountJobRunner            _runner;
@@ -598,6 +601,10 @@ struct ControllerFixtureBase
     const BucketIdVector &calcAsked() const {
         return _calc->asked();
     }
+    void runLoop() {
+        while (!_bmj.isBlocked() && !_bmj.run()) {
+        }
+    }
 };
 
 ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts)
@@ -610,9 +617,10 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
       _fbh(),
+      _bucketCreateNotifier(),
       _diskMemUsageNotifier(),
       _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
-           _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
+           _notReady._subDb, _fbh, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
            _diskMemUsageNotifier, blockableConfig,
            "test"),
       _runner(_bmj)
@@ -1213,6 +1221,25 @@ TEST_F("explicitly active not ready bucket can be moved to ready even if node is
     assertEqual(f._notReady.bucket(3), f._notReady.docs(3)[1], 2, 1, f.docsMoved()[1]);
     ASSERT_EQUAL(1u, f.bucketsModified().size());
     EXPECT_EQUAL(f._notReady.bucket(3), f.bucketsModified()[0]);
+}
+
+TEST_F("require that notifyCreateBucket causes bucket to be reconsidered by job", ControllerFixture)
+{
+    EXPECT_FALSE(f._bmj.done());
+    f.addReady(f._ready.bucket(1));
+    f.addReady(f._ready.bucket(2));
+    f.runLoop();
+    EXPECT_TRUE(f._bmj.done());
+    EXPECT_TRUE(f.docsMoved().empty());
+    EXPECT_TRUE(f.bucketsModified().empty());
+    f.addReady(f._notReady.bucket(3)); // bucket 3 now ready, no notify
+    EXPECT_TRUE(f._bmj.done());        // move job still believes work done
+    f._bmj.notifyCreateBucket(f._notReady.bucket(3)); // reconsider bucket 3
+    EXPECT_FALSE(f._bmj.done());
+    f.runLoop();
+    EXPECT_TRUE(f._bmj.done());
+    EXPECT_EQUAL(1u, f.bucketsModified().size());
+    EXPECT_EQUAL(2u, f.docsMoved().size());
 }
 
 struct ResourceLimitControllerFixture : public ControllerFixture

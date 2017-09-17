@@ -27,7 +27,7 @@ import static org.junit.Assume.assumeTrue;
 /**
  * Tests for query class
  *
- * @author  Bjorn Borud
+ * @author Bjorn Borud
  */
 public class QueryTestCase {
 

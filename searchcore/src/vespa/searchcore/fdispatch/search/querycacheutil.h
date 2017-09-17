@@ -18,24 +18,24 @@ private:
     FastS_QueryCacheUtil(const FastS_QueryCacheUtil &);
     FastS_QueryCacheUtil& operator=(const FastS_QueryCacheUtil &);
 
-    double _startTime;		// For the query
+    double _startTime;      // For the query
 
-    uint32_t _userMaxHits;	 // Max hits spec.d by user; NB: see _systemMaxHits
-    uint32_t _alignedMaxHits;	 // Max hits      (forwarded to engine)
+    uint32_t _userMaxHits;   // Max hits spec.d by user; NB: see _systemMaxHits
+    uint32_t _alignedMaxHits;    // Max hits      (forwarded to engine)
     uint32_t _alignedSearchOffset; // Search offset (forwarded to engine)
     vespalib::string _ranking;   // ranking profile to be used
     uint32_t _randomSeed;        // seed for random rank values
-    uint32_t _dateTime;		 // datetime used for freshness boost
+    uint32_t _dateTime;      // datetime used for freshness boost
 
-    FastS_query _query;		// NB: Here it is!
+    FastS_query _query;     // NB: Here it is!
 
     FastS_QueryResult _queryResult;
     FastS_DocsumsResult _docsumsResult;
     FastS_SearchInfo _searchInfo;
 
-    FastS_hitresult *_alignedHitBuf;	// Hits from engine
-    bool	 _hitbuf_needfree;	// Destructor should free _hitbuf.
-    uint32_t _alignedHitCount;	// # Hits from engine
+    FastS_hitresult *_alignedHitBuf;    // Hits from engine
+    bool     _hitbuf_needfree;  // Destructor should free _hitbuf.
+    uint32_t _alignedHitCount;  // # Hits from engine
 
     uint32_t *_sortIndex;
     char     *_sortData; // NB: same malloc as _sortIndex

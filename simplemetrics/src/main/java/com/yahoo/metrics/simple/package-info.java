@@ -23,7 +23,7 @@
  * {@link com.yahoo.metrics.simple.MetricUpdater}.
  * </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @PublicApi
 @ExportPackage

@@ -400,7 +400,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * of tracelevel, which is the property deciding whether this needs to be done
      */
     private void traceProperties() {
-        if (traceLevel==0) return;
+        if (traceLevel == 0) return;
         CompiledQueryProfile profile=null;
         QueryProfileProperties profileProperties=properties().getInstance(QueryProfileProperties.class);
         if (profileProperties!=null)
@@ -410,10 +410,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             trace("No query profile is used", false, 1);
         else
             trace("Using " + profile.toString(), false, 1);
-        if (traceLevel<4) return;
+        if (traceLevel < 4) return;
 
-        StringBuilder b=new StringBuilder("Resolved properties:\n");
-        Set<String> mentioned=new HashSet<>();
+        StringBuilder b = new StringBuilder("Resolved properties:\n");
+        Set<String> mentioned = new HashSet<>();
         for (Map.Entry<String,String> requestProperty : requestProperties().entrySet() ) {
             Object resolvedValue = properties().get(requestProperty.getKey(), requestProperties());
             if (resolvedValue == null && requestProperty.getKey().equals("queryProfile"))

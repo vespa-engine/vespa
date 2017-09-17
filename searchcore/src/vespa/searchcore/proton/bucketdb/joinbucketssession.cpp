@@ -2,15 +2,17 @@
 
 #include "joinbucketssession.h"
 #include "bucketdeltapair.h"
+#include "i_bucket_create_notifier.h"
 #include <cassert>
 
 namespace proton::bucketdb {
 
 JoinBucketsSession::JoinBucketsSession(BucketDBOwner &bucketDB,
+                                       IBucketCreateNotifier &bucketCreateNotifier,
                                        const BucketId &source1,
                                        const BucketId &source2,
                                        const BucketId &target)
-    : BucketSessionBase(bucketDB),
+    : BucketSessionBase(bucketDB, bucketCreateNotifier),
       _source1Delta(),
       _source2Delta(),
       _wantTargetActive(false),
@@ -99,7 +101,9 @@ JoinBucketsSession::finish()
     if (source2Empty) {
         _bucketDB->deleteEmptyBucket(_source2);
     }
+    if (!_source1Delta.empty() || !_source2Delta.empty()) {
+        _bucketCreateNotifier.notifyCreateBucket(_target);
+    }
 }
 
 }
-

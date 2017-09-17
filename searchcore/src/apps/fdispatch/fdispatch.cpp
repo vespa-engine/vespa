@@ -134,7 +134,7 @@ FastS_FDispatchApp::GetOptions(int *exitCode)
     int errflg = 0;
     int c;
     const char *optArgument;
-    int longopt_index;	/* Shows which long option was used */
+    int longopt_index;  /* Shows which long option was used */
     static struct option longopts[] = {
         { "config-id", 1, NULL, 0 },
         { NULL, 0, NULL, 0 }

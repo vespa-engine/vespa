@@ -52,23 +52,26 @@ public class CuratorTest {
 
     @Test
     public void require_curator_is_created_from_config() {
-        Curator curator = createCurator(createTestConfig());
-        assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
+        try (Curator curator = createCurator(createTestConfig())) {
+            assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
+        }
     }
 
     @Test
     public void require_that_curator_can_produce_spec() {
-        Curator curator = createCurator(createTestConfig());
-        assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
-        assertThat(curator.serverCount(), is(2));
+        try (Curator curator = createCurator(createTestConfig())) {
+            assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
+            assertThat(curator.serverCount(), is(2));
+        }
     }
 
     @Test
     public void require_that_server_count_is_correct() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         builder.zookeeperserver(createZKBuilder("localhost", port1));
-        Curator curator = createCurator(new ConfigserverConfig(builder));
-        assertThat(curator.serverCount(), is(1));
+        try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
+            assertThat(curator.serverCount(), is(1));
+        }
     }
 
     private ConfigserverConfig createTestConfig() {

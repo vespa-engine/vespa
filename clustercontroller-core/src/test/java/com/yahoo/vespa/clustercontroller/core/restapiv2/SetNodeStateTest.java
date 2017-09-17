@@ -1,14 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.SetNodeStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,13 +22,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class SetNodeStateTest extends StateRestApiTest {
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     public static class SetUnitStateRequestImpl extends StateRequest implements SetUnitStateRequest {
         private Map<String, UnitState> newStates = new LinkedHashMap<>();
         private Condition condition = Condition.FORCE;
+        private ResponseWait responseWait = ResponseWait.WAIT_UNTIL_CLUSTER_ACKED;
 
         public SetUnitStateRequestImpl(String req) {
             super(req, 0);
@@ -31,6 +41,11 @@ public class SetNodeStateTest extends StateRestApiTest {
 
         public SetUnitStateRequestImpl setCondition(Condition condition) {
             this.condition = condition;
+            return this;
+        }
+
+        public SetUnitStateRequestImpl setResponseWait(ResponseWait responseWait) {
+            this.responseWait = responseWait;
             return this;
         }
 
@@ -60,6 +75,11 @@ public class SetNodeStateTest extends StateRestApiTest {
         @Override
         public Condition getCondition() {
             return condition;
+        }
+
+        @Override
+        public ResponseWait getResponseWait() {
+            return responseWait;
         }
     }
 
@@ -343,6 +363,42 @@ public class SetNodeStateTest extends StateRestApiTest {
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/1", 0));
         String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", "down", "testing more");
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
+    }
+
+    private Id.Node createDummyId() {
+        return new Id.Node(new Id.Service(new Id.Cluster("foo"), NodeType.STORAGE), 0);
+    }
+
+    private SetNodeStateRequest createDummySetNodeStateRequest() {
+        return new SetNodeStateRequest(createDummyId(), new SetUnitStateRequestImpl("music/storage/1")
+                .setNewState("user", "maintenance", "whatever reason."));
+    }
+
+    @Test
+    public void set_node_state_requests_are_by_default_tagged_as_having_version_ack_dependency() {
+        SetNodeStateRequest request = createDummySetNodeStateRequest();
+        assertTrue(request.hasVersionAckDependency());
+    }
+
+    @Test
+    public void set_node_state_requests_may_override_version_ack_dependency() {
+        SetNodeStateRequest request = new SetNodeStateRequest(createDummyId(), new SetUnitStateRequestImpl("music/storage/1")
+                .setNewState("user", "maintenance", "whatever reason.")
+                .setResponseWait(SetUnitStateRequest.ResponseWait.NO_WAIT));
+        assertFalse(request.hasVersionAckDependency());
+    }
+
+    // Technically, this failure mode currently applies to all requests, but it's only really
+    // important to test (and expected to happen) for requests that have dependencies on cluster
+    // state version publishing.
+    @Test
+    public void leadership_loss_fails_set_node_state_request() throws Exception {
+        expectedException.expectMessage("Leadership lost before request could complete");
+        expectedException.expect(UnknownMasterException.class);
+
+        SetNodeStateRequest request = createDummySetNodeStateRequest();
+        request.handleLeadershipLost();
+        request.getResult();
     }
 
 }

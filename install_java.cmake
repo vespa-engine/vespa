@@ -52,12 +52,10 @@ install_fat_java_artifact(vespaclient-java)
 install_fat_java_artifact(zkfacade)
 
 vespa_install_script(application-preprocessor/src/main/sh/vespa-preprocess-application bin)
-vespa_install_script(jdisc_core/src/main/perl/vespa-jdisc-logfmt bin)
-vespa_install_script(config-proxy/src/main/sh/vespa-config-ctl bin)
-vespa_install_script(config-proxy/src/main/sh/vespa-config-loadtester bin)
-vespa_install_script(config-proxy/src/main/sh/vespa-config-verification bin)
+vespa_install_script(config-proxy/src/main/sh/vespa-config-ctl.sh vespa-config-ctl bin)
+vespa_install_script(config-proxy/src/main/sh/vespa-config-loadtester.sh vespa-config-loadtester bin)
+vespa_install_script(config-proxy/src/main/sh/vespa-config-verification.sh vespa-config-verification bin)
 vespa_install_script(config-model/src/main/perl/vespa-deploy bin)
-vespa_install_script(config-model/src/main/perl/vespa-deploy-application bin)
 vespa_install_script(config-model/src/main/perl/vespa-expand-config.pl bin)
 vespa_install_script(config-model/src/main/perl/vespa-replicate-log-stream bin)
 vespa_install_script(config-model/src/main/sh/vespa-validate-application bin)
@@ -93,7 +91,6 @@ install(FILES
     configdefinitions/src/vespa/attributes.def
     configdefinitions/src/vespa/cluster-info.def
     configdefinitions/src/vespa/cluster-list.def
-    configdefinitions/src/vespa/cluster-member-info.def
     configdefinitions/src/vespa/configserver.def
     configdefinitions/src/vespa/fleetcontroller.def
     configdefinitions/src/vespa/ilscripts.def

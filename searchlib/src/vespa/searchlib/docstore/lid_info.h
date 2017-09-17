@@ -79,7 +79,7 @@ public:
     using Guard = vespalib::GenerationHandler::Guard;
     virtual ~IGetLid() { }
 
-    virtual LidInfo getLid(Guard & guard, uint32_t lid) const = 0;
+    virtual LidInfo getLid(const Guard & guard, uint32_t lid) const = 0;
     virtual vespalib::LockGuard getLidGuard(uint32_t lid) const = 0;
     virtual Guard getLidReadGuard() const = 0;
 };

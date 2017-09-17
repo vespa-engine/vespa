@@ -16,7 +16,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class DeploymentFileValidatorTest {
 
@@ -41,7 +41,7 @@ public class DeploymentFileValidatorTest {
                 "   </jdisc>" +
                 "</services>";
 
-        final String deploymentInfo = "<?xml version='1.0' encoding='UTF-8'?>" +
+        final String deploymentSpec = "<?xml version='1.0' encoding='UTF-8'?>" +
                 "<deployment version='1.0'>" +
                 "  <test />" +
                 "  <prod global-service-id='non-existing'>" +
@@ -52,7 +52,7 @@ public class DeploymentFileValidatorTest {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(simpleHosts)
                 .withServices(services)
-                .withDeploymentInfo(deploymentInfo)
+                .withDeploymentSpec(deploymentSpec)
                 .build();
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
         try {

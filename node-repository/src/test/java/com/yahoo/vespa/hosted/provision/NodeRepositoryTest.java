@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -70,7 +69,7 @@ public class NodeRepositoryTest {
         assertTrue(tester.nodeRepository().dynamicAllocationEnabled());
     }
 
-    @Test @Ignore // TODO: Enable once controller no longer deletes child nodes manually
+    @Test
     public void only_allow_docker_containers_remove_in_ready() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         tester.addNode("id1", "host1", "docker", NodeType.tenant);

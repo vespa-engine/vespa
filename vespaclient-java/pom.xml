@@ -33,13 +33,29 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <!-- TODO: remove dependency on container-dev, and instead depend directly on what this module needs! -->
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>documentapi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-dev</artifactId>
+            <artifactId>jdisc_http_service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>predicate-search-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -9,7 +9,6 @@ import java.util.concurrent.Executor;
  * A convenience superclass for listenable freezables.
  *
  * @author bratseth
- * @since 5.1.13
  */
 public class ListenableFreezableClass extends FreezableClass implements ListenableFreezable {
 

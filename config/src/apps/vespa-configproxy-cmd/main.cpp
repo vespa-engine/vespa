@@ -28,7 +28,7 @@ Application::parseOpts()
             _flags.method = optArg;
             break;
         case 's':
-            _flags.hostname = optArg;
+            _flags.targethost = optArg;
             break;
         case 'p':
             _flags.portnumber = atoi(optArg);

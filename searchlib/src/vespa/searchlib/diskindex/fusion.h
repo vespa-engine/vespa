@@ -191,7 +191,7 @@ protected:
 
     typedef FusionInputIndex OldIndex;
 
-    const Schema *_schema;	// External ownership
+    const Schema *_schema;  // External ownership
     std::vector<std::shared_ptr<OldIndex> > _oldIndexes;
     typedef std::vector<std::shared_ptr<OldIndex> >::iterator
     OldIndexIterator;

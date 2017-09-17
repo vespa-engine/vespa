@@ -49,8 +49,10 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
       _warmupExecutor(ctx._warmupExecutor),
-      _gidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>())
-{ }
+      _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>())
+{
+    _gidToLidChangeHandler = _realGidToLidChangeHandler;
+}
 
 SearchableDocSubDB::~SearchableDocSubDB()
 {
@@ -244,7 +246,7 @@ SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
     SearchableFeedView::UP feedView(new SearchableFeedView(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
             FastAccessFeedView::Context(attrWriter, _docIdLimit),
-            SearchableFeedView::Context(getIndexWriter(), _gidToLidChangeHandler)));
+            SearchableFeedView::Context(getIndexWriter())));
 
     // XXX: Not exception safe.
     _rFeedView.set(SearchableFeedView::SP(feedView.release()));
@@ -274,7 +276,7 @@ reconfigure(vespalib::Closure0<bool>::UP closure)
     bool ret = true;
 
     if (closure.get() != NULL)
-        ret = closure->call();	// Perform index manager reconfiguration now
+        ret = closure->call();  // Perform index manager reconfiguration now
     reconfigureIndexSearchable();
     return ret;
 }
@@ -351,7 +353,7 @@ SearchableDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
 void
 SearchableDocSubDB::close()
 {
-    _gidToLidChangeHandler->close();
+    _realGidToLidChangeHandler->close();
     Parent::close();
 }
 

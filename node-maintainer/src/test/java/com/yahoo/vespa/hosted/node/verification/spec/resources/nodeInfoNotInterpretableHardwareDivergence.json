@@ -38,7 +38,6 @@
   "convergedStateVersion": "6.138.18",
   "failCount": 44,
   "hardwareFailure": true,
-  "hardwareFailureType": "disk_smart",
   "hardwareFailureDescription": "disk_smart",
   "wantToRetire": false,
   "wantToDeprovision": false,

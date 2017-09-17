@@ -198,7 +198,7 @@ public:
     {
     }
 
-    virtual void notifyPut(document::GlobalId gid, uint32_t lid, SerialNum)  override {
+    virtual void notifyPutDone(document::GlobalId gid, uint32_t lid, SerialNum)  override {
         _changeGid = gid;
         _changeLid = lid;
         _gidToLid[gid] = lid;
@@ -385,7 +385,7 @@ struct MyAttributeWriter : public IAttributeWriter
     virtual const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;
     }
-    void commit(SerialNum serialNum, OnWriteDoneType) override {
+    void forceCommit(SerialNum serialNum, OnWriteDoneType) override {
         (void) serialNum; ++_commitCount;
         _tracer.traceCommit(attributeAdapterTypeName, serialNum);
     }
@@ -755,13 +755,14 @@ struct SearchableFeedViewFixture : public FixtureBase
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
                 _dmsc,
+                *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
                 _lidReuseDelayer,
                 _commitTimeTracker),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit),
-           SearchableFeedView::Context(iw, _gidToLidChangeHandler))
+           SearchableFeedView::Context(iw))
     {
         runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
@@ -776,6 +777,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
                 _dmsc,
+                *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
                 _lidReuseDelayer,

@@ -88,7 +88,10 @@ Metrics = element metrics {
     element consumer {
         attribute id { xsd:Name } &
         element metric-set { attribute id { xsd:Name } }* &
-        element metric { attribute id { xsd:Name } }*
+        element metric {
+            attribute id { xsd:Name } &
+            attribute display-name { xsd:Name }?
+        }*
     }+
 }
 

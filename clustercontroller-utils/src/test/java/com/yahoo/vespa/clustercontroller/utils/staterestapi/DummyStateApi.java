@@ -179,7 +179,8 @@ public class DummyStateApi implements StateRestAPI {
         }
         n.state = newState.get("current").getId();
         n.reason = newState.get("current").getReason();
-        return new SetResponse("DummyStateAPI", true);
+        String reason = String.format("DummyStateAPI %s call", request.getResponseWait().getName());
+        return new SetResponse(reason, true);
     }
 
     private void checkForInducedException() throws StateRestApiException {

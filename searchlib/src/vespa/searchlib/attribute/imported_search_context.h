@@ -3,8 +3,10 @@
 #pragma once
 
 #include "attributevector.h"
+#include "bitvector_search_cache.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace search::fef { class TermFieldMatchData; }
@@ -26,20 +28,23 @@ class SearchContextParams;
 class ImportedSearchContext : public ISearchContext {
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
     const ImportedAttributeVector&                  _imported_attribute;
+    vespalib::string                                _queryTerm;
+    bool                                            _useSearchCache;
+    BitVectorSearchCache::Entry::SP                 _searchCacheLookup;
+    IDocumentMetaStoreContext::IReadGuard::UP       _dmsReadGuard;
     const ReferenceAttribute&                       _reference_attribute;
     const AttributeVector&                          _target_attribute;
     std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
     ReferencedLids                                  _referencedLids;
-    uint32_t                                        _referencedLidLimit;
     PostingListMerger<int32_t>                      _merger;
     bool                                            _fetchPostingsDone;
 
     uint32_t getReferencedLid(uint32_t lid) const {
-        uint32_t referencedLid = _referencedLids[lid];
-        return ((referencedLid >= _referencedLidLimit) ? 0u : referencedLid);
+        return _referencedLids[lid];
     }
 
     void makeMergedPostings(bool isFilter);
+    void considerAddSearchCacheEntry();
 public:
     ImportedSearchContext(std::unique_ptr<QueryTermSimple> term,
                           const SearchContextParams& params,

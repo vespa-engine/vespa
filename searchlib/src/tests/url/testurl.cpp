@@ -15,8 +15,8 @@ static search::util::URL GlobalURL;
 
 static bool
 CheckString(const char *name,
-	    const unsigned char *test1,
-	    const unsigned char *test2)
+            const unsigned char *test1,
+            const unsigned char *test2)
 {
     assert(test1 != NULL);
     assert(test2 != NULL);
@@ -32,8 +32,8 @@ CheckString(const char *name,
 
 static bool
 CheckInt(const char *name,
-	 int test1,
-	 int test2)
+         int test1,
+         int test2)
 {
     if (test1 != test2) {
         printf("FAILED: %s: %d != %d!\n", name, test1, test2);
@@ -68,24 +68,24 @@ GetTokenString(search::util::URL &url)
 
 static bool
 CheckURL(const char *url,
-	 const char *scheme,
-	 const char *host,
-	 const char *domain,
-	 const char *siteowner,
+         const char *scheme,
+         const char *host,
+         const char *domain,
+         const char *siteowner,
          const char *tld,
          const char *maintld,
-	 const char */* tldregion */,
-	 const char *port,
-	 const char *path,
-	 int pathdepth,
-	 const char *filename,
-	 const char *extension,
-	 const char *params,
-	 const char *query,
-	 const char *fragment,
-	 const char *address,
-	 const char *tokens,
-	 int verbose=0)
+         const char */* tldregion */,
+         const char *port,
+         const char *path,
+         int pathdepth,
+         const char *filename,
+         const char *extension,
+         const char *params,
+         const char *query,
+         const char *fragment,
+         const char *address,
+         const char *tokens,
+         int verbose=0)
 {
     if (verbose>0)
         printf("Checking with URL: '%s'\n", url);

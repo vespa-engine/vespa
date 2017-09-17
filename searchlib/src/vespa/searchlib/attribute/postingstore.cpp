@@ -81,7 +81,7 @@ template <typename DataT>
 PostingStore<DataT>::~PostingStore()
 {
     _builder.clear();
-    _store.dropBuffers();	// Drop buffers before type handlers are dropped
+    _store.dropBuffers();   // Drop buffers before type handlers are dropped
 }
 
 

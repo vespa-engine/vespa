@@ -68,7 +68,7 @@ public:
         uint32_t _docId;
         DocWordCollapsedFeature _collapsedDocWordFeatures;
         uint32_t _positions;
-        uint32_t _accPositions;	// accumulated positions for previous words
+        uint32_t _accPositions; // accumulated positions for previous words
 
         DocWordFeature();
         ~DocWordFeature();
@@ -155,7 +155,7 @@ public:
     DocWordFeatureList _extraPostings;
     DocWordPosFeatureList _extraWordPosFeatures;
     std::vector<Randomizer> _randomizer;
-    uint32_t _docIdLimit;	// Documents in index
+    uint32_t _docIdLimit;   // Documents in index
     std::string _name;
     const PosOccFieldsParams &_fieldsParams;
     uint32_t _packedIndex;

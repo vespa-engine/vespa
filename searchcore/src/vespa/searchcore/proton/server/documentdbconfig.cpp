@@ -40,7 +40,8 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       importedFieldsChanged(false),
       tuneFileDocumentDBChanged(false),
       schemaChanged(false),
-      maintenanceChanged(false)
+      maintenanceChanged(false),
+      visibilityDelayChanged(false)
 { }
 
 DocumentDBConfig::DocumentDBConfig(
@@ -171,6 +172,8 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.maintenanceChanged =
         !equals<DocumentDBMaintenanceConfig>(_maintenance.get(),
                 rhs._maintenance.get());
+    retval.visibilityDelayChanged =
+            (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
     return retval;
 }
 

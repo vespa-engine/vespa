@@ -35,7 +35,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
       _indices(getGenerationHolder()),
       _cachedUniqueStoreMemoryUsage(),
       _gidToLidMapperFactory(),
-      _referenceMappings(getGenerationHolder())
+      _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
     setEnum(true);
     enableEnumeratedSave(true);
@@ -247,9 +247,6 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
     assert(doc < _indices.size());
     EntryRef oldRef = _indices[doc];
     Reference refToAdd(gid);
-    if (_gidToLidMapperFactory) {
-        refToAdd.setLid(_gidToLidMapperFactory->getMapper()->mapGidToLid(gid));
-    }
     EntryRef newRef = _store.add(refToAdd).ref();
     std::atomic_thread_fence(std::memory_order_release);
     _indices[doc] = newRef;
@@ -320,14 +317,23 @@ ReferenceAttribute::setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFact
 }
 
 void
+ReferenceAttribute::notifyReferencedPutNoCommit(const GlobalId &gid, DocId referencedLid)
+{
+    assert(referencedLid != 0);
+    EntryRef ref = _store.find(gid);
+    if (!ref.valid() || _store.get(ref).lid() == 0) {
+        Reference refToAdd(gid);
+        ref = _store.add(refToAdd).ref();
+    }
+    const auto &entry = _store.get(ref);
+    _referenceMappings.notifyReferencedPut(entry, referencedLid);
+}
+
+void
 ReferenceAttribute::notifyReferencedPut(const GlobalId &gid, DocId referencedLid)
 {
-    EntryRef ref = _store.find(gid);
-    if (ref.valid()) {
-        const auto &entry = _store.get(ref);
-        _referenceMappings.notifyReferencedPut(entry, referencedLid);
-        commit();
-    }
+    notifyReferencedPutNoCommit(gid, referencedLid);
+    commit();
 }
 
 void
@@ -336,9 +342,32 @@ ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
     EntryRef ref = _store.find(gid);
     if (ref.valid()) {
         const auto &entry = _store.get(ref);
+        uint32_t oldReferencedLid = entry.lid();
         _referenceMappings.notifyReferencedRemove(entry);
+        if (oldReferencedLid != 0) {
+            _store.remove(ref);
+        }
         commit();
     }
+}
+
+namespace {
+
+class ReferencedLidPopulator : public IGidToLidMapperVisitor
+{
+    ReferenceAttribute &_attr;
+public:
+    ReferencedLidPopulator(ReferenceAttribute &attr)
+        : IGidToLidMapperVisitor(),
+          _attr(attr)
+    {
+    }
+    virtual ~ReferencedLidPopulator() override { }
+    virtual void visit(const document::GlobalId &gid, uint32_t lid) const override {
+        _attr.notifyReferencedPutNoCommit(gid, lid);
+    }
+};
+
 }
 
 void
@@ -347,13 +376,8 @@ ReferenceAttribute::populateReferencedLids()
     if (_gidToLidMapperFactory) {
         std::unique_ptr<IGidToLidMapper> mapperUP = _gidToLidMapperFactory->getMapper();
         const IGidToLidMapper &mapper = *mapperUP;
-        const auto &store = _store;
-        const auto saver = _store.getSaver();
-        saver.foreach_key([&store,&mapper,this](EntryRef ref)
-                          {   const Reference &entry = store.get(ref);
-                              entry.setLid(mapper.mapGidToLid(entry.gid()));
-                              _referenceMappings.syncMappings(entry);
-                          });
+        ReferencedLidPopulator populator(*this);
+        mapper.foreach(populator);
     }
     commit();
 }

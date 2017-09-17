@@ -3,8 +3,7 @@
 
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 class ThreadServiceObserver : public searchcorespi::index::IThreadService
 {
@@ -38,9 +37,8 @@ public:
     virtual bool isCurrentThread() const override {
         return _service.isCurrentThread();
     }
+    size_t getNumThreads() const override { return _service.getNumThreads(); }
+
 };
 
-} // namespace test
-} // namespace proton
-
-
+}

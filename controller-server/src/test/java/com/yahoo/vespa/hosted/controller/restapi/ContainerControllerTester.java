@@ -74,9 +74,10 @@ public class ContainerControllerTester {
     }
 
     public void notifyJobCompletion(ApplicationId applicationId, long projectId, boolean success, DeploymentJobs.JobType job) {
-        controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId, job, projectId, 1L,
+        controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId, job, projectId,
+                                                                                     42,
                                                                                      success ? Optional.empty() : Optional.of(DeploymentJobs.JobError.unknown),
-                                                                                     false, false));
+                                                                                     false));
     }
 
     public AthensDomain addTenantAthensDomain(String domainName, String userName) {

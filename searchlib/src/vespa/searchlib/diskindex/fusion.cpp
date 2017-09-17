@@ -247,7 +247,7 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
         cookedFormat = featureParams.getStr("cookedEncoding");
         rawFormat = featureParams.getStr("encoding");
         if (rawFormat == "")
-            rawFormatOK = false;	// Typically uncompressed file
+            rawFormatOK = false;    // Typically uncompressed file
         outFeatureParams = featureParams;
     }
     {
@@ -259,7 +259,7 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
         if (featureParams != outFeatureParams)
             rawFormatOK = false;
         if (!reader.allowRawFeatures())
-            rawFormatOK = false;	// Reader transforms data
+            rawFormatOK = false;    // Reader transforms data
     }
     if (!cookedFormatOK) {
         LOG(error,

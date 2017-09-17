@@ -91,9 +91,9 @@ public:
     /**
      * Constructor for feature store.
      *
-     * @param schema		The schema describing fields and field
-     *				collections available, used to derive
-     *				coding parameters.
+     * @param schema The schema describing fields and field
+     *               collections available, used to derive
+     *               coding parameters.
      */
     FeatureStore(const Schema &schema);
 
@@ -102,10 +102,10 @@ public:
     /**
      * Add features to feature store
      *
-     * @param packedIndex	The field or field collection owning features
-     * @param features		The features to be encoded
-     * @return			pair with reference to stored features and
-     *				size of encoded features in bits
+     * @param packedIndex The field or field collection owning features
+     * @param features    The features to be encoded
+     * @return            pair with reference to stored features and
+     *                    size of encoded features in bits
      */
     std::pair<datastore::EntryRef, uint64_t>
     addFeatures(uint32_t packedIndex,
@@ -116,9 +116,9 @@ public:
      * Get features from feature store.  Method signature is not
      * const since feature decoder is written to during calculation.
      *
-     * @param packedIndex	The field or field collection owning features
-     * @param ref		Reference to stored features
-     * @param features		The features to be decoded
+     * @param packedIndex The field or field collection owning features
+     * @param ref         Reference to stored features
+     * @param features    The features to be decoded
      */
     void
     getFeatures(uint32_t packedIndex,
@@ -176,9 +176,9 @@ public:
      * Calculate size of encoded features.  Method signature is not
      * const since feature decoder is written to during calculation.
      *
-     * @param packedIndex	The field or field collection owning features
-     * @param ref		Reference to stored features
-     * @return			size of features in bits
+     * @param packedIndex The field or field collection owning features
+     * @param ref         Reference to stored features
+     * @return            size of features in bits
      */
     size_t
     bitSize(uint32_t packedIndex, datastore::EntryRef ref);
@@ -186,8 +186,8 @@ public:
     /**
      * Get byte address of stored features
      *
-     * @param ref		Referennce to stored features
-     * @return			byte address of stored features
+     * @param ref Referennce to stored features
+     * @return    byte address of stored features
      */
     const uint8_t *
     getBits(datastore::EntryRef ref) const
@@ -199,9 +199,9 @@ public:
     /**
      * Move features to new location, as part of compaction.
      *
-     * @param packedIndex	The field or field collection owning features
-     * @param ref		Old reference to stored features
-     * @return			New reference to stored features
+     * @param packedIndex The field or field collection owning features
+     * @param ref         Old reference to stored features
+     * @return            New reference to stored features
      */
     datastore::EntryRef
     moveFeatures(uint32_t packedIndex,

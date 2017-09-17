@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * Utilities for getting the hostname of the system running the JVM.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  * @author hakon
  */
@@ -118,6 +118,10 @@ public class HostName {
      * DO NOT USE: Package-private for testing purposes (all testing machines should have a hostname)
      */
     static String getSystemHostName() throws Exception {
+        String env = System.getenv("VESPA_HOSTNAME");
+        if (env != null && ! env.trim().isEmpty()) {
+            return env.trim();
+        }
         Process process = Runtime.getRuntime().exec("hostname");
         BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String hostname = in.readLine();
@@ -125,7 +129,6 @@ public class HostName {
         if (process.exitValue() != 0) {
             throw new RuntimeException("Command 'hostname' failed with exit code " + process.exitValue());
         }
-
         return hostname;
     }
 

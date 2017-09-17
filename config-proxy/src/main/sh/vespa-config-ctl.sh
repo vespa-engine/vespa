@@ -81,16 +81,7 @@ export VESPA_SENTINEL_PORT
 mkdir -p "$LOGDIR"
 mkdir -p "$VESPA_LOG_CONTROL_DIR"
 
-# sanity check hostname
-hname=$(hostname)
-canon=$(perl -e 'use Socket;
-                 my $hostname = `hostname`; chomp($hostname);
-                 my ($err, @results) = Socket::getaddrinfo($hostname, 0, {"flags" => Socket::AI_CANONNAME});
-                 print @results[0]->{"canonname"} . "\n";')
-if [ "$hname" != "$canon" ]; then
-    echo "The hostname ($hname) must match with gethostbyname (was $canon)"
-    exit 1
-fi
+hname=$(vespa-print-default hostname)
 
 CONFIG_ID="hosts/$hname"
 export CONFIG_ID
@@ -120,7 +111,7 @@ case $1 in
         fail=true
         for ((sleepcount=0;$sleepcount<600;sleepcount=$sleepcount+1)) ; do
             usleep 100000
-            if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && vespa-ping-configproxy -s `hostname` 2>/dev/null
+            if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && vespa-ping-configproxy -s $hname 2>/dev/null
             then
                 echo "config proxy started (runserver pid `cat $P_CONFIG_PROXY`)"
                 fail=false

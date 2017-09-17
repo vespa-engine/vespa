@@ -55,32 +55,36 @@ public interface Issues {
         private final String queue;
         private final String component;
         private final String label;
+        private final String assignee;
 
-        public Classification(String queue, String component, String label) {
+        public Classification(String queue, String component, String label, String assignee) {
             if (queue.isEmpty()) throw new IllegalArgumentException("Queue can not be empty!");
 
             this.queue = queue;
             this.component = component;
             this.label = label;
+            this.assignee = assignee;
         }
 
         public Classification(String queue) {
-            this(queue, null, null);
+            this(queue, null, null, null);
         }
 
-        public Classification withComponent(String component) { return new Classification(queue, component, label); }
-        public Classification withLabel(String label) { return new Classification(queue, component, label); }
+        public Classification withComponent(String component) { return new Classification(queue, component, label, assignee); }
+        public Classification withLabel(String label) { return new Classification(queue, component, label, assignee); }
+        public Classification withAssignee(String assignee) { return new Classification(queue, component, label, assignee); }
 
         public String queue() { return queue; }
         public Optional<String> component() { return Optional.ofNullable(component); }
         public Optional<String> label() { return Optional.ofNullable(label); }
+        public Optional<String> assignee() { return Optional.ofNullable(assignee); }
 
         @Override
         public String toString() {
-            return
-                    "Queue     :  " + queue()     + "\n" +
+            return  "Queue     :  " + queue()     + "\n" +
                     "Component :  " + component() + "\n" +
-                    "Label     :  " + label()     + "\n";
+                    "Label     :  " + label()     + "\n" +
+                    "Assignee  :  " + assignee()  + "\n";
         }
 
     }

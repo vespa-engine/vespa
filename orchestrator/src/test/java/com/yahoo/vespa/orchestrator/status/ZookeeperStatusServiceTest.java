@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.orchestrator.TestIds;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
@@ -39,32 +40,32 @@ import static org.junit.Assert.fail;
 public class ZookeeperStatusServiceTest {
     private TestingServer testingServer;
     private ZookeeperStatusService zookeeperStatusService;
-    private CuratorFramework curatorFramework;
+    private Curator curator;
 
     @Before
     public void setUp() throws Exception {
         Logger.getLogger("").setLevel(LogLevel.WARNING);
 
         testingServer = new TestingServer();
-        curatorFramework = createConnectedCuratorFramework(testingServer);
-        zookeeperStatusService = new ZookeeperStatusService(curatorFramework);
+        curator = createConnectedCurator(testingServer);
+        zookeeperStatusService = new ZookeeperStatusService(curator);
     }
 
-    private static CuratorFramework createConnectedCuratorFramework(TestingServer server) throws InterruptedException {
-        CuratorFramework curatorFramework = CuratorFrameworkFactory.builder()
-                .connectString(server.getConnectString())
-                .retryPolicy(new ExponentialBackoffRetry(1000, 3))
-                .build();
+    private static Curator createConnectedCuratorFramework(TestingServer server) throws InterruptedException {
+        return createConnectedCurator(server);
+    }
 
-        curatorFramework.start();
-        curatorFramework.blockUntilConnected(1, TimeUnit.MINUTES);
-        return curatorFramework;
+    private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
+        Curator curator = new Curator(server.getConnectString());
+        curator.framework().blockUntilConnected(1, TimeUnit.MINUTES);
+        return curator;
     }
 
     @After
     public void tearDown() throws Exception {
-        if (curatorFramework != null) { //teardown is called even if setUp fails.
-            curatorFramework.close();
+        if (curator != null) { //teardown is called even if setUp fails.
+            curator.close();
+            curator = null;
         }
         if (testingServer != null) {
             testingServer.close();
@@ -101,8 +102,8 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void locks_are_exclusive() throws Exception {
-        try (CuratorFramework curatorFramework2 = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2);
+        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
+            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
             final CompletableFuture<Void> lockedSuccessfullyFuture;
             try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
@@ -131,7 +132,7 @@ public class ZookeeperStatusServiceTest {
         try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
                 TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
-            KillSession.kill(curatorFramework.getZookeeperClient().getZooKeeper(), testingServer.getConnectString());
+            KillSession.kill(curator.framework().getZookeeperClient().getZooKeeper(), testingServer.getConnectString());
 
             assertSessionFailed(() ->
                     statusRegistry.setHostState(
@@ -148,8 +149,8 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
-        try (CuratorFramework curatorFramework2 = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2);
+        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
+            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
             try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
                     TestIds.APPLICATION_INSTANCE_REFERENCE)) {
@@ -158,13 +159,12 @@ public class ZookeeperStatusServiceTest {
                 CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
                     try {
                         zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(
-                                TestIds.APPLICATION_INSTANCE_REFERENCE,
-                                1, TimeUnit.SECONDS);
+                                TestIds.APPLICATION_INSTANCE_REFERENCE,1);
                         fail("Both zookeeper host status services locked simultaneously for the same application instance");
                     } catch (RuntimeException e) {
                     }
 
-                    killSession(curatorFramework2, testingServer);
+                    killSession(curator.framework(), testingServer);
 
                     //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
                     zookeeperStatusService2.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
@@ -226,8 +226,8 @@ public class ZookeeperStatusServiceTest {
      */
     @Test(expected = AssertionError.class)
     public void multiple_locks_in_a_single_thread_gives_error() throws InterruptedException {
-        try (CuratorFramework curatorFramework2 = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2);
+        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
+            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
             try (MutableStatusRegistry statusRegistry1 = zookeeperStatusService
                     .lockApplicationInstance_forCurrentThreadOnly(TestIds.APPLICATION_INSTANCE_REFERENCE);

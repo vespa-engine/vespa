@@ -34,6 +34,7 @@ import static org.junit.Assert.*;
 public class SuperModelRequestHandlerTest {
 
     private static final File testApp = new File("src/test/resources/deploy/app");
+    private SuperModelManager manager;
     private SuperModelGenerationCounter counter;
     private SuperModelRequestHandler controller;
 
@@ -43,10 +44,9 @@ public class SuperModelRequestHandlerTest {
     @Before
     public void setup() throws IOException {
         counter = new SuperModelGenerationCounter(new MockCurator());
-        controller = new SuperModelRequestHandler(counter,
-                                                  new TestConfigDefinitionRepo(),
-                                                  new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                  emptyNodeFlavors());
+        ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
+        manager = new SuperModelManager(configserverConfig, emptyNodeFlavors(), counter);
+        controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
     }
 
     @Test
@@ -95,10 +95,9 @@ public class SuperModelRequestHandlerTest {
     public void test_super_model_master_generation() throws IOException, SAXException {
         TenantName tenantA = TenantName.from("a");
         long masterGen = 10;
-        controller = new SuperModelRequestHandler(counter,
-                                                  new TestConfigDefinitionRepo(),
-                                                  new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen)),
-                                                  emptyNodeFlavors());
+        ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen));
+        manager = new SuperModelManager(configserverConfig, emptyNodeFlavors(), counter);
+        controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
 
         long gen = counter.increment();
         controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3L, 1));

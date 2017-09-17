@@ -19,7 +19,7 @@ import java.util.*;
  * also parse any "timezone" parameter as the timezone for time expressions such as {@link
  * com.yahoo.search.grouping.request.DayOfMonthFunction} and {@link com.yahoo.search.grouping.request.HourOfDayFunction}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 @After(PhaseNames.RAW_QUERY)
 @Before(PhaseNames.TRANSFORMED_QUERY)

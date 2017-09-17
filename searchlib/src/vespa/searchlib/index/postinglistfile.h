@@ -26,7 +26,7 @@ class PostingListFileSeqRead
 {
 protected:
     PostingListCounts _counts;
-    unsigned int _residueDocs;	// Docids left to read for word
+    unsigned int _residueDocs;  // Docids left to read for word
 public:
     PostingListFileSeqRead();
 
@@ -99,7 +99,7 @@ public:
      * @param Offset start of posting lists for word pair.
      * @param endOffset end of posting lists for word pair.
      * @param readAheadOffset end of posting list for either this or a
-     *				 later word pair, depending on disk seek cost.
+     *               later word pair, depending on disk seek cost.
      */
     virtual void setPostingOffset(uint64_t offset, uint64_t endOffset, uint64_t readAheadOffset) = 0;
 

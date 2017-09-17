@@ -6,7 +6,7 @@ import java.util.Comparator;
 /**
  * Ensures that HitGroups are placed last in the result.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class HitGroupsLastComparator extends ChainableComparator {
 

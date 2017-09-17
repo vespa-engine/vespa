@@ -22,10 +22,11 @@ import com.yahoo.log.LogLevel;
  * <p>SimpleDocumentProcessor is for the <em>simple</em> cases. For complete control over document processing,
  * like returning instances of {@link DocumentProcessor.LaterProgress}, subclass {@link DocumentProcessor} instead.</p>
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author Einar M R Rosenvinge
+ * @author havardpe
  */
 public class SimpleDocumentProcessor extends DocumentProcessor {
+
     /**
      * Override this to process the Document inside a DocumentPut.
      * @deprecated use process(DocumentPut)
@@ -33,6 +34,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      * @param document the Document to process.
      */
     @Deprecated
+    // TODO: Remove on Vespa 7
     public void process(Document document) {
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Ignored " + document);
@@ -46,6 +48,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      *
      * @param put the DocumentPut to process.
      */
+    @SuppressWarnings("deprecation")
     public void process(DocumentPut put) {
         process(put.getDocument());
     }
@@ -118,4 +121,5 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
 
         return Progress.DONE;
     }
+
 }

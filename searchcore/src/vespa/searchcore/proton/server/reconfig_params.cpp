@@ -49,7 +49,7 @@ ReconfigParams::shouldIndexManagerChange() const
 bool
 ReconfigParams::shouldAttributeManagerChange() const
 {
-    return _res.attributesChanged || _res.importedFieldsChanged;
+    return _res.attributesChanged || _res.importedFieldsChanged || _res.visibilityDelayChanged;
 }
 
 bool

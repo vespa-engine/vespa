@@ -364,12 +364,12 @@ public class ClusterSearcher extends Searcher {
                     doFill(searcher, result, summaryClass, execution);
                 } else {
                     if (result.hits().getErrorHit() == null) {
-                        result.hits().setError(ErrorMessage.createTimeout("No time left to get summaries"));
+                        result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries"));
                     }
                 }
             } else {
                 if (result.hits().getErrorHit() == null) {
-                    result.hits().setError(ErrorMessage.createNoBackendsInService("Could not fill result"));
+                    result.hits().addError(ErrorMessage.createNoBackendsInService("Could not fill result"));
                 }
             }
             // no error: good result, let's return

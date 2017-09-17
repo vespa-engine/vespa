@@ -78,11 +78,17 @@ public class DeploymentTrigger {
 
             // Trigger next
             if (report.success())
-                application = trigger(order.nextAfter(report.jobType(), application), application, report.jobType() + " completed successfully", lock);
+                application = trigger(order.nextAfter(report.jobType(), application), application,
+                                      String.format("%s completed successfully in build %d",
+                                                    report.jobType(), report.buildNumber()), lock);
             else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
-                application = trigger(report.jobType(), application, true, "Retrying due to out of capacity", lock);
+                application = trigger(report.jobType(), application, true,
+                                      String.format("Retrying due to out of capacity in build %d",
+                                                    report.buildNumber()), lock);
             else if (shouldRetryNow(application))
-                application = trigger(report.jobType(), application, false, "Retrying as job just started failing", lock);
+                application = trigger(report.jobType(), application, false,
+                                      String.format("Retrying as build %d just started failing",
+                                                    report.buildNumber()), lock);
 
             applications().store(application, lock);
         }

@@ -111,7 +111,10 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the Docker image to use for nodes in this */
     public DockerImage dockerImage() { return dockerImage; }
-    
+
+    /** @return The name resolver used to resolve hostname and ip addresses */
+    public NameResolver nameResolver() { return nameResolver; }
+
     // ---------------- Query API ----------------------------------------------------------------
 
     /**
@@ -258,6 +261,7 @@ public class NodeRepository extends AbstractComponent {
         if (ipAddresses.isEmpty()) {
             ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
         }
+
         return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), additionalIpAddresses, hostname, parentHostname, flavor, type);
     }
 
@@ -525,14 +529,13 @@ public class NodeRepository extends AbstractComponent {
      *    If also removing the parent node: child is in state provisioned|failed|parked|ready
      */
     private boolean verifyRemovalIsAllowed(Node nodeToRemove, boolean deletingAsChild) {
-        // TODO: Enable once controller no longer deletes child nodes manually
-        /*if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
+        if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
             if (nodeToRemove.state() != Node.State.ready) {
                 throw new IllegalArgumentException(
                         String.format("Docker container node %s can only be removed when in state ready", nodeToRemove.hostname()));
             }
 
-        } else */ if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+        } else if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
             List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.ready);
 
             if (! legalStates.contains(nodeToRemove.state())) {

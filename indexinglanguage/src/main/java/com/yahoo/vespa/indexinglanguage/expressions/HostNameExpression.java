@@ -4,21 +4,16 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
-
-import java.net.InetAddress;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class HostNameExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext ctx) {
-        try {
-            ctx.setValue(new StringFieldValue(normalizeHostName(InetAddress.getLocalHost().getHostName())));
-        } catch (java.net.UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        ctx.setValue(new StringFieldValue(normalizeHostName(getDefaults().vespaHostname())));
     }
 
     @Override

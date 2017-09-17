@@ -47,7 +47,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 public class StorageMaintainer {
     private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static Optional<String> kernelVersion = Optional.empty();
 
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
@@ -143,12 +142,6 @@ public class StorageMaintainer {
             throw new RuntimeException("Disk usage command timedout, aborting.");
         }
         String output = IOUtils.readAll(new InputStreamReader(duCommand.getInputStream()));
-        String error = IOUtils.readAll(new InputStreamReader(duCommand.getErrorStream()));
-
-        if (! error.isEmpty()) {
-            throw new RuntimeException("Disk usage wrote to error log: " + error);
-        }
-
         String[] results = output.split("\t");
         if (results.length != 2) {
             throw new RuntimeException("Result from disk usage command not as expected: " + output);
@@ -187,16 +180,18 @@ public class StorageMaintainer {
                 maintainerExecutor.addJob("delete-files")
                         .withArgument("basePath", path)
                         .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                        .withArgument("fileNameRegex", ".*\\.log\\..+")
-                        .withArgument("recursive", false);
-
-                maintainerExecutor.addJob("delete-files")
-                        .withArgument("basePath", path)
-                        .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                        .withArgument("fileNameRegex", ".*QueryAccessLog.*")
+                        .withArgument("fileNameRegex", ".*\\.log.+")
                         .withArgument("recursive", false);
             }
         }
+
+        Path qrsDir = environment.pathInNodeAdminFromPathInNode(
+                containerName, getDefaults().underVespaHome("logs/vespa/qrs"));
+        maintainerExecutor.addJob("delete-files")
+                .withArgument("basePath", qrsDir)
+                .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
+                .withArgument("fileNameRegex", ".*QueryAccessLog.*")
+                .withArgument("recursive", false);
 
         Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(
                 containerName, getDefaults().underVespaHome("logs/vespa/logarchive"));
@@ -235,11 +230,7 @@ public class StorageMaintainer {
         attributes.put("region", environment.getRegion());
         attributes.put("environment", environment.getEnvironment());
         attributes.put("flavor", nodeSpec.nodeFlavor);
-        try {
-            attributes.put("kernel_version", getKernelVersion());
-        } catch (Throwable ignored) {
-            attributes.put("kernel_version", "unknown");
-        }
+        attributes.put("kernel_version", System.getProperty("os.version"));
 
         nodeSpec.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
         nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
@@ -323,21 +314,6 @@ public class StorageMaintainer {
                 .map(configServer -> "http://" +  configServer + ":" + 4080)
                 .collect(Collectors.joining(","));
         return executeMaintainer("com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier", configServers);
-    }
-
-
-
-    private String getKernelVersion() throws IOException, InterruptedException {
-        if (! kernelVersion.isPresent()) {
-            Pair<Integer, String> result = new ProcessExecuter().exec(new String[]{"uname", "-r"});
-            if (result.getFirst() == 0) {
-                kernelVersion = Optional.of(result.getSecond().trim());
-            } else {
-                throw new RuntimeException("Failed to get kernel version\n" + result);
-            }
-        }
-
-        return kernelVersion.orElse("unknown");
     }
 
 

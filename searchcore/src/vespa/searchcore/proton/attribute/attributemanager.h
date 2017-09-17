@@ -155,7 +155,6 @@ public:
 
     static void padAttribute(search::AttributeVector &v, uint32_t docIdLimit);
 
-    const ImportedAttributesRepo *getImportedAttributes() const { return _importedAttributes.get(); }
 
     // Implements search::IAttributeManager
     virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
@@ -200,6 +199,8 @@ public:
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
 
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
+
+    virtual const ImportedAttributesRepo *getImportedAttributes() const override { return _importedAttributes.get(); }
 };
 
 } // namespace proton

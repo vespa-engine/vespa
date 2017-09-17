@@ -14,8 +14,8 @@ public class RangeItemTestCase {
     @Test
     public void testRangeConstruction() {
         verifyRange(new RangeItem(5, 7, 9, "a", true), 9, true);
-        verifyRange(new RangeItem(5,7, "a", true), 0, true);
-        verifyRange(new RangeItem(5,7, "a"), 0, false);
+        verifyRange(new RangeItem(5, 7, "a", true), 0, true);
+        verifyRange(new RangeItem(5, 7, "a"), 0, false);
     }
 
     private void verifyRange(RangeItem range, int limit, boolean isFromQuery) {

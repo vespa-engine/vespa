@@ -17,12 +17,9 @@ public interface DockerOperations {
 
     void removeContainer(Container existingContainer);
 
-    // Returns false if image is already downloaded
-    boolean shouldScheduleDownloadOfImage(DockerImage dockerImage);
-
     Optional<Container> getContainer(ContainerName containerName);
 
-    void scheduleDownloadOfImage(ContainerName containerName, DockerImage dockerImage, Runnable callback);
+    boolean pullImageAsyncIfNeeded(DockerImage dockerImage);
 
     ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command);
 

@@ -3,6 +3,7 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_mapper.h>
@@ -36,8 +37,36 @@ BucketId toBucketId(const GlobalId &gid) {
     return bucketId;
 }
 
+using GidMap = std::map<GlobalId, uint32_t>;
+
+struct GidCollector : public search::IGidToLidMapperVisitor
+{
+    GidMap &_map;
+    GidCollector(GidMap &map)
+        : IGidToLidMapperVisitor(),
+          _map(map)
+    {
+    }
+    virtual void visit(const document::GlobalId &gid, uint32_t lid) const override { _map.insert(std::make_pair(gid, lid)); }
+};
+
+GidMap collectGids(const std::unique_ptr<search::IGidToLidMapper> &mapper)
+{
+    GidMap result;
+    mapper->foreach(GidCollector(result));
+    return result;
+}
+
+void assertGids(const GidMap &expGids, const GidMap &gids)
+{
+    EXPECT_EQUAL(expGids, gids);
+}
+
 void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, const vespalib::string &docId, uint32_t lid) {
-    EXPECT_EQUAL(lid, mapper->mapGidToLid(toGid(docId)));
+    auto gids = collectGids(mapper);
+    auto itr = gids.find(toGid(docId));
+    uint32_t foundLid = (itr != gids.end()) ? itr->second : 0u;
+    EXPECT_EQUAL(lid, foundLid);
 }
 
 }
@@ -113,15 +142,6 @@ struct Fixture
     }
 };
 
-TEST_F("Test that we can use gid mapper to get lids", Fixture)
-{
-    auto factory = f.getGidToLidMapperFactory();
-    auto mapper = factory->getMapper();
-    TEST_DO(assertLid(mapper, doc1, 4));
-    TEST_DO(assertLid(mapper, doc2, 7));
-    TEST_DO(assertLid(mapper, doc3, 0));
-}
-
 TEST_F("Test that mapper holds read guard", Fixture)
 {
     TEST_DO(f.assertGenerations(3, 3));
@@ -134,6 +154,17 @@ TEST_F("Test that mapper holds read guard", Fixture)
     auto mapper = factory->getMapper();
     f.remove(1);
     TEST_DO(f.assertPut(doc3, 2, 10, 7, [&]() -> auto & { return mapper; }));
+}
+
+TEST_F("Test that gid mapper can iterate over known gids", Fixture)
+{
+    auto factory = f.getGidToLidMapperFactory();
+    auto mapper = factory->getMapper();
+    TEST_DO(assertGids({{toGid(doc1), 4}, {toGid(doc2), 7}}, collectGids(mapper)));
+    f.put(doc3);
+    TEST_DO(assertGids({{toGid(doc1), 4}, {toGid(doc2), 7}, {toGid(doc3), 1}}, collectGids(mapper)));
+    f.remove(4);
+    TEST_DO(assertGids({{toGid(doc2), 7}, {toGid(doc3), 1}}, collectGids(mapper)));
 }
 
 }

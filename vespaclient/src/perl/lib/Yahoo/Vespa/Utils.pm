@@ -8,7 +8,6 @@ package Yahoo::Vespa::Utils;
 use strict;
 use warnings;
 use Carp ();
-use Sys::Hostname qw(hostname);
 
 BEGIN { # - Define exports from this module
     use base 'Exporter';
@@ -35,9 +34,8 @@ return 1;
 # independent of computer they run on.
 sub getHostname { # ()
     if (!defined $HOSTNAME) {
-        $HOSTNAME = hostname;
         &assertNotUnitTest();
-        $HOSTNAME = `hostname`;
+        $HOSTNAME = `vespa-print-default hostname`;
         chomp $HOSTNAME;
     }
     return $HOSTNAME;

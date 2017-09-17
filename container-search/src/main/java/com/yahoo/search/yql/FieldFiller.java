@@ -97,7 +97,7 @@ public class FieldFiller extends Searcher {
 
         for (Documentdb db : config.documentdb()) {
             for (Summaryclass summary : db.summaryclass()) {
-                Set<String> attributes = null;
+                Set<String> attributes;
                 if (Execution.ATTRIBUTEPREFETCH.equals(summary.name())) {
                     attributes = new HashSet<>(summary.fields().size());
                     for (Fields f : summary.fields()) {
@@ -131,20 +131,19 @@ public class FieldFiller extends Searcher {
 
         Set<String> summaryFields = result.getQuery().getPresentation().getSummaryFields();
 
-        if (summaryFields.isEmpty()
-                || summaryClass == null
-                || result.getQuery().properties()
-                        .getBoolean(FIELD_FILLER_DISABLE)) {
+        if (summaryFields.isEmpty() || 
+            summaryClass == null || 
+            result.getQuery().properties().getBoolean(FIELD_FILLER_DISABLE)) {
             return;
         }
 
         if (intersectionOfAttributes.containsAll(summaryFields)) {
-            if (!Execution.ATTRIBUTEPREFETCH.equals(summaryClass)) {
+            if ( ! Execution.ATTRIBUTEPREFETCH.equals(summaryClass)) {
                 execution.fill(result, Execution.ATTRIBUTEPREFETCH);
             }
         } else {
             // Yes, summaryClass may be Execution.ATTRIBUTEPREFETCH here
-            if (!summaryDb.hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
+            if ( ! summaryDb.hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
                 execution.fill(result, null);
             }
         }

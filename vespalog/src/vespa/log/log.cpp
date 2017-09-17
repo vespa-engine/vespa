@@ -12,6 +12,7 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include "control-file.h"
 #include "bufferedlogger.h"
 
+#include <vespa/defaults.h>
 #include <vespa/fastos/thread.h>
 #include <cassert>
 #include <cstdarg>
@@ -114,9 +115,7 @@ void
 Logger::ensureHostname()
 {
     if (_hostname[0] == '\0') {
-        char hn[257];
-        snprintf(_hostname, sizeof _hostname, "%s",
-                 (gethostname(hn, sizeof hn) == 0) ? hn : "-");
+        snprintf(_hostname, sizeof _hostname, "%s", vespa::Defaults::vespaHostname());
     }
 }
 

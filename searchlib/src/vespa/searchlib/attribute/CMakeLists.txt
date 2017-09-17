@@ -21,6 +21,7 @@ vespa_add_library(searchlib_attribute OBJECT
     attributesaver.cpp
     attributevector.cpp
     attrvector.cpp
+    bitvector_search_cache.cpp
     changevector.cpp
     configconverter.cpp
     createarrayfastsearch.cpp

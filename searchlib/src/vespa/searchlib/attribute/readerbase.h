@@ -57,7 +57,7 @@ private:
     FileReader<uint32_t>  _idxReader;
     FileReader<uint32_t>  _enumReader;
     uint32_t              _currIdx;
-    uint32_t	          _datHeaderLen;
+    uint32_t              _datHeaderLen;
     uint32_t              _idxHeaderLen;
     uint32_t              _weightHeaderLen;
     uint32_t              _udatHeaderLen;

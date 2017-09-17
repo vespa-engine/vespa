@@ -106,7 +106,7 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
                     : _source->_metaStore->lowerBound(_bucket));
     const Iterator end = _source->_metaStore->upperBound(_bucket);
     size_t docsMoved = 0;
-    size_t docsSkipped = 0;	// In absence of a proper cost metric
+    size_t docsSkipped = 0; // In absence of a proper cost metric
     typedef std::vector<MoveKey> MoveVec;
     MoveVec toMove;
     for (; itr != end && docsMoved < maxDocsToMove; ++itr) {

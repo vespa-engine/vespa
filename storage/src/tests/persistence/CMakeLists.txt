@@ -6,7 +6,7 @@ vespa_add_library(storage_testpersistence TEST
     splitbitdetectortest.cpp
     legacyoperationhandlertest.cpp
     diskmoveoperationhandlertest.cpp
-    providershutdownwrappertest.cpp
+    provider_error_wrapper_test.cpp
     mergehandlertest.cpp
     persistencethread_splittest.cpp
     bucketownershipnotifiertest.cpp

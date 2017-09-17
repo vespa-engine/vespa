@@ -34,6 +34,7 @@ private:
 
 public:
     SplitBucketSession(BucketDBOwner &bucketDB,
+                       IBucketCreateNotifier &bucketCreateNotifier,
                        const BucketId &source,
                        const BucketId &target1,
                        const BucketId &target2);

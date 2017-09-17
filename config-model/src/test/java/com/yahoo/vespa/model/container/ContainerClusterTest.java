@@ -4,8 +4,10 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -24,6 +26,7 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
@@ -33,7 +36,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class ContainerClusterTest {
 
@@ -261,6 +264,49 @@ public class ContainerClusterTest {
         RoutingProviderConfig config = new RoutingProviderConfig(builder);
         assertFalse(config.enabled());
         assertEquals(0, cluster.getAllComponents().stream().map(c -> c.getClassId().getName()).filter(c -> c.equals("com.yahoo.jdisc.http.filter.security.RoutingConfigProvider")).count());
+    }
+
+    @Test
+    public void setsRotationActiveAccordingToDeploymentSpec() {
+        String deploymentSpec = "<deployment>\n" +
+                                "  <prod>    \n" +
+                                "    <region active='true'>us-north-1</region>\n" +
+                                "    <parallel>\n" +
+                                "      <region active='false'>us-north-2</region>\n" +
+                                "      <region active='true'>us-north-3</region>\n" +
+                                "    </parallel>\n" +
+                                "    <region active='false'>us-north-4</region>\n" +
+                                "  </prod>\n" +
+                                "</deployment>";
+        for (String region : Arrays.asList("us-north-1", "us-north-3")) {
+            Container container = containerIn(region, deploymentSpec);
+            assertEquals("Region " + region + " is active", "true",
+                         container.getServicePropertyString("activeRotation"));
+        }
+        for (String region : Arrays.asList("us-north-2", "us-north-4")) {
+            Container container = containerIn(region, deploymentSpec);
+            assertEquals("Region " + region + " is inactive", "false",
+                         container.getServicePropertyString("activeRotation"));
+        }
+        Container container = containerIn("unknown", deploymentSpec);
+        assertEquals("Unknown region is inactive", "false",
+                     container.getServicePropertyString("activeRotation"));
+    }
+
+    private static Container containerIn(String regionName, String deploymentSpec) {
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
+                .withDeploymentSpec(deploymentSpec)
+                .build();
+        DeployState state = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .properties(new DeployProperties.Builder().hostedVespa(true).zone(
+                        new Zone(Environment.prod, RegionName.from(regionName))).build()
+                )
+                .build();
+        MockRoot root = new MockRoot("foo", state);
+        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
+        addContainer(cluster, "c1", "c1.domain");
+        return cluster.getContainers().get(0);
     }
 
     private static void addContainer(ContainerCluster cluster, String name, String hostName) {

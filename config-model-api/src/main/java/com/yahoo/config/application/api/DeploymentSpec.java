@@ -140,10 +140,11 @@ public class DeploymentSpec {
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() { return steps; }
 
-    /** Returns only the DeclaredZone deployment steps of this in the order they will be performed */
+    /** Returns all the DeclaredZone deployment steps in the order they are declared */
     public List<DeclaredZone> zones() {
-        return steps.stream().filter(step -> step instanceof DeclaredZone).map(DeclaredZone.class::cast)
-                             .collect(Collectors.toList());
+        return steps.stream()
+                .flatMap(step -> step.zones().stream())
+                .collect(Collectors.toList());
     }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */

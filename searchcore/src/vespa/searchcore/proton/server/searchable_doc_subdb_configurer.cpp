@@ -47,12 +47,13 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
             StoreOnlyFeedView::Context(summaryAdapter,
                     schema,
                     searchView->getDocumentMetaStore(),
+                    curr->getGidToLidChangeHandler(),
                     repo,
                     curr->getWriteService(),
                     curr->getLidReuseDelayer(), curr->getCommitTimeTracker()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(attrWriter, curr->getDocIdLimit()),
-            SearchableFeedView::Context(indexWriter, curr->getGidToLidChangeHandler()))));
+            SearchableFeedView::Context(indexWriter))));
 }
 
 void
@@ -209,7 +210,9 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
     if (params.shouldAttributeManagerChange()) {
         IAttributeManager::SP newAttrMgr = attrMgr->create(attrSpec);
-        newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr));
+        newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
+                                                           searchView->getDocumentMetaStore(),
+                                                           newConfig.getMaintenanceConfigSP()->getVisibilityDelay()));
         IAttributeManager::SP oldAttrMgr = attrMgr;
         attrMgr = newAttrMgr;
         shouldMatchViewChange = true;

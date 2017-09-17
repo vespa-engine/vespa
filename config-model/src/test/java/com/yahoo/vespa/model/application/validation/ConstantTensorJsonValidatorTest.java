@@ -271,7 +271,7 @@ public class ConstantTensorJsonValidatorTest {
                 inputJsonToReader(
                         "{",
                         "   'stats': {",
-                        "       'パープルゴム製のアヒルは私を殺すために望んでいます': true,",
+                        "       '\u30d1\u30fc\u30d7\u30eb\u30b4\u30e0\u88fd\u306e\u30a2\u30d2\u30eb\u306f\u79c1\u3092\u6bba\u3059\u305f\u3081\u306b\u671b\u3093\u3067\u3044\u307e\u3059': true,",
                         "       'points': 47",
                         "   }",
                         "}"));

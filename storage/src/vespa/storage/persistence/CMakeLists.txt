@@ -9,7 +9,7 @@ vespa_add_library(storage_spersistence OBJECT
     types.cpp
     mergehandler.cpp
     bucketprocessor.cpp
-    providershutdownwrapper.cpp
+    provider_error_wrapper.cpp
     bucketownershipnotifier.cpp
     fieldvisitor.cpp
     testandsethelper.cpp

@@ -100,7 +100,7 @@ public class RoutingProducerTest {
         return new MockApplicationPackage.Builder()
                 .withHosts(hosts)
                 .withServices(services)
-                .withDeploymentInfo(deploymentInfo)
+                .withDeploymentSpec(deploymentInfo)
                 .build();
     }
 

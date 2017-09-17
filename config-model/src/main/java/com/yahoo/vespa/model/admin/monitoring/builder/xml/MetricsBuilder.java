@@ -25,6 +25,7 @@ import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricS
 public class MetricsBuilder {
 
     private static final String ID_ATTRIBUTE = "id";
+    private static final String DISPLAY_NAME_ATTRIBUTE = "display-name";
 
     private final ApplicationType applicationType;
     private final Map<String, MetricSet> availableMetricSets;
@@ -46,9 +47,18 @@ public class MetricsBuilder {
         return metrics;
     }
 
+    private static Metric metricFromElement(Element elem) {
+        String m_id = elem.getAttribute(ID_ATTRIBUTE);
+        String m_dn = elem.getAttribute(DISPLAY_NAME_ATTRIBUTE);
+        if (m_dn == null || "".equals(m_dn)) {
+            return new Metric(m_id);
+        }
+        return new Metric(m_id, m_dn);
+    }
+
     private MetricSet buildMetricSet(String consumerId, Element consumerElement) {
         List<Metric> metrics = XML.getChildren(consumerElement, "metric").stream()
-                .map(metricElement -> new Metric(metricElement.getAttribute(ID_ATTRIBUTE)))
+                .map(metricElement -> metricFromElement(metricElement))
                 .collect(Collectors.toCollection(LinkedList::new));
 
         List<MetricSet> metricSets = XML.getChildren(consumerElement, "metric-set").stream()

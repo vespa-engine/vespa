@@ -10,8 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * @author steinar
- * @author bratseth
+ * @author Steinar Knutsen
  */
 public class DefaultErrorHitTestCase {
 
@@ -23,12 +22,8 @@ public class DefaultErrorHitTestCase {
         de = new DefaultErrorHit(SOURCE, ErrorMessage.createUnspecifiedError("DefaultErrorHitTestCase"));
     }
 
-    @After
-    public void tearDown() throws Exception {
-    }
-
     @Test
-    public final void testSetSourceTakeTwo() {
+    public void testSetSourceTakeTwo() {
         assertEquals(SOURCE, de.getSource());
         de.setSource(null);
         assertNull(de.getSource());
@@ -41,19 +36,19 @@ public class DefaultErrorHitTestCase {
     }
 
     @Test
-    public final void testToString() {
+    public void testToString() {
         assertEquals("Error: Source 'nalle': 5: Unspecified error: DefaultErrorHitTestCase", de.toString());
     }
 
     @Test
-    public final void testSetMainError() {
+    public void testSetMainError() {
         ErrorMessage e = ErrorMessage.createBackendCommunicationError("abc");
         assertNull(e.getSource());
         de.addError(e);
         assertEquals(SOURCE, e.getSource());
         boolean caught = false;
         try {
-            new DefaultErrorHit(SOURCE, null);
+            new DefaultErrorHit(SOURCE, (ErrorMessage)null);
         } catch (NullPointerException ex) {
             caught = true;
         }
@@ -69,47 +64,41 @@ public class DefaultErrorHitTestCase {
     }
 
     @Test
-    public final void testAddError() {
-        ErrorMessage e = ErrorMessage
-                .createBackendCommunicationError("ljkhlkjh");
+    public void testAddError() {
+        ErrorMessage e = ErrorMessage.createBackendCommunicationError("ljkhlkjh");
         assertNull(e.getSource());
         de.addError(e);
         assertEquals(SOURCE, e.getSource());
         e = ErrorMessage.createBadRequest("kdjfhsdkfhj");
         de.addError(e);
         int i = 0;
-        for (Iterator<ErrorMessage> errors = de.errorIterator(); errors
-                .hasNext(); errors.next()) {
+        for (Iterator<ErrorMessage> errors = de.errorIterator(); errors.hasNext(); errors.next()) {
             ++i;
         }
         assertEquals(3, i);
     }
 
     @Test
-    public final void testAddErrors() {
-        DefaultErrorHit other = new DefaultErrorHit("abc",
-                ErrorMessage.createBadRequest("sdasd"));
+    public void testAddErrors() {
+        DefaultErrorHit other = new DefaultErrorHit("abc", ErrorMessage.createBadRequest("sdasd"));
         de.addErrors(other);
         int i = 0;
-        for (Iterator<ErrorMessage> errors = de.errorIterator(); errors
-                .hasNext(); errors.next()) {
+        for (Iterator<ErrorMessage> errors = de.errorIterator(); errors.hasNext(); errors.next()) {
             ++i;
         }
         assertEquals(2, i);
-        other = new DefaultErrorHit("abd",
-                ErrorMessage.createEmptyDocsums("uiyoiuy"));
+        other = new DefaultErrorHit("abd", ErrorMessage.createEmptyDocsums("uiyoiuy"));
         other.addError(ErrorMessage.createNoAnswerWhenPingingNode("xzvczx"));
         de.addErrors(other);
         i = 0;
-        for (Iterator<ErrorMessage> errors = de.errorIterator(); errors
-                .hasNext(); errors.next()) {
+        for (Iterator<ErrorMessage> errors = de.errorIterator(); errors.hasNext(); errors.next()) {
             ++i;
         }
         assertEquals(4, i);
     }
 
     @Test
-    public final void testHasOnlyErrorCode() {
+    public void testHasOnlyErrorCode() {
         assertTrue(de.hasOnlyErrorCode(com.yahoo.container.protect.Error.UNSPECIFIED.code));
         assertFalse(de.hasOnlyErrorCode(com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR.code));
 

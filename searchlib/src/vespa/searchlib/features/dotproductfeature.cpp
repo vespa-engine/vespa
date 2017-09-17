@@ -108,7 +108,7 @@ template <typename A>
 SparseDotProductExecutor<A>::SparseDotProductExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes) :
     DotProductExecutor<A>(attribute, queryVector),
     _queryIndexes(queryIndexes),
-    _scratch(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()))
+    _scratch(queryIndexes.size())
 {
 }
 

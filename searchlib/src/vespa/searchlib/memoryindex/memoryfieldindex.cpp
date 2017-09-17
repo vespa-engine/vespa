@@ -61,10 +61,10 @@ MemoryFieldIndex::~MemoryFieldIndex()
         }
     }
     _postingListStore.clearBuilder();
-    freeze();	// Flush all pending posting list tree freezes
+    freeze();   // Flush all pending posting list tree freezes
     transferHoldLists();
-    _dict.clear();	// Clear dictionary
-    freeze();	// Flush pending freeze for dictionary tree.
+    _dict.clear();  // Clear dictionary
+    freeze();   // Flush pending freeze for dictionary tree.
     transferHoldLists();
     incGeneration();
     trimHoldLists();

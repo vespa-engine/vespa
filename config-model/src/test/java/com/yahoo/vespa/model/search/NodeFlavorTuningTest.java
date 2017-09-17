@@ -16,6 +16,18 @@ import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
 public class NodeFlavorTuningTest {
 
     @Test
+    public void require_that_hwinfo_disk_size_is_set() {
+        ProtonConfig cfg = configFromDiskSetting(100);
+        assertEquals(100 * GB, cfg.hwinfo().disk().size());
+    }
+
+    @Test
+    public void require_that_hwinfo_memory_size_is_set() {
+        ProtonConfig cfg = configFromMemorySetting(24);
+        assertEquals(24 * GB, cfg.hwinfo().memory().size());
+    }
+
+    @Test
     public void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
         assertEquals(200, cfg.hwinfo().disk().writespeed(), 0.001);

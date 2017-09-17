@@ -6,6 +6,8 @@
 
 namespace proton::bucketdb {
 
+class IBucketCreateNotifier;
+
 /**
  * Base class for split/join handling utility classes that bundles temporary
  * variables used during the operation.
@@ -19,9 +21,10 @@ public:
 
 protected:
     BucketDBOwner::Guard _bucketDB;
+    IBucketCreateNotifier &_bucketCreateNotifier;
 
 public:
-    BucketSessionBase(BucketDBOwner &bucketDB);
+    BucketSessionBase(BucketDBOwner &bucketDB, IBucketCreateNotifier &bucketCreateNotifier);
 
     bool extractInfo(const BucketId &bucket, BucketState *&info);
 

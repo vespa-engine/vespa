@@ -27,7 +27,7 @@ Test::requireThatWordsCanBeAddedAndRetrieved()
     EntryRef r1 = ws.addWord(w1);
     EntryRef r2 = ws.addWord(w2);
     EntryRef r3 = ws.addWord(w3);
-    uint32_t invp = WordStore::RefType::align(1);	// Reserved as invalid
+    uint32_t invp = WordStore::RefType::align(1);   // Reserved as invalid
     uint32_t w1s = w1.size() + 1;
     uint32_t w1p = WordStore::RefType::pad(w1s);
     uint32_t w2s = w2.size() + 1;

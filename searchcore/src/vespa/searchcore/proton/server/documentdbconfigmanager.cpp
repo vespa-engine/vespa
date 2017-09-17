@@ -336,7 +336,7 @@ forwardConfig(const BootstrapConfig::SP & config)
     {
         if (!_ignoreForwardedConfig &&
             config->getGeneration() < _bootstrapConfig->getGeneration())
-            return;	// Enforce time direction
+            return; // Enforce time direction
         _bootstrapConfig = config;
         _ignoreForwardedConfig = false;
     }

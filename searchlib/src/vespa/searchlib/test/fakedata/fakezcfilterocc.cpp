@@ -48,34 +48,34 @@ writeZcBuf(EC &e, ZcBuf &buf)
                 bytesOffset * 8, size * 8);
 }
 
-#define ZCDECODE(valI, resop)						\
-do {									\
-    if (__builtin_expect(valI[0] < (1 << 7), true)) {			\
-	resop valI[0];							\
-	valI += 1;							\
-    } else if (__builtin_expect(valI[1] < (1 << 7), true)) {		\
-        resop (valI[0] & ((1 << 7) - 1)) +				\
-              (valI[1] << 7);						\
-        valI += 2;							\
-    } else if (__builtin_expect(valI[2] < (1 << 7), true)) {		\
-        resop (valI[0] & ((1 << 7) - 1)) +				\
-              ((valI[1] & ((1 << 7) - 1)) << 7) +			\
-              (valI[2] << 14);						\
-        valI += 3;							\
-    } else if (__builtin_expect(valI[3] < (1 << 7), true)) {		\
-        resop (valI[0] & ((1 << 7) - 1)) +				\
-              ((valI[1] & ((1 << 7) - 1)) << 7) +			\
-              ((valI[2] & ((1 << 7) - 1)) << 14) +			\
-              (valI[3] << 21);						\
-        valI += 4;							\
-    } else {								\
-        resop (valI[0] & ((1 << 7) - 1)) +				\
-              ((valI[1] & ((1 << 7) - 1)) << 7) +			\
-              ((valI[2] & ((1 << 7) - 1)) << 14) +			\
-              ((valI[3] & ((1 << 7) - 1)) << 21) +			\
-              (valI[4] << 28);						\
-        valI += 5;							\
-    }									\
+#define ZCDECODE(valI, resop)                                \
+do {                                                         \
+    if (__builtin_expect(valI[0] < (1 << 7), true)) {        \
+    resop valI[0];                                           \
+    valI += 1;                                               \
+    } else if (__builtin_expect(valI[1] < (1 << 7), true)) { \
+        resop (valI[0] & ((1 << 7) - 1)) +                   \
+              (valI[1] << 7);                                \
+        valI += 2;                                           \
+    } else if (__builtin_expect(valI[2] < (1 << 7), true)) { \
+        resop (valI[0] & ((1 << 7) - 1)) +                   \
+              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
+              (valI[2] << 14);                               \
+        valI += 3;                                           \
+    } else if (__builtin_expect(valI[3] < (1 << 7), true)) { \
+        resop (valI[0] & ((1 << 7) - 1)) +                   \
+              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
+              ((valI[2] & ((1 << 7) - 1)) << 14) +           \
+              (valI[3] << 21);                               \
+        valI += 4;                                           \
+    } else {                                                 \
+        resop (valI[0] & ((1 << 7) - 1)) +                   \
+              ((valI[1] & ((1 << 7) - 1)) << 7) +            \
+              ((valI[2] & ((1 << 7) - 1)) << 14) +           \
+              ((valI[3] & ((1 << 7) - 1)) << 21) +           \
+              (valI[4] << 28);                               \
+        valI += 5;                                           \
+    }                                                        \
 } while (0)
 
 FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw)

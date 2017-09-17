@@ -29,12 +29,12 @@ private:
     vespalib::string         _curWord;
     bool                     _inWord;
     uint32_t                 _lowestOKFieldId;
-    std::vector<FieldHandle> _fields;	// Defined fields.
+    std::vector<FieldHandle> _fields;   // Defined fields.
     vespalib::string         _prefix;
     uint32_t                 _docIdLimit;
     uint64_t                 _numWordIds;
 
-    const Schema &_schema;	// Ptr to allow being std::vector member
+    const Schema &_schema;  // Ptr to allow being std::vector member
 
     static uint32_t noDocId() {
         return std::numeric_limits<uint32_t>::max();

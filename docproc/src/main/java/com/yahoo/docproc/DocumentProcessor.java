@@ -41,10 +41,8 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public abstract class DocumentProcessor extends ChainedComponent {
-    static Logger log = Logger.getLogger(DocprocService.class.getName());
 
-    /** The number of instances of this processor */
-    private static int instanceCounter = 1;
+    static Logger log = Logger.getLogger(DocprocService.class.getName());
 
     /** Schema map for doctype-fieldnames */
     private Map<Pair<String,String>, String> fieldMap = new HashMap<>();
@@ -163,10 +161,7 @@ public abstract class DocumentProcessor extends ChainedComponent {
 
     }
 
-    /** Schema map for field names
-     * (doctype,from)→to
-     *
-     */
+    /** Schema map for field names (doctype,from)→to */
     public Map<Pair<String, String>, String> getFieldMap() {
         return fieldMap;
     }
@@ -187,11 +182,4 @@ public abstract class DocumentProcessor extends ChainedComponent {
         return ret;
     }
 
-    private void dumpMap(Map<?, String> m) {
-        System.out.print("[");
-        for (Map.Entry<?, String> e : m.entrySet()) {
-            System.out.print("("+e.getKey()+"->"+e.getValue()+")");
-        }
-        System.out.print("]\n");
-    }
 }

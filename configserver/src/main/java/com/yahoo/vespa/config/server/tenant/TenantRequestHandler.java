@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.*;
 
 import com.yahoo.config.provision.Version;
@@ -81,7 +80,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     private void notifyReloadListeners(ApplicationSet applicationSet) {
         for (ReloadListener reloadListener : reloadListeners) {
             reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
-            reloadListener.configReloaded(tenant, applicationSet);
+            reloadListener.configActivated(tenant, applicationSet);
         }
     }
 

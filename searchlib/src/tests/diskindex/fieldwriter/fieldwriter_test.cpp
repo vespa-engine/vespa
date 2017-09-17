@@ -77,7 +77,7 @@ void enableSkip()
 void enableSkipChunks()
 {
     minSkipDocs = 64;
-    minChunkDocs = 9000;	// Unrealistic low for testing
+    minChunkDocs = 9000;    // Unrealistic low for testing
 }
 
 
@@ -928,7 +928,7 @@ FieldWriterTest::Main()
     _wordSet2.setupParams(false, false);
     _wordSet2.setupWords(_rnd, _numDocs, _commonDocFreq, 3);
     uint32_t docIdBias = 700000000;
-    _wordSet2.addDocIdBias(docIdBias);	// Large skip numbers
+    _wordSet2.addDocIdBias(docIdBias);  // Large skip numbers
     testFieldWriterVariantsWithHighLids(_wordSet2, _numDocs + docIdBias,
                                         _verbose);
     return 0;

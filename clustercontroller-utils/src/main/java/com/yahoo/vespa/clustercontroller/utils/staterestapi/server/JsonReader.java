@@ -35,9 +35,12 @@ public class JsonReader {
     static class SetRequestData {
         final Map<String, UnitState> stateMap;
         final SetUnitStateRequest.Condition condition;
-        public SetRequestData(Map<String, UnitState> stateMap, SetUnitStateRequest.Condition condition) {
+        final SetUnitStateRequest.ResponseWait responseWait;
+        public SetRequestData(Map<String, UnitState> stateMap, SetUnitStateRequest.Condition condition,
+                              SetUnitStateRequest.ResponseWait responseWait) {
             this.stateMap = stateMap;
             this.condition = condition;
+            this.responseWait = responseWait;
         }
     }
 
@@ -47,10 +50,14 @@ public class JsonReader {
         final SetUnitStateRequest.Condition condition;
 
         if (json.has("condition")) {
-            condition = SetUnitStateRequest.Condition.valueOf(json.getString("condition"));
+            condition = SetUnitStateRequest.Condition.fromString(json.getString("condition"));
         } else {
             condition = SetUnitStateRequest.Condition.FORCE;
         }
+
+        final SetUnitStateRequest.ResponseWait responseWait = json.has("response-wait")
+                ? SetUnitStateRequest.ResponseWait.fromString(json.getString("response-wait"))
+                : SetUnitStateRequest.ResponseWait.WAIT_UNTIL_CLUSTER_ACKED;
 
         Map<String, UnitState> stateMap = new HashMap<>();
         if (!json.has("state")) {
@@ -90,7 +97,7 @@ public class JsonReader {
             }
             stateMap.put(type, new UnitStateImpl(code, reason));
         }
-        return new SetRequestData(stateMap, condition);
+        return new SetRequestData(stateMap, condition, responseWait);
     }
 
 }

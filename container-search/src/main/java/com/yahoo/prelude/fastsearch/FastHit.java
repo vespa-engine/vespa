@@ -48,10 +48,7 @@ public class FastHit extends Hit {
      */
     private boolean ignoreRowBits = false;
 
-    /**
-     * Whether to use the row number in the index uri, see FastSearcher for
-     * details
-     */
+    /** Whether to use the row number in the index uri, see FastSearcher for details */
     private boolean useRowInIndexUri = true;
 
     private transient QueryPacketData queryPacketData = null;
@@ -111,8 +108,8 @@ public class FastHit extends Hit {
     }
 
     /**
-     * Returns the explicitly set uri if available, returns
-     * "index:[source]/[partid]/[id]" otherwise
+     * Returns the explicitly set uri if available, returns "index:[source]/[partid]/[id]" otherwise
+     * 
      * @return uri of hit
      */
     public URI getUri() {
@@ -131,9 +128,9 @@ public class FastHit extends Hit {
     }
 
     /**
-     * The uri of the index location of this hit
-     * ("index:[source]/[partid]/[id]"). This is the uri if no other uri is
-     * assigned
+     * The uri of the index location of this hit ("index:[source]/[partid]/[id]"). 
+     * This is the uri if no other uri is assigned
+     * 
      * @return uri to the index.
      */
     public URI getIndexUri() {
@@ -182,7 +179,7 @@ public class FastHit extends Hit {
     }
 
     /**
-     * @return Returns the column number where this hit originated, or partId if not known
+     * Returns the column number where this hit originated, or partId if not known
      */
     public int getColumn() {
         return partId >>> rowBits;
@@ -263,6 +260,7 @@ public class FastHit extends Hit {
 
     /**
      * Only needed when fetching summaries in 2 phase.
+     *
      * @param distributionKey Of node where you find this hit.
      */
     public void setDistributionKey(int distributionKey) {
@@ -313,20 +311,6 @@ public class FastHit extends Hit {
     @Beta
     public void setLazyStringField(String fieldName, byte[] value) {
         setField(fieldName, new LazyString(new StringField(fieldName), new StringValue(value)));
-    }
-
-    public static final class RawField {
-        private final boolean needXmlEscape;
-
-        private final byte[] contents;
-
-        public RawField(DocsumField fieldType, byte[] contents) {
-            needXmlEscape = ! (fieldType instanceof XMLField);
-            this.contents = contents;
-        }
-
-        public byte [] getUtf8() { return contents; }
-        public boolean needXmlEscape() { return needXmlEscape; }
     }
 
     /**
@@ -386,6 +370,22 @@ public class FastHit extends Hit {
         }
     }
 
+    public static final class RawField {
+
+        private final boolean needXmlEscape;
+
+        private final byte[] contents;
+
+        public RawField(DocsumField fieldType, byte[] contents) {
+            needXmlEscape = ! (fieldType instanceof XMLField);
+            this.contents = contents;
+        }
+
+        public byte [] getUtf8() { return contents; }
+        public boolean needXmlEscape() { return needXmlEscape; }
+
+    }
+
     private static abstract class LazyValue {
         abstract Object getValue(String fieldName);
         abstract RawField getFieldAsUtf8(String fieldName);
@@ -395,6 +395,7 @@ public class FastHit extends Hit {
      * Represents a value that resides in the docsum.
      */
     private static class LazyDocsumValue extends LazyValue {
+
         private final Docsum docsum;
 
         LazyDocsumValue(Docsum docsum) {
@@ -414,9 +415,11 @@ public class FastHit extends Hit {
         RawField getFieldAsUtf8(String fieldName) {
             return docsum.fetchFieldAsUtf8(getFieldIndex(fieldName));
         }
+
     }
 
     private static class LazyString extends LazyValue {
+
         private final Inspector value;
         private final DocsumField fieldType;
 
@@ -433,6 +436,7 @@ public class FastHit extends Hit {
         RawField getFieldAsUtf8(String fieldName) {
             return new RawField(fieldType, value.asUtf8());
         }
+
     }
 
 }

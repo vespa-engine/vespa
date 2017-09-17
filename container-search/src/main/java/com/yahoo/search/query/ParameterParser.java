@@ -6,7 +6,7 @@ import static com.yahoo.container.util.Util.quote;
 /**
  * Wrapper class to avoid code duplication of common parsing requirements.
  *
- * @author <a href="steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ParameterParser {
 

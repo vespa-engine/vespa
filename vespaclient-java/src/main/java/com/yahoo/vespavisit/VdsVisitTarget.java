@@ -12,6 +12,7 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.Identity;
+import com.yahoo.net.HostName;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -21,8 +22,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.lang.reflect.Constructor;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
 /**
@@ -201,15 +200,8 @@ public class VdsVisitTarget {
     }
 
     private String getTcpAddress() {
-        try {
-            InetAddress addr = InetAddress.getLocalHost();
-            String hostname = addr.getHostName();
-            return "tcp/" + hostname + ":" + port + "/visit-destination";
-        } catch (UnknownHostException e) {
-            System.err.println("Failed to detect hostname.");
-            System.exit(1);
-        }
-        return "";
+        String hostname = HostName.getLocalhost();
+        return "tcp/" + hostname + ":" + port + "/visit-destination";
     }
 
     @SuppressWarnings("unchecked")

@@ -20,6 +20,28 @@ public abstract class RemoteClusterControllerTask {
 
     public abstract void doRemoteFleetControllerTask(Context context);
 
+    /**
+     * If the task should _not_ be considered complete before a cluster state
+     * version representing the changes made by the task has been ACKed by
+     * all distributors.
+     *
+     * Note that if a task performs a no-op state change (e.g. setting maintenance
+     * mode on a node already in maintenance mode), the task may be considered complete
+     * immediately if its effective changes have already been ACKed.
+     */
+    public boolean hasVersionAckDependency() { return false; }
+
+    /**
+     *  If the task response has been deferred due to hasVersionAckDependency(),
+     *  handleLeadershipLost() will be invoked on the task if the cluster controller
+     *  discovers it has lost leadership in the time between task execution and
+     *  deferred response send time.
+     *
+     *  This method will also be invoked if the controller is signalled to shut down
+     *  before the dependent cluster version has been published.
+     */
+    public void handleLeadershipLost() {}
+
     public boolean isCompleted() {
         synchronized (monitor) {
             return completed;

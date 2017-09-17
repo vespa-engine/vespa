@@ -53,6 +53,7 @@ public:
     virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
+    virtual const ImportedAttributesRepo *getImportedAttributes() const override;
 };
 
 } // namespace proton

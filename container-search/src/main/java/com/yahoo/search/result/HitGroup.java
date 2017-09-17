@@ -11,23 +11,26 @@ import com.yahoo.processing.response.DataList;
 import com.yahoo.processing.response.DefaultIncomingData;
 import com.yahoo.processing.response.IncomingData;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.collections.CollectionUtil.first;
 
 /**
  * <p>A group of ordered hits. Since hitGroup is itself a kind of Hit,
- * this can compose hierarchies of grouped hits.</p>
+ * this can compose hierarchies of grouped hits.
  *
  * <p>Group hits has a relevancy just as other hits - they can be ordered
  * between each other and in comparison to other hits.
  *
  * <p>Note that a group is by default a meta hit, but it can also contain its own content
- * in addition to subgroup content, in which case it should be set to non-meta.</p>
+ * in addition to subgroup content, in which case it should be set to non-meta.
  *
  * @author bratseth
  */
@@ -77,7 +80,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * A direct reference to the errors of this result, or null if there are no errors.
      * The error hit will also be listed in the set of this of this result
      */
-    private ErrorHit errorHit = null;
+    private DefaultErrorHit errorHit = null;
 
     private final ListenableFuture<DataList<Hit>> completedFuture;
 
@@ -106,7 +109,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * @param id the id of this hit - any string, it is convenient to make this unique in the result containing this
      * @param relevance the relevance of this group of hits, preferably a number between 0 and 1
      */
-    public HitGroup(String id,double relevance) {
+    public HitGroup(String id, double relevance) {
         this(id,new Relevance(relevance));
     }
 
@@ -223,9 +226,15 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      */
     @Override
     public Hit add(Hit hit) {
-        if (hit.isMeta() && hit instanceof ErrorHit) {
-            boolean add = mergeErrors((ErrorHit) hit);
-            if (!add) return (Hit)errorHit;
+        if (hit.isMeta() && hit instanceof DefaultErrorHit) {
+            if (errorHit != null) {
+                errorHit.addErrors((DefaultErrorHit)hit);
+                return errorHit; // don't add another error hit
+            }
+            else {
+                errorHit = merge(consumeAnyQueryErrors(), (DefaultErrorHit) hit);
+                hit = errorHit; // Add this hit below
+            }
         }
         handleNewHit(hit);
         hits.add(hit);
@@ -340,8 +349,8 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /**
      * Removes a hit from this group or any subgroup.
      *
-     * @param uri The uri of the hit to remove.
-     * @return The hit removed, or null if not found.
+     * @param uri the uri of the hit to remove.
+     * @return the hit removed, or null if not found.
      */
     public Hit remove(URI uri) {
         for (Iterator<Hit> it = hits.iterator(); it.hasNext(); ) {
@@ -351,7 +360,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
                 handleRemovedHit(hit);
                 return hit;
             }
-            if (hit instanceof HitGroup) {
+            else if (hit instanceof HitGroup) {
                 Hit removed = ((HitGroup)hit).remove(uri);
                 if (removed != null) {
                     return removed;
@@ -376,93 +385,107 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return hit;
     }
 
-    /** Sets the main error of this result. Prefer addError to add some error information. */
+    /** 
+     * Sets the main error of this result
+     * 
+     * @deprecated prefer addError to add some error information.
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public void setError(ErrorMessage error) {
-        if (errorHit == null)
-            add((Hit)createErrorHit(error));
-        else
-            errorHit.addError(error);
+        addError(error);
     }
 
     /** Adds an error to this result */
     public void addError(ErrorMessage error) {
+        getError(); // update the list of errors
         if (errorHit == null)
-            add((Hit)createErrorHit(error));
+            add(new DefaultErrorHit(getSource(), error));
         else
             errorHit.addError(error);
     }
 
-    /**
-     * Returns the error hit containing all error information,
-     * or null if no error has occurred
-     */
+    /** Returns the error hit containing all error information, or null if no error has occurred */
     public ErrorHit getErrorHit() {
         getError(); // Make sure the error hit is updated
         return errorHit;
     }
 
+    /** 
+     * Removes the error hit of this.
+     * This removes all error messages of this and the query producing it.
+     *
+     * @return the error hit which was removed, or null if there were no errors
+     */
+    public DefaultErrorHit removeErrorHit() {
+        updateHits(); // Consume and remove from the query producing this as well
+        DefaultErrorHit removed = errorHit;
+        if (removed != null)
+            remove(removed.getId());
+        errorHit = null;
+        return removed;
+    }
+    
     /**
      * Returns the first error in this result,
      * or null if no searcher has produced an error AND the query doesn't contain an error
      */
     public ErrorMessage getError() {
-        // See updateHits if this method is changed
-        if (errorHit != null) {
-            return errorHit.errors().iterator().next();
-        }
-
-        if (getQuery() != null && getQuery().errors().size() != 0) {
-            updateHits();
-        } // Pull them over
-
-        if (errorHit == null) {
+        updateHits();
+        if (errorHit == null)
             return null;
-        }
-
-        return errorHit.errors().iterator().next();
+        else
+            return errorHit.errors().iterator().next();
     }
 
     /**
-     * Handles the addition of a new error hit, whether or not we already have one
+     * Combines two error hits to one. Any one argument may be null, in which case the other is returned.
      *
-     * @return true if this shouls also be added to the list of hits of this reslt
+     * @return true if this should also be added to the list of hits of this result
      */
-    private boolean mergeErrors(ErrorHit newHit) {
-        if (errorHit == null) {
-            errorHit = newHit;
-            return true;
-        } else {
-            errorHit.addErrors(newHit);
-            return false;
-        }
+    private DefaultErrorHit merge(DefaultErrorHit first, DefaultErrorHit second) {
+        if (first == null) return second;
+        if (second == null) return first;
+
+        String mergedSource = first.getSource()!=null ? first.getSource() : second.getSource();
+        List<ErrorMessage> mergedErrors = new ArrayList<>();
+        mergedErrors.addAll(first.errors());
+        mergedErrors.addAll(second.errors());
+        return new DefaultErrorHit(mergedSource, mergedErrors);
     }
 
     /**
      * Must be called before the list of hits, or anything dependent on the list of hits, is removed.
-     * Merges errors from the query if there is one set for this group
+     * Consumes errors from the query if there is one set for this group
      */
     private void updateHits() {
-        if (getQuery()==null) return;
-
-        if (getQuery().errors().size() == 0) return;
-
-        if (errorHit == null) // Creates an error hit where the first error is "main"
-            add((Hit)createErrorHit(toSearchError(getQuery().errors().get(0))));
-
-        // Add the rest of the errors
-        for (int i=1; i<getQuery().errors().size(); i++)
-            errorHit.addError(toSearchError(getQuery().errors().get(i)));
-        getQuery().errors().clear(); // TODO: Really clear them from here?
+        DefaultErrorHit queryErrors = consumeAnyQueryErrors();
+        if (queryErrors != null)
+            add(queryErrors);
     }
 
-    protected ErrorHit createErrorHit(ErrorMessage errorMessage) {
-        return new DefaultErrorHit(getSource(), errorMessage);
+    /** 
+     * Consumes errors from the query and returns them in a new error hit
+     * 
+     * @return the error hit containing all query errors, or null if no query errors should be consumed
+     */
+    private DefaultErrorHit consumeAnyQueryErrors() {
+        if (errorHit != null) return null;
+        if (getQuery() == null) return null;
+        if (getQuery().errors().isEmpty()) return null;
+
+        // Move errors from the query into this
+        List<ErrorMessage> queryErrors = getQuery().errors().stream().map(this::toSearchError).collect(Collectors.toList());
+        getQuery().errors().clear(); // TODO: Remove this line (not promised, can be done at any time)
+        return new DefaultErrorHit(getSource(), queryErrors);
     }
 
     /** Compatibility */
     private ErrorMessage toSearchError(com.yahoo.processing.request.ErrorMessage error) {
-        if (error instanceof ErrorMessage) return (ErrorMessage)error;
-        else return new ErrorMessage(error.getCode(),error.getMessage(),error.getDetailedMessage(),error.getCause());
+        if (error instanceof ErrorMessage) 
+            return (ErrorMessage)error;
+        else 
+            return new ErrorMessage(error.getCode(), error.getMessage(), error.getDetailedMessage(), error.getCause());
     }
 
     /**
@@ -704,13 +727,16 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     // Filled is not kept in sync at removal
     private void handleRemovedHit(Hit hit) {
-        if (!hit.isAuxiliary()) {
+        if ( ! hit.isAuxiliary()) {
             concreteHitCount--;
-            if (!hit.isCached())
+            if ( ! hit.isCached())
                 notCachedCount--;
         }
         else if (hit instanceof HitGroup) {
             subgroupCount--;
+        }
+        else if (hit instanceof DefaultErrorHit) {
+            errorHit = null;
         }
 
         if (deletionBreaksOrdering) {
@@ -796,8 +822,8 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         }
         if (this.errorHit!=null) { // Find the cloned error and assign it
             for (Hit hit : hitGroupClone.asList()) {
-                if (hit instanceof ErrorHit)
-                    hitGroupClone.errorHit=(ErrorHit)hit;
+                if (hit instanceof DefaultErrorHit)
+                    hitGroupClone.errorHit=(DefaultErrorHit)hit;
             }
         }
 

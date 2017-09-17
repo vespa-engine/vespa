@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_attribute_vector_read_guard.h"
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 
 namespace search {
 namespace attribute {
@@ -9,16 +11,18 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
         vespalib::stringref name,
         std::shared_ptr<ReferenceAttribute> reference_attribute,
         std::shared_ptr<AttributeVector> target_attribute,
+        std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+        std::shared_ptr<BitVectorSearchCache> search_cache,
         bool stableEnumGuard)
-    : ImportedAttributeVector(name, std::move(reference_attribute), std::move(target_attribute)),
+    : ImportedAttributeVector(name, std::move(reference_attribute), std::move(target_attribute),
+                              std::move(document_meta_store), std::move(search_cache)),
       _referencedLids(),
-      _referencedLidLimit(0u),
       _reference_attribute_guard(_reference_attribute),
       _target_attribute_guard(stableEnumGuard ? std::shared_ptr<AttributeVector>() : _target_attribute),
-      _target_attribute_enum_guard(stableEnumGuard ? _target_attribute : std::shared_ptr<AttributeVector>())
+      _target_attribute_enum_guard(stableEnumGuard ? _target_attribute : std::shared_ptr<AttributeVector>()),
+      _mapper(_reference_attribute->getGidToLidMapperFactory()->getMapper())
 {
     _referencedLids = _reference_attribute->getReferencedLids();
-    _referencedLidLimit = _target_attribute->getCommittedDocIdLimit();
 }
 
 ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() {

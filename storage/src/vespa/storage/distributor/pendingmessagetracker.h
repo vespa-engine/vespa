@@ -21,6 +21,7 @@
 
 #include <set>
 #include <unordered_map>
+#include <chrono>
 
 namespace storage {
 namespace distributor {
@@ -106,7 +107,7 @@ public:
      * storage node. "Completed" here means both successful and failed
      * operations. Statistics are monotonically increasing within the scope of
      * the process' lifetime and are never reset. This models how the Linux
-     * kernel reports its internal stats and means the caller must maintan
+     * kernel reports its internal stats and means the caller must maintain
      * value snapshots to extract meaningful time series information.
      *
      * If stats are requested for a node that has not had any operations
@@ -135,6 +136,10 @@ public:
 
     LatencyStatisticsProvider& getLatencyStatisticsProvider() {
         return _statisticsForwarder;
+    }
+
+    void setNodeBusyDuration(std::chrono::seconds secs) noexcept {
+        _nodeBusyDuration = secs;
     }
 
 private:
@@ -210,6 +215,7 @@ private:
     std::unordered_map<uint16_t, NodeStats> _nodeIndexToStats;
     NodeInfo _nodeInfo;
     ForwardingLatencyStatisticsProvider _statisticsForwarder;
+    std::chrono::seconds _nodeBusyDuration;
 
     // Since distributor is currently single-threaded, this will only
     // contend when status page is being accessed. It is, however, required

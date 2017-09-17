@@ -36,6 +36,7 @@ private:
 
 public:
     JoinBucketsSession(BucketDBOwner &bucketDB,
+                       IBucketCreateNotifier &bucketCreateNotifier,
                        const BucketId &source1,
                        const BucketId &source2,
                        const BucketId &target);

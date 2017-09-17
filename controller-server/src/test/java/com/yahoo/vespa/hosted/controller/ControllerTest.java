@@ -31,6 +31,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -46,8 +49,6 @@ import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -68,7 +69,6 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
-import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -385,8 +385,8 @@ public class ControllerTest {
         tester.controller().applications().createApplication(applicationId, Optional.empty());
 
         // Verify that Athens domain does not have any relations to tenant/application yet
-        assertThat(mockDomain.applications.keySet()).isEmpty();
-        assertThat(mockDomain.isVespaTenant).isFalse();
+        assertTrue(mockDomain.applications.keySet().isEmpty());
+        assertFalse(mockDomain.isVespaTenant);
 
         // Migrate tenant to Athens
         NToken nToken = new NTokenMock("token");
@@ -395,15 +395,12 @@ public class ControllerTest {
 
         // Verify that tenant is migrated
         Tenant tenant = tester.controller().tenants().tenant(tenantId).get();
-        assertThat(tenant.isAthensTenant())
-                .isTrue();
-        assertThat(tenant.getAthensDomain().get())
-                .isEqualTo(athensDomain);
+        assertTrue(tenant.isAthensTenant());
+        assertEquals(athensDomain, tenant.getAthensDomain().get());
         // Verify that domain knows about tenant and application
-        assertThat(mockDomain.isVespaTenant)
-                .isTrue();
-        assertThat(mockDomain.applications.keySet())
-                .contains(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationName));
+        assertTrue(mockDomain.isVespaTenant);
+        assertTrue(mockDomain.applications.keySet().contains(
+                new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationName)));
     }
 
     @Test
@@ -499,10 +496,9 @@ public class ControllerTest {
                 application.id(),
                 jobType,
                 application.deploymentJobs().projectId().get(),
-                1L,
+                42,
                 jobError,
-                selfTriggering,
-                true
+                selfTriggering
         );
     }
 
@@ -520,22 +516,20 @@ public class ControllerTest {
 
         // Check initial rotation status
         Map<String, EndpointStatus> rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
-        assertEquals(2, rotationStatus.size());
+        assertEquals(1, rotationStatus.size());
 
-        assertTrue(rotationStatus.get("global-endpoint").getStatus().equals(EndpointStatus.Status.in));
-        assertTrue(rotationStatus.get("alias-endpoint").getStatus().equals(EndpointStatus.Status.in));
+        assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.in));
 
         // Set the global rotations out of service
         EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "Testing I said", "Test", tester.clock().instant().getEpochSecond());
         List<String> overrides = tester.controller().applications().setGlobalRotationStatus(deployId, status);
-        assertEquals(2, overrides.size());
+        assertEquals(1, overrides.size());
 
         // Recheck the override rotation status
         rotationStatus = tester.controller().applications().getGlobalRotationStatus(deployId);
-        assertEquals(2, rotationStatus.size());
-        assertTrue(rotationStatus.get("global-endpoint").getStatus().equals(EndpointStatus.Status.out));
-        assertTrue(rotationStatus.get("alias-endpoint").getStatus().equals(EndpointStatus.Status.out));
-        assertTrue(rotationStatus.get("alias-endpoint").getReason().equals("Testing I said"));
+        assertEquals(1, rotationStatus.size());
+        assertTrue(rotationStatus.get("qrs-endpoint").getStatus().equals(EndpointStatus.Status.out));
+        assertTrue(rotationStatus.get("qrs-endpoint").getReason().equals("Testing I said"));
     }
 
     @Test
@@ -613,7 +607,6 @@ public class ControllerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");
-        Version oldVersion = Version.fromString("6.98.12");
         tester.configServerClientMock().setDefaultConfigServerVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
@@ -665,6 +658,25 @@ public class ControllerTest {
 
         assertEquals("Irrelevant (main) job data is removed.", 0, newMainJobsCount);
         assertEquals("Relevant (cd) data is not removed.", cdJobsCount, newCdJobsCount);
+    }
+
+    @Test
+    public void testDnsAliasRegistration() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .region("us-central-1") // Two deployments should result in DNS alias being registered once
+                .build();
+
+        tester.deployCompletely(application, applicationPackage);
+        assertEquals(1, tester.controllerTester().nameService().records().size());
+        Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, "app1.tenant1.global.vespa.yahooapis.com");
+        assertTrue(record.isPresent());
+        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name());
+        assertEquals("fake-global-rotation-tenant1.app1", record.get().value());
     }
 
 }

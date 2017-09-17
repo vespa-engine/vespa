@@ -21,12 +21,11 @@ struct MockGidToLidMapper : public search::IGidToLidMapper {
     {
     }
 
-    uint32_t mapGidToLid(const document::GlobalId &gid) const override {
-        auto itr = _map.find(gid);
-        if (itr != _map.end()) {
-            return itr->second;
-        } else {
-            return 0u;
+    void foreach(const search::IGidToLidMapperVisitor &visitor) const override {
+        for (const auto &kv : _map) {
+            if (kv.second != 0) {
+                visitor.visit(kv.first, kv.second);
+            }
         }
     }
 };

@@ -168,8 +168,6 @@ class NodesResponse extends HttpResponse {
                 });
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailureDescription().isPresent());
-        // TODO: Remove when all clients have switched to hardwareFailureDescription
-        node.status().hardwareFailureDescription().ifPresent(failure -> object.setString("hardwareFailureType", failure));
         node.status().hardwareFailureDescription().ifPresent(failure -> object.setString("hardwareFailureDescription", failure));
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());

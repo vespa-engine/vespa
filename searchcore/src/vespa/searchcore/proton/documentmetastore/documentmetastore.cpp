@@ -454,7 +454,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _subDbType(subDbType),
       _trackDocumentSizes(true)
 {
-    ensureSpace(0);			// lid 0 is reserved
+    ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     generation_t generation = getGenerationHandler().getCurrentGeneration();
@@ -846,7 +846,7 @@ DocumentMetaStore::getLids(const BucketId &bucketId, std::vector<DocId> &lids)
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
         assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits != bucketId.getUsedBits())
-            continue;	// Skip document belonging to overlapping bucket
+            continue;   // Skip document belonging to overlapping bucket
         lids.push_back(lid);
     }
 }

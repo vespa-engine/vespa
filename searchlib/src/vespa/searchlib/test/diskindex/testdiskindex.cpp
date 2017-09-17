@@ -17,7 +17,7 @@ namespace diskindex {
 struct Builder
 {
     search::diskindex::IndexBuilder _ib;
-    TuneFileIndexing	_tuneFileIndexing;
+    TuneFileIndexing    _tuneFileIndexing;
     DummyFileHeaderContext   _fileHeaderContext;
 
     Builder(const std::string &dir,
@@ -99,7 +99,7 @@ TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
                 bool fieldEmpty, bool docEmpty, bool wordEmpty)
 {
     buildIndex(dir, directio, fieldEmpty, docEmpty, wordEmpty);
-    TuneFileRandRead	tuneFileRead;
+    TuneFileRandRead    tuneFileRead;
     if (directio) {
         tuneFileRead.setWantDirectIO();
     }

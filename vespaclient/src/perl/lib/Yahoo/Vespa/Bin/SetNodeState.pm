@@ -21,6 +21,7 @@ our $wanted_state;
 our $wanted_state_description;
 our $nodes_attempted_set;
 our $success;
+our $no_wait;
 
 return 1;
 
@@ -58,6 +59,10 @@ EOS
               . "will show up in various admin tools. (Use double quotes to "
               . "give a reason with whitespace in it)");
 
+    setOptionHeader("Options related to operation visibility:");
+    setFlagOption(['n', 'no-wait'], \$no_wait, "Do not wait for node state "
+                . "changes to be visible in the cluster before returning.");
+
     Yahoo::Vespa::ContentNodeSelection::registerCommandLineArguments();
     Yahoo::Vespa::VespaModel::registerCommandLineArguments();
     handleCommandLineArguments($args);
@@ -83,7 +88,7 @@ sub execute { # ()
         exitApplication(1);
     }
     if (!$success) {
-	exitApplication(1);
+        exitApplication(1);
     }
 }
 
@@ -92,6 +97,6 @@ sub setNodeStateForNode {
     my ($cluster, $type, $index) = (
             $$info{'cluster'}, $$info{'type'}, $$info{'index'});
     $success &&= setNodeUserState($cluster, $type, $index, $wanted_state,
-                                  $wanted_state_description);
+                                  $wanted_state_description, $no_wait);
     ++$nodes_attempted_set;
 }

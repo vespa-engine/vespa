@@ -3,7 +3,7 @@
 #include "imported_attribute_vector.h"
 #include "imported_attribute_vector_read_guard.h"
 #include "imported_search_context.h"
-#include "attributeguard.h"
+#include "bitvector_search_cache.h"
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -13,10 +13,28 @@ namespace attribute {
 ImportedAttributeVector::ImportedAttributeVector(
             vespalib::stringref name,
             std::shared_ptr<ReferenceAttribute> reference_attribute,
-            std::shared_ptr<AttributeVector> target_attribute)
+            std::shared_ptr<AttributeVector> target_attribute,
+            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+            bool use_search_cache)
     : _name(name),
       _reference_attribute(std::move(reference_attribute)),
-      _target_attribute(std::move(target_attribute))
+      _target_attribute(std::move(target_attribute)),
+      _document_meta_store(std::move(document_meta_store)),
+      _search_cache(use_search_cache ? std::make_shared<BitVectorSearchCache>() :
+                    std::shared_ptr<BitVectorSearchCache>())
+{
+}
+
+ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
+                                                 std::shared_ptr<ReferenceAttribute> reference_attribute,
+                                                 std::shared_ptr<AttributeVector> target_attribute,
+                                                 std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+                                                 std::shared_ptr<BitVectorSearchCache> search_cache)
+    : _name(name),
+      _reference_attribute(std::move(reference_attribute)),
+      _target_attribute(std::move(target_attribute)),
+      _document_meta_store(std::move(document_meta_store)),
+      _search_cache(std::move(search_cache))
 {
 }
 
@@ -27,7 +45,7 @@ std::unique_ptr<ImportedAttributeVector>
 ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
     return std::make_unique<ImportedAttributeVectorReadGuard>
-        (getName(), getReferenceAttribute(), getTargetAttribute(), stableEnumGuard);
+        (getName(), getReferenceAttribute(), getTargetAttribute(), getDocumentMetaStore(), getSearchCache(), stableEnumGuard);
 }
 
 const vespalib::string& search::attribute::ImportedAttributeVector::getName() const {
@@ -131,6 +149,12 @@ bool ImportedAttributeVector::hasEnum() const {
     return _target_attribute->hasEnum();
 }
 
+void ImportedAttributeVector::clearSearchCache() {
+    if (_search_cache) {
+        _search_cache->clear();
+    }
+}
+
 long ImportedAttributeVector::onSerializeForAscendingSort(DocId doc,
                                                           void *serTo,
                                                           long available,
@@ -145,48 +169,6 @@ long ImportedAttributeVector::onSerializeForDescendingSort(DocId doc,
                                                            const common::BlobConverter *bc) const {
     return _target_attribute->serializeForDescendingSort(
             _reference_attribute->getReferencedLid(doc), serTo, available, bc);
-}
-
-namespace {
-
-class ImportedAttributeGuard : public AttributeGuard {
-public:
-    ImportedAttributeGuard(const AttributeVectorSP& target_attr,
-                           const AttributeVectorSP& reference_attr)
-        : AttributeGuard(),
-          _target_attr_guard(target_attr),
-          _reference_attr_guard(reference_attr)
-    {
-    }
-    
-private:
-    AttributeGuard _target_attr_guard;
-    AttributeGuard _reference_attr_guard;
-};
-
-class ImportedAttributeEnumGuard : public AttributeEnumGuard {
-public:
-    ImportedAttributeEnumGuard(const AttributeVectorSP& target_attr,
-                               const AttributeVectorSP& reference_attr)
-        : AttributeEnumGuard(AttributeVectorSP()),
-          _target_attr_enum_guard(target_attr),
-          _reference_attr_guard(reference_attr)
-    {
-    }
-    
-private:
-    AttributeEnumGuard _target_attr_enum_guard;
-    AttributeGuard _reference_attr_guard;
-};
-
-}
-
-std::unique_ptr<AttributeGuard> ImportedAttributeVector::acquireGuard() const {
-    return std::make_unique<ImportedAttributeGuard>(_target_attribute, _reference_attribute);
-}
-
-std::unique_ptr<AttributeEnumGuard> ImportedAttributeVector::acquireEnumGuard() const {
-    return std::make_unique<ImportedAttributeEnumGuard>(_target_attribute, _reference_attribute);
 }
 
 }

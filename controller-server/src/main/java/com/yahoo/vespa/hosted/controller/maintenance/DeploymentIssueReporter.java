@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.Contacts;
@@ -40,7 +41,7 @@ public class DeploymentIssueReporter extends Maintainer {
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivityAge = Duration.ofDays(4);
     static final String deploymentFailureLabel = "vespaDeploymentFailure";
-    static final Classification vespaOps = new Classification("VESPA", "Services", deploymentFailureLabel);
+    static final Classification vespaOps = new Classification("VESPA", "Services", deploymentFailureLabel, null);
     static final UserContact terminalUser = new UserContact("frodelu", "Frode Lundgren", admin);
 
     private final Contacts contacts;
@@ -74,24 +75,33 @@ public class DeploymentIssueReporter extends Maintainer {
             else
                 controller().applications().setJiraIssueId(application.id(), Optional.empty());
 
-        // TODO: Do this when version.confidence is BROKEN instead?
+        // TODO: Do this when version.confidence is BROKEN instead? Or, exclude above those upgrading to BROKEN version?
         if (failingApplications.size() > 0.2 * applications.size()) {
             fileOrUpdate(manyFailingDeploymentsIssueFrom(failingApplications)); // Problems with Vespa is the most likely cause when so many deployments fail.
         }
         else {
             for (Application application : failingApplications) {
                 Issue deploymentIssue = deploymentIssueFrom(application);
+                Tenant applicationTenant = null;
                 Classification applicationOwner = null;
                 try {
-                    applicationOwner = jiraClassificationOf(ownerOf(application));
+                    applicationTenant= ownerOf(application);
+                    applicationOwner = applicationTenant.tenantType() == TenantType.USER
+                            ? vespaOps.withAssignee(applicationTenant.getId().id().replaceFirst("by-", ""))
+                            : jiraClassificationOf(applicationTenant);
                     fileFor(application, deploymentIssue.with(applicationOwner));
                 }
                 catch (RuntimeException e) { // Catch errors due to inconsistent or missing data in Sherpa, OpsDB, JIRA, and send to ourselves.
                     Pattern componentError = Pattern.compile(".*Component name '.*' is not valid.*", Pattern.DOTALL);
                     if (componentError.matcher(e.getMessage()).matches()) // Several properties seem to list invalid components, in which case we simply ignore this.
-                        fileFor(application, deploymentIssue.with(applicationOwner.withComponent(null)));
+                        fileFor(application,
+                                deploymentIssue
+                                        .with(applicationOwner.withComponent(null))
+                                        .append("\n\nNote: The 'Queue Component' field in [opsdb|https://opsdb.ops.yahoo.com/properties.php?id=" +
+                                                applicationTenant.getPropertyId().get() +
+                                                "&action=view] for your property was rejected by JIRA. Please check your spelling."));
                     else
-                        fileFor(application, deploymentIssue.append(e.getMessage() + "\n\nAddressee:\n" + applicationOwner));
+                        fileFor(application, deploymentIssue.with(vespaOps).append(e.getMessage() + "\n\nAddressee:\n" + applicationOwner));
                 }
             }
         }

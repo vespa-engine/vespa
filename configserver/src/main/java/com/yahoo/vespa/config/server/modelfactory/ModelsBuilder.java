@@ -112,11 +112,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         Version latest = findLatest(versions);
         // load latest application version
         MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
-                                                                 applicationPackage, 
-                                                                 applicationId, 
-                                                                 wantedNodeVespaVersion, 
-                                                                 allocatedHosts.asOptional(),
-                                                                 now);
+                                                           applicationPackage, 
+                                                           applicationId, 
+                                                           wantedNodeVespaVersion, 
+                                                           allocatedHosts.asOptional(),
+                                                           now);
         allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
         
         if (latestModelVersion.getModel().skipOldConfigModels(now))

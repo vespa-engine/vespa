@@ -15,8 +15,7 @@ import com.yahoo.prelude.query.WordItem;
 /**
  * Transform terms in query tree to lower case based on Vespa index settings.
  *
- * @since 5.1.3
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @After({ STEMMING, ACCENT_REMOVAL })
 @Provides(VespaLowercasingSearcher.LOWERCASING)

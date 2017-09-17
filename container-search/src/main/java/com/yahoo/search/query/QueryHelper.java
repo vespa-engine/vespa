@@ -2,7 +2,7 @@
 package com.yahoo.search.query;
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 class QueryHelper {
 

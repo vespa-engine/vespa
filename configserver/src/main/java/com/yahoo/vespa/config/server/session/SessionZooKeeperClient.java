@@ -172,7 +172,7 @@ public class SessionZooKeeperClient {
     }
 
     public Version readVespaVersion() {
-        if ( ! configCurator.exists(versionPath())) return Vtag.currentVersion;
+        if ( ! configCurator.exists(versionPath())) return Vtag.currentVersion; // TODO: This should not be possible any more - verify and remove
         return new Version(configCurator.getData(versionPath()));
     }
 

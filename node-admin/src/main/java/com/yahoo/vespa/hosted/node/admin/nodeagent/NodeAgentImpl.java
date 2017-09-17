@@ -50,6 +50,10 @@ import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.Containe
  * @author bakksjo
  */
 public class NodeAgentImpl implements NodeAgent {
+    // This is used as a definition of 1 GB when comparing flavor specs in node-repo
+    private static final long BYTES_IN_GB = 1_000_000_000L;
+
+
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private boolean isFrozen = true;
     private boolean wantFrozen = false;
@@ -352,14 +356,8 @@ public class NodeAgentImpl implements NodeAgent {
     private void scheduleDownLoadIfNeeded(ContainerNodeSpec nodeSpec) {
         if (nodeSpec.currentDockerImage.equals(nodeSpec.wantedDockerImage)) return;
 
-        if (dockerOperations.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
-            if (nodeSpec.wantedDockerImage.get().equals(imageBeingDownloaded)) {
-                // Downloading already scheduled, but not done.
-                return;
-            }
+        if (dockerOperations.pullImageAsyncIfNeeded(nodeSpec.wantedDockerImage.get())) {
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
-            // Create a signalWorkToBeDone when download is finished.
-            dockerOperations.scheduleDownloadOfImage(containerName, imageBeingDownloaded, this::signalWorkToBeDone);
         } else if (imageBeingDownloaded != null) { // Image was downloading, but now it's ready
             imageBeingDownloaded = null;
         }
@@ -457,8 +455,12 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case active:
                 storageMaintainer.ifPresent(maintainer -> {
-                    maintainer.removeOldFilesFromNode(containerName);
                     maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+
+                    maintainer.getDiskUsageFor(containerName)
+                            .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / nodeSpec.minDiskAvailableGb)
+                            .filter(diskUtil -> diskUtil >= 0.8)
+                            .ifPresent(diskUtil -> maintainer.removeOldFilesFromNode(containerName));
                 });
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (isDownloadingImage()) {
@@ -487,7 +489,6 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestrator.resume(hostname);
                 break;
             case inactive:
-                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
@@ -523,14 +524,13 @@ public class NodeAgentImpl implements NodeAgent {
 
         Docker.ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
-        final long bytesInGB = 1 << 30;
         final int totalNumCpuCores = ((List<Number>) ((Map) stats.getCpuStats().get("cpu_usage")).get("percpu_usage")).size();
         final long cpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
         final long cpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
         final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
         final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
-        final long diskTotalBytes = (long) (nodeSpec.minDiskAvailableGb * bytesInGB);
+        final long diskTotalBytes = (long) (nodeSpec.minDiskAvailableGb * BYTES_IN_GB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
                         .getDiskUsageFor(containerName));
 

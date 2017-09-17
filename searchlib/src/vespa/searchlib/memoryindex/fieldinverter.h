@@ -29,11 +29,11 @@ public:
     class PosInfo
     {
     public:
-        uint32_t _wordNum;		// XXX: Initially word reference
+        uint32_t _wordNum;      // XXX: Initially word reference
         uint32_t _docId;
         uint32_t _elemId;
         uint32_t _wordPos;
-        uint32_t _elemRef;	// Offset in _elems
+        uint32_t _elemRef;  // Offset in _elems
 
         static constexpr uint32_t _elemRemoved =
             std::numeric_limits<uint32_t>::max();
@@ -181,14 +181,14 @@ private:
     uint32_t                       _docId;
     uint32_t                       _oldPosSize;
 
-    const index::Schema			  &_schema;
+    const index::Schema           &_schema;
 
-    WordBuffer				_words;
-    ElemInfoVec				_elems;
-    PosInfoVec				_positions;
-    index::DocIdAndPosOccFeatures	_features;
-    std::vector<uint32_t>		_elementWordRefs;
-    std::vector<uint32_t>		_wordRefs;
+    WordBuffer                     _words;
+    ElemInfoVec                    _elems;
+    PosInfoVec                     _positions;
+    index::DocIdAndPosOccFeatures  _features;
+    std::vector<uint32_t>          _elementWordRefs;
+    std::vector<uint32_t>          _wordRefs;
 
     typedef std::pair<document::Span, const document::FieldValue *> SpanTerm;
     typedef std::vector<SpanTerm> SpanTermVector;
@@ -206,7 +206,7 @@ public:
     /**
      * Start a new element
      *
-     * @param weight		element weight
+     * @param weight        element weight
      */
     void
     startElement(int32_t weight);
@@ -221,10 +221,10 @@ private:
     /**
      * Save field value as word in word buffer.
      *
-     * @param word		word to be saved
-     * @param len		length of word to be saved.
+     * @param word      word to be saved
+     * @param len       length of word to be saved.
      *
-     * @return			word reference
+     * @return          word reference
      */
     VESPA_DLL_LOCAL uint32_t
     saveWord(const vespalib::stringref word);
@@ -232,9 +232,9 @@ private:
     /**
      * Save field value as word in word buffer.
      *
-     * @param fv		field value containing word to be stored
+     * @param fv        field value containing word to be stored
      *
-     * @return			word reference
+     * @return          word reference
      */
     VESPA_DLL_LOCAL uint32_t
     saveWord(const document::FieldValue &fv);
@@ -242,9 +242,9 @@ private:
     /**
      * Get pointer to saved word from a word reference.
      *
-     * @param wordRef		word reference
+     * @param wordRef       word reference
      *
-     * @return			saved word
+     * @return          saved word
      */
     const char *
     getWordFromRef(uint32_t wordRef) const
@@ -255,9 +255,9 @@ private:
     /**
      * Get pointer to saved word from a word number
      *
-     * @param wordNum		word number
+     * @param wordNum       word number
      *
-     * @return			saved word
+     * @return          saved word
      */
     const char *
     getWordFromNum(uint32_t wordNum) const
@@ -268,9 +268,9 @@ private:
     /**
      * Get word number from word reference
      *
-     * @param wordRef		word reference
+     * @param wordRef       word reference
      *
-     * @return 			word number
+     * @return          word number
      */
     uint32_t
     getWordNum(uint32_t wordRef) const
@@ -282,8 +282,8 @@ private:
     /**
      * Update mapping from word reference to word number
      *
-     * @param wordRef		word reference
-     * @param wordNum		word number
+     * @param wordRef       word reference
+     * @param wordNum       word number
      */
     void
     updateWordNum(uint32_t wordRef, uint32_t wordNum)
@@ -296,7 +296,7 @@ private:
      * Add a word reference to posting list.  Don't step word pos.
      *
      *
-     * @param wordRef		word reference
+     * @param wordRef       word reference
      */
     void
     add(uint32_t wordRef) {

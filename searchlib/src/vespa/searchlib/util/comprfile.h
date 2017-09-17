@@ -110,9 +110,9 @@ private:
     int _bitOffset;
     uint64_t _stopOffset;
     bool _readAll;
-    bool _checkPointOffsetValid;	// Set only if checkpoint has been read
+    bool _checkPointOffsetValid;    // Set only if checkpoint has been read
     FastOS_FileInterface *_file;
-    uint64_t _checkPointOffset;	// bit offset saved by checkPointRead
+    uint64_t _checkPointOffset; // bit offset saved by checkPointRead
 
 public:
     ComprFileReadContext(ComprFileDecodeContext &decodeContext);
