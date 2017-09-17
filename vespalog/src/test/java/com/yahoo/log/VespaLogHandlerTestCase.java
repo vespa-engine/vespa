@@ -18,7 +18,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class VespaLogHandlerTestCase {
     protected static String hostname;

@@ -15,7 +15,7 @@ import com.yahoo.log.event.MalformedEventException;
  * chosen the name LogMessage to avoid confusion with LogRecord
  * which is used in java.util.logging.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class LogMessage
 {

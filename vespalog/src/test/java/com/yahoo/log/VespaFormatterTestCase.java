@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.is;
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class VespaFormatterTestCase {
 
