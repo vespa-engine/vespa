@@ -37,4 +37,4 @@ vespa_add_library(messagebus
     DEPENDS
 )
 vespa_generate_config(messagebus ../../main/config/messagebus.def)
-install(FILES ../../main/config/messagebus.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install(FILES ../../main/config/messagebus.def RENAME messagebus.messagebus.def DESTINATION var/db/vespa/config_server/serverdb/classes)
