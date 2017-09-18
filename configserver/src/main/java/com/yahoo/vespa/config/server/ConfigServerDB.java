@@ -42,7 +42,6 @@ public class ConfigServerDB {
         return new ConfigServerDB(new ConfigserverConfig(new ConfigserverConfig.Builder().configServerDBDir(dir)));
     }
 
-    public File dest()  { return new File(serverDB, "configs"); }
     public File classes() { return new File(serverDB, "classes"); }
     public File vespaapps() { return new File(serverDB, "vespaapps"); }
     public File serverdefs() { return new File(serverDB, "serverdefs"); }
@@ -52,7 +51,6 @@ public class ConfigServerDB {
      * Creates all the config server db's dirs that are global.
      */
     public void create() {
-        cr(dest());
         cr(classes());
         cr(vespaapps());
         cr(serverdefs());
