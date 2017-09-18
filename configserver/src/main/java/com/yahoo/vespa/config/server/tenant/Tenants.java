@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -20,7 +21,6 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -56,7 +56,6 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
 
     public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     private static final TenantName DEFAULT_TENANT = TenantName.defaultName();
-    private static final List<TenantName> SYSTEM_TENANT_NAMES = Arrays.asList(DEFAULT_TENANT, HOSTED_VESPA_TENANT);
 
     private static final Path tenantsPath = Path.fromString("/config/v2/tenants/");
     private static final Path vespaPath = Path.fromString("/vespa");
@@ -89,7 +88,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         curator.framework().getConnectionStateListenable().addListener(this);
 
         curator.create(tenantsPath);
-        createSystemTenants();
+        createSystemTenants(globalComponentRegistry.getConfigserverConfig());
         curator.create(vespaPath);
 
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
@@ -213,12 +212,16 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     /**
-     * Writes the default tenant into ZooKeeper. Will not fail if the node already exists,
-     * as this is OK and might happen when several config servers start at the same time and
-     * try to call this method.
+     * Writes the tenants that should always be present into ZooKeeper. Will not fail if the node
+     * already exists, as this is OK and might happen when several config servers start at the
+     * same time and try to call this method.
      */
-    public synchronized void createSystemTenants() {
-        for (final TenantName tenantName : SYSTEM_TENANT_NAMES) {
+    private synchronized void createSystemTenants(ConfigserverConfig configserverConfig) {
+        List<TenantName> systemTenants = new ArrayList<>();
+        systemTenants.add(DEFAULT_TENANT);
+        if (configserverConfig.hostedVespa()) systemTenants.add(HOSTED_VESPA_TENANT);
+
+        for (final TenantName tenantName : systemTenants) {
             try {
                 writeTenantPath(tenantName);
             } catch (RuntimeException e) {
