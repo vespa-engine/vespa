@@ -153,6 +153,10 @@
           <groupId>org.antlr</groupId>
           <artifactId>antlr4-runtime</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>xerces</groupId>
+          <artifactId>xercesImpl</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
