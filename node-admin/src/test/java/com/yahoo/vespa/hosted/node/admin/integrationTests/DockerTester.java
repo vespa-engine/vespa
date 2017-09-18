@@ -30,14 +30,14 @@ import static org.mockito.Mockito.when;
 /**
  * @author musum
  */
-// Need to deconstruct updater
+// Need to deconstruct nodeAdminStateUpdater
 public class DockerTester implements AutoCloseable {
     final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     final Docker dockerMock = new DockerMock(callOrderVerifier);
     final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+    final NodeAdminStateUpdater nodeAdminStateUpdater;
+    final NodeAdmin nodeAdmin;
     private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
-    private final NodeAdminStateUpdater updater;
-    private final NodeAdmin nodeAdmin;
 
 
     public DockerTester() {
@@ -61,25 +61,17 @@ public class DockerTester implements AutoCloseable {
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, 100, mr, Clock.systemUTC());
-        updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, storageMaintainer,
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, storageMaintainer,
                 clock, orchestratorMock, "basehostname");
-        updater.start(5);
+        nodeAdminStateUpdater.start(5);
     }
 
     public void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
         nodeRepositoryMock.updateContainerNodeSpec(containerNodeSpec);
     }
 
-    public NodeAdmin getNodeAdmin() {
-        return nodeAdmin;
-    }
-
-    public NodeAdminStateUpdater getNodeAdminStateUpdater() {
-        return updater;
-    }
-
     @Override
     public void close() {
-        updater.deconstruct();
+        nodeAdminStateUpdater.deconstruct();
     }
 }
