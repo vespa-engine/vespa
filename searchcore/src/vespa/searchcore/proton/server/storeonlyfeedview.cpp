@@ -501,9 +501,7 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpd
                 FeedToken *token = onWriteDone->getToken();
                 token->trace(1, "The update looks like : " + upd.toString(token->shouldTrace(2)));
             }
-            vespalib::nbostream os;
-            prevDoc->serialize(os);
-            newDoc = std::make_unique<Document>(*_repo, os);
+            newDoc = std::move(prevDoc);
             if (useDocumentStore(serialNum)) {
                 LOG(spam, "Original document :\n%s", newDoc->toXml("  ").c_str());
                 LOG(spam, "Update\n%s", upd.toXml().c_str());
