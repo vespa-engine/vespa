@@ -96,8 +96,8 @@ public class ZookeeperStatusService implements StatusService {
     MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             ApplicationInstanceReference applicationInstanceReference,
             long timeoutSeconds) {
-        String lock2Path = applicationInstanceLock2Path(applicationInstanceReference);
-        Lock lock = new Lock(lock2Path, curator);
+        String lockPath = applicationInstanceLock2Path(applicationInstanceReference);
+        Lock lock = new Lock(lockPath, curator);
         lock.acquire(Duration.ofSeconds(timeoutSeconds));
 
         try {
