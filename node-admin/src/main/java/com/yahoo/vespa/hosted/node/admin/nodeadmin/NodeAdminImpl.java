@@ -46,7 +46,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
-    private final Optional<StorageMaintainer> storageMaintainer;
+    private final StorageMaintainer storageMaintainer;
 
     private final Clock clock;
     private boolean previousWantFrozen;
@@ -62,10 +62,10 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public NodeAdminImpl(final DockerOperations dockerOperations,
                          final Function<String, NodeAgent> nodeAgentFactory,
-                         final Optional<StorageMaintainer> storageMaintainer,
+                         final StorageMaintainer storageMaintainer,
+                         final AclMaintainer aclMaintainer,
                          final int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver,
-                         final Optional<AclMaintainer> aclMaintainer,
                          final Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
@@ -89,9 +89,9 @@ public class NodeAdminImpl implements NodeAdmin {
             }
         }, 0, 55, TimeUnit.SECONDS);
 
-        aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleWithFixedDelay(() -> {
-            if (!isFrozen()) maintainer.run();
-        }, 30, 60, TimeUnit.SECONDS));
+        aclScheduler.scheduleWithFixedDelay(() -> {
+            if (!isFrozen()) aclMaintainer.run();
+        }, 30, 60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(container -> container.hostname)
                 .collect(Collectors.toList());
 
-        storageMaintainer.ifPresent(StorageMaintainer::cleanNodeAdmin);
+        storageMaintainer.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRunHostnames, existingContainerNames);
         dockerOperations.deleteUnusedDockerImages();
 

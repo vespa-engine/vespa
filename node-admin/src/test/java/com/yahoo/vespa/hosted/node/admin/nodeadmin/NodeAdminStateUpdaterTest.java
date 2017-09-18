@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
@@ -14,7 +15,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -40,9 +40,10 @@ public class NodeAdminStateUpdaterTest {
     private final ManualClock clock = new ManualClock();
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
+    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
-            nodeRepository, nodeAdmin, Optional.empty(), clock, orchestrator, parentHostname));
+            nodeRepository, nodeAdmin, storageMaintainer, clock, orchestrator, parentHostname));
 
 
     @Test

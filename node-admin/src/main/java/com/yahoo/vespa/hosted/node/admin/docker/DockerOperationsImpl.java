@@ -116,10 +116,6 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-            if (environment.isRunningLocally()) {
-                command.withEntrypoint("/usr/local/bin/start-services.sh", "--run-local");
-            }
-
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
                 String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
