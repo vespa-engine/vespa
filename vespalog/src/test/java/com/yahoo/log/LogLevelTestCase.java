@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 /**
  * Testcases for LogLevel
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class LogLevelTestCase {
 
