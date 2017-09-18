@@ -899,7 +899,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 2, minor = 9, micro = 1/g'
         -->
-        <curator.version>2.12.0</curator.version>
+        <curator.version>2.9.1</curator.version>
         <jackson2.version>2.8.3</jackson2.version>
         <jersey2.version>2.23.2</jersey2.version>
         <jetty.version>9.4.6.v20170531</jetty.version>
