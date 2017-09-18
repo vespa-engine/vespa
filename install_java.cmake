@@ -99,6 +99,7 @@ install(FILES
     configdefinitions/src/vespa/load-type.def
     configdefinitions/src/vespa/messagetyperouteselectorpolicy.def
     configdefinitions/src/vespa/model.def
+    configdefinitions/src/vespa/orchestrator.def
     configdefinitions/src/vespa/persistence.def
     configdefinitions/src/vespa/rank-profiles.def
     configdefinitions/src/vespa/routing-provider.def
@@ -190,7 +191,6 @@ install(FILES
     logd/src/main/resources/configdefinitions/logd.def
     messagebus/src/main/config/messagebus.def
     metrics/src/vespa/metrics/metricsmanager.def
-    orchestrator/src/main/resources/configdefinitions/orchestrator.def
     persistence/src/main/resources/configdefinitions/persistence-rpc.def
     searchcore/src/vespa/searchcore/config/fdispatchrc.def
     searchcore/src/vespa/searchcore/config/partitions.def

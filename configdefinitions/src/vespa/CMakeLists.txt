@@ -4,6 +4,7 @@ vespa_add_library(configdefinitions
     INSTALL lib64
     DEPENDS
 )
+# If yo do changes here you also need to update install_java.cmake
 vespa_generate_config(configdefinitions application-id.def)
 install(FILES application-id.def DESTINATION var/db/vespa/config_server/serverdb/classes)
 vespa_generate_config(configdefinitions attributes.def)
