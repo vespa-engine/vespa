@@ -87,37 +87,6 @@ install(FILES
 install(FILES
     chain/src/main/resources/configdefinitions/chains.def
     config-provisioning/src/main/resources/configdefinitions/flavors.def
-    configdefinitions/src/vespa/application-id.def
-    configdefinitions/src/vespa/attributes.def
-    configdefinitions/src/vespa/cluster-info.def
-    configdefinitions/src/vespa/cluster-list.def
-    configdefinitions/src/vespa/configserver.def
-    configdefinitions/src/vespa/fleetcontroller.def
-    configdefinitions/src/vespa/ilscripts.def
-    configdefinitions/src/vespa/indexschema.def
-    configdefinitions/src/vespa/lb-services.def
-    configdefinitions/src/vespa/load-type.def
-    configdefinitions/src/vespa/messagetyperouteselectorpolicy.def
-    configdefinitions/src/vespa/model.def
-    configdefinitions/src/vespa/orchestrator.def
-    configdefinitions/src/vespa/persistence.def
-    configdefinitions/src/vespa/rank-profiles.def
-    configdefinitions/src/vespa/routing-provider.def
-    configdefinitions/src/vespa/routing.def
-    configdefinitions/src/vespa/sentinel.def
-    configdefinitions/src/vespa/slobroks.def
-    configdefinitions/src/vespa/specialtokens.def
-    configdefinitions/src/vespa/stor-devices.def
-    configdefinitions/src/vespa/stor-distribution.def
-    configdefinitions/src/vespa/stor-filestor.def
-    configdefinitions/src/vespa/stor-memfilepersistence.def
-    configdefinitions/src/vespa/summary.def
-    configdefinitions/src/vespa/summarymap.def
-    configdefinitions/src/vespa/upgrading.def
-    configdefinitions/src/vespa/ymon.def
-    configdefinitions/src/vespa/zookeeper-server.def
-    configdefinitions/src/vespa/zookeepers.def
-    configdefinitions/src/vespa/dispatch.def
     container-accesslogging/src/main/resources/configdefinitions/access-log.def
     container-core/src/main/resources/configdefinitions/application-metadata.def
     container-core/src/main/resources/configdefinitions/container-document.def
