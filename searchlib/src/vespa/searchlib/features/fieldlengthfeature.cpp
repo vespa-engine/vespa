@@ -56,7 +56,7 @@ FieldLengthExecutor::execute(uint32_t docId)
 }
 
 void
-FieldLengthExecutor::handle_bind_match_data(MatchData &md)
+FieldLengthExecutor::handle_bind_match_data(const MatchData &md)
 {
     _md = &md;
 }

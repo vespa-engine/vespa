@@ -45,13 +45,14 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     QueryEnvironment         queryEnv;
     RankSetup                rankSetup;
-    RankProgram::UP          rankProgram;
     MatchDataLayout          mdl;
+    MatchData::UP            match_data;
+    RankProgram::UP          rankProgram;
     std::vector<TermFieldHandle> fooHandles;
     std::vector<TermFieldHandle> barHandles;
     RankFixture(size_t fooCnt, size_t barCnt)
         : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
-          rankProgram(), mdl(), fooHandles(), barHandles()
+          mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
     {
         for (size_t i = 0; i < fooCnt; ++i) {
             uint32_t fieldId = indexEnv.getFieldByName("foo")->id();
@@ -70,14 +71,15 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         rankSetup.setFirstPhaseRank(featureName);
         rankSetup.setIgnoreDefaultRankFeatures(true);
         ASSERT_TRUE(rankSetup.compile());
+        match_data = mdl.createMatchData();
         rankProgram = rankSetup.create_first_phase_program();
-        rankProgram->setup(mdl, queryEnv);
+        rankProgram->setup(*match_data, queryEnv);
     }
     feature_t getScore(uint32_t docId) {
         return Utils::getScoreFeature(*rankProgram, docId);
     }
     void setScore(TermFieldHandle handle, uint32_t docId, feature_t score) {
-        rankProgram->match_data().resolveTermField(handle)->setRawScore(docId, score);
+        match_data->resolveTermField(handle)->setRawScore(docId, score);
     }
     void setFooScore(uint32_t i, uint32_t docId, feature_t score) {
         ASSERT_LESS(i, fooHandles.size());

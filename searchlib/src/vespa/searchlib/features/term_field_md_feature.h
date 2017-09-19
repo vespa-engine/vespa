@@ -21,7 +21,7 @@ class TermFieldMdExecutor : public fef::FeatureExecutor {
     const fef::MatchData *_md;
 
     void execute(uint32_t docId) override;
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 public:
     TermFieldMdExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);
 };

@@ -31,7 +31,7 @@ private:
     QueryTerm                  _termB;
     const fef::MatchData      *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    virtual void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     TermDistanceExecutor(const fef::IQueryEnvironment & env,

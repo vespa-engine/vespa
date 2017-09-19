@@ -141,7 +141,8 @@ TEST("test overrides")
     overrides.add("value(1,2,3).2",  "6.0");
     overrides.add("bogus(feature)", "10.0");
 
-    rankProgram->setup(mdl, queryEnv, overrides);
+    MatchData::UP match_data = mdl.createMatchData();
+    rankProgram->setup(*match_data, queryEnv, overrides);
 
     std::map<vespalib::string, feature_t> res = Utils::getAllFeatures(*rankProgram, 2);
 

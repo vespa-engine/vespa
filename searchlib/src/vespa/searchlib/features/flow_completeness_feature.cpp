@@ -234,7 +234,7 @@ FlowCompletenessExecutor::execute(uint32_t)
 }
 
 void
-FlowCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+FlowCompletenessExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }
