@@ -32,7 +32,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun() throws IOException {
+    public List<ContainerNodeSpec> getContainersToRun(String dockerHostHostname) throws IOException {
         synchronized (monitor) {
             return new ArrayList<>(containerNodeSpecsByHostname.values());
         }
