@@ -696,6 +696,7 @@ AttributeVector::enableEnumeratedSave(bool enable) {
 }
 
 attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }
+const attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() const { return nullptr; }
 const IDocumentWeightAttribute * AttributeVector::asDocumentWeightAttribute() const { return nullptr; }
 bool AttributeVector::hasPostings() { return getIPostingListAttributeBase() != nullptr; }
 uint64_t AttributeVector::getUniqueValueCount() const { return getTotalValueCount(); }

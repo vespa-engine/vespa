@@ -22,8 +22,8 @@ public:
                   uint32_t fromLid,
                   uint32_t toLid) = 0;
 
-    virtual void
-    forwardedShrinkLidSpace(uint32_t newSize) = 0;
+    virtual void forwardedShrinkLidSpace(uint32_t newSize) = 0;
+    virtual MemoryUsage getMemoryUsage() const = 0;
 };
 
 
