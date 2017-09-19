@@ -64,20 +64,20 @@ public class NodeAgentImpl implements NodeAgent {
     private final PrefixLogger logger;
     private DockerImage imageBeingDownloaded = null;
 
-    private final String hostname;
     private final ContainerName containerName;
+    private final String hostname;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final StorageMaintainer storageMaintainer;
+    private final AclMaintainer aclMaintainer;
     private final Environment environment;
     private final Clock clock;
-    private final AclMaintainer aclMaintainer;
+    private final Duration timeBetweenEachConverge;
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final LinkedList<String> debugMessages = new LinkedList<>();
 
-    private long delaysBetweenEachConvergeMillis = 30_000;
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
 
@@ -117,7 +117,8 @@ public class NodeAgentImpl implements NodeAgent {
             final StorageMaintainer storageMaintainer,
             final AclMaintainer aclMaintainer,
             final Environment environment,
-            final Clock clock) {
+            final Clock clock,
+            final Duration timeBetweenEachConverge) {
         this.containerName = ContainerName.fromHostname(hostName);
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.hostname = hostName;
@@ -128,7 +129,9 @@ public class NodeAgentImpl implements NodeAgent {
         this.aclMaintainer = aclMaintainer;
         this.environment = environment;
         this.clock = clock;
+        this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
+
         this.serviceRestarter = service -> {
             try {
                 ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
@@ -183,11 +186,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void start(int intervalMillis) {
-        String message = "Starting with interval " + intervalMillis + " ms";
+    public void start() {
+        String message = "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms";
         logger.info(message);
         addDebugMessage(message);
-        delaysBetweenEachConvergeMillis = intervalMillis;
+
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
         }
@@ -375,7 +378,7 @@ public class NodeAgentImpl implements NodeAgent {
         boolean isFrozenCopy;
         synchronized (monitor) {
             while (!workToDoNow) {
-                long remainder = delaysBetweenEachConvergeMillis - Duration.between(lastConverge, clock.instant()).toMillis();
+                long remainder = timeBetweenEachConverge.minus(Duration.between(lastConverge, clock.instant())).toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);

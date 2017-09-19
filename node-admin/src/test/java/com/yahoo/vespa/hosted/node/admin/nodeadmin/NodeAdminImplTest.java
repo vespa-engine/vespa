@@ -31,7 +31,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -53,7 +52,7 @@ public class NodeAdminImplTest {
     private final ManualClock clock = new ManualClock();
 
     private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
-            100, new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
+            new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() throws Exception {
@@ -72,12 +71,12 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName1);
-        inOrder.verify(nodeAgent1).start(100);
+        inOrder.verify(nodeAgent1).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
-        inOrder.verify(nodeAgent1, never()).start(anyInt());
+        inOrder.verify(nodeAgent1, never()).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
@@ -86,13 +85,13 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName2);
-        inOrder.verify(nodeAgent2).start(100);
+        inOrder.verify(nodeAgent2).start();
         inOrder.verify(nodeAgent2, never()).stop();
         verify(nodeAgent1).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
-        inOrder.verify(nodeAgent2, never()).start(anyInt());
+        inOrder.verify(nodeAgent2, never()).start();
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);
