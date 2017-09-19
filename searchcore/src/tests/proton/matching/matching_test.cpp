@@ -292,7 +292,7 @@ struct MyWorld {
         MatchToolsFactory::UP match_tools_factory = matcher->create_match_tools_factory(
                 *request, searchContext, attributeContext, metaStore, overrides);
         MatchTools::UP match_tools = match_tools_factory->createMatchTools();
-        RankProgram::UP rank_program = match_tools->first_phase_program();
+        match_tools->setup_first_phase();
         return match_tools->match_data().get_termwise_limit();
     }
 
