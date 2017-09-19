@@ -56,23 +56,25 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private final Clock clock;
     private final Orchestrator orchestrator;
     private final String dockerHostHostName;
+    private final Duration nodeAdminConvergeStateInterval;
 
-    private long delaysBetweenEachTickMillis = 30_000;
     private Instant lastTick;
 
     public NodeAdminStateUpdater(
-            final NodeRepository nodeRepository,
-            final NodeAdmin nodeAdmin,
-            StorageMaintainer storageMaintainer,
-            Clock clock,
+            NodeRepository nodeRepository,
             Orchestrator orchestrator,
-            String dockerHostHostName) {
+            StorageMaintainer storageMaintainer,
+            NodeAdmin nodeAdmin,
+            String dockerHostHostName,
+            Clock clock,
+            Duration nodeAdminConvergeStateInterval) {
         log.log(LogLevel.INFO, objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
-        this.nodeAdmin = nodeAdmin;
-        this.clock = clock;
         this.orchestrator = orchestrator;
+        this.nodeAdmin = nodeAdmin;
         this.dockerHostHostName = dockerHostHostName;
+        this.clock = clock;
+        this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
         this.lastTick = clock.instant();
 
         specVerifierScheduler.scheduleWithFixedDelay(() ->
@@ -133,7 +135,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         State wantedStateCopy;
         synchronized (monitor) {
             while (! workToDoNow) {
-                long remainder = delaysBetweenEachTickMillis - Duration.between(lastTick, clock.instant()).toMillis();
+                Duration timeSinceLastConverge = Duration.between(lastTick, clock.instant());
+                long remainder = nodeAdminConvergeStateInterval.minus(timeSinceLastConverge).toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);
@@ -231,7 +234,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             }
             final List<ContainerNodeSpec> containersToRun;
             try {
-                containersToRun = nodeRepository.getContainersToRun();
+                containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed fetching container info from node repository", e);
                 return;
@@ -250,7 +253,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private List<String> getNodesInActiveState() {
         try {
-            return nodeRepository.getContainersToRun()
+            return nodeRepository.getContainersToRun(dockerHostHostName)
                                  .stream()
                                  .filter(nodespec -> nodespec.nodeState == Node.State.active)
                                  .map(nodespec -> nodespec.hostname)
@@ -260,8 +263,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         }
     }
 
-    public void start(long stateConvergeInterval) {
-        delaysBetweenEachTickMillis = stateConvergeInterval;
+    public void start() {
         if (loopThread != null) {
             throw new RuntimeException("Can not restart NodeAdminStateUpdater");
         }
