@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +37,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.
  * @author dybis, stiankri
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
-    public static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
+    static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private State currentState = SUSPENDED_NODE_ADMIN;
@@ -64,7 +63,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public NodeAdminStateUpdater(
             final NodeRepository nodeRepository,
             final NodeAdmin nodeAdmin,
-            Optional<StorageMaintainer> storageMaintainer,
+            StorageMaintainer storageMaintainer,
             Clock clock,
             Orchestrator orchestrator,
             String dockerHostHostName) {
@@ -76,8 +75,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         this.dockerHostHostName = dockerHostHostName;
         this.lastTick = clock.instant();
 
-        storageMaintainer.ifPresent(maintainer -> specVerifierScheduler.scheduleWithFixedDelay(() ->
-                updateHardwareDivergence(maintainer), 5, 60, TimeUnit.MINUTES));
+        specVerifierScheduler.scheduleWithFixedDelay(() ->
+                updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
     }
 
     private String objectToString() {
