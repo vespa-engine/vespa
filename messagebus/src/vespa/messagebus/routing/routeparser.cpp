@@ -71,7 +71,7 @@ RouteParser::createDirective(const stringref &str)
 }
 
 Hop
-RouteParser::createHop(const stringref &str)
+RouteParser::createHop(stringref str)
 {
     if (str.empty()) {
         return Hop().addDirective(createErrorDirective("Failed to parse empty string."));
@@ -84,7 +84,7 @@ RouteParser::createHop(const stringref &str)
     }
     if (len > 4 && str.substr(0, 4) == "tcp/") {
         IHopDirective::SP tcp = createTcpDirective(str.substr(4));
-        if (tcp.get() != NULL) {
+        if (tcp.get() != nullptr) {
             return Hop().addDirective(tcp);
         }
     }
@@ -119,7 +119,7 @@ RouteParser::createHop(const stringref &str)
 }
 
 Route
-RouteParser::createRoute(const stringref &str)
+RouteParser::createRoute(stringref str)
 {
     Route ret;
     for (size_t from = 0, at = 0, depth = 0; at <= str.size(); ++at) {

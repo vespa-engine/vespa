@@ -65,14 +65,14 @@ Test::Main()
 
         reply = pxy.getReply();
         ASSERT_TRUE(reply.get() != 0);
-        EXPECT_EQUAL(reply->getNumErrors(), 1u);
+        ASSERT_EQUAL(reply->getNumErrors(), 1u);
         EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
         reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "fatality"));
         is->forward(std::move(reply));
 
         reply = src.getReply();
         ASSERT_TRUE(reply.get() != 0);
-        EXPECT_EQUAL(reply->getNumErrors(), 2u);
+        ASSERT_EQUAL(reply->getNumErrors(), 2u);
         EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
         EXPECT_EQUAL(reply->getError(1).getService(), "test/pxy/session");
     }

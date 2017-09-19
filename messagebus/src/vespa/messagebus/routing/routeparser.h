@@ -29,7 +29,7 @@ public:
      * @param str The string to parse as a hop.
      * @return The created hop.
      */
-    static Hop createHop(const vespalib::stringref &str);
+    static Hop createHop(vespalib::stringref str);
 
     /**
      * Creates a route from a string representation.
@@ -37,7 +37,7 @@ public:
      * @param str The string to parse as a route.
      * @return The created route.
      */
-    static Route createRoute(const vespalib::stringref &str);
+    static Route createRoute(vespalib::stringref str);
 };
 
 } // mbus

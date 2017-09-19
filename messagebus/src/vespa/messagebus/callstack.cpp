@@ -13,7 +13,7 @@ CallStack::discard()
 {
     while (!_stack.empty()) {
         const Frame &frame = _stack.back();
-        if (frame.discardHandler != NULL) {
+        if (frame.discardHandler != nullptr) {
             frame.discardHandler->handleDiscard(frame.ctx);
         }
         _stack.pop_back();

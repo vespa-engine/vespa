@@ -76,7 +76,7 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
     } catch (const std::exception &e) {
         LOG(error, "Protocol '%s' threw an exception; %s", protocolName.c_str(), e.what());
     }
-    if (policy.get() == NULL) {
+    if (policy.get() == nullptr) {
         LOG(error, "Protocol '%s' failed to create routing policy '%s' with parameter '%s'.",
             protocolName.c_str(), policyName.c_str(), policyParam.c_str());
         return IRoutingPolicy::SP();

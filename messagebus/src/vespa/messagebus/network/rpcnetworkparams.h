@@ -3,6 +3,7 @@
 
 #include "identity.h"
 #include <vespa/slobrok/cfg.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 
 namespace mbus {
 
@@ -12,13 +13,15 @@ namespace mbus {
  */
 class RPCNetworkParams {
 private:
-    Identity    _identity;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+    Identity          _identity;
     config::ConfigUri _slobrokConfig;
-    string      _oosServerPattern;
-    int         _listenPort;
-    uint32_t    _maxInputBufferSize;
-    uint32_t    _maxOutputBufferSize;
-    double      _connectionExpireSecs;
+    string            _oosServerPattern;
+    int               _listenPort;
+    uint32_t          _maxInputBufferSize;
+    uint32_t          _maxOutputBufferSize;
+    double            _connectionExpireSecs;
+    CompressionConfig _compressionConfig;
 
 public:
     RPCNetworkParams();
@@ -177,6 +180,12 @@ public:
         _maxOutputBufferSize = maxOutputBufferSize;
         return *this;
     }
+
+    RPCNetworkParams &setCompressionConfig(CompressionConfig compressionConfig) {
+        _compressionConfig = compressionConfig;
+        return *this;
+    }
+    CompressionConfig getCompressionConfig() const { return _compressionConfig; }
 };
 
 }
