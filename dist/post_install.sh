@@ -47,8 +47,6 @@ mkdir -p $INSTALLPATH/share/vespa/schema/version/6.x/schema/
 mkdir -p $INSTALLPATH/tmp/vespa/
 mkdir -p $INSTALLPATH/var/db/jdisc/logcontrol/
 mkdir -p $INSTALLPATH/var/db/vespa/
-mkdir -p $INSTALLPATH/var/db/vespa/config_server/serverdb/configs/
-mkdir -p $INSTALLPATH/var/db/vespa/config_server/serverdb/configs/application/
 mkdir -p $INSTALLPATH/var/db/vespa/config_server/serverdb/applications/
 mkdir -p $INSTALLPATH/var/db/vespa/logcontrol/
 mkdir -p $INSTALLPATH/var/jdisc_container/
