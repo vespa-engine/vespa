@@ -118,7 +118,7 @@ public class RunInContainerTest {
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator).suspend(parentHostname);
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
+        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(Collections.emptyList());
         waitForJdiscContainerToServe();
 
         assertTrue("The initial resume command should fail because it needs to converge first",
@@ -144,7 +144,7 @@ public class RunInContainerTest {
         assertTrue(verifyWithRetries("resume", true));
 
         // Lets try the same, but with an active container running on this host
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(
+        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(
                 Collections.singletonList(new ContainerNodeSpec.Builder()
                         .hostname("host1.test.yahoo.com")
                         .wantedDockerImage(new DockerImage("dockerImage"))
