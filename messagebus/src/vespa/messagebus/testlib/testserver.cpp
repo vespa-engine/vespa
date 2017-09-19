@@ -4,7 +4,6 @@
 #include "simpleprotocol.h"
 #include "slobrok.h"
 #include "slobrokstate.h"
-#include <vespa/messagebus/network/oosmanager.h>
 #include <vespa/vespalib/component/vtag.h>
 
 namespace mbus {
@@ -12,7 +11,9 @@ namespace mbus {
 VersionedRPCNetwork::VersionedRPCNetwork(const RPCNetworkParams &params) :
     RPCNetwork(params),
     _version(vespalib::Vtag::currentVersion)
-{}
+{
+    // empty
+}
 
 void
 VersionedRPCNetwork::setVersion(const vespalib::Version &version)
@@ -96,4 +97,4 @@ TestServer::waitState(const OOSState &oosState)
     return false;
 }
 
-}
+} // namespace mbus

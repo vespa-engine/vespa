@@ -11,8 +11,7 @@ RPCNetworkParams::RPCNetworkParams() :
     _listenPort(0),
     _maxInputBufferSize(256*1024),
     _maxOutputBufferSize(256*1024),
-    _connectionExpireSecs(30),
-    _compressionConfig(CompressionConfig::LZ4, 6, 90, 1024)
+    _connectionExpireSecs(30)
 { }
 
 RPCNetworkParams::~RPCNetworkParams() {}

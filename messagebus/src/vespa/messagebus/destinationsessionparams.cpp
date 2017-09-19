@@ -6,7 +6,7 @@ namespace mbus {
 DestinationSessionParams::DestinationSessionParams() :
     _name("destination"),
     _broadcastName(true),
-    _handler(nullptr)
+    _handler(NULL)
 { }
 
 } // namespace mbus

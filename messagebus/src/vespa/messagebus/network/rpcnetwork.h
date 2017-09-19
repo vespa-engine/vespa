@@ -2,33 +2,27 @@
 #pragma once
 
 #include "inetwork.h"
-#include "rpcsendadapter.h"
-#include "rpctarget.h"
-#include "identity.h"
+#include "oosmanager.h"
+#include "rpcnetworkparams.h"
+#include "rpcsendv1.h"
+#include "rpcservicepool.h"
+#include "rpctargetpool.h"
 #include <vespa/messagebus/blob.h>
 #include <vespa/messagebus/blobref.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/reply.h>
 #include <vespa/slobrok/imirrorapi.h>
 #include <vespa/vespalib/component/versionspecification.h>
-#include <vespa/vespalib/util/compressionconfig.h>
-#include <vespa/fnet/frt/invokable.h>
-
-class FNET_Transport;
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 namespace slobrok {
-    namespace api { class RegisterAPI; }
-    class ConfiguratorFactory;
+    namespace api {
+        class RegisterAPI;
+    }
 }
 
 namespace mbus {
-
-class OOSManager;
-class RPCServicePool;
-class RPCTargetPool;
-class RPCNetworkParams;
-class RPCServiceAddress;
-
 /**
  * Network implementation based on RPC. This class is responsible for
  * keeping track of services and for sending messages to services.
@@ -36,7 +30,6 @@ class RPCServiceAddress;
 class RPCNetwork : public INetwork,
                    public FRT_Invokable {
 private:
-    using CompressionConfig = vespalib::compression::CompressionConfig;
     struct SendContext : public RPCTarget::IVersionHandler {
         vespalib::Lock            _lock;
         RPCNetwork               &_net;
@@ -58,26 +51,24 @@ private:
         void PerformTask() override;
     };
 
-    using SendAdapterMap = std::map<vespalib::Version, RPCSendAdapter*>;
+    typedef std::map<vespalib::VersionSpecification, RPCSendAdapter*> SendAdapterMap;
 
-    INetworkOwner                                *_owner;
-    Identity                                      _ident;
-    std::unique_ptr<FastOS_ThreadPool>            _threadPool;
-    std::unique_ptr<FNET_Transport>               _transport;
-    std::unique_ptr<FRT_Supervisor>               _orb;
-    FNET_Scheduler                               &_scheduler;
-    std::unique_ptr<RPCTargetPool>                _targetPool;
-    TargetPoolTask                                _targetPoolTask;
-    std::unique_ptr<RPCServicePool>               _servicePool;
-    std::unique_ptr<slobrok::ConfiguratorFactory> _slobrokCfgFactory;
-    std::unique_ptr<slobrok::api::IMirrorAPI>     _mirror;
-    std::unique_ptr<slobrok::api::RegisterAPI>    _regAPI;
-    std::unique_ptr<OOSManager>                   _oosManager;
-    int                                           _requestedPort;
-    std::unique_ptr<RPCSendAdapter>               _sendV1;
-    std::unique_ptr<RPCSendAdapter>               _sendV2;
-    SendAdapterMap                                _sendAdapters;
-    CompressionConfig                             _compressionConfig;
+    INetworkOwner            *_owner;
+    Identity                  _ident;
+    FastOS_ThreadPool         _threadPool;
+    FNET_Transport            _transport;
+    FRT_Supervisor            _orb;
+    FNET_Scheduler           &_scheduler;
+    RPCTargetPool             _targetPool;
+    TargetPoolTask            _targetPoolTask;
+    RPCServicePool            _servicePool;
+    slobrok::ConfiguratorFactory                _slobrokCfgFactory;
+    std::unique_ptr<slobrok::api::IMirrorAPI>   _mirror;
+    std::unique_ptr<slobrok::api::RegisterAPI>  _regAPI;
+    OOSManager                _oosManager;
+    int                       _requestedPort;
+    RPCSendV1                 _sendV1;
+    SendAdapterMap            _sendAdapters;
 
     /**
      * Resolves and assigns a service address for the given recipient using the
@@ -168,7 +159,7 @@ public:
      *
      * @return port number
      **/
-    int getPort() const;
+    int getPort() const { return _orb.GetListenPort(); }
 
     /**
      * Allocate a new rpc request object. The caller of this method gets the
@@ -200,7 +191,7 @@ public:
      *
      * @return internal OOS manager
      **/
-    OOSManager &getOOSManager() { return *_oosManager; }
+    OOSManager &getOOSManager() { return _oosManager; }
 
     /**
      * Obtain a reference to the internal supervisor. This is used by
@@ -208,7 +199,7 @@ public:
      *
      * @return The supervisor.
      */
-    FRT_Supervisor &getSupervisor() { return *_orb; }
+    FRT_Supervisor &getSupervisor() { return _orb; }
 
     /**
      * Deliver an error reply to the recipients of a {@link SendContext} in a
@@ -218,7 +209,8 @@ public:
      * @param errCode The error code to return.
      * @param errMsg  The error string to return.
      */
-    void replyError(const SendContext &ctx, uint32_t errCode, const string &errMsg);
+    void replyError(const SendContext &ctx, uint32_t errCode,
+                    const string &errMsg);
 
     void attach(INetworkOwner &owner) override;
     const string getConnectionSpec() const override;
@@ -233,8 +225,9 @@ public:
     void shutdown() override;
     void postShutdownHook() override;
     const slobrok::api::IMirrorAPI &getMirror() const override;
-    CompressionConfig getCompressionConfig() { return _compressionConfig; }
+
     void invoke(FRT_RPCRequest *req);
 };
 
 } // namespace mbus
+

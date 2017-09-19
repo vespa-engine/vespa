@@ -54,7 +54,7 @@ const HopBlueprint *
 RoutingTable::getHop(const string &name) const
 {
     std::map<string, HopBlueprint>::const_iterator it = _hops.find(name);
-    return it != _hops.end() ? &(it->second) : nullptr;
+    return it != _hops.end() ? &(it->second) : NULL;
 }
 
 bool
@@ -67,7 +67,7 @@ const Route *
 RoutingTable::getRoute(const string &name) const
 {
     std::map<string, Route>::const_iterator it = _routes.find(name);
-    return it != _routes.end() ? &(it->second) : nullptr;
+    return it != _routes.end() ? &(it->second) : NULL;
 }
 
 } // namespace mbus
