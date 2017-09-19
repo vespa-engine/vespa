@@ -179,24 +179,21 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void shutdown() {
+    public void stop() {
         metricsScheduler.shutdown();
         aclScheduler.shutdown();
-        try {
-            boolean metricsSchedulerShutdown = metricsScheduler.awaitTermination(30, TimeUnit.SECONDS);
-            boolean aclSchedulerShutdown = aclScheduler.awaitTermination(30, TimeUnit.SECONDS);
-            if (! (metricsSchedulerShutdown && aclSchedulerShutdown)) {
-                throw new RuntimeException("Failed shutting down all scheduler(s), shutdown status:\n" +
-                        "\tMetrics Scheduler: " + metricsSchedulerShutdown + "\n" +
-                        "\tACL Scheduler: " + aclSchedulerShutdown);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
-        for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.stop();
-        }
+        // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
+        nodeAgents.values().parallelStream().forEach(NodeAgent::stop);
+
+        do {
+            try {
+                metricsScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                aclScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                logger.info("Was interrupted while waiting for metricsScheduler and aclScheduler to shutdown");
+            }
+        } while (!metricsScheduler.isTerminated() || !aclScheduler.isTerminated());
     }
 
     // Set-difference. Returns minuend minus subtrahend.

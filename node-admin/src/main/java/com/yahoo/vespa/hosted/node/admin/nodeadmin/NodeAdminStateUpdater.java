@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -36,7 +35,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.
  *
  * @author dybis, stiankri
  */
-public class NodeAdminStateUpdater extends AbstractComponent {
+public class NodeAdminStateUpdater {
     static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
@@ -275,22 +274,27 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         loopThread.start();
     }
 
-    @Override
-    public void deconstruct() {
+    public void stop() {
+        specVerifierScheduler.shutdown();
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
         log.log(LogLevel.INFO, objectToString() + ": Deconstruct called");
+
+        // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
-        try {
-            loopThread.join(10000);
-            if (loopThread.isAlive()) {
-                log.log(LogLevel.ERROR, "Could not stop tick thread");
+
+        do {
+            try {
+                loopThread.join(0);
+                specVerifierScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e1) {
+                log.info("Interrupted while waiting for NodeAdminStateUpdater thread and specVerfierScheduler to shutdown");
             }
-        } catch (InterruptedException e1) {
-            log.log(LogLevel.ERROR, "Interrupted; Could not stop thread");
-        }
-        nodeAdmin.shutdown();
+        } while (loopThread.isAlive() || !specVerifierScheduler.isTerminated());
+
+        // Finally, stop NodeAdmin and all the NodeAgents
+        nodeAdmin.stop();
         log.log(LogLevel.INFO, objectToString() + ": Deconstruct complete");
     }
 }
