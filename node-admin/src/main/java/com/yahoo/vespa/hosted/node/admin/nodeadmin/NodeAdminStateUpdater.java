@@ -37,7 +37,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.
  * @author dybis, stiankri
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
-    public static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
+    static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private State currentState = SUSPENDED_NODE_ADMIN;
