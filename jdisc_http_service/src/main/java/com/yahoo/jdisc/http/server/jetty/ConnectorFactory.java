@@ -135,8 +135,6 @@ public class ConnectorFactory {
         Ssl sslConfig = connectorConfig.ssl();
 
         final SslContextFactory factory = new SslContextFactory();
-        factory.setNeedClientAuth(sslConfig.needClientAuth());
-
         if (!sslConfig.excludeProtocol().isEmpty()) {
             final String[] prots = new String[sslConfig.excludeProtocol().size()];
             for (int i = 0; i < prots.length; i++) {
