@@ -52,6 +52,10 @@ public class ConfigServerHttpRequestExecutor {
     }
 
     public static ConfigServerHttpRequestExecutor create(Set<String> configServerHosts) {
+        if (configServerHosts.isEmpty()) {
+            throw new IllegalStateException("Environment setting for config servers missing or empty.");
+        }
+
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         // Increase max total connections to 200, which should be enough
         cm.setMaxTotal(200);
