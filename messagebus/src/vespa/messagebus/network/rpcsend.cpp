@@ -41,7 +41,8 @@ class FillByHandover final : public PayLoadFiller
 public:
     FillByHandover(Blob payload) : _payload(std::move(payload)) { }
     void fill(FRT_Values & v) const override {
-        v.AddData(std::move(_payload.payload()), _payload.size());
+        size_t sz = _payload.size();
+        v.AddData(std::move(_payload.payload()), sz);
     }
     void fill(const vespalib::Memory & name, vespalib::slime::Cursor & v) const override {
         v.setData(name, vespalib::Memory(_payload.data(), _payload.size()));
