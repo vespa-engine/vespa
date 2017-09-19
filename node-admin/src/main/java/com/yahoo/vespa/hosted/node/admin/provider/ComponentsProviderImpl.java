@@ -51,8 +51,9 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private static final int NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS = 30000;
 
     @Inject
-    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment) {
+    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver) {
         String baseHostName = HostName.getLocalhost();
+        Environment environment = new Environment();
         Set<String> configServerHosts = environment.getConfigServerHosts();
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
