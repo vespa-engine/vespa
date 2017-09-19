@@ -87,7 +87,7 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
     SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext,
                                                  _syncToken);
     bool saveSuccess = false;
-    if (_dmsft._hwInfo.slowDisk()) {
+    if (_dmsft._hwInfo.disk().slow()) {
         search::AttributeMemorySaveTarget memorySaveTarget;
         saveSuccess = _saver->save(memorySaveTarget);
         _saver.reset();
