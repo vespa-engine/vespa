@@ -7,6 +7,8 @@
 #include <vespa/messagebus/network/rpcnetwork.h>
 #include <vespa/config/helper/legacysubscriber.h>
 
+namespace config {class ConfigUri; }
+
 namespace mbus {
 
 /**
@@ -40,8 +42,10 @@ public:
      * @param routingCfgId The config id for message bus routing specs.
      */
     RPCMessageBus(const MessageBusParams &mbusParams,
-                  const RPCNetworkParams &rpcParams = RPCNetworkParams(),
-                  const config::ConfigUri & routingCfgId = config::ConfigUri("client"));
+                  const RPCNetworkParams &rpcParams,
+                  const config::ConfigUri & routingCfgId);
+    RPCMessageBus(const MessageBusParams &mbusParams,
+                  const RPCNetworkParams &rpcParams);
 
 
     /**
@@ -55,8 +59,8 @@ public:
      * @param routingCfgId The config id for messagebus routing specs.
      */
     RPCMessageBus(const ProtocolSet &protocols,
-                  const RPCNetworkParams &rpcParams = RPCNetworkParams(),
-                  const config::ConfigUri & routingCfgId = config::ConfigUri("client"));
+                  const RPCNetworkParams &rpcParams,
+                  const config::ConfigUri & routingCfgId);
 
     /**
      * Destruct. This will destruct the internal MessageBus and RPCNetwork

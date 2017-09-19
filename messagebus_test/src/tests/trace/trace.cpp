@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("trace_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -20,6 +19,9 @@ LOG_SETUP("trace_test");
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <iostream>
+
+#include <vespa/log/log.h>
+LOG_SETUP("trace_test");
 
 using namespace mbus;
 using vespalib::make_string;

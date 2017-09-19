@@ -3,6 +3,7 @@
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>

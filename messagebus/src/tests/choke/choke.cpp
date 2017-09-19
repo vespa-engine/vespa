@@ -2,7 +2,6 @@
 
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/reply.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
