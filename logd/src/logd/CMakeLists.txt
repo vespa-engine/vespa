@@ -12,4 +12,4 @@ vespa_add_library(logd STATIC
     DEPENDS
 )
 vespa_generate_config(logd ../main/resources/configdefinitions/logd.def)
-install(FILES ../main/resources/configdefinitions/logd.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install(FILES ../main/resources/configdefinitions/logd.def RENAME cloud.config.log.logd.def DESTINATION var/db/vespa/config_server/serverdb/classes)
