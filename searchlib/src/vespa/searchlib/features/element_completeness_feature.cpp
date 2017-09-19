@@ -73,7 +73,7 @@ ElementCompletenessExecutor::execute(uint32_t docId)
 }
 
 void
-ElementCompletenessExecutor::handle_bind_match_data(const fef::MatchData &md)
+ElementCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
 {
     _md = &md;
 }

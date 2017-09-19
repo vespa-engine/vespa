@@ -82,7 +82,7 @@ private:
 
     static bool nextElement(Item &item);
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     ElementCompletenessExecutor(const fef::IQueryEnvironment &env,

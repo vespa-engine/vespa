@@ -17,7 +17,7 @@ private:
     std::vector<Pair>     _pairs;
     const fef::MatchData *_md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     NativeDotProductExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);

@@ -40,7 +40,7 @@ MatchesExecutor::execute(uint32_t docId)
 }
 
 void
-MatchesExecutor::handle_bind_match_data(const MatchData &md)
+MatchesExecutor::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }

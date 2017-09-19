@@ -23,20 +23,16 @@ class MatchTools
 {
 private:
     using IRequestContext = search::queryeval::IRequestContext;
-    QueryLimiter                          &_queryLimiter;
-    const vespalib::Doom                  &_softDoom;
-    const vespalib::Doom                  &_hardDoom;
-    const Query                           &_query;
-    MaybeMatchPhaseLimiter                &_match_limiter;
-    const QueryEnvironment                &_queryEnv;
-    const search::fef::RankSetup          &_rankSetup;
-    const search::fef::Properties         &_featureOverrides;
-    search::fef::MatchData::UP             _match_data;
-    search::fef::RankProgram::UP           _rank_program;
-    search::queryeval::SearchIterator::UP  _search;
-    HandleRecorder::HandleSet              _used_handles;
-    bool                                   _search_has_changed;
-    void setup(search::fef::RankProgram::UP, double termwise_limit = 1.0);
+    QueryLimiter                       & _queryLimiter;
+    const vespalib::Doom               & _softDoom;
+    const vespalib::Doom               & _hardDoom;
+    const Query                        & _query;
+    MaybeMatchPhaseLimiter             & _match_limiter;
+    const QueryEnvironment             & _queryEnv;
+    const search::fef::RankSetup       & _rankSetup;
+    const search::fef::Properties      & _featureOverrides;
+    search::fef::MatchDataLayout         _mdl;
+    HandleRecorder                       _handleRecorder;
 public:
     typedef std::unique_ptr<MatchTools> UP;
     MatchTools(const MatchTools &) = delete;
@@ -55,17 +51,15 @@ public:
     const vespalib::Doom &getHardDoom() const { return _hardDoom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
     MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
+    search::queryeval::SearchIterator::UP
+    createSearch(search::fef::MatchData &matchData) const {
+        return _query.createSearch(matchData);
+    }
     bool has_second_phase_rank() const { return !_rankSetup.getSecondPhaseRank().empty(); }
-    const search::fef::MatchData &match_data() const { return *_match_data; }
-    search::fef::RankProgram &rank_program() { return *_rank_program; }
-    search::queryeval::SearchIterator &search() { return *_search; }
-    search::queryeval::SearchIterator::UP borrow_search() { return std::move(_search); }
-    void give_back_search(search::queryeval::SearchIterator::UP search_in) { _search = std::move(search_in); }
-    void tag_search_as_changed() { _search_has_changed = true; }
-    void setup_first_phase();
-    void setup_second_phase();
-    void setup_summary();
-    void setup_dump();
+    search::fef::RankProgram::UP first_phase_program() const;
+    search::fef::RankProgram::UP second_phase_program() const;
+    search::fef::RankProgram::UP summary_program() const;
+    search::fef::RankProgram::UP dump_program() const;
 };
 
 class MatchToolsFactory : public vespalib::noncopyable

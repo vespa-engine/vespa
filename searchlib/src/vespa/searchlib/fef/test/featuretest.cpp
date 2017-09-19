@@ -22,7 +22,6 @@ FeatureTest::FeatureTest(BlueprintFactory &factory,
     _layout(layout),
     _overrides(overrides),
     _resolver(new BlueprintResolver(factory, indexEnv)),
-    _match_data(_layout.createMatchData()),
     _rankProgram(new RankProgram(_resolver)),
     _doneSetup(false)
 {
@@ -43,7 +42,6 @@ FeatureTest::FeatureTest(BlueprintFactory &factory,
     _layout(layout),
     _overrides(overrides),
     _resolver(new BlueprintResolver(factory, indexEnv)),
-    _match_data(_layout.createMatchData()),
     _rankProgram(new RankProgram(_resolver)),
     _doneSetup(false)
 {
@@ -70,7 +68,7 @@ FeatureTest::setup()
         return false;
     }
 
-    _rankProgram->setup(*_match_data, _queryEnv, _overrides);
+    _rankProgram->setup(_layout, _queryEnv, _overrides);
     _doneSetup = true;
     return true;
 }
@@ -79,7 +77,7 @@ MatchDataBuilder::UP
 FeatureTest::createMatchDataBuilder()
 {
     if (_doneSetup) {
-        return MatchDataBuilder::UP(new MatchDataBuilder(_queryEnv, *_match_data));
+        return MatchDataBuilder::UP(new MatchDataBuilder(_queryEnv, _rankProgram->match_data()));
     }
     LOG(warning, "Match data not initialized.");
     return MatchDataBuilder::UP();
@@ -137,7 +135,6 @@ void
 FeatureTest::clear()
 {
     _resolver = BlueprintResolver::SP(new BlueprintResolver(_factory, _indexEnv));
-    _match_data = _layout.createMatchData();
     _rankProgram.reset(new RankProgram(_resolver));
     _doneSetup = false;
 }

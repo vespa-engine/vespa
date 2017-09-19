@@ -73,7 +73,7 @@ NativeAttributeMatchExecutorMulti::execute(uint32_t docId)
 }
 
 void
-NativeAttributeMatchExecutorMulti::handle_bind_match_data(const MatchData &md)
+NativeAttributeMatchExecutorMulti::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }
@@ -88,7 +88,7 @@ NativeAttributeMatchExecutorSingle::execute(uint32_t docId)
 }
 
 void
-NativeAttributeMatchExecutorSingle::handle_bind_match_data(const MatchData &md)
+NativeAttributeMatchExecutorSingle::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }
