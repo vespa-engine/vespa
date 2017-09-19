@@ -19,34 +19,48 @@ namespace proton::matching {
 
 namespace {
 
-size_t
-tagMatchData(const HandleRecorder::HandleSet & handles, MatchData & md)
+bool contains_all(const HandleRecorder::HandleSet &old_set,
+                  const HandleRecorder::HandleSet &new_set)
 {
-    size_t ignored(0);
-    for (TermFieldHandle handle(0); handle < md.getNumTermFields(); handle++) {
-        if (handles.find(handle) == handles.end()) {
-            md.resolveTermField(handle)->tagAsNotNeeded();
-            ignored++;
+    for (TermFieldHandle handle: new_set) {
+        if (old_set.find(handle) == old_set.end()) {
+            return false;
         }
     }
-    return ignored;
+    return true;
 }
 
-search::fef::RankProgram::UP setup_program(search::fef::RankProgram::UP program,
-                                           MatchData &match_data,
-                                           const QueryEnvironment &queryEnv,
-                                           const Properties &featureOverrides)
+void tag_match_data(const HandleRecorder::HandleSet &handles, MatchData &match_data) {
+    for (TermFieldHandle handle = 0; handle < match_data.getNumTermFields(); ++handle) {
+        if (handles.find(handle) == handles.end()) {
+            match_data.resolveTermField(handle)->tagAsNotNeeded();
+        }
+    }
+}
+
+} // namespace proton::matching::<unnamed>
+
+void
+MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_limit)
 {
-    match_data.soft_reset();
+    if (_search) {
+        _match_data->soft_reset();
+    }
+    _rank_program = std::move(rank_program);
     HandleRecorder recorder;
     {
         HandleRecorder::Binder bind(recorder);
-        program->setup(match_data, queryEnv, featureOverrides);
+        _rank_program->setup(*_match_data, _queryEnv, _featureOverrides);
     }
-    tagMatchData(recorder.getHandles(), match_data);
-    return program;
-}
-
+    bool can_reuse_search = (_search && !_search_has_changed &&
+                             contains_all(_used_handles, recorder.getHandles()));
+    if (!can_reuse_search) {
+        tag_match_data(recorder.getHandles(), *_match_data);
+        _match_data->set_termwise_limit(termwise_limit);
+        _search = _query.createSearch(*_match_data);
+        _used_handles = recorder.getHandles();
+        _search_has_changed = false;
+    }
 }
 
 MatchTools::MatchTools(QueryLimiter & queryLimiter,
@@ -66,41 +80,42 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
       _queryEnv(queryEnv),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
-      _match_data(mdl.createMatchData())
+      _match_data(mdl.createMatchData()),
+      _rank_program(),
+      _search(),
+      _used_handles(),
+      _search_has_changed(false)
 {
 }
 
-MatchTools::~MatchTools() {}
-
-search::fef::RankProgram::UP
-MatchTools::first_phase_program()
+MatchTools::~MatchTools()
 {
-    auto program = setup_program(_rankSetup.create_first_phase_program(),
-                                 *_match_data, _queryEnv, _featureOverrides);
-    _match_data->set_termwise_limit(TermwiseLimit::lookup(_queryEnv.getProperties(),
-                                                          _rankSetup.get_termwise_limit()));
-    return program;
 }
 
-search::fef::RankProgram::UP
-MatchTools::second_phase_program()
+void
+MatchTools::setup_first_phase()
 {
-    return setup_program(_rankSetup.create_second_phase_program(),
-                         *_match_data, _queryEnv, _featureOverrides);
+    setup(_rankSetup.create_first_phase_program(),
+          TermwiseLimit::lookup(_queryEnv.getProperties(),
+                                _rankSetup.get_termwise_limit()));
 }
 
-search::fef::RankProgram::UP
-MatchTools::summary_program()
+void
+MatchTools::setup_second_phase()
 {
-    return setup_program(_rankSetup.create_summary_program(),
-                         *_match_data, _queryEnv, _featureOverrides);
+    setup(_rankSetup.create_second_phase_program());
 }
 
-search::fef::RankProgram::UP
-MatchTools::dump_program()
+void
+MatchTools::setup_summary()
 {
-    return setup_program(_rankSetup.create_dump_program(),
-                         *_match_data, _queryEnv, _featureOverrides);
+    setup(_rankSetup.create_summary_program());
+}
+
+void
+MatchTools::setup_dump()
+{
+    setup(_rankSetup.create_dump_program());
 }
 
 //-----------------------------------------------------------------------------
