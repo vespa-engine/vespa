@@ -76,6 +76,6 @@ public class DockerTester implements AutoCloseable {
 
     @Override
     public void close() {
-        nodeAdminStateUpdater.deconstruct();
+        nodeAdminStateUpdater.stop();
     }
 }

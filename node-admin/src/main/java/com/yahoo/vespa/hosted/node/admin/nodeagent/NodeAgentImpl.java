@@ -210,19 +210,15 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
         signalWorkToBeDone();
-        try {
-            loopThread.join(10000);
-            if (loopThread.isAlive()) {
-                logger.error("Could not stop host thread " + hostname);
+
+        do {
+            try {
+                loopThread.join(0);
+                filebeatRestarter.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                logger.error("Interrupted while waiting for converge thread and filebeatRestarter scheduler to shutdown");
             }
-        } catch (InterruptedException e1) {
-            logger.error("Interrupted; Could not stop host thread " + hostname);
-        }
-        try {
-            filebeatRestarter.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            logger.error("Interrupted; Could not stop filebeatrestarter thread");
-        }
+        } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
 
         logger.info("Stopped");
     }

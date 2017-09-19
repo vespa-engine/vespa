@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.net.HostName;
 
 import com.yahoo.system.ProcessExecuter;
@@ -34,7 +35,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  *
  * @author dybis
  */
-public class ComponentsProviderImpl implements ComponentsProvider {
+public class ComponentsProviderImpl extends AbstractComponent implements ComponentsProvider {
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
     private static final int WEB_SERVICE_PORT = getDefaults().vespaWebServicePort();
@@ -70,5 +71,10 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     @Override
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
         return nodeAdminStateUpdater;
+    }
+
+    @Override
+    public void deconstruct() {
+        nodeAdminStateUpdater.stop();
     }
 }
