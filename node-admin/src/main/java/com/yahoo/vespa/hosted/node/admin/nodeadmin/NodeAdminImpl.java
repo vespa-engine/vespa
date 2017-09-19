@@ -55,8 +55,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final Map<ContainerName, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
-    private final int nodeAgentScanIntervalMillis;
-
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
@@ -64,13 +62,11 @@ public class NodeAdminImpl implements NodeAdmin {
                          final Function<String, NodeAgent> nodeAgentFactory,
                          final StorageMaintainer storageMaintainer,
                          final AclMaintainer aclMaintainer,
-                         final int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver,
                          final Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
-        this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
         this.clock = clock;
         this.previousWantFrozen = true;
@@ -257,7 +253,7 @@ public class NodeAdminImpl implements NodeAdmin {
         }
 
         final NodeAgent agent = nodeAgentFactory.apply(hostname);
-        agent.start(nodeAgentScanIntervalMillis);
+        agent.start();
         nodeAgents.put(containerName, agent);
         try {
             Thread.sleep(1000);
