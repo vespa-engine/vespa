@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 namespace mbus {
 

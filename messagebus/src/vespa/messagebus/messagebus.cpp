@@ -97,7 +97,7 @@ MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
     MessageBusParams params;
     while (!protocols.empty()) {
         IProtocol::SP protocol = protocols.extract();
-        if (protocol.get() != NULL) {
+        if (protocol.get() != nullptr) {
             params.addProtocol(protocol);
         }
     }
@@ -155,7 +155,7 @@ MessageBus::setup(const MessageBusParams &params)
 
     // Start messenger.
     IRetryPolicy::SP retryPolicy = params.getRetryPolicy();
-    if (retryPolicy.get() != NULL) {
+    if (retryPolicy.get() != nullptr) {
         _resender.reset(new Resender(retryPolicy));
 
         Messenger::ITask::UP task(new ResenderTask(*_resender));
@@ -271,7 +271,7 @@ MessageBus::sync()
 void
 MessageBus::handleMessage(Message::UP msg)
 {
-    if (_resender.get() != NULL && msg->hasBucketSequence()) {
+    if (_resender.get() != nullptr && msg->hasBucketSequence()) {
         deliverError(std::move(msg), ErrorCode::SEQUENCE_ERROR,
                      "Bucket sequences not supported when resender is enabled.");
         return;
@@ -359,7 +359,7 @@ MessageBus::handleDiscard(Context ctx)
 void
 MessageBus::deliverMessage(Message::UP msg, const string &session)
 {
-    IMessageHandler *msgHandler = NULL;
+    IMessageHandler *msgHandler = nullptr;
     {
         LockGuard guard(_lock);
         std::map<string, IMessageHandler*>::iterator it = _sessions.find(session);
@@ -367,7 +367,7 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
             msgHandler = it->second;
         }
     }
-    if (msgHandler == NULL) {
+    if (msgHandler == nullptr) {
         deliverError(std::move(msg), ErrorCode::UNKNOWN_SESSION,
                      make_string("Session '%s' does not exist.", session.c_str()));
     } else if (!checkPending(*msg)) {

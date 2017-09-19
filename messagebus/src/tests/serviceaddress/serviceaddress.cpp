@@ -3,20 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
-#include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/sourcesession.h>
-#include <vespa/messagebus/intermediatesession.h>
-#include <vespa/messagebus/destinationsession.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/error.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/network/rpcservice.h>
-#include <vespa/messagebus/sourcesessionparams.h>
 
 using namespace mbus;
 

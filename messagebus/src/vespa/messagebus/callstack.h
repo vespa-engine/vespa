@@ -72,7 +72,7 @@ public:
      * @param ctx            The context to store.
      * @param discardHandler The handler for discarded messages.
      **/
-    void push(IReplyHandler &replyHandler, Context ctx, IDiscardHandler *discardHandler = NULL) {
+    void push(IReplyHandler &replyHandler, Context ctx, IDiscardHandler *discardHandler = nullptr) {
         _stack.emplace_back(&replyHandler, discardHandler, ctx);
     }
 

@@ -6,7 +6,7 @@
 namespace mbus {
 
 SourceSessionParams::SourceSessionParams() :
-    _replyHandler(NULL),
+    _replyHandler(nullptr),
     _throttlePolicy(new DynamicThrottlePolicy()),
     _timeout(180.0)
 { }
@@ -40,7 +40,7 @@ SourceSessionParams::setTimeout(double timeout)
 bool
 SourceSessionParams::hasReplyHandler() const
 {
-    return _replyHandler != NULL;
+    return _replyHandler != nullptr;
 }
 
 IReplyHandler &

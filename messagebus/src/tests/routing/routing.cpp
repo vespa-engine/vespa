@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routing/errordirective.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/routing/routingcontext.h>
