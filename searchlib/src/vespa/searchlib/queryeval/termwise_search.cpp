@@ -11,27 +11,17 @@ template <bool IS_STRICT>
 struct TermwiseSearch : public SearchIterator {
 
     SearchIterator::UP search;
-    BitVector::UP      result;
-    uint32_t           my_beginid;
-    uint32_t           my_first_hit;
-
-    bool same_range(uint32_t beginid, uint32_t endid) const {
-        return ((beginid == my_beginid) && endid == getEndId());
-    }
+    BitVector::UP  result;
 
     TermwiseSearch(SearchIterator::UP search_in)
-        : search(std::move(search_in)), result(), my_beginid(0), my_first_hit(0) {}
+        : search(std::move(search_in)), result() {}
 
     Trinary is_strict() const override { return IS_STRICT ? Trinary::True : Trinary::False; }
     void initRange(uint32_t beginid, uint32_t endid) override {
-        if (!same_range(beginid, endid)) {
-            my_beginid = beginid;
-            SearchIterator::initRange(beginid, endid);
-            search->initRange(beginid, endid);
-            my_first_hit = std::max(getDocId(), search->getDocId());
-            result = search->get_hits(beginid);
-        }
-        setDocId(my_first_hit);
+        SearchIterator::initRange(beginid, endid);
+        search->initRange(beginid, endid);
+        setDocId(std::max(getDocId(), search->getDocId()));
+        result = search->get_hits(beginid);
     }
     void doSeek(uint32_t docid) override {
         if (__builtin_expect(isAtEnd(docid), false)) {

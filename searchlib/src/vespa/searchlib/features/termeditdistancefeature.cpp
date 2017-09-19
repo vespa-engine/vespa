@@ -156,7 +156,7 @@ TermEditDistanceExecutor::execute(uint32_t docId)
 }
 
 void
-TermEditDistanceExecutor::handle_bind_match_data(const fef::MatchData &md)
+TermEditDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
 {
     _md = &md;
 }

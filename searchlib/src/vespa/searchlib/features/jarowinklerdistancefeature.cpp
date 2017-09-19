@@ -59,7 +59,7 @@ JaroWinklerDistanceExecutor::execute(uint32_t docId)
 }
 
 void
-JaroWinklerDistanceExecutor::handle_bind_match_data(const fef::MatchData &md)
+JaroWinklerDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
 {
     _md = &md;
 }

@@ -106,15 +106,11 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
                            const std::vector<uint32_t> &docs, bool summaryFeatures)
 {
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
-    if (summaryFeatures) {
-        matchTools->setup_summary();
-    } else {
-        matchTools->setup_dump();
-    }
-    RankProgram &rankProgram = matchTools->rank_program();
+    RankProgram::UP rankProgram = summaryFeatures ? matchTools->summary_program() :
+            matchTools->dump_program();
 
     std::vector<vespalib::string> featureNames;
-    FeatureResolver resolver(rankProgram.get_seeds());
+    FeatureResolver resolver(rankProgram->get_seeds());
     featureNames.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
@@ -125,12 +121,12 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     }
     FeatureSet &fs = *retval.get();
 
-    SearchIterator &search = matchTools->search();
-    search.initRange(docs.front(), docs.back()+1);
+    SearchIterator::UP search = matchTools->createSearch(rankProgram->match_data());
+    search->initRange(docs.front(), docs.back()+1);
     for (uint32_t i = 0; i < docs.size(); ++i) {
-        if (search.seek(docs[i])) {
-            uint32_t docId = search.getDocId();
-            search.unpack(docId);
+        if (search->seek(docs[i])) {
+            uint32_t docId = search->getDocId();
+            search->unpack(docId);
             search::feature_t * f = fs.getFeaturesByIndex(
                     fs.addDocId(docId));
             for (uint32_t j = 0; j < featureNames.size(); ++j) {

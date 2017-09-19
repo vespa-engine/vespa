@@ -18,7 +18,7 @@ private:
     uint32_t  _fieldHandle;
     const fef::MatchData *_md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
@@ -35,7 +35,7 @@ private:
     uint32_t  _fieldHandle;
     const fef::MatchData *_md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandle);

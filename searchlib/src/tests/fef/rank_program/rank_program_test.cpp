@@ -6,7 +6,6 @@
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/indexproperties.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/plugin/sum.h>
@@ -70,11 +69,10 @@ struct Fixture {
     IndexEnvironment indexEnv;
     BlueprintResolver::SP resolver;
     Properties overrides;
-    MatchData::UP match_data;
     RankProgram program;
     size_t track_cnt;
     Fixture() : factory(), indexEnv(), resolver(new BlueprintResolver(factory, indexEnv)),
-                overrides(), match_data(), program(resolver), track_cnt(0)
+                overrides(), program(resolver), track_cnt(0)
     {
         factory.addPrototype(Blueprint::SP(new BoxingBlueprint()));
         factory.addPrototype(Blueprint::SP(new DocidBlueprint()));
@@ -109,8 +107,7 @@ struct Fixture {
         ASSERT_TRUE(resolver->compile());
         MatchDataLayout mdl;
         QueryEnvironment queryEnv(&indexEnv);
-        match_data = mdl.createMatchData();
-        program.setup(*match_data, queryEnv, overrides);
+        program.setup(mdl, queryEnv, overrides);
         return *this;
     }
     double get(uint32_t docid = default_docid) {

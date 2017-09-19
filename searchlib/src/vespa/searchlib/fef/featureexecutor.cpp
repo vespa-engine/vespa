@@ -28,7 +28,7 @@ FeatureExecutor::handle_bind_outputs(vespalib::ArrayRef<NumberOrObject>)
 }
 
 void
-FeatureExecutor::handle_bind_match_data(const MatchData &)
+FeatureExecutor::handle_bind_match_data(MatchData &)
 {
 }
 
@@ -47,7 +47,7 @@ FeatureExecutor::bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs)
 }
 
 void
-FeatureExecutor::bind_match_data(const MatchData &md)
+FeatureExecutor::bind_match_data(MatchData &md)
 {
     handle_bind_match_data(md);
 }

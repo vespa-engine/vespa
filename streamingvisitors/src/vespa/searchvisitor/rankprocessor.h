@@ -29,7 +29,6 @@ private:
 
     QueryEnvironment                     _queryEnv;
     search::fef::MatchDataLayout         _mdLayout;
-    search::fef::MatchData::UP           _match_data;
     search::fef::RankProgram::UP         _rankProgram;
     uint32_t                             _docId;
     double                               _score;
@@ -68,7 +67,7 @@ public:
     void runRankProgram(uint32_t docId);
     search::FeatureSet::SP calculateFeatureSet();
     void fillSearchResult(vdslib::SearchResult & searchResult);
-    const search::fef::MatchData &getMatchData() const { return *_match_data; }
+    const search::fef::MatchData &getMatchData() const { return _rankProgram->match_data(); }
     void setRankScore(double score) { _score = score; } 
     double getRankScore() const { return _score; }
     HitCollector & getHitCollector() { return *_hitCollector; }

@@ -23,7 +23,7 @@ ItemRawScoreExecutor::execute(uint32_t docId)
 }
 
 void
-ItemRawScoreExecutor::handle_bind_match_data(const MatchData &md)
+ItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }
@@ -42,7 +42,7 @@ SimpleItemRawScoreExecutor::execute(uint32_t docId)
 }
 
 void
-SimpleItemRawScoreExecutor::handle_bind_match_data(const MatchData &md)
+SimpleItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }

@@ -6,6 +6,7 @@
 #include "featureexecutor.h"
 #include "properties.h"
 #include "matchdata.h"
+#include "matchdatalayout.h"
 #include "feature_resolver.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
@@ -20,10 +21,11 @@ namespace fef {
  * values. In order to access (and thereby calculate) output features
  * you typically use the get_seeds function to resolve the predefined
  * set of output features. Each feature value will be wrapped in a
- * LazyValue object that can be realized for a specific docid. Note
- * that you need unpack any relevant posting information into the
- * MatchData object passed to the setup function before trying to
- * resolve lazy values.
+ * LazyValue object that can be realized for a specific docid. The
+ * rank program also owns the MatchData used to store unpacked
+ * term-field match information. Note that you need unpack any
+ * relevant posting information into the MatchData object before
+ * trying to resolve lazy values.
  **/
 class RankProgram
 {
@@ -35,6 +37,7 @@ private:
     using ValueSet = std::set<const NumberOrObject *>;
 
     BlueprintResolver::SP            _resolver;
+    MatchData::UP                    _match_data;
     vespalib::Stash                  _hot_stash;
     vespalib::Stash                  _cold_stash;
     std::vector<FeatureExecutor *>   _executors;
@@ -44,7 +47,7 @@ private:
     bool check_const(const NumberOrObject *value) const { return (_is_const.count(value) == 1); }
     bool check_const(FeatureExecutor *executor, const std::vector<BlueprintResolver::FeatureRef> &inputs) const;
     void run_const(FeatureExecutor *executor);
-    void unbox(BlueprintResolver::FeatureRef seed, const MatchData &md);
+    void unbox(BlueprintResolver::FeatureRef seed);
     FeatureResolver resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const;
 
 public:
@@ -63,11 +66,19 @@ public:
     /**
      * Set up this rank program by creating the needed feature
      * executors and wiring them together. This function will also
-     * pre-calculate all constant features.
+     * create the MatchData to be used for iterator unpacking as well
+     * as pre-calculating all constant features.
      **/
-    void setup(const MatchData &md,
+    void setup(const MatchDataLayout &mdl,
                const IQueryEnvironment &queryEnv,
                const Properties &featureOverrides = Properties());
+
+    /**
+     * Expose the MatchData used when creating search iterators as it
+     * is where all iterators should unpack their match information.
+     **/
+    MatchData &match_data() { return *_match_data; }
+    const MatchData &match_data() const { return *_match_data; }
 
     /**
      * Obtain the names and storage locations of all seed features for

@@ -116,7 +116,6 @@ private:
     MatchDataLayout                        &_layout;
     const Properties                       &_overrides;
     BlueprintResolver::SP                   _resolver;
-    MatchData::UP                           _match_data;
     RankProgram::UP                         _rankProgram;
     bool                                    _doneSetup;
 

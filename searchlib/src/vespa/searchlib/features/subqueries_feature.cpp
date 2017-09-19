@@ -37,7 +37,7 @@ void SubqueriesExecutor::execute(uint32_t docId) {
 }
 
 void
-SubqueriesExecutor::handle_bind_match_data(const fef::MatchData &md)
+SubqueriesExecutor::handle_bind_match_data(fef::MatchData &md)
 {
     _md = &md;
 }

@@ -86,7 +86,7 @@ FieldMatchExecutor::execute(uint32_t docId)
 }
 
 void
-FieldMatchExecutor::handle_bind_match_data(const fef::MatchData &md)
+FieldMatchExecutor::handle_bind_match_data(fef::MatchData &md)
 {
     _splitter.bind_match_data(md);
 }

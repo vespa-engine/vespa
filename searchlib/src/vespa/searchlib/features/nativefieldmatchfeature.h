@@ -73,7 +73,7 @@ private:
         return table->get(index);
     }
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     NativeFieldMatchExecutor(const fef::IQueryEnvironment & env,

@@ -7,7 +7,6 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/plugin/unbox.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/verify_feature.h>
 #include <vespa/eval/eval/value_type.h>
@@ -88,11 +87,10 @@ struct Fixture {
             return vespalib::eval::error_value;        
         }
         MatchDataLayout mdl;
-        MatchData::UP md = mdl.createMatchData();
         QueryEnvironment queryEnv(&indexEnv);
         Properties overrides;
         RankProgram program(resolver);
-        program.setup(*md, queryEnv, overrides);        
+        program.setup(mdl, queryEnv, overrides);        
         auto result = program.get_seeds();
         EXPECT_EQUAL(1u, result.num_features());
         EXPECT_TRUE(!result.is_object(0)); // verifies auto-unboxing

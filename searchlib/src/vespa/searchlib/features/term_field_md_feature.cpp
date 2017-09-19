@@ -65,7 +65,7 @@ TermFieldMdExecutor::execute(uint32_t docId)
 }
 
 void
-TermFieldMdExecutor::handle_bind_match_data(const MatchData &md)
+TermFieldMdExecutor::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }

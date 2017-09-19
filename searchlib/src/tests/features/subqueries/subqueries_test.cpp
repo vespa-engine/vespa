@@ -43,24 +43,22 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     QueryEnvironment         queryEnv;
     RankSetup                rankSetup;
-    MatchDataLayout          mdl;
-    MatchData::UP            match_data;
     RankProgram::UP          rankProgram;
+    MatchDataLayout          mdl;
     std::vector<TermFieldHandle> fooHandles;
     std::vector<TermFieldHandle> barHandles;
     RankFixture(size_t fooCnt, size_t barCnt,
                 std::string featureName = "subqueries(foo)")
         : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
-          mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
+          rankProgram(), mdl(), fooHandles(), barHandles()
     {
         fooHandles = addFields(fooCnt, indexEnv.getFieldByName("foo")->id());
         barHandles = addFields(barCnt, indexEnv.getFieldByName("bar")->id());
         rankSetup.setFirstPhaseRank(featureName);
         rankSetup.setIgnoreDefaultRankFeatures(true);
         ASSERT_TRUE(rankSetup.compile());
-        match_data = mdl.createMatchData();
         rankProgram = rankSetup.create_first_phase_program();
-        rankProgram->setup(*match_data, queryEnv);
+        rankProgram->setup(mdl, queryEnv);
     }
     std::vector<TermFieldHandle> addFields(size_t count, uint32_t fieldId) {
         std::vector<TermFieldHandle> handles;
@@ -77,7 +75,7 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     }
     void setSubqueries(TermFieldHandle handle, uint32_t docId,
                        uint64_t subqueries) {
-        match_data->resolveTermField(handle)->setSubqueries(docId, subqueries);
+        rankProgram->match_data().resolveTermField(handle)->setSubqueries(docId, subqueries);
     }
     void setFooSubqueries(uint32_t i, uint32_t docId, uint64_t subqueries) {
         ASSERT_LESS(i, fooHandles.size());

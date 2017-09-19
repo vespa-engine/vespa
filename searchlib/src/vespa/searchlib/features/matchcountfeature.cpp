@@ -36,7 +36,7 @@ MatchCountExecutor::execute(uint32_t docId)
 }
 
 void
-MatchCountExecutor::handle_bind_match_data(const MatchData &md)
+MatchCountExecutor::handle_bind_match_data(MatchData &md)
 {
     _md = &md;
 }

@@ -258,13 +258,6 @@ public:
     }
 
     /**
-     * Tag that this instance is used for ranking.
-     */
-    void tagAsNeeded() {
-        _fieldId = _fieldId & ~0x2000;
-    }
-
-    /**
      * Special docId value indicating that no data has been saved yet.
      * This should match (or be above) endId() in search::queryeval::SearchIterator.
      *

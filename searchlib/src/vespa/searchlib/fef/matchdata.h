@@ -58,15 +58,6 @@ public:
      **/
     explicit MatchData(const Params &cparams);
 
-    /**
-     * Reset this match data in such a way that it can be re-used with
-     * either the same search iterator tree or with a new search
-     * iterator tree where the only difference in interaction with the
-     * match data is which terms are unpacked. Note that this will
-     * reset some properties, but not all. Use with caution.
-     **/
-    void soft_reset();
-
     MatchData(const MatchData &rhs) = delete;
     MatchData & operator=(const MatchData &rhs) = delete;
 
