@@ -89,7 +89,7 @@ OOSManager::isOOS(const string &service)
         return false;
     }
     vespalib::LockGuard guard(_lock);
-    if (_oosSet.get() == nullptr) {
+    if (_oosSet.get() == NULL) {
         return false;
     }
     if (_oosSet->find(service) == _oosSet->end()) {

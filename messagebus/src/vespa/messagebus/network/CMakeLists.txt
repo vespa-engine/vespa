@@ -6,9 +6,7 @@ vespa_add_library(messagebus_network OBJECT
     oosmanager.cpp
     rpcnetwork.cpp
     rpcnetworkparams.cpp
-    rpcsend.cpp
     rpcsendv1.cpp
-    rpcsendv2.cpp
     rpcservice.cpp
     rpcserviceaddress.cpp
     rpcservicepool.cpp

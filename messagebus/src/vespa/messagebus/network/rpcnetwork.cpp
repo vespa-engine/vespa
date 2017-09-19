@@ -1,11 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "inetworkowner.h"
 #include "rpcnetwork.h"
-#include "rpcservicepool.h"
-#include "oosmanager.h"
-#include "rpcsendv1.h"
-#include "rpcsendv2.h"
-#include "rpctargetpool.h"
-#include "rpcnetworkparams.h"
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
 #include <vespa/messagebus/tracelevel.h>
@@ -16,8 +11,6 @@
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/scheduler.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fnet/frt/supervisor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcnetwork");
@@ -59,15 +52,17 @@ public:
 namespace mbus {
 
 RPCNetwork::SendContext::SendContext(RPCNetwork &net, const Message &msg,
-                                     const std::vector<RoutingNode*> &recipients)
-    : _net(net),
-      _msg(msg),
-      _traceLevel(msg.getTrace().getLevel()),
-      _recipients(recipients),
-      _hasError(false),
-      _pending(_recipients.size()),
-      _version(_net.getVersion())
-{ }
+                                     const std::vector<RoutingNode*> &recipients) :
+    _net(net),
+    _msg(msg),
+    _traceLevel(msg.getTrace().getLevel()),
+    _recipients(recipients),
+    _hasError(false),
+    _pending(_recipients.size()),
+    _version(_net.getVersion())
+{
+    // empty
+}
 
 void
 RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
@@ -75,7 +70,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     bool shouldSend = false;
     {
         vespalib::LockGuard guard(_lock);
-        if (version == nullptr) {
+        if (version == NULL) {
             _hasError = true;
         } else if (*version < _version) {
             _version = *version;
@@ -90,9 +85,11 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     }
 }
 
-RPCNetwork::TargetPoolTask::TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool)
-    : FNET_Task(&scheduler),
-      _pool(pool)
+RPCNetwork::TargetPoolTask::TargetPoolTask(
+        FNET_Scheduler &scheduler,
+        RPCTargetPool &pool) :
+    FNET_Task(&scheduler),
+    _pool(pool)
 {
     ScheduleNow();
 }
@@ -107,26 +104,24 @@ RPCNetwork::TargetPoolTask::PerformTask()
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(0),
     _ident(params.getIdentity()),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
-    _transport(std::make_unique<FNET_Transport>()),
-    _orb(std::make_unique<FRT_Supervisor>(_transport.get(), nullptr)),
-    _scheduler(*_transport->GetScheduler()),
-    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
-    _targetPoolTask(_scheduler, *_targetPool),
-    _servicePool(std::make_unique<RPCServicePool>(*this, 4096)),
-    _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
-    _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
-    _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
-    _oosManager(std::make_unique<OOSManager>(*_orb, *_mirror, params.getOOSServerPattern())),
+    _threadPool(128000, 0),
+    _transport(),
+    _orb(&_transport, NULL),
+    _scheduler(*_transport.GetScheduler()),
+    _targetPool(params.getConnectionExpireSecs()),
+    _targetPoolTask(_scheduler, _targetPool),
+    _servicePool(*this, 4096),
+    _slobrokCfgFactory(params.getSlobrokConfig()),
+    _mirror(std::make_unique<slobrok::api::MirrorAPI>(_orb, _slobrokCfgFactory)),
+    _regAPI(std::make_unique<slobrok::api::RegisterAPI>(_orb, _slobrokCfgFactory)),
+    _oosManager(_orb, *_mirror, params.getOOSServerPattern()),
     _requestedPort(params.getListenPort()),
-    _sendV1(std::make_unique<RPCSendV1>()),
-    _sendV2(std::make_unique<RPCSendV2>()),
-    _sendAdapters(),
-    _compressionConfig(params.getCompressionConfig())
+    _sendV1(),
+    _sendAdapters()
 {
-    _transport->SetDirectWrite(false);
-    _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
-    _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
+    _transport.SetDirectWrite(false);
+    _transport.SetMaxInputBufferSize(params.getMaxInputBufferSize());
+    _transport.SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
 }
 
 RPCNetwork::~RPCNetwork()
@@ -137,33 +132,33 @@ RPCNetwork::~RPCNetwork()
 FRT_RPCRequest *
 RPCNetwork::allocRequest()
 {
-    return _orb->AllocRPCRequest();
+    return _orb.AllocRPCRequest();
 }
 
 RPCTarget::SP
 RPCNetwork::getTarget(const RPCServiceAddress &address)
 {
-    return _targetPool->getTarget(*_orb, address);
+    return _targetPool.getTarget(_orb, address);
 }
 
 void
-RPCNetwork::replyError(const SendContext &ctx, uint32_t errCode, const string &errMsg)
+RPCNetwork::replyError(const SendContext &ctx, uint32_t errCode,
+                       const string &errMsg)
 {
-    for (RoutingNode * rnode : ctx._recipients) {
+    for (std::vector<RoutingNode*>::const_iterator it = ctx._recipients.begin();
+         it != ctx._recipients.end(); ++it)
+    {
         Reply::UP reply(new EmptyReply());
         reply->setTrace(Trace(ctx._traceLevel));
         reply->addError(Error(errCode, errMsg));
-        _owner->deliverReply(std::move(reply), *rnode);
+        _owner->deliverReply(std::move(reply), **it);
     }
 }
-
-int RPCNetwork::getPort() const { return _orb->GetListenPort(); }
-
 
 void
 RPCNetwork::flushTargetPool()
 {
-    _targetPool->flushTargets(true);
+    _targetPool.flushTargets(true);
 }
 
 const vespalib::Version &
@@ -178,13 +173,13 @@ RPCNetwork::attach(INetworkOwner &owner)
     LOG_ASSERT(_owner == 0);
     _owner = &owner;
 
-    _sendV1->attach(*this);
-    _sendV2->attach(*this);
-    _sendAdapters[vespalib::Version(5)] = _sendV1.get();
-    _sendAdapters[vespalib::Version(6, 142)] = _sendV2.get();
+    _sendV1.attach(*this);
+    _sendAdapters.insert(SendAdapterMap::value_type(vespalib::VersionSpecification(5), &_sendV1));
+    _sendAdapters.insert(SendAdapterMap::value_type(vespalib::VersionSpecification(6), &_sendV1));
 
-    FRT_ReflectionBuilder builder(_orb.get());
-    builder.DefineMethod("mbus.getVersion", "", "s", true, FRT_METHOD(RPCNetwork::invoke), this);
+    FRT_ReflectionBuilder builder(&_orb);
+    builder.DefineMethod("mbus.getVersion", "", "s", true,
+                         FRT_METHOD(RPCNetwork::invoke), this);
     builder.MethodDesc("Retrieves the message bus version.");
     builder.ReturnDesc("version", "The message bus version.");
 }
@@ -198,23 +193,29 @@ RPCNetwork::invoke(FRT_RPCRequest *req)
 const string
 RPCNetwork::getConnectionSpec() const
 {
-    return make_string("tcp/%s:%d", _ident.getHostname().c_str(), _orb->GetListenPort());
+    return make_string("tcp/%s:%d", _ident.getHostname().c_str(), _orb.GetListenPort());
 }
 
 RPCSendAdapter *
 RPCNetwork::getSendAdapter(const vespalib::Version &version)
 {
-    auto lower = _sendAdapters.lower_bound(version);
-    return (lower != _sendAdapters.end()) ? lower->second : nullptr;
+    for (SendAdapterMap::iterator it = _sendAdapters.begin();
+         it != _sendAdapters.end(); ++it)
+    {
+        if (it->first.matches(version)) {
+            return it->second;
+        }
+    }
+    return NULL;
 }
 
 bool
 RPCNetwork::start()
 {
-    if (!_orb->Listen(_requestedPort)) {
+    if (!_orb.Listen(_requestedPort)) {
         return false;
     }
-    if (!_transport->Start(_threadPool.get())) {
+    if (!_transport.Start(&_threadPool)) {
         return false;
     }
     return true;
@@ -226,13 +227,13 @@ bool
 RPCNetwork::waitUntilReady(double seconds) const
 {
     slobrok::api::SlobrokList brokerList;
-    slobrok::Configurator::UP configurator = _slobrokCfgFactory->create(brokerList);
+    slobrok::Configurator::UP configurator = _slobrokCfgFactory.create(brokerList);
     bool hasConfig = false;
     for (uint32_t i = 0; i < seconds * 100; ++i) {
         if (configurator->poll()) {
             hasConfig = true;
         }
-        if (_mirror->ready() && _oosManager->isReady()) {
+        if (_mirror->ready() && _oosManager.isReady()) {
             return true;
         }
         FastOS_Thread::Sleep(10);
@@ -243,7 +244,7 @@ RPCNetwork::waitUntilReady(double seconds) const
         std::string brokers = brokerList.logString();
         LOG(error, "mirror (of %s) failed to become ready in %d seconds",
             brokers.c_str(), (int)seconds);
-    } else if (! _oosManager->isReady()) {
+    } else if (! _oosManager.isReady()) {
         LOG(error, "OOS manager failed to become ready in %d seconds", (int)seconds);
     }
     return false;
@@ -292,23 +293,24 @@ RPCNetwork::allocServiceAddress(RoutingNode &recipient)
 Error
 RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceName)
 {
-    if (_oosManager->isOOS(serviceName)) {
+    if (_oosManager.isOOS(serviceName)) {
         return Error(ErrorCode::SERVICE_OOS,
                      make_string("The service '%s' has been marked as out of service.",
                                            serviceName.c_str()));
     }
-    RPCServiceAddress::UP ret = _servicePool->resolve(serviceName);
-    if (ret.get() == nullptr) {
+    RPCServiceAddress::UP ret = _servicePool.resolve(serviceName);
+    if (ret.get() == NULL) {
         return Error(ErrorCode::NO_ADDRESS_FOR_SERVICE,
                      make_string("The address of service '%s' could not be resolved. It is not currently "
-                                 "registered with the Vespa name server. "
-                                 "The service must be having problems, or the routing configuration is wrong.",
-                                 serviceName.c_str()));
+                                           "registered with the Vespa name server. "
+                                           "The service must be having problems, or the routing configuration is wrong.",
+                                           serviceName.c_str()));
     }
-    RPCTarget::SP target = _targetPool->getTarget(*_orb, *ret);
-    if (target.get() == nullptr) {
+    RPCTarget::SP target = _targetPool.getTarget(_orb, *ret);
+    if (target.get() == NULL) {
         return Error(ErrorCode::CONNECTION_ERROR,
-                     make_string("Failed to connect to service '%s'.", serviceName.c_str()));
+                     make_string("Failed to connect to service '%s'.",
+                                           serviceName.c_str()));
     }
     ret->setTarget(target); // free by freeServiceAddress()
     recipient.setServiceAddress(IServiceAddress::UP(ret.release()));
@@ -328,7 +330,7 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
     double timeout = ctx._msg.getTimeRemainingNow() / 1000.0;
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
         RoutingNode *&recipient = ctx._recipients[i];
-        LOG_ASSERT(recipient != nullptr);
+        LOG_ASSERT(recipient != NULL);
 
         RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient->getServiceAddress());
         LOG_ASSERT(address.hasTarget());
@@ -341,12 +343,13 @@ void
 RPCNetwork::send(RPCNetwork::SendContext &ctx)
 {
     if (ctx._hasError) {
-        replyError(ctx, ErrorCode::HANDSHAKE_FAILED, "An error occured while resolving version.");
+        replyError(ctx, ErrorCode::HANDSHAKE_FAILED,
+                   "An error occured while resolving version.");
     } else {
         uint64_t timeRemaining = ctx._msg.getTimeRemainingNow();
         Blob payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);
         RPCSendAdapter *adapter = getSendAdapter(ctx._version);
-        if (adapter == nullptr) {
+        if (adapter == NULL) {
             replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
                        make_string("Can not send to version '%s' recipient.", ctx._version.toString().c_str()));
         } else if (timeRemaining == 0) {
@@ -375,8 +378,8 @@ RPCNetwork::sync()
 void
 RPCNetwork::shutdown()
 {
-    _transport->ShutDown(false);
-    _threadPool->Close();
+    _transport.ShutDown(false);
+    _threadPool.Close();
 }
 
 void

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vector>
 #include "hop.h"
 
 namespace mbus {
@@ -32,7 +33,7 @@ public:
      * @param route The string to parse.
      * @return A route that corresponds to the string.
      */
-    static Route parse(vespalib::stringref route);
+    static Route parse(const string &route);
 
     /**
      * Create a Route that contains no hops
