@@ -6,6 +6,11 @@ cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 project(vespa CXX C)
 
+# allows import of project in CLion on OSX
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+endif()
+
 # TODO: Move this to where it's actually needed
 find_package(JNI REQUIRED)
 
