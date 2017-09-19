@@ -32,7 +32,7 @@ public:
     }
 
     ~MessageTask() {
-        if (_msg.get() != NULL) {
+        if (_msg.get() != nullptr) {
             _msg->discard();
         }
     }
@@ -42,7 +42,7 @@ public:
     }
 
     uint8_t priority() const override {
-        if (_msg.get() != NULL) {
+        if (_msg.get() != nullptr) {
             return _msg->priority();
         }
 
@@ -64,7 +64,7 @@ public:
     }
 
     ~ReplyTask() {
-        if (_reply.get() != NULL) {
+        if (_reply.get() != nullptr) {
             _reply->discard();
         }
     }
@@ -74,7 +74,7 @@ public:
     }
 
     uint8_t priority() const override {
-        if (_reply.get() != NULL) {
+        if (_reply.get() != nullptr) {
             return _reply->priority();
         }
 
@@ -205,7 +205,7 @@ Messenger::Run(FastOS_ThreadInterface *thread, void *arg)
                 _queue.pop();
             }
         }
-        if (task.get() != NULL) {
+        if (task.get() != nullptr) {
             try {
                 task->run();
             } catch (const std::exception &e) {

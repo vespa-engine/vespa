@@ -26,13 +26,13 @@ public:
         _payload(Alloc::alloc(s)),
         _sz(s)
     { }
-    Blob(Blob && rhs) :
+    Blob(Blob && rhs) noexcept :
         _payload(std::move(rhs._payload)),
         _sz(rhs._sz)
     {
         rhs._sz = 0;
     }
-    Blob & operator = (Blob && rhs) {
+    Blob & operator = (Blob && rhs) noexcept {
         swap(rhs);
         return *this;
     }
@@ -65,4 +65,3 @@ private:
 };
 
 } // namespace mbus
-

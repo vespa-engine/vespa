@@ -404,6 +404,11 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
             params.setListenPort(config->mbusport);
         }
 
+        using CompressionConfig = vespalib::compression::CompressionConfig;
+        CompressionConfig::Type compressionType = CompressionConfig::toType(
+                CommunicationManagerConfig::Mbus::Compress::getTypeName(config->mbus.compress.type).c_str());
+        params.setCompressionConfig(CompressionConfig(compressionType, config->mbus.compress.level,
+                                                      90, config->mbus.compress.limit));
         // Configure messagebus here as we for legacy reasons have
         // config here.
         _mbus = std::make_unique<mbus::RPCMessageBus>(

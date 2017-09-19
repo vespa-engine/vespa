@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/sourcesessionparams.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/fastos/app.h>
 
