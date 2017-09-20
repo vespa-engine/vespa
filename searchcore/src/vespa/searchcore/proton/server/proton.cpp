@@ -239,7 +239,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setFS4Compression(protonConfig);
     vespalib::string vespaHomeDir = vespa::Defaults::vespaHome();
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>
-                           (vespaHomeDir,
+                           (protonConfig.basedir, vespaHomeDir,
                             diskMemUsageSamplerConfig(protonConfig, _hwInfo));
 
     _metricsEngine.reset(new MetricsEngine());
