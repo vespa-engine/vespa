@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -13,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.time.Clock;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author dybis
  */
-public class ComponentsProviderWithMocks implements ComponentsProvider {
+public class NodeAdminProviderWithMocks implements Provider<NodeAdminStateUpdater> {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(5);
 
@@ -46,12 +46,17 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock,
             orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com", Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL);
 
-    public ComponentsProviderWithMocks() {
+    public NodeAdminProviderWithMocks() {
         nodeAdminStateUpdater.start();
     }
 
     @Override
-    public NodeAdminStateUpdater getNodeAdminStateUpdater() {
+    public NodeAdminStateUpdater get() {
         return nodeAdminStateUpdater;
+    }
+
+    @Override
+    public void deconstruct() {
+        nodeAdminStateUpdater.stop();
     }
 }
