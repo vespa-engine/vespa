@@ -1,16 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author Markus Bjartveit Krüger
-* @date            Creation date: 2001-11-21
-*
-* HTTP chunked output stream.
-*
-* Copyright (c)  : 2001 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * HTTP chunked output stream.
+ *
+ * Author: Markus Bjartveit Krüger
+ */
 
 #include "httpchunkedoutputstream.h"
 #include <cassert>

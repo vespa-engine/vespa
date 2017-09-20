@@ -1,17 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @author Tor Egge
- * @author Vidar Larsen
- *
+/*
  * Extract case information from Unicode property files.
- * This program read the UnicodeData-4.0.0.txt file and generates
+ * This program reads the UnicodeData-4.0.0.txt file and generates
  * the unicodeutil-lowercase.cpp file that gives a mapping from
  * unicode characters to their lowercase equivalents.
  *
- * Copyright (C) 2000 - 2003 Fast Search & Transfer ASA
- * Copyright (C) 2003 Overture Services Norway AS
- *
- *                ALL RIGHTS RESERVED
+ * Author: Tor Egge
+ * Author: Vidar Larsen
  */
 
 #include <vespa/fastlib/io/bufferedfile.h>

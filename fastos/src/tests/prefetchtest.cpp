@@ -1,16 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-//************************************************************************
-/**
+/*
  * FastOS_Prefetch test program.
  *
- * @author  Olaf Birkeland
- * @version $Id$
+ * Author: Olaf Birkeland
  */
- /*
- * Creation date    : 2000-12-11
- * Copyright (c)    : 1997-2001 Fast Search & Transfer ASA
- *                    ALL RIGHTS RESERVED
- *************************************************************************/
 
 #include "tests.h"
 #include <vespa/fastos/time.h>
