@@ -51,9 +51,10 @@ public class NodeAdminStateUpdater {
     private Thread loopThread;
 
     private final NodeRepository nodeRepository;
+    private final Orchestrator orchestrator;
+    private final StorageMaintainer storageMaintainer;
     private final NodeAdmin nodeAdmin;
     private final Clock clock;
-    private final Orchestrator orchestrator;
     private final String dockerHostHostName;
     private final Duration nodeAdminConvergeStateInterval;
 
@@ -70,14 +71,12 @@ public class NodeAdminStateUpdater {
         log.log(LogLevel.INFO, objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
+        this.storageMaintainer = storageMaintainer;
         this.nodeAdmin = nodeAdmin;
         this.dockerHostHostName = dockerHostHostName;
         this.clock = clock;
         this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
         this.lastTick = clock.instant();
-
-        specVerifierScheduler.scheduleWithFixedDelay(() ->
-                updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
     }
 
     private String objectToString() {
@@ -272,6 +271,9 @@ public class NodeAdminStateUpdater {
         });
         loopThread.setName("tick-NodeAdminStateUpdater");
         loopThread.start();
+
+        specVerifierScheduler.scheduleWithFixedDelay(() ->
+                updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
     }
 
     public void stop() {
@@ -279,14 +281,14 @@ public class NodeAdminStateUpdater {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
-        log.log(LogLevel.INFO, objectToString() + ": Deconstruct called");
+        log.log(LogLevel.INFO, objectToString() + ": Stop called");
 
         // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
 
         do {
             try {
-                loopThread.join(0);
+                loopThread.join();
                 specVerifierScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException e1) {
                 log.info("Interrupted while waiting for NodeAdminStateUpdater thread and specVerfierScheduler to shutdown");
@@ -295,6 +297,6 @@ public class NodeAdminStateUpdater {
 
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
-        log.log(LogLevel.INFO, objectToString() + ": Deconstruct complete");
+        log.log(LogLevel.INFO, objectToString() + ": Stop complete");
     }
 }
