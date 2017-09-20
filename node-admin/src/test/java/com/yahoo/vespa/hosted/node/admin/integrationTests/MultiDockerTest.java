@@ -82,7 +82,7 @@ public class MultiDockerTest {
         tester.addContainerNodeSpec(containerNodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
-        while (tester.getNodeAdmin().getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {
+        while (tester.nodeAdmin.getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {
             Thread.sleep(10);
         }
 

@@ -32,7 +32,7 @@ public class RebootTest {
             dockerTester.addContainerNodeSpec(createContainerNodeSpec());
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
-            while (dockerTester.getNodeAdmin().getListOfHosts().size() == 0) {
+            while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {
                 Thread.sleep(10);
             }
 
@@ -41,13 +41,13 @@ public class RebootTest {
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
                     "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
 
-            NodeAdminStateUpdater updater = dockerTester.getNodeAdminStateUpdater();
+            NodeAdminStateUpdater updater = dockerTester.nodeAdminStateUpdater;
             assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
                        is(Optional.of("Not all node agents are frozen.")));
 
             updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
 
-            NodeAdmin nodeAdmin = dockerTester.getNodeAdmin();
+            NodeAdmin nodeAdmin = dockerTester.nodeAdmin;
             // Wait for node admin to be frozen
             while ( ! nodeAdmin.isFrozen()) {
                 System.out.println("Node admin not frozen yet");

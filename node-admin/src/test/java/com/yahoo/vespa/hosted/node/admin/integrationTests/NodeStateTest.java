@@ -32,7 +32,7 @@ public class NodeStateTest {
         tester.addContainerNodeSpec(initialContainerNodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
-        while (tester.getNodeAdmin().getListOfHosts().size() == 0) {
+        while (tester.nodeAdmin.getListOfHosts().size() == 0) {
             Thread.sleep(10);
         }
 

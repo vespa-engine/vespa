@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -51,8 +50,10 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     // Converge towards desired node admin state every 30 seconds
     private static final int NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS = 30000;
 
-    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment) {
+    @Inject
+    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver) {
         String baseHostName = HostName.getLocalhost();
+        Environment environment = new Environment();
         Set<String> configServerHosts = environment.getConfigServerHosts();
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
@@ -65,30 +66,21 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
-        Optional<StorageMaintainer> storageMaintainer = environment.isRunningLocally() ?
-                Optional.empty() : Optional.of(new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock));
-        Optional<AclMaintainer> aclMaintainer = environment.isRunningLocally() ?
-                Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository, baseHostName));
+        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock);
+        AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, baseHostName);
 
         Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, environment, clock, aclMaintainer);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
-                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer, clock);
+                        storageMaintainer, aclMaintainer, environment, clock);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
+                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, clock);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, storageMaintainer, clock, orchestrator, baseHostName);
         nodeAdminStateUpdater.start(NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS);
 
         metricReceiverWrapper = metricReceiver;
 
-        if (! environment.isRunningLocally()) {
-            setCorePattern(docker);
-            initializeNodeAgentSecretAgent(docker);
-        }
-    }
-
-    @Inject
-    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver) {
-        this(docker, metricReceiver, new Environment());
+        setCorePattern(docker);
+        initializeNodeAgentSecretAgent(docker);
     }
 
     @Override

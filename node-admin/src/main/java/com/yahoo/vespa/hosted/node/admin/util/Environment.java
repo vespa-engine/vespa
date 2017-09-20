@@ -15,8 +15,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -35,7 +35,6 @@ public class Environment {
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
-    private static final String RUNNING_LOCALLY = "RUNNING_LOCALLY";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
     private final Set<String> configServerHosts;
@@ -46,7 +45,6 @@ public class Environment {
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final String feedEndpoint;
-    private final boolean isRunningLocally;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -60,8 +58,7 @@ public class Environment {
              new InetAddressResolver(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
-             getEnvironmentVariable(COREDUMP_FEED_ENDPOINT),
-             Optional.ofNullable(System.getenv(RUNNING_LOCALLY)).map(Boolean::valueOf).orElse(false));
+             getEnvironmentVariable(COREDUMP_FEED_ENDPOINT));
     }
 
     public Environment(Set<String> configServerHosts,
@@ -71,8 +68,7 @@ public class Environment {
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
                        List<String> logstashNodes,
-                       String feedEndpoint,
-                       boolean isRunningLocally) {
+                       String feedEndpoint) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
@@ -81,7 +77,6 @@ public class Environment {
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.feedEndpoint = feedEndpoint;
-        this.isRunningLocally = isRunningLocally;
     }
 
     public Set<String> getConfigServerHosts() { return configServerHosts; }
@@ -115,7 +110,7 @@ public class Environment {
         }
 
         final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
-        return hostNameStrings.stream().collect(Collectors.toSet());
+        return new HashSet<>(hostNameStrings);
     }
 
     private static List<String> getLogstashNodesFromEnvironment() {
@@ -136,10 +131,6 @@ public class Environment {
 
     public String getCoredumpFeedEndpoint() {
         return feedEndpoint;
-    }
-
-    public boolean isRunningLocally() {
-        return isRunningLocally;
     }
 
     /**
@@ -205,7 +196,6 @@ public class Environment {
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private String feedEndpoint;
-        private boolean isRunningLocally = false;
 
         public Builder configServerHosts(String... hosts) {
             configServerHosts = Arrays.stream(hosts).collect(Collectors.toSet());
@@ -247,14 +237,10 @@ public class Environment {
             return this;
         }
 
-        public Builder isRunningLocally(boolean isRunningLocally) {
-            this.isRunningLocally = isRunningLocally;
-            return this;
-        }
 
         public Environment build() {
             return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
-                                   pathResolver, logstashNodes, feedEndpoint, isRunningLocally);
+                                   pathResolver, logstashNodes, feedEndpoint);
         }
     }
 }

@@ -621,6 +621,6 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
         return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                Optional.of(storageMaintainer), environment, clock, Optional.of(aclMaintainer));
+                storageMaintainer, aclMaintainer, environment, clock);
     }
 }
