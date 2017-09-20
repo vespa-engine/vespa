@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 namespace proton {
 
 /*
@@ -11,30 +9,19 @@ namespace proton {
  */
 class HwInfo
 {
-    uint64_t _diskSizeBytes;
     bool _slowDisk;
-    uint64_t _memorySizeBytes;
-
 public:
     HwInfo()
-        : _diskSizeBytes(0),
-          _slowDisk(false),
-          _memorySizeBytes(0)
+        : _slowDisk(false)
     {
     }
 
-    HwInfo(uint64_t diskSizeBytes_in,
-           bool slowDisk_in,
-           uint64_t memorySizeBytes_in)
-        : _diskSizeBytes(diskSizeBytes_in),
-          _slowDisk(slowDisk_in),
-          _memorySizeBytes(memorySizeBytes_in)
+    HwInfo(bool slowDisk_in)
+        : _slowDisk(slowDisk_in)
     {
     }
 
-    uint64_t diskSizeBytes() const { return _diskSizeBytes; }
     bool slowDisk() const { return _slowDisk; }
-    uint64_t memorySizeBytes() const { return _memorySizeBytes; }
 };
 
 }
