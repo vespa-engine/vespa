@@ -1,15 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- *
- * @file url.h
- * @author Michael Susæg
- * @date Creation date:
- *
- * This file is the header file for the url class.
- *
- * Copyright (c)        : 1997-2000 Fast Search & Transfer ASA.
- *                        ALL RIGHTS RESERVED
- *
+/*
+ * Author: Michael Susæg
  */
 
 #pragma once

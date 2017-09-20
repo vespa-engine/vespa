@@ -1,15 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- *
- * @file url.cpp
- * @author Michael Susæg
- * @date Creation date: 1999-11-23
- *
  * This file contains different URL string functions
  *
- * Copyright (c)        : 1997-2000 Fast Search & Transfer ASA.
- *                        ALL RIGHTS RESERVED
- *
+ * Author: Michael Susæg
  */
 
 

@@ -1,13 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**************************************************************************
- * @author Bård Kvalheim
+ * Author: Bård Kvalheim
  *
  * The test class of the testsuite. Written by Chuck Allison.
  * http://www.cuj.com/archive/1809/feature.html
- *
- * @date Creation date: 2000-12-15
- * Copyright (c)    : 1997-2000 Fast Search & Transfer ASA
- *                    ALL RIGHTS RESERVED
  *
  * Apart for a trick the usage of the test class is very simple:
  *

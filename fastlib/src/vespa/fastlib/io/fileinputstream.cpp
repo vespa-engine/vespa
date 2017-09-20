@@ -1,16 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author Stein Hardy Danielsen
-* @date            Creation date: 2000-10-07
-*
-* FileInputStream class implementation
-*
-* Copyright (c)  : 1997-2000 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * Author: Stein Hardy Danielsen
+ */
 
 #include "fileinputstream.h"
 

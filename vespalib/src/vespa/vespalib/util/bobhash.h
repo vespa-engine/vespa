@@ -5,21 +5,14 @@
 
 namespace vespalib {
 
-/**
- * @class BobHash
+/*
+ * Hash function based on
+ * http://burtleburtle.net/bob/hash/index.html
+ * by Bob Jenkins, 1996. bob_jenkins@burtleburtle.net. You may use this
+ * code any way you wish, private, educational, or commercial. It's free.
  *
- * @brief Hash function based on
- *        http://burtleburtle.net/bob/hash/index.html
- *        by Bob Jenkins, 1996. bob_jenkins@burtleburtle.net. You may use this
- *        code any way you wish, private, educational, or commercial. It's free.
- *
- * @author        Michael Susag
- * @date          Creation date: 2003-04-16
- * @version       $Id$
- *
- * Copyright (c)  2003 Fast Search & Transfer ASA
- *                ALL RIGHTS RESERVED
- **/
+ * Author: Michael Susag
+ */
 
 
 
