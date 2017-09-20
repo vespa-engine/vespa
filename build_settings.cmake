@@ -26,7 +26,7 @@ set(CXX_SPECIFIC_WARN_OPTS "-Wsuggest-override -Wnon-virtual-dtor")
 # Select C++ ABI
 if(DEFINED VESPA_CXX_ABI_FLAGS)
 else()
-set (VESPA_CXX_ABI_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
+    set (VESPA_CXX_ABI_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
 endif()
 
 # C and C++ compiler flags
@@ -38,7 +38,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--build-id -lato
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
 # Use C++ 17
-#TODO renable when cmake 3.8 is out.
+# TODO renable when cmake 3.8 is out.
 # set(CMAKE_CXX_STANDARD 17)
 
 # Always build shared libs if not explicitly specified
