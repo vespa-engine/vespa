@@ -46,36 +46,41 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     private final Logger log = Logger.getLogger(NodeAdminProvider.class.getName());
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
-    private final Lock classLock;
+    private Lock classLock = null;
 
     @Inject
     public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver, Locking locking) {
         log.log(LogLevel.INFO, objectToString() + ": Creating object, acquiring lock...");
-        classLock = locking.lock(this.getClass());
-        log.log(LogLevel.INFO, objectToString() + ": Lock acquired");
+        try {
+            classLock = locking.lock(this.getClass());
+            log.log(LogLevel.INFO, objectToString() + ": Lock acquired");
 
-        Clock clock = Clock.systemUTC();
-        String dockerHostHostName = HostName.getLocalhost();
-        ProcessExecuter processExecuter = new ProcessExecuter();
-        Environment environment = new Environment();
+            Clock clock = Clock.systemUTC();
+            String dockerHostHostName = HostName.getLocalhost();
+            ProcessExecuter processExecuter = new ProcessExecuter();
+            Environment environment = new Environment();
 
-        ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(environment.getConfigServerHosts());
-        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT);
-        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor, WEB_SERVICE_PORT);
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
+            ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(environment.getConfigServerHosts());
+            NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT);
+            Orchestrator orchestrator = new OrchestratorImpl(requestExecutor, WEB_SERVICE_PORT);
+            DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
-        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock);
-        AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, dockerHostHostName);
+            StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock);
+            AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, dockerHostHostName);
 
-        Function<String, NodeAgent> nodeAgentFactory =
-                (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
-                metricReceiver, clock);
+            Function<String, NodeAgent> nodeAgentFactory =
+                    (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
+                            storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
+            NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
+                    metricReceiver, clock);
 
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator, storageMaintainer, nodeAdmin,
-                dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
-        nodeAdminStateUpdater.start();
+            nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator, storageMaintainer, nodeAdmin,
+                    dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
+            nodeAdminStateUpdater.start();
+        } catch (Exception e) {
+            if (classLock != null) classLock.close();
+            throw e;
+        }
     }
 
     @Override
