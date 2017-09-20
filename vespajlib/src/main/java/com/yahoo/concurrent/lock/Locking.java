@@ -2,7 +2,6 @@ package com.yahoo.concurrent.lock;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -19,12 +18,8 @@ public class Locking {
      * @return the acquired lock
      */
     public Lock lock(Class<?> key) {
-        try {
-            ReentrantLock lock = locks.computeIfAbsent(key, k -> new ReentrantLock(true));
-            lock.tryLock(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            return new Lock(lock);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while waiting for lock of " + key);
-        }
+        ReentrantLock lock = locks.computeIfAbsent(key, k -> new ReentrantLock(true));
+        lock.lock();
+        return new Lock(lock);
     }
 }
