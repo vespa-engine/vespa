@@ -4,7 +4,7 @@ and the [Vespa documentation](http://github.com/vespa-engine/documentation)
 are welcome.
 This documents tells you what you need to know to contribute.
 
-## Open development
+## Open development
 All work on Vespa happens directly on Github,
 using the [Github flow model](https://guides.github.com/introduction/flow/).
 We release the master branch a few times a week and you should expect it to almost always work.
