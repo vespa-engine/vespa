@@ -59,7 +59,7 @@ IndexFieldInfoExecutor::execute(uint32_t docId)
 }
 
 void
-IndexFieldInfoExecutor::handle_bind_match_data(fef::MatchData &md)
+IndexFieldInfoExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }
@@ -98,7 +98,7 @@ AttrFieldInfoExecutor::execute(uint32_t docId)
 }
 
 void
-AttrFieldInfoExecutor::handle_bind_match_data(fef::MatchData &md)
+AttrFieldInfoExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

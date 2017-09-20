@@ -40,7 +40,7 @@ FeatureOverrider::execute(uint32_t docId)
 }
 
 void
-FeatureOverrider::handle_bind_match_data(MatchData &md)
+FeatureOverrider::handle_bind_match_data(const MatchData &md)
 {
     _executor.bind_match_data(md);
 }

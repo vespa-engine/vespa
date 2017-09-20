@@ -87,6 +87,7 @@ private:
     const RankEnvironment & _rankEnv;
     MatchDataLayout _layout;
     std::unique_ptr<RankSetup> _rs;
+    MatchData::UP _match_data;
     RankProgram::UP _firstPhaseProgram;
     RankProgram::UP _secondPhaseProgram;
 
@@ -100,7 +101,7 @@ public:
 RankExecutor::RankExecutor(const vespalib::string &initRank, const vespalib::string &finalRank,
                            const RankEnvironment &rankEnv)
     : _initRank(initRank), _finalRank(finalRank), _rankEnv(rankEnv), _layout(),
-      _rs(), _firstPhaseProgram(), _secondPhaseProgram()
+      _rs(), _match_data(), _firstPhaseProgram(), _secondPhaseProgram()
 {}
 
 RankExecutor::~RankExecutor() {}
@@ -121,12 +122,13 @@ RankExecutor::setup()
     if (!_rs->compile()) {
         return false;
     }
+    _match_data = _layout.createMatchData();
 
     _firstPhaseProgram = _rs->create_first_phase_program();
-    _firstPhaseProgram->setup(_layout, _rankEnv.queryEnvironment());
+    _firstPhaseProgram->setup(*_match_data, _rankEnv.queryEnvironment());
     if (!_finalRank.empty()) {
         _secondPhaseProgram = _rs->create_second_phase_program();
-        _secondPhaseProgram->setup(_layout, _rankEnv.queryEnvironment());
+        _secondPhaseProgram->setup(*_match_data, _rankEnv.queryEnvironment());
     }
     return true;
 }
@@ -154,6 +156,7 @@ private:
     const RankEnvironment & _rankEnv;
     RankSetup _setup;
     MatchDataLayout _layout;
+    MatchData::UP _match_data;
     RankProgram::UP _rankProgram;
 
 public:
@@ -169,6 +172,7 @@ FeatureDumper::FeatureDumper(const RankEnvironment & rankEnv)
     : _rankEnv(rankEnv),
       _setup(_rankEnv.factory(), _rankEnv.indexEnvironment()),
       _layout(),
+      _match_data(),
       _rankProgram()
 {}
 FeatureDumper::~FeatureDumper() {}
@@ -191,8 +195,9 @@ FeatureDumper::setup()
         return false;
     }
 
+    _match_data = _layout.createMatchData();
     _rankProgram = _setup.create_dump_program();
-    _rankProgram->setup(_layout, _rankEnv.queryEnvironment());
+    _rankProgram->setup(*_match_data, _rankEnv.queryEnvironment());
     return true;
 }
 
@@ -780,12 +785,13 @@ RankSetupTest::testFeatureNormalization()
     { // RANK context
         MatchDataLayout layout;
         QueryEnvironment queryEnv;
+        MatchData::UP match_data = layout.createMatchData();
         RankProgram::UP firstPhaseProgram = rankSetup.create_first_phase_program();
         RankProgram::UP secondPhaseProgram = rankSetup.create_second_phase_program();
         RankProgram::UP summaryProgram = rankSetup.create_summary_program();
-        firstPhaseProgram->setup(layout, queryEnv);
-        secondPhaseProgram->setup(layout, queryEnv);
-        summaryProgram->setup(layout, queryEnv);
+        firstPhaseProgram->setup(*match_data, queryEnv);
+        secondPhaseProgram->setup(*match_data, queryEnv);
+        summaryProgram->setup(*match_data, queryEnv);
 
         EXPECT_APPROX(2.0, Utils::getScoreFeature(*firstPhaseProgram, 1), 0.001);
         EXPECT_APPROX(4.0, Utils::getScoreFeature(*secondPhaseProgram, 1), 0.001);
@@ -831,8 +837,9 @@ RankSetupTest::testFeatureNormalization()
     { // DUMP context
         MatchDataLayout layout;
         QueryEnvironment queryEnv;
+        MatchData::UP match_data = layout.createMatchData();
         RankProgram::UP rankProgram = rankSetup.create_dump_program();
-        rankProgram->setup(layout, queryEnv);
+        rankProgram->setup(*match_data, queryEnv);
 
         { // dump seed features
             std::map<vespalib::string, feature_t> actual = Utils::getSeedFeatures(*rankProgram, 1);
