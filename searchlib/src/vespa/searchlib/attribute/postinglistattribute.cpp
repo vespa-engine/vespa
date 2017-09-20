@@ -202,6 +202,12 @@ PostingListAttributeBase<P>::forwardedShrinkLidSpace(uint32_t newSize)
     (void) _postingList.resizeBitVectors(newSize, newSize);
 }
 
+template <typename P>
+MemoryUsage
+PostingListAttributeBase<P>::getMemoryUsage() const
+{
+    return _postingList.getMemoryUsage();
+}
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
