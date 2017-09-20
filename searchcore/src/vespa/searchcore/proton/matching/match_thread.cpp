@@ -49,8 +49,8 @@ struct SimpleStrategy {
 
 // seek_next maps to OptimizedAndNotForBlackListing::seekFast
 struct FastBlackListingStrategy {
-    static bool can_use(bool do_limit, SearchIterator &search) {
-        return (!do_limit &&
+    static bool can_use(bool do_rank, bool do_limit, SearchIterator &search) {
+        return (!do_rank && !do_limit &&
                 (dynamic_cast<OptimizedAndNotForBlackListing *>(&search) != nullptr));
     }
     static uint32_t seek_next(SearchIterator &search, uint32_t docid) {
@@ -200,7 +200,7 @@ template <bool do_rank, bool do_limit, bool do_share>
 void
 MatchThread::match_loop_helper_rank_limit_share(MatchTools &tools, HitCollector &hits)
 {
-    if (FastBlackListingStrategy::can_use(do_limit, tools.search())) {
+    if (FastBlackListingStrategy::can_use(do_rank, do_limit, tools.search())) {
         match_loop<FastBlackListingStrategy, do_rank, do_limit, do_share>(tools, hits);
     } else {
         match_loop<SimpleStrategy, do_rank, do_limit, do_share>(tools, hits);
