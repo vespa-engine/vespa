@@ -54,14 +54,15 @@ import static org.junit.Assert.*;
  */
 public class SessionPreparerTest extends TestWithCurator {
 
-    private static final Path appPath = Path.createRoot().append("testapp");
+    private static final Path tenantPath = Path.createRoot();
+    private static final Path sessionsPath = tenantPath.append("sessions").append("testapp");
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
 
     private SessionPreparer preparer;
     private TestComponentRegistry componentRegistry;
     private MockFileDistributionFactory fileDistributionFactory;
-    private Path tenantPath = appPath;
+
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -116,7 +117,7 @@ public class SessionPreparerTest extends TestWithCurator {
         preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
                          new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
                          Optional.empty(), tenantPath, Instant.now());
-        assertFalse(configCurator.exists(appPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
+        assertFalse(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
@@ -136,7 +137,7 @@ public class SessionPreparerTest extends TestWithCurator {
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().limitSendingOfDeployedFilesToCalled, is(2));
         // Should be called only once no matter how many model versions are built
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().reloadDeployFileDistributorCalled, is(1));
-        assertTrue(configCurator.exists(appPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
+        assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
@@ -185,8 +186,8 @@ public class SessionPreparerTest extends TestWithCurator {
                                .applicationName("foo").instanceName("quux").build();
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
         preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, appPath);
-        assertTrue(configCurator.exists(appPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
+        assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
         assertThat(zkc.readApplicationId(), is(origId));
     }
 
@@ -245,7 +246,7 @@ public class SessionPreparerTest extends TestWithCurator {
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {
-        return new SessionContext(app, new SessionZooKeeperClient(curator, appPath), app.getAppDir(), new MemoryTenantApplications(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
+        return new SessionContext(app, new SessionZooKeeperClient(curator, sessionsPath), app.getAppDir(), new MemoryTenantApplications(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

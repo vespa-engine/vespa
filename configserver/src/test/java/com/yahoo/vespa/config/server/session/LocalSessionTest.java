@@ -155,10 +155,10 @@ public class LocalSessionTest {
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<AllocatedHosts> allocatedHosts) throws Exception {
-        Path appPath = Path.fromString("/" + sessionId);
-        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, appPath, allocatedHosts);
+        Path sessionPath = Path.fromString("/" + sessionId);
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, sessionPath, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, appPath);
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, sessionPath);
         if (allocatedHosts.isPresent()) {
             zkClient.write(allocatedHosts.get());
         }

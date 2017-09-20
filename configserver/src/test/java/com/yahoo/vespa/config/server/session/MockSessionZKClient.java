@@ -19,20 +19,20 @@ import java.util.Optional;
 public class MockSessionZKClient extends SessionZooKeeperClient {
 
     private ApplicationPackage app = null;
-    private Optional<AllocatedHosts> info = null;
+    private Optional<AllocatedHosts> info = Optional.empty();
     private Session.Status sessionStatus;
 
-    public MockSessionZKClient(Curator curator, Path rootPath) {
-        this(curator, rootPath, (ApplicationPackage)null);
+    public MockSessionZKClient(Curator curator, Path sessionPath) {
+        this(curator, sessionPath, (ApplicationPackage)null);
     }
 
-    public MockSessionZKClient(Curator curator, Path rootPath, Optional<AllocatedHosts> allocatedHosts) {
-        this(curator, rootPath);
+    public MockSessionZKClient(Curator curator, Path sessionPath, Optional<AllocatedHosts> allocatedHosts) {
+        this(curator, sessionPath);
         this.info = allocatedHosts;
     }
 
-    public MockSessionZKClient(Curator curator, Path rootPath, ApplicationPackage application) {
-        super(curator, rootPath);
+    public MockSessionZKClient(Curator curator, Path sessionPath, ApplicationPackage application) {
+        super(curator, sessionPath);
         this.app = application;
     }
 
