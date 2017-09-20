@@ -606,8 +606,8 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
 void
 Test::requireThatFlushedAttributeCanBeLoaded()
 {
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(false)));
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(true)));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(0, false, 0)));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(0, true, 0)));
 }
 
 int

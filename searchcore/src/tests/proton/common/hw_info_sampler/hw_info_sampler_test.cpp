@@ -44,7 +44,7 @@ struct Fixture
 
 TEST_F("Test that hw_info_sampler uses override info", Fixture)
 {
-    Config samplerCfg(75.0, 100.0, sampleLen);
+    Config samplerCfg(0, 75.0, 100.0, sampleLen, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(75.0, sampler.diskWriteSpeed());
     EXPECT_NOT_EQUAL(0, time_point_to_long(sampler.sampleTime()));
@@ -57,7 +57,7 @@ TEST_F("Test that hw_info_sampler uses saved info", Fixture)
     builder.disk.writespeed = 72.0;
     builder.disk.sampletime = time_point_to_long(Clock::now());
     f.writeConfig(builder);
-    Config samplerCfg(0.0, 70.0, sampleLen);
+    Config samplerCfg(0, 0.0, 70.0, sampleLen, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(builder.disk.writespeed, sampler.diskWriteSpeed());
     EXPECT_EQUAL(builder.disk.sampletime, time_point_to_long(sampler.sampleTime()));
@@ -66,7 +66,7 @@ TEST_F("Test that hw_info_sampler uses saved info", Fixture)
 
 TEST_F("Test that hw_info_sampler can sample disk write speed", Fixture)
 {
-    Config samplerCfg(0.0, 100.0, sampleLen);
+    Config samplerCfg(0, 0.0, 100.0, sampleLen, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     ASSERT_NOT_EQUAL(0.0, sampler.diskWriteSpeed());
     ASSERT_NOT_EQUAL(0, time_point_to_long(sampler.sampleTime()));
@@ -74,6 +74,34 @@ TEST_F("Test that hw_info_sampler can sample disk write speed", Fixture)
     EXPECT_APPROX(sampler.diskWriteSpeed(), sampler2.diskWriteSpeed(), 0.1);
     EXPECT_EQUAL(time_point_to_long(sampler.sampleTime()),
                  time_point_to_long(sampler2.sampleTime()));
+}
+
+TEST_F("require that disk size can be specified", Fixture)
+{
+    Config samplerCfg(1024, 1.0, 0.0, sampleLen, 0);
+    HwInfoSampler sampler(test_dir, samplerCfg);
+    EXPECT_EQUAL(1024u, sampler.hwInfo().diskSizeBytes());
+}
+
+TEST_F("require that disk size can be sampled", Fixture)
+{
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, 0);
+    HwInfoSampler sampler(test_dir, samplerCfg);
+    EXPECT_GREATER(sampler.hwInfo().diskSizeBytes(), 0u);
+}
+
+TEST_F("require that memory size can be specified", Fixture)
+{
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, 1024);
+    HwInfoSampler sampler(test_dir, samplerCfg);
+    EXPECT_EQUAL(1024u, sampler.hwInfo().memorySizeBytes());
+}
+
+TEST_F("require that memory size can be sampled", Fixture)
+{
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, 0);
+    HwInfoSampler sampler(test_dir, samplerCfg);
+    EXPECT_GREATER(sampler.hwInfo().memorySizeBytes(), 0u);
 }
 
 TEST_MAIN()
