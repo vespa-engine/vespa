@@ -15,7 +15,7 @@ import java.util.Collection;
  * @author lulf
  * @since 5.1
  */
-public interface ReloadListener extends ApplicationListener {
+public interface ReloadListener {
     /**
      * Signal the listener that hosts used by by a particular tenant.
      *
@@ -32,4 +32,19 @@ public interface ReloadListener extends ApplicationListener {
      * @throws java.lang.IllegalArgumentException if one or more of the hosts are in use by another tenant.
      */
     void verifyHostsAreAvailable(TenantName tenant, Collection<String> newHosts);
+
+    /**
+     * Configs has been activated for an application: Either an application
+     * has been deployed for the first time, or it has been externally or internally redeployed.
+     *
+     * Must be thread-safe.
+     */
+    void configActivated(TenantName tenant, ApplicationSet application);
+
+    /**
+     * Application has been removed.
+     *
+     * Must be thread-safe.
+     */
+    void applicationRemoved(ApplicationId applicationId);
 }
