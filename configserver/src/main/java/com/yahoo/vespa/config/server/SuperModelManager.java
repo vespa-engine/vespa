@@ -4,6 +4,9 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.SuperModelListener;
+import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
@@ -14,13 +17,19 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.model.SuperModel;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Provides a SuperModel - a model of all application instances,  and makes it stays
  * up to date as applications are added, redeployed, and removed.
  */
-public class SuperModelManager implements SuperModelProvider, ApplicationListener {
+public class SuperModelManager implements SuperModelProvider {
     private final Zone zone;
     private SuperModel superModel;  // Guarded by 'this' monitor
     private final List<SuperModelListener> listeners = new ArrayList<>();  // Guarded by 'this' monitor
@@ -40,22 +49,23 @@ public class SuperModelManager implements SuperModelProvider, ApplicationListene
         makeNewSuperModel(new HashMap<>());
     }
 
-    @Override
     public synchronized SuperModel getSuperModel() {
         return superModel;
     }
 
-    @Override
     public synchronized long getGeneration() {
         return generation;
     }
 
     @Override
-    public synchronized void registerListener(SuperModelListener listener) {
+    public synchronized List<ApplicationInfo> snapshot(SuperModelListener listener) {
         listeners.add(listener);
+        return superModel.applicationModels().values().stream()
+                .flatMap(applications -> applications.values().stream())
+                .map(Application::toApplicationInfo)
+                .collect(Collectors.toList());
     }
 
-    @Override
     public synchronized void configActivated(TenantName tenant, ApplicationSet applicationSet) {
         Map<TenantName, Map<ApplicationId, Application>> newModels = createModelCopy();
         if (!newModels.containsKey(tenant)) {
@@ -70,10 +80,9 @@ public class SuperModelManager implements SuperModelProvider, ApplicationListene
         newModels.get(tenant).put(applicationSet.getId(), application);
 
         makeNewSuperModel(newModels);
-        listeners.stream().forEach(listener -> listener.applicationActivated(superModel, application));
+        listeners.stream().forEach(listener -> listener.applicationActivated(application.toApplicationInfo()));
     }
 
-    @Override
     public synchronized void applicationRemoved(ApplicationId applicationId) {
         Map<TenantName, Map<ApplicationId, Application>> newModels = createModelCopy();
         if (newModels.containsKey(applicationId.tenant())) {
@@ -84,7 +93,7 @@ public class SuperModelManager implements SuperModelProvider, ApplicationListene
         }
 
         makeNewSuperModel(newModels);
-        listeners.stream().forEach(listener -> listener.applicationRemoved(superModel, applicationId));
+        listeners.stream().forEach(listener -> listener.applicationRemoved(applicationId));
     }
 
     private void makeNewSuperModel(Map<TenantName, Map<ApplicationId, Application>> newModels) {
