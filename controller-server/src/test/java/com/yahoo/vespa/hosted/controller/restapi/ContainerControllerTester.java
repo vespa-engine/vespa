@@ -54,12 +54,17 @@ public class ContainerControllerTester {
     public ContainerTester containerTester() { return containerTester; }
 
     public Application createApplication() {
-        AthensDomain domain1 = addTenantAthensDomain("domain1", "mytenant");
-        controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId("tenant1"), domain1,
+        return createApplication("domain1","tenant1",
+                                 "application1");
+    }
+
+    public Application createApplication(String athensDomain, String tenant, String application) {
+        AthensDomain domain1 = addTenantAthensDomain(athensDomain, "mytenant");
+        controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
                                                                  new Property("property1"),
                                                                  Optional.of(new PropertyId("1234"))),
                                        Optional.of(TestIdentities.userNToken));
-        ApplicationId app = ApplicationId.from("tenant1", "application1", "default");
+        ApplicationId app = ApplicationId.from(tenant, application, "default");
         return controller.applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
 

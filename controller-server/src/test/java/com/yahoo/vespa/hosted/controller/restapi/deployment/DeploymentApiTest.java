@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionCorpUsEast1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 
@@ -37,18 +38,45 @@ public class DeploymentApiTest extends ControllerContainerTest {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         tester.containerTester().updateSystemVersion();
         long projectId = 11;
-        Application app = tester.createApplication();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("corp-us-east-1")
-                .build();
-        tester.notifyJobCompletion(app.id(), projectId, true, component);
-        tester.deploy(app, applicationPackage, new Zone(Environment.test, RegionName.from("us-east-1")), projectId);
-        tester.notifyJobCompletion(app.id(), projectId, true, systemTest);
-        tester.deploy(app, applicationPackage, new Zone(Environment.staging, RegionName.from("us-east-3")), projectId);
-        tester.notifyJobCompletion(app.id(), projectId, false, stagingTest);
 
-        tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller()), 
+        {
+            Application failingApplication = tester.createApplication("domain1", "tenant1",
+                                                                      "application1");
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .region("corp-us-east-1")
+                    .build();
+            tester.notifyJobCompletion(failingApplication.id(), projectId, true, component);
+            tester.deploy(failingApplication, applicationPackage, new Zone(Environment.test,
+                                                                           RegionName.from("us-east-1")), projectId);
+            tester.notifyJobCompletion(failingApplication.id(), projectId, true, systemTest);
+            tester.deploy(failingApplication, applicationPackage, new Zone(Environment.staging,
+                                                                           RegionName.from("us-east-3")), projectId);
+            tester.notifyJobCompletion(failingApplication.id(), projectId, false, stagingTest);
+        }
+
+        {
+            Application productionApplication = tester.createApplication("domain2", "tenant2",
+                                                                         "application2");
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .upgradePolicy("conservative")
+                    .environment(Environment.prod)
+                    .region("corp-us-east-1")
+                    .build();
+            tester.notifyJobCompletion(productionApplication.id(), projectId, true, component);
+            tester.deploy(productionApplication, applicationPackage, new Zone(Environment.test,
+                                                                              RegionName.from("us-east-1")), projectId);
+            tester.notifyJobCompletion(productionApplication.id(), projectId, true, systemTest);
+            tester.deploy(productionApplication, applicationPackage, new Zone(Environment.staging,
+                                                                              RegionName.from("us-east-3")), projectId);
+            tester.notifyJobCompletion(productionApplication.id(), projectId, true, stagingTest);
+            tester.deploy(productionApplication, applicationPackage, new Zone(Environment.staging,
+                                                                              RegionName.from("corp-us-east-1")),
+                          projectId);
+            tester.notifyJobCompletion(productionApplication.id(), projectId, true, productionCorpUsEast1);
+        }
+
+        tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller()),
                                                                     tester.controller()));
         tester.assertResponse(new Request("http://localhost:8080/deployment/v1/"),
                               new File("root.json"));
