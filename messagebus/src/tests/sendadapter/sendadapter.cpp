@@ -207,13 +207,15 @@ testSendAdapters(TestData &data, const std::vector<vespalib::Version> & versions
 TEST("test that all known versions are present") {
     TestData data;
     ASSERT_TRUE(data.start());
+    EXPECT_FALSE(data._srcServer.net.getSendAdapter(vespalib::Version(4, 999)) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0)) != nullptr);
     EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0))) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 147)) != nullptr);
     EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 147))) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148)) != nullptr);
     EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148))) != nullptr);
-
+    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(9, 999)) != nullptr);
+    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(9, 999))) != nullptr);
 }
 
 TEST("test that ee can send between multiple versions") {
