@@ -3,30 +3,16 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/timer.h>
 #include <vespa/searchlib/common/lambdatask.h>
+#include <experimental/filesystem>
 #include <unistd.h>
 
 using search::makeLambdaTask;
 
 namespace proton {
 
-namespace {
-
-uint64_t getPhysicalMemoryBytes()
-{
-    // TODO: Temporal workaround for Docker nodes. Remove when this is part of proton.cfg instead.
-    if (const char *memoryEnv = std::getenv("VESPA_TOTAL_MEMORY_MB")) {
-        uint64_t physicalMemoryMB = atoll(memoryEnv);
-        return physicalMemoryMB * 1024u * 1024u;
-    } else {
-        return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
-    }
-}
-
-} // namespace proton:<anonymous>
-
 DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in,
                                          const Config &config)
-    : _filter(getPhysicalMemoryBytes()),
+    : _filter(config.hwInfo),
       _path(path_in),
       _sampleInterval(60.0),
       _periodicTimer()
@@ -43,8 +29,8 @@ void
 DiskMemUsageSampler::setConfig(const Config &config)
 {
     _periodicTimer.reset();
-    _filter.setConfig(config._filterConfig);
-    _sampleInterval = config._sampleInterval;
+    _filter.setConfig(config.filterConfig);
+    _sampleInterval = config.sampleInterval;
     sampleUsage();
     _periodicTimer = std::make_unique<vespalib::Timer>();
     _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]()
@@ -59,10 +45,26 @@ DiskMemUsageSampler::sampleUsage()
     sampleDiskUsage();
 }
 
+namespace {
+
+uint64_t
+sampleDiskUsageInDirectory(const std::experimental::filesystem::path &path)
+{
+    uint64_t result = 0;
+    for (const auto &elem : std::experimental::filesystem::recursive_directory_iterator(path)) {
+        if (!std::experimental::filesystem::is_directory(elem.path())) {
+            result += std::experimental::filesystem::file_size(elem.path());
+        }
+    }
+    return result;
+}
+
+}
+
 void
 DiskMemUsageSampler::sampleDiskUsage()
 {
-    _filter.setDiskStats(std::experimental::filesystem::space(_path));
+    _filter.setDiskStats(sampleDiskUsageInDirectory(_path));
 }
 
 void

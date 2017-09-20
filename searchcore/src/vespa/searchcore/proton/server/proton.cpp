@@ -32,6 +32,8 @@
 #include <vespa/searchlib/expression/forcelink.hpp>
 
 #include <vespa/log/log.h>
+#include <vespa/defaults.h>
+
 LOG_SETUP(".proton.server.proton");
 
 using document::DocumentTypeRepo;
@@ -75,12 +77,13 @@ setFS4Compression(const ProtonConfig & proton)
 }
 
 DiskMemUsageSampler::Config
-diskMemUsageSamplerConfig(const ProtonConfig &proton)
+diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 {
     return DiskMemUsageSampler::Config(
             proton.writefilter.memorylimit,
             proton.writefilter.disklimit,
-            proton.writefilter.sampleinterval);
+            proton.writefilter.sampleinterval,
+            hwInfo);
 }
 
 }
@@ -234,9 +237,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                      samplerCfg);
     _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);
+    vespalib::string vespaHomeDir = vespa::Defaults::vespaHome();
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>
-                           (protonConfig.basedir,
-                            diskMemUsageSamplerConfig(protonConfig));
+                           (vespaHomeDir,
+                            diskMemUsageSamplerConfig(protonConfig, _hwInfo));
 
     _metricsEngine.reset(new MetricsEngine());
     _metricsEngine->addMetricsHook(_metricsHook);
@@ -344,7 +348,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
 
-    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig));
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, _hwInfo));
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
