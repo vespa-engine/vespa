@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
@@ -39,6 +40,10 @@ public class DeploymentOrder {
 
     /** Returns a list of jobs to trigger after the given job */
     public List<JobType> nextAfter(JobType job, Application application) {
+        if (!application.deploying().isPresent()) { // Change was cancelled
+            return Collections.emptyList();
+        }
+
         // Always trigger system test after component as deployment spec might not be available yet (e.g. if this is a
         // new application with no previous deployments)
         if (job == JobType.component) {
@@ -48,7 +53,7 @@ public class DeploymentOrder {
         // At this point we have deployed to system test, so deployment spec is available
         List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
         Optional<DeploymentSpec.Step> currentStep = fromJob(job, application);
-        if ( ! currentStep.isPresent()) {
+        if (!currentStep.isPresent()) {
             return Collections.emptyList();
         }
 
@@ -59,7 +64,7 @@ public class DeploymentOrder {
         }
 
         // Postpone if step hasn't completed all it's jobs for this change
-        if (!completedSuccessfully(currentStep.get(), application)) {
+        if (!completedSuccessfully(currentStep.get(), application.deploying().get(), application)) {
             return Collections.emptyList();
         }
 
@@ -112,9 +117,9 @@ public class DeploymentOrder {
     }
 
     /** Returns whether all jobs have completed successfully for given step */
-    private boolean completedSuccessfully(DeploymentSpec.Step step, Application application) {
+    private boolean completedSuccessfully(DeploymentSpec.Step step, Change change, Application application) {
         return jobsFrom(step).stream()
-                .allMatch(job -> application.deploymentJobs().isSuccessful(application.deploying().get(), job));
+                .allMatch(job -> application.deploymentJobs().isSuccessful(change, job));
     }
 
     /** Resolve deployment step from job */
