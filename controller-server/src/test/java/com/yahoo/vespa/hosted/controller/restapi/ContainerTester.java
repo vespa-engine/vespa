@@ -5,6 +5,7 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.collections.Pair;
+import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
@@ -44,6 +45,11 @@ public class ContainerTester {
     public void updateSystemVersion() {
         Controller controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
         controller.updateVersionStatus(VersionStatus.compute(controller));
+    }
+
+    public void updateSystemVersion(Version version) {
+        Controller controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
+        controller.updateVersionStatus(VersionStatus.compute(controller, version));
     }
 
     public void assertResponse(Request request, File responseFile) throws IOException {

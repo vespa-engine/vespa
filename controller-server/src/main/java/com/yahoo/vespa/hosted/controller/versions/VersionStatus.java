@@ -128,22 +128,24 @@ public class VersionStatus {
                                                                                 List<Application> applications) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
-        for (Version infrastructureVersion : infrastructureVersions)
+        for (Version infrastructureVersion : infrastructureVersions) {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
+        }
 
         for (Application application : applications) {
             DeploymentJobs jobs = application.deploymentJobs();
 
             // Note that each version deployed on this application exists
-            for (Deployment deployment : application.deployments().values())
+            for (Deployment deployment : application.deployments().values()) {
                 versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
+            }
 
             // List versions which have failing jobs, and versions which are in production
-            // TODO: Don't count applications which started failing on an application change, not a version change
 
             // Failing versions
             Map<Version, List<JobStatus>> failingJobsByVersion = jobs.jobStatus().values().stream()
                     .filter(jobStatus -> jobStatus.lastCompleted().isPresent())
+                    .filter(jobStatus -> jobStatus.lastCompleted().get().upgrade())
                     .filter(jobStatus -> jobStatus.jobError().isPresent())
                     .filter(jobStatus -> jobStatus.jobError().get() != DeploymentJobs.JobError.outOfCapacity)
                     .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastCompleted().get().version()));

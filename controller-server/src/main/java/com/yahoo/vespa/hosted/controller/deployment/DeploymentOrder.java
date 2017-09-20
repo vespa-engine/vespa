@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -94,12 +93,8 @@ public class DeploymentOrder {
         }
         DeploymentSpec.Step lastStep = deploymentSteps.get(deploymentSteps.size() - 1);
         Optional<DeploymentSpec.Step> step = fromJob(job, application);
-        if (!step.isPresent()) {
-            log.log(Level.WARNING, "Could not find deployment step for " + application.id().toShortString() +
-                                   " from job " + job);
-            return false;
-        }
-        return step.get().equals(lastStep);
+        // Step may not exist for all jobs, e.g. component
+        return step.map(s -> s.equals(lastStep)).orElse(false);
     }
 
     /** Returns jobs for given deployment spec, in the order they are declared */
