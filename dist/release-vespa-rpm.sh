@@ -29,7 +29,6 @@ git mv $SPECFILE .
 mv pom.xml pom.xml.hide
 
 # Run tito to update spec file and tag
-tito init
 tito tag --use-version=$VERSION --no-auto-changelog
 
 # Push changes and tag to branc
