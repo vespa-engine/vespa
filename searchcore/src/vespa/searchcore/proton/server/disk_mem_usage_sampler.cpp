@@ -10,10 +10,12 @@ using search::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in,
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &protonBaseDir,
+                                         const std::string &vespaHomeDir,
                                          const Config &config)
     : _filter(config.hwInfo),
-      _path(path_in),
+      _protonBaseDir(protonBaseDir),
+      _vespaHomeDir(vespaHomeDir),
       _sampleInterval(60.0),
       _periodicTimer()
 {
@@ -62,12 +64,21 @@ sampleDiskUsageInDirectory(const fs::path &path)
     return result;
 }
 
+uint64_t
+sampleDiskUsageOnFileSystem(const fs::path &path)
+{
+    auto space_info = fs::space(path);
+    return (space_info.capacity - space_info.available);
+}
+
 }
 
 void
 DiskMemUsageSampler::sampleDiskUsage()
 {
-    _filter.setDiskStats(sampleDiskUsageInDirectory(_path));
+    bool slowDisk = _filter.getHwInfo().slowDisk();
+    _filter.setDiskStats(slowDisk ? sampleDiskUsageOnFileSystem(_protonBaseDir) :
+                         sampleDiskUsageInDirectory(_vespaHomeDir));
 }
 
 void
