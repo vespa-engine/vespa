@@ -8,7 +8,6 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
@@ -20,15 +19,13 @@ import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 class HttpRequestFactory {
 
     public static HttpRequest newJDiscRequest(CurrentContainer container, HttpServletRequest servletRequest) {
-        HttpRequest httpRequest = HttpRequest.newServerRequest(
+        return HttpRequest.newServerRequest(
                 container,
                 getUri(servletRequest),
                 HttpRequest.Method.valueOf(servletRequest.getMethod()),
                 HttpRequest.Version.fromString(servletRequest.getProtocol()),
                 new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
                 getConnection(servletRequest).getCreatedTimeStamp());
-        httpRequest.context().put("jdisc.request.X509Certificate", getCertChain(servletRequest));
-        return httpRequest;
     }
 
     public static URI getUri(HttpServletRequest servletRequest) {
@@ -96,7 +93,4 @@ class HttpRequestFactory {
         }
     }
 
-    private static X509Certificate[] getCertChain(HttpServletRequest servletRequest) {
-        return (X509Certificate[]) servletRequest.getAttribute("javax.servlet.request.X509Certificate");
-    }
 }

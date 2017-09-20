@@ -70,14 +70,9 @@ public class HttpRequestFactoryTest {
 
         @Override
         public Object getAttribute(String name) {
-            switch (name) {
-                case "org.eclipse.jetty.server.HttpConnection":
-                    HttpConnection connection = mock(HttpConnection.class);
-                    when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
-                    return connection;
-                default:
-                    return null;
-            }
+            HttpConnection connection = mock(HttpConnection.class);
+            when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
+            return connection;
         }
 
         @Override
