@@ -22,5 +22,4 @@ vespa_add_library(searchcore_pcommon STATIC
     DEPENDS
     searchcore_proton_metrics
     searchcore_fconfig
-    stdc++fs
 )
