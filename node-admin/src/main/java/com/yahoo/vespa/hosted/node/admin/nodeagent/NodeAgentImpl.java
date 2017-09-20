@@ -85,7 +85,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
-    private final Consumer<String> serviceRestarter;
+    private Consumer<String> serviceRestarter;
     private Future<?> currentFilebeatRestarter;
 
     private boolean resumeScriptRun = false;
@@ -131,19 +131,6 @@ public class NodeAgentImpl implements NodeAgent {
         this.clock = clock;
         this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
-
-        this.serviceRestarter = service -> {
-            try {
-                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        containerName, "service", service, "restart");
-
-                if (!processResult.isSuccess()) {
-                    logger.error("Failed to restart service " + service + ": " + processResult);
-                }
-            } catch (Exception e) {
-                logger.error("Failed to restart service " + service, e);
-            }
-        };
     }
 
     @Override
@@ -200,6 +187,19 @@ public class NodeAgentImpl implements NodeAgent {
         });
         loopThread.setName("tick-" + hostname);
         loopThread.start();
+
+        serviceRestarter = service -> {
+            try {
+                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
+                        containerName, "service", service, "restart");
+
+                if (!processResult.isSuccess()) {
+                    logger.error("Failed to restart service " + service + ": " + processResult);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to restart service " + service, e);
+            }
+        };
     }
 
     @Override
@@ -213,7 +213,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         do {
             try {
-                loopThread.join(0);
+                loopThread.join();
                 filebeatRestarter.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException e) {
                 logger.error("Interrupted while waiting for converge thread and filebeatRestarter scheduler to shutdown");
