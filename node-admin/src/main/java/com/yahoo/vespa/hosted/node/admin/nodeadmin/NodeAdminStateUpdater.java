@@ -68,7 +68,6 @@ public class NodeAdminStateUpdater {
             String dockerHostHostName,
             Clock clock,
             Duration nodeAdminConvergeStateInterval) {
-        log.log(LogLevel.INFO, objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.storageMaintainer = storageMaintainer;
@@ -77,10 +76,6 @@ public class NodeAdminStateUpdater {
         this.clock = clock;
         this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
         this.lastTick = clock.instant();
-    }
-
-    private String objectToString() {
-        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
     public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
@@ -281,7 +276,6 @@ public class NodeAdminStateUpdater {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
-        log.log(LogLevel.INFO, objectToString() + ": Stop called");
 
         // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
@@ -297,6 +291,5 @@ public class NodeAdminStateUpdater {
 
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
-        log.log(LogLevel.INFO, objectToString() + ": Stop complete");
     }
 }

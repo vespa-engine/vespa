@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.concurrent.lock.Lock;
 import com.yahoo.concurrent.lock.Locking;
 import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 
 import com.yahoo.system.ProcessExecuter;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -42,12 +44,15 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
+    private final Logger log = Logger.getLogger(NodeAdminProvider.class.getName());
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
     private final Lock classLock;
 
     @Inject
     public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver, Locking locking) {
+        log.log(LogLevel.INFO, objectToString() + ": Creating object, acquiring lock...");
         classLock = locking.lock(this.getClass());
+        log.log(LogLevel.INFO, objectToString() + ": Lock acquired");
 
         Clock clock = Clock.systemUTC();
         String dockerHostHostName = HostName.getLocalhost();
@@ -80,7 +85,16 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     @Override
     public void deconstruct() {
+        log.log(LogLevel.INFO, objectToString() + ": Stop called");
+
         nodeAdminStateUpdater.stop();
+        log.log(LogLevel.INFO, objectToString() + ": Stop complete");
+
         classLock.close();
+        log.log(LogLevel.INFO, objectToString() + ": Lock released");
+    }
+
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 }
