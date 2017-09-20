@@ -262,7 +262,6 @@ public class SearchNode extends AbstractService implements
             rtcspec(getConnectSpec()).
             httpport(getHttpPort()).
             partition(getNodeSpec().partitionId()).
-            persistenceprovider(new ProtonConfig.Persistenceprovider.Builder().port(getPersistenceProviderRpcPort())).
             clustername(getClusterName()).
             basedir(getBaseDir()).
             tlsspec("tcp/" + getHost().getHostName() + ":" + getTransactionLogServer().getTlsPort()).

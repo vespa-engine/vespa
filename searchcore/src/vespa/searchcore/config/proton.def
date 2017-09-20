@@ -20,12 +20,6 @@ rtcspec       string default="tcp/localhost:8004" restart
 ## Port to use for the web server
 httpport       int default=0 restart
 
-## Port to use for the persistence provider rpc server
-persistenceprovider.port       int default=8006 restart
-
-## Number of threads used to drive the internal persistence SPI
-persistenceprovider.threads    int default=16 restart
-
 ## Cluster name
 clustername	string default="" restart
 
