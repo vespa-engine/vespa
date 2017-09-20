@@ -79,8 +79,22 @@ public class SendAdapterTestCase {
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
+    public void requireCorrectVersionSelection() {
+        assertNull(srcServer.net.getSendAdapter(new Version(4,999)));
+        assertTrue(srcServer.net.getSendAdapter(new Version(5,0)) instanceof RPCSendV1);
+        assertTrue(srcServer.net.getSendAdapter(new Version(6,147)) instanceof RPCSendV1);
+        assertTrue(srcServer.net.getSendAdapter(new Version(6,148)) instanceof RPCSendV2);
+        assertTrue(srcServer.net.getSendAdapter(new Version(9,9999)) instanceof RPCSendV2);
+    }
+
+    @Test
     public void requireThatMessagesCanBeSentAcrossAllSupportedVersions() throws Exception {
-        List<Version> versions = Arrays.asList(new Version(5, 0), new Version(5, 1));
+        List<Version> versions = Arrays.asList(
+                new Version(5, 0),
+                new Version(6, 147),
+                new Version(6, 148)
+        );
+
         for (Version srcVersion : versions) {
             for (Version itrVersion : versions) {
                 for (Version dstVersion : versions) {

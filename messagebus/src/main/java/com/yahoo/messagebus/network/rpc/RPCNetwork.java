@@ -184,7 +184,7 @@ public class RPCNetwork implements Network, MethodHandler {
         RPCSendAdapter adapter1 = new RPCSendV1();
         RPCSendAdapter adapter2 = new RPCSendV2();
         addSendAdapter(new Version(5), adapter1);
-        addSendAdapter(new Version(6,142), adapter2);
+        addSendAdapter(new Version(6,148), adapter2);
     }
 
     @Override
@@ -345,7 +345,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * @param version The version for which to return an adapter.
      * @return The compatible adapter.
      */
-    private RPCSendAdapter getSendAdapter(Version version) {
+    public RPCSendAdapter getSendAdapter(Version version) {
         Map.Entry<Version, RPCSendAdapter> lower = sendAdapters.floorEntry(version);
         return (lower != null) ? lower.getValue() : null;
     }
