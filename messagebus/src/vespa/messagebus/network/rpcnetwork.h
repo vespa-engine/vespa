@@ -93,15 +93,6 @@ private:
     Error resolveServiceAddress(RoutingNode &recipient, const string &serviceName);
 
     /**
-     * Determines and returns the send adapter that is compatible with the given
-     * version. If no adapter can be found, this method returns null.
-     *
-     * @param version The version for which to return an adapter.
-     * @return The compatible adapter.
-     */
-    RPCSendAdapter *getSendAdapter(const vespalib::Version &version);
-
-    /**
      * This method is a callback invoked after {@link #send(Message, List)} once
      * the version of all recipients have been resolved. If all versions were
      * resolved ahead of time, this method is invoked by the same thread as the
@@ -219,6 +210,15 @@ public:
      * @param errMsg  The error string to return.
      */
     void replyError(const SendContext &ctx, uint32_t errCode, const string &errMsg);
+
+    /**
+     * Determines and returns the send adapter that is compatible with the given
+     * version. If no adapter can be found, this method returns null.
+     *
+     * @param version The version for which to return an adapter.
+     * @return The compatible adapter.
+     */
+    RPCSendAdapter *getSendAdapter(const vespalib::Version &version);
 
     void attach(INetworkOwner &owner) override;
     const string getConnectionSpec() const override;

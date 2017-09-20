@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
+#include <vespa/messagebus/network/rpcsendv1.h>
+#include <vespa/messagebus/network/rpcsendv2.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -58,21 +59,7 @@ public:
     bool start();
 };
 
-class Test : public vespalib::TestApp {
-private:
-    static const int TIMEOUT_SECS = 60;
-
-    bool testVersionedSend(TestData &data,
-                           const vespalib::Version &srcVersion,
-                           const vespalib::Version &itrVersion,
-                           const vespalib::Version &dstVersion);
-    void testSendAdapters(TestData &data);
-
-public:
-    int Main() override;
-};
-
-TEST_APPHOOK(Test);
+static const int TIMEOUT_SECS = 6;
 
 TestData::TestData() :
     _slobrok(),
@@ -116,55 +103,8 @@ TestData::start()
     return true;
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("sendadapter_test");
-
-    TestData data;
-    ASSERT_TRUE(data.start());
-
-    testSendAdapters(data); TEST_FLUSH();
-
-    TEST_DONE();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Tests
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void
-Test::testSendAdapters(TestData &data)
-{
-    std::vector<vespalib::Version> versions;
-    versions.push_back(vespalib::Version(5, 0));
-    versions.push_back(vespalib::Version(5, 1));
-
-    for (std::vector<vespalib::Version>::const_iterator srcVersion = versions.begin();
-         srcVersion != versions.end(); ++srcVersion)
-    {
-        for (std::vector<vespalib::Version>::const_iterator itrVersion = versions.begin();
-             itrVersion != versions.end(); ++itrVersion)
-        {
-            for (std::vector<vespalib::Version>::const_iterator dstVersion = versions.begin();
-                 dstVersion != versions.end(); ++dstVersion)
-            {
-                EXPECT_TRUE(testVersionedSend(data, *srcVersion, *itrVersion, *dstVersion));
-            }
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Utilities
-//
-////////////////////////////////////////////////////////////////////////////////
-
 bool
-Test::testVersionedSend(TestData &data,
+testVersionedSend(TestData &data,
                          const vespalib::Version &srcVersion,
                          const vespalib::Version &itrVersion,
                          const vespalib::Version &dstVersion)
@@ -250,3 +190,36 @@ Test::testVersionedSend(TestData &data,
     }
     return true;
 }
+
+
+void
+testSendAdapters(TestData &data, const std::vector<vespalib::Version> & versions)
+{
+    for (vespalib::Version src : versions) {
+        for (vespalib::Version intermediate : versions) {
+            for (vespalib::Version dst : versions) {
+                EXPECT_TRUE(testVersionedSend(data, src, intermediate, dst));
+            }
+        }
+    }
+}
+
+TEST("test that all known versions are present") {
+    TestData data;
+    ASSERT_TRUE(data.start());
+    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0)) != nullptr);
+    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0))) != nullptr);
+    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 147)) != nullptr);
+    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 147))) != nullptr);
+    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148)) != nullptr);
+    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148))) != nullptr);
+
+}
+
+TEST("test that ee can send between multiple versions") {
+    TestData data;
+    ASSERT_TRUE(data.start());
+    TEST_DO(testSendAdapters(data, {vespalib::Version(5, 0), vespalib::Version(6, 147), vespalib::Version(6, 148)}));
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }
