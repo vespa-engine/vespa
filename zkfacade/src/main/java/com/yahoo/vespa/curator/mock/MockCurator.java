@@ -4,8 +4,8 @@ package com.yahoo.vespa.curator.mock;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
-import com.yahoo.concurrent.Lock;
-import com.yahoo.concurrent.Locks;
+import com.yahoo.concurrent.lock.Lock;
+import com.yahoo.concurrent.lock.Locks;
 import com.yahoo.path.Path;
 import static com.yahoo.vespa.curator.mock.MemoryFileSystem.Node;
 
