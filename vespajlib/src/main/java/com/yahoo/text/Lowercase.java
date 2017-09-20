@@ -8,7 +8,7 @@ import java.util.Locale;
  * which is not to be handled as natural language data, e.g. field names or
  * configuration paramaters.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class Lowercase {
 

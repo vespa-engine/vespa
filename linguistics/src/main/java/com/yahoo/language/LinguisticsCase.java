@@ -9,7 +9,7 @@ import java.util.Locale;
  * This class provides a case normalization operation to be used e.g. when
  * document search should be case insensitive.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class LinguisticsCase {
 
