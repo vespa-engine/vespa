@@ -812,6 +812,7 @@ AttributeVector::getEstimatedSaveByteSize() const
     uint64_t weightFileSize = 0;
     uint64_t idxFileSize = 0;
     uint64_t udatFileSize = 0;
+    size_t fixedWidth = getFixedWidth();
     AddressSpace enumAddressSpace(getEnumStoreAddressSpaceUsage());
 
     if (hasMultiValue()) {
@@ -822,8 +823,12 @@ AttributeVector::getEstimatedSaveByteSize() const
     }
     if (hasEnum() && getEnumeratedSave()) {
         datFileSize =  headerSize + 4 * totalValueCount;
-        udatFileSize = headerSize + enumAddressSpace.used()
-                       - 8 * uniqueValueCount;
+        if (fixedWidth != 0) {
+            udatFileSize = headerSize + fixedWidth * uniqueValueCount;
+        } else {
+            udatFileSize = headerSize + enumAddressSpace.used()
+                           - 8 * uniqueValueCount;
+        }
     } else {
         BasicType::Type basicType(getBasicType());
         const Status &status = getStatus();
@@ -845,7 +850,7 @@ AttributeVector::getEstimatedSaveByteSize() const
             }
             break;
         default:
-            datFileSize = headerSize + getFixedWidth() * totalValueCount;
+            datFileSize = headerSize + fixedWidth * totalValueCount;
             break;
         }
     }
