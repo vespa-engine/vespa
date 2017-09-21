@@ -23,18 +23,14 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     private static final Logger log = Logger.getLogger(LocalSessionRepo.class.getName());
 
-    private final static FilenameFilter sessionApplicationsFilter = new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-            return name.matches("\\d+");
-        }
-    };
+    private final static FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
 
     private final long sessionLifetime; // in seconds
     private final TenantApplications applicationRepo;
     private final Clock clock;
 
-    public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader, TenantApplications applicationRepo, Clock clock, long sessionLifeTime) {
+    public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader,
+                            TenantApplications applicationRepo, Clock clock, long sessionLifeTime) {
         this(applicationRepo, clock, sessionLifeTime);
         loadSessions(tenantFileSystemDirs.path(), loader);
     }
@@ -48,7 +44,8 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
             try {
                 addSession(loader.loadSession(Long.parseLong(application.getName())));
             } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Could not load application '" + application.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
+                log.log(LogLevel.WARNING, "Could not load application '" +
+                        application.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
             }
         }
     }

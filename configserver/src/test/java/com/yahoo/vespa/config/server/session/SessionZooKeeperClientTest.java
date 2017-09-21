@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.text.Utf8;
@@ -105,13 +104,9 @@ public class SessionZooKeeperClientTest extends TestWithCurator {
         assertThat(zkId.serializedForm(), is(expectedIdString));
     }
 
-    private SessionZooKeeperClient createSessionZKClient(String generation) {
-        return createSessionZKClient(generation, 100);
-    }
-
-    private SessionZooKeeperClient createSessionZKClient(String generation, long createTimeInMillis) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, Path.fromString(generation));
-        zkc.createNewSession(createTimeInMillis, TimeUnit.MILLISECONDS);
+    private SessionZooKeeperClient createSessionZKClient(String sessionId) {
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, Path.fromString(sessionId));
+        zkc.createNewSession(100, TimeUnit.MILLISECONDS);
         return zkc;
     }
 

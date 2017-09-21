@@ -52,9 +52,9 @@ public class RemoteSessionRepoTest extends TestWithCurator {
 
 
     private void createSession(String root, long sessionId, boolean wait) {
-        Path rootPath = Path.fromString(root).append("sessions");
-        curator.create(rootPath);
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, rootPath.append(String.valueOf(sessionId)));
+        Path sessionsPath = Path.fromString(root).append("sessions");
+        curator.create(sessionsPath);
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath.append(String.valueOf(sessionId)));
         zkc.createNewSession(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
