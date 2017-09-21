@@ -7,7 +7,7 @@
 namespace search {
 namespace predicate {
 /**
- * Hash function coming from the RISE code base, used in boolean search.
+ * Hash function used for predicate fields.
  */
 struct PredicateHash {
     static uint64_t hash64(vespalib::stringref aKey) {

@@ -25,7 +25,7 @@ private:
 /**
  * Attribute that manages a predicate index. It is not a traditional
  * attribute in that it doesn't store values for each document, but
- * rather keeps an index for boolean search. Summaries are not fetched
+ * rather keeps an index for predicate search. Summaries are not fetched
  * from the attribute, but rather using the summary store like a
  * non-index field.
  */

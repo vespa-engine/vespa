@@ -6,13 +6,12 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 /**
- * Encapsulates values required for native implementation of boolean search.
+ * Encapsulates values required for predicate fields.
  *
- * @author <a href="mailto:lesters@yahoo-inc.com">Lester Solbakken</a>
- * @since 5.2
+ * @author lesters
  */
-public final class BooleanIndexDefinition
-{
+public final class BooleanIndexDefinition {
+
     public static final int DEFAULT_ARITY = 8;
     public static final long DEFAULT_UPPER_BOUND = Long.MAX_VALUE;
     public static final long DEFAULT_LOWER_BOUND = Long.MIN_VALUE;
