@@ -78,5 +78,11 @@ ssl.sslKeyManagerFactoryAlgorithm   string   default="SunX509"
 # The SSL protocol passed to SSLContext.getInstance()
 ssl.protocol                        string   default="TLS"
 
-# Whether connector requires client authentication. See SSLEngine.getNeedClientAuth() for details.
-ssl.needClientAuth                  bool     default=false
+# Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
+ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
+
+# The SecureRandom implementation passed to SSLEngine.init()
+# Java have a default pseudo-random number generator (PRNG) for crypto operations. This default may have performance
+# issues on some platform (e.g. NativePRNG in Linux utilizes a global lock). Changing the generator to SHA1PRNG may
+# improve performance. Set value to empty string to use the default generator.
+ssl.prng                            string   default=""
