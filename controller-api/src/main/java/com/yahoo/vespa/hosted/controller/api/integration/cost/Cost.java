@@ -49,6 +49,8 @@ public interface Cost {
     /**
      * Get application costs for a given application instance in a given zone.
      *
+     * Default implementation calls out to @see getApplicationCost
+     *
      * @param env Environment like test, dev, perf, staging or prod
      * @param region Region name like us-east-1
      * @param app ApplicationId like tenant:application:instance
@@ -63,7 +65,7 @@ public interface Cost {
     /**
      * Provides target utilization - default targets ARE XXX
      *
-     * @return
+     * @return Target utilization
      */
     default CostHardwareInfo getUsageTarget(Environment env, RegionName region, ApplicationId app) {
         return new CostHardwareInfo(0.8, 0.3, 0.4, 0.3);
