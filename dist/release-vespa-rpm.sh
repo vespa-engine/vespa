@@ -9,7 +9,9 @@ fi
 
 readonly VERSION=$1
 readonly GITREF=$2
-readonly SPECFILE="dist/vespa.spec"
+readonly DIST_DIR="dist"
+readonly SPECFILE="${DIST_DIR}/vespa.spec"
+readonly TITO_DIR="${DIST_DIR}/.tito"
 readonly RPM_BRANCH="rpmbuild"
 readonly CURRENT_BRANCH=$(git branch | grep "^\*" | cut -d' ' -f2)
 
@@ -22,7 +24,8 @@ git push --delete origin $RPM_BRANCH &> /dev/null || true
 git branch -D $RPM_BRANCH &> /dev/null || true 
 git checkout -b $RPM_BRANCH $GITREF
 
-# Tito expects spec file to be on root
+# Tito expects spec file and .tito directory to be on root
+git mv $TITO_DIR .
 git mv $SPECFILE .
 
 # Hide pom.xml to avoid tito doing anything to our pom.xml files
