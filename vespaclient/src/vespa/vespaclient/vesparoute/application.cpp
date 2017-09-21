@@ -4,16 +4,18 @@
 
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/util/stringutil.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/configagent.h>
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/routedirective.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/network/rpcsendv1.h>
+#include <vespa/messagebus/network/rpcsendv2.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 using config::ConfigGetter;
 using document::DocumenttypesConfig;
@@ -528,9 +530,8 @@ Application::isService(FRT_Supervisor &frt, const std::string &spec) const
         FRT_StringValue *retList = req->GetReturn()->GetValue(2)._string_array._pt;
 
         for (uint32_t i = 0; i < numMethods; ++i) {
-            if (strcmp(methods[i]._str, mbus::RPCSendV1::METHOD_NAME) == 0 &&
-                strcmp(argList[i]._str, mbus::RPCSendV1::METHOD_PARAMS) == 0 &&
-                strcmp(retList[i]._str, mbus::RPCSendV1::METHOD_RETURN) == 0) {
+            if (mbus::RPCSendV1::isCompatible(methods[i]._str,argList[i]._str, retList[i]._str) ||
+                mbus::RPCSendV2::isCompatible(methods[i]._str,argList[i]._str, retList[i]._str)) {
                 ret = true;
                 break;
             }

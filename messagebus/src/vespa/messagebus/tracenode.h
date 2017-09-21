@@ -5,7 +5,7 @@
 
 namespace mbus {
 
-    typedef vespalib::TraceNode TraceNode;
+    using TraceNode = vespalib::TraceNode;
 
 } // namespace mbus
 
