@@ -76,7 +76,7 @@ sampleDiskUsageOnFileSystem(const fs::path &path)
 void
 DiskMemUsageSampler::sampleDiskUsage()
 {
-    bool slowDisk = _filter.getHwInfo().slowDisk();
+    bool slowDisk = _filter.getHwInfo().slowDisk() || true;
     _filter.setDiskStats(slowDisk ? sampleDiskUsageOnFileSystem(_protonBaseDir) :
                          sampleDiskUsageInDirectory(_vespaHomeDir));
 }
