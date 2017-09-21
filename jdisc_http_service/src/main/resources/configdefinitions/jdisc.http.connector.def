@@ -78,5 +78,5 @@ ssl.sslKeyManagerFactoryAlgorithm   string   default="SunX509"
 # The SSL protocol passed to SSLContext.getInstance()
 ssl.protocol                        string   default="TLS"
 
-# Whether connector requires client authentication. See SSLEngine.getNeedClientAuth() for details.
-ssl.needClientAuth                  bool     default=false
+# Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
+ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
