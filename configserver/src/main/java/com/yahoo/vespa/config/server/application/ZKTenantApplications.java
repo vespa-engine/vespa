@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 /**
  * The applications of a tenant, backed by ZooKeeper.
- * Each application is stored as a single file under config/v2/tenants/&lt;tenant&gt;/applications/&lt;applications&gt;,
+ * Each application is stored as a single node under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;applications&gt;,
  * named the same as the application id and containing the id of the session storing the content of the application.
  *
  * @author Ulf Lilleengen
