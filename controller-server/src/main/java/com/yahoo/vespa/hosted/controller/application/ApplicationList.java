@@ -5,15 +5,12 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -130,12 +127,7 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> !hasRunningJob(a, change)));
     }
 
-    /** Returns the subset of applications which deploys to given environment and region */
-    public ApplicationList deploysTo(Environment environment, RegionName region) {
-        return listOf(list.stream().filter(a -> a.deploymentSpec().includes(environment, Optional.of(region))));
-    }
-
-    // ----------------------------------- Internal helpers 
+    // ----------------------------------- Internal helpers
     
     private static boolean isUpgradingTo(Version version, Application application) {
         if ( ! (application.deploying().isPresent()) ) return false;
