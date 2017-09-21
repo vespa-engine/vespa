@@ -181,7 +181,7 @@ RPCNetwork::attach(INetworkOwner &owner)
     _sendV1->attach(*this);
     _sendV2->attach(*this);
     _sendAdapters[vespalib::Version(5)] = _sendV1.get();
-    _sendAdapters[vespalib::Version(6, 148)] = _sendV2.get();
+    _sendAdapters[vespalib::Version(6, 149)] = _sendV2.get();
 
     FRT_ReflectionBuilder builder(_orb.get());
     builder.DefineMethod("mbus.getVersion", "", "s", true, FRT_METHOD(RPCNetwork::invoke), this);

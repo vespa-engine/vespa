@@ -210,18 +210,18 @@ TEST("test that all known versions are present") {
     EXPECT_FALSE(data._srcServer.net.getSendAdapter(vespalib::Version(4, 999)) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0)) != nullptr);
     EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0))) != nullptr);
-    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 147)) != nullptr);
-    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 147))) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148)) != nullptr);
-    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148))) != nullptr);
+    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148))) != nullptr);
+    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 149)) != nullptr);
+    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 149))) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(9, 999)) != nullptr);
     EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(9, 999))) != nullptr);
 }
 
-TEST("test that ee can send between multiple versions") {
+TEST("test that we can send between multiple versions") {
     TestData data;
     ASSERT_TRUE(data.start());
-    TEST_DO(testSendAdapters(data, {vespalib::Version(5, 0), vespalib::Version(6, 147), vespalib::Version(6, 148)}));
+    TEST_DO(testSendAdapters(data, {vespalib::Version(5, 0), vespalib::Version(6, 148), vespalib::Version(6, 149), vespalib::Version(9, 999)}));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
