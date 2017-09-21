@@ -28,13 +28,8 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.HttpProxy;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
-import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
@@ -63,6 +58,7 @@ import java.util.Optional;
 public class DeployTester {
 
     private final Curator curator;
+    private final Clock clock;
     private final Tenants tenants;
     private final File testApp;
 
@@ -75,19 +71,34 @@ public class DeployTester {
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
         this(appPath, modelFactories, new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                      .configServerDBDir(Files.createTempDir()
-                                                                                             .getAbsolutePath())));
+                                                                                             .getAbsolutePath())),
+             Clock.systemUTC());
     }
 
     public DeployTester(String appPath, ConfigserverConfig configserverConfig) {
         this(appPath,
              Collections.singletonList(createModelFactory(Clock.systemUTC())),
-             configserverConfig);
+             configserverConfig,
+             Clock.systemUTC());
+    }
+
+    public DeployTester(String appPath, ConfigserverConfig configserverConfig, Clock clock) {
+        this(appPath,
+             Collections.singletonList(createModelFactory(clock)),
+             configserverConfig,
+             clock);
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
+        this(appPath, modelFactories, configserverConfig, Clock.systemUTC());
+    }
+
+    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
         Metrics metrics = Metrics.createTestMetrics();
         this.curator = new MockCurator();
-        TestComponentRegistry componentRegistry = createComponentRegistry(curator, metrics, modelFactories, configserverConfig);
+        this.clock = clock;
+        TestComponentRegistry componentRegistry = createComponentRegistry(curator, metrics, modelFactories,
+                                                                          configserverConfig, clock);
         try {
             this.testApp = new File(appPath);
             this.tenants = new Tenants(componentRegistry, metrics);
@@ -155,13 +166,9 @@ public class DeployTester {
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(ApplicationId id) {
         ApplicationRepository applicationRepository = new ApplicationRepository(tenants,
-                                                                                HostProvisionerProvider.withProvisioner(createHostProvisioner()),
+                                                                                createHostProvisioner(),
                                                                                 curator,
-                                                                                new LogServerLogGrabber(),
-                                                                                new ApplicationConvergenceChecker(),
-                                                                                new HttpProxy(new SimpleHttpFetcher()),
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()));
-
+                                                                                clock);
         return applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
     }
 
@@ -171,7 +178,8 @@ public class DeployTester {
 
     private TestComponentRegistry createComponentRegistry(Curator curator, Metrics metrics,
                                                           List<ModelFactory> modelFactories,
-                                                          ConfigserverConfig configserverConfig) {
+                                                          ConfigserverConfig configserverConfig,
+                                                          Clock clock) {
         TestComponentRegistry.Builder builder = new TestComponentRegistry.Builder();
 
         if (configserverConfig.hostedVespa()) {
@@ -181,7 +189,8 @@ public class DeployTester {
         builder.configServerConfig(configserverConfig)
                .curator(curator)
                .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-               .metrics(metrics);
+               .metrics(metrics)
+               .clock(clock);
         return builder.build();
     }
 

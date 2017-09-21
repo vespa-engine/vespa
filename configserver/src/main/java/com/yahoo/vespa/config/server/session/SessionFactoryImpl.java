@@ -22,6 +22,7 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -52,12 +53,15 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final TenantName tenant;
     private final String serverId;
     private final Optional<NodeFlavors> nodeFlavors;
+    private final Clock clock;
 
     public SessionFactoryImpl(GlobalComponentRegistry globalComponentRegistry,
                               SessionCounter sessionCounter,
                               Path sessionsPath,
                               TenantApplications applicationRepo,
-                              TenantFileSystemDirs tenantFileSystemDirs, HostValidator<ApplicationId> hostRegistry, TenantName tenant) {
+                              TenantFileSystemDirs tenantFileSystemDirs,
+                              HostValidator<ApplicationId> hostRegistry,
+                              TenantName tenant) {
         this.hostRegistry = hostRegistry;
         this.tenant = tenant;
         this.sessionPreparer = globalComponentRegistry.getSessionPreparer();
@@ -71,6 +75,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.defRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.serverId = globalComponentRegistry.getConfigserverConfig().serverId();
         this.nodeFlavors = globalComponentRegistry.getZone().nodeFlavors();
+        this.clock = globalComponentRegistry.getClock();
     }
 
     @Override
@@ -100,9 +105,11 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     private LocalSession createSessionFromApplication(ApplicationPackage applicationPackage,
                                                       long sessionId,
-                                                      SessionZooKeeperClient sessionZKClient, TimeoutBudget timeoutBudget) {
+                                                      SessionZooKeeperClient sessionZKClient,
+                                                      TimeoutBudget timeoutBudget,
+                                                      Clock clock) {
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
-        sessionZKClient.createNewSession(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        sessionZKClient.createNewSession(clock.instant().toEpochMilli(), TimeUnit.MILLISECONDS);
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Creating upload waiter for session " + sessionId);
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Done creating upload waiter for session " + sessionId);
@@ -145,7 +152,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile, userApplicationDir, applicationName, sessionId, currentlyActiveSession);
             applicationPackage.writeMetaData();
-            return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget);
+            return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget, clock);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionIdPath, e);
         }

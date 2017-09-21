@@ -35,6 +35,18 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         loadSessions(tenantFileSystemDirs.path(), loader);
     }
 
+    // Constructor public only for testing
+    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock) {
+        this(applicationRepo, clock, TimeUnit.DAYS.toMillis(1));
+    }
+
+    // Constructor public only for testing
+    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock, long sessionLifetime) {
+        this.applicationRepo = applicationRepo;
+        this.sessionLifetime = sessionLifetime;
+        this.clock = clock;
+    }
+
     private void loadSessions(File applicationsDir, LocalSessionLoader loader) {
         File[] applications = applicationsDir.listFiles(sessionApplicationsFilter);
         if (applications == null) {
@@ -61,17 +73,6 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
             return getSession(applicationRepo.getSessionIdForApplication(applicationId));
         }
         return null;
-    }
-
-    // Constructor only for testing
-    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock, long sessionLifetime) {
-        this.applicationRepo = applicationRepo;
-        this.sessionLifetime = sessionLifetime;
-        this.clock = clock;
-    }
-
-    public LocalSessionRepo(TenantApplications applicationRepo) {
-        this(applicationRepo, Clock.systemUTC(), TimeUnit.DAYS.toMillis(1));
     }
 
     @Override

@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 
+import java.time.Clock;
 import java.util.Optional;
 
 /**
@@ -108,4 +109,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public Zone getZone() {
         return zone;
     }
+
+    @Override
+    public Clock getClock() {return  Clock.systemUTC();}
 }
