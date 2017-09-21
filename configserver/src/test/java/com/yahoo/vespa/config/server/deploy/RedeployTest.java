@@ -88,8 +88,6 @@ public class RedeployTest {
         assertTrue(deployment3.isPresent());
         deployment3.get().prepare();  // session 4 (not activated)
 
-        try { Thread.sleep(1000);} catch (InterruptedException e) { /* Ignored */ }
-
         LocalSession deployment3session = ((Deployment) deployment3.get()).session();
         assertNotEquals(activeSessionId, deployment3session);
         // No change to active session id
