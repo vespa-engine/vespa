@@ -459,6 +459,7 @@ void AttributeTest::testReload(const AttributePtr & a, const AttributePtr & b, c
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
     a->setCreateSerialNum(43u);
     EXPECT_TRUE( a->saveAs(b->getBaseFileName()) );
+    a->commit(true);
     if (preciseEstimatedSize(*a)) {
         EXPECT_EQUAL(statSize(*b), a->getEstimatedSaveByteSize());
     } else {
