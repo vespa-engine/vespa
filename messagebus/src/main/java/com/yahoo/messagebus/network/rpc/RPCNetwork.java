@@ -184,7 +184,7 @@ public class RPCNetwork implements Network, MethodHandler {
         RPCSendAdapter adapter1 = new RPCSendV1();
         RPCSendAdapter adapter2 = new RPCSendV2();
         addSendAdapter(new Version(5), adapter1);
-        addSendAdapter(new Version(6,148), adapter2);
+        addSendAdapter(new Version(6,149), adapter2);
     }
 
     @Override
