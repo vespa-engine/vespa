@@ -319,7 +319,8 @@ public class StorageMaintainer {
 
     private String executeMaintainer(String mainClass, String... args) {
         String[] command = Stream.concat(
-                Stream.of("sudo", "-E", getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"), mainClass),
+                Stream.of("sudo", "VESPA_HOME=" + getDefaults().vespaHome(),
+                        getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"), mainClass),
                 Stream.of(args))
                 .toArray(String[]::new);
 
