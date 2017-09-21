@@ -73,29 +73,27 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     /**
      * Checks if config sources are available
      */
-    private boolean checkConfigSources() {
+    private void checkConfigSources() {
         if (configSourceSet == null || configSourceSet.getSources() == null || configSourceSet.getSources().size() == 0) {
             log.log(LogLevel.WARNING, "No config sources defined, could not check connection");
-            return false;
         } else {
             Request req = new Request("ping");
             for (String configSource : configSourceSet.getSources()) {
                 Spec spec = new Spec(configSource);
                 Target target = supervisor.connect(spec);
-                target.invokeSync(req, 10.0);
+                target.invokeSync(req, 30.0);
                 if (target.isValid()) {
                     log.log(LogLevel.DEBUG, "Created connection to config source at " + spec.toString());
-                    return true;
+                    return;
                 } else {
-                    log.log(LogLevel.WARNING, "Could not connect to config source at " + spec.toString());
+                    log.log(LogLevel.INFO, "Could not connect to config source at " + spec.toString());
                 }
                 target.close();
             }
             String extra = "";
-            log.log(LogLevel.WARNING, "Could not connect to any config source in set " + configSourceSet.toString() +
+            log.log(LogLevel.INFO, "Could not connect to any config source in set " + configSourceSet.toString() +
                     ", please make sure config server(s) are running. " + extra);
         }
-        return false;
     }
 
     /**
