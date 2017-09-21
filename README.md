@@ -9,7 +9,7 @@ documentation at http://docs.vespa.ai/.
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
 
-[![Build Status](https://travis-ci.org/vespa-engine/vespa.svg?branch=master)](https://travis-ci.org/vespa-engine/vespa)
+Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vespa.svg?branch=master)](https://travis-ci.org/vespa-engine/vespa)
 
 ## Get started developing
 
