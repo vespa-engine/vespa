@@ -128,10 +128,13 @@ public class DeploymentJobs {
     }
 
     /** Returns whether change has been deployed completely */
-    public boolean isDeployed(Change change) {
+    public boolean isDeployed(Optional<Change> change) {
+        if (!change.isPresent()) {
+            return true;
+        }
         return status.values().stream()
                 .filter(status -> status.type().isProduction())
-                .allMatch(status -> isSuccessful(change, status.type()));
+                .allMatch(status -> isSuccessful(change.get(), status.type()));
     }
 
     /** Returns whether job has completed successfully */
