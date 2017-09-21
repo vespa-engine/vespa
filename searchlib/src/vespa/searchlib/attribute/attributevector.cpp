@@ -805,8 +805,8 @@ uint64_t
 AttributeVector::getEstimatedSaveByteSize() const
 {
     uint64_t headerSize = 4096;
-    uint64_t totalValueCount = getTotalValueCount();
-    uint64_t uniqueValueCount = getUniqueValueCount();
+    uint64_t totalValueCount = _status.getNumValues();
+    uint64_t uniqueValueCount = _status.getNumUniqueValues();
     uint64_t docIdLimit = getCommittedDocIdLimit();
     uint64_t datFileSize = 0;
     uint64_t weightFileSize = 0;
