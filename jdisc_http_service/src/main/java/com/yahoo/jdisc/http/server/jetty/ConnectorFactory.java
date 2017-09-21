@@ -144,6 +144,10 @@ public class ConnectorFactory {
                 break;
         }
 
+        if (!sslConfig.prng().isEmpty()) {
+            factory.setSecureRandomAlgorithm(sslConfig.prng());
+        }
+
         if (!sslConfig.excludeProtocol().isEmpty()) {
             final String[] prots = new String[sslConfig.excludeProtocol().size()];
             for (int i = 0; i < prots.length; i++) {
