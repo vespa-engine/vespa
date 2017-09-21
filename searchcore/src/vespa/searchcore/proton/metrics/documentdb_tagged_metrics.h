@@ -84,6 +84,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
     struct IndexMetrics : metrics::MetricSet
     {
+        metrics::LongValueMetric diskUsage;
         MemoryUsageMetrics memoryUsage;
 
         IndexMetrics(metrics::MetricSet *parent);
