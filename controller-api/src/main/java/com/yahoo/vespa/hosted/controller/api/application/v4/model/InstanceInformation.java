@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.yahoo.vespa.hosted.controller.api.cost.CostJsonModel;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.restapi.CostJsonModel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;

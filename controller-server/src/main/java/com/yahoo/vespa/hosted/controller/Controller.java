@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.Cost;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
@@ -175,7 +175,7 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public ApplicationCost getApplicationCost(com.yahoo.config.provision.ApplicationId application,
+    public CostApplication getApplicationCost(com.yahoo.config.provision.ApplicationId application,
                                               com.yahoo.config.provision.Zone zone)
             throws NotFoundCheckedException {
         return cost.getApplicationCost(zone.environment(), zone.region(), application);

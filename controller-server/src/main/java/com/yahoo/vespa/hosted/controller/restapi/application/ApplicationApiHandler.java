@@ -55,8 +55,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.CostJsonModelAdapter;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.restapi.CostJsonModelAdapter;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -432,7 +432,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Cost
         try {
-            ApplicationCost appCost = controller.getApplicationCost(applicationId, zoneId);
+            CostApplication appCost = controller.getApplicationCost(applicationId, zoneId);
             Cursor costObject = response.setObject("cost");
             CostJsonModelAdapter.toSlime(appCost, costObject);
         } catch (NotFoundCheckedException nfce) {

@@ -4,35 +4,34 @@ package com.yahoo.vespa.hosted.controller.api.integration.cost;
 import java.util.List;
 
 /**
- * Cost data model for a cluster. I.e one cluster within one vespa application in one zone.
+ * Cost data model for a cluster. I.e one cluster within one Vespa application in one zone.
  *
  * @author smorgrav
  */
-// TODO: Use doubles
 // TODO: Make immutable
 // TODO: Enforce constraints
 // TODO: Document content
-public class ClusterCost {
+public class CostCluster {
 
     private int count;
     private String resource;
-    private float utilization;
+    private double utilization;
     private int tco;
     private String flavor;
     private int waste;
     private String type;
-    private float utilMem;
-    private float utilCpu;
-    private float utilDisk;
-    private float utilDiskBusy;
-    private float usageMem;
-    private float usageCpu;
-    private float usageDisk;
-    private float usageDiskBusy;
+    private double utilMem;
+    private double utilCpu;
+    private double utilDisk;
+    private double utilDiskBusy;
+    private double usageMem;
+    private double usageCpu;
+    private double usageDisk;
+    private double usageDiskBusy;
     private List<String> hostnames;
     
     /** Create an empty (invalid) cluster cost */
-    public ClusterCost() {}
+    public CostCluster() {}
 
     public int getCount() {
         return count;
@@ -82,7 +81,7 @@ public class ClusterCost {
         this.type = type;
     }
 
-    public float getUtilization() {
+    public double getUtilization() {
         return utilization;
     }
 
@@ -99,7 +98,7 @@ public class ClusterCost {
         this.waste = waste;
     }
 
-    public float getUsageCpu() {
+    public double getUsageCpu() {
         return usageCpu;
     }
 
@@ -108,7 +107,7 @@ public class ClusterCost {
         this.usageCpu = usageCpu;
     }
 
-    public float getUsageDisk() {
+    public double getUsageDisk() {
         return usageDisk;
     }
 
@@ -117,7 +116,7 @@ public class ClusterCost {
         this.usageDisk = usageDisk;
     }
 
-    public float getUsageMem() {
+    public double getUsageMem() {
         return usageMem;
     }
 
@@ -126,7 +125,7 @@ public class ClusterCost {
         this.usageMem = usageMem;
     }
 
-    public float getUtilCpu() {
+    public double getUtilCpu() {
         return utilCpu;
     }
 
@@ -135,7 +134,7 @@ public class ClusterCost {
         this.utilCpu = utilCpu;
     }
 
-    public float getUtilDisk() {
+    public double getUtilDisk() {
         return utilDisk;
     }
 
@@ -144,7 +143,7 @@ public class ClusterCost {
         this.utilDisk = utilDisk;
     }
 
-    public float getUtilMem() {
+    public double getUtilMem() {
         return utilMem;
     }
 
@@ -153,7 +152,7 @@ public class ClusterCost {
         this.utilMem = utilMem;
     }
 
-    public float getUsageDiskBusy() {
+    public double getUsageDiskBusy() {
         return usageDiskBusy;
     }
 
@@ -162,7 +161,7 @@ public class ClusterCost {
         this.usageDiskBusy = usageDiskBusy;
     }
 
-    public float getUtilDiskBusy() {
+    public double getUtilDiskBusy() {
         return utilDiskBusy;
     }
 

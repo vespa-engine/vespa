@@ -1,30 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.cost;
+package com.yahoo.vespa.hosted.controller.api.integration.cost.restapi;
 
 import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.hosted.controller.api.cost.CostJsonModel;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.CostCluster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Converting from cost data model to the JSON data model used in the cost REST API.
+ * Serializing and deserializing cost model
  *
  * @author smorgrav
  */
 public class CostJsonModelAdapter {
 
-    public static CostJsonModel.Application toJsonModel(ApplicationCost appCost) {
+    public static CostJsonModel.Application toJsonModel(CostApplication appCost) {
         CostJsonModel.Application app = new CostJsonModel.Application();
-        app.zone = appCost.getZone();
+        app.zone = appCost.getZone().toString();
         app.tenant = appCost.getTenant();
         app.app = appCost.getApp();
         app.tco = appCost.getTco();
         app.utilization = appCost.getUtilization();
         app.waste = appCost.getWaste();
         app.cluster = new HashMap<>();
-        Map<String, ClusterCost> clusterMap = appCost.getCluster();
+        Map<String, CostCluster> clusterMap = appCost.getCluster();
         for (String key : clusterMap.keySet()) {
             app.cluster.put(key, toJsonModel(clusterMap.get(key)));
         }
@@ -32,19 +33,19 @@ public class CostJsonModelAdapter {
         return app;
     }
     
-    public static void toSlime(ApplicationCost appCost, Cursor object) {
-        object.setString("zone", appCost.getZone());
+    public static void toSlime(CostApplication appCost, Cursor object) {
+        object.setString("zone", appCost.getZone().toString());
         object.setString("tenant", appCost.getTenant());
         object.setString("app", appCost.getApp());
         object.setLong("tco", appCost.getTco());
         object.setDouble("utilization", appCost.getUtilization());
         object.setDouble("waste", appCost.getWaste());
         Cursor clustersObject = object.setObject("cluster");
-        for (Map.Entry<String, ClusterCost> clusterEntry : appCost.getCluster().entrySet())
+        for (Map.Entry<String, CostCluster> clusterEntry : appCost.getCluster().entrySet())
             toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
     }
 
-    public static CostJsonModel.Cluster toJsonModel(ClusterCost clusterCost) {
+    public static CostJsonModel.Cluster toJsonModel(CostCluster clusterCost) {
         CostJsonModel.Cluster cluster = new CostJsonModel.Cluster();
         cluster.count = clusterCost.getCount();
         cluster.resource = clusterCost.getResource();
@@ -67,7 +68,7 @@ public class CostJsonModelAdapter {
         return cluster;
     }
 
-    private static void toSlime(ClusterCost clusterCost, Cursor object) {
+    private static void toSlime(CostCluster clusterCost, Cursor object) {
         object.setLong("count", clusterCost.getCount());
         object.setString("resource", clusterCost.getResource());
         object.setDouble("utilization", clusterCost.getUtilization());

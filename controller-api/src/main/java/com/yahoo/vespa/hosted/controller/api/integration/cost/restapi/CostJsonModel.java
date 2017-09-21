@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.cost;
+package com.yahoo.vespa.hosted.controller.api.integration.cost.restapi;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,9 +26,9 @@ public class CostJsonModel {
         @JsonProperty
         public int tco;
         @JsonProperty
-        public float utilization;
+        public double utilization;
         @JsonProperty
-        public float waste;
+        public double waste;
         @JsonProperty
         public Map<String, Cluster> cluster;
     }
@@ -41,7 +41,7 @@ public class CostJsonModel {
         @JsonProperty
         public String resource;
         @JsonProperty
-        public float utilization;
+        public double utilization;
         @JsonProperty
         public int tco;
         @JsonProperty
@@ -62,12 +62,12 @@ public class CostJsonModel {
     public static class HardwareResources {
 
         @JsonProperty
-        public float mem;
+        public double mem;
         @JsonProperty
-        public float disk;
+        public double disk;
         @JsonProperty
-        public float cpu;
+        public double cpu;
         @JsonProperty("diskbusy")
-        public float diskBusy;
+        public double diskBusy;
     }
 }
