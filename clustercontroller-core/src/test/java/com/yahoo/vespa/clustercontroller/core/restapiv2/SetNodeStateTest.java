@@ -374,11 +374,16 @@ public class SetNodeStateTest extends StateRestApiTest {
                 .setNewState("user", "maintenance", "whatever reason."));
     }
 
-    // FIXME requests should be tagged as version dependent; temporary workaround
     @Test
-    public void set_node_state_requests_are_by_default_not_tagged_as_having_version_ack_dependency() {
+    public void set_node_state_requests_are_by_default_tagged_as_having_version_ack_dependency() {
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        assertFalse(request.hasVersionAckDependency());
+        assertTrue(request.hasVersionAckDependency());
+    }
+
+    @Test
+    public void set_node_state_requests_not_initially_marked_as_failed() {
+        SetNodeStateRequest request = createDummySetNodeStateRequest();
+        assertFalse(request.isFailed());
     }
 
     @Test
@@ -400,6 +405,13 @@ public class SetNodeStateTest extends StateRestApiTest {
         SetNodeStateRequest request = createDummySetNodeStateRequest();
         request.handleLeadershipLost();
         request.getResult();
+    }
+
+    @Test
+    public void leadership_loss_marks_request_as_failed_for_early_out_response() {
+        SetNodeStateRequest request = createDummySetNodeStateRequest();
+        request.handleLeadershipLost();
+        assertTrue(request.isFailed());
     }
 
 }

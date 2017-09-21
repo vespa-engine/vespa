@@ -65,6 +65,11 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
         failure = new UnknownMasterException("Leadership lost before request could complete");
     }
 
+    @Override
+    public boolean isFailed() {
+        return (failure != null);
+    }
+
     public abstract Result calculateResult(Context context) throws StateRestApiException, OtherMasterIndexException;
 
 }

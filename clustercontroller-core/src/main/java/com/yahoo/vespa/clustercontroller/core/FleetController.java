@@ -665,8 +665,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             final RemoteClusterControllerTask task = remoteTasks.poll();
             log.finest(() -> String.format("Processing remote task of type '%s'", task.getClass().getName()));
             task.doRemoteFleetControllerTask(context);
-            // We cannot introduce a version barrier for tasks when we're not the master (and therefore will not publish new versions).
-            if (!isMaster() || !task.hasVersionAckDependency()) {
+            if (taskMayBeCompletedImmediately(task)) {
                 log.finest(() -> String.format("Done processing remote task of type '%s'", task.getClass().getName()));
                 task.notifyCompleted();
             } else {
@@ -676,6 +675,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             return true;
         }
         return false;
+    }
+
+    private boolean taskMayBeCompletedImmediately(RemoteClusterControllerTask task) {
+        // We cannot introduce a version barrier for tasks when we're not the master (and therefore will not publish new versions).
+        return (!task.hasVersionAckDependency() || task.isFailed() || !masterElectionHandler.isMaster());
     }
 
     private RemoteClusterControllerTask.Context createRemoteTaskProcessingContext() {

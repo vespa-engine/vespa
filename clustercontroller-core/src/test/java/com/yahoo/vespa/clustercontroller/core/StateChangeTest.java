@@ -1275,6 +1275,11 @@ public class StateChangeTest extends FleetControllerTest {
         }
     }
 
+    private static class FailingMockSynchronousTaskWithSideEffects extends MockSynchronousTaskWithSideEffects {
+        @Override
+        public boolean isFailed() { return true; }
+    }
+
     private static class MockNoOpSynchronousTask extends MockTask {
         @Override
         public void doRemoteFleetControllerTask(Context ctx) {
@@ -1308,6 +1313,10 @@ public class StateChangeTest extends FleetControllerTest {
 
         MockTask scheduleNoOpVersionDependentTask() throws Exception {
             return scheduleTask(new MockNoOpSynchronousTask());
+        }
+
+        MockTask scheduleFailingVersionDependentTaskWithSideEffects() throws Exception {
+            return scheduleTask(new FailingMockSynchronousTaskWithSideEffects());
         }
 
         void markStorageNodeDown(int index) throws Exception {
@@ -1393,6 +1402,15 @@ public class StateChangeTest extends FleetControllerTest {
 
         fixture.sendAllDeferredDistributorClusterStateAcks();
         assertTrue(task.isCompleted()); // Now finally acked by all nodes
+    }
+
+    @Test
+    public void failing_task_is_immediately_completed() throws Exception {
+        RemoteTaskFixture fixture = createDefaultFixture();
+        MockTask task = fixture.scheduleFailingVersionDependentTaskWithSideEffects();
+
+        assertTrue(task.isInvoked());
+        assertTrue(task.isCompleted());
     }
 
     @Test

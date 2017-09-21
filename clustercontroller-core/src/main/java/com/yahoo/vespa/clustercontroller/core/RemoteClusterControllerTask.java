@@ -32,6 +32,14 @@ public abstract class RemoteClusterControllerTask {
     public boolean hasVersionAckDependency() { return false; }
 
     /**
+     * If true, signals that a task has failed and can be immediately marked as
+     * complete without waiting for a version ACK. The task implementation has
+     * the responsibility of communicating any failure to the caller, and ensuring
+     * that the lack of version waiting does not violate any invariants.
+     */
+    public boolean isFailed() { return false; }
+
+    /**
      *  If the task response has been deferred due to hasVersionAckDependency(),
      *  handleLeadershipLost() will be invoked on the task if the cluster controller
      *  discovers it has lost leadership in the time between task execution and
