@@ -7,6 +7,7 @@ import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 
+import java.time.Duration;
 import java.util.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -116,6 +117,8 @@ public class FleetControllerOptions implements Cloneable {
     // TODO: Get rid of this by always getting nodes by distribution.getNodes()
     public Set<ConfiguredNode> nodes;
 
+    private Duration maxDeferredTaskVersionWaitTime = Duration.ofSeconds(30);
+
     // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
     public FleetControllerOptions(String clusterName) {
         this.clusterName = clusterName;
@@ -137,6 +140,14 @@ public class FleetControllerOptions implements Cloneable {
     public void setStorageDistribution(Distribution distribution) {
         this.storageDistribution = distribution;
         this.nodes = distribution.getNodes();
+    }
+
+    public Duration getMaxDeferredTaskVersionWaitTime() {
+        return maxDeferredTaskVersionWaitTime;
+    }
+
+    public void setMaxDeferredTaskVersionWaitTime(Duration maxDeferredTaskVersionWaitTime) {
+        this.maxDeferredTaskVersionWaitTime = maxDeferredTaskVersionWaitTime;
     }
 
     public FleetControllerOptions clone() {
@@ -213,6 +224,7 @@ public class FleetControllerOptions implements Cloneable {
         sb.append("<tr><td><nobr>Maximum event log size</nobr></td><td align=\"right\">").append(eventLogMaxSize).append("</td></tr>");
         sb.append("<tr><td><nobr>Maximum node event log size</nobr></td><td align=\"right\">").append(eventNodeLogMaxSize).append("</td></tr>");
         sb.append("<tr><td><nobr>Wanted distribution bits</nobr></td><td align=\"right\">").append(distributionBits).append("</td></tr>");
+        sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
 
         sb.append("</table>");
     }

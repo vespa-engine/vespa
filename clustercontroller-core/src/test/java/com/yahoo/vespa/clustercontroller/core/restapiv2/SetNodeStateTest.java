@@ -2,7 +2,9 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.SetNodeStateRequest;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.DeadlineExceededException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
@@ -403,15 +405,25 @@ public class SetNodeStateTest extends StateRestApiTest {
         expectedException.expect(UnknownMasterException.class);
 
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleLeadershipLost();
+        request.handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
         request.getResult();
     }
 
     @Test
     public void leadership_loss_marks_request_as_failed_for_early_out_response() {
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleLeadershipLost();
+        request.handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
         assertTrue(request.isFailed());
+    }
+
+    @Test
+    public void deadline_exceeded_fails_set_node_state_request() throws Exception {
+        expectedException.expectMessage("Task exceeded its version wait deadline");
+        expectedException.expect(DeadlineExceededException.class);
+
+        SetNodeStateRequest request = createDummySetNodeStateRequest();
+        request.handleFailure(RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED);
+        request.getResult();
     }
 
 }
