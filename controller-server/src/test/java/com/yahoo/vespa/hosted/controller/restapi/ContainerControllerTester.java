@@ -28,9 +28,13 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -42,13 +46,17 @@ public class ContainerControllerTester {
 
     private final ContainerTester containerTester;
     private final Controller controller;
+    private final Upgrader upgrader;
 
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
         controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
+        upgrader = new Upgrader(controller, Duration.ofMinutes(2), new JobControl(new MockCuratorDb()));
     }
 
     public Controller controller() { return controller; }
+
+    public Upgrader upgrader() { return upgrader; }
 
     /** Returns the wrapped generic container tester */
     public ContainerTester containerTester() { return containerTester; }

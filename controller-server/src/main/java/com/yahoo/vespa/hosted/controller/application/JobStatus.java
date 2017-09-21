@@ -13,6 +13,7 @@ import java.util.Optional;
  * This is immutable.
  * 
  * @author bratseth
+ * @author mpolden
  */
 public class JobStatus {
     
@@ -52,17 +53,20 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()); 
     }
 
-    public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision, Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(version, revision, triggerTime)),
+    public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision, boolean upgrade,
+                                    Instant triggerTime) {
+        return new JobStatus(type, jobError, Optional.of(new JobRun(version, revision, upgrade, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
     public JobStatus withCompletion(Optional<DeploymentJobs.JobError> jobError, Instant completionTime, Controller controller) {
         Version version;
         Optional<ApplicationRevision> revision;
+        boolean upgrade;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion();
             revision = Optional.empty();
+            upgrade = false;
         }
         else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
@@ -72,9 +76,10 @@ public class JobStatus {
         else {
             version = lastTriggered.get().version();
             revision = lastTriggered.get().revision();
+            upgrade = lastTriggered.get().upgrade();
         }
 
-        JobRun thisCompletion = new JobRun(version, revision, completionTime);
+        JobRun thisCompletion = new JobRun(version, revision, upgrade, completionTime);
 
         Optional<JobRun> firstFailing = this.firstFailing;
         if (jobError.isPresent() &&  ! this.firstFailing.isPresent())
@@ -166,15 +171,20 @@ public class JobStatus {
         private final Version version;
         private final Optional<ApplicationRevision> revision;
         private final Instant at;
+        private final boolean upgrade;
         
-        public JobRun(Version version, Optional<ApplicationRevision> revision, Instant at) {
+        public JobRun(Version version, Optional<ApplicationRevision> revision, boolean upgrade, Instant at) {
             Objects.requireNonNull(version, "version cannot be null");
             Objects.requireNonNull(revision, "revision cannot be null");
             Objects.requireNonNull(at, "at cannot be null");
             this.version = version;
             this.revision = revision;
+            this.upgrade = upgrade;
             this.at = at;
         }
+
+        /** Returns whether this job run was a Vespa upgrade */
+        public boolean upgrade() { return upgrade; }
         
         /** The Vespa version used on this run */
         public Version version() { return version; }
@@ -184,25 +194,26 @@ public class JobStatus {
         
         /** The time if this triggering or completion */
         public Instant at() { return at; }
-        
-        @Override 
+
+        @Override
         public int hashCode() {
-            return Objects.hash(version ,revision, at);
+            return Objects.hash(version, revision, upgrade, at);
         }
         
         @Override
         public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! (o instanceof JobRun)) return false;
-            JobRun other = (JobRun)o;
-            if ( ! Objects.equals(other.version, this.version)) return false;
-            if ( ! Objects.equals(this.revision, other.revision)) return false;
-            if ( ! Objects.equals(this.at, other.at)) return false;
-            return true;
+            if (this == o) return true;
+            if (!(o instanceof JobRun)) return false;
+            JobRun jobRun = (JobRun) o;
+            return upgrade == jobRun.upgrade &&
+                   Objects.equals(version, jobRun.version) &&
+                   Objects.equals(revision, jobRun.revision) &&
+                   Objects.equals(at, jobRun.at);
         }
-        
+
         @Override
-        public String toString() { return "job run of version " + version + " " + revision + " at " + at; }
+        public String toString() { return "job run of version " + (upgrade() ? "upgrade " : "") + version + " "
+                                          + revision + " at " + at; }
         
     }
 

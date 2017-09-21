@@ -290,7 +290,7 @@ public class DeploymentTrigger {
                                cause));
         buildSystem.addJob(application.id(), jobType, first);
 
-        return application.withJobTriggering(jobType, clock.instant(), controller);
+        return application.withJobTriggering(jobType, application.deploying(), clock.instant(), controller);
     }
 
     private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
