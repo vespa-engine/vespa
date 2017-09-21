@@ -61,7 +61,7 @@ findroot
 ${VESPA_HOME}/bin/vespa-prestart.sh || exit 1
 willrun=${VESPA_HOME}/libexec/vespa/start-configserver
 if [ -x $willrun ]; then
-    echo "Starting $willrun" >&2
+    echo "Running $willrun" >&2
     exec $willrun
 fi
 echo "FATAL cannot run: $willrun"
