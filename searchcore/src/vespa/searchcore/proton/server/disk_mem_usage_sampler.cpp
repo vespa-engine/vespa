@@ -3,31 +3,19 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/timer.h>
 #include <vespa/searchlib/common/lambdatask.h>
+#include <experimental/filesystem>
 #include <unistd.h>
 
 using search::makeLambdaTask;
 
 namespace proton {
 
-namespace {
-
-uint64_t getPhysicalMemoryBytes()
-{
-    // TODO: Temporal workaround for Docker nodes. Remove when this is part of proton.cfg instead.
-    if (const char *memoryEnv = std::getenv("VESPA_TOTAL_MEMORY_MB")) {
-        uint64_t physicalMemoryMB = atoll(memoryEnv);
-        return physicalMemoryMB * 1024u * 1024u;
-    } else {
-        return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
-    }
-}
-
-} // namespace proton:<anonymous>
-
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in,
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &protonBaseDir,
+                                         const std::string &vespaHomeDir,
                                          const Config &config)
-    : _filter(getPhysicalMemoryBytes()),
-      _path(path_in),
+    : _filter(config.hwInfo),
+      _protonBaseDir(protonBaseDir),
+      _vespaHomeDir(vespaHomeDir),
       _sampleInterval(60.0),
       _periodicTimer()
 {
@@ -43,8 +31,8 @@ void
 DiskMemUsageSampler::setConfig(const Config &config)
 {
     _periodicTimer.reset();
-    _filter.setConfig(config._filterConfig);
-    _sampleInterval = config._sampleInterval;
+    _filter.setConfig(config.filterConfig);
+    _sampleInterval = config.sampleInterval;
     sampleUsage();
     _periodicTimer = std::make_unique<vespalib::Timer>();
     _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]()
@@ -59,10 +47,38 @@ DiskMemUsageSampler::sampleUsage()
     sampleDiskUsage();
 }
 
+namespace {
+
+namespace fs = std::experimental::filesystem;
+
+uint64_t
+sampleDiskUsageInDirectory(const fs::path &path)
+{
+    uint64_t result = 0;
+    for (const auto &elem : fs::recursive_directory_iterator(path,
+                                                             fs::directory_options::skip_permission_denied)) {
+        if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
+            result += fs::file_size(elem.path());
+        }
+    }
+    return result;
+}
+
+uint64_t
+sampleDiskUsageOnFileSystem(const fs::path &path)
+{
+    auto space_info = fs::space(path);
+    return (space_info.capacity - space_info.available);
+}
+
+}
+
 void
 DiskMemUsageSampler::sampleDiskUsage()
 {
-    _filter.setDiskStats(std::experimental::filesystem::space(_path));
+    bool slowDisk = _filter.getHwInfo().slowDisk();
+    _filter.setDiskStats(slowDisk ? sampleDiskUsageOnFileSystem(_protonBaseDir) :
+                         sampleDiskUsageInDirectory(_vespaHomeDir));
 }
 
 void

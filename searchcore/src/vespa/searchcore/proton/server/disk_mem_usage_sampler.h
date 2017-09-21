@@ -13,7 +13,8 @@ namespace proton {
  */
 class DiskMemUsageSampler {
     DiskMemUsageFilter _filter;
-    std::experimental::filesystem::path _path;
+    std::experimental::filesystem::path _protonBaseDir;
+    std::experimental::filesystem::path _vespaHomeDir;
     double _sampleInterval;
     std::unique_ptr<vespalib::Timer> _periodicTimer;
 
@@ -22,24 +23,30 @@ class DiskMemUsageSampler {
     void sampleMemoryUsage();
 public:
     struct Config {
-        DiskMemUsageFilter::Config _filterConfig;
-        double _sampleInterval;
-    public:
+        DiskMemUsageFilter::Config filterConfig;
+        double sampleInterval;
+        HwInfo hwInfo;
+
         Config()
-            : _filterConfig(),
-              _sampleInterval(60.0)
+            : filterConfig(),
+              sampleInterval(60.0),
+              hwInfo()
         {
         }
 
-        Config(double memoryLimit_in, double diskLimit_in,
-               double sampleInterval_in)
-            : _filterConfig(memoryLimit_in, diskLimit_in),
-              _sampleInterval(sampleInterval_in)
+        Config(double memoryLimit_in,
+               double diskLimit_in,
+               double sampleInterval_in,
+               const HwInfo &hwInfo_in)
+            : filterConfig(memoryLimit_in, diskLimit_in),
+              sampleInterval(sampleInterval_in),
+              hwInfo(hwInfo_in)
         {
         }
     };
 
-    DiskMemUsageSampler(const std::string &path_in,
+    DiskMemUsageSampler(const std::string &protonBaseDir,
+                        const std::string &vespaHomeDir,
                         const Config &config);
 
     ~DiskMemUsageSampler();

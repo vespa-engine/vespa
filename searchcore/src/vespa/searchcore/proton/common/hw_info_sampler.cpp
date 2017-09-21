@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hw_info_sampler.h"
-#include <vespa/config/config.h>
 #include <vespa/config/common/configholder.h>
+#include <vespa/config/config.h>
 #include <vespa/config/file/filesource.h>
-#include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/config/print/fileconfigwriter.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/fastos/file.h>
+#include <vespa/searchcore/config/config-hwinfo.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <experimental/filesystem>
 
 using config::ConfigHandle;
 using config::ConfigSubscriber;
@@ -21,6 +22,26 @@ using Clock = std::chrono::system_clock;
 namespace proton {
 
 namespace {
+
+uint64_t
+sampleDiskSizeBytes(const std::string &pathStr, const HwInfoSampler::Config &cfg)
+{
+    if (cfg.diskSizeBytes != 0) {
+        return cfg.diskSizeBytes;
+    }
+    std::experimental::filesystem::path path(pathStr);
+    auto space_info = std::experimental::filesystem::space(path);
+    return space_info.capacity;
+}
+
+uint64_t
+sampleMemorySizeBytes(const HwInfoSampler::Config &cfg)
+{
+    if (cfg.memorySizeBytes != 0) {
+        return cfg.memorySizeBytes;
+    }
+    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+}
 
 std::unique_ptr<HwinfoConfig> readConfig(const vespalib::string &path) {
     FileSpec spec(path + "/" + "hwinfo.cfg");
@@ -78,20 +99,11 @@ HwInfoSampler::HwInfoSampler(const vespalib::string &path,
                              const Config &config)
     : _hwInfo(),
       _sampleTime(),
-      _diskWriteSpeed(0.0)
+      _diskSizeBytes(sampleDiskSizeBytes(path, config)),
+      _diskWriteSpeed(0.0),
+      _memorySizeBytes(sampleMemorySizeBytes(config))
 {
-    if (config._diskWriteSpeedOverride != 0) {
-        _diskWriteSpeed = config._diskWriteSpeedOverride;
-        _sampleTime = Clock::now();
-    } else {
-        auto cfg = readConfig(path);
-        if (cfg && cfg->disk.sampletime != 0.0) {
-            _sampleTime = std::chrono::time_point<Clock>(std::chrono::seconds(cfg->disk.sampletime));
-            _diskWriteSpeed = cfg->disk.writespeed;
-        } else {
-            sample(path, config);
-        }
-    }
+    setDiskWriteSpeed(path, config);
     setup(config);
 }
 
@@ -102,15 +114,32 @@ HwInfoSampler::~HwInfoSampler()
 void
 HwInfoSampler::setup(const Config &config)
 {
-    bool slowDisk = _diskWriteSpeed < config._slowWriteSpeedLimit;
-    _hwInfo = HwInfo(slowDisk);
+    bool slowDisk = _diskWriteSpeed < config.slowWriteSpeedLimit;
+    _hwInfo = HwInfo(_diskSizeBytes, slowDisk, _memorySizeBytes);
 }
 
 void
-HwInfoSampler::sample(const vespalib::string &path, const Config &config)
+HwInfoSampler::setDiskWriteSpeed(const vespalib::string &path, const Config &config)
+{
+    if (config.diskWriteSpeedOverride != 0) {
+        _diskWriteSpeed = config.diskWriteSpeedOverride;
+        _sampleTime = Clock::now();
+    } else {
+        auto cfg = readConfig(path);
+        if (cfg && cfg->disk.sampletime != 0.0) {
+            _sampleTime = std::chrono::time_point<Clock>(std::chrono::seconds(cfg->disk.sampletime));
+            _diskWriteSpeed = cfg->disk.writespeed;
+        } else {
+            sampleDiskWriteSpeed(path, config);
+        }
+    }
+}
+
+void
+HwInfoSampler::sampleDiskWriteSpeed(const vespalib::string &path, const Config &config)
 {
     size_t minDiskWriteLen = 1024u * 1024u;
-    size_t diskWriteLen = config._diskSampleWriteSize;
+    size_t diskWriteLen = config.diskSampleWriteSize;
     diskWriteLen = std::max(diskWriteLen, minDiskWriteLen);
     _sampleTime = Clock::now();
     _diskWriteSpeed = measureDiskWriteSpeed(path, diskWriteLen);
