@@ -46,13 +46,13 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     private final Logger log = Logger.getLogger(NodeAdminProvider.class.getName());
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
-    private Lock classLock = null;
+    private final Lock classLock;
 
     @Inject
     public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver, Locking locking) {
         log.log(LogLevel.INFO, objectToString() + ": Creating object, acquiring lock...");
+        classLock = locking.lock(this.getClass());
         try {
-            classLock = locking.lock(this.getClass());
             log.log(LogLevel.INFO, objectToString() + ": Lock acquired");
 
             Clock clock = Clock.systemUTC();
@@ -78,7 +78,7 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
                     dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
             nodeAdminStateUpdater.start();
         } catch (Exception e) {
-            if (classLock != null) classLock.close();
+            classLock.close();
             throw e;
         }
     }
