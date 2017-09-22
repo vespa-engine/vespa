@@ -35,7 +35,6 @@ mkdir -p $INSTALLPATH/conf/zookeeper/
 mkdir -p $INSTALLPATH/libexec/jdisc_core/
 mkdir -p $INSTALLPATH/libexec/vespa/modelplugins/
 mkdir -p $INSTALLPATH/libexec/vespa/plugins/qrs/
-mkdir -p $INSTALLPATH/libexec/yjava_daemon/bin/
 mkdir -p $INSTALLPATH/logs/jdisc_core/
 mkdir -p $INSTALLPATH/logs/vespa/
 mkdir -p $INSTALLPATH/logs/vespa/
