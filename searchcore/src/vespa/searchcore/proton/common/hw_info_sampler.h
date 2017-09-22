@@ -16,22 +16,16 @@ class HwInfoSampler
 {
 public:
     struct Config {
-        uint64_t diskSizeBytes;
-        double diskWriteSpeedOverride;
-        double slowWriteSpeedLimit;
-        uint64_t diskSampleWriteSize;
-        uint64_t memorySizeBytes;
+        double _diskWriteSpeedOverride;
+        double _slowWriteSpeedLimit;
+        uint64_t _diskSampleWriteSize;
 
-        Config(uint64_t diskSizeBytes_,
-               double diskWriteSpeedOverride_,
-               double slowWriteSpeedLimit_,
-               double diskSampleWriteSize_,
-               uint64_t memorySizeBytes_)
-            : diskSizeBytes(diskSizeBytes_),
-              diskWriteSpeedOverride(diskWriteSpeedOverride_),
-              slowWriteSpeedLimit(slowWriteSpeedLimit_),
-              diskSampleWriteSize(diskSampleWriteSize_),
-              memorySizeBytes(memorySizeBytes_)
+        Config(double diskWriteSpeedOverride,
+               double slowWriteSpeedLimit,
+               double diskSampleWriteSize)
+            : _diskWriteSpeedOverride(diskWriteSpeedOverride),
+              _slowWriteSpeedLimit(slowWriteSpeedLimit),
+              _diskSampleWriteSize(diskSampleWriteSize)
         {
         }
     };
@@ -40,13 +34,10 @@ private:
     HwInfo _hwInfo;
     using Clock = std::chrono::system_clock;
     Clock::time_point _sampleTime;
-    uint64_t _diskSizeBytes;
     double _diskWriteSpeed;
-    uint64_t _memorySizeBytes;
 
     void setup(const Config &config);
-    void setDiskWriteSpeed(const vespalib::string &path, const Config &config);
-    void sampleDiskWriteSpeed(const vespalib::string &path, const Config &config);
+    void sample(const vespalib::string &path, const Config &config);
 public:
     HwInfoSampler(const vespalib::string &path, const Config &config);
     ~HwInfoSampler();
