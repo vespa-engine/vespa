@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.restapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -11,8 +10,8 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 
-import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,13 +36,10 @@ public class RestApiHandler extends LoggingRequestHandler{
     private final NodeAdminStateUpdater refresher;
     private final MetricReceiverWrapper metricReceiverWrapper;
 
-    @Inject
-    public RestApiHandler(Executor executor, AccessLog accessLog,
-                          Provider<NodeAdminStateUpdater> componentsProvider,
-                          MetricReceiverWrapper metricReceiverWrapper) {
+    public RestApiHandler(Executor executor, AccessLog accessLog, ComponentsProvider componentsProvider) {
         super(executor, accessLog);
-        this.refresher = componentsProvider.get();
-        this.metricReceiverWrapper = metricReceiverWrapper;
+        this.refresher = componentsProvider.getNodeAdminStateUpdater();
+        this.metricReceiverWrapper = componentsProvider.getMetricReceiverWrapper();
     }
 
     @Override

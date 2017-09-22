@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -35,7 +36,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.
  *
  * @author dybis, stiankri
  */
-public class NodeAdminStateUpdater {
+public class NodeAdminStateUpdater extends AbstractComponent {
     static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
@@ -51,31 +52,35 @@ public class NodeAdminStateUpdater {
     private Thread loopThread;
 
     private final NodeRepository nodeRepository;
-    private final Orchestrator orchestrator;
-    private final StorageMaintainer storageMaintainer;
     private final NodeAdmin nodeAdmin;
     private final Clock clock;
+    private final Orchestrator orchestrator;
     private final String dockerHostHostName;
-    private final Duration nodeAdminConvergeStateInterval;
 
+    private long delaysBetweenEachTickMillis = 30_000;
     private Instant lastTick;
 
     public NodeAdminStateUpdater(
-            NodeRepository nodeRepository,
-            Orchestrator orchestrator,
+            final NodeRepository nodeRepository,
+            final NodeAdmin nodeAdmin,
             StorageMaintainer storageMaintainer,
-            NodeAdmin nodeAdmin,
-            String dockerHostHostName,
             Clock clock,
-            Duration nodeAdminConvergeStateInterval) {
+            Orchestrator orchestrator,
+            String dockerHostHostName) {
+        log.log(LogLevel.INFO, objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
-        this.orchestrator = orchestrator;
-        this.storageMaintainer = storageMaintainer;
         this.nodeAdmin = nodeAdmin;
-        this.dockerHostHostName = dockerHostHostName;
         this.clock = clock;
-        this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
+        this.orchestrator = orchestrator;
+        this.dockerHostHostName = dockerHostHostName;
         this.lastTick = clock.instant();
+
+        specVerifierScheduler.scheduleWithFixedDelay(() ->
+                updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
+    }
+
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
     public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
@@ -128,8 +133,7 @@ public class NodeAdminStateUpdater {
         State wantedStateCopy;
         synchronized (monitor) {
             while (! workToDoNow) {
-                Duration timeSinceLastConverge = Duration.between(lastTick, clock.instant());
-                long remainder = nodeAdminConvergeStateInterval.minus(timeSinceLastConverge).toMillis();
+                long remainder = delaysBetweenEachTickMillis - Duration.between(lastTick, clock.instant()).toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);
@@ -227,7 +231,7 @@ public class NodeAdminStateUpdater {
             }
             final List<ContainerNodeSpec> containersToRun;
             try {
-                containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
+                containersToRun = nodeRepository.getContainersToRun();
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed fetching container info from node repository", e);
                 return;
@@ -246,7 +250,7 @@ public class NodeAdminStateUpdater {
 
     private List<String> getNodesInActiveState() {
         try {
-            return nodeRepository.getContainersToRun(dockerHostHostName)
+            return nodeRepository.getContainersToRun()
                                  .stream()
                                  .filter(nodespec -> nodespec.nodeState == Node.State.active)
                                  .map(nodespec -> nodespec.hostname)
@@ -256,7 +260,8 @@ public class NodeAdminStateUpdater {
         }
     }
 
-    public void start() {
+    public void start(long stateConvergeInterval) {
+        delaysBetweenEachTickMillis = stateConvergeInterval;
         if (loopThread != null) {
             throw new RuntimeException("Can not restart NodeAdminStateUpdater");
         }
@@ -266,30 +271,24 @@ public class NodeAdminStateUpdater {
         });
         loopThread.setName("tick-NodeAdminStateUpdater");
         loopThread.start();
-
-        specVerifierScheduler.scheduleWithFixedDelay(() ->
-                updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
     }
 
-    public void stop() {
-        specVerifierScheduler.shutdown();
+    @Override
+    public void deconstruct() {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
-
-        // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
+        log.log(LogLevel.INFO, objectToString() + ": Deconstruct called");
         signalWorkToBeDone();
-
-        do {
-            try {
-                loopThread.join();
-                specVerifierScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            } catch (InterruptedException e1) {
-                log.info("Interrupted while waiting for NodeAdminStateUpdater thread and specVerfierScheduler to shutdown");
+        try {
+            loopThread.join(10000);
+            if (loopThread.isAlive()) {
+                log.log(LogLevel.ERROR, "Could not stop tick thread");
             }
-        } while (loopThread.isAlive() || !specVerifierScheduler.isTerminated());
-
-        // Finally, stop NodeAdmin and all the NodeAgents
-        nodeAdmin.stop();
+        } catch (InterruptedException e1) {
+            log.log(LogLevel.ERROR, "Interrupted; Could not stop thread");
+        }
+        nodeAdmin.shutdown();
+        log.log(LogLevel.INFO, objectToString() + ": Deconstruct complete");
     }
 }

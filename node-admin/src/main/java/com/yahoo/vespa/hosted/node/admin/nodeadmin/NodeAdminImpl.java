@@ -55,6 +55,8 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final Map<ContainerName, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
+    private final int nodeAgentScanIntervalMillis;
+
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
@@ -62,11 +64,13 @@ public class NodeAdminImpl implements NodeAdmin {
                          final Function<String, NodeAgent> nodeAgentFactory,
                          final StorageMaintainer storageMaintainer,
                          final AclMaintainer aclMaintainer,
+                         final int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver,
                          final Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
+        this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
         this.clock = clock;
         this.previousWantFrozen = true;
@@ -179,21 +183,24 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void stop() {
+    public void shutdown() {
         metricsScheduler.shutdown();
         aclScheduler.shutdown();
-
-        // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
-        nodeAgents.values().parallelStream().forEach(NodeAgent::stop);
-
-        do {
-            try {
-                metricsScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                aclScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            } catch (InterruptedException e) {
-                logger.info("Was interrupted while waiting for metricsScheduler and aclScheduler to shutdown");
+        try {
+            boolean metricsSchedulerShutdown = metricsScheduler.awaitTermination(30, TimeUnit.SECONDS);
+            boolean aclSchedulerShutdown = aclScheduler.awaitTermination(30, TimeUnit.SECONDS);
+            if (! (metricsSchedulerShutdown && aclSchedulerShutdown)) {
+                throw new RuntimeException("Failed shutting down all scheduler(s), shutdown status:\n" +
+                        "\tMetrics Scheduler: " + metricsSchedulerShutdown + "\n" +
+                        "\tACL Scheduler: " + aclSchedulerShutdown);
             }
-        } while (!metricsScheduler.isTerminated() || !aclScheduler.isTerminated());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            nodeAgent.stop();
+        }
     }
 
     // Set-difference. Returns minuend minus subtrahend.
@@ -250,7 +257,7 @@ public class NodeAdminImpl implements NodeAdmin {
         }
 
         final NodeAgent agent = nodeAgentFactory.apply(hostname);
-        agent.start();
+        agent.start(nodeAgentScanIntervalMillis);
         nodeAgents.put(containerName, agent);
         try {
             Thread.sleep(1000);

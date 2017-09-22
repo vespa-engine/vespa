@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
+import com.yahoo.vespa.defaults.Defaults;
+
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
@@ -17,6 +19,7 @@ import java.util.Optional;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
+    static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
@@ -25,11 +28,9 @@ public class OrchestratorImpl implements Orchestrator {
             = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
 
     private final ConfigServerHttpRequestExecutor requestExecutor;
-    private final int port;
 
-    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor, int port) {
+    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
-        this.port = port;
     }
 
     @Override
@@ -37,7 +38,7 @@ public class OrchestratorImpl implements Orchestrator {
         UpdateHostResponse response;
         try {
             response = requestExecutor.put(getSuspendPath(hostName),
-                    port,
+                    WEB_SERVICE_PORT,
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
@@ -57,7 +58,7 @@ public class OrchestratorImpl implements Orchestrator {
         try {
              batchOperationResult = requestExecutor.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                     port,
+                    WEB_SERVICE_PORT,
                     Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                     BatchOperationResult.class);
         } catch (Exception e) {
@@ -74,7 +75,7 @@ public class OrchestratorImpl implements Orchestrator {
         UpdateHostResponse response;
         try {
             String path = getSuspendPath(hostName);
-            response = requestExecutor.delete(path, port, UpdateHostResponse.class);
+            response = requestExecutor.delete(path, WEB_SERVICE_PORT, UpdateHostResponse.class);
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
         } catch (Exception e) {

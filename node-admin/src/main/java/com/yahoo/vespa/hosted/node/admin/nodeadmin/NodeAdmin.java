@@ -62,5 +62,5 @@ public interface NodeAdmin {
     /**
      * Stop the NodeAgent. Will not delete the storage or stop the container.
      */
-    void stop();
+    void shutdown();
 }
