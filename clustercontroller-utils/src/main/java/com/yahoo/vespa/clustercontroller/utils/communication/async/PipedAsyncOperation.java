@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
 public abstract class PipedAsyncOperation<S, T> extends RedirectedAsyncOperation<S, T> {
+
     private T result;
 
     public PipedAsyncOperation(AsyncOperation<S> source) {
@@ -20,4 +21,5 @@ public abstract class PipedAsyncOperation<S, T> extends RedirectedAsyncOperation
     public T getResult() {
         return result;
     }
+
 }

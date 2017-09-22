@@ -11,6 +11,7 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2;
 import com.yahoo.vdslib.state.NodeType;
 
 public class Id {
+
     public static class Cluster extends Id {
         private final String id;
 
@@ -62,4 +63,5 @@ public class Id {
         public final int getPartitionIndex() { return id; }
         public String toString() { return super.toString() + "/" + id; }
     }
+
 }

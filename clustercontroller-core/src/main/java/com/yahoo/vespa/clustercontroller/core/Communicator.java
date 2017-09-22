@@ -21,4 +21,5 @@ public interface Communicator {
     void setSystemState(ClusterState state, NodeInfo node, Waiter<SetClusterStateRequest> waiter);
 
     void shutdown();
+
 }

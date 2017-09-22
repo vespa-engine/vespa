@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 public class TimeoutHandler<V extends HttpResult> extends AsyncHttpClientWithBase<V> {
+
     public static class InternalRequest<V extends HttpResult> extends AsyncOperationImpl<V> {
         final AsyncOperation<V> operation;
         long startTime;
@@ -146,4 +147,5 @@ public class TimeoutHandler<V extends HttpResult> extends AsyncHttpClientWithBas
             requests.values().remove(r);
         }
     }
+
 }

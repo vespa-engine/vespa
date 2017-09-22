@@ -13,6 +13,7 @@ import java.util.Map;
 
 /**
  * Class used to create a StorageNodeStatsContainer from HostInfo.
+ *
  * @author hakonhall
  */
 public class StorageNodeStatsBridge {
@@ -51,4 +52,5 @@ public class StorageNodeStatsBridge {
         }
         return new StorageMergeStats(mapToNodeStats);
     }
+
 }

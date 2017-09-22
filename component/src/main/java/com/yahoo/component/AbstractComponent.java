@@ -141,4 +141,5 @@ public class AbstractComponent implements Component {
         Class declaringClass = deconstruct.getDeclaringClass();
         return (declaringClass != AbstractComponent.class);
     }
+
 }

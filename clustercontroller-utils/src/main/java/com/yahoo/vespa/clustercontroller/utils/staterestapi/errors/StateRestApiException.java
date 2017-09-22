@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.errors;
 
 public abstract class StateRestApiException extends Exception {
+
     private Integer htmlCode;
     private String htmlStatus;
 
@@ -29,4 +30,5 @@ public abstract class StateRestApiException extends Exception {
 
     public Integer getCode() { return htmlCode; }
     public String getStatus() { return htmlStatus; }
+
 }

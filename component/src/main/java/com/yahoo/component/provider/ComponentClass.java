@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class ComponentClass<T extends AbstractComponent> {
+
     private static Logger log = Logger.getLogger(ComponentClass.class.getName());
 
     private final Class<T> clazz;

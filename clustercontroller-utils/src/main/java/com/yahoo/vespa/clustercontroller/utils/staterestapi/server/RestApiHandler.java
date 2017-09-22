@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RestApiHandler implements HttpRequestHandler {
+
     private final static Logger log = Logger.getLogger(RestApiHandler.class.getName());
 
     private final StateRestAPI restApi;

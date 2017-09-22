@@ -6,6 +6,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 public class JsonHttpResult extends HttpResult {
+
     private JSONObject json;
     private boolean failedParsing = false;
 

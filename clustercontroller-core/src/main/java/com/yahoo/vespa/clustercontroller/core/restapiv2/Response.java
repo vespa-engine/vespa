@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Response {
+
     public static class UnitStateImpl implements UnitState {
         private final String id;
         private final String reason;
@@ -126,4 +127,5 @@ public class Response {
     public static class ServiceResponse extends EmptyResponse<NodeResponse> {}
     public static class NodeResponse extends EmptyResponse<PartitionResponse> {}
     public static class PartitionResponse extends EmptyResponse<UnitResponse> {}
+
 }

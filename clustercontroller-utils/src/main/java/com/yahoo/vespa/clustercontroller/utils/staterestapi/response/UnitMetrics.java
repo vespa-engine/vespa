@@ -4,5 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 import java.util.Map;
 
 public interface UnitMetrics {
-    public Map<String, Number> getMetricMap();
+
+    Map<String, Number> getMetricMap();
+
 }

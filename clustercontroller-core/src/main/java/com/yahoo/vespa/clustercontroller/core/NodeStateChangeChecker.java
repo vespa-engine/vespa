@@ -17,7 +17,7 @@ import java.util.Optional;
 /**
  * Checks if a node can be upgraded.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class NodeStateChangeChecker {
     public static final String BUCKETS_METRIC_NAME = "vds.datastored.alldisks.buckets";

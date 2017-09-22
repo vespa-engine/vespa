@@ -7,6 +7,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiE
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
 
 public abstract class Request<Result> extends RemoteClusterControllerTask {
+
     public enum MasterState {
         MUST_BE_MASTER,
         NEED_NOT_BE_MASTER
@@ -65,4 +66,5 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
     }
 
     public abstract Result calculateResult(Context context) throws StateRestApiException, OtherMasterIndexException;
+
 }

@@ -16,12 +16,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StatusHandler implements HttpRequestHandler {
+
     private final static Logger log = Logger.getLogger(StatusHandler.class.getName());
-    public static interface ClusterStatusPageServerSet {
-        public ContainerStatusPageServer get(String cluster);
-        public Map<String, ContainerStatusPageServer> getAll();
+
+    public interface ClusterStatusPageServerSet {
+
+        ContainerStatusPageServer get(String cluster);
+        Map<String, ContainerStatusPageServer> getAll();
+
     }
+
     public static class ContainerStatusPageServer implements StatusPageServerInterface {
+
         StatusPageServer.HttpRequest request;
         StatusPageResponse response;
         // Ensure only only one use the server at a time
@@ -64,7 +70,9 @@ public class StatusHandler implements HttpRequestHandler {
                 }
             }
         }
+
     }
+
     private static Pattern clusterListRequest = Pattern.compile("^/clustercontroller-status/v1/?$");
     private static Pattern statusRequest = Pattern.compile("^/clustercontroller-status/v1/([^/]+)(/.*)?$");
     private final ClusterStatusPageServerSet statusClusters;

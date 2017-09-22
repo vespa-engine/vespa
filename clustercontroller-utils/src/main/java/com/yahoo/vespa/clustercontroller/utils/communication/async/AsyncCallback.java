@@ -2,6 +2,8 @@
 package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
 public interface AsyncCallback<T>   {
+
     /** Callback indicating the given operation has completed. */
-    public void done(AsyncOperation<T> op);
+    void done(AsyncOperation<T> op);
+
 }

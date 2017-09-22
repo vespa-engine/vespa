@@ -400,4 +400,5 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
             currentHttpRequest = null; // Avoid fleetcontroller processing request more than once
         }
     }
+
 }

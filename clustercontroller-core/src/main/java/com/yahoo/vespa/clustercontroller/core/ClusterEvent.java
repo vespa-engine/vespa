@@ -41,4 +41,5 @@ public class ClusterEvent implements Event{
     public String getCategory() {
         return type.toString();
     }
+
 }

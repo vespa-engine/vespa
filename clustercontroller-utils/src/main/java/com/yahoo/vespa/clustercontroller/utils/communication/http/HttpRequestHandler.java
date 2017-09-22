@@ -3,5 +3,6 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
 public interface HttpRequestHandler {
 
-    public HttpResult handleRequest(HttpRequest request) throws Exception;
+    HttpResult handleRequest(HttpRequest request) throws Exception;
+
 }

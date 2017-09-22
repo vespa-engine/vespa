@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class HttpResult {
+
     private static class HttpReturnCode {
         private final int code;
         private final String message;
@@ -84,4 +85,5 @@ public class HttpResult {
     public void printContent(StringBuilder sb) {
         sb.append(content.toString());
     }
+
 }

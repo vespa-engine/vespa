@@ -4,5 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 import java.util.Map;
 
 public interface UnitAttributes {
-    public Map<String, String> getAttributeValues();
+
+    Map<String, String> getAttributeValues();
+
 }

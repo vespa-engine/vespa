@@ -16,4 +16,5 @@ public class OperationNotSupportedForUnitException extends StateRestApiException
         setHtmlCode(405);
         setHtmlStatus("Operation not supported for resource");
     }
+
 }

@@ -17,12 +17,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 class GroupAvailabilityCalculator {
+
     private final Distribution distribution;
     private final double minNodeRatioPerGroup;
 
     private GroupAvailabilityCalculator(Distribution distribution,
-                                        double minNodeRatioPerGroup)
-    {
+                                        double minNodeRatioPerGroup) {
         this.distribution = distribution;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
     }

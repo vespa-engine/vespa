@@ -10,7 +10,8 @@ import java.util.Optional;
 
 /**
  * Keeper for Metrics for HostInfo.
- * @author dybis
+ *
+ * @author Haakon Dybdahl
  */
 public class Metrics {
 
@@ -67,4 +68,5 @@ public class Metrics {
     // We initialize it in case the metrics is missing in the JSON.
     @JsonProperty("values")
     private ArrayList<Metric> metricsList = new ArrayList<>();
+
 }

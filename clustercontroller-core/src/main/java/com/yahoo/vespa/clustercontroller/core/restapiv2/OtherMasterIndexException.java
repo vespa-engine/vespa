@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 public class OtherMasterIndexException extends Exception {
+
     private final int index;
 
     public OtherMasterIndexException(int index) {
@@ -9,4 +10,5 @@ public class OtherMasterIndexException extends Exception {
     }
 
     public int getMasterIndex() { return index; }
+
 }

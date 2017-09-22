@@ -6,13 +6,13 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 
 /**
- * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+ * @author Haakon Humberset
  */
 public interface RunDataExtractor {
 
-    public ClusterState getLatestClusterState();
-    public FleetControllerOptions getOptions();
-    public long getConfigGeneration();
-    public ContentCluster getCluster();
+    ClusterState getLatestClusterState();
+    FleetControllerOptions getOptions();
+    long getConfigGeneration();
+    ContentCluster getCluster();
 
 }

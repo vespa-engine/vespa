@@ -8,6 +8,7 @@ import org.codehaus.jettison.json.JSONObject;
 import java.util.Map;
 
 public class JsonWriter {
+
     private String pathPrefix = "/";
 
     public JsonWriter() {
@@ -100,4 +101,5 @@ public class JsonWriter {
         jsonObject.put("reason", setResponse.getReason());
         return jsonObject;
     }
+
 }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 
 public class ProxyAsyncHttpClient<V extends HttpResult> extends AsyncHttpClientWithBase<V> {
+
     private final String proxyHost;
     private final int proxyPort;
 
@@ -25,4 +26,5 @@ public class ProxyAsyncHttpClient<V extends HttpResult> extends AsyncHttpClientW
         path.append(r.getPath());
         return client.execute(r.setHost(proxyHost).setPort(proxyPort).setPath(path.toString()));
     }
+
 }

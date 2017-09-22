@@ -4,5 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 import java.util.Map;
 
 public interface CurrentUnitState {
-    public Map<String, UnitState> getStatePerType();
+
+    Map<String, UnitState> getStatePerType();
+
 }

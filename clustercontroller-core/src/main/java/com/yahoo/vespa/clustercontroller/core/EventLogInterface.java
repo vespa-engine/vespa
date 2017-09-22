@@ -7,12 +7,12 @@ import java.util.List;
 
 public interface EventLogInterface {
 
-    public void add(Event e);
-    public void add(Event e, boolean logInfo);
-    public void addNodeOnlyEvent(NodeEvent e, java.util.logging.Level level);
-    public int getNodeEventsSince(Node n, long time);
-    public long getRecentTimePeriod();
-    public void writeHtmlState(StringBuilder sb, Node node);
-    public void setMaxSize(int size, int nodesize);
+    void add(Event e);
+    void add(Event e, boolean logInfo);
+    void addNodeOnlyEvent(NodeEvent e, java.util.logging.Level level);
+    int getNodeEventsSince(Node n, long time);
+    long getRecentTimePeriod();
+    void writeHtmlState(StringBuilder sb, Node node);
+    void setMaxSize(int size, int nodesize);
 
 }

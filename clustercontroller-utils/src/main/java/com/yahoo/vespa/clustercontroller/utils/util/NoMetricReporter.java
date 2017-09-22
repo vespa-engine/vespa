@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.util;
 import java.util.Map;
 
 public class NoMetricReporter implements MetricReporter {
+
     @Override
     public void set(String s, Number number, Context context) {}
 
@@ -12,4 +13,5 @@ public class NoMetricReporter implements MetricReporter {
 
     @Override
     public Context createContext(Map<String, ?> stringMap) { return null; }
+
 }

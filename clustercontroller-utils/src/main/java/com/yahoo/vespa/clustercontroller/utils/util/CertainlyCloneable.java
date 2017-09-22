@@ -6,6 +6,7 @@ package com.yahoo.vespa.clustercontroller.utils.util;
  * coverage, this class exist to hide the clone not supported exceptions that should never happen.
  */
 public class CertainlyCloneable<T> implements Cloneable {
+
     @Override
     public Object clone() {
         try{
@@ -19,4 +20,5 @@ public class CertainlyCloneable<T> implements Cloneable {
     protected Object callParentClone() throws CloneNotSupportedException {
         return super.clone();
     }
+
 }

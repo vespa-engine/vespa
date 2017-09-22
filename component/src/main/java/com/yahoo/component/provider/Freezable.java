@@ -14,7 +14,7 @@ public interface Freezable {
      * structures and dependent objects. Overrides must call super.
      * Calling freeze on an already frozen class must have no effect.
      */
-    public void freeze();
+    void freeze();
 
 
     /**
@@ -25,5 +25,6 @@ public interface Freezable {
      * @return true if this instance is in an immutable state, false otherwise
      * @since 5.1.4
      */
-    public boolean isFrozen();
+    boolean isFrozen();
+
 }

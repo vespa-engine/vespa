@@ -6,7 +6,7 @@ import static com.yahoo.container.util.Util.firstNonNull;
 /**
  * Code common to ComponentId and ComponentSpecification
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 final class Spec<VERSION> {
 
@@ -93,4 +93,5 @@ final class Spec<VERSION> {
 
         return n1.compareTo(n2);
     }
+
 }

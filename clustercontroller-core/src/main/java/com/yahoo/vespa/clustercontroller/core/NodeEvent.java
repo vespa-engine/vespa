@@ -49,4 +49,5 @@ public class NodeEvent implements Event {
     public Type getType() {
         return type;
     }
+
 }

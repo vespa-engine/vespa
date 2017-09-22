@@ -2,5 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.requests;
 
 public interface UnitRequest {
+
     String[] getUnitPath();
+
 }

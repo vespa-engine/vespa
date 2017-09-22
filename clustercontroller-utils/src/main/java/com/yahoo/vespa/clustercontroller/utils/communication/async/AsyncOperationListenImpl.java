@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.logging.Logger;
 
 public class AsyncOperationListenImpl<T> {
+
     private static final Logger log = Logger.getLogger(AsyncOperationListenImpl.class.getName());
     private final Collection<AsyncCallback<T>> listeners = new HashSet<>();
     private boolean listenersNotified = false;
@@ -44,4 +45,5 @@ public class AsyncOperationListenImpl<T> {
             listenersNotified = true;
         }
     }
+
 }

@@ -8,4 +8,5 @@ public class InvalidContentException extends StateRestApiException {
         setHtmlCode(400);
         setHtmlStatus("Content of HTTP request had invalid data");
     }
+
 }

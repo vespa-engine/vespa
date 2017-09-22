@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class HttpRequest extends CertainlyCloneable<HttpRequest> {
+
     public static class KeyValuePair {
         public String key;
         public String value;
@@ -21,6 +22,7 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
             return key;
         }
     }
+
     public enum HttpOp { GET, POST, PUT, DELETE }
 
     private String host;
@@ -145,4 +147,5 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
         }
         return false;
     }
+
 }

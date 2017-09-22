@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.errors;
 
 public class OtherMasterException extends NotMasterException {
+
     private final String masterHost;
     private final int masterPort;
 
@@ -13,4 +14,5 @@ public class OtherMasterException extends NotMasterException {
 
     public String getHost() { return masterHost; }
     public int getPort() { return masterPort; }
+
 }

@@ -2,5 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 public interface RemoteClusterControllerTaskScheduler {
-    public void schedule(RemoteClusterControllerTask task);
+
+    void schedule(RemoteClusterControllerTask task);
+
 }

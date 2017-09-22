@@ -6,7 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Keeping information about a storage node seen from the distributor.
- * @author dybis
+ *
+ * @author Haakon Dybdahl
  */
 public class StorageNode {
 
@@ -97,4 +98,5 @@ public class StorageNode {
     public OutstandingMergeOps getOutstandingMergeOpsOrNull() {
         return outstandingMergeOps;
     }
+
 }

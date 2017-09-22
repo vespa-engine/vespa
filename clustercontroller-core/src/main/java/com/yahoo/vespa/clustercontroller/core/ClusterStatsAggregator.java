@@ -30,7 +30,6 @@ import com.yahoo.log.LogLevel;
  * from each distributor.
  *
  * @author hakonhall
- * @since 5.34
  */
 public class ClusterStatsAggregator {
 
@@ -121,4 +120,5 @@ public class ClusterStatsAggregator {
             }
         }
     }
+
 }

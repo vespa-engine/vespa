@@ -11,4 +11,5 @@ public interface NodeLookup {
     void shutdown();
 
     boolean updateCluster(ContentCluster cluster, NodeAddedOrRemovedListener listener);
+
 }

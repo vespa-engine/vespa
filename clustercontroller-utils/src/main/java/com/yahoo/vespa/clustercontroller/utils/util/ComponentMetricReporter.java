@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class ComponentMetricReporter implements MetricReporter {
+
     private final MetricReporter impl;
     private final String prefix;
     private final Map<String, String> defaultDimensions = new TreeMap<>();
@@ -52,4 +53,5 @@ public class ComponentMetricReporter implements MetricReporter {
         }
         return impl.createContext(m);
     }
+
 }

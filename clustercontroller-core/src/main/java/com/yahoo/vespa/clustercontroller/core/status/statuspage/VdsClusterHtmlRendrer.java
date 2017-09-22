@@ -22,6 +22,7 @@ import java.util.TreeMap;
  * Renders webpage with status regarding cluster.
  */
 public class VdsClusterHtmlRendrer {
+
     private static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
 
     public static class Table {
@@ -301,4 +302,5 @@ public class VdsClusterHtmlRendrer {
     public Table createNewClusterHtmlTable(final String clusterName, final int slobrokGenerationCount) {
         return new Table(clusterName, slobrokGenerationCount);
     }
+
 }

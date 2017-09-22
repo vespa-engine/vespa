@@ -24,4 +24,5 @@ public class StorageNodeStatsContainer {
     }
 
     public int size() { return storageNodesByIndex.size(); }
+
 }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 /**
  * LatencyStats handles adding latencies and counts.
+ *
  * @author hakonhall
  */
 public class LatencyStats {
@@ -28,4 +29,5 @@ public class LatencyStats {
 
     public long getLatencyMsSum() { return latencyMsSum; }
     public long getCount() { return count; }
+
 }

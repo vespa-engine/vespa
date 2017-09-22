@@ -7,6 +7,7 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageRespon
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 
 public class ClusterStateRequestHandler implements StatusPageServer.RequestHandler  {
+
     private final StateVersionTracker stateVersionTracker;
 
     public ClusterStateRequestHandler(StateVersionTracker stateVersionTracker) {
@@ -21,4 +22,5 @@ public class ClusterStateRequestHandler implements StatusPageServer.RequestHandl
         response.writeContent(cs.toString());
         return response;
     }
+
 }

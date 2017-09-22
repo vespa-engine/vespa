@@ -16,6 +16,7 @@ import com.yahoo.cloud.config.ZookeepersConfig;
 import java.util.logging.Logger;
 
 public class ClusterControllerConfigFetcher {
+
     private static Logger log = Logger.getLogger(ClusterControllerConfigFetcher.class.getName());
 
     private final ConfigSubscriber configSubscriber = new ConfigSubscriber();
@@ -93,4 +94,5 @@ public class ClusterControllerConfigFetcher {
     boolean configUpdated(long timeoutMillis) {
         return configSubscriber.nextConfig(timeoutMillis);
     }
+
 }

@@ -8,8 +8,10 @@ package com.yahoo.vespa.clustercontroller.core;
  * they are obvious from direct inspection.
  */
 public enum ClusterStateReason {
+
     TOO_FEW_STORAGE_NODES_AVAILABLE,
     TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE,
     TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO,
     TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO,
+
 }

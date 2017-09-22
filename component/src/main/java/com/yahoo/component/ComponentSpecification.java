@@ -7,9 +7,10 @@ package com.yahoo.component;
  * This is an immutable value object
  *
  * @author Arne Bergene Fossaa
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class ComponentSpecification {
+
     private final class VersionHandler implements Spec.VersionHandler<VersionSpecification> {
         @Override
         public VersionSpecification emptyVersion() {
@@ -157,4 +158,5 @@ public final class ComponentSpecification {
             return getNamespace().equals(otherNamespace);
         }
     }
+
 }

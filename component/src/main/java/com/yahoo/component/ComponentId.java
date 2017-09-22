@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This is an immutable value object.
  *
  * @author bratseth
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class ComponentId implements Comparable<ComponentId> {
 
