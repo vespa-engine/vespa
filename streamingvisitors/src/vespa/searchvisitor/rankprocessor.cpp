@@ -89,6 +89,7 @@ RankProcessor::initQueryEnvironment()
                 terms[i].getTerm()->index().c_str(), terms[i].getTerm()->getTerm());
         }
     }
+    _match_data = _mdLayout.createMatchData();
 }
 
 void
@@ -100,7 +101,7 @@ RankProcessor::initHitCollector(size_t wantedHitCount)
 void
 RankProcessor::setupRankProgram(RankProgram &program)
 {
-    program.setup(_mdLayout, _queryEnv, search::fef::Properties());
+    program.setup(*_match_data, _queryEnv, search::fef::Properties());
 }
 
 void
@@ -137,6 +138,7 @@ RankProcessor::RankProcessor(RankManager::Snapshot::SP snapshot,
     _query(query),
     _queryEnv(location, snapshot->getIndexEnvironment(rankProfile), queryProperties, attrMgr),
     _mdLayout(),
+    _match_data(),
     _rankProgram(),
     _docId(TermFieldMatchData::invalidId()),
     _score(0.0),
@@ -182,13 +184,13 @@ copyTermFieldMatchData(const std::vector<search::fef::TermFieldMatchData> &src, 
 class RankProgramWrapper : public HitCollector::IRankProgram
 {
 private:
-    RankProgram &_rankProgram;
+    MatchData &_match_data;
 
 public:
-    RankProgramWrapper(RankProgram &rankProgram) : _rankProgram(rankProgram) {}
+    RankProgramWrapper(MatchData &match_data) : _match_data(match_data) {}
     virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
         // Prepare the match data object used by the rank program with earlier unpacked match data.
-        copyTermFieldMatchData(matchData, _rankProgram.match_data());
+        copyTermFieldMatchData(matchData, _match_data);
         (void) docid;
     }
 };
@@ -202,7 +204,7 @@ RankProcessor::calculateFeatureSet()
     RankProgram &rankProgram = *(_summaryProgram.get() != nullptr ? _summaryProgram : _rankProgram);
     search::fef::FeatureResolver resolver(rankProgram.get_seeds());
     LOG(debug, "Feature handles: numNames(%ld)", resolver.num_features());
-    RankProgramWrapper wrapper(rankProgram);
+    RankProgramWrapper wrapper(*_match_data);
     FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, resolver);
     LOG(debug, "Feature set: numFeatures(%u), numDocs(%u)", sf->numFeatures(), sf->numDocs());
     return sf;
@@ -217,9 +219,8 @@ RankProcessor::fillSearchResult(vdslib::SearchResult & searchResult)
 void
 RankProcessor::unpackMatchData(uint32_t docId)
 {
-    MatchData &matchData = _rankProgram->match_data();
     _docId = docId;
-    unpackMatchData(matchData);
+    unpackMatchData(*_match_data);
 }
 
 void

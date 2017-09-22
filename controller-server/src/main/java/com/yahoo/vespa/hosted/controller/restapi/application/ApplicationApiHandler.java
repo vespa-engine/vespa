@@ -370,7 +370,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             metricsObject.setDouble("writeServiceQuality", metrics.writeServiceQuality());
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed getting Yamas metrics", e);
+            log.log(Level.WARNING, "Failed getting Yamas metrics", Exceptions.toMessageString(e));
         }
 
         return new SlimeJsonResponse(slime);
@@ -439,7 +439,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed getting Yamas metrics", e);
+            log.log(Level.WARNING, "Failed getting Yamas metrics", Exceptions.toMessageString(e));
         }
 
         return new SlimeJsonResponse(slime);

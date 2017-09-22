@@ -27,7 +27,7 @@ private:
     fef::TermFieldHandle _fieldHandle;
     const fef::MatchData        *_md;
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 };
 
 /**

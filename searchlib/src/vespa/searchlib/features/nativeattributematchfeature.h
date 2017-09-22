@@ -57,7 +57,7 @@ private:
     std::vector<CachedTermData>        _queryTermData;
     const fef::MatchData              *_md;
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 public:
     NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first), _md(nullptr) { }
     void execute(uint32_t docId) override;
@@ -69,7 +69,7 @@ private:
     CachedTermData _queryTermData;
     const fef::MatchData *_md;
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     NativeAttributeMatchExecutorSingle(const Precomputed & setup) :

@@ -24,4 +24,4 @@ vespa_add_library(metrics
     DEPENDS
 )
 vespa_generate_config(metrics metricsmanager.def)
-install(FILES metricsmanager.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install(FILES metricsmanager.def RENAME metrics.metricsmanager.def DESTINATION var/db/vespa/config_server/serverdb/classes)

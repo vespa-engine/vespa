@@ -1,13 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Creation date: 2000-05-15
- *
- * Declaration of the SimpleQueryStack
- *
- *   Copyright (C) 1997-2003 Fast Search & Transfer ASA
- *   Copyright (C) 2003 Overture Services Norway AS
- *               ALL RIGHTS RESERVED
- */
+
 #pragma once
 
 #include <vespa/searchlib/parsequery/parse.h>

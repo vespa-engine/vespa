@@ -103,7 +103,7 @@ public class LinguisticsAnnotator {
     }
 
     private static void addAnnotationSpan(String input, SpanList parent, Tokenizer tokenizer, Token token, StemMode mode, TermOccurrences termOccurrences) {
-        if (!token.isSpecialToken()) {
+        if ( ! token.isSpecialToken()) {
             if (token.getNumComponents() > 0) {
                 for (int i = 0; i < token.getNumComponents(); ++i) {
                     addAnnotationSpan(input, parent, tokenizer, token.getComponent(i), mode, termOccurrences);
@@ -144,9 +144,7 @@ public class LinguisticsAnnotator {
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
                 String lowercasedStem = toLowerCase(stem);
-                if (! (lowercasedOrig.equals(lowercasedStem)
-                       || lowercasedTerm.equals(lowercasedStem)))
-                {
+                if (! (lowercasedOrig.equals(lowercasedStem) || lowercasedTerm.equals(lowercasedStem))) {
                     addAnnotation(where, stem, orig, termOccurrences);
                 }
             }

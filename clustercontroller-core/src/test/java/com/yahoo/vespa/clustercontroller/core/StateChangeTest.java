@@ -1508,4 +1508,19 @@ public class StateChangeTest extends FleetControllerTest {
         assertTrue(task.isCompleted());
     }
 
+    @Test
+    public void synchronous_task_immediately_answered_when_not_leader() throws Exception {
+        FleetControllerOptions options = optionsWithZeroTransitionTime();
+        options.fleetControllerCount = 3;
+        RemoteTaskFixture fixture = createFixtureWith(options);
+
+        fixture.loseLeadership();
+        markAllNodesAsUp(options);
+
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+
+        assertTrue(task.isInvoked());
+        assertTrue(task.isCompleted());
+    }
+
 }

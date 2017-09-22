@@ -27,8 +27,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Zookeeper client for a specific session. Can be used to read and write session status
- * and create and get prepare and active barrier.
+ * Zookeeper client for a specific session. Path for a session is /config/v2/tenants/&lt;tenant&gt;/sessions/&lt;sessionid&gt;
+ * Can be used to read and write session status and create and get prepare and active barrier.
  * 
  * @author Ulf Lilleengen
  */
@@ -39,34 +39,34 @@ public class SessionZooKeeperClient {
     // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
 
     static final String APPLICATION_ID_PATH = "applicationId";
-    static final String VERSION_PATH = "version";
-    static final String CREATE_TIME_PATH = "createTime";
+    private static final String VERSION_PATH = "version";
+    private static final String CREATE_TIME_PATH = "createTime";
     private final Curator curator;
     private final ConfigCurator configCurator;
-    private final Path rootPath;
+    private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;
     private final ServerCacheLoader cacheLoader;
     private final Optional<NodeFlavors> nodeFlavors;
 
     // Only for testing when cache loader does not need cache entries.
-    public SessionZooKeeperClient(Curator curator, Path rootPath) {
-        this(curator, ConfigCurator.create(curator), rootPath, new StaticConfigDefinitionRepo(), "", Optional.empty());
+    public SessionZooKeeperClient(Curator curator, Path sessionPath) {
+        this(curator, ConfigCurator.create(curator), sessionPath, new StaticConfigDefinitionRepo(), "", Optional.empty());
     }
 
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,
-                                  Path rootPath,
+                                  Path sessionPath,
                                   ConfigDefinitionRepo definitionRepo,
                                   String serverId,
                                   Optional<NodeFlavors> nodeFlavors) {
         this.curator = curator;
         this.configCurator = configCurator;
-        this.rootPath = rootPath;
+        this.sessionPath = sessionPath;
         this.serverId = serverId;
         this.nodeFlavors = nodeFlavors;
-        this.sessionStatusPath = rootPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
-        this.cacheLoader = new ServerCacheLoader(configCurator, rootPath, definitionRepo);
+        this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        this.cacheLoader = new ServerCacheLoader(configCurator, sessionPath, definitionRepo);
     }
 
     public void writeStatus(Session.Status sessionStatus) {
@@ -112,7 +112,7 @@ public class SessionZooKeeperClient {
     private static final String UPLOAD_BARRIER = "uploadBarrier";
 
     private Path getWaiterPath(String barrierName) {
-        return rootPath.append(barrierName);
+        return sessionPath.append(barrierName);
     }
 
     /** Returns the number of node members needed in a barrier */
@@ -121,7 +121,7 @@ public class SessionZooKeeperClient {
     }
 
     private Curator.CompletionWaiter createCompletionWaiter(String waiterNode) {
-        return curator.createCompletionWaiter(rootPath, waiterNode, getNumberOfMembers(), serverId);
+        return curator.createCompletionWaiter(sessionPath, waiterNode, getNumberOfMembers(), serverId);
     }
 
     private Curator.CompletionWaiter getCompletionWaiter(Path path) {
@@ -130,20 +130,20 @@ public class SessionZooKeeperClient {
 
     public void delete() {
         try {
-            log.log(LogLevel.DEBUG, "Deleting " + rootPath.getAbsolute());
-            configCurator.deleteRecurse(rootPath.getAbsolute());
+            log.log(LogLevel.DEBUG, "Deleting " + sessionPath.getAbsolute());
+            configCurator.deleteRecurse(sessionPath.getAbsolute());
         } catch (RuntimeException e) {
-            log.log(LogLevel.INFO, "Error deleting session (" + rootPath.getAbsolute() + ") from zookeeper");
+            log.log(LogLevel.INFO, "Error deleting session (" + sessionPath.getAbsolute() + ") from zookeeper");
         }
     }
 
     /** Returns a transaction deleting this session on commit */
     public CuratorTransaction deleteTransaction() {
-        return CuratorTransaction.from(CuratorOperations.deleteAll(rootPath.getAbsolute(), curator), curator);
+        return CuratorTransaction.from(CuratorOperations.deleteAll(sessionPath.getAbsolute(), curator), curator);
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(configCurator, rootPath, nodeFlavors);
+        return new ZKApplicationPackage(configCurator, sessionPath, nodeFlavors);
     }
 
     public ServerCache loadServerCache() {
@@ -151,7 +151,7 @@ public class SessionZooKeeperClient {
     }
 
     private String applicationIdPath() {
-        return rootPath.append(APPLICATION_ID_PATH).getAbsolute();
+        return sessionPath.append(APPLICATION_ID_PATH).getAbsolute();
     }
 
     public void writeApplicationId(ApplicationId id) {
@@ -164,7 +164,7 @@ public class SessionZooKeeperClient {
     }
 
     private String versionPath() {
-        return rootPath.append(VERSION_PATH).getAbsolute();
+        return sessionPath.append(VERSION_PATH).getAbsolute();
     }
 
     public void writeVespaVersion(Version version) {
@@ -184,7 +184,7 @@ public class SessionZooKeeperClient {
     }
 
     private String getCreateTimePath() {
-        return rootPath.append(CREATE_TIME_PATH).getAbsolute();
+        return sessionPath.append(CREATE_TIME_PATH).getAbsolute();
     }
 
     AllocatedHosts getAllocatedHosts() {
@@ -193,7 +193,7 @@ public class SessionZooKeeperClient {
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, true, rootPath);
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, true, sessionPath);
         return new ZooKeeperDeployer(zkClient);
     }
 
@@ -215,8 +215,8 @@ public class SessionZooKeeperClient {
      */
     public void createNewSession(long createTime, TimeUnit timeUnit) {
         CuratorTransaction transaction = new CuratorTransaction(curator);
-        transaction.add(CuratorOperations.create(rootPath.getAbsolute()));
-        transaction.add(CuratorOperations.create(rootPath.append(UPLOAD_BARRIER).getAbsolute()));
+        transaction.add(CuratorOperations.create(sessionPath.getAbsolute()));
+        transaction.add(CuratorOperations.create(sessionPath.append(UPLOAD_BARRIER).getAbsolute()));
         transaction.add(createWriteStatusTransaction(Session.Status.NEW).operations());
         transaction.add(CuratorOperations.create(getCreateTimePath(), Utf8.toBytes(String.valueOf(timeUnit.toSeconds(createTime)))));
         transaction.commit();

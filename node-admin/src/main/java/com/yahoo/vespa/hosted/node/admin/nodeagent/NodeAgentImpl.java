@@ -64,20 +64,20 @@ public class NodeAgentImpl implements NodeAgent {
     private final PrefixLogger logger;
     private DockerImage imageBeingDownloaded = null;
 
-    private final String hostname;
     private final ContainerName containerName;
+    private final String hostname;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
-    private final Optional<StorageMaintainer> storageMaintainer;
+    private final StorageMaintainer storageMaintainer;
+    private final AclMaintainer aclMaintainer;
     private final Environment environment;
     private final Clock clock;
-    private final Optional<AclMaintainer> aclMaintainer;
+    private final Duration timeBetweenEachConverge;
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final LinkedList<String> debugMessages = new LinkedList<>();
 
-    private long delaysBetweenEachConvergeMillis = 30_000;
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
 
@@ -85,7 +85,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
-    private final Consumer<String> serviceRestarter;
+    private Consumer<String> serviceRestarter;
     private Future<?> currentFilebeatRestarter;
 
     private boolean resumeScriptRun = false;
@@ -114,33 +114,23 @@ public class NodeAgentImpl implements NodeAgent {
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
-            final Optional<StorageMaintainer> storageMaintainer,
+            final StorageMaintainer storageMaintainer,
+            final AclMaintainer aclMaintainer,
             final Environment environment,
             final Clock clock,
-            final Optional<AclMaintainer> aclMaintainer) {
+            final Duration timeBetweenEachConverge) {
+        this.containerName = ContainerName.fromHostname(hostName);
+        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
+        this.hostname = hostName;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
-        this.hostname = hostName;
-        this.containerName = ContainerName.fromHostname(hostName);
         this.dockerOperations = dockerOperations;
         this.storageMaintainer = storageMaintainer;
-        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
+        this.aclMaintainer = aclMaintainer;
         this.environment = environment;
         this.clock = clock;
-        this.aclMaintainer = aclMaintainer;
+        this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
-        this.serviceRestarter = service -> {
-            try {
-                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        containerName, "service", service, "restart");
-
-                if (!processResult.isSuccess()) {
-                    logger.error("Failed to restart service " + service + ": " + processResult);
-                }
-            } catch (Exception e) {
-                logger.error("Failed to restart service " + service, e);
-            }
-        };
     }
 
     @Override
@@ -183,11 +173,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void start(int intervalMillis) {
-        String message = "Starting with interval " + intervalMillis + " ms";
+    public void start() {
+        String message = "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms";
         logger.info(message);
         addDebugMessage(message);
-        delaysBetweenEachConvergeMillis = intervalMillis;
+
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
         }
@@ -197,6 +187,19 @@ public class NodeAgentImpl implements NodeAgent {
         });
         loopThread.setName("tick-" + hostname);
         loopThread.start();
+
+        serviceRestarter = service -> {
+            try {
+                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
+                        containerName, "service", service, "restart");
+
+                if (!processResult.isSuccess()) {
+                    logger.error("Failed to restart service " + service + ": " + processResult);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to restart service " + service, e);
+            }
+        };
     }
 
     @Override
@@ -207,19 +210,15 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
         signalWorkToBeDone();
-        try {
-            loopThread.join(10000);
-            if (loopThread.isAlive()) {
-                logger.error("Could not stop host thread " + hostname);
+
+        do {
+            try {
+                loopThread.join();
+                filebeatRestarter.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                logger.error("Interrupted while waiting for converge thread and filebeatRestarter scheduler to shutdown");
             }
-        } catch (InterruptedException e1) {
-            logger.error("Interrupted; Could not stop host thread " + hostname);
-        }
-        try {
-            filebeatRestarter.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            logger.error("Interrupted; Could not stop filebeatrestarter thread");
-        }
+        } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
 
         logger.info("Stopped");
     }
@@ -257,15 +256,13 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
-        aclMaintainer.ifPresent(AclMaintainer::run);
+        aclMaintainer.run();
         dockerOperations.startContainer(containerName, nodeSpec);
         lastCpuMetric = new CpuUsageReporter();
 
         currentFilebeatRestarter = filebeatRestarter.scheduleWithFixedDelay(() -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS);
-        storageMaintainer.ifPresent(maintainer -> {
-            maintainer.writeMetricsConfig(containerName, nodeSpec);
-            maintainer.writeFilebeatConfig(containerName, nodeSpec);
-        });
+        storageMaintainer.writeMetricsConfig(containerName, nodeSpec);
+        storageMaintainer.writeFilebeatConfig(containerName, nodeSpec);
 
         resumeScriptRun = false;
         containerState = UNKNOWN;
@@ -377,7 +374,7 @@ public class NodeAgentImpl implements NodeAgent {
         boolean isFrozenCopy;
         synchronized (monitor) {
             while (!workToDoNow) {
-                long remainder = delaysBetweenEachConvergeMillis - Duration.between(lastConverge, clock.instant()).toMillis();
+                long remainder = timeBetweenEachConverge.minus(Duration.between(lastConverge, clock.instant())).toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);
@@ -439,9 +436,7 @@ public class NodeAgentImpl implements NodeAgent {
             // will change and we will be reporting duplicate metrics.
             // TODO: Should be retried if writing fails
             if (container.isPresent()) {
-                storageMaintainer.ifPresent(maintainer -> {
-                    maintainer.writeMetricsConfig(containerName, nodeSpec);
-                });
+                storageMaintainer.writeMetricsConfig(containerName, nodeSpec);
             }
         }
 
@@ -454,14 +449,13 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case active:
-                storageMaintainer.ifPresent(maintainer -> {
-                    maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+                storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
 
-                    maintainer.getDiskUsageFor(containerName)
-                            .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / nodeSpec.minDiskAvailableGb)
-                            .filter(diskUtil -> diskUtil >= 0.8)
-                            .ifPresent(diskUtil -> maintainer.removeOldFilesFromNode(containerName));
-                });
+                storageMaintainer.getDiskUsageFor(containerName)
+                        .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / nodeSpec.minDiskAvailableGb)
+                        .filter(diskUtil -> diskUtil >= 0.8)
+                        .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(containerName));
+
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (isDownloadingImage()) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -469,7 +463,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 container = removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 if (! container.isPresent()) {
-                    storageMaintainer.ifPresent(maintainer -> maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false));
+                    storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
                     startContainer(nodeSpec);
                 }
 
@@ -498,7 +492,7 @@ public class NodeAgentImpl implements NodeAgent {
             case dirty:
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                storageMaintainer.ifPresent(maintainer -> maintainer.cleanupNodeStorage(containerName, nodeSpec));
+                storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 nodeRepository.markNodeAvailableForNewAllocation(hostname);
                 break;
@@ -531,8 +525,7 @@ public class NodeAgentImpl implements NodeAgent {
         final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
         final long diskTotalBytes = (long) (nodeSpec.minDiskAvailableGb * BYTES_IN_GB);
-        final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
-                        .getDiskUsageFor(containerName));
+        final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(containerName);
 
         // CPU usage by a container as percentage of total host CPU, cpuPercentageOfHost, is given by dividing used
         // CPU time by the container with CPU time used by the entire system.

@@ -18,7 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 /**
  * Make sure we can install the logging stuff properly.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LogSetupTestCase {
     // For testing zookeeper log records
@@ -45,7 +45,7 @@ public class LogSetupTestCase {
         zookeeperLogRecord.setMillis(1107011348029L);
 
         curatorLogRecord = new LogRecord(Level.WARNING, "curator log record");
-        curatorLogRecord.setLoggerName("com.netflix.curator.utils.DefaultTracerDriver");
+        curatorLogRecord.setLoggerName("org.apache.curator.utils.DefaultTracerDriver");
         curatorLogRecord.setMillis(1107011348029L);
 
         hostname = Util.getHostName();
@@ -63,7 +63,7 @@ public class LogSetupTestCase {
         zookeeperLogRecordError.setMillis(1107011348029L);
 
         curatorLogRecordError = new LogRecord(Level.SEVERE, "curator log record");
-        curatorLogRecordError.setLoggerName("com.netflix.curator.utils.DefaultTracerDriver");
+        curatorLogRecordError.setLoggerName("org.apache.curator.utils.DefaultTracerDriver");
         curatorLogRecordError.setMillis(1107011348029L);
 
         notzookeeperLogRecord = new LogRecord(Level.WARNING, "not zookeeper log record");

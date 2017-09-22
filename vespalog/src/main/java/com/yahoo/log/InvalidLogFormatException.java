@@ -5,7 +5,7 @@ package com.yahoo.log;
  * This (checked) exception is used to flag invalid log messages,
  * primarily for use in the factory methods of LogMessage.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class InvalidLogFormatException extends Exception
 {

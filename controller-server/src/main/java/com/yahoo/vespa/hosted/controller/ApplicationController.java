@@ -310,7 +310,10 @@ public class ApplicationController {
                     // - For self-triggered applications we don't have any trigger information, so we add it here.
                     // - For all applications, we don't have complete control over which revision is actually built,
                     //   so we update it here with what we actually triggered if necessary
-                    application = application.with(application.deploymentJobs().withTriggering(jobType, version, Optional.of(revision), clock.instant()));
+                    application = application.with(application.deploymentJobs()
+                                                           .withTriggering(jobType, application.deploying(),
+                                                                           version, Optional.of(revision),
+                                                                           clock.instant()));
                 }
 
                 // Delete zones not listed in DeploymentSpec, if allowed

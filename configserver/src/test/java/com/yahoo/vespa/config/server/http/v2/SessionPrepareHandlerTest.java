@@ -22,10 +22,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.HttpProxy;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
@@ -33,7 +30,6 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.http.*;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -81,7 +77,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void setupRepo() throws Exception {
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
-        localRepo = new LocalSessionRepo(applicationRepo);
+        localRepo = new LocalSessionRepo(applicationRepo, Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
@@ -243,7 +239,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
         // Need different repos for 'default' tenant as opposed to the 'test' tenant
         TenantApplications applicationRepoDefault = new MemoryTenantApplications();
-        LocalSessionRepo localRepoDefault = new LocalSessionRepo(applicationRepoDefault);
+        LocalSessionRepo localRepoDefault = new LocalSessionRepo(applicationRepoDefault, Clock.systemUTC());
         final TenantName tenantName = TenantName.defaultName();
         addTenant(tenantName, localRepoDefault, new RemoteSessionRepo(), new MockSessionFactory());
         addTestTenant();
@@ -379,12 +375,9 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         return new SessionPrepareHandler(Runnable::run, AccessLog.voidAccessLog(), builder.createTenants(), configserverConfig,
                                          new ApplicationRepository(builder.createTenants(),
-                                                                   HostProvisionerProvider.withProvisioner(new MockProvisioner()),
+                                                                   new MockProvisioner(),
                                                                    curator,
-                                                                   new LogServerLogGrabber(),
-                                                                   new ApplicationConvergenceChecker(),
-                                                                   new HttpProxy(new SimpleHttpFetcher()),
-                                                                   configserverConfig));
+                                                                   Clock.systemUTC()));
     }
 
     private TestTenantBuilder addTenant(TenantName tenantName,

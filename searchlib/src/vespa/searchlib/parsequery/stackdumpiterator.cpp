@@ -1,11 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Implementation of the simple query stack dump iterator.
- *
- *   Copyright (C) 1997-2003 Fast Search & Transfer ASA
- *   Copyright (C) 2003 Overture Services Norway AS
- *               ALL RIGHTS RESERVED
- */
+
 #include "stackdumpiterator.h"
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>

@@ -52,9 +52,9 @@ public class RemoteSessionRepoTest extends TestWithCurator {
 
 
     private void createSession(String root, long sessionId, boolean wait) {
-        Path rootPath = Path.fromString(root).append("sessions");
-        curator.create(rootPath);
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, rootPath.append(String.valueOf(sessionId)));
+        Path sessionsPath = Path.fromString(root).append("sessions");
+        curator.create(sessionsPath);
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath.append(String.valueOf(sessionId)));
         zkc.createNewSession(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
@@ -87,6 +87,10 @@ public class RemoteSessionRepoTest extends TestWithCurator {
         assertNull(remoteSessionRepo.getSession(0l));
     }
 
+    // If reading a session throws an exception it should be handled and not prevent other applications
+    // from loading. In this test we just show that we end up with one session in remote session
+    // repo even if it had bad data (by making getSessionIdForApplication() in FailingTenantApplications
+    // throw an exception).
     @Test
     public void testBadApplicationRepoOnActivate() throws Exception {
         TenantApplications applicationRepo = new FailingTenantApplications();
@@ -97,6 +101,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
                 .withApplicationRepo(applicationRepo)
                 .build();
         remoteSessionRepo = tenant.getRemoteSessionRepo();
+        assertThat(remoteSessionRepo.listSessions().size(), is(0));
         createSession("/mytenant", 2l, true);
         assertThat(remoteSessionRepo.listSessions().size(), is(1));
     }

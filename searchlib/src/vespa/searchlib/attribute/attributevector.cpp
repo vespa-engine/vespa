@@ -696,6 +696,7 @@ AttributeVector::enableEnumeratedSave(bool enable) {
 }
 
 attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }
+const attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() const { return nullptr; }
 const IDocumentWeightAttribute * AttributeVector::asDocumentWeightAttribute() const { return nullptr; }
 bool AttributeVector::hasPostings() { return getIPostingListAttributeBase() != nullptr; }
 uint64_t AttributeVector::getUniqueValueCount() const { return getTotalValueCount(); }
@@ -804,13 +805,14 @@ uint64_t
 AttributeVector::getEstimatedSaveByteSize() const
 {
     uint64_t headerSize = 4096;
-    uint64_t totalValueCount = getTotalValueCount();
-    uint64_t uniqueValueCount = getUniqueValueCount();
+    uint64_t totalValueCount = _status.getNumValues();
+    uint64_t uniqueValueCount = _status.getNumUniqueValues();
     uint64_t docIdLimit = getCommittedDocIdLimit();
     uint64_t datFileSize = 0;
     uint64_t weightFileSize = 0;
     uint64_t idxFileSize = 0;
     uint64_t udatFileSize = 0;
+    size_t fixedWidth = getFixedWidth();
     AddressSpace enumAddressSpace(getEnumStoreAddressSpaceUsage());
 
     if (hasMultiValue()) {
@@ -821,8 +823,12 @@ AttributeVector::getEstimatedSaveByteSize() const
     }
     if (hasEnum() && getEnumeratedSave()) {
         datFileSize =  headerSize + 4 * totalValueCount;
-        udatFileSize = headerSize + enumAddressSpace.used()
-                       - 8 * uniqueValueCount;
+        if (fixedWidth != 0) {
+            udatFileSize = headerSize + fixedWidth * uniqueValueCount;
+        } else {
+            udatFileSize = headerSize + enumAddressSpace.used()
+                           - 8 * uniqueValueCount;
+        }
     } else {
         BasicType::Type basicType(getBasicType());
         const Status &status = getStatus();
@@ -844,7 +850,7 @@ AttributeVector::getEstimatedSaveByteSize() const
             }
             break;
         default:
-            datFileSize = headerSize + getFixedWidth() * totalValueCount;
+            datFileSize = headerSize + fixedWidth * totalValueCount;
             break;
         }
     }

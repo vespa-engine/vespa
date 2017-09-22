@@ -187,7 +187,7 @@ public class LogSetup {
         public boolean isLoggable(LogRecord record) {
             if (record.getLoggerName() == null) return true;
             if (!record.getLoggerName().startsWith("org.apache.zookeeper.") &&
-                    !record.getLoggerName().startsWith("com.netflix.curator")) {
+                    !record.getLoggerName().startsWith("org.apache.curator")) {
                 return true;
             }
             fileHandler.publish(record);

@@ -72,14 +72,15 @@ std::vector<uint32_t> vec(uint32_t w1, uint32_t w2, uint32_t w3) {
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     QueryEnvironment         queryEnv;
     RankSetup                rankSetup;
-    RankProgram::UP          rankProgram;
     MatchDataLayout          mdl;
+    MatchData::UP            match_data;
+    RankProgram::UP          rankProgram;
     std::vector<TermFieldHandle> fooHandles;
     std::vector<TermFieldHandle> barHandles;
     RankFixture(const std::vector<uint32_t> &fooWeights,
                 const std::vector<uint32_t> &barWeights)
         : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
-          rankProgram(), mdl(), fooHandles(), barHandles()
+          mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
     {
         for (size_t i = 0; i < fooWeights.size(); ++i) {
             uint32_t fieldId = indexEnv.getFieldByName("foo")->id();
@@ -100,8 +101,9 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         rankSetup.setFirstPhaseRank(featureName);
         rankSetup.setIgnoreDefaultRankFeatures(true);
         ASSERT_TRUE(rankSetup.compile());
+        match_data = mdl.createMatchData();
         rankProgram = rankSetup.create_first_phase_program();
-        rankProgram->setup(mdl, queryEnv);
+        rankProgram->setup(*match_data, queryEnv);
     }
     feature_t getScore(uint32_t docId) {
         return Utils::getScoreFeature(*rankProgram, docId);
@@ -110,15 +112,15 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         ASSERT_LESS(i, fooHandles.size());
         TermFieldMatchDataPosition pos;
         pos.setElementWeight(index_weight);
-        rankProgram->match_data().resolveTermField(fooHandles[i])->reset(docId);
-        rankProgram->match_data().resolveTermField(fooHandles[i])->appendPosition(pos);
+        match_data->resolveTermField(fooHandles[i])->reset(docId);
+        match_data->resolveTermField(fooHandles[i])->appendPosition(pos);
     }
     void setBarWeight(uint32_t i, uint32_t docId, int32_t index_weight) {
         ASSERT_LESS(i, barHandles.size());
         TermFieldMatchDataPosition pos;
         pos.setElementWeight(index_weight);
-        rankProgram->match_data().resolveTermField(barHandles[i])->reset(docId);
-        rankProgram->match_data().resolveTermField(barHandles[i])->appendPosition(pos);
+        match_data->resolveTermField(barHandles[i])->reset(docId);
+        match_data->resolveTermField(barHandles[i])->appendPosition(pos);
     }
 };
 

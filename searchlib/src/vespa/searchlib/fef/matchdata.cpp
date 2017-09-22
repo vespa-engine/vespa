@@ -11,6 +11,15 @@ MatchData::MatchData(const Params &cparams)
 {
 }
 
+void
+MatchData::soft_reset()
+{
+    for (auto &tfmd: _termFields) {
+        tfmd.resetOnlyDocId(TermFieldMatchData::invalidId()).tagAsNeeded();
+    }
+    _termwise_limit = 1.0;
+}
+
 MatchData::UP
 MatchData::makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit)
 {

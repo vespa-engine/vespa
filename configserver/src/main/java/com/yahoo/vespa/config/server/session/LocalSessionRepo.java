@@ -23,20 +23,28 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     private static final Logger log = Logger.getLogger(LocalSessionRepo.class.getName());
 
-    private final static FilenameFilter sessionApplicationsFilter = new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-            return name.matches("\\d+");
-        }
-    };
+    private final static FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
 
     private final long sessionLifetime; // in seconds
     private final TenantApplications applicationRepo;
     private final Clock clock;
 
-    public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader, TenantApplications applicationRepo, Clock clock, long sessionLifeTime) {
+    public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader,
+                            TenantApplications applicationRepo, Clock clock, long sessionLifeTime) {
         this(applicationRepo, clock, sessionLifeTime);
         loadSessions(tenantFileSystemDirs.path(), loader);
+    }
+
+    // Constructor public only for testing
+    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock) {
+        this(applicationRepo, clock, TimeUnit.DAYS.toMillis(1));
+    }
+
+    // Constructor public only for testing
+    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock, long sessionLifetime) {
+        this.applicationRepo = applicationRepo;
+        this.sessionLifetime = sessionLifetime;
+        this.clock = clock;
     }
 
     private void loadSessions(File applicationsDir, LocalSessionLoader loader) {
@@ -48,7 +56,8 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
             try {
                 addSession(loader.loadSession(Long.parseLong(application.getName())));
             } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Could not load application '" + application.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
+                log.log(LogLevel.WARNING, "Could not load application '" +
+                        application.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
             }
         }
     }
@@ -64,17 +73,6 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
             return getSession(applicationRepo.getSessionIdForApplication(applicationId));
         }
         return null;
-    }
-
-    // Constructor only for testing
-    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock, long sessionLifetime) {
-        this.applicationRepo = applicationRepo;
-        this.sessionLifetime = sessionLifetime;
-        this.clock = clock;
-    }
-
-    public LocalSessionRepo(TenantApplications applicationRepo) {
-        this(applicationRepo, Clock.systemUTC(), TimeUnit.DAYS.toMillis(1));
     }
 
     @Override

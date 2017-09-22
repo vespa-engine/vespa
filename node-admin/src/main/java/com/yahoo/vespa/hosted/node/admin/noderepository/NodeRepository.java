@@ -13,7 +13,7 @@ import java.util.Optional;
  * @author stiankri
  */
 public interface NodeRepository {
-    List<ContainerNodeSpec> getContainersToRun() throws IOException;
+    List<ContainerNodeSpec> getContainersToRun(String baseHostName) throws IOException;
 
     Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName);
 

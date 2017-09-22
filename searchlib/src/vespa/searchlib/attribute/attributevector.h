@@ -661,6 +661,7 @@ public:
     bool getEnumeratedSave() const { return _hasEnum && _enableEnumeratedSave; }
 
     virtual attribute::IPostingListAttributeBase * getIPostingListAttributeBase();
+    virtual const attribute::IPostingListAttributeBase * getIPostingListAttributeBase() const;
     bool hasPostings();
     virtual uint64_t getUniqueValueCount() const;
     virtual uint64_t getTotalValueCount() const;

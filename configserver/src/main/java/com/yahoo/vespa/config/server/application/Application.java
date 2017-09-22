@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
@@ -72,6 +73,10 @@ public class Application implements ModelResult {
         sb.append("generation ").append(appGeneration).append(", ");
         sb.append("vespa version ").append(vespaVersion);
         return sb.toString();
+    }
+
+    public ApplicationInfo toApplicationInfo() {
+        return new ApplicationInfo(app, appGeneration, model);
     }
 
     public ServerCache getCache() {

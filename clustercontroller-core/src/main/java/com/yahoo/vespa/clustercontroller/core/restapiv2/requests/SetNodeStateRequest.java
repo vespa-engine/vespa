@@ -67,7 +67,9 @@ public class SetNodeStateRequest extends Request<SetResponse> {
 
     @Override
     public boolean hasVersionAckDependency() {
-        return (this.responseWait == SetUnitStateRequest.ResponseWait.WAIT_UNTIL_CLUSTER_ACKED);
+        // FIXME this is a temporary change while edge cases in interactions between controller
+        // and orchestration are sorted out.
+        return false;
     }
 
     static SetResponse setWantedState(

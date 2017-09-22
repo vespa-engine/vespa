@@ -26,8 +26,8 @@ import java.util.logging.Logger;
 
 /**
  * The applications of a tenant, backed by ZooKeeper.
- * Each application is stored as a single file, named the same as the application id and containing the id
- * of the session storing the content of the application.
+ * Each application is stored as a single node under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;applications&gt;,
+ * named the same as the application id and containing the id of the session storing the content of the application.
  *
  * @author Ulf Lilleengen
  */
@@ -36,26 +36,27 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private static final Logger log = Logger.getLogger(ZKTenantApplications.class.getName());
     private final Curator curator;
-    private final Path tenantRoot;
-    private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(ZKTenantApplications.class.getName()));
+    private final Path applicationsPath;
+    private final ExecutorService pathChildrenExecutor =
+            Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(ZKTenantApplications.class.getName()));
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
 
-    private ZKTenantApplications(Curator curator, Path tenantRoot, ReloadHandler reloadHandler, TenantName tenant) {
+    private ZKTenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
         this.curator = curator;
-        this.tenantRoot = tenantRoot;
+        this.applicationsPath = applicationsPath;
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
         rewriteApplicationIds();
-        this.directoryCache = curator.createDirectoryCache(tenantRoot.getAbsolute(), false, false, pathChildrenExecutor);
+        this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
     }
 
-    public static TenantApplications create(Curator curator, Path root, ReloadHandler reloadHandler, TenantName tenant) {
+    public static TenantApplications create(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
         try {
-            return new ZKTenantApplications(curator, root, reloadHandler, tenant);
+            return new ZKTenantApplications(curator, applicationsPath, reloadHandler, tenant);
         } catch (Exception e) {
             throw new RuntimeException(Tenants.logPre(tenant) + "Error creating application repo", e);
         }
@@ -63,7 +64,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void rewriteApplicationIds() {
         try {
-            List<String> appNodes = curator.framework().getChildren().forPath(tenantRoot.getAbsolute());
+            List<String> appNodes = curator.framework().getChildren().forPath(applicationsPath.getAbsolute());
             for (String appNode : appNodes) {
                 Optional<ApplicationId> appId = parseApplication(appNode);
                 appId.filter(id -> shouldBeRewritten(appNode, id))
@@ -75,7 +76,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     }
 
     private long readSessionId(ApplicationId appId, String appNode) {
-        String path = tenantRoot.append(appNode).getAbsolute();
+        String path = applicationsPath.append(appNode).getAbsolute();
         try {
             return Long.parseLong(Utf8.toString(curator.framework().getData().forPath(path)));
         } catch (Exception e) {
@@ -88,8 +89,8 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     }
 
     private void rewriteApplicationId(ApplicationId appId, String origNode, long sessionId) {
-        String newPath = tenantRoot.append(appId.serializedForm()).getAbsolute();
-        String oldPath = tenantRoot.append(origNode).getAbsolute();
+        String newPath = applicationsPath.append(appId.serializedForm()).getAbsolute();
+        String oldPath = applicationsPath.append(origNode).getAbsolute();
         try (CuratorTransaction transaction = new CuratorTransaction(curator)) {
             if (curator.framework().checkExists().forPath(newPath) == null) {
                 transaction.add(CuratorOperations.create(newPath, Utf8.toAsciiBytes(sessionId)));
@@ -104,7 +105,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     @Override
     public List<ApplicationId> listApplications() {
         try {
-            List<String> appNodes = curator.framework().getChildren().forPath(tenantRoot.getAbsolute());
+            List<String> appNodes = curator.framework().getChildren().forPath(applicationsPath.getAbsolute());
             List<ApplicationId> applicationIds = new ArrayList<>();
             for (String appNode : appNodes) {
                 parseApplication(appNode).ifPresent(applicationIds::add);
@@ -127,9 +128,9 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     @Override
     public Transaction createPutApplicationTransaction(ApplicationId applicationId, long sessionId) {
         if (listApplications().contains(applicationId)) {
-            return new CuratorTransaction(curator).add(CuratorOperations.setData(tenantRoot.append(applicationId.serializedForm()).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+            return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationsPath.append(applicationId.serializedForm()).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
         } else {
-            return new CuratorTransaction(curator).add(CuratorOperations.create(tenantRoot.append(applicationId.serializedForm()).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+            return new CuratorTransaction(curator).add(CuratorOperations.create(applicationsPath.append(applicationId.serializedForm()).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
         }
     }
 
@@ -140,7 +141,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     @Override
     public CuratorTransaction deleteApplication(ApplicationId applicationId) {
-        Path path = tenantRoot.append(applicationId.serializedForm());
+        Path path = applicationsPath.append(applicationId.serializedForm());
         return CuratorTransaction.from(CuratorOperations.delete(path.getAbsolute()), curator);
     }
 
@@ -150,13 +151,13 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         pathChildrenExecutor.shutdown();
     }
 
-
     @Override
     public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
         switch (event.getType()) {
             case CHILD_ADDED:
                 applicationAdded(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;
+            // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
             case CHILD_REMOVED:
                 applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;

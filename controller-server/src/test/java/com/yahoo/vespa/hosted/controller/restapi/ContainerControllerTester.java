@@ -28,9 +28,13 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -42,24 +46,33 @@ public class ContainerControllerTester {
 
     private final ContainerTester containerTester;
     private final Controller controller;
+    private final Upgrader upgrader;
 
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
         controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
+        upgrader = new Upgrader(controller, Duration.ofMinutes(2), new JobControl(new MockCuratorDb()));
     }
 
     public Controller controller() { return controller; }
+
+    public Upgrader upgrader() { return upgrader; }
 
     /** Returns the wrapped generic container tester */
     public ContainerTester containerTester() { return containerTester; }
 
     public Application createApplication() {
-        AthensDomain domain1 = addTenantAthensDomain("domain1", "mytenant");
-        controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId("tenant1"), domain1,
+        return createApplication("domain1","tenant1",
+                                 "application1");
+    }
+
+    public Application createApplication(String athensDomain, String tenant, String application) {
+        AthensDomain domain1 = addTenantAthensDomain(athensDomain, "mytenant");
+        controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
                                                                  new Property("property1"),
                                                                  Optional.of(new PropertyId("1234"))),
                                        Optional.of(TestIdentities.userNToken));
-        ApplicationId app = ApplicationId.from("tenant1", "application1", "default");
+        ApplicationId app = ApplicationId.from(tenant, application, "default");
         return controller.applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
 

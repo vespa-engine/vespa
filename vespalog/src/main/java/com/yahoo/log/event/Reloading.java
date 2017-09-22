@@ -3,7 +3,7 @@ package com.yahoo.log.event;
 
 /**
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class Reloading extends Event {
     public Reloading () {

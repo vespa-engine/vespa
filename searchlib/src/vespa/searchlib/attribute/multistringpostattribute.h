@@ -105,6 +105,8 @@ public:
 
     attribute::IPostingListAttributeBase * getIPostingListAttributeBase() override { return this; }
 
+    const attribute::IPostingListAttributeBase * getIPostingListAttributeBase()  const override { return this; }
+
     void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) override {
         fillPostingsFixupEnumBase(loaded);
     }

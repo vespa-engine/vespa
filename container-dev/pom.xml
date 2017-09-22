@@ -97,6 +97,10 @@
           <groupId>commons-lang</groupId>
           <artifactId>commons-lang</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -107,6 +111,10 @@
         <exclusion>
           <groupId>org.ow2.asm</groupId>
           <artifactId>asm</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -142,12 +150,24 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.ibm.icu</groupId>
+          <artifactId>icu4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-collections</groupId>
+          <artifactId>commons-collections</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>commons-lang</groupId>
           <artifactId>commons-lang</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.antlr</groupId>
           <artifactId>antlr4-runtime</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>xerces</groupId>
+          <artifactId>xercesImpl</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -156,6 +176,10 @@
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+        </exclusion>
         <exclusion>
           <!-- TODO: Remove exclusion when scala-xml is excluded in config-bundle pom -->
           <groupId>org.scala-lang.modules</groupId>
@@ -166,7 +190,18 @@
 
     <!-- Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
          and hence make them invisible to user projects' build classpath.
-        Excluded artifacts should be added explicitly to the application module to make then visible in users' test classpath. -->
+         Excluded artifacts should be added explicitly to the application module to make then visible in users' test classpath. -->
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>document</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-collections</groupId>
+          <artifactId>commons-collections</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>predicate-search-core</artifactId>

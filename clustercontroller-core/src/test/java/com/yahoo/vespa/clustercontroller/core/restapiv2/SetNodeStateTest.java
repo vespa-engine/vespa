@@ -374,10 +374,11 @@ public class SetNodeStateTest extends StateRestApiTest {
                 .setNewState("user", "maintenance", "whatever reason."));
     }
 
+    // FIXME requests should be tagged as version dependent; temporary workaround
     @Test
-    public void set_node_state_requests_are_by_default_tagged_as_having_version_ack_dependency() {
+    public void set_node_state_requests_are_by_default_not_tagged_as_having_version_ack_dependency() {
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        assertTrue(request.hasVersionAckDependency());
+        assertFalse(request.hasVersionAckDependency());
     }
 
     @Test

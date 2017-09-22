@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * logging events, rather than making events him/herself and stuffing
  * them through the logging API.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public abstract class Event implements Serializable {
     private static Logger log = Logger.getLogger(Event.class.getName());

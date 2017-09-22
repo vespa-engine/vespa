@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.Tenants;
 import org.junit.Test;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -34,7 +33,6 @@ public class ListTenantsTest extends TenantTest {
 
     private static void assertContainsSystemTenants(final Collection<TenantName> tenantNames) {
         assertTrue(tenantNames.contains(TenantName.defaultName()));
-        assertTrue(tenantNames.contains(Tenants.HOSTED_VESPA_TENANT));
     }
 
     @Test

@@ -29,6 +29,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileReader;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -56,12 +57,9 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
         tenants.writeTenantPath(tenant2);
 
         applicationRepository = new ApplicationRepository(tenants,
-                                                          HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner()),
+                                                          new SessionHandlerTest.MockProvisioner(),
                                                           curator,
-                                                          new LogServerLogGrabber(),
-                                                          new ApplicationConvergenceChecker(),
-                                                          new HttpProxy(new SimpleHttpFetcher()),
-                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()));
+                                                          Clock.systemUTC());
     }
 
     @Test

@@ -83,7 +83,7 @@ NativeFieldMatchExecutor::execute(uint32_t docId)
 }
 
 void
-NativeFieldMatchExecutor::handle_bind_match_data(fef::MatchData &md)
+NativeFieldMatchExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

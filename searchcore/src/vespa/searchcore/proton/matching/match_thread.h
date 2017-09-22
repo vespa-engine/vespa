@@ -51,46 +51,41 @@ private:
 
     class Context {
     public:
-        Context(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
+        Context(double rankDropLimit, MatchTools &tools, HitCollector &hits,
                 uint32_t num_threads) __attribute__((noinline));
         void rankHit(uint32_t docId);
         void addHit(uint32_t docId) { _hits.addHit(docId, search::zero_rank_value); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool   atSoftDoom() const { return _softDoom.doom(); }
-        MaybeMatchPhaseLimiter & limiter() { return _limiter; }
-        uint32_t                  matches;
+        uint32_t                 matches;
     private:
-        uint32_t                  _matches_limit;
-        LazyValue                 _score_feature;
-        RankProgram             & _ranking;
-        double                    _rankDropLimit;
-        HitCollector            & _hits;
-        const Doom              & _softDoom;
-        MaybeMatchPhaseLimiter  & _limiter;
+        uint32_t                 _matches_limit;
+        LazyValue                _score_feature;
+        RankProgram             &_ranking;
+        double                   _rankDropLimit;
+        HitCollector            &_hits;
+        const Doom              &_softDoom;
     };
 
     double estimate_match_frequency(uint32_t matches, uint32_t searchedSoFar) __attribute__((noinline));
-
-    template <typename IteratorT>
-    void maybe_limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
+    SearchIterator *maybe_limit(MatchTools &tools, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
 
     bool any_idle() const { return (idle_observer.get() > 0); }
     bool try_share(DocidRange &docid_range, uint32_t next_docid) __attribute__((noinline));
 
-    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    bool inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
+    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work>
+    bool inner_match_loop(Context &context, MatchTools &tools, DocidRange docid_range) __attribute__((noinline));
 
-    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void match_loop(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits) __attribute__((noinline));
+    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work>
+    void match_loop(MatchTools &tools, HitCollector &hits) __attribute__((noinline));
 
-    template <typename IteratorT, bool do_rank, bool do_limit>
-    void match_loop_helper_2(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
+    template <bool do_rank, bool do_limit, bool do_share> void match_loop_helper_rank_limit_share(MatchTools &tools, HitCollector &hits);
+    template <bool do_rank, bool do_limit> void match_loop_helper_rank_limit(MatchTools &tools, HitCollector &hits);
+    template <bool do_rank> void match_loop_helper_rank(MatchTools &tools, HitCollector &hits);
+    void match_loop_helper(MatchTools &tools, HitCollector &hits);
 
-    template <typename IteratorT, bool do_rank>
-    void match_loop_helper(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
-
-    search::ResultSet::UP findMatches(MatchTools &matchTools);
+    search::ResultSet::UP findMatches(MatchTools &tools);
 
     void processResult(const Doom & hardDoom, search::ResultSet::UP result, ResultProcessor::Context &context);
 

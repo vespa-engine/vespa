@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -98,25 +99,37 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 if (failingSince == null) continue; // started working just now
 
                 Cursor applicationObject = failingArray.addObject();
-                toSlime(id, applicationObject, request);
+                toSlime(application.get(), applicationObject, request);
                 applicationObject.setLong("failingSince", failingSince.toEpochMilli());
+
             }
 
             Cursor productionArray = versionObject.setArray("productionApplications");
-            for (ApplicationId id : version.statistics().production())
-                toSlime(id, productionArray.addObject(), request);
+            for (ApplicationId id : version.statistics().production()) {
+                Optional<Application> application = controller.applications().get(id);
+                if ( ! application.isPresent()) continue; // deleted just now
+                toSlime(application.get(), productionArray.addObject(), request);
+            }
         }
         return new SlimeJsonResponse(slime);
     }
-    
-    private void toSlime(ApplicationId id, Cursor object, HttpRequest request) {
-        object.setString("tenant", id.tenant().value());
-        object.setString("application", id.application().value());
-        object.setString("instance", id.instance().value());
-        object.setString("url", new Uri(request.getUri()).withPath("/application/v4" +
-                                                                   "/tenant/" + id.tenant().value() +
-                                                                   "/application/" + id.application().value())
-                                                         .toString());
+
+    private void toSlime(Application application, Cursor object, HttpRequest request) {
+        object.setString("tenant", application.id().tenant().value());
+        object.setString("application", application.id().application().value());
+        object.setString("instance", application.id().instance().value());
+        object.setString("url", new Uri(request.getUri()).withPath("/application/v4/tenant/" +
+                                                                   application.id().tenant().value() +
+                                                                   "/application/" +
+                                                                   application.id().application().value()).toString());
+        object.setString("upgradePolicy", toString(application.deploymentSpec().upgradePolicy()));
     }
-    
+
+    private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {
+        if (upgradePolicy == DeploymentSpec.UpgradePolicy.defaultPolicy) {
+            return "default";
+        }
+        return upgradePolicy.name();
+    }
+
 }

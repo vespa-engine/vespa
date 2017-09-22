@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/enumstorebase.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/ipostinglistattributebase.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using search::attribute::Status;
@@ -13,6 +14,7 @@ using search::AttributeVector;
 using search::EnumStoreBase;
 using search::MemoryUsage;
 using search::attribute::MultiValueMappingBase;
+using search::attribute::IPostingListAttributeBase;
 using namespace vespalib::slime;
 
 namespace proton {
@@ -87,12 +89,17 @@ convertMultiValueToSlime(const MultiValueMappingBase &multiValue, Cursor &object
     convertMemoryUsageToSlime(multiValue.getMemoryUsage(), object.setObject("memoryUsage"));
 }
 
-
 void
 convertChangeVectorToSlime(const AttributeVector &v, Cursor &object)
 {
     MemoryUsage usage = v.getChangeVectorMemoryUsage();
     convertMemoryUsageToSlime(usage, object);
+}
+
+void
+convertPostingBaseToSlime(const IPostingListAttributeBase &postingBase, Cursor &object)
+{
+    convertMemoryUsageToSlime(postingBase.getMemoryUsage(), object.setObject("memoryUsage"));
 }
 
 }
@@ -120,6 +127,10 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         const MultiValueMappingBase *multiValue = attr.getMultiValueBase();
         if (multiValue) {
             convertMultiValueToSlime(*multiValue, object.setObject("multiValue"));
+        }
+        const IPostingListAttributeBase *postingBase = attr.getIPostingListAttributeBase();
+        if (postingBase) {
+            convertPostingBaseToSlime(*postingBase, object.setObject("postingList"));
         }
         convertChangeVectorToSlime(attr, object.setObject("changeVector"));
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());

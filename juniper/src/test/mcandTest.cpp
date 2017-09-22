@@ -1,21 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Implementation of the automated unit test class for the MatchCandidate
- * class.
- *
- * @file mcandTest.cpp
- *
- * @author Knut Omang
- *
- * @date Created 27 Feb 2003
- *
- * $Id$
- *
- * <pre>
- *              Copyright (c) : 2003 Fast Search & Transfer ASA
- *                              ALL RIGHTS RESERVED
- * </pre>
- ***************************************************************************/
+/*
+ * Author: Knut Omang
+ */
 
 #include "mcandTest.h"
 

@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 
+import java.time.Clock;
 import java.util.Optional;
 
 /**
@@ -38,5 +39,6 @@ public interface GlobalComponentRegistry {
     ModelFactoryRegistry getModelFactoryRegistry();
     Optional<Provisioner> getHostProvisioner();
     Zone getZone();
+    Clock getClock();
 
 }

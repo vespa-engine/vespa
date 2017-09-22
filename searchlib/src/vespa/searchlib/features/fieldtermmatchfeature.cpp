@@ -63,7 +63,7 @@ FieldTermMatchExecutor::execute(uint32_t docId)
 }
 
 void
-FieldTermMatchExecutor::handle_bind_match_data(fef::MatchData &md)
+FieldTermMatchExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

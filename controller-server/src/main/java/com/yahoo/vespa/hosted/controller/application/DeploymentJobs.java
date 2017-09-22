@@ -24,6 +24,7 @@ import java.util.Optional;
  * This is immutable.
  * 
  * @author bratseth
+ * @author mpolden
  */
 public class DeploymentJobs {
 
@@ -68,14 +69,17 @@ public class DeploymentJobs {
         return new DeploymentJobs(Optional.of(report.projectId()), status, jiraIssueId, report.selfTriggering());
     }
 
-    public DeploymentJobs withTriggering(DeploymentJobs.JobType jobType, 
-                                         Version version, 
-                                         Optional<ApplicationRevision> revision, 
+    public DeploymentJobs withTriggering(JobType jobType,
+                                         Optional<Change> change,
+                                         Version version,
+                                         Optional<ApplicationRevision> revision,
                                          Instant triggerTime) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(jobType, (type, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
-            return job.withTriggering(version, revision, triggerTime);
+            return job.withTriggering(version, revision,
+                                      change.isPresent() && change.get() instanceof Change.VersionChange,
+                                      triggerTime);
         });
         return new DeploymentJobs(projectId, status, jiraIssueId, selfTriggering);
     }
@@ -128,10 +132,13 @@ public class DeploymentJobs {
     }
 
     /** Returns whether change has been deployed completely */
-    public boolean isDeployed(Change change) {
+    public boolean isDeployed(Optional<Change> change) {
+        if (!change.isPresent()) {
+            return true;
+        }
         return status.values().stream()
                 .filter(status -> status.type().isProduction())
-                .allMatch(status -> isSuccessful(change, status.type()));
+                .allMatch(status -> isSuccessful(change.get(), status.type()));
     }
 
     /** Returns whether job has completed successfully */

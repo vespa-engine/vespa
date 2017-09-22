@@ -61,11 +61,8 @@ findroot
 ${VESPA_HOME}/bin/vespa-prestart.sh || exit 1
 willrun=${VESPA_HOME}/libexec/vespa/start-vespa-base.sh
 if [ -x $willrun ]; then
-    echo "Starting $willrun as a background process." >&2
-    exec </dev/null
-    exec >/dev/null 2>&1
-    nohup $willrun &
-    exit 0
+    echo "Running $willrun" >&2
+    exec $willrun
 fi
 echo "FATAL cannot run: $willrun"
 exit 1

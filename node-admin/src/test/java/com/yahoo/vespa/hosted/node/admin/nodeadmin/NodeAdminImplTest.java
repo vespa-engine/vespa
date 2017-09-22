@@ -7,12 +7,13 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +31,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -45,15 +45,17 @@ import static org.mockito.Mockito.when;
 public class NodeAdminImplTest {
     // Trick to allow mocking of typed interface without casts/warnings.
     private interface NodeAgentFactory extends Function<String, NodeAgent> {}
+    private final DockerOperations dockerOperations = mock(DockerOperations.class);
+    private final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
+    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+    private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
+    private final ManualClock clock = new ManualClock();
+
+    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
+            new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() throws Exception {
-        final DockerOperations dockerOperations = mock(DockerOperations.class);
-        final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty(), Clock.systemUTC());
-
         final String hostName1 = "host1.test.yahoo.com";
         final String hostName2 = "host2.test.yahoo.com";
         final ContainerName containerName1 = ContainerName.fromHostname(hostName1);
@@ -69,12 +71,12 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName1);
-        inOrder.verify(nodeAgent1).start(100);
+        inOrder.verify(nodeAgent1).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
-        inOrder.verify(nodeAgent1, never()).start(anyInt());
+        inOrder.verify(nodeAgent1, never()).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
@@ -83,13 +85,13 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName2);
-        inOrder.verify(nodeAgent2).start(100);
+        inOrder.verify(nodeAgent2).start();
         inOrder.verify(nodeAgent2, never()).stop();
         verify(nodeAgent1).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
-        inOrder.verify(nodeAgent2, never()).start(anyInt());
+        inOrder.verify(nodeAgent2, never()).start();
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);
@@ -98,12 +100,6 @@ public class NodeAdminImplTest {
 
     @Test
     public void testSetFrozen() throws Exception {
-        final DockerOperations dockerOperations = mock(DockerOperations.class);
-        final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty(), Clock.systemUTC());
-
         List<NodeAgent> nodeAgents = new ArrayList<>();
         List<String> existingContainerHostnames = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
@@ -153,18 +149,6 @@ public class NodeAdminImplTest {
 
     @Test
     public void testSubsystemFreezeDuration() {
-        final DockerOperations dockerOperations = mock(DockerOperations.class);
-        final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-        final ManualClock clock = new ManualClock();
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(
-                dockerOperations,
-                nodeAgentFactory,
-                Optional.empty(),
-                100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation),
-                Optional.empty(),
-                clock);
-
         // Initially everything is frozen to force convergence
         assertTrue(nodeAdmin.isFrozen());
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());

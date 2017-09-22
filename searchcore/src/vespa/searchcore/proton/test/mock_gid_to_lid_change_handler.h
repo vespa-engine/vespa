@@ -44,7 +44,7 @@ public:
         _removes.emplace_back(docTypeName, keepNames);
     }
 
-    virtual void notifyPut(document::GlobalId, uint32_t, SerialNum)  override { }
+    virtual void notifyPutDone(document::GlobalId, uint32_t, SerialNum)  override { }
     virtual void notifyRemove(document::GlobalId, SerialNum)  override { }
     virtual void notifyRemoveDone(document::GlobalId, SerialNum)  override { }
 

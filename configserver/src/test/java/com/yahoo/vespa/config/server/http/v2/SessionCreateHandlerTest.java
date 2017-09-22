@@ -9,17 +9,12 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.HttpProxy;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -28,10 +23,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.*;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 import static com.yahoo.jdisc.Response.Status.*;
 import static org.hamcrest.core.Is.is;
@@ -64,7 +59,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() throws Exception {
         applicationRepo = new MemoryTenantApplications();
-        localSessionRepo = new LocalSessionRepo(applicationRepo);
+        localSessionRepo = new LocalSessionRepo(applicationRepo, Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";
         tenantMessage = ",\"tenant\":\"test\"";
@@ -242,12 +237,9 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         return new SessionCreateHandler(Runnable::run, AccessLog.voidAccessLog(), tenants, configserverConfig,
                                         new ApplicationRepository(testTenantBuilder.createTenants(),
-                                                                  HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner()),
+                                                                  new SessionHandlerTest.MockProvisioner(),
                                                                   new MockCurator(),
-                                                                  new LogServerLogGrabber(),
-                                                                  new ApplicationConvergenceChecker(),
-                                                                  new HttpProxy(new SimpleHttpFetcher()),
-                                                                  configserverConfig));
+                                                                  Clock.systemUTC()));
     }
 
     public HttpRequest post() throws FileNotFoundException {

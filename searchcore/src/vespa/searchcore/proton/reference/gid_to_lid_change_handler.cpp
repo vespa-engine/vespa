@@ -31,10 +31,10 @@ GidToLidChangeHandler::~GidToLidChangeHandler()
 }
 
 void
-GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid)
+GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid)
 {
     for (const auto &listener : _listeners) {
-        listener->notifyPut(gid, lid);
+        listener->notifyPutDone(gid, lid);
     }
 }
 
@@ -47,25 +47,39 @@ GidToLidChangeHandler::notifyRemove(GlobalId gid)
 }
 
 void
-GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum)
+GidToLidChangeHandler::notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto itr = _pendingRemove.find(gid);
     if (itr != _pendingRemove.end()) {
-        assert(itr->second > serialNum);
-        return; // Document has already been removed later on
+        auto &entry = itr->second;
+        assert(entry.removeSerialNum != serialNum);
+        if (entry.removeSerialNum > serialNum) {
+            return; // Document has already been removed later on
+        }
+        assert(entry.putSerialNum != serialNum);
+        if (entry.putSerialNum > serialNum) {
+            return; // Document has already been put later on
+        }
+        entry.putSerialNum = serialNum;
     }
-    notifyPut(gid, lid);
+    notifyPutDone(gid, lid);
 }
 
 void
 GidToLidChangeHandler::notifyRemove(GlobalId gid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
-    auto insRes = _pendingRemove.insert(std::make_pair(gid, serialNum));
+    auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
     if (!insRes.second) {
-        assert(insRes.first->second < serialNum);
-        insRes.first->second = serialNum;
+        auto &entry = insRes.first->second;
+        assert(entry.removeSerialNum < serialNum);
+        assert(entry.putSerialNum < serialNum);
+        if (entry.removeSerialNum < entry.putSerialNum) {
+            notifyRemove(gid);
+        }
+        entry.removeSerialNum = serialNum;
+        ++entry.refCount;
     } else {
         notifyRemove(gid);
     }
@@ -76,9 +90,13 @@ GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     auto itr = _pendingRemove.find(gid);
-    assert(itr != _pendingRemove.end() && itr->second >= serialNum);
-    if (itr->second == serialNum) {
+    assert(itr != _pendingRemove.end());
+    auto &entry = itr->second;
+    assert(entry.removeSerialNum >= serialNum);
+    if (entry.refCount == 1) {
         _pendingRemove.erase(itr);
+    } else {
+        --entry.refCount;
     }
 }
 

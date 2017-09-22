@@ -96,17 +96,14 @@ void VespaDocumentSerializer::write(const Document &value,
     VespaDocumentSerializer doc_serializer(doc_stream);
     doc_serializer.write(value.getId());
 
-    int hasHeader = 0;
-    int hasBody = 0;
+    bool hasHeader = false;
+    bool hasBody = false;
 
-    for (StructuredFieldValue::const_iterator it(value.getFields().begin()), mt(value.getFields().end());
-         it != mt;
-         ++it)
-    {
-        if (it.field().isHeaderField()) {
-            hasHeader = 1;
+    for (const Field & field : value.getFields()) {
+        if (field.isHeaderField()) {
+            hasHeader = true;
         } else {
-            hasBody = 1;
+            hasBody = true;
         }
 
         if (hasHeader && hasBody) {
@@ -115,7 +112,7 @@ void VespaDocumentSerializer::write(const Document &value,
     }
 
     if (mode != COMPLETE) {
-        hasBody = 0;
+        hasBody = false;
     }
 
     doc_stream << getContentCode(hasHeader, hasBody);
@@ -244,8 +241,8 @@ void VespaDocumentSerializer::write(const StringFieldValue &value) {
 
 namespace {
 void serializeFields(const StructFieldValue &value, nbostream &stream,
-                     vector<pair<uint32_t, uint32_t> > &field_info,
-                     const FieldSet& fieldSet) {
+                     vector<pair<uint32_t, uint32_t> > &field_info, const FieldSet& fieldSet)
+{
     VespaDocumentSerializer serializer(stream);
     for (StructuredFieldValue::const_iterator it(value.begin()), e(value.end()); it != e; ++it) {
         if (!fieldSet.contains(it.field())) {
@@ -261,8 +258,7 @@ void serializeFields(const StructFieldValue &value, nbostream &stream,
     }
 }
 
-bool compressionSufficient(const CompressionConfig &config,
-                           uint64_t old_size, size_t new_size)
+bool compressionSufficient(const CompressionConfig &config, uint64_t old_size, size_t new_size)
 {
     return (new_size + 8) < (old_size * config.threshold / 100);
 }
@@ -273,13 +269,14 @@ bool bigEnough(size_t size, const CompressionConfig &config)
 }
 
 vespalib::ConstBufferRef
-compressStream(const CompressionConfig &config, nbostream &stream,
-                    vespalib::DataBuffer & compressed_data)
+compressStream(const CompressionConfig &config, nbostream &stream, vespalib::DataBuffer & compressed_data)
 {
     using vespalib::compression::compress;
     vespalib::ConstBufferRef buf(stream.c_str(), stream.size());
     if (config.useCompression() && bigEnough(stream.size(), config)) {
-        CompressionConfig::Type compressedType = compress(config, vespalib::ConstBufferRef(stream.c_str(), stream.size()), compressed_data, false);
+        CompressionConfig::Type compressedType = compress(config,
+                                                          vespalib::ConstBufferRef(stream.c_str(), stream.size()),
+                                                          compressed_data, false);
         if (compressedType != config.type ||
             ! compressionSufficient(config, stream.size(), compressed_data.getDataLen()))
         {
@@ -554,6 +551,5 @@ void VespaDocumentSerializer::write(const RemoveFieldPathUpdate &value)
 {
     writeFieldPath(_stream, value);
 }
-
 
 }  // namespace document

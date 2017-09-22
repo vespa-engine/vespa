@@ -21,7 +21,7 @@ RoutingNode::RoutingNode(MessageBus &mbus, INetwork &net, Resender *resender,
     : _mbus(mbus),
       _net(net),
       _resender(resender),
-      _parent(NULL),
+      _parent(nullptr),
       _recipients(),
       _children(),
       _replyHandler(&replyHandler),
@@ -45,8 +45,8 @@ RoutingNode::RoutingNode(RoutingNode &parent, const Route &route)
       _parent(&parent),
       _recipients(parent._recipients),
       _children(),
-      _replyHandler(NULL),
-      _discardHandler(NULL),
+      _replyHandler(nullptr),
+      _discardHandler(nullptr),
       _trace(parent._trace.getLevel()),
       _pending(0),
       _msg(parent._msg),
@@ -78,8 +78,8 @@ RoutingNode::clearChildren()
 void
 RoutingNode::discard()
 {
-    assert(_parent == NULL);
-    if (_discardHandler != NULL) {
+    assert(_parent == nullptr);
+    if (_discardHandler != nullptr) {
         _discardHandler->handleDiscard(Context());
     }
 }
@@ -101,7 +101,7 @@ RoutingNode::prepareForRetry()
 {
     _shouldRetry = false;
     _reply.reset();
-    if (_routingContext.get() != NULL && _routingContext->getSelectOnRetry()) {
+    if (_routingContext.get() != nullptr && _routingContext->getSelectOnRetry()) {
         clearChildren();
     } else if (!_children.empty()) {
         bool retryingSome = false;
@@ -109,7 +109,7 @@ RoutingNode::prepareForRetry()
              it != _children.end(); ++it)
         {
             RoutingNode *child= *it;
-            if (child->_shouldRetry || child->_reply.get() == NULL) {
+            if (child->_shouldRetry || child->_reply.get() == nullptr) {
                 child->prepareForRetry();
                 retryingSome = true;
             }
@@ -126,11 +126,11 @@ RoutingNode::prepareForRetry()
 void
 RoutingNode::notifyParent()
 {
-    if (_serviceAddress.get() != NULL) {
+    if (_serviceAddress.get() != nullptr) {
         _net.freeServiceAddress(*this);
     }
     tryIgnoreResult();
-    if (_parent != NULL) {
+    if (_parent != nullptr) {
         _parent->notifyMerge();
         return;
     }
@@ -174,7 +174,7 @@ RoutingNode::addError(uint32_t code, const string &msg)
 void
 RoutingNode::addError(const Error &err)
 {
-    if (_reply.get() != NULL) {
+    if (_reply.get() != nullptr) {
         _reply->getTrace().swap(_trace);
         _reply->addError(err);
         _reply->getTrace().swap(_trace);
@@ -186,8 +186,8 @@ RoutingNode::addError(const Error &err)
 void
 RoutingNode::setReply(Reply::UP reply)
 {
-    if (reply.get() != NULL) {
-        _shouldRetry = _resender != NULL && _resender->shouldRetry(*reply);
+    if (reply.get() != nullptr) {
+        _shouldRetry = _resender != nullptr && _resender->shouldRetry(*reply);
         _trace.getRoot().addChild(reply->getTrace().getRoot());
         reply->getTrace().clear();
     }
@@ -211,7 +211,7 @@ RoutingNode::notifyAbort(const string &msg)
         mystack.pop();
         if (!node->_isActive) {
             // reply not pending
-        } else if (node->_reply.get() != NULL) {
+        } else if (node->_reply.get() != nullptr) {
             node->notifyParent();
         } else if (node->_children.empty()) {
             node->setError(ErrorCode::SEND_ABORTED, msg);
@@ -240,7 +240,7 @@ RoutingNode::notifyTransmit()
                 if (node->hasReply()) {
                     node->notifyParent();
                 } else {
-                    assert(node->_serviceAddress.get() != NULL);
+                    assert(node->_serviceAddress.get() != nullptr);
                     sendTo.push_back(node);
                 }
             } else {
@@ -296,7 +296,7 @@ RoutingNode::notifyMerge()
         setError(ErrorCode::POLICY_ERROR, make_string("Policy '%s' threw an exception; %s",
                                                       dir.getName().c_str(), e.what()));
     }
-    if (_reply.get() == NULL) {
+    if (_reply.get() == nullptr) {
         setError(ErrorCode::APP_FATAL_ERROR, make_string("Routing policy '%s' failed to merge replies.",
                                                          dir.getName().c_str()));
     }
@@ -315,12 +315,12 @@ RoutingNode::hasUnconsumedErrors()
     while (!mystack.empty()) {
         RoutingNode *node = mystack.top();
         mystack.pop();
-        if (node->_reply.get() != NULL) {
+        if (node->_reply.get() != nullptr) {
             for (uint32_t i = 0; i < node->_reply->getNumErrors(); ++i) {
                 int errorCode = node->_reply->getError(i).getCode();
                 RoutingNode *it = node;
-                while (it != NULL) {
-                    if (it->_routingContext.get() != NULL &&
+                while (it != nullptr) {
+                    if (it->_routingContext.get() != nullptr &&
                         it->_routingContext->isConsumableError(errorCode))
                     {
                         errorCode = ErrorCode::NONE;
@@ -329,7 +329,7 @@ RoutingNode::hasUnconsumedErrors()
                     it = it->_parent;
                 }
                 if (errorCode != ErrorCode::NONE) {
-                    _shouldRetry = _resender != NULL && _resender->canRetry(errorCode);
+                    _shouldRetry = _resender != nullptr && _resender->canRetry(errorCode);
                     if (!_shouldRetry) {
                         return true; // no need to continue
                     }
@@ -374,17 +374,17 @@ RoutingNode::resolve(uint32_t depth)
         if (executePolicySelect()) {
             return resolveChildren(depth + 1);
         }
-        return _reply.get() != NULL;
+        return _reply.get() != nullptr;
     }
     _net.allocServiceAddress(*this);
-    return _serviceAddress.get() != NULL || _reply.get() != NULL;
+    return _serviceAddress.get() != nullptr || _reply.get() != nullptr;
 }
 
 bool
 RoutingNode::lookupHop()
 {
     RoutingTable::SP table = _mbus.getRoutingTable(_msg.getProtocol());
-    if (table.get() != NULL) {
+    if (table.get() != nullptr) {
         string name = _route.getHop(0).getServiceName();
         if (table->hasHop(name)) {
             const HopBlueprint *hop = table->getHop(name);
@@ -404,7 +404,7 @@ RoutingNode::lookupRoute()
     Hop &hop = _route.getHop(0);
     if (hop.getDirective(0)->getType() == IHopDirective::TYPE_ROUTE) {
         RouteDirective &dir = static_cast<RouteDirective&>(*hop.getDirective(0));
-        if (table.get() == NULL || !table->hasRoute(dir.getName())) {
+        if (table.get() == nullptr || !table->hasRoute(dir.getName())) {
             setError(ErrorCode::ILLEGAL_ROUTE,
                      make_string("Route '%s' does not exist.", dir.getName().c_str()));
             return false;
@@ -415,7 +415,7 @@ RoutingNode::lookupRoute()
                                  dir.getName().c_str(), _route.toString().c_str()));
         return true;
     }
-    if (table.get() != NULL) {
+    if (table.get() != nullptr) {
         string name = hop.getServiceName();
         if (table->hasRoute(name)) {
             insertRoute(*table->getRoute(name));
@@ -474,7 +474,7 @@ RoutingNode::executePolicySelect()
 {
     const PolicyDirective &dir = _routingContext->getDirective();
     _policy = _mbus.getRoutingPolicy(_msg.getProtocol(), dir.getName(), dir.getParam());
-    if (_policy.get() == NULL) {
+    if (_policy.get() == nullptr) {
         setError(ErrorCode::UNKNOWN_POLICY, make_string(
                 "Protocol '%s' could not create routing policy '%s' with parameter '%s'.",
                 _msg.getProtocol().c_str(), dir.getName().c_str(), dir.getParam().c_str()));
@@ -489,7 +489,7 @@ RoutingNode::executePolicySelect()
         return false;
     }
     if (_children.empty()) {
-        if (_reply.get() == NULL) {
+        if (_reply.get() == nullptr) {
             setError(ErrorCode::NO_SERVICES_FOR_ROUTE,
                      make_string("Policy '%s' selected no recipients for route '%s'.",
                                  dir.getName().c_str(), _route.toString().c_str()));
@@ -522,7 +522,7 @@ RoutingNode::resolveChildren(uint32_t childDepth)
         RoutingNode *child = *it;
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
                             make_string("Resolving '%s'.", child->_route.toString().c_str()));
-        child->_isActive = (child->_reply.get() == NULL);
+        child->_isActive = (child->_reply.get() == nullptr);
         if (child->_isActive) {
             ++numActiveChildren;
             if (!child->resolve(childDepth)) {
@@ -562,7 +562,7 @@ RoutingNode::tryIgnoreResult()
     if (!shouldIgnoreResult()) {
         return false;
     }
-    if (_reply.get() == NULL || !_reply->hasErrors()) {
+    if (_reply.get() == nullptr || !_reply->hasErrors()) {
         return false;
     }
     setReply(Reply::UP(new EmptyReply()));

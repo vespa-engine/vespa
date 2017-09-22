@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
@@ -14,7 +15,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -32,17 +32,20 @@ import static org.mockito.Mockito.when;
 
 /**
  * Basic test of NodeAdminStateUpdater
+ *
  * @author freva
  */
 public class NodeAdminStateUpdaterTest {
-    private final String parentHostname = "basehost1.test.yahoo.com";
-
-    private final ManualClock clock = new ManualClock();
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
-    private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
+    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+    private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
+    private final String parentHostname = "basehost1.test.yahoo.com";
+    private final ManualClock clock = new ManualClock();
+    private final Duration convergeStateInterval = Duration.ofSeconds(30);
+
     private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
-            nodeRepository, nodeAdmin, Optional.empty(), clock, orchestrator, parentHostname));
+            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock, convergeStateInterval));
 
 
     @Test
@@ -65,7 +68,7 @@ public class NodeAdminStateUpdaterTest {
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
         suspendHostnames.add(parentHostname);
 
-        when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
+        when(nodeRepository.getContainersToRun(eq(parentHostname))).thenReturn(containersToRun);
 
         // Initially everything is frozen to force convergence
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));

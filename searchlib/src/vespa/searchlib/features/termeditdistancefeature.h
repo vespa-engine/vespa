@@ -88,7 +88,7 @@ private:
      */
     void logRow(const std::vector<TedCell> &row, size_t numCols);
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 private:
     const TermEditDistanceConfig             &_config;       // The config for this executor.

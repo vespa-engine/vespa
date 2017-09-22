@@ -72,7 +72,7 @@ public class DeploymentTrigger {
                 else { // start a new change deployment
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                 }
-            } else if (order.isLast(report.jobType(), application) && report.success() && application.deploymentJobs().isDeployed(application.deploying().get())) {
+            } else if (order.isLast(report.jobType(), application) && report.success() && application.deploymentJobs().isDeployed(application.deploying())) {
                 application = application.withDeploying(Optional.empty());
             }
 
@@ -290,7 +290,7 @@ public class DeploymentTrigger {
                                cause));
         buildSystem.addJob(application.id(), jobType, first);
 
-        return application.withJobTriggering(jobType, clock.instant(), controller);
+        return application.withJobTriggering(jobType, application.deploying(), clock.instant(), controller);
     }
 
     private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {

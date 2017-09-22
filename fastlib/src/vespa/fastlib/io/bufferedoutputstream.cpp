@@ -1,16 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author Markus Bjartveit Krüger
-* @date            Creation date: 2001-10-30
-*
-* Generic buffered output stream
-*
-* Copyright (c)  : 2001 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * Generic buffered output stream
+ *
+ * Author: Markus Bjartveit Krüger
+ */
 
 #include "bufferedoutputstream.h"
 #include <cstring>

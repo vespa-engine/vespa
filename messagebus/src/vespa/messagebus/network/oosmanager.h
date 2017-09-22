@@ -20,14 +20,11 @@ class RPCNetwork;
  */
 class OOSManager : public FNET_Task {
 public:
-    /**
-     * Convenience typedefs.
-     */
-    typedef slobrok::api::IMirrorAPI     IMirrorAPI;
-    typedef IMirrorAPI::SpecList          SpecList;
-    typedef std::vector<OOSClient::SP>   ClientList;
-    typedef std::set<string>             StringSet;
-    typedef std::shared_ptr<StringSet> OOSSet;
+    using IMirrorAPI = slobrok::api::IMirrorAPI;
+    using SpecList = IMirrorAPI::SpecList;
+    using ClientList = std::vector<OOSClient::SP>;
+    using StringSet = std::set<string>;
+    using OOSSet = std::shared_ptr<StringSet>;
 
 private:
     FRT_Supervisor  &_orb;

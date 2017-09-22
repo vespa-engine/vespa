@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -11,12 +10,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.HttpProxy;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
-import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
@@ -24,6 +18,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -62,12 +57,9 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                                          AccessLog.voidAccessLog(),
                                          Zone.defaultZone(),
                                          new ApplicationRepository(testTenantBuilder.createTenants(),
-                                                                   HostProvisionerProvider.empty(),
+                                                                   new MockProvisioner(),
                                                                    new MockCurator(),
-                                                                   new LogServerLogGrabber(),
-                                                                   new ApplicationConvergenceChecker(),
-                                                                   new HttpProxy(new SimpleHttpFetcher()),
-                                                                   new ConfigserverConfig(new ConfigserverConfig.Builder())));
+                                                                   Clock.systemUTC()));
         pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }

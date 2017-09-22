@@ -6,6 +6,11 @@ cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 project(vespa CXX C)
 
+# allows import of project in CLion on OSX
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+endif()
+
 # TODO: Move this to where it's actually needed
 find_package(JNI REQUIRED)
 
@@ -67,12 +72,12 @@ add_subdirectory(vespalib)
 add_subdirectory(vespalog)
 add_subdirectory(vespamalloc)
 add_subdirectory(vsm)
+# Note: Change when cmake gets proper post-install support.
+# Post installation steps are run from dist subdirectory which needs to be the last add_subdirectory(...) call in this file.
+add_subdirectory(dist)
 
 # Create module targets with name ${MODULE}+module depending on every target defined within that module
 __create_module_targets(TARGETS "module")
 
 # Create module targets with name ${MODULE}+test depending on every test target defined within that module
 __create_module_targets(TEST_TARGETS "test")
-
-# Post installation steps. Need to be the last install(...) call in this file.
-install(CODE "execute_process(COMMAND ${CMAKE_CURRENT_LIST_DIR}/dist/post_install.sh ${CMAKE_INSTALL_PREFIX})")

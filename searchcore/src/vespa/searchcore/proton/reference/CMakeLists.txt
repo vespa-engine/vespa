@@ -10,6 +10,7 @@ vespa_add_library(searchcore_reference STATIC
     gid_to_lid_change_registrator.cpp
     gid_to_lid_mapper.cpp
     gid_to_lid_mapper_factory.cpp
+    pending_notify_remove_done.cpp
     DEPENDS
     searchcore_attribute
     searchcore_documentmetastore

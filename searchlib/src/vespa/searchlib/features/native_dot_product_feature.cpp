@@ -35,7 +35,7 @@ NativeDotProductExecutor::execute(uint32_t docId)
 }
 
 void
-NativeDotProductExecutor::handle_bind_match_data(fef::MatchData &md)
+NativeDotProductExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

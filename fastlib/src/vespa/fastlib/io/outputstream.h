@@ -1,16 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author Stein Hardy Danielsen
-* @date            Creation date: 2000-1-14
-*
-* Generic output stream interface
-*
-* Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * Generic output stream interface
+ *
+ * Author Stein Hardy Danielsen
+ */
 #pragma once
 
 #include <cstdlib>

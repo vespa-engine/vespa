@@ -87,36 +87,6 @@ install(FILES
 install(FILES
     chain/src/main/resources/configdefinitions/chains.def
     config-provisioning/src/main/resources/configdefinitions/flavors.def
-    configdefinitions/src/vespa/application-id.def
-    configdefinitions/src/vespa/attributes.def
-    configdefinitions/src/vespa/cluster-info.def
-    configdefinitions/src/vespa/cluster-list.def
-    configdefinitions/src/vespa/configserver.def
-    configdefinitions/src/vespa/fleetcontroller.def
-    configdefinitions/src/vespa/ilscripts.def
-    configdefinitions/src/vespa/indexschema.def
-    configdefinitions/src/vespa/lb-services.def
-    configdefinitions/src/vespa/load-type.def
-    configdefinitions/src/vespa/messagetyperouteselectorpolicy.def
-    configdefinitions/src/vespa/model.def
-    configdefinitions/src/vespa/persistence.def
-    configdefinitions/src/vespa/rank-profiles.def
-    configdefinitions/src/vespa/routing-provider.def
-    configdefinitions/src/vespa/routing.def
-    configdefinitions/src/vespa/sentinel.def
-    configdefinitions/src/vespa/slobroks.def
-    configdefinitions/src/vespa/specialtokens.def
-    configdefinitions/src/vespa/stor-devices.def
-    configdefinitions/src/vespa/stor-distribution.def
-    configdefinitions/src/vespa/stor-filestor.def
-    configdefinitions/src/vespa/stor-memfilepersistence.def
-    configdefinitions/src/vespa/summary.def
-    configdefinitions/src/vespa/summarymap.def
-    configdefinitions/src/vespa/upgrading.def
-    configdefinitions/src/vespa/ymon.def
-    configdefinitions/src/vespa/zookeeper-server.def
-    configdefinitions/src/vespa/zookeepers.def
-    configdefinitions/src/vespa/dispatch.def
     container-accesslogging/src/main/resources/configdefinitions/access-log.def
     container-core/src/main/resources/configdefinitions/application-metadata.def
     container-core/src/main/resources/configdefinitions/container-document.def
@@ -177,47 +147,14 @@ install(FILES
     docproc/src/main/resources/configdefinitions/docproc.def
     docproc/src/main/resources/configdefinitions/schemamapping.def
     docproc/src/main/resources/configdefinitions/splitter-joiner-document-processor.def
-    document/src/vespa/document/config/documentmanager.def
-    document/src/vespa/document/config/documenttypes.def
-    documentapi/src/main/resources/configdefinitions/documentrouteselectorpolicy.def
     fileacquirer/src/main/resources/configdefinitions/filedistributorrpc.def
-    filedistribution/src/vespa/filedistribution/distributor/filedistributor.def
-    filedistribution/src/vespa/filedistribution/model/filereferences.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.client.http-client.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.connector.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.server.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.servlet-paths.def
-    logd/src/main/resources/configdefinitions/logd.def
-    messagebus/src/main/config/messagebus.def
-    metrics/src/vespa/metrics/metricsmanager.def
-    orchestrator/src/main/resources/configdefinitions/orchestrator.def
     persistence/src/main/resources/configdefinitions/persistence-rpc.def
-    searchcore/src/vespa/searchcore/config/fdispatchrc.def
-    searchcore/src/vespa/searchcore/config/partitions.def
-    searchcore/src/vespa/searchcore/config/proton.def
-    searchcore/src/vespa/searchcore/config/ranking-constants.def
-    searchlib/src/vespa/searchlib/config/translogserver.def
-    searchsummary/src/vespa/searchsummary/config/juniperrc.def
     simplemetrics/src/main/resources/configdefinitions/manager.def
     statistics/src/main/resources/configdefinitions/statistics.def
-    storage/src/vespa/storage/bucketdb/stor-bucket-init.def
-    storage/src/vespa/storage/bucketdb/stor-bucketdb.def
-    storage/src/vespa/storage/config/rpc-provider.def
-    storage/src/vespa/storage/config/stor-bouncer.def
-    storage/src/vespa/storage/config/stor-bucketmover.def
-    storage/src/vespa/storage/config/stor-communicationmanager.def
-    storage/src/vespa/storage/config/stor-distributormanager.def
-    storage/src/vespa/storage/config/stor-integritychecker.def
-    storage/src/vespa/storage/config/stor-messageforwarder.def
-    storage/src/vespa/storage/config/stor-opslogger.def
-    storage/src/vespa/storage/config/stor-prioritymapping.def
-    storage/src/vespa/storage/config/stor-server.def
-    storage/src/vespa/storage/config/stor-status.def
-    storage/src/vespa/storage/config/stor-visitordispatcher.def
-    storage/src/vespa/storage/visiting/stor-visitor.def
-    vsm/src/vespa/vsm/config/vsm.def
-    vsm/src/vespa/vsm/config/vsmfields.def
-    vsm/src/vespa/vsm/config/vsmsummary.def
     vespaclient-core/src/main/resources/configdefinitions/feeder.def
     vespaclient-core/src/main/resources/configdefinitions/spooler.def
     docker-api/src/main/resources/configdefinitions/docker.def

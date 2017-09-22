@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -39,8 +38,6 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final String[] SUSPEND_NODE_COMMAND = new String[]{NODE_PROGRAM, "suspend"};
     private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[]{NODE_PROGRAM, "restart-vespa"};
     private static final String[] STOP_NODE_COMMAND = new String[]{NODE_PROGRAM, "stop"};
-
-    private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
     private static final String MANAGER_NAME = "node-admin";
 
@@ -115,10 +112,6 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withUlimit("core", -1, -1)
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
-
-            if (environment.isRunningLocally()) {
-                command.withEntrypoint("/usr/local/bin/start-services.sh", "--run-local");
-            }
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {

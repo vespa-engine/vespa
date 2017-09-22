@@ -73,7 +73,7 @@ public class PredicateProcessor extends Processor {
             } else if (field.getDataType().getPrimitiveType() == DataType.PREDICATE) {
                 fail(search, field, "Collections of predicates are not allowed.");
             } else if (field.getDataType() == DataType.RAW && field.doesIndexing()) {
-                fail(search, field, "Indexing of RAW fields are not supported. If you are using RAW fields for boolean search, use predicate data type instead.");
+                fail(search, field, "Indexing of RAW fields is not supported.");
             } else {
                 // if field is not a predicate, disallow predicate-related index parameters
                 for (Index index : field.getIndices().values()) {

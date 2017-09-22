@@ -75,6 +75,7 @@ public class ApplicationSerializer {
     private final String versionField = "version";
     private final String revisionField = "revision";
     private final String atField = "at";
+    private final String upgradeField = "upgrade";
     
     // ------------------ Serialization
     
@@ -149,6 +150,7 @@ public class ApplicationSerializer {
         object.setString(versionField, jobRun.get().version().toString());
         if ( jobRun.get().revision().isPresent())
             toSlime(jobRun.get().revision().get(), object.setObject(revisionField));
+        object.setBool(upgradeField, jobRun.get().upgrade());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
     }
     
@@ -196,7 +198,7 @@ public class ApplicationSerializer {
         return new Zone(Environment.from(object.field(environmentField).asString()),
                         RegionName.from(object.field(regionField).asString()));
     }
-    
+
     private Optional<ApplicationRevision> applicationRevisionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         String applicationPackageHash = object.field(applicationPackageHashField).asString();
@@ -251,14 +253,15 @@ public class ApplicationSerializer {
                              jobRunFromSlime(object.field(firstFailingField)),
                              jobRunFromSlime(object.field(lastSuccessField)));
     }
-    
+
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(new JobStatus.JobRun(new Version(object.field(versionField).asString()),
                                                 applicationRevisionFromSlime(object.field(revisionField)),
+                                                object.field(upgradeField).asBool(),
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
-    
+
     private Optional<Long> optionalLong(Inspector field) {
         return field.valid() ? Optional.of(field.asLong()) : Optional.empty();
     }

@@ -1,50 +1,80 @@
 {
-  "versions":[
+  "versions": [
     {
-      "version":"(ignore)",
-      "confidence":"normal",
-      "commit":"(ignore)",
-      "date":0,
-      "controllerVersion":false,
-      "systemVersion":true,
-      "configServers":[
+      "version": "(ignore)",
+      "confidence": "normal",
+      "commit": "(ignore)",
+      "date": 0,
+      "controllerVersion": false,
+      "systemVersion": false,
+      "configServers": [],
+      "failingApplications": [],
+      "productionApplications": [
         {
-          "hostname":"config1.test"
-        },
-        {
-          "hostname":"config2.test"
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default"
         }
-      ],
-      "failingApplications":[
-        {
-          "tenant":"tenant1",
-          "application":"application1",
-          "instance":"default",
-          "url":"http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "failingSince": "(ignore)"
-        }
-      ],
-      "productionApplications":[
-
       ]
     },
     {
-      "version":"(ignore)",
-      "confidence":"normal",
-      "commit":"(ignore)",
-      "date":0,
-      "controllerVersion":true,
-      "systemVersion":false,
-      "configServers":[
-
+      "version": "(ignore)",
+      "confidence": "normal",
+      "commit": "(ignore)",
+      "date": 0,
+      "controllerVersion": false,
+      "systemVersion": false,
+      "configServers": [],
+      "failingApplications": [
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default",
+          "failingSince": "(ignore)"
+        }
       ],
-      "failingApplications":[
-
-      ],
-      "productionApplications":[
-
+      "productionApplications": [
+        {
+          "tenant": "tenant2",
+          "application": "application2",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
+          "upgradePolicy": "default"
+        }
       ]
+    },
+    {
+      "version": "(ignore)",
+      "confidence": "normal",
+      "commit": "(ignore)",
+      "date": 0,
+      "controllerVersion": false,
+      "systemVersion": true,
+      "configServers": [
+        {
+          "hostname": "config1.test"
+        },
+        {
+          "hostname": "config2.test"
+        }
+      ],
+      "failingApplications": [],
+      "productionApplications": []
+    },
+    {
+      "version": "(ignore)",
+      "confidence": "normal",
+      "commit": "(ignore)",
+      "date": 0,
+      "controllerVersion": true,
+      "systemVersion": false,
+      "configServers": [],
+      "failingApplications": [],
+      "productionApplications": []
     }
   ]
 }
-

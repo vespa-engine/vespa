@@ -1,20 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Definition of the automated unit test class for the MatchObject class.
- *
- * @file matchobjectTest.h
- *
- * @author Knut Omang
- *
- * @date Created 21 Feb 2003
- *
- * $Id$
- *
- * <pre>
- *              Copyright (c) : 2003 Fast Search & Transfer ASA
- *                              ALL RIGHTS RESERVED
- * </pre>
- ***************************************************************************/
+/*
+ * Author: Knut Omang
+ */
 #pragma once
 
 #include "testenv.h"

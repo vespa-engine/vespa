@@ -9,6 +9,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
+import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;

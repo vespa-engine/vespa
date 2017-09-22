@@ -128,26 +128,6 @@ public class ZookeeperStatusServiceTest {
     }
 
     @Test
-    public void session_expiry_when_holding_lock_causes_operations_to_fail() throws Exception {
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                TestIds.APPLICATION_INSTANCE_REFERENCE)) {
-
-            KillSession.kill(curator.framework().getZookeeperClient().getZooKeeper(), testingServer.getConnectString());
-
-            assertSessionFailed(() ->
-                    statusRegistry.setHostState(
-                            TestIds.HOST_NAME1,
-                            HostStatus.ALLOWED_TO_BE_DOWN));
-
-
-            assertSessionFailed(() ->
-                    statusRegistry.getHostStatus(
-                            TestIds.HOST_NAME1));
-
-        }
-    }
-
-    @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
         try (Curator curator = createConnectedCuratorFramework(testingServer)) {
             ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
@@ -218,23 +198,6 @@ public class ZookeeperStatusServiceTest {
             KillSession.kill(curatorFramework.getZookeeperClient().getZooKeeper(), testingServer.getConnectString());
         } catch (Exception e) {
             throw new RuntimeException("Failed killing session. ", e);
-        }
-    }
-
-    /**
-     * This requirement is due to limitations in SessionFailRetryLoop
-     */
-    @Test(expected = AssertionError.class)
-    public void multiple_locks_in_a_single_thread_gives_error() throws InterruptedException {
-        try (Curator curator = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
-
-            try (MutableStatusRegistry statusRegistry1 = zookeeperStatusService
-                    .lockApplicationInstance_forCurrentThreadOnly(TestIds.APPLICATION_INSTANCE_REFERENCE);
-                 MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
-                         .lockApplicationInstance_forCurrentThreadOnly(TestIds.APPLICATION_INSTANCE_REFERENCE2))
-            {
-            }
         }
     }
 

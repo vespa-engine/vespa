@@ -35,7 +35,6 @@ mkdir -p $INSTALLPATH/conf/zookeeper/
 mkdir -p $INSTALLPATH/libexec/jdisc_core/
 mkdir -p $INSTALLPATH/libexec/vespa/modelplugins/
 mkdir -p $INSTALLPATH/libexec/vespa/plugins/qrs/
-mkdir -p $INSTALLPATH/libexec/yjava_daemon/bin/
 mkdir -p $INSTALLPATH/logs/jdisc_core/
 mkdir -p $INSTALLPATH/logs/vespa/
 mkdir -p $INSTALLPATH/logs/vespa/
@@ -47,8 +46,6 @@ mkdir -p $INSTALLPATH/share/vespa/schema/version/6.x/schema/
 mkdir -p $INSTALLPATH/tmp/vespa/
 mkdir -p $INSTALLPATH/var/db/jdisc/logcontrol/
 mkdir -p $INSTALLPATH/var/db/vespa/
-mkdir -p $INSTALLPATH/var/db/vespa/config_server/serverdb/configs/
-mkdir -p $INSTALLPATH/var/db/vespa/config_server/serverdb/configs/application/
 mkdir -p $INSTALLPATH/var/db/vespa/config_server/serverdb/applications/
 mkdir -p $INSTALLPATH/var/db/vespa/logcontrol/
 mkdir -p $INSTALLPATH/var/jdisc_container/

@@ -1,16 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author Stein Hardy Danielsen
-* @date            Creation date: 2000-1-7
-*
-* Generic http server and connection classes
-*
-* Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * Generic http server and connection classes
+ *
+ * Author: Stein Hardy Danielsen
+ */
 
 
 #pragma once
@@ -30,19 +23,9 @@ class Fast_HTTPServer;
 #define FASTLIB_SUCCESS (0)
 #define FASTLIB_FAILURE (1)
 
-/**
-********************************************************************************
-*
-* Generic HTTP connection class
-* @author Stein Hardy Danielsen
-* @date            Creation date: 2000-1-7
-*
-* Generic HTTP connection class
-*
-* Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * Generic HTTP connection class
+ */
 
 // Error codes
 #define FASTLIB_HTTPSERVER_NEWTHREADFAILED (2)
@@ -135,18 +118,9 @@ public:
 
 
 
-/**
-********************************************************************************
-*
-* Generic HTTP server class
-*
-* @author Stein Hardy Danielsen
-* @date            Creation date: 2000-1-7
-*
-* Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+/*
+ * Generic HTTP server class
+ */
 class Fast_HTTPServer : public FastOS_Runnable
 {
 private:

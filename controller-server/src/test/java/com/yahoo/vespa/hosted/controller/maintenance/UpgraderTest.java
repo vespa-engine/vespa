@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -264,6 +265,101 @@ public class UpgraderTest {
         // Upgrader runs again, nothing happens as there's already a job in progress for this change
         tester.upgrader().maintain();
         assertTrue("No more jobs triggered at this time", tester.buildSystem().jobs().isEmpty());
+    }
+
+    @Test
+    public void testUpgradeCancelledWithDeploymentInProgress() {
+        DeploymentTester tester = new DeploymentTester();
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        // Setup applications
+        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
+        Application default0 = tester.createAndDeploy("default0", 2, "default");
+        Application default1 = tester.createAndDeploy("default1", 3, "default");
+        Application default2 = tester.createAndDeploy("default2", 4, "default");
+        Application default3 = tester.createAndDeploy("default3", 5, "default");
+        Application default4 = tester.createAndDeploy("default4", 6, "default");
+
+        // New version is released
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.upgrader().maintain();
+
+        // Canaries upgrade and raise confidence
+        tester.completeUpgrade(canary0, version, "canary");
+        tester.completeUpgrade(canary1, version, "canary");
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
+
+        // Applications with default policy start upgrading
+        tester.upgrader().maintain();
+        assertEquals("Upgrade scheduled for remaining apps", 5, tester.buildSystem().jobs().size());
+
+        // 4/5 applications fail and lowers confidence
+        tester.completeUpgradeWithError(default0, version, "default", DeploymentJobs.JobType.systemTest);
+        tester.completeUpgradeWithError(default1, version, "default", DeploymentJobs.JobType.systemTest);
+        tester.completeUpgradeWithError(default2, version, "default", DeploymentJobs.JobType.systemTest);
+        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.systemTest);
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
+        tester.upgrader().maintain();
+
+        // 5th app passes system-test, but does not trigger next job as upgrade is cancelled
+        assertFalse("No change present", tester.applications().require(default4.id()).deploying().isPresent());
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default4, true);
+        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+    }
+
+    @Test
+    public void testConfidenceIgnoresFailingApplicationChanges() {
+        DeploymentTester tester = new DeploymentTester();
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        // Setup applications
+        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
+        Application default0 = tester.createAndDeploy("default0", 2, "default");
+        Application default1 = tester.createAndDeploy("default1", 3, "default");
+        Application default2 = tester.createAndDeploy("default2", 4, "default");
+        Application default3 = tester.createAndDeploy("default3", 5, "default");
+        Application default4 = tester.createAndDeploy("default4", 5, "default");
+
+        // New version is released
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.upgrader().maintain();
+
+        // Canaries upgrade and raise confidence
+        tester.completeUpgrade(canary0, version, "canary");
+        tester.completeUpgrade(canary1, version, "canary");
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
+
+        // All applications upgrade successfully
+        tester.upgrader().maintain();
+        tester.completeUpgrade(default0, version, "default");
+        tester.completeUpgrade(default1, version, "default");
+        tester.completeUpgrade(default2, version, "default");
+        tester.completeUpgrade(default3, version, "default");
+        tester.completeUpgrade(default4, version, "default");
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
+
+        // Multiple application changes are triggered and fail, but does not affect version confidence as upgrade has
+        // completed successfully
+        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default0, false);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default1, false);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default2, true);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default3, true);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default2, false);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default3, false);
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
     }
 
     // TODO: Remove when corp-prod special casing is no longer needed

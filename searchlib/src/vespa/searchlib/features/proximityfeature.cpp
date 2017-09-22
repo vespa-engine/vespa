@@ -51,7 +51,7 @@ ProximityExecutor::execute(uint32_t docId)
 }
 
 void
-ProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+ProximityExecutor::handle_bind_match_data(const fef::MatchData &md)
 {
     _md = &md;
 }

@@ -19,7 +19,7 @@ Sequencer::~Sequencer()
 {
     for (QueueMap::iterator it = _seqMap.begin(); it != _seqMap.end(); ++it) {
         MessageQueue *queue = it->second;
-        if (queue != NULL) {
+        if (queue != nullptr) {
             while (queue->size() > 0) {
                 Message *msg = queue->front();
                 queue->pop();
@@ -40,7 +40,7 @@ Sequencer::filter(Message::UP msg)
         vespalib::LockGuard guard(_lock);
         QueueMap::iterator it = _seqMap.find(seqId);
         if (it != _seqMap.end()) {
-            if (it->second == NULL) {
+            if (it->second == nullptr) {
                 it->second = new MessageQueue();
             }
             msg->getTrace().trace(TraceLevel::COMPONENT,
@@ -49,7 +49,7 @@ Sequencer::filter(Message::UP msg)
             msg.release();
             return Message::UP();
         }
-        _seqMap[seqId] = NULL; // insert empty queue
+        _seqMap[seqId] = nullptr; // insert empty queue
     }
     return std::move(msg);
 }
@@ -69,7 +69,7 @@ Sequencer::handleMessage(Message::UP msg)
 {
     if (msg->hasSequenceId()) {
         msg = filter(std::move(msg));
-        if (msg.get() != NULL) {
+        if (msg.get() != nullptr) {
             sequencedSend(std::move(msg));
         }
     } else {
@@ -89,8 +89,8 @@ Sequencer::handleReply(Reply::UP reply)
         QueueMap::iterator it = _seqMap.find(seq);
         MessageQueue *que = it->second;
         assert(it != _seqMap.end());
-        if (que == NULL || que->size() == 0) {
-            if (que != NULL) {
+        if (que == nullptr || que->size() == 0) {
+            if (que != nullptr) {
                 delete que;
             }
             _seqMap.erase(it);
@@ -99,7 +99,7 @@ Sequencer::handleReply(Reply::UP reply)
             que->pop();
         }
     }
-    if (msg.get() != NULL) {
+    if (msg.get() != nullptr) {
         sequencedSend(std::move(msg));
     }
     IReplyHandler &handler = reply->getCallStack().pop(*reply);

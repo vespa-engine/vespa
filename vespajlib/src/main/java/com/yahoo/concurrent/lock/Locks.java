@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.concurrent;
+package com.yahoo.concurrent.lock;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 
@@ -51,7 +51,7 @@ public class Locks<TYPE> {
     public Lock lock(TYPE key, long timeout, TimeUnit timeoutUnit) {
         try {
             ReentrantLock lock = locks.computeIfAbsent(key, k -> new ReentrantLock(true));
-            boolean acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);
+            boolean acquired = lock.tryLock(timeout, timeoutUnit);
             if ( ! acquired)
                 throw new UncheckedTimeoutException("Timed out waiting for the lock to " + key);
             return new Lock(lock);

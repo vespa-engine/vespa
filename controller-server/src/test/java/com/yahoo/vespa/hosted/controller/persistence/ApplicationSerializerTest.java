@@ -61,10 +61,10 @@ public class ApplicationSerializerTest {
         List<JobStatus> statusList = new ArrayList<>();
 
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.systemTest)
-                                .withTriggering(Version.fromString("5.6.7"), Optional.empty(), Instant.ofEpochMilli(7))
+                                .withTriggering(Version.fromString("5.6.7"), Optional.empty(), true, Instant.ofEpochMilli(7))
                                 .withCompletion(Optional.empty(), Instant.ofEpochMilli(8), tester.controller()));
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.stagingTest)
-                                .withTriggering(Version.fromString("5.6.6"), Optional.empty(), Instant.ofEpochMilli(5))
+                                .withTriggering(Version.fromString("5.6.6"), Optional.empty(), true, Instant.ofEpochMilli(5))
                                 .withCompletion(Optional.of(JobError.unknown), Instant.ofEpochMilli(6), tester.controller()));
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty(), false);
@@ -133,6 +133,12 @@ public class ApplicationSerializerTest {
         assertEquals(JobError.unknown, applicationWithFailingJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().get());
     }
 
+    @Test
+    public void testLegacySerializationWithoutUpgradeField() {
+        Application application = applicationSerializer.fromSlime(applicationSlime(false));
+        assertFalse(application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).lastCompleted().get().upgrade());
+    }
+
     private Slime applicationSlime(boolean error) {
         return SlimeUtils.jsonToSlime(applicationJson(error).getBytes(StandardCharsets.UTF_8));
     }
@@ -147,10 +153,19 @@ public class ApplicationSerializerTest {
                 "    \"jobStatus\": [\n" +
                 "      {\n" +
                 "        \"jobType\": \"system-test\",\n" +
-                "        \"version\": \"5.6.7\",\n" +
-                "        \"completionTime\": 7,\n" +
                 (error ? "        \"jobError\": \"" + JobError.unknown + "\",\n" : "") +
-                "        \"lastTriggered\": 8\n" +
+                "        \"lastCompleted\": {\n" +
+                "          \"version\": \"6.1\",\n" +
+                "          \"revision\": {\n" +
+                "            \"applicationPackageHash\": \"dead\",\n" +
+                "            \"sourceRevision\": {\n" +
+                "              \"repositoryField\": \"git@git.foo\",\n" +
+                "              \"branchField\": \"origin/master\",\n" +
+                "              \"commitField\": \"cafe\"\n" +
+                "            }\n" +
+                "          },\n" +
+                "          \"at\": 1505725189469\n" +
+                "        }\n" +
                 "      }\n" +
                 "    ],\n" +
                 "    \"selfTriggering\": false\n" +

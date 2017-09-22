@@ -254,4 +254,30 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionApNortheast1);
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
     }
+
+    @Test
+    public void testHandleMultipleNotificationsFromLastJob() {
+        DeploymentTester tester = new DeploymentTester();
+        BuildSystem buildSystem = tester.buildSystem();
+        TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
+        Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("corp-us-east-1")
+                .build();
+
+        // Component job finishes
+        tester.notifyJobCompletion(JobType.component, application, true);
+
+        // Application is deployed to all test environments and declared zones
+        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionCorpUsEast1);
+
+        // Extra notification for last job
+        tester.notifyJobCompletion(JobType.productionCorpUsEast1, application, true);
+        assertFalse("Change has been deployed",
+                    tester.applications().require(application.id()).deploying().isPresent());
+        assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+    }
 }
