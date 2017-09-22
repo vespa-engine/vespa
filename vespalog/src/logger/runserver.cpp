@@ -51,15 +51,15 @@ public:
     int readPid();
     void writePid();
     bool writeOpen();
-    bool isRunning();
-    bool isMine();
+    bool anotherRunning();
+    bool canStealLock();
     void cleanUp();
 };
 
 void
 PidFile::cleanUp()
 {
-    if (isMine() || !isRunning()) remove(_pidfile);
+    if (!anotherRunning()) remove(_pidfile);
     if (_fd >= 0) close(_fd);
     _fd = -1;
 }
@@ -75,7 +75,6 @@ PidFile::writeOpen()
                 strerror(errno));
         return false;
     }
-    // XXX should we use locking or not?
     if (flock(_fd, LOCK_EX | LOCK_NB) != 0) {
         fprintf(stderr, "could not lock pidfile %s: %s\n", _pidfile,
                 strerror(errno));
@@ -117,18 +116,34 @@ PidFile::readPid()
 }
 
 bool
-PidFile::isRunning()
+PidFile::anotherRunning()
 {
     int pid = readPid();
-    if (pid < 1) return false;
+    if (pid < 1 || pid == getpid()) {
+        // no valid pid, or my own pid
+        return false;
+    }
+    if (canStealLock()) {
+        return false;
+    }
     return (kill(pid, 0) == 0 || errno == EPERM);
 }
 
 bool
-PidFile::isMine()
+PidFile::canStealLock()
 {
-    int pid = readPid();
-    return (pid == getpid());
+    int flags = O_WRONLY | O_NONBLOCK;
+    int desc = open(_pidfile, flags, 0644);
+    if (desc < 0) {
+        return false;
+    }
+    if (flock(desc, LOCK_EX | LOCK_NB) != 0) {
+        close(desc);
+        return false;
+    }
+    flock(desc, LOCK_UN | LOCK_NB);
+    close(desc);
+    return true;
 }
 
 using namespace ns_log;
@@ -351,7 +366,7 @@ int main(int argc, char *argv[])
 
     PidFile mypf(pidfile);
     if (doStop) {
-        if (mypf.isRunning()) {
+        if (mypf.anotherRunning()) {
             int pid = mypf.readPid();
             if (killcmd != NULL) {
                 fprintf(stdout, "%s was running with pid %d, running '%s' to stop it\n",
@@ -399,7 +414,7 @@ int main(int argc, char *argv[])
         usage(argv[0], 1);
     }
 
-    if (mypf.isRunning()) {
+    if (mypf.anotherRunning()) {
         fprintf(stderr, "runserver already running with pid %d\n",
                 mypf.readPid());
         exit(0);
