@@ -28,18 +28,17 @@ import java.util.stream.Collectors;
  */
 public class NodeRepositoryImpl implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
-    private final String baseHostName;
-    private final int port;
-    private final ConfigServerHttpRequestExecutor requestExecutor;
 
-    public NodeRepositoryImpl(ConfigServerHttpRequestExecutor requestExecutor, int configPort, String baseHostName) {
-        this.baseHostName = baseHostName;
-        this.port = configPort;
+    private final ConfigServerHttpRequestExecutor requestExecutor;
+    private final int port;
+
+    public NodeRepositoryImpl(ConfigServerHttpRequestExecutor requestExecutor, int port) {
         this.requestExecutor = requestExecutor;
+        this.port = port;
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun() throws IOException {
+    public List<ContainerNodeSpec> getContainersToRun(String baseHostName) throws IOException {
         try {
             final GetNodesResponse nodesForHost = requestExecutor.get(
                     "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",

@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  */
 public class RunInContainerTest {
     private final Logger logger = Logger.getLogger("RunInContainerTest");
-    private final Orchestrator orchestrator = ComponentsProviderWithMocks.orchestratorMock;
+    private final Orchestrator orchestrator = NodeAdminProviderWithMocks.orchestratorMock;
     private final String parentHostname = "localhost.test.yahoo.com";
     private JDisc container;
     private int port;
@@ -118,7 +118,7 @@ public class RunInContainerTest {
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator).suspend(parentHostname);
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
+        when(NodeAdminProviderWithMocks.nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(Collections.emptyList());
         waitForJdiscContainerToServe();
 
         assertTrue("The initial resume command should fail because it needs to converge first",
@@ -144,7 +144,7 @@ public class RunInContainerTest {
         assertTrue(verifyWithRetries("resume", true));
 
         // Lets try the same, but with an active container running on this host
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(
+        when(NodeAdminProviderWithMocks.nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(
                 Collections.singletonList(new ContainerNodeSpec.Builder()
                         .hostname("host1.test.yahoo.com")
                         .wantedDockerImage(new DockerImage("dockerImage"))
@@ -167,9 +167,9 @@ public class RunInContainerTest {
         assertTrue(verifyWithRetries("suspend/node-admin", true));
 
         // Allow stopping services in active nodes
-        doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
+        doNothing().when(NodeAdminProviderWithMocks.dockerOperationsMock)
                 .trySuspendNode(eq(new ContainerName("host1")));
-        doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
+        doNothing().when(NodeAdminProviderWithMocks.dockerOperationsMock)
                 .stopServicesOnNode(eq(new ContainerName("host1")));
 
         assertTrue(verifyWithRetries("suspend", false));
@@ -191,7 +191,7 @@ public class RunInContainerTest {
                 "    <handler id=\"com.yahoo.vespa.hosted.node.admin.restapi.RestApiHandler\" bundle=\"node-admin\">\n" +
                 "      <binding>http://*/rest/*</binding>\n" +
                 "    </handler>\n" +
-                "    <component id=\"node-admin\" class=\"com.yahoo.vespa.hosted.node.admin.integrationTests.ComponentsProviderWithMocks\" bundle=\"node-admin\"/>\n" +
+                "    <component id=\"node-admin\" class=\"com.yahoo.vespa.hosted.node.admin.integrationTests.NodeAdminProviderWithMocks\" bundle=\"node-admin\"/>\n" +
                 "  <http>" +
                 "    <server id=\'myServer\' port=\'" + port + "\' />" +
                 "  </http>" +

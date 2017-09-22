@@ -6,7 +6,6 @@ import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -20,20 +19,17 @@ import static org.mockito.Mockito.*;
  */
 public class OrchestratorImplTest {
     private static final String hostName = "host123.yahoo.com";
-    private ConfigServerHttpRequestExecutor requestExecutor;
-    private OrchestratorImpl orchestrator;
 
-    @Before
-    public void setup() {
-        requestExecutor = mock(ConfigServerHttpRequestExecutor.class);
-        orchestrator = new OrchestratorImpl(requestExecutor);
-    }
+    private final ConfigServerHttpRequestExecutor requestExecutor = mock(ConfigServerHttpRequestExecutor.class);
+    private final int port = 1234;
+    private final OrchestratorImpl orchestrator = new OrchestratorImpl(requestExecutor, port);
+
 
     @Test
     public void testSuspendCall() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 Optional.empty(),
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
@@ -45,7 +41,7 @@ public class OrchestratorImplTest {
     public void testSuspendCallWithFailureReason() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 Optional.empty(),
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
@@ -82,7 +78,7 @@ public class OrchestratorImplTest {
     public void testResumeCall() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
 
@@ -93,7 +89,7 @@ public class OrchestratorImplTest {
     public void testResumeCallWithFailureReason() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
 
@@ -131,7 +127,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(BatchOperationResult.successResult());
@@ -147,7 +143,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(new BatchOperationResult(failureReason));
@@ -163,7 +159,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.WEB_SERVICE_PORT,
+                port,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenThrow(new RuntimeException(exceptionMessage));

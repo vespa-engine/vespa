@@ -29,7 +29,7 @@ public interface NodeAgent {
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
      * striving to make the current state equal to the wanted state.
      */
-    void start(int intervalMillis);
+    void start();
 
     /**
      * Signals to the agent that the node is at the end of its lifecycle and no longer needs a managing agent.
