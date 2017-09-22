@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
+import com.yahoo.concurrent.lock.Lock;
+import com.yahoo.concurrent.lock.Locking;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
@@ -44,11 +46,15 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     private final Logger log = Logger.getLogger(NodeAdminProvider.class.getName());
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
+    private final Lock classLock;
 
     @Inject
-    public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver) {
-        log.log(LogLevel.INFO, objectToString() + ": Creating object");
+    public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver, Locking locking) {
+        log.log(LogLevel.INFO, objectToString() + ": Creating object, acquiring lock...");
+        classLock = locking.lock(this.getClass());
         try {
+            log.log(LogLevel.INFO, objectToString() + ": Lock acquired");
+
             Clock clock = Clock.systemUTC();
             String dockerHostHostName = HostName.getLocalhost();
             ProcessExecuter processExecuter = new ProcessExecuter();
@@ -72,6 +78,7 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
                     dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
             nodeAdminStateUpdater.start();
         } catch (Exception e) {
+            classLock.close();
             throw e;
         }
     }
@@ -87,6 +94,9 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
         nodeAdminStateUpdater.stop();
         log.log(LogLevel.INFO, objectToString() + ": Stop complete");
+
+        classLock.close();
+        log.log(LogLevel.INFO, objectToString() + ": Lock released");
     }
 
     private String objectToString() {
