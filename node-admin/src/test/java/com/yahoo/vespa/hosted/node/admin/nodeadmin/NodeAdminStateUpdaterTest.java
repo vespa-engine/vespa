@@ -32,20 +32,18 @@ import static org.mockito.Mockito.when;
 
 /**
  * Basic test of NodeAdminStateUpdater
- *
  * @author freva
  */
 public class NodeAdminStateUpdaterTest {
-    private final NodeRepository nodeRepository = mock(NodeRepository.class);
-    private final Orchestrator orchestrator = mock(Orchestrator.class);
-    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final String parentHostname = "basehost1.test.yahoo.com";
-    private final ManualClock clock = new ManualClock();
-    private final Duration convergeStateInterval = Duration.ofSeconds(30);
 
+    private final ManualClock clock = new ManualClock();
+    private final NodeRepository nodeRepository = mock(NodeRepository.class);
+    private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
+    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+    private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
-            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock, convergeStateInterval));
+            nodeRepository, nodeAdmin, storageMaintainer, clock, orchestrator, parentHostname));
 
 
     @Test
@@ -68,7 +66,7 @@ public class NodeAdminStateUpdaterTest {
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
         suspendHostnames.add(parentHostname);
 
-        when(nodeRepository.getContainersToRun(eq(parentHostname))).thenReturn(containersToRun);
+        when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
 
         // Initially everything is frozen to force convergence
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
