@@ -2,7 +2,8 @@
 package com.yahoo.search.predicate;
 
 /**
- * Constants related to the subquery bitmap in predicate/boolean search.
+ * Constants related to the subquery bitmap in predicate search.
+ * 
  * @author bjorncs
  */
 public interface SubqueryBitmap {
@@ -16,6 +17,5 @@ public interface SubqueryBitmap {
      * Default subquery bitmap.
      */
     long DEFAULT_VALUE = ALL_SUBQUERIES;
-
 
 }

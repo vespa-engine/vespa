@@ -15,16 +15,17 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class IndexOperation implements FieldOperation {
+
     private String indexName;
     private Optional<Boolean> prefix = Optional.empty();
     private List<String> aliases = new LinkedList<>();
     private Optional<String> stemming = Optional.empty();
     private Optional<Type> type = Optional.empty();
 
-    private OptionalInt arity = OptionalInt.empty(); // For predicate data type in boolean search
+    private OptionalInt arity = OptionalInt.empty(); // For predicate data type
     private OptionalLong lowerBound = OptionalLong.empty();
     private OptionalLong upperBound = OptionalLong.empty();
     private OptionalDouble densePostingListThreshold = OptionalDouble.empty();
@@ -111,4 +112,5 @@ public class IndexOperation implements FieldOperation {
     public void setDensePostingListThreshold(double densePostingListThreshold) {
         this.densePostingListThreshold = OptionalDouble.of(densePostingListThreshold);
     }
+
 }

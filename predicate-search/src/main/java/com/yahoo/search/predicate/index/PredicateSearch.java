@@ -15,12 +15,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Implementation of the "Interval" boolean search algorithm.
+ * Implementation of the "Interval" predicate search algorithm.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class PredicateSearch {
+
     private final PostingList[] postingLists;
     private final byte[] nPostingListsForDocument;
     private final byte[] minFeatureIndex;
@@ -37,6 +38,7 @@ public class PredicateSearch {
 
     /**
      * Creates a search for a set of posting lists.
+     * 
      * @param postingLists Posting lists for the boolean variables that evaluate to true
      * @param nPostingListsForDocument The number of posting list for each docId
      * @param minFeatureIndex Index from docId to min-feature value.
@@ -278,4 +280,5 @@ public class PredicateSearch {
         }
 
     }
+
 }
