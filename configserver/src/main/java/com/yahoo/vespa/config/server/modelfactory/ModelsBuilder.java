@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Rotation;
@@ -87,7 +88,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels(now))
                     break;
             }
-            catch (OutOfCapacityException e) {
+            catch (OutOfCapacityException | ApplicationLockException e) {
                 // Don't wrap this exception, and don't try to load other model versions as this is (most likely)
                 // caused by the state of the system, not the model version/application combination
                 throw e;
