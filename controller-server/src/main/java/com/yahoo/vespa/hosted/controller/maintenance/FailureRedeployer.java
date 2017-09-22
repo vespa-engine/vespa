@@ -48,9 +48,6 @@ public class FailureRedeployer extends Maintainer {
     private void retryStuckJobs(List<Application> applications) {
         Instant maxAge = controller().clock().instant().minus(jobTimeout);
         for (Application application : applications) {
-            if (!application.deploying().isPresent()) {
-                continue;
-            }
             Optional<JobStatus> job = oldestRunningJob(application);
             if (!job.isPresent()) {
                 continue;
