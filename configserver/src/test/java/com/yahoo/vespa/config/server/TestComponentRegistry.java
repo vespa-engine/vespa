@@ -23,6 +23,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -49,6 +50,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final FileDistributionFactory fileDistributionFactory;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
+    private final Clock clock;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
@@ -62,7 +64,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   Optional<Provisioner> hostProvisioner,
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
-                                  TenantListener tenantListener) {
+                                  TenantListener tenantListener,
+                                  Clock clock) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -78,6 +81,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
         this.sessionPreparer = sessionPreparer;
+        this.clock = clock;
     }
 
     public static class Builder {
@@ -96,7 +100,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
-
+        private Clock clock = Clock.systemUTC();
 
         public Builder configServerConfig(ConfigserverConfig configserverConfig) {
             this.configserverConfig = configserverConfig;
@@ -133,6 +137,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
+        public Builder clock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
         public TestComponentRegistry build() {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
@@ -152,7 +161,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              new SuperModelGenerationCounter(curator),
                                              new ConfigServerDB(configserverConfig),
                                              hostRegistries, configserverConfig, sessionPreparer,
-                                             hostProvisioner, defRepo, reloadListener, tenantListener);
+                                             hostProvisioner, defRepo, reloadListener,
+                                             tenantListener, clock);
         }
     }
 
@@ -194,4 +204,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     }
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
+
+    @Override
+    public Clock getClock() { return clock;}
 }

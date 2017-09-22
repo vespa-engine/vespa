@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -26,9 +25,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.HttpProxy;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -38,9 +34,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
@@ -99,7 +93,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        localRepo = new LocalSessionRepo(applicationRepo);
+        localRepo = new LocalSessionRepo(applicationRepo, Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         pathProvider = new PathProvider(Path.createRoot());
         hostProvisioner = new MockProvisioner();
@@ -384,12 +378,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 testTenantBuilder.createTenants(),
                 Zone.defaultZone(),
                 new ApplicationRepository(testTenantBuilder.createTenants(),
-                                          HostProvisionerProvider.withProvisioner(hostProvisioner),
+                                          hostProvisioner,
                                           curator,
-                                          new LogServerLogGrabber(),
-                                          new ApplicationConvergenceChecker(),
-                                          new HttpProxy(new SimpleHttpFetcher()),
-                                          new ConfigserverConfig(new ConfigserverConfig.Builder())));
+                                          Clock.systemUTC()));
     }
 
 }

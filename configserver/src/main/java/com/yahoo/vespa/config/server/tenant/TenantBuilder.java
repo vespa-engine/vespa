@@ -46,7 +46,6 @@ public class TenantBuilder {
     private RemoteSessionFactory remoteSessionFactory;
     private TenantFileSystemDirs tenantFileSystemDirs;
     private HostValidator<ApplicationId> hostValidator;
-    private Clock clock = Clock.systemUTC();
 
     private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant, Path zkPath) {
         this.componentRegistry = componentRegistry;
@@ -89,11 +88,6 @@ public class TenantBuilder {
         return this;
     }
 
-    public TenantBuilder withClock(Clock clock) {
-        this.clock = clock;
-        return this;
-    }
-
     /**
      * Create a real tenant from the properties given by this builder.
      *
@@ -103,7 +97,7 @@ public class TenantBuilder {
     public Tenant build() throws Exception {
         createTenantRequestHandler();
         createApplicationRepo();
-        createRemoteSessionFactory(clock);
+        createRemoteSessionFactory(componentRegistry.getClock());
         createRemoteSessionRepo();
         createSessionCounter();
         createServerDbDirs();
@@ -123,13 +117,15 @@ public class TenantBuilder {
 
 	private void createLocalSessionRepo() {
         if (localSessionRepo == null) {
-            localSessionRepo = new LocalSessionRepo(tenantFileSystemDirs, localSessionLoader, applicationRepo, Clock.systemUTC(), componentRegistry.getConfigserverConfig().sessionLifetime());
+            localSessionRepo = new LocalSessionRepo(tenantFileSystemDirs, localSessionLoader, applicationRepo,
+                                                    componentRegistry.getClock(), componentRegistry.getConfigserverConfig().sessionLifetime());
         }
     }
 
     private void createSessionFactory() {
         if (sessionFactory == null || localSessionLoader == null) {
-            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, sessionCounter, sessionsPath, applicationRepo, tenantFileSystemDirs, hostValidator, tenant);
+            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, sessionCounter, sessionsPath,
+                                                             applicationRepo, tenantFileSystemDirs, hostValidator, tenant);
             if (sessionFactory == null) {
                 sessionFactory = impl;
             }
@@ -194,7 +190,12 @@ public class TenantBuilder {
 
     private void createServerDbDirs() {
         if (tenantFileSystemDirs == null) {
-            tenantFileSystemDirs = new TenantFileSystemDirs(new File(Defaults.getDefaults().underVespaHome(componentRegistry.getServerDB().getConfigserverConfig().configServerDBDir())), tenant);
+            tenantFileSystemDirs = new TenantFileSystemDirs(new File(
+                    Defaults.getDefaults().underVespaHome(componentRegistry
+                                                                  .getServerDB()
+                                                                  .getConfigserverConfig()
+                                                                  .configServerDBDir())),
+                                                            tenant);
         }
     }
 

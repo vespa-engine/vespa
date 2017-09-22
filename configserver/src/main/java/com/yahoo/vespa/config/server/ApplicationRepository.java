@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.Deployment;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -81,13 +82,35 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ApplicationConvergenceChecker applicationConvergenceChecker,
                                  HttpProxy httpProxy, 
                                  ConfigserverConfig configserverConfig) {
+        this(tenants, hostProvisionerProvider.getHostProvisioner(), curator, logServerLogGrabber,
+             applicationConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC());
+    }
+
+    // For testing
+    public ApplicationRepository(Tenants tenants,
+                                 Provisioner hostProvisioner,
+                                 Curator curator,
+                                 Clock clock) {
+        this(tenants, Optional.of(hostProvisioner), curator, new LogServerLogGrabber(),
+             new ApplicationConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
+             new ConfigserverConfig(new ConfigserverConfig.Builder()), clock);
+    }
+
+    private ApplicationRepository(Tenants tenants,
+                                  Optional<Provisioner> hostProvisioner,
+                                  Curator curator,
+                                  LogServerLogGrabber logServerLogGrabber,
+                                  ApplicationConvergenceChecker applicationConvergenceChecker,
+                                  HttpProxy httpProxy,
+                                  ConfigserverConfig configserverConfig,
+                                  Clock clock) {
         this.tenants = tenants;
-        this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
+        this.hostProvisioner = hostProvisioner;
         this.curator = curator;
         this.logServerLogGrabber = logServerLogGrabber;
         this.convergeChecker = applicationConvergenceChecker;
         this.httpProxy = httpProxy;
-        this.clock = Clock.systemUTC();
+        this.clock = clock;
         this.configserverConfig = configserverConfig;
         this.environment = Environment.from(configserverConfig.environment());
     }
