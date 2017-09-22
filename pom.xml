@@ -893,7 +893,8 @@
         <aries.spifly.version>1.0.8</aries.spifly.version>
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
-        <!-- WARNING: If you change this version, you also need to update
+        <bouncycastle.version>1.49</bouncycastle.version>
+        <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
              using something like
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
