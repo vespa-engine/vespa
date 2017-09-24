@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Builds the admin model from a version 4 XML tag, or as a default when an admin 3 tag or no admin tag is used.
@@ -51,6 +53,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin);
         assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, version)), admin);
+
+        addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
 
     private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin) {

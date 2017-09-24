@@ -8,6 +8,7 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.ApplicationId;
@@ -22,9 +23,12 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -246,7 +250,47 @@ public class AdminTestCase {
         assertEquals(sc.values(0).operations(0).name(), StatisticsConfig.Values.Operations.Name.REGULAR);
         assertEquals(sc.values(0).operations(0).arguments(0).key(), "limits");
         assertEquals(sc.values(0).operations(0).arguments(0).value(), "25,50,100,500");
-
     }
 
+    @Test
+    public void testLogForwarding() throws Exception {
+        String hosts = "<hosts>"
+                + "  <host name=\"myhost0\">"
+                + "    <alias>node0</alias>"
+                + "  </host>"
+                + "</hosts>";
+
+        String services = "<services>" +
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='node0' />" +
+                "    <logforwarding>" +
+                "      <forward type='splunk'>" +
+                "        <source>" +
+                "          <log>access</log>" +
+                "          <log>vespa</log>" +
+                "        </source>" +
+                "        <destination>" +
+                "          <endpoint>host1:port,host2:port</endpoint>" +
+                "          <index>all</index>" +
+                "        </destination>" +
+                "      </forward>" +
+                "      <forward type='splunk'>" +
+                "        <source>" +
+                "          <log>access</log>" +
+                "        </source>" +
+                "        <destination>" +
+                "          <endpoint>host3:port</endpoint>" +
+                "          <index>access</index>" +
+                "        </destination>" +
+                "      </forward>" +
+                "    </logforwarding>" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
+
+        Set<String> configIds = vespaModel.getConfigIds();
+        // 2 logforwarders on each host
+        IntStream.of(0, 1).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
+    }
 }

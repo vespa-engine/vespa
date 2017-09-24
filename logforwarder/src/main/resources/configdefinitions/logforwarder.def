@@ -1,0 +1,7 @@
+namespace=cloud.config
+
+# Forwarder that forwards onle or more types of log to an endpoint
+type string
+sources[].log string
+endpoint string
+index string
