@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -16,13 +17,13 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author lulf
@@ -139,6 +140,80 @@ public class DedicatedAdminV4Test {
                                    "slobrok", "logd", "filedistributorservice", "qrserver");
         assertHostContainsServices(model, "hosts/myhost3",
                                    "slobrok", "logd", "filedistributorservice", "qrserver");
+    }
+
+    @Test
+    public void testLogForwarding() throws IOException, SAXException {
+        String services = "<services>" +
+                "  <admin version='4.0'>" +
+                "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
+                "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
+                "    <logforwarding>" +
+                "      <forward type='splunk'>" +
+                "        <source>" +
+                "          <log>access</log>" +
+                "          <log>vespa</log>" +
+                "        </source>" +
+                "        <destination>" +
+                "          <endpoint>host1:port,host2:port</endpoint>" +
+                "          <index>all</index>" +
+                "        </destination>" +
+                "      </forward>" +
+                "      <forward type='splunk'>" +
+                "        <source>" +
+                "          <log>access</log>" +
+                "        </source>" +
+                "        <destination>" +
+                "          <endpoint>host3:port</endpoint>" +
+                "          <index>access</index>" +
+                "        </destination>" +
+                "      </forward>" +
+                "    </logforwarding>" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel model = createModel(hosts, services);
+        assertEquals(3, model.getHosts().size());
+
+        assertHostContainsServices(model, "hosts/myhost0",
+                                   "filedistributorservice", "logd", "logforwarder", "logforwarder2", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost1",
+                                   "filedistributorservice", "logd", "logforwarder", "logforwarder2", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost2",
+                                   "filedistributorservice", "logd", "logforwarder", "logforwarder2", "logserver");
+
+        Set<String> configIds = model.getConfigIds();
+        // 2 logforwarders on each host
+        IntStream.of(0, 1, 2, 3, 4, 5).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
+
+        // First forwarder
+        {
+            LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
+            model.getConfig(builder, "admin/logforwarder.0");
+            LogforwarderConfig config = new LogforwarderConfig(builder);
+
+            assertEquals("splunk", config.type());
+            assertEquals("host1:port,host2:port", config.endpoint());
+            assertEquals("all", config.index());
+            List<LogforwarderConfig.Sources> sources = config.sources();
+            assertEquals(2, sources.size());
+            assertEquals("access", sources.get(0).log());
+            assertEquals("vespa", sources.get(1).log());
+        }
+
+        // Two forwarders on each host, so forwarder with id admin/logforwarder.3 should be different
+        {
+            LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
+            model.getConfig(builder, "admin/logforwarder.3");
+            LogforwarderConfig config = new LogforwarderConfig(builder);
+
+            assertEquals("splunk", config.type());
+            assertEquals("host3:port", config.endpoint());
+            assertEquals("access", config.index());
+            List<LogforwarderConfig.Sources> sources = config.sources();
+            assertEquals(1, sources.size());
+            assertEquals("access", sources.get(0).log());
+        }
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * A w3c Element wrapper whith a better API.
+ * A w3c Element wrapper with a better API.
  *
  * Author unknown.
  */
@@ -44,6 +44,18 @@ public class ModelElement {
         }
 
         return null;
+    }
+
+    /**
+     * If not found, return empty list
+     */
+    public List<ModelElement> getChildren(String name) {
+        List<Element> e = XML.getChildren(xml, name);
+
+        List<ModelElement> list = new ArrayList<>();
+        e.forEach(element -> list.add(new ModelElement(element)));
+
+        return list;
     }
 
     public ModelElement getChildByPath(String path) {

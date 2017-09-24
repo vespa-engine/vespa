@@ -19,6 +19,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
 
@@ -109,6 +110,29 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             }
         }
         return minutes;
+    }
+
+    void addLogForwarders(ModelElement logForwardingElement, Admin admin) {
+        if (logForwardingElement == null) return;
+
+        int i = 0;
+        for (ModelElement e : logForwardingElement.getChildren("forward")) {
+            String type = e.getStringAttribute("type");
+            List<String> sources = e.getChild("source").getChildren("log")
+                                    .stream()
+                                    .map(ModelElement::asString)
+                                    .collect(Collectors.toList());
+            String index = e.getChild("destination").getChild("index").asString();
+            String endpoint = e.getChild("destination").getChild("endpoint").asString();
+
+            for (HostResource host : admin.getHostSystem().getHosts()) {
+                System.out.println("Adding " + e + " on host " + host.getHostName());
+                LogForwarder logForwarder = new LogForwarder(admin, i, type, sources, endpoint, index);
+                logForwarder.setHostResource(host);
+                logForwarder.initService();
+                i++;
+            }
+        }
     }
 
 }

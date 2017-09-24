@@ -976,6 +976,7 @@
         <module>libmlr</module>
         <module>linguistics</module>
         <module>logd</module>
+        <module>logforwarder</module>
         <module>logserver</module>
         <module>messagebus-disc</module>
         <module>messagebus</module>
