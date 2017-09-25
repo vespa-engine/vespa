@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -36,14 +37,18 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author dybis
  */
 public class ComponentsProviderImpl extends AbstractComponent implements ComponentsProvider {
-    private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
     private static final int WEB_SERVICE_PORT = getDefaults().vespaWebServicePort();
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
+    private final Logger log = Logger.getLogger(ComponentsProviderImpl.class.getName());
+    private final NodeAdminStateUpdater nodeAdminStateUpdater;
+
     @Inject
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver) {
+        log.info(objectToString() + ": Creating object");
+
         Clock clock = Clock.systemUTC();
         String dockerHostHostName = HostName.getLocalhost();
         ProcessExecuter processExecuter = new ProcessExecuter();
@@ -75,6 +80,13 @@ public class ComponentsProviderImpl extends AbstractComponent implements Compone
 
     @Override
     public void deconstruct() {
+        log.info(objectToString() + ": Stop called");
         nodeAdminStateUpdater.stop();
+        log.info(objectToString() + ": Stop complete");
+    }
+
+
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 }
