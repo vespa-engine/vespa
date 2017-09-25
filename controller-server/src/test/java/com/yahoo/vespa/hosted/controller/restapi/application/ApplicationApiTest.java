@@ -35,10 +35,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -695,8 +691,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void addMockObservedApplicationCost(String tenant, String application, String instance) {
         CostMock mock = (CostMock) container.components().getComponent("com.yahoo.vespa.hosted.controller.cost.MockInsightBackend");
         
-        CostCluster cost = new CostCluster();
-        cost.setCount(2);
+        CostCluster cost = new CostCluster(null, null, null);
+/*        cost.setCount(2);
         cost.setResource("cpu");
         cost.setUtilization(1.0f);
         cost.setTco(25);
@@ -708,10 +704,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
         hostnames.add("host2");
         cost.setHostnames(hostnames);
         Map<String, CostCluster> clusterCosts = new HashMap<>();
-        clusterCosts.put("cluster1", cost);
+        clusterCosts.put("cluster1", cost);*/
         
         mock.setApplicationCost(new ApplicationId.Builder().tenant(tenant).applicationName(application).instanceName(instance).build(),
-                                new CostApplication(new Zone(Environment.prod, RegionName.from("prod.us-west-1")), tenant, application + "." + instance, 37, 1.0f, 0.0f, clusterCosts));
+                                new CostApplication(new Zone(Environment.prod, RegionName.from("prod.us-west-1")),null, null));
     }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
@@ -749,5 +745,4 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
-    
 }

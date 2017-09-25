@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.cost;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 /**
- * Value object for system resources as ratios of available resources.
+ * Value object for system resources as _ratios_ of available resources.
  *
  * Can be for actual readings or target numbers.
  *

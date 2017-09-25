@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.controller.cost;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.Cost;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
@@ -28,13 +26,9 @@ public class CostMock extends AbstractComponent implements Cost  {
         return new ArrayList<>(applicationCost.values());
     }
 
-    /**
-     * Get cost for a specific application in one zone or null if this application is not known.
-     * The zone information is ignored in the dummy backend.
-     */
     @Override
-    public CostApplication getApplicationCost(Environment env, RegionName region, ApplicationId application) {
-        return applicationCost.get(application);
+    public Map<Zone, List<ApplicationId>> getApplications() {
+        return null;
     }
 
     @Override
@@ -43,16 +37,11 @@ public class CostMock extends AbstractComponent implements Cost  {
     }
 
     @Override
-    public Map<String, CostResources> getUsageMetrics(Zone zone, ApplicationId app) {
+    public Map<String, CostResources> getClusterUtilization(Zone zone, ApplicationId app) {
         return null;
     }
 
     public void setApplicationCost(ApplicationId application, CostApplication cost) {
         applicationCost.put(application, cost);
-    }
-
-    @Override
-    public String getCsvForLocalAnalysis() {
-        return null;
     }
 }

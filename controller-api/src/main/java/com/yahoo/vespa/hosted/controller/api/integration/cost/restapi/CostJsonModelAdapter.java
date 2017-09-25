@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.cost.restapi;
 
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.CostCluster;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.CostResources;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Serializing and deserializing cost model
+ * Serializing and de-serializing cost model
  *
  * @author smorgrav
  */
@@ -19,8 +21,8 @@ public class CostJsonModelAdapter {
     public static CostJsonModel.Application toJsonModel(CostApplication appCost) {
         CostJsonModel.Application app = new CostJsonModel.Application();
         app.zone = appCost.getZone().toString();
-        app.tenant = appCost.getAppId().tenant().toString();
-        app.app = appCost.getAppId().application().toString();
+        app.tenant = appCost.getAppId().tenant().value();
+        app.app = appCost.getAppId().application().value();
         app.tco = (int)appCost.getTco();
         app.utilization = appCost.getUtilization();
         app.waste = appCost.getWaste();
@@ -32,11 +34,11 @@ public class CostJsonModelAdapter {
 
         return app;
     }
-    
+
     public static void toSlime(CostApplication appCost, Cursor object) {
         object.setString("zone", appCost.getZone().toString());
-        object.setString("tenant", appCost.getTenant());
-        object.setString("app", appCost.getApp());
+        object.setString("tenant", appCost.getAppId().tenant().value());
+        object.setString("app", appCost.getAppId().application().value() + "." + appCost.getAppId().instance().value());
         object.setLong("tco", (long)appCost.getTco());
         object.setDouble("utilization", appCost.getUtilization());
         object.setDouble("waste", appCost.getWaste());
@@ -47,48 +49,65 @@ public class CostJsonModelAdapter {
 
     public static CostJsonModel.Cluster toJsonModel(CostCluster clusterCost) {
         CostJsonModel.Cluster cluster = new CostJsonModel.Cluster();
-        cluster.count = clusterCost.getCount();
-        cluster.resource = clusterCost.getResource();
-        cluster.utilization = clusterCost.getUtilization();
-        cluster.tco = clusterCost.getTco();
-        cluster.flavor = clusterCost.getFlavor();
-        cluster.waste = clusterCost.getWaste();
-        cluster.type = clusterCost.getType();
+        cluster.count = clusterCost.getClusterInfo().getHostnames().size();
+        cluster.resource = getResourceName(clusterCost.getResultUtilization());
+        cluster.utilization = clusterCost.getResultUtilization().getMaxUtilization();
+        cluster.tco = (int)clusterCost.getTco();
+        cluster.flavor = clusterCost.getClusterInfo().getFlavor().toString();
+        cluster.waste = (int)clusterCost.getWaste();
+        cluster.type = clusterCost.getClusterInfo().getClusterType().name();
         cluster.util = new CostJsonModel.HardwareResources();
-        cluster.util.cpu = clusterCost.getUtilCpu();
-        cluster.util.mem = clusterCost.getUtilMem();
-        cluster.util.disk = clusterCost.getUtilDisk();
+        cluster.util.cpu = clusterCost.getResultUtilization().getCpu();
+        cluster.util.mem = clusterCost.getResultUtilization().getMemory();
+        cluster.util.disk = clusterCost.getResultUtilization().getDisk();
+        cluster.util.diskBusy = clusterCost.getResultUtilization().getDiskBusy();
+
+        Flavor flavor = clusterCost.getClusterInfo().getFlavor();
         cluster.usage = new CostJsonModel.HardwareResources();
-        cluster.usage.cpu = clusterCost.getUsageCpu();
-        cluster.usage.mem = clusterCost.getUsageMem();
-        cluster.usage.disk = clusterCost.getUsageDisk();
-        cluster.hostnames = new ArrayList<>(clusterCost.getHostnames());
-        cluster.usage.diskBusy = clusterCost.getUsageDiskBusy();
-        cluster.util.diskBusy = clusterCost.getUtilDiskBusy();
+        cluster.usage.cpu = flavor.getMinCpuCores() * clusterCost.getSystemUtilization().getCpu();
+        cluster.usage.mem = flavor.getMinMainMemoryAvailableGb() *  clusterCost.getSystemUtilization().getMemory();
+        cluster.usage.disk = flavor.getMinDiskAvailableGb() * clusterCost.getSystemUtilization().getDisk();
+        cluster.usage.diskBusy = clusterCost.getSystemUtilization().getDiskBusy();
+        cluster.hostnames = new ArrayList<>(clusterCost.getClusterInfo().getHostnames());
+
         return cluster;
     }
 
     private static void toSlime(CostCluster clusterCost, Cursor object) {
-        object.setLong("count", clusterCost.getCount());
-        object.setString("resource", clusterCost.getResource());
-        object.setDouble("utilization", clusterCost.getUtilization());
-        object.setLong("tco", clusterCost.getTco());
-        object.setString("flavor", clusterCost.getFlavor());
-        object.setLong("waste", clusterCost.getWaste());
-        object.setString("type", clusterCost.getType());
+        object.setLong("count", clusterCost.getClusterInfo().getHostnames().size());
+        object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
+        object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
+        object.setLong("tco", (int)clusterCost.getTco());
+        object.setString("flavor", clusterCost.getClusterInfo().getClusterType().name());
+        object.setLong("waste", (int)clusterCost.getWaste());
+        object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
         Cursor utilObject = object.setObject("util");
-        utilObject.setDouble("cpu", clusterCost.getUtilCpu());
-        utilObject.setDouble("mem", clusterCost.getUtilMem());
-        utilObject.setDouble("disk", clusterCost.getUtilDisk());
-        utilObject.setDouble("diskBusy", clusterCost.getUtilDiskBusy());
+        utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());
+        utilObject.setDouble("mem", clusterCost.getResultUtilization().getMemory());
+        utilObject.setDouble("disk", clusterCost.getResultUtilization().getDisk());
+        utilObject.setDouble("diskBusy", clusterCost.getResultUtilization().getDiskBusy());
         Cursor usageObject = object.setObject("usage");
-        usageObject.setDouble("cpu", clusterCost.getUsageCpu());
-        usageObject.setDouble("mem", clusterCost.getUsageMem());
-        usageObject.setDouble("disk", clusterCost.getUsageDisk());
-        usageObject.setDouble("diskBusy", clusterCost.getUsageDiskBusy());
+        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu() * 100);
+        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory() * 100);
+        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk() * 100);
+        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy() * 100);
         Cursor hostnamesArray = object.setArray("hostnames");
-        for (String hostname : clusterCost.getHostnames())
+        for (String hostname : clusterCost.getClusterInfo().getHostnames())
             hostnamesArray.addString(hostname);
     }
 
+    private static String getResourceName(CostResources resources) {
+        String name = "cpu";
+        double max = resources.getMaxUtilization();
+
+        if (resources.getMemory() == max) {
+            name = "mem";
+        } else if (resources.getDisk() == max) {
+            name = "disk";
+        } else if (resources.getDiskBusy() == max) {
+            name = "diskbusy";
+        }
+
+        return name;
+    }
 }

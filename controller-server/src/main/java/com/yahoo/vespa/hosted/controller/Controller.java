@@ -178,7 +178,7 @@ public class Controller extends AbstractComponent {
     public CostApplication getApplicationCost(com.yahoo.config.provision.ApplicationId application,
                                               com.yahoo.config.provision.Zone zone)
             throws NotFoundCheckedException {
-        return cost.getApplicationCost(zone.environment(), zone.region(), application);
+        return cost.getApplicationCost(zone, application);
     }
 
     public URI getElkUri(Environment environment, RegionName region, DeploymentId deploymentId) {
