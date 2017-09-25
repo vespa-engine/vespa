@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * A service which returns metric values on request
@@ -17,7 +17,7 @@ public interface MetricsService {
 
     DeploymentMetrics getDeploymentMetrics(ApplicationId application, Zone zone);
 
-    List<ClusterCostMetrics> getClusterCostMetrics(ApplicationId application, Zone zone);
+    Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, Zone zone);
 
     class DeploymentMetrics {
 
@@ -67,22 +67,30 @@ public interface MetricsService {
 
     }
 
-    class CostMetrics {
+    class SystemMetrics {
 
         private final double cpuUtil;
         private final double memUtil;
         private final double diskUtil;
 
-        public CostMetrics(double cpuUtil, double memUtil, double diskUtil) {
+        /**
+         * @param cpuUtil  percentage of system cpu utilization
+         * @param memUtil  percentage of system memory utilization
+         * @param diskUtil percentage of system disk utilization
+         */
+        public SystemMetrics(double cpuUtil, double memUtil, double diskUtil) {
             this.cpuUtil = cpuUtil;
             this.memUtil = memUtil;
             this.diskUtil = diskUtil;
         }
 
+        /** @return the percentage of cpu utilization **/
         public double cpuUtil() { return cpuUtil; }
 
+        /** @return the percentage of memory utilization **/
         public double memUtil() { return memUtil; }
 
+        /** @return the percentage of disk utilization **/
         public double diskUtil() { return diskUtil; }
 
         public static class Builder {
@@ -102,24 +110,8 @@ public interface MetricsService {
                 this.diskUtil = diskUtil;
             }
 
-            public CostMetrics build() { return new CostMetrics(cpuUtil, memUtil, diskUtil); }
+            public SystemMetrics build() { return new SystemMetrics(cpuUtil, memUtil, diskUtil); }
         }
-
-    }
-
-    class ClusterCostMetrics {
-
-        private final String clusterId;
-        private final CostMetrics costMetrics;
-
-        public ClusterCostMetrics(String clusterId, CostMetrics costMetrics) {
-            this.clusterId = clusterId;
-            this.costMetrics = costMetrics;
-        }
-
-        public String clusterId() { return clusterId; }
-
-        public CostMetrics costMetrics() { return costMetrics; }
 
     }
 
