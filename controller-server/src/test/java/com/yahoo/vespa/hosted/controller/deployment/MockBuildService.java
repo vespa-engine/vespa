@@ -161,7 +161,8 @@ public class MockBuildService implements BuildService {
                                 jobType,
                                 projectId,
                                 42,
-                                JobError.from(success)
+                                JobError.from(success),
+                                false
                         ));
         }
 

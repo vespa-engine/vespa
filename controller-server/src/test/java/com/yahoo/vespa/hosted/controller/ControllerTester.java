@@ -9,6 +9,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
@@ -21,8 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
@@ -30,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.jira.JiraMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.cost.CostMock;
 import com.yahoo.vespa.hosted.controller.cost.MockInsightBackend;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
@@ -40,6 +40,8 @@ import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.routing.MockRoutingGenerator;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.MemoryRotationRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
 
 import java.util.Optional;
 
@@ -107,6 +109,13 @@ public final class ControllerTester {
 
     public GitHubMock gitHubClientMock () { return gitHubMock; }
 
+    /** Set the application with the given id to currently be in the progress of rolling out the given change */
+    public void setDeploying(ApplicationId id, Optional<Change> change) {
+        try (Lock lock = controller.applications().lock(id)) {
+            controller.applications().store(controller.applications().require(id).withDeploying(change), lock);
+        }
+    }
+    
     /** Creates the given tenant and application and deploys it */
     public Application createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
         return createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
