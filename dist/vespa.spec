@@ -30,12 +30,14 @@ BuildRequires: libatomic
 BuildRequires: Judy-devel
 %if 0%{?centos}
 BuildRequires: cmake3
+BuildRequires: rh-maven33
 BuildRequires: llvm3.9-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
+BuildRequires: maven
 %if 0%{?fc25}
 BuildRequires: llvm-devel >= 3.9.1
 BuildRequires: boost-devel >= 1.60
@@ -49,7 +51,6 @@ BuildRequires: zookeeper-devel >= 3.4.9
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
-BuildRequires: rh-maven33
 BuildRequires: libicu-devel
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: openssl-devel
@@ -113,7 +114,9 @@ Vespa - The open big data serving engine
 %if 0%{?_devtoolset_enable:1}
 source %{_devtoolset_enable} || true
 %endif
+%if 0%{?centos}
 scl enable rh-maven33 bash
+%endif
 sh bootstrap.sh java
 mvn -nsu -T 2C install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
