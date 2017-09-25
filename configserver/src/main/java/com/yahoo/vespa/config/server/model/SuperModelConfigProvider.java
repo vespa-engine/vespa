@@ -5,15 +5,15 @@ import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.server.application.Application;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -22,16 +22,20 @@ import java.util.Map;
  * @author vegardh
  * @since 5.9
  */
-public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Producer  {
+public class SuperModelConfigProvider implements LbServicesConfig.Producer, RoutingConfig.Producer  {
 
-    private final Map<TenantName, Map<ApplicationId, Application>> models;
+    private final SuperModel superModel;
     private final LbServicesProducer lbProd;
     private final RoutingProducer zoneProd;
 
-    public SuperModel(Map<TenantName, Map<ApplicationId, Application>> models, Zone zone) {
-        this.models = models;
-        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(models), zone);
-        this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(models));
+    public SuperModelConfigProvider(SuperModel superModel, Zone zone) {
+        this.superModel = superModel;
+        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getAllModels()), zone);
+        this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(superModel.getAllModels()));
+    }
+
+    public SuperModel getSuperModel() {
+        return superModel;
     }
 
     public ConfigPayload getConfig(ConfigKey<?> configKey) {
@@ -49,7 +53,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
         }
     }
 
-    public Map<TenantName, Map<ApplicationId, Application>> applicationModels() { return models; }
+    public Map<TenantName, Map<ApplicationId, ApplicationInfo>> applicationModels() { return superModel.getAllModels(); }
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
@@ -65,14 +69,14 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
                                                                     ApplicationId applicationId,
                                                                     String configId) {
         TenantName tenant = applicationId.tenant();
-        if (!models.containsKey(tenant)) {
+        if (!superModel.getAllModels().containsKey(tenant)) {
             throw new IllegalArgumentException("Tenant " + tenant + " not found");
         }
-        Map<ApplicationId, Application> applications = models.get(tenant);
+        Map<ApplicationId, ApplicationInfo> applications = superModel.getAllModels().get(tenant);
         if (!applications.containsKey(applicationId)) {
             throw new IllegalArgumentException("Application id " + applicationId + " not found");
         }
-        Application application = applications.get(applicationId);
+        ApplicationInfo application = applications.get(applicationId);
         ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
         ConfigPayload payload = application.getModel().getConfig(key, null);
         return payload.toInstance(configClass, configId);

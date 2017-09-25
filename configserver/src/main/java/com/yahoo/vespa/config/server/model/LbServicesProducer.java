@@ -1,20 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.model;
 
+import com.google.common.base.Joiner;
+import com.yahoo.cloud.config.LbServicesConfig;
+import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import com.google.common.base.Joiner;
-import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.cloud.config.LbServicesConfig;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 
 /**
  * Produces lb-services cfg
@@ -24,10 +25,10 @@ import com.yahoo.config.provision.TenantName;
  */
 public class LbServicesProducer implements LbServicesConfig.Producer {
 
-    private final Map<TenantName, Map<ApplicationId, Application>> models;
+    private final Map<TenantName, Map<ApplicationId, ApplicationInfo>> models;
     private final Zone zone;
 
-    public LbServicesProducer(Map<TenantName, Map<ApplicationId, Application>> models, Zone zone) {
+    public LbServicesProducer(Map<TenantName, Map<ApplicationId, ApplicationInfo>> models, Zone zone) {
         this.models = models;
         this.zone = zone;
     }
@@ -41,7 +42,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         });
     }
 
-    private LbServicesConfig.Tenants.Builder getTenantConfig(Map<ApplicationId, Application> apps) {
+    private LbServicesConfig.Tenants.Builder getTenantConfig(Map<ApplicationId, ApplicationInfo> apps) {
         LbServicesConfig.Tenants.Builder tb = new LbServicesConfig.Tenants.Builder();
         apps.keySet().stream()
                 .sorted()
@@ -55,7 +56,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         return applicationId.application().value() + ":" + zone.environment().value() + ":" + zone.region().value() + ":" + applicationId.instance().value();
     }
 
-    private LbServicesConfig.Tenants.Applications.Builder getAppConfig(Application app) {
+    private LbServicesConfig.Tenants.Applications.Builder getAppConfig(ApplicationInfo app) {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
         app.getModel().getHosts().stream()
@@ -66,7 +67,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         return ab;
     }
 
-    private boolean getActiveRotation(Application app) {
+    private boolean getActiveRotation(ApplicationInfo app) {
         boolean activeRotation = false;
         for (HostInfo hostInfo : app.getModel().getHosts()) {
             final Optional<ServiceInfo> container = hostInfo.getServices().stream().filter(

@@ -4,15 +4,12 @@ package com.yahoo.vespa.config.server.model;
 import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
-import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -31,7 +28,7 @@ import static org.junit.Assert.assertThat;
 public class RoutingProducerTest {
     @Test
     public void testNodesFromRoutingAppOnly() throws Exception {
-        Map<TenantName, Map<ApplicationId, Application>> testModel = createTestModel(new DeployState.Builder());
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
         RoutingProducer producer = new RoutingProducer(testModel);
         RoutingConfig.Builder builder = new RoutingConfig.Builder();
         producer.getConfig(builder);
@@ -41,8 +38,8 @@ public class RoutingProducerTest {
         assertThat(config.hosts(1), is("hosted-vespa.routing2.yahoo.com"));
     }
 
-    private Map<TenantName, Map<ApplicationId, Application>> createTestModel(DeployState.Builder deployStateBuilder) throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> tMap = new LinkedHashMap<>();
+    private Map<TenantName, Map<ApplicationId, ApplicationInfo>> createTestModel(DeployState.Builder deployStateBuilder) throws IOException, SAXException {
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> tMap = new LinkedHashMap<>();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
         TenantName routing = TenantName.from(Tenants.HOSTED_VESPA_TENANT.value());
@@ -52,8 +49,8 @@ public class RoutingProducerTest {
         return tMap;
     }
 
-    private Map<ApplicationId, Application> createTestApplications(TenantName tenant, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
-        Map<ApplicationId, Application> aMap = new LinkedHashMap<>();
+    private Map<ApplicationId, ApplicationInfo> createTestApplications(TenantName tenant, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
+        Map<ApplicationId, ApplicationInfo> aMap = new LinkedHashMap<>();
         ApplicationId fooApp = new ApplicationId.Builder().tenant(tenant).applicationName("foo").build();
         ApplicationId barApp = new ApplicationId.Builder().tenant(tenant).applicationName("bar").build();
         ApplicationId routingApp = new ApplicationId.Builder().tenant(tenant).applicationName(RoutingProducer.ROUTING_APPLICATION.value()).build();
@@ -63,15 +60,15 @@ public class RoutingProducerTest {
         return aMap;
     }
 
-    private Application createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
-        return new Application(createVespaModel(createApplicationPackage(
-                        appId.tenant() + "." + appId.application() + ".yahoo.com", appId.tenant().value() + "." + appId.application().value() + "2.yahoo.com"),
-                deploystateBuilder),
-                new ServerCache(),
+    private ApplicationInfo createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
+        return new ApplicationInfo(
+                appId,
                 3l,
-                Version.fromIntValues(1, 2, 3),
-                MetricUpdater.createTestUpdater(),
-                appId);
+                createVespaModel(
+                        createApplicationPackage(
+                                appId.tenant() + "." + appId.application() + ".yahoo.com",
+                                appId.tenant().value() + "." + appId.application().value() + "2.yahoo.com"),
+                        deploystateBuilder));
     }
 
     private ApplicationPackage createApplicationPackage(String host1, String host2) {

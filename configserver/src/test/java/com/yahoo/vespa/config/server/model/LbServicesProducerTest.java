@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.model;
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
@@ -13,18 +14,20 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
@@ -43,7 +46,7 @@ public class LbServicesProducerTest {
 
     @Test
     public void testDeterministicGetConfig() throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
         LbServicesConfig last = null;
         for (int i = 0; i < 100; i++) {
             testModel = randomizeTenant(testModel, i);
@@ -57,7 +60,7 @@ public class LbServicesProducerTest {
 
     @Test
     public void testConfigAliases() throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> testModel = createTestModel(new DeployState.Builder());
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
         LbServicesConfig conf = getLbServicesConfig(Zone.defaultZone(), testModel);
         final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:default:default").hosts("foo.foo.yahoo.com").services("qrserver");
         assertThat(services.servicealiases().size(), is(1));
@@ -85,12 +88,12 @@ public class LbServicesProducerTest {
 
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) throws IOException, SAXException {
         final Zone zone = new Zone(Environment.prod, regionName);
-        Map<TenantName, Map<ApplicationId, Application>> testModel = createTestModel(new DeployState.Builder().
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().
                 properties(new DeployProperties.Builder().zone(zone).build()));
         return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 
-    private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Map<ApplicationId, Application>> testModel) {
+    private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel) {
         LbServicesProducer producer = new LbServicesProducer(testModel, zone);
         LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
         producer.getConfig(builder);
@@ -99,7 +102,7 @@ public class LbServicesProducerTest {
 
     @Test
     public void testConfigAliasesWithRotations() throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
         RegionName regionName = RegionName.from("us-east-1");
         LbServicesConfig conf = getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
         final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").hosts("foo.foo.yahoo.com").services("qrserver");
@@ -113,8 +116,8 @@ public class LbServicesProducerTest {
         assertThat(services.endpointaliases(3), is(rotation2));
     }
 
-    private Map<TenantName, Map<ApplicationId, Application>> randomizeTenant(Map<TenantName, Map<ApplicationId, Application>> testModel, int seed) {
-        Map<TenantName, Map<ApplicationId, Application>> randomizedTenants = new LinkedHashMap<>();
+    private Map<TenantName, Map<ApplicationId, ApplicationInfo>> randomizeTenant(Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel, int seed) {
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> randomizedTenants = new LinkedHashMap<>();
         List<TenantName> keys = new ArrayList<>(testModel.keySet());
         Collections.shuffle(keys, new Random(seed));
         for (TenantName key : keys) {
@@ -123,8 +126,8 @@ public class LbServicesProducerTest {
         return randomizedTenants;
     }
 
-    private Map<ApplicationId, Application> randomizeApplications(Map<ApplicationId, Application> applicationIdApplicationMap, int seed) {
-        Map<ApplicationId, Application> randomizedApplications = new LinkedHashMap<>();
+    private Map<ApplicationId, ApplicationInfo> randomizeApplications(Map<ApplicationId, ApplicationInfo> applicationIdApplicationMap, int seed) {
+        Map<ApplicationId, ApplicationInfo> randomizedApplications = new LinkedHashMap<>();
         List<ApplicationId> keys = new ArrayList<>(applicationIdApplicationMap.keySet());
         Collections.shuffle(keys, new Random(seed));
         for (ApplicationId key : keys) {
@@ -133,8 +136,8 @@ public class LbServicesProducerTest {
         return randomizedApplications;
     }
 
-    private Map<TenantName, Map<ApplicationId, Application>> createTestModel(DeployState.Builder deployStateBuilder) throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> tMap = new LinkedHashMap<>();
+    private Map<TenantName, Map<ApplicationId, ApplicationInfo>> createTestModel(DeployState.Builder deployStateBuilder) throws IOException, SAXException {
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> tMap = new LinkedHashMap<>();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
         TenantName baz = TenantName.from("baz");
@@ -144,8 +147,8 @@ public class LbServicesProducerTest {
         return tMap;
     }
 
-    private Map<ApplicationId, Application> createTestApplications(TenantName tenant, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
-        Map<ApplicationId, Application> aMap = new LinkedHashMap<>();
+    private Map<ApplicationId, ApplicationInfo> createTestApplications(TenantName tenant, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
+        Map<ApplicationId, ApplicationInfo> aMap = new LinkedHashMap<>();
         ApplicationId fooApp = new ApplicationId.Builder().tenant(tenant).applicationName("foo").build();
         ApplicationId barApp = new ApplicationId.Builder().tenant(tenant).applicationName("bar").build();
         ApplicationId bazApp = new ApplicationId.Builder().tenant(tenant).applicationName("baz").build();
@@ -155,15 +158,13 @@ public class LbServicesProducerTest {
         return aMap;
     }
 
-    private Application createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
-        return new Application(createVespaModel(createApplicationPackage(
-                        appId.tenant() + "." + appId.application() + ".yahoo.com", appId.tenant().value() + "." + appId.application().value() + "2.yahoo.com"),
-                deploystateBuilder),
-                new ServerCache(),
+    private ApplicationInfo createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
+        return new ApplicationInfo(
+                appId,
                 3l,
-                Version.fromIntValues(1, 2, 3),
-                MetricUpdater.createTestUpdater(),
-                appId);
+                createVespaModel(createApplicationPackage(
+                        appId.tenant() + "." + appId.application() + ".yahoo.com", appId.tenant().value() + "." + appId.application().value() + "2.yahoo.com"),
+                deploystateBuilder));
     }
 
     private ApplicationPackage createApplicationPackage(String host1, String host2) {
