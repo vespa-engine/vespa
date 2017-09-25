@@ -49,7 +49,7 @@ BuildRequires: zookeeper-devel >= 3.4.9
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
-BuildRequires: maven
+BuildRequires: rh-maven33
 BuildRequires: libicu-devel
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: openssl-devel
@@ -113,6 +113,7 @@ Vespa - The open big data serving engine
 %if 0%{?_devtoolset_enable:1}
 source %{_devtoolset_enable} || true
 %endif
+scl enable rh-maven33 bash
 sh bootstrap.sh java
 mvn -nsu -T 2C install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
