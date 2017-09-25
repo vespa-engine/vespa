@@ -267,6 +267,7 @@ public class NodeAdminStateUpdater {
         loopThread.setName("tick-NodeAdminStateUpdater");
         loopThread.start();
 
+        nodeAdmin.start();
         specVerifierScheduler.scheduleWithFixedDelay(() ->
                 updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
     }

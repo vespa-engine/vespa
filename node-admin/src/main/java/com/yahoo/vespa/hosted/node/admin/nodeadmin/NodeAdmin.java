@@ -60,6 +60,11 @@ public interface NodeAdmin {
     Map<String, Object> debugInfo();
 
     /**
+     * Start node-admin schedulers.
+     */
+    void start();
+
+    /**
      * Stop the NodeAgent. Will not delete the storage or stop the container.
      */
     void stop();
