@@ -5,8 +5,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 StorageCommand::StorageCommand(const StorageCommand& other)
     : StorageMessage(other, generateMsgId()),
@@ -49,5 +48,4 @@ StorageCommand::createCopyToForward(const document::BucketId&, uint64_t) const
             VESPA_STRLOC);
 }
 
-} // api
-} // storage
+}

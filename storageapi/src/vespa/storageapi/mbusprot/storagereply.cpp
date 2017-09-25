@@ -7,23 +7,23 @@
 using vespalib::alloc::Alloc;
 using vespalib::IllegalStateException;
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
-StorageReply::StorageReply(const mbus::BlobRef& data,
-                           const ProtocolSerialization& serializer)
+StorageReply::StorageReply(mbus::BlobRef data, const ProtocolSerialization& serializer)
     : _serializer(&serializer),
-      _buffer(Alloc::alloc(data.size())),
+      _sz(data.size()),
+      _buffer(Alloc::alloc(_sz)),
       _mbusType(0),
       _reply()
 {
-    memcpy(_buffer.get(), data.data(), _buffer.size());
-    document::ByteBuffer buf(data.data(), data.size());
+    memcpy(_buffer.get(), data.data(), _sz);
+    document::ByteBuffer buf(data.data(), _sz);
     buf.getIntNetwork(reinterpret_cast<int32_t&>(_mbusType));
 }
 
 StorageReply::StorageReply(const api::StorageReply::SP& reply)
     : _serializer(0),
+      _sz(0),
       _buffer(),
       _mbusType(reply->getType().getId()),
       _reply(reply)
@@ -48,10 +48,9 @@ StorageReply::deserialize() const
     if (cmd == 0) {
         throw IllegalStateException("Storage reply get message did not return a storage command", VESPA_STRLOC);
     }
-    mbus::BlobRef blobRef(static_cast<char *>(_buffer.get()), _buffer.size());
+    mbus::BlobRef blobRef(static_cast<char *>(_buffer.get()), _sz);
     _reply = _serializer->decodeReply(blobRef, *cmd->getCommand())->getReply();
     Alloc().swap(_buffer);
 }
 
-} // mbusprot
-} // storage
+}

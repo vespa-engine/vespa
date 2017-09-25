@@ -381,4 +381,3 @@ StorageMessage::getSummary() const {
 }
 
 }
-

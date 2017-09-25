@@ -4,8 +4,7 @@
 #include "protocolserialization5_2.h"
 #include <vespa/messagebus/iprotocol.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class StorageProtocol : public mbus::IProtocol
 {
@@ -28,5 +27,4 @@ private:
     ProtocolSerialization5_2 _serializer5_2;
 };
 
-} // mbusprot
-} // storage
+}
