@@ -941,6 +941,7 @@
         <module>container</module>
         <module>container-core</module>
         <module>container-accesslogging</module>
+        <module>container-dependencies-enforcer</module>
         <module>container-dev</module>
         <module>container-di</module>
         <module>container-disc</module>
