@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -80,7 +79,6 @@ public class FailedExpirer extends Expirer {
 
     private boolean failCountIndicatesHwFail(Zone zone, Node node) {
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) return false;
-        if (zone.system() == SystemName.cd) return false;
         return zone.environment() == Environment.prod || zone.environment() == Environment.staging;
     }
 
