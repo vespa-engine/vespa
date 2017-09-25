@@ -217,6 +217,7 @@ public final class ContainerCluster
         addSimpleComponent(AccessLog.class);
         // TODO better modelling
         addSimpleComponent(ThreadPoolProvider.class);
+        addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
         addSimpleComponent(SIMPLE_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SslKeyStoreFactoryProvider");
