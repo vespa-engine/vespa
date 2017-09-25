@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +62,7 @@ public class NodeAdminStateUpdater {
     private final Duration nodeAdminConvergeStateInterval;
 
     private final ClassLocking classLocking;
-    private ClassLock classLock;
+    private Optional<ClassLock> classLock;
     private Instant lastTick;
 
     public NodeAdminStateUpdater(
@@ -86,8 +87,9 @@ public class NodeAdminStateUpdater {
         this.loopThread = new Thread(() -> {
             log.info(objectToString() + ": Acquiring lock");
             try {
-                classLock = classLocking.tryLock(NodeAdminStateUpdater.class, () -> !terminated.get());
+                classLock = Optional.of(classLocking.tryLock(NodeAdminStateUpdater.class, () -> !terminated.get()));
             } catch (LockInterruptException e) {
+                classLock = Optional.empty();
                 return;
             }
 
@@ -315,10 +317,10 @@ public class NodeAdminStateUpdater {
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
 
-        log.info(objectToString() + ": Releasing lock");
-        if (classLock != null) {
-            classLock.close();
-        }
+        classLock.ifPresent(lock -> {
+            log.info(objectToString() + ": Releasing lock");
+            lock.close();
+        });
         log.info(objectToString() + ": Stop complete");
     }
 }
