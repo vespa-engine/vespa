@@ -81,7 +81,7 @@ public class NodeAgentImpl implements NodeAgent {
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
 
-    private Thread loopThread;
+    private final Thread loopThread;
 
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
@@ -131,6 +131,11 @@ public class NodeAgentImpl implements NodeAgent {
         this.clock = clock;
         this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
+
+        this.loopThread = new Thread(() -> {
+            while (!terminated.get()) tick();
+        });
+        this.loopThread.setName("tick-" + hostname);
     }
 
     @Override
@@ -178,14 +183,6 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info(message);
         addDebugMessage(message);
 
-        if (loopThread != null) {
-            throw new RuntimeException("Can not restart a node agent.");
-        }
-
-        loopThread = new Thread(() -> {
-            while (!terminated.get()) tick();
-        });
-        loopThread.setName("tick-" + hostname);
         loopThread.start();
 
         serviceRestarter = service -> {
