@@ -37,12 +37,11 @@ SearchIteratorPack::SearchIteratorPack(const std::vector<SearchIterator*> &child
     for (auto child: children) {
         _children.emplace_back(child);
     }
-    assert((_children.size() == _childMatch.size()) ||
-           (_childMatch.empty() && (_md.get() == nullptr)));
+    assert((_children.size() == _childMatch.size()) || _childMatch.empty());
 }
 
-SearchIteratorPack::SearchIteratorPack(const std::vector<SearchIterator*> &children)
-    : SearchIteratorPack(children, std::vector<fef::TermFieldMatchData*>(), MatchDataUP())
+SearchIteratorPack::SearchIteratorPack(const std::vector<SearchIterator*> &children, MatchDataUP md)
+    : SearchIteratorPack(children, std::vector<fef::TermFieldMatchData*>(), MatchDataUP(std::move(md)))
 { }
 
 std::unique_ptr<BitVector>

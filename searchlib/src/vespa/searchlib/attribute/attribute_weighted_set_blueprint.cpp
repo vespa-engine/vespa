@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 
 namespace search {
 
@@ -157,11 +158,15 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
     assert(tfmda.size() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0];
     if (strict) { // use generic weighted set search
+        fef::MatchDataLayout layout;
+        auto handle = layout.allocTermField(tfmd.getFieldId());
+        auto match_data = layout.createMatchData();
+        auto child_tfmd = match_data->resolveTermField(handle);
         std::vector<queryeval::SearchIterator*> children(_contexts.size());
         for (size_t i = 0; i < _contexts.size(); ++i) {
-            children[i] = _contexts[i]->createIterator(&tfmd, true).release();
+            children[i] = _contexts[i]->createIterator(child_tfmd, true).release();
         }
-        return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, _weights));
+        return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, _weights, std::move(match_data)));
     } else { // use attribute filter optimization
         bool isSingleValue = !_attr.hasMultiValue();
         bool isString = (_attr.isStringType() && _attr.hasEnum());

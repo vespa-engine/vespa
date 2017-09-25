@@ -9,6 +9,8 @@ namespace search::queryeval {
 WeightedSetTermBlueprint::WeightedSetTermBlueprint(const FieldSpec &field)
     : ComplexLeafBlueprint(field),
       _estimate(),
+      _layout(),
+      _children_field(field.getName(), field.getFieldId(), _layout.allocTermField(field.getFieldId()), false),
       _weights(),
       _terms()
 {
@@ -40,18 +42,18 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight)
     term.release();
 }
 
-SearchIterator::UP
-WeightedSetTermBlueprint::createSearch(search::fef::MatchData &md, bool) const
-{
-    const State &state = getState();
-    assert(state.numFields() == 1);
-    search::fef::TermFieldMatchData &tfmd = *state.field(0).resolve(md);
 
+SearchIterator::UP
+WeightedSetTermBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
+                                           bool) const
+{
+    assert(tfmda.size() == 1);
+    fef::MatchData::UP md = _layout.createMatchData();
     std::vector<SearchIterator*> children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        children[i] = _terms[i]->createSearch(md, true).release();
+        children[i] = _terms[i]->createSearch(*md, true).release();
     }
-    return SearchIterator::UP(WeightedSetTermSearch::create(children, tfmd, _weights));
+    return SearchIterator::UP(WeightedSetTermSearch::create(children, *tfmda[0], _weights, std::move(md)));
 }
 
 void
@@ -69,12 +71,6 @@ WeightedSetTermBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     LeafBlueprint::visitMembers(visitor);
     visit(visitor, "_weights", _weights);
     visit(visitor, "_terms", _terms);
-}
-
-SearchIterator::UP
-WeightedSetTermBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
-{
-    abort();
 }
 
 }

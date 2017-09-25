@@ -29,7 +29,7 @@ public:
                        const std::vector<fef::TermFieldMatchData*> &childMatch,
                        MatchDataUP md);
 
-    explicit SearchIteratorPack(const std::vector<SearchIterator*> &children);
+    SearchIteratorPack(const std::vector<SearchIterator*> &children, MatchDataUP md);
 
     uint32_t get_docid(uint32_t ref) const {
         return _children[ref]->getDocId();
