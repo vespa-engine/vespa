@@ -10,7 +10,6 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
@@ -39,10 +38,10 @@ public class RestApiHandler extends LoggingRequestHandler{
 
     @Inject
     public RestApiHandler(Executor executor, AccessLog accessLog,
-                          ComponentsProvider componentsProvider,
+                          NodeAdminStateUpdater nodeAdminStateUpdater,
                           MetricReceiverWrapper metricReceiverWrapper) {
         super(executor, accessLog);
-        this.refresher = componentsProvider.getNodeAdminStateUpdater();
+        this.refresher = nodeAdminStateUpdater;
         this.metricReceiverWrapper = metricReceiverWrapper;
     }
 

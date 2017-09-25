@@ -3,11 +3,25 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
+import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -26,15 +40,19 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -42,7 +60,11 @@ import static org.mockito.Mockito.when;
  */
 public class RunInContainerTest {
     private final Logger logger = Logger.getLogger("RunInContainerTest");
-    private final Orchestrator orchestrator = ComponentsProviderWithMocks.orchestratorMock;
+
+    private static final NodeRepository nodeRepositoryMock = mock(NodeRepository.class);
+    private static final Orchestrator orchestratorMock = mock(Orchestrator.class);
+    private static final DockerOperations dockerOperationsMock = mock(DockerOperations.class);
+
     private final String parentHostname = "localhost.test.yahoo.com";
     private JDisc container;
     private int port;
@@ -58,7 +80,7 @@ public class RunInContainerTest {
         // To test the initial NodeAdminStateUpdater convergence towards RESUME, orchestrator should
         // deny permission to resume for parent host, otherwise it'll converge to RESUME before REST
         // handler comes up
-        doThrow(new RuntimeException()).when(orchestrator).resume(parentHostname);
+        doThrow(new RuntimeException()).when(orchestratorMock).resume(parentHostname);
         port = findRandomOpenPort();
         System.out.println("PORT IS " + port);
         logger.info("PORT IS " + port);
@@ -117,22 +139,22 @@ public class RunInContainerTest {
     @Ignore
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
-        doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator).suspend(parentHostname);
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(Collections.emptyList());
+        doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestratorMock).suspend(parentHostname);
+        when(nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(Collections.emptyList());
         waitForJdiscContainerToServe();
 
         assertTrue("The initial resume command should fail because it needs to converge first",
                 verifyWithRetries("resume", false));
-        doNothing().when(orchestrator).resume(parentHostname);
+        doNothing().when(orchestratorMock).resume(parentHostname);
         assertTrue(verifyWithRetries("resume", true));
 
         doThrow(new OrchestratorException("Cannot suspend because..."))
-                .when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
+                .when(orchestratorMock).suspend(parentHostname, Collections.singletonList(parentHostname));
         assertTrue("Should fail because orchestrator does not allow node-admin to suspend",
                 verifyWithRetries("suspend/node-admin", false));
 
         // Orchestrator changes its mind, allows node-admin to suspend
-        doNothing().when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
+        doNothing().when(orchestratorMock).suspend(parentHostname, Collections.singletonList(parentHostname));
         assertTrue(verifyWithRetries("suspend/node-admin", true));
 
         // Lets try to suspend everything now, should be trivial as we have no active containers to stop services at
@@ -144,7 +166,7 @@ public class RunInContainerTest {
         assertTrue(verifyWithRetries("resume", true));
 
         // Lets try the same, but with an active container running on this host
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(
+        when(nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(
                 Collections.singletonList(new ContainerNodeSpec.Builder()
                         .hostname("host1.test.yahoo.com")
                         .wantedDockerImage(new DockerImage("dockerImage"))
@@ -152,7 +174,7 @@ public class RunInContainerTest {
                         .nodeType("tenant")
                         .nodeFlavor("docker")
                         .build()));
-        doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator)
+        doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestratorMock)
                 .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
 
         // Initially we are denied to suspend because we have to freeze all the node-agents
@@ -160,16 +182,16 @@ public class RunInContainerTest {
         // At this point they should be frozen, but Orchestrator doesn't allow to suspend either the container or the node-admin
         assertTrue(verifyWithRetries("suspend/node-admin", false));
 
-        doNothing().when(orchestrator)
+        doNothing().when(orchestratorMock)
                 .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
 
         // Orchestrator successfully suspended everything
         assertTrue(verifyWithRetries("suspend/node-admin", true));
 
         // Allow stopping services in active nodes
-        doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
+        doNothing().when(dockerOperationsMock)
                 .trySuspendNode(eq(new ContainerName("host1")));
-        doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
+        doNothing().when(dockerOperationsMock)
                 .stopServicesOnNode(eq(new ContainerName("host1")));
 
         assertTrue(verifyWithRetries("suspend", false));
@@ -191,11 +213,49 @@ public class RunInContainerTest {
                 "    <handler id=\"com.yahoo.vespa.hosted.node.admin.restapi.RestApiHandler\" bundle=\"node-admin\">\n" +
                 "      <binding>http://*/rest/*</binding>\n" +
                 "    </handler>\n" +
-                "    <component id=\"node-admin\" class=\"com.yahoo.vespa.hosted.node.admin.integrationTests.ComponentsProviderWithMocks\" bundle=\"node-admin\"/>\n" +
+                "    <component id=\"metric-receiver\" class=\"com.yahoo.vespa.hosted.node.admin.integrationTests.RunInContainerTest$MetricReceiverWrapperMock\" bundle=\"node-admin\"/>\n" +
+                "    <component id=\"node-admin\" class=\"com.yahoo.vespa.hosted.node.admin.integrationTests.RunInContainerTest$NodeAdminProviderWithMocks\" bundle=\"node-admin\"/>\n" +
                 "  <http>" +
                 "    <server id=\'myServer\' port=\'" + port + "\' />" +
                 "  </http>" +
                 "  </jdisc>\n" +
                 "</services>\n";
+    }
+
+
+    public static class MetricReceiverWrapperMock extends MetricReceiverWrapper {
+        public MetricReceiverWrapperMock() {
+            super(MetricReceiver.nullImplementation);
+        }
+    }
+
+    public class NodeAdminProviderWithMocks implements Provider<NodeAdminStateUpdater> {
+        private final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
+        private final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(5);
+
+        private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+        private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
+        private final Environment environment = new Environment.Builder().build();
+        private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+        private final Function<String, NodeAgent> nodeAgentFactory =
+                (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, dockerOperationsMock,
+                        storageMaintainer, aclMaintainer, environment, Clock.systemUTC(), NODE_AGENT_SCAN_INTERVAL);
+        private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
+        private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock,
+                orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com", Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, new ClassLocking());
+
+        public NodeAdminProviderWithMocks() {
+            nodeAdminStateUpdater.start();
+        }
+
+        @Override
+        public NodeAdminStateUpdater get() {
+            return nodeAdminStateUpdater;
+        }
+
+        @Override
+        public void deconstruct() {
+            nodeAdminStateUpdater.stop();
+        }
     }
 }

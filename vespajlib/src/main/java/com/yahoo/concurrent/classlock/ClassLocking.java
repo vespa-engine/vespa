@@ -2,6 +2,7 @@ package com.yahoo.concurrent.classlock;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 /**
  * @author valerijf
@@ -11,11 +12,20 @@ public class ClassLocking {
     private final Object monitor = new Object();
 
     public ClassLock lock(Class<?> clazz) {
+        return lockWhile(clazz, () -> true);
+    }
+
+    public ClassLock lockWhile(Class<?> clazz, BooleanSupplier interruptCondition) {
         synchronized (monitor) {
-            while(classLocks.containsKey(clazz)) {
+            while (classLocks.containsKey(clazz)) {
                 try {
                     monitor.wait();
-                } catch (InterruptedException ignored) { }
+                } catch (InterruptedException ignored) {
+                }
+
+                if (!interruptCondition.getAsBoolean()) {
+                    throw new LockInterruptException();
+                }
             }
 
             ClassLock classLock = new ClassLock(this, clazz);
@@ -32,6 +42,12 @@ public class ClassLocking {
             } else {
                 throw new IllegalArgumentException("Lock has already been released");
             }
+        }
+    }
+
+    public void interrupt() {
+        synchronized (monitor) {
+            monitor.notifyAll();
         }
     }
 }
