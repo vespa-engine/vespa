@@ -6,11 +6,11 @@
 #include <vespa/messagebus/reply.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class StorageReply : public mbus::Reply, public StorageMessage {
     const ProtocolSerialization* _serializer;
+    size_t   _sz;
     mutable vespalib::alloc::Alloc _buffer;
     uint32_t _mbusType;
     mutable api::StorageReply::SP _reply;
@@ -18,7 +18,7 @@ class StorageReply : public mbus::Reply, public StorageMessage {
 public:
     typedef std::unique_ptr<StorageReply> UP;
 
-    StorageReply(const mbus::BlobRef& data, const ProtocolSerialization&);
+    StorageReply(mbus::BlobRef data, const ProtocolSerialization&);
     StorageReply(const api::StorageReply::SP& reply);
     ~StorageReply();
 
@@ -40,9 +40,7 @@ public:
     }
 
 private:
-
     void deserialize() const;
 };
 
-} // mbusprot
-} // storage
+}

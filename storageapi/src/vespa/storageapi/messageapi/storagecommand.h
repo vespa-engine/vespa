@@ -14,8 +14,7 @@
 
 #include "storagemessage.h"
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class StorageReply;
 
@@ -65,6 +64,4 @@ public:
 
 };
 
-} // api
-} // storage
-
+}
