@@ -2,9 +2,12 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,16 +37,15 @@ public class PolledBuildSystemTest {
 
     @Test
     public void throttle_capacity_constrained_jobs() {
-        DeploymentTester tester = new DeploymentTester();
+        ControllerTester tester = new ControllerTester();
         BuildSystem buildSystem = new PolledBuildSystem(tester.controller(), new MockCuratorDb());
 
-        int fooProjectId = 1;
-        int barProjectId = 2;
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .region("us-west-1")
-                .build();
-        ApplicationId foo = tester.createAndDeploy("app1", fooProjectId, applicationPackage).id();
-        ApplicationId bar = tester.createAndDeploy("app2", barProjectId, applicationPackage).id();
+        long fooProjectId = 1;
+        long barProjectId = 2;
+        ApplicationId foo = tester.createAndDeploy("tenant1", "domain1", "app1",
+                                                   Environment.prod, fooProjectId).id();
+        ApplicationId bar = tester.createAndDeploy("tenant2", "domain2", "app2",
+                                                   Environment.prod, barProjectId).id();
 
         // Trigger jobs in capacity constrained environment
         buildSystem.addJob(foo, jobType, false);

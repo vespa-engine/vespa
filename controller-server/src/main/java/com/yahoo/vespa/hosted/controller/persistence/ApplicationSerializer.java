@@ -125,6 +125,7 @@ public class ApplicationSerializer {
         deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
         deploymentJobs.jiraIssueId().ifPresent(jiraIssueId -> cursor.setString(jiraIssueIdField, jiraIssueId));
+        cursor.setBool(selfTriggeringField, deploymentJobs.isSelfTriggering());
     }
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
@@ -219,7 +220,7 @@ public class ApplicationSerializer {
         Optional<String> jiraIssueKey = optionalString(object.field(jiraIssueIdField));
         boolean selfTriggering = object.field(selfTriggeringField).asBool();
 
-        return new DeploymentJobs(projectId, jobStatusList, jiraIssueKey);
+        return new DeploymentJobs(projectId, jobStatusList, jiraIssueKey, selfTriggering);
     }
 
     private Optional<Change> changeFromSlime(Inspector object) {

@@ -278,13 +278,17 @@ public class ApplicationController {
             Version version;
             if (options.deployCurrentVersion)
                 version = application.currentVersion(controller, zone);
+            else if (application.deploymentJobs().isSelfTriggering()) // legacy mode: let the client decide
+                version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
             else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
                 return unexpectedDeployment(applicationId, zone, applicationPackage);
             else
                 version = application.currentDeployVersion(controller, zone);
 
             // Ensure that the deploying change is tested
-            if ( ! zone.environment().isManuallyDeployed() &&
+            // FIXME: For now only for non-self-triggering applications - VESPA-8418
+            if ( ! application.deploymentJobs().isSelfTriggering() && 
+                 ! zone.environment().isManuallyDeployed() && 
                  ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
                 throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                    " as pending " + application.deploying().get() +
