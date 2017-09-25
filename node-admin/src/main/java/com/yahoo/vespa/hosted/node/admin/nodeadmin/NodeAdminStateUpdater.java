@@ -297,9 +297,7 @@ public class NodeAdminStateUpdater {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
 
-        synchronized (classLocking) {
-            classLocking.notifyAll();
-        }
+        classLocking.interrupt();
 
         // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
