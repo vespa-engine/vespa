@@ -2,7 +2,7 @@ package com.yahoo.concurrent.classlock;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 /**
  * @author valerijf
@@ -11,18 +11,18 @@ public class ClassLocking {
     private final Map<Class<?>, ClassLock> classLocks = new HashMap<>();
 
     public synchronized ClassLock lock(Class<?> clazz) {
-        return tryLock(clazz, () -> true);
+        return lockWhile(clazz, () -> true);
     }
 
-    public synchronized ClassLock tryLock(Class<?> clazz, Supplier<Boolean> continueRetrying) {
+    public synchronized ClassLock lockWhile(Class<?> clazz, BooleanSupplier interruptCondition) {
         while(classLocks.containsKey(clazz)) {
             try {
                 wait();
-            } catch (InterruptedException ignored) {
-                if (! continueRetrying.get()) {
-                    throw new LockInterruptException();
-                }
-            }
+            } catch (InterruptedException ignored) { }
+        }
+
+        if (! interruptCondition.getAsBoolean()) {
+            throw new LockInterruptException();
         }
 
         ClassLock classLock = new ClassLock(this, clazz);

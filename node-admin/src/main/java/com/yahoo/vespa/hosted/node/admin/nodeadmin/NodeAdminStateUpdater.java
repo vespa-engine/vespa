@@ -87,7 +87,7 @@ public class NodeAdminStateUpdater {
         this.loopThread = new Thread(() -> {
             log.info(objectToString() + ": Acquiring lock");
             try {
-                classLock = Optional.of(classLocking.tryLock(NodeAdminStateUpdater.class, () -> !terminated.get()));
+                classLock = Optional.of(classLocking.lockWhile(NodeAdminStateUpdater.class, () -> !terminated.get()));
             } catch (LockInterruptException e) {
                 classLock = Optional.empty();
                 return;
