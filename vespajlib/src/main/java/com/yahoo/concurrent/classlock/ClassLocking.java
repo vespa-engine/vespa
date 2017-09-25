@@ -22,10 +22,10 @@ public class ClassLocking {
                     monitor.wait();
                 } catch (InterruptedException ignored) {
                 }
-            }
 
-            if (!interruptCondition.getAsBoolean()) {
-                throw new LockInterruptException();
+                if (!interruptCondition.getAsBoolean()) {
+                    throw new LockInterruptException();
+                }
             }
 
             ClassLock classLock = new ClassLock(this, clazz);
