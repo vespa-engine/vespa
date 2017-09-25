@@ -14,7 +14,7 @@ Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vesp
 ## Get started developing
 
 ### Setup build environment
-C++ building is supported on CentOS 7. The Java source can be built on any platform having Java 8 and Maven (version>=3.3) installed. 
+C++ building is supported on CentOS 7. The Java source can be built on any platform having Java 8 and Maven installed. 
 We recommend using the following environment: [Create C++ dev environment on CentOS using VirtualBox and Vagrant](vagrant/README.md).
 You can also setup CentOS 7 natively and install the following build dependencies:
 
