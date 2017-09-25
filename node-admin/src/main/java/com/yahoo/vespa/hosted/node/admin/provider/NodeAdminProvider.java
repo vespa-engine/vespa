@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
+import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.net.HostName;
 
@@ -46,7 +47,7 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
     @Inject
-    public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver) {
+    public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver, ClassLocking classLocking) {
         log.info(objectToString() + ": Creating object");
 
         Clock clock = Clock.systemUTC();
@@ -69,7 +70,8 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
                 metricReceiver, clock);
 
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator, storageMaintainer, nodeAdmin,
-                dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
+                dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL, classLocking);
+
         nodeAdminStateUpdater.start();
     }
 
