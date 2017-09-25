@@ -4,6 +4,7 @@
  */
 #pragma once
 #include <cppunit/extensions/HelperMacros.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 
 // Wrapper for CPPUNIT_ASSERT_EQUAL_MESSAGE to prevent it from evaluating
@@ -146,49 +147,6 @@
 
 // Create output operator for containers.
 // Needed so we can use CPPUNIT_ASSERT_EQUAL with them.
-
-// TODO: Remove these functions from the std namespace.
-namespace std {
-    template<typename T>
-    inline std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
-    {
-        out << "std::vector(" << v.size() << ") {";
-        for (uint32_t i=0, n=v.size(); i<n; ++i) {
-            out << "\n  " << v[i];
-        }
-        if (v.size() > 0) out << "\n";
-        return out << "}";
-    }
-    template<typename T>
-    inline std::ostream& operator<<(std::ostream& out, const std::set<T>& v)
-    {
-        out << "std::set(" << v.size() << ") {";
-        for (typename std::set<T>::const_iterator it = v.begin(); it != v.end();
-             ++it)
-        {
-            out << "\n  " << *it;
-        }
-        if (v.size() > 0) out << "\n";
-        return out << "}";
-    }
-    template<typename S, typename T>
-    inline std::ostream& operator<<(std::ostream& out, const std::map<S, T>& m)
-    {
-        out << "std::map(" << m.size() << ") {";
-        for (typename std::map<S, T>::const_iterator it = m.begin();
-             it != m.end(); ++it)
-        {
-            out << "\n  " << *it;
-        }
-        if (m.size() > 0) out << "\n";
-        return out << "}";
-    }
-    template<typename S, typename T>
-    inline std::ostream& operator<<(std::ostream& out, const std::pair<S, T>& p)
-    {
-        return out << "std::pair(" << p.first << ", " << p.second << ")";
-    }
-}
 
 template<typename S, typename T>
 std::ostream&
