@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
-import com.yahoo.component.AbstractComponent;
+import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.net.HostName;
 
 import com.yahoo.system.ProcessExecuter;
@@ -36,17 +36,17 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  *
  * @author dybis
  */
-public class ComponentsProviderImpl extends AbstractComponent implements ComponentsProvider {
+public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     private static final int WEB_SERVICE_PORT = getDefaults().vespaWebServicePort();
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
-    private final Logger log = Logger.getLogger(ComponentsProviderImpl.class.getName());
+    private final Logger log = Logger.getLogger(NodeAdminProvider.class.getName());
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
     @Inject
-    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver) {
+    public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver) {
         log.info(objectToString() + ": Creating object");
 
         Clock clock = Clock.systemUTC();
@@ -74,7 +74,7 @@ public class ComponentsProviderImpl extends AbstractComponent implements Compone
     }
 
     @Override
-    public NodeAdminStateUpdater getNodeAdminStateUpdater() {
+    public NodeAdminStateUpdater get() {
         return nodeAdminStateUpdater;
     }
 
