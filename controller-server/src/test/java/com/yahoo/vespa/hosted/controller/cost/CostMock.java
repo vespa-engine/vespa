@@ -9,7 +9,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.Cost;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.CostClusterInfo;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.CostHardwareInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.cost.CostResources;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +43,7 @@ public class CostMock extends AbstractComponent implements Cost  {
     }
 
     @Override
-    public Map<String, CostHardwareInfo> getUsageMetrics(Zone zone, ApplicationId app) {
+    public Map<String, CostResources> getUsageMetrics(Zone zone, ApplicationId app) {
         return null;
     }
 

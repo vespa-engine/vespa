@@ -19,9 +19,9 @@ public class CostJsonModelAdapter {
     public static CostJsonModel.Application toJsonModel(CostApplication appCost) {
         CostJsonModel.Application app = new CostJsonModel.Application();
         app.zone = appCost.getZone().toString();
-        app.tenant = appCost.getTenant();
-        app.app = appCost.getApp();
-        app.tco = appCost.getTco();
+        app.tenant = appCost.getAppId().tenant().toString();
+        app.app = appCost.getAppId().application().toString();
+        app.tco = (int)appCost.getTco();
         app.utilization = appCost.getUtilization();
         app.waste = appCost.getWaste();
         app.cluster = new HashMap<>();
@@ -37,7 +37,7 @@ public class CostJsonModelAdapter {
         object.setString("zone", appCost.getZone().toString());
         object.setString("tenant", appCost.getTenant());
         object.setString("app", appCost.getApp());
-        object.setLong("tco", appCost.getTco());
+        object.setLong("tco", (long)appCost.getTco());
         object.setDouble("utilization", appCost.getUtilization());
         object.setDouble("waste", appCost.getWaste());
         Cursor clustersObject = object.setObject("cluster");

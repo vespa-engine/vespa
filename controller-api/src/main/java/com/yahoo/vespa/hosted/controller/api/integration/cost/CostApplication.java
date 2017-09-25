@@ -1,65 +1,62 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.cost;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Cost data model for an application instance. I.e one running vespa application in one zone.
+ * Calcalute cost for for an application instance. I.e one running vespa application in one zone.
  *
  * @author smorgrav
  */
-// TODO: Make the Application own this and rename to Cost
-// TODO: Enforce constraints
-// TODO: Remove application id elements
 public class CostApplication {
 
-    /** This contains environment.region */
     private final Zone zone;
-
-    private final String tenant;
-    
-    // This must contain applicationName.instanceName. TODO: Fix
-    private final String app;
-
-    private final int tco;
+    private final ApplicationId appId;
     private final double utilization;
     private final double waste;
-    private final Map<String, CostCluster> cluster;
+    private final double tco;
 
+    private final Map<String, CostCluster> clusters;
     
-    public CostApplication(Zone zone, String tenant, String app, int tco, float utilization, float waste,
-                           Map<String, CostCluster> clusterCost) {
-        if (utilization < 0) throw new IllegalArgumentException("Utilization cannot be negative");
+    public CostApplication(Zone zone, ApplicationId appId, Map<String, CostCluster> clusterCosts) {
         this.zone = zone;
-        this.tenant = tenant;
-        this.app = app;
-        this.tco = tco;
-        this.utilization = utilization;
+        this.appId = appId;
+        clusters = new HashMap<>(clusterCosts);
+
+        double tco = 0;
+        double util = 0;
+        double waste = 0;
+
+        for (CostCluster costCluster : clusterCosts.values()) {
+            tco += costCluster.getTco();
+            waste += costCluster.getWaste();
+            int nodesInCluster = costCluster.getClusterInfo().getHostnames().size();
+            util = Math.max(util, nodesInCluster*costCluster.getResultUtilization().getMaxUtilization());
+        }
+
+        this.utilization = util;
         this.waste = waste;
-        cluster = new HashMap<>(clusterCost);
+        this.tco = tco;
     }
     
     public Zone getZone() {
         return zone;
     }
 
-    public String getApp() {
-        return app;
+    public ApplicationId getAppId() {
+        return appId;
     }
 
     public Map<String, CostCluster> getCluster() {
-        return cluster;
+        return clusters;
     }
 
-    public int getTco() {
+    public double getTco() {
         return tco;
-    }
-
-    public String getTenant() {
-        return tenant;
     }
 
     public double getUtilization() {
