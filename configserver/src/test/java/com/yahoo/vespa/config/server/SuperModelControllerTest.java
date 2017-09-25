@@ -2,22 +2,26 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.LbServicesConfig;
+import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications;
+import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.model.SuperModel;
-import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.model.VespaModel;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -43,13 +47,14 @@ public class SuperModelControllerTest {
 
     @Before
     public void setupHandler() throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> models = new LinkedHashMap<>();
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> models = new LinkedHashMap<>();
         models.put(TenantName.from("a"), new LinkedHashMap<>());
         File testApp = new File("src/test/resources/deploy/app");
         ApplicationId app = ApplicationId.from(TenantName.from("a"),
                                                ApplicationName.from("foo"), InstanceName.defaultName());
-        models.get(app.tenant()).put(app, new Application(new VespaModel(FilesApplicationPackage.fromFile(testApp)), new ServerCache(), 4l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app));
-        handler = new SuperModelController(new SuperModel(models, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
+        models.get(app.tenant()).put(app, new ApplicationInfo(app, 4l, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
+        SuperModel superModel = new SuperModel(models);
+        handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
     }
     
     @Test
@@ -77,7 +82,7 @@ public class SuperModelControllerTest {
 
     @Test
     public void test_lb_config_multiple_apps() throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, Application>> models = new LinkedHashMap<>();
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> models = new LinkedHashMap<>();
         models.put(TenantName.from("t1"), new LinkedHashMap<>());
         models.put(TenantName.from("t2"), new LinkedHashMap<>());
         File testApp1 = new File("src/test/resources/deploy/app");
@@ -86,13 +91,13 @@ public class SuperModelControllerTest {
         // TODO must fix equals, hashCode on Tenant
         Version vespaVersion = Version.fromIntValues(1, 2, 3);
         models.get(TenantName.from("t1")).put(applicationId("mysimpleapp"),
-                new Application(new VespaModel(FilesApplicationPackage.fromFile(testApp1)), new ServerCache(), 4l, vespaVersion, MetricUpdater.createTestUpdater(), applicationId("mysimpleapp")));
+                new ApplicationInfo(applicationId("mysimpleapp"), 4l, new VespaModel(FilesApplicationPackage.fromFile(testApp1))));
         models.get(TenantName.from("t1")).put(applicationId("myadvancedapp"),
-                new Application(new VespaModel(FilesApplicationPackage.fromFile(testApp2)), new ServerCache(), 4l, vespaVersion, MetricUpdater.createTestUpdater(), applicationId("myadvancedapp")));
+                new ApplicationInfo(applicationId("myadvancedapp"), 4l, new VespaModel(FilesApplicationPackage.fromFile(testApp2))));
         models.get(TenantName.from("t2")).put(applicationId("minetooadvancedapp"),
-                new Application(new VespaModel(FilesApplicationPackage.fromFile(testApp3)), new ServerCache(), 4l, vespaVersion, MetricUpdater.createTestUpdater(), applicationId("minetooadvancedapp")));
-
-        SuperModelController han = new SuperModelController(new SuperModel(models, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
+                new ApplicationInfo(applicationId("minetooadvancedapp"), 4l, new VespaModel(FilesApplicationPackage.fromFile(testApp3))));
+        SuperModel superModel = new SuperModel(models);
+        SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
         LbServicesConfig lbc = new LbServicesConfig(lb);

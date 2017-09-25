@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
-import com.yahoo.vespa.config.server.model.SuperModel;
+import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 
 import java.io.IOException;
@@ -28,12 +28,12 @@ import java.io.StringReader;
  */
 public class SuperModelController {
 
-    private final SuperModel model;
+    private final SuperModelConfigProvider model;
     private final long generation;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final ConfigResponseFactory responseFactory;
 
-    public SuperModelController(SuperModel model, ConfigDefinitionRepo configDefinitionRepo, long generation, ConfigResponseFactory responseFactory) {
+    public SuperModelController(SuperModelConfigProvider model, ConfigDefinitionRepo configDefinitionRepo, long generation, ConfigResponseFactory responseFactory) {
         this.model = model;
         this.configDefinitionRepo = configDefinitionRepo;
         this.generation = generation;
@@ -68,7 +68,7 @@ public class SuperModelController {
         }
     }
 
-    public SuperModel getSuperModel() {
+    public SuperModelConfigProvider getSuperModel() {
         return model;
     }
 

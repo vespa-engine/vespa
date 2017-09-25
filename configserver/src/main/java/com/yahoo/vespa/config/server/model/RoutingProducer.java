@@ -2,11 +2,11 @@
 package com.yahoo.vespa.config.server.model;
 
 import com.yahoo.cloud.config.RoutingConfig;
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 
 import java.util.Map;
@@ -20,20 +20,22 @@ import java.util.Map;
 public class RoutingProducer implements RoutingConfig.Producer {
     static final ApplicationName ROUTING_APPLICATION = ApplicationName.from("routing");
 
-    private final Map<TenantName, Map<ApplicationId, Application>> models;
+    private final Map<TenantName, Map<ApplicationId, ApplicationInfo>> models;
 
-    public RoutingProducer(Map<TenantName, Map<ApplicationId, Application>> models) {
+    public RoutingProducer(Map<TenantName, Map<ApplicationId, ApplicationInfo>> models) {
         this.models = models;
     }
 
     @Override
     public void getConfig(RoutingConfig.Builder builder) {
-        for (Map<ApplicationId, Application> model : models.values()) {
-            model.values().stream().filter(application -> isHostedVespaRoutingApplication(application.getId())).forEach(application -> {
-                for (HostInfo host : application.getModel().getHosts()) {
-                    builder.hosts(host.getHostname());
-                }
-            });
+        for (Map<ApplicationId, ApplicationInfo> model : models.values()) {
+            model.values().stream()
+                    .filter(application -> isHostedVespaRoutingApplication(application.getApplicationId()))
+                    .forEach(application -> {
+                        for (HostInfo host : application.getModel().getHosts()) {
+                            builder.hosts(host.getHostname());
+                        }
+                    });
         }
     }
 

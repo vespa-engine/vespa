@@ -11,10 +11,10 @@ public interface SuperModelListener {
      * Application has been activated: Either deployed the first time,
      * internally redeployed, or externally triggered redeploy.
      */
-    void applicationActivated(ApplicationInfo application);
+    void applicationActivated(SuperModel superModel, ApplicationId id);
 
     /**
      * Application has been removed.
      */
-    void applicationRemoved(ApplicationId id);
+    void applicationRemoved(SuperModel superModel, ApplicationId id);
 }
