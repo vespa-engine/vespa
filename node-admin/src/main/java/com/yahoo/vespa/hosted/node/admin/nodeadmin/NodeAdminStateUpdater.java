@@ -73,6 +73,7 @@ public class NodeAdminStateUpdater {
             Clock clock,
             Duration nodeAdminConvergeStateInterval,
             ClassLocking classLocking) {
+        log.info(objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.nodeAdmin = nodeAdmin;
@@ -83,12 +84,14 @@ public class NodeAdminStateUpdater {
         this.lastTick = clock.instant();
 
         this.loopThread = new Thread(() -> {
+            log.info(objectToString() + ": Acquiring lock");
             try {
                 classLock = classLocking.tryLock(NodeAdminStateUpdater.class, () -> !terminated.get());
             } catch (LockInterruptException e) {
                 return;
             }
 
+            log.info(objectToString() + ": Starting threads and schedulers");
             nodeAdmin.start();
             specVerifierScheduler.scheduleWithFixedDelay(() ->
                     updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
@@ -98,6 +101,10 @@ public class NodeAdminStateUpdater {
             }
         });
         this.loopThread.setName("tick-NodeAdminStateUpdater");
+    }
+
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
     public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
@@ -283,6 +290,7 @@ public class NodeAdminStateUpdater {
     }
 
     public void stop() {
+        log.info(objectToString() + ": Stop called");
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
@@ -307,8 +315,10 @@ public class NodeAdminStateUpdater {
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
 
+        log.info(objectToString() + ": Releasing lock");
         if (classLock != null) {
             classLock.close();
         }
+        log.info(objectToString() + ": Stop complete");
     }
 }

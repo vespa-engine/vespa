@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -43,13 +42,10 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
-    private final Logger log = Logger.getLogger(NodeAdminProvider.class.getName());
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
     @Inject
     public NodeAdminProvider(Docker docker, MetricReceiverWrapper metricReceiver, ClassLocking classLocking) {
-        log.info(objectToString() + ": Creating object");
-
         Clock clock = Clock.systemUTC();
         String dockerHostHostName = HostName.getLocalhost();
         ProcessExecuter processExecuter = new ProcessExecuter();
@@ -82,13 +78,6 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     @Override
     public void deconstruct() {
-        log.info(objectToString() + ": Stop called");
         nodeAdminStateUpdater.stop();
-        log.info(objectToString() + ": Stop complete");
-    }
-
-
-    private String objectToString() {
-        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 }
