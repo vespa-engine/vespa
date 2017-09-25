@@ -15,6 +15,8 @@ namespace queryeval {
 class WeightedSetTermBlueprint : public ComplexLeafBlueprint
 {
     HitEstimate             _estimate;
+    fef::MatchDataLayout    _layout;
+    FieldSpec               _children_field;
     std::vector<int32_t>    _weights;
     std::vector<Blueprint*> _terms;
 
@@ -27,18 +29,16 @@ public:
 
     // used by create visitor
     // matches signature in dot product blueprint for common blueprint
-    // building code. Hands out its own field spec to children. NOTE:
-    // this is only ok since children will never be unpacked.
-    FieldSpec getNextChildField(const FieldSpec &outer) { return outer; }
+    // building code. Hands out the same field spec to all children.
+    FieldSpec getNextChildField(const FieldSpec &) { return _children_field; }
 
     // used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    SearchIteratorUP createSearch(search::fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
 private:
-    SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override;
     void fetchPostings(bool strict) override;
 };
 

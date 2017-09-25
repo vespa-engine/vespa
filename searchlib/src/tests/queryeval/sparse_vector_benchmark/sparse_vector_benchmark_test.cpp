@@ -234,7 +234,7 @@ struct WeightedSetFactory : SparseVectorFactory {
             terms.push_back(childFactory.createChild(i, limit));
             weights.push_back(default_weight);
         }
-        return WeightedSetTermSearch::create(terms, tfmd, weights);
+        return WeightedSetTermSearch::create(terms, tfmd, weights, MatchData::UP(nullptr));
     }
 };
 

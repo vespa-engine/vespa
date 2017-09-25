@@ -7,7 +7,9 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/fake_result.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
@@ -121,7 +123,7 @@ struct MockFixture {
         mock = new MockSearch(initial);
         children.push_back(mock);
         weights.push_back(1);
-        search.reset(WeightedSetTermSearch::create(children, tfmd, weights));
+        search.reset(WeightedSetTermSearch::create(children, tfmd, weights, MatchData::UP(nullptr)));
     }
 };
 
@@ -192,7 +194,7 @@ TEST_F("test Eager Matching Child", MockFixture(5)) {
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
 private:
     SearchIterator::UP create(const std::vector<SearchIterator*> &children) const override {
-        return SearchIterator::UP(WeightedSetTermSearch::create(children, _tfmd, _weights));
+        return SearchIterator::UP(WeightedSetTermSearch::create(children, _tfmd, _weights, MatchData::UP(nullptr)));
     }
 };
 
@@ -211,6 +213,47 @@ TEST("verify search iterator conformance with search iterator children") {
 TEST("verify search iterator conformance with document weight iterator children") {
     WeightIteratorChildrenVerifier verifier;
     verifier.verify();
+}
+
+struct VerifyMatchData {
+    struct MyBlueprint : search::queryeval::SimpleLeafBlueprint {
+        VerifyMatchData &vmd;
+        MyBlueprint(VerifyMatchData &vmd_in, FieldSpec spec_in)
+            : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
+        SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override {
+            EXPECT_EQUAL(tfmda.size(), 1u);
+            EXPECT_TRUE(tfmda[0] != nullptr);
+            if (vmd.child_tfmd == nullptr) {
+                vmd.child_tfmd = tfmda[0];
+            } else {
+                EXPECT_EQUAL(vmd.child_tfmd, tfmda[0]);
+            }
+            ++vmd.child_cnt;
+            return std::make_unique<EmptySearch>();
+        }
+    };
+    size_t child_cnt = 0;
+    TermFieldMatchData *child_tfmd = nullptr;
+    search::queryeval::Blueprint::UP create(const FieldSpec &spec) {
+        return std::make_unique<MyBlueprint>(*this, spec);
+    }
+};
+
+TEST("require that children get a common (yet separate) term field match data") {
+    VerifyMatchData vmd;
+    MatchDataLayout layout;
+    auto top_handle = layout.allocTermField(42);
+    FieldSpec top_spec("foo", 42, top_handle);
+    WeightedSetTermBlueprint blueprint(top_spec);
+    for (size_t i = 0; i < 5; ++i) {
+        blueprint.addTerm(vmd.create(blueprint.getNextChildField(top_spec)), 1);
+    }
+    auto match_data = layout.createMatchData();
+    auto search = blueprint.createSearch(*match_data, true);
+    auto top_tfmd = match_data->resolveTermField(top_handle);
+    EXPECT_EQUAL(vmd.child_cnt, 5u);
+    EXPECT_TRUE(vmd.child_tfmd != nullptr);
+    EXPECT_NOT_EQUAL(top_tfmd, vmd.child_tfmd);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
