@@ -105,6 +105,14 @@
                                         <include>org.slf4j:slf4j-api:1.7.5:jar:provided</include>
                                         <include>org.slf4j:slf4j-jdk14:1.7.5:jar:provided</include>
                                         <include>xml-apis:xml-apis:1.4.01:jar:provided</include>
+
+                                        <!-- TODO: Remove the deps below when all environments use maven >= 3.3 -->
+                                        <include>org.scala-lang:scala-library:2.11.4:jar:provided</include>
+                                        <include>commons-lang:commons-lang:2.6:jar:provided</include>
+                                        <include>org.apache.commons:commons-exec:1.3:jar:provided</include>
+                                        <include>org.antlr:antlr-runtime:3.5.2:jar:provided</include>
+                                        <include>log4j:log4j:1.2.16:jar:provided</include>
+                                        <include>commons-collections:commons-collections:3.2.1:jar:provided</include>
                                     </includes>
                                 </bannedDependencies>
                             </rules>
