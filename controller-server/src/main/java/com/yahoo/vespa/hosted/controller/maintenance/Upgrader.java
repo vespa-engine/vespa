@@ -2,10 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -14,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,19 +34,13 @@ public class Upgrader extends Maintainer {
     public void maintain() {
         VespaVersion target = controller().versionStatus().version(controller().systemVersion());
         if (target == null) return; // we don't have information about the current system version at this time
-
-        // TODO: Remove corp-prod special casing when corp-prod and main are upgraded at the same time
-        if (Vtag.currentVersion.isAfter(target.versionNumber())) {
-            upgrade(applications().deploysTo(Environment.prod, RegionName.from("corp-us-east-1")).with(UpgradePolicy.canary),
-                    Vtag.currentVersion);
-        }
         
         switch (target.confidence()) {
             case broken:
                 ApplicationList toCancel = applications().upgradingTo(target.versionNumber())
                                                          .without(UpgradePolicy.canary);
                 if (toCancel.isEmpty()) break;
-                log.info("Version " + target.versionNumber() + " is broken, cancelling all upgrades");
+                log.info("Version " + target.versionNumber() + " is broken, cancelling upgrades of non-canaries");
                 cancelUpgradesOf(toCancel);
                 break;
             case low:
