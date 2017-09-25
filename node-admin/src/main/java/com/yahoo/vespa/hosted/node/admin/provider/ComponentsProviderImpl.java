@@ -2,11 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.net.HostName;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -24,63 +23,54 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
-import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
-import java.util.Set;
+import java.time.Duration;
 import java.util.function.Function;
+import java.util.logging.Logger;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Set up node admin for production.
  *
  * @author dybis
  */
-public class ComponentsProviderImpl implements ComponentsProvider {
-    private static final ContainerName NODE_ADMIN_CONTAINER_NAME = new ContainerName("node-admin");
+public class ComponentsProviderImpl extends AbstractComponent implements ComponentsProvider {
 
-    private final NodeAdminStateUpdater nodeAdminStateUpdater;
-    private final MetricReceiverWrapper metricReceiverWrapper;
-
-    private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
     private static final int WEB_SERVICE_PORT = getDefaults().vespaWebServicePort();
+    private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
+    private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
-    // Converge towards desired node admin state every 30 seconds
-    private static final int NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS = 30000;
+    private final Logger log = Logger.getLogger(ComponentsProviderImpl.class.getName());
+    private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
     @Inject
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver) {
-        String baseHostName = HostName.getLocalhost();
-        Environment environment = new Environment();
-        Set<String> configServerHosts = environment.getConfigServerHosts();
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
+        log.info(objectToString() + ": Creating object");
 
         Clock clock = Clock.systemUTC();
+        String dockerHostHostName = HostName.getLocalhost();
         ProcessExecuter processExecuter = new ProcessExecuter();
-        ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
-        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
-        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
+        Environment environment = new Environment();
+
+        ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(environment.getConfigServerHosts());
+        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT);
+        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor, WEB_SERVICE_PORT);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
         StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock);
-        AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, baseHostName);
+        AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, dockerHostHostName);
 
         Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, aclMaintainer, environment, clock);
+                        storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
-                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, clock);
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, storageMaintainer, clock, orchestrator, baseHostName);
-        nodeAdminStateUpdater.start(NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS);
+                metricReceiver, clock);
 
-        metricReceiverWrapper = metricReceiver;
-
-        setCorePattern(docker);
-        initializeNodeAgentSecretAgent(docker);
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator, storageMaintainer, nodeAdmin,
+                dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
+        nodeAdminStateUpdater.start();
     }
 
     @Override
@@ -89,30 +79,14 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     }
 
     @Override
-    public MetricReceiverWrapper getMetricReceiverWrapper() {
-        return metricReceiverWrapper;
+    public void deconstruct() {
+        log.info(objectToString() + ": Stop called");
+        nodeAdminStateUpdater.stop();
+        log.info(objectToString() + ": Stop complete");
     }
 
 
-    private void setCorePattern(Docker docker) {
-        final String[] sysctlCorePattern = {"sysctl", "-w", "kernel.core_pattern=" +
-                                            getDefaults().underVespaHome("var/crash/%e.core.%p")};
-        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, sysctlCorePattern);
-    }
-
-    private void initializeNodeAgentSecretAgent(Docker docker) {
-        final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
-        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "chmod", "a+w", yamasAgentFolder.toString());
-
-        Path nodeAdminCheckPath = Paths.get("/usr/bin/curl");
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("node-admin", 60, nodeAdminCheckPath,
-                "localhost:4080/rest/metrics");
-
-        try {
-            scheduleMaker.writeTo(yamasAgentFolder);
-            docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "service", "yamas-agent", "restart");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write secret-agent schedules for node-admin", e);
-        }
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 }

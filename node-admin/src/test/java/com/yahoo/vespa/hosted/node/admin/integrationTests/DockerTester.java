@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.function.Function;
 
 import static org.mockito.Matchers.any;
@@ -32,6 +33,9 @@ import static org.mockito.Mockito.when;
  */
 // Need to deconstruct nodeAdminStateUpdater
 public class DockerTester implements AutoCloseable {
+    private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
+    private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(10);
+
     final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     final Docker dockerMock = new DockerMock(callOrderVerifier);
     final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
@@ -40,7 +44,7 @@ public class DockerTester implements AutoCloseable {
     private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
 
 
-    public DockerTester() {
+    DockerTester() {
         InetAddressResolver inetAddressResolver = mock(InetAddressResolver.class);
         try {
             when(inetAddressResolver.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
@@ -57,21 +61,21 @@ public class DockerTester implements AutoCloseable {
 
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
+        DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
-                orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock);
-        nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, 100, mr, Clock.systemUTC());
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, storageMaintainer,
-                clock, orchestratorMock, "basehostname");
-        nodeAdminStateUpdater.start(5);
+                orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
+        nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, orchestratorMock, storageMaintainer,
+                nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
+        nodeAdminStateUpdater.start();
     }
 
-    public void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
+    void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
         nodeRepositoryMock.updateContainerNodeSpec(containerNodeSpec);
     }
 
     @Override
     public void close() {
-        nodeAdminStateUpdater.deconstruct();
+        nodeAdminStateUpdater.stop();
     }
 }

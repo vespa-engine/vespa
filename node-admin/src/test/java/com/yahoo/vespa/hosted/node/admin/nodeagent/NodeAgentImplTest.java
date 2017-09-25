@@ -57,6 +57,7 @@ import static org.mockito.Mockito.when;
  * @author bakksjo
  */
 public class NodeAgentImplTest {
+    private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final double MIN_CPU_CORES = 2;
     private static final double MIN_MAIN_MEMORY_AVAILABLE_GB = 16;
     private static final double MIN_DISK_AVAILABLE_GB = 250;
@@ -621,6 +622,6 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
         return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, aclMaintainer, environment, clock);
+                storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
     }
 }

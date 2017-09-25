@@ -64,20 +64,20 @@ public class NodeAgentImpl implements NodeAgent {
     private final PrefixLogger logger;
     private DockerImage imageBeingDownloaded = null;
 
-    private final String hostname;
     private final ContainerName containerName;
+    private final String hostname;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final StorageMaintainer storageMaintainer;
+    private final AclMaintainer aclMaintainer;
     private final Environment environment;
     private final Clock clock;
-    private final AclMaintainer aclMaintainer;
+    private final Duration timeBetweenEachConverge;
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final LinkedList<String> debugMessages = new LinkedList<>();
 
-    private long delaysBetweenEachConvergeMillis = 30_000;
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
 
@@ -85,7 +85,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
-    private final Consumer<String> serviceRestarter;
+    private Consumer<String> serviceRestarter;
     private Future<?> currentFilebeatRestarter;
 
     private boolean resumeScriptRun = false;
@@ -117,7 +117,8 @@ public class NodeAgentImpl implements NodeAgent {
             final StorageMaintainer storageMaintainer,
             final AclMaintainer aclMaintainer,
             final Environment environment,
-            final Clock clock) {
+            final Clock clock,
+            final Duration timeBetweenEachConverge) {
         this.containerName = ContainerName.fromHostname(hostName);
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.hostname = hostName;
@@ -128,19 +129,8 @@ public class NodeAgentImpl implements NodeAgent {
         this.aclMaintainer = aclMaintainer;
         this.environment = environment;
         this.clock = clock;
+        this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
-        this.serviceRestarter = service -> {
-            try {
-                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        containerName, "service", service, "restart");
-
-                if (!processResult.isSuccess()) {
-                    logger.error("Failed to restart service " + service + ": " + processResult);
-                }
-            } catch (Exception e) {
-                logger.error("Failed to restart service " + service, e);
-            }
-        };
     }
 
     @Override
@@ -183,11 +173,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void start(int intervalMillis) {
-        String message = "Starting with interval " + intervalMillis + " ms";
+    public void start() {
+        String message = "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms";
         logger.info(message);
         addDebugMessage(message);
-        delaysBetweenEachConvergeMillis = intervalMillis;
+
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
         }
@@ -197,6 +187,19 @@ public class NodeAgentImpl implements NodeAgent {
         });
         loopThread.setName("tick-" + hostname);
         loopThread.start();
+
+        serviceRestarter = service -> {
+            try {
+                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
+                        containerName, "service", service, "restart");
+
+                if (!processResult.isSuccess()) {
+                    logger.error("Failed to restart service " + service + ": " + processResult);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to restart service " + service, e);
+            }
+        };
     }
 
     @Override
@@ -207,19 +210,15 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
         signalWorkToBeDone();
-        try {
-            loopThread.join(10000);
-            if (loopThread.isAlive()) {
-                logger.error("Could not stop host thread " + hostname);
+
+        do {
+            try {
+                loopThread.join();
+                filebeatRestarter.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                logger.error("Interrupted while waiting for converge thread and filebeatRestarter scheduler to shutdown");
             }
-        } catch (InterruptedException e1) {
-            logger.error("Interrupted; Could not stop host thread " + hostname);
-        }
-        try {
-            filebeatRestarter.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            logger.error("Interrupted; Could not stop filebeatrestarter thread");
-        }
+        } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
 
         logger.info("Stopped");
     }
@@ -375,7 +374,7 @@ public class NodeAgentImpl implements NodeAgent {
         boolean isFrozenCopy;
         synchronized (monitor) {
             while (!workToDoNow) {
-                long remainder = delaysBetweenEachConvergeMillis - Duration.between(lastConverge, clock.instant()).toMillis();
+                long remainder = timeBetweenEachConverge.minus(Duration.between(lastConverge, clock.instant())).toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);
