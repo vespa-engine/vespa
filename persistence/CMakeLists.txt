@@ -29,3 +29,7 @@ vespa_define_module(
     src/tests/proxy
     src/tests/spi
 )
+
+install_fat_java_artifact(persistence)
+install(FILES persistence/src/main/resources/configdefinitions/persistence-rpc.def RENAME persistence.persistence-rpc.def
+        DESTINATION var/db/vespa/config_server/serverdb/classes)

@@ -1,10 +1,4 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_define_module(
-    LIBS
-    src/vespa
+install_fat_java_artifact(jdisc_core)
 
-    APPS
-    src/apps/printdefault
-)
-
-install_fat_java_artifact(defaults)
+install(FILES src/main/perl/vespa-jdisc-logfmt.1 DESTINATION man/man1)
