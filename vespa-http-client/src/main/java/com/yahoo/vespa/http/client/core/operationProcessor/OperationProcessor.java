@@ -192,13 +192,10 @@ public class OperationProcessor {
         final Result result = process(endpointResult, clusterId);
 
         if (result != null) {
-            try {
-                resultCallback.onCompletion(result.getDocumentId(), result);
-                if (traceToStderr && result.hasLocalTrace()) {
-                    System.err.println(result.toString());
-                }
-            } finally {
-                incompleteResultsThrottler.resultReady(result.isSuccess());
+            incompleteResultsThrottler.resultReady(result.isSuccess());
+            resultCallback.onCompletion(result.getDocumentId(), result);
+            if (traceToStderr && result.hasLocalTrace()) {
+                System.err.println(result.toString());
             }
         }
     }
