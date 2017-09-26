@@ -402,6 +402,11 @@ writefilter.sampleinterval double default = 60.0
 ## The disk size is used when determining if feed should be blocked in writefilter.
 hwinfo.disk.size long default = 0
 
+## Whether the disk partition is shared among several instances of proton (e.g. when using docker).
+## If shared, disk usage is sampled by doing a recursive directory scan in proton basedir.
+## If not, disk usage is sampled by looking at the filesystem space info.
+hwinfo.disk.shared bool default = false
+
 ## Override for disk write speed, measured in MiB/s. When zero, the
 ## actual disk write speed is sampled by writing data to a temporary file.
 hwinfo.disk.writespeed double default = 200.0
