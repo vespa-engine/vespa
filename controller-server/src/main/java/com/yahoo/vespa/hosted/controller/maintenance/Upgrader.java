@@ -68,6 +68,7 @@ public class Upgrader extends Maintainer {
         applications = applications.notDeployingApplication(); // wait with applications deploying an application change
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.notRunningJobFor(change); // do not trigger multiple jobs simultaneously for same upgrade
+        applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         for (Application application : applications.byIncreasingDeployedVersion().asList()) {
             try {
                 controller().applications().deploymentTrigger().triggerChange(application.id(), change);

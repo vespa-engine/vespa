@@ -28,6 +28,7 @@ public class ApplicationPackageBuilder {
     private Environment environment = Environment.prod;
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
+    private final StringBuilder blockUpgrade = new StringBuilder();
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
         this.upgradePolicy = upgradePolicy;
@@ -60,6 +61,17 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder blockUpgrade(String daySpec, String hourSpec, String zoneSpec) {
+        blockUpgrade.append("  <block-upgrade days=\"");
+        blockUpgrade.append(daySpec);
+        blockUpgrade.append("\" hours=\"");
+        blockUpgrade.append(hourSpec);
+        blockUpgrade.append("\" time-zone=\"");
+        blockUpgrade.append(zoneSpec);
+        blockUpgrade.append("\"/>\n");
+        return this;
+    }
+
     public ApplicationPackageBuilder allow(ValidationId validationId) {
         validationOverridesBody.append("  <allow until='");
         validationOverridesBody.append(asIso8601Date(Instant.now().plus(Duration.ofDays(29))));
@@ -76,6 +88,7 @@ public class ApplicationPackageBuilder {
             xml.append(upgradePolicy);
             xml.append("'/>\n");
         }
+        xml.append(blockUpgrade);
         xml.append("  <");
         xml.append(environment.value());
         xml.append(">\n");

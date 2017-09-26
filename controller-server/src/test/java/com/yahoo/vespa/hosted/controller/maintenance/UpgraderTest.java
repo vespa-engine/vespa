@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -12,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -358,6 +361,43 @@ public class UpgraderTest {
         tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default3, false);
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
+    }
+
+    @Test
+    public void testConsidersBlockUpgradeWindow() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T18:00:00.00Z")); // A tuesday
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                // Block upgrades on tuesday in hours 18 and 19
+                .blockUpgrade("tue", "18-19", "UTC")
+                .region("us-west-1")
+                .build();
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        // New version is released
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+
+        // Application is not upgraded at this time
+        tester.upgrader().maintain();
+        assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
+
+        // One hour passes, time is 19:00, still no upgrade
+        tester.clock().advance(Duration.ofHours(1));
+        tester.upgrader().maintain();
+        assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
+
+        // Two hours pass in total, time is 20:00 and application upgrades
+        tester.clock().advance(Duration.ofHours(1));
+        tester.upgrader().maintain();
+        assertFalse("Job is scheduled", tester.buildSystem().jobs().isEmpty());
+        tester.completeUpgrade(app, version, "canary");
+        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
 
 }

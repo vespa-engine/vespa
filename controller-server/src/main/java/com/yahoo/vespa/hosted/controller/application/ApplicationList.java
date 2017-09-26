@@ -111,6 +111,11 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> ! a.id().instance().value().startsWith("default-pr")));
     }
 
+    /** Returns the subset of applications that are allowed to upgrade at the given time */
+    public ApplicationList canUpgradeAt(Instant instant) {
+        return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
+    }
+
      // ----------------------------------- Sorting
 
     /**
