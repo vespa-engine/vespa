@@ -250,7 +250,7 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    auto rejected = _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequest(req);}));
+    auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req]() { doRequest(req);}));
     assert(!rejected);
 }
 
