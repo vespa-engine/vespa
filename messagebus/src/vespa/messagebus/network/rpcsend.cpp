@@ -147,6 +147,11 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
+    _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequestDone(req);}));
+}
+
+void
+RPCSend::doRequestDone(FRT_RPCRequest *req) {
     SendContext::UP ctx(static_cast<SendContext*>(req->GetContext()._value.VOIDP));
     const string &serviceName = static_cast<RPCServiceAddress&>(ctx->getRecipient().getServiceAddress()).getServiceName();
     Reply::UP reply;
