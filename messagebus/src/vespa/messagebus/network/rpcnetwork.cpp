@@ -382,10 +382,11 @@ RPCNetwork::sync()
 void
 RPCNetwork::shutdown()
 {
-    _executor->shutdown();
     _executor->sync();
     _transport->ShutDown(false);
     _threadPool->Close();
+    _executor->shutdown();
+    _executor->sync();
 }
 
 void
