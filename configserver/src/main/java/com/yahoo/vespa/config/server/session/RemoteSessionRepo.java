@@ -139,7 +139,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         return sessions;
     }
 
-    synchronized void sessionsChanged() throws NumberFormatException {
+    private synchronized void sessionsChanged() throws NumberFormatException {
         List<Long> sessions = getSessionList(directoryCache.getCurrentData());
         checkForRemovedSessions(sessions);
         checkForAddedSessions(sessions);
@@ -236,6 +236,9 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             case CHILD_REMOVED:
                 sessionsChanged();
                 break;
+            case CONNECTION_RECONNECTED:
+                sessionsChanged();
+                break;
         }
     }
 
@@ -245,7 +248,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             if (session == null) continue; // session might have been deleted after getting session list
             log.log(LogLevel.DEBUG, session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
-
         }
     }
 }
