@@ -11,25 +11,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Calculate cost, hardware utilization and waste for applications.
+ * Calculate cost, hardware utilization and waste for Vespa.
  * <p>
  * Cost refers to the total cost ownership aka TCO.
  * <p>
  * We define a target utilization for each cluster in an application and compares this
- * to the actual utilization to get a number for ideal cost (if ideally scaled) and waste.
- * <p>
- * The target utilization is defined with the following in mind:
- * 1 Application stats to see contention on CPU above 80%
- * 2 It is scaled for a 50/50 load balancing between two zones (thus must be able to serve the other zone)
- * 3 Peaks are 2x average wrt CPU
- * 4 Memory contention is rising when over 80%
+ * to the actual utilization. Cost is then the TCO for the hardware used multiplied with
+ * the relative utilization. Waste is the difference between target and ideal cost.
  *
  * @author smorgrav
  */
 public interface Cost {
 
     /**
-     * Get application costs for all applications across all zones
+     * Get application costs for all applications across all zones.
      *
      * @return A list of all application costs in all zones
      */
@@ -51,11 +46,11 @@ public interface Cost {
     }
 
     /**
-     * Get application costs for a specific application deployement
+     * Get application costs for a specific application.
      *
      * @param zone The zone - the combination of a environment and region e.g 'test.us-east-1'
      * @param app  ApplicationId e.g tenant:application:instance
-     * @return A list of applications cost in given zone
+     * @return The cost of one application
      */
     default CostApplication getApplicationCost(Zone zone, ApplicationId app)
             throws NotFoundCheckedException {
@@ -73,14 +68,26 @@ public interface Cost {
     }
 
     /**
-     * Provides target utilization - default targets ARE XXX
+     * Provides target utilization - default targets are cased on the following assumptions:
+     *
+     * 1. CPU contention starts to be noticeable at 80% and spikes are 2x average
+     * 2. Query load is perfectly load-balanced between two zones, cpu needs to handle fail-over - thus 2x load
+     * 3. Memory contention (and especially sys cpu usage from memory management) increases after 90%
+     * 4. Memory consumptions spikes over average with ~20%
+     * 5. Memory and disk usage is independent of query load
+     *
+     * The default targets are:
+     * CPU: 0.2
+     * MEM: 0.7
+     * DISK: 0.7
+     * DISKBUSY: 0.3
      *
      * @param zone The zone - the combination of a environment and region e.g 'test.us-east-1'
      * @param app  ApplicationId e.g tenant:application:instance
      * @return Target utilization
      */
     default CostResources getTargetUtilization(Zone zone, ApplicationId app) {
-        return new CostResources(0.8, 0.3, 0.4, 0.3);
+        return new CostResources(0.7, 0.2, 0.7, 0.3);
     }
 
     /**
@@ -90,18 +97,16 @@ public interface Cost {
 
     /**
      * Provides information about the clusters in the application like
-     * what hardware that it is using, the TCO for the hardware and number of hosts.
+     * what hardware that it is using, the TCO for the hardware and the hostnames in the cluster.
      *
      * @param zone The zone - the combination of a environment and region e.g 'test.us-east-1'
      * @param app  ApplicationId e.g tenant:application:instance
-     * @return Map between clusterid -> costclusterinfo
+     * @return Map between clusterid -> info
      */
     Map<String, CostClusterInfo> getClusterInfo(Zone zone, ApplicationId app);
 
     /**
-     * Provides ratio of available hardware used.
-     * <p>
-     * Used to calculate the utilization of the hardware.
+     * Provides the ratio of available hardware used (e.g cpu, mem, disk) each in the range: [0,1].
      *
      * @param zone The zone - the combination of a environment and region e.g 'test.us-east-1'
      * @param app  ApplicationId e.g tenant:application:instance

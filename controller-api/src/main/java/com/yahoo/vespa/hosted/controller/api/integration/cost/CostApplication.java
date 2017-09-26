@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Calcalute cost for for an application instance. I.e one running vespa application in one zone.
+ * Calculates cost for for an application instance.
  *
  * @author smorgrav
  */

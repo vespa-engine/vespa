@@ -6,9 +6,8 @@ import com.yahoo.config.provision.Flavor;
 import java.util.List;
 
 /**
- * Value object of static cluster information.
- *
- * Used to calculate cost and annotate results.
+ * Value object of static cluster information, in particular the TCO
+ * of the hardware used for this cluster.
  *
  * @author smorgrav
  */

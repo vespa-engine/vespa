@@ -2,8 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.cost;
 
 /**
- * Calculate tco, waste and result utilization
- * for one cluster within one Vespa application in one zone.
+ * Calculate tco and waste for one cluster within one Vespa application in one zone.
  *
  * @author smorgrav
  */
@@ -16,9 +15,9 @@ public class CostCluster {
     private final CostResources resultUtilization;
 
     /**
-     * @param clusterInfo       Value object with cluster info e.g. hardware tco
-     * @param systemUtilization Utilization of system resources (in percentage)
-     * @param targetUtilization Target utilization (usually < 1.0)
+     * @param clusterInfo       Value object with cluster info e.g. the TCO for the hardware used
+     * @param systemUtilization Utilization of system resources (as ratios)
+     * @param targetUtilization Target utilization (ratios - usually < 1.0)
      */
     public CostCluster(CostClusterInfo clusterInfo,
                        CostResources systemUtilization,
@@ -58,15 +57,15 @@ public class CostCluster {
     }
 
     static CostResources calculateResultUtilization(CostResources system, CostResources target) {
-        double cpu = system.getCpu()/target.getCpu();
-        double mem = system.getMemory()/target.getMemory();
-        double disk = system.getDisk()/target.getDisk();
-        double diskbusy = system.getDiskBusy()/target.getDiskBusy();
+        double cpu = ratio(system.getCpu(),target.getCpu());
+        double mem = ratio(system.getMemory(),target.getMemory());
+        double disk = ratio(system.getDisk(),target.getDisk());
+        double diskbusy = ratio(system.getDiskBusy(),target.getDiskBusy());
 
         return new CostResources(mem, cpu, disk, diskbusy);
     }
 
-    static double ration(double a, double b) {
+    private static double ratio(double a, double b) {
         if (b == 0) return 1;
         return a/b;
     }
