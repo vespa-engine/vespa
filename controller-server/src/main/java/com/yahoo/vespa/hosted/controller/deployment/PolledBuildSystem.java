@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Stores a queue for each type of job, and offers jobs from each of these to a periodic
@@ -21,6 +23,8 @@ import java.util.List;
  * @author mpolden
  */
 public class PolledBuildSystem implements BuildSystem {
+
+    private static final Logger log = Logger.getLogger(PolledBuildSystem.class.getName());
 
     private final Controller controller;
 
@@ -77,7 +81,14 @@ public class PolledBuildSystem implements BuildSystem {
                 Deque<ApplicationId> queue = curator.readJobQueue(jobType);
                 for (ApplicationId a : queue) {
                     ApplicationId application = removeFromQueue ? queue.poll() : a;
-                    jobsToRun.add(new BuildJob(projectIdFor(application), jobType.id()));
+
+                    Optional<Long> projectId = projectId(application);
+                    if (projectId.isPresent()) {
+                        jobsToRun.add(new BuildJob(projectId.get(), jobType.id()));
+                    } else {
+                        log.warning("Not queuing " + jobType.id() + " for " + application.toShortString() +
+                                    " because project ID is missing");
+                    }
 
                     // Return only one job at a time for capacity constrained queues
                     if (removeFromQueue && isCapacityConstrained(jobType)) break;
@@ -89,8 +100,8 @@ public class PolledBuildSystem implements BuildSystem {
         }
     }
 
-    private Long projectIdFor(ApplicationId applicationId) {
-        return controller.applications().require(applicationId).deploymentJobs().projectId().get();
+    private Optional<Long> projectId(ApplicationId applicationId) {
+        return controller.applications().require(applicationId).deploymentJobs().projectId();
     }
 
     private static boolean isCapacityConstrained(JobType jobType) {
