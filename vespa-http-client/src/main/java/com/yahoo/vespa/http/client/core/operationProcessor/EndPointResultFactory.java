@@ -18,11 +18,11 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 @Beta
 public final class EndPointResultFactory {
+
     private static Logger log = Logger.getLogger(EndPointResultFactory.class.getName());
 
     private static final String EMPTY_MESSAGE = "-";

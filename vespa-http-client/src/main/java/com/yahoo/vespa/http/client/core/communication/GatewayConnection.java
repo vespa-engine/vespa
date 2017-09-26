@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface GatewayConnection {
+
     InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException;
 
     InputStream drain() throws ServerResponseException, IOException;
@@ -20,4 +21,5 @@ public interface GatewayConnection {
     void handshake() throws ServerResponseException, IOException;
 
     void close();
+
 }

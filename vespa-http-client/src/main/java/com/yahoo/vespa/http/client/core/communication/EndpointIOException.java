@@ -7,9 +7,11 @@ import java.io.IOException;
 
 /**
  * Class for throwing exception from endpoint.
+ *
  * @author dybis
 */
 public class EndpointIOException extends IOException {
+
     private final Endpoint endpoint;
     private static final long serialVersionUID = 29335813211L;
 
@@ -21,4 +23,5 @@ public class EndpointIOException extends IOException {
     public Endpoint getEndpoint() {
         return endpoint;
     }
+
 }

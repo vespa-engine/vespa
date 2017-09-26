@@ -29,11 +29,12 @@ import java.util.logging.Logger;
 
 /**
  * Merges several endpointResult into one Result and does the callback.
+ *
  * @author dybis
- * @since 5.1.20
  */
 @Beta
 public class OperationProcessor {
+
     private static final Logger log = Logger.getLogger(OperationProcessor.class.getName());
     private final Map<String, DocumentSendInfo> docSendInfoByOperationId = new HashMap<>();
     private final ArrayListMultimap<String, Document> blockedDocumentsByDocumentId = ArrayListMultimap.create();
@@ -244,12 +245,10 @@ public class OperationProcessor {
         try {
             clusterConnection.post(document);
         } catch (EndpointIOException eio) {
-            resultReceived(
-                    EndPointResultFactory.createError(
-                            eio.getEndpoint(),
-                            document.getOperationId(),
-                            eio),
-                    clusterConnection.getClusterId());
+            resultReceived(EndPointResultFactory.createError(eio.getEndpoint(),
+                                                             document.getOperationId(),
+                                                             eio),
+                                                             clusterConnection.getClusterId());
         }
     }
 
@@ -298,4 +297,5 @@ public class OperationProcessor {
             throw new RuntimeException("Did not manage to shut down retry threads. Please report problem.");
         }
     }
+
 }

@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Commandline interface for the binary.
+ *
  * @author dybis
  */
 @Beta
@@ -28,6 +29,7 @@ public class CommandLineArguments {
 
     /**
      * Creates a CommandLineArguments instance and populates it with data.
+     *
      * @param args array of arguments.
      * @return null on failure or if help option is set to true.
      */
@@ -223,4 +225,5 @@ public class CommandLineArguments {
         }
         return builder.build();
     }
+
 }

@@ -14,11 +14,11 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @author dybis
- * @since 5.1.20
  */
 public class Runner {
+
     /**
      * Feed data from inputFile to session.
      * @param feedClient where to send data to

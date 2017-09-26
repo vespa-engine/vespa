@@ -57,4 +57,5 @@ public class DryRunGatewayConnection implements GatewayConnection {
 
     @Override
     public void close() { }
+
 }

@@ -11,11 +11,11 @@ import java.util.List;
 /**
  * A set of {@link Endpoint} instances. Construct using {@link Cluster.Builder}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 @Immutable
 public final class Cluster {
+
     /**
      * Builder for {@link Cluster}.
      */
@@ -73,6 +73,5 @@ public final class Cluster {
     public String toString() {
         return "Cluster " + endpoints + ", route " + route;
     }
-
 
 }

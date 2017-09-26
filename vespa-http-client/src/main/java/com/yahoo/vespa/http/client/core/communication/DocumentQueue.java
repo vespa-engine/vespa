@@ -13,10 +13,13 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Document queue that only gives you document operations on documents for which there are no already in flight operations for.
+ * Document queue that only gives you document operations on documents for which there are no 
+ * already in flight operations for.
+ *
  * @author dybis
  */
 class DocumentQueue {
+
     private final Deque<Document> queue;
     private final int maxSize;
     private boolean closed = false;
@@ -119,4 +122,5 @@ class DocumentQueue {
             return Optional.empty();
         }
     }
+
 }

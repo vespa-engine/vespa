@@ -13,11 +13,11 @@ import java.util.concurrent.BlockingQueue;
  *
  * A {@link SessionFactory} is provided to instantiate Sessions.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  * @see SessionFactory
  */
 public interface Session extends AutoCloseable {
+
     /**
      * Returns an OutputStream that can be used to write ONE operation, identified by the
      * given document ID. The data format must match the
@@ -33,7 +33,7 @@ public interface Session extends AutoCloseable {
      * @param documentId the unique ID identifying this operation in the system
      * @return an OutputStream to write the operation payload into
      */
-    public OutputStream stream(CharSequence documentId);
+    OutputStream stream(CharSequence documentId);
 
     /**
      * Returns {@link Result}s for all operations enqueued by {@link #stream(CharSequence)}.
@@ -44,7 +44,7 @@ public interface Session extends AutoCloseable {
      * @return a blocking queue for retrieving results
      * @see Result
      */
-    public BlockingQueue<Result> results();
+    BlockingQueue<Result> results();
 
     /**
      * Closes this Session. All resources are freed, persistent connections are closed and
@@ -52,11 +52,12 @@ public interface Session extends AutoCloseable {
      *
      * @throws RuntimeException in cases where underlying resources throw on shutdown/close
      */
-    public void close();
+    void close();
 
     /**
      * Returns stats about the cluster.
      * @return JSON string with information about cluster.
      */
-    public String getStatsAsJson();
+    String getStatsAsJson();
+
 }

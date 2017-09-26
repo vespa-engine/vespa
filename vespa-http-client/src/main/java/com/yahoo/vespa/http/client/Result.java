@@ -16,8 +16,7 @@ import java.util.List;
  * but may contain more than one Result.Detail instances, as these pertains to a
  * single endpoint, and a Result may wrap data for multiple endpoints.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 // This should be an interface, but in order to be binary compatible during refactoring we made it abstract.
 public class Result {

@@ -14,13 +14,13 @@ import java.util.List;
  * when creating {@link com.yahoo.vespa.http.client.Session}s. This class is immutable
  * and has no public constructor - to instantiate one, use a {@link Builder}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  * @see com.yahoo.vespa.http.client.SessionFactory
  * @see Builder
  */
 @Immutable
 public final class SessionParams {
+
     /**
      * Interface for handling serious errors with connection.
      */
@@ -180,4 +180,5 @@ public final class SessionParams {
     public ErrorReporter getErrorReport() {
         return errorReport;
     }
+
 }

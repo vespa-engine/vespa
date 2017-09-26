@@ -5,6 +5,7 @@ import java.util.concurrent.Semaphore;
 
 /**
  * A semaphore that can be re-sized.
+ *
  * @author dybis
  */
 final public class ConcurrentDocumentOperationBlocker {
@@ -64,4 +65,5 @@ final public class ConcurrentDocumentOperationBlocker {
             super.reducePermits(reduction);
         }
     }
+
 }

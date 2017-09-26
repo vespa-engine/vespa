@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author dybis
  * @see FeedClientFactory
- * @since 5.29.0
  */
 public interface FeedClient extends AutoCloseable {
 
@@ -25,6 +24,7 @@ public interface FeedClient extends AutoCloseable {
      * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
      * Documents might time out before they are sent. Failed documents are not retried.
      * Don't call stream() after close is called.
+     * 
      * @param documentId Document id of the document.
      * @param documentData The document data as JSON or XML (as specified when using the factory to create the API)
      */
@@ -34,6 +34,7 @@ public interface FeedClient extends AutoCloseable {
      * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
      * Documents might time out before they are sent. Failed documents are not retried.
      * Don't call stream() after close is called.
+     * 
      * @param documentId Document id of the document.
      * @param documentData The document data as JSON or XML (as specified when using the factory to create the API)
      * @param context Any context, will be accessible in the result of the callback.
@@ -47,7 +48,7 @@ public interface FeedClient extends AutoCloseable {
      * AtomicInteger for counters and follow general guides for thread-safe programming.
      * There is an example implementation in class SimpleLoggerResultCallback.
      */
-    static interface ResultCallback {
+    interface ResultCallback {
         void onCompletion(String docId, Result documentResult);
     }
 
@@ -60,17 +61,19 @@ public interface FeedClient extends AutoCloseable {
 
     /**
      * Returns stats about the cluster.
+     * 
      * @return JSON string with information about cluster.
      */
-    public String getStatsAsJson();
+    String getStatsAsJson();
 
     /**
      * Utility function that takes an array of JSON documents and calls the FeedClient for each element.
+     *
      * @param inputStream This can be a very large stream. The outer element is an array (of document operations).
      * @param feedClient The feedClient that will receive the document operations.
      * @param numSent increased per document sent to API (but no waiting for results).
      */
-    public static void feedJson(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
+    static void feedJson(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
         JsonReader.read(inputStream, feedClient, numSent);
     }
 
@@ -78,15 +81,17 @@ public interface FeedClient extends AutoCloseable {
      * Utility function that takes an array of XML documents and calls the FeedClient for each element.
      * The XML document has to be formatted with line space on each line (like "regular" XML, but stricter
      * than the specifications of XML).
+     *
      * @param inputStream This can be a very large stream.
      * @param feedClient The feedClient that will receive the document operations.
      * @param numSent increased per document sent to API (but no waiting for results).
      */
-    public static void feedXml(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
+    static void feedXml(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
         try {
             XmlFeedReader.read(inputStream, feedClient, numSent);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
 }

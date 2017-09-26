@@ -30,6 +30,7 @@ import java.util.Random;
  * @author dybis
  */
 public class IncompleteResultsThrottler {
+
     private final ConcurrentDocumentOperationBlocker blocker = new ConcurrentDocumentOperationBlocker();
     private final int maxInFlightValue;
     private final int minInFlightValue;
@@ -180,4 +181,5 @@ public class IncompleteResultsThrottler {
                         tryBoostingSizeIfMinValueOverSeveralCycles(size), maxInFlightValue));
         blocker.setMaxConcurrency(maxInFlightNow);
     }
+
 }
