@@ -17,7 +17,7 @@ public class CostCluster {
     /**
      * @param clusterInfo       Value object with cluster info e.g. the TCO for the hardware used
      * @param systemUtilization Utilization of system resources (as ratios)
-     * @param targetUtilization Target utilization (ratios - usually < 1.0)
+     * @param targetUtilization Target utilization (ratios - usually less than 1.0)
      */
     public CostCluster(CostClusterInfo clusterInfo,
                        CostResources systemUtilization,

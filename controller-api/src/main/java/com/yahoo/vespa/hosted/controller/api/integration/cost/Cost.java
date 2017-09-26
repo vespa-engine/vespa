@@ -91,7 +91,7 @@ public interface Cost {
     }
 
     /**
-     * @return zone->app for all known zones and applications
+     * @return Map from zone to app for all known zones and applications
      */
     Map<Zone, List<ApplicationId>> getApplications();
 
@@ -101,7 +101,7 @@ public interface Cost {
      *
      * @param zone The zone - the combination of a environment and region e.g 'test.us-east-1'
      * @param app  ApplicationId e.g tenant:application:instance
-     * @return Map between clusterid -> info
+     * @return Map between cluster id to cluster info
      */
     Map<String, CostClusterInfo> getClusterInfo(Zone zone, ApplicationId app);
 
@@ -110,7 +110,7 @@ public interface Cost {
      *
      * @param zone The zone - the combination of a environment and region e.g 'test.us-east-1'
      * @param app  ApplicationId e.g tenant:application:instance
-     * @return Map between clusterid -> resource utilization
+     * @return Map between cluster id to resource utilization
      */
     Map<String, CostResources> getClusterUtilization(Zone zone, ApplicationId app);
 }
