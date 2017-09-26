@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * API for handling single operation on a document and visiting.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class RestApi extends LoggingRequestHandler {
 
@@ -52,6 +52,7 @@ public class RestApi extends LoggingRequestHandler {
     private static final String SELECTION = "selection";
     private static final String CLUSTER = "cluster";
     private static final String CONTINUATION = "continuation";
+    private static final String WANTED_DOCUMENT_COUNT = "wantedDocumentCount";
     private static final String APPLICATION_JSON = "application/json";
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
@@ -96,17 +97,31 @@ public class RestApi extends LoggingRequestHandler {
         this.singleDocumentParser = new SingleDocumentParser(docTypeManager);
     }
 
-    // Returns null if invalid value.
-    private Optional<Boolean> parseBoolean(String parameter, HttpRequest request) {
+    private static Optional<String> requestProperty(String parameter, HttpRequest request) {
         final String property = request.getProperty(parameter);
         if (property != null && ! property.isEmpty()) {
-            switch (property) {
-                case "true" : return Optional.of(true);
-                case "false": return Optional.of(false);
-                default : return null;
-            }
+            return Optional.of(property);
         }
         return Optional.empty();
+    }
+
+    private static boolean parseBooleanStrict(String value) {
+        if ("true".equalsIgnoreCase(value)) {
+            return true;
+        } else if ("false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        throw new IllegalArgumentException(String.format("Value not convertible to bool: '%s'", value));
+    }
+
+    private static Optional<Boolean> parseBoolean(String parameter, HttpRequest request) {
+        Optional<String> property = requestProperty(parameter, request);
+        return property.map(RestApi::parseBooleanStrict);
+    }
+
+    private static Optional<Integer> parseInteger(String parameter, HttpRequest request) throws NumberFormatException {
+        Optional<String> property = requestProperty(parameter, request);
+        return property.map(Integer::parseInt);
     }
 
     @Override
@@ -134,8 +149,10 @@ public class RestApi extends LoggingRequestHandler {
             return Response.createErrorResponse(500, "Exception while parsing URI: " + e2.getMessage(), RestUri.apiErrorCodes.URL_PARSING);
         }
 
-        Optional<Boolean> create = parseBoolean(CREATE_PARAMETER_NAME, request);
-        if (create == null) {
+        final Optional<Boolean> create;
+        try {
+            create = parseBoolean(CREATE_PARAMETER_NAME, request);
+        } catch (IllegalArgumentException e) {
             return Response.createErrorResponse(403, "Non valid value for 'create' parameter, must be empty, true, or " +
                     "false: " + request.getProperty(CREATE_PARAMETER_NAME), RestUri.apiErrorCodes.INVALID_CREATE_VALUE);
         }
@@ -184,9 +201,7 @@ public class RestApi extends LoggingRequestHandler {
         if (condition != null && ! condition.isEmpty()) {
             operationUpdate.getDocumentUpdate().setCondition(new TestAndSetCondition(condition));
         }
-        if (create.isPresent()) {
-            operationUpdate.getDocumentUpdate().setCreateIfNonExistent(create.get());
-        }
+        create.ifPresent(c -> operationUpdate.getDocumentUpdate().setCreateIfNonExistent(c));
         return operationUpdate;
     }
 
@@ -214,11 +229,16 @@ public class RestApi extends LoggingRequestHandler {
             }
         };
     }
+
+    private static HttpResponse createInvalidParameterResponse(String parameter, String explanation) {
+        return Response.createErrorResponse(403, String.format("Invalid '%s' value. %s", parameter, explanation), RestUri.apiErrorCodes.UNSPECIFIED);
+    }
     
     private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
         String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
         if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
             if (! documentSelection.isEmpty()) {
+                // TODO why is this restriction in place? Document selection allows composition of location predicate and other expressions
                 return Response.createErrorResponse(
                         400,
                         "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.",
@@ -234,11 +254,17 @@ public class RestApi extends LoggingRequestHandler {
         }
         Optional<String> cluster = Optional.ofNullable(request.getProperty(CLUSTER));
         Optional<String> continuation = Optional.ofNullable(request.getProperty(CONTINUATION));
-        final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, cluster, continuation);
-        final ObjectNode resultNode = mapper.createObjectNode();
-        if (visit.token.isPresent()) {
-            resultNode.put(CONTINUATION, visit.token.get());
+        Optional<Integer> wantedDocumentCount;
+        try {
+            wantedDocumentCount = parseInteger(WANTED_DOCUMENT_COUNT, request);
+        } catch (IllegalArgumentException e) {
+            return createInvalidParameterResponse(WANTED_DOCUMENT_COUNT, "Expected integer");
         }
+
+        final OperationHandler.VisitOptions options = new OperationHandler.VisitOptions(cluster, continuation, wantedDocumentCount);
+        final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, options);
+        final ObjectNode resultNode = mapper.createObjectNode();
+        visit.token.ifPresent(t -> resultNode.put(CONTINUATION, t));
         resultNode.putArray(DOCUMENTS).addPOJO(visit.documentsAsJsonList);
         resultNode.put(PATH_NAME, restUri.getRawPath());
 

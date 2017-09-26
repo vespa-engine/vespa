@@ -91,7 +91,7 @@ public class OperationHandlerImplTest {
         return new String( stream.toByteArray());
     }
 
-    private class OperationHandlerImplFixture {
+    private static class OperationHandlerImplFixture {
         DocumentAccess documentAccess = mock(DocumentAccess.class);
         AtomicReference<VisitorParameters> assignedParameters = new AtomicReference<>();
         VisitorControlHandler.CompletionCode completionCode = VisitorControlHandler.CompletionCode.SUCCESS;
@@ -123,6 +123,14 @@ public class OperationHandlerImplTest {
         return new RestUri(new URI("http://localhost/document/v1/namespace/document-type/docid/"));
     }
 
+    private static OperationHandler.VisitOptions visitOptionsWithWantedDocumentCount(int wantedDocumentCount) {
+        return new OperationHandler.VisitOptions(Optional.empty(), Optional.empty(), Optional.of(wantedDocumentCount));
+    }
+
+    private static OperationHandler.VisitOptions emptyVisitOptions() {
+        return new OperationHandler.VisitOptions(Optional.empty(), Optional.empty(), Optional.empty());
+    }
+
     @Test
     public void timeout_without_buckets_visited_throws_timeout_error() throws Exception {
         OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
@@ -131,7 +139,7 @@ public class OperationHandlerImplTest {
         // RestApiException hides its guts internally, so cannot trivially use @Rule directly to check for error category
         try {
             OperationHandlerImpl handler = fixture.createHandler();
-            handler.visit(dummyVisitUri(), "", Optional.empty(), Optional.empty());
+            handler.visit(dummyVisitUri(), "", emptyVisitOptions());
         } catch (RestApiException e) {
             assertThat(e.getResponse().getStatus(), is(500));
             assertThat(renderRestApiExceptionAsString(e), containsString("Timed out"));
@@ -145,7 +153,7 @@ public class OperationHandlerImplTest {
         fixture.bucketsVisited = 1;
 
         OperationHandlerImpl handler = fixture.createHandler();
-        handler.visit(dummyVisitUri(), "", Optional.empty(), Optional.empty());
+        handler.visit(dummyVisitUri(), "", emptyVisitOptions());
     }
 
     @Test
@@ -153,8 +161,50 @@ public class OperationHandlerImplTest {
         OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
         OperationHandlerImpl handler = fixture.createHandler();
 
-        handler.visit(dummyVisitUri(), "", Optional.empty(), Optional.empty());
+        handler.visit(dummyVisitUri(), "", emptyVisitOptions());
 
         assertThat(fixture.assignedParameters.get().getSessionTimeoutMs(), is((long)OperationHandlerImpl.VISIT_TIMEOUT_MS));
     }
+
+    private static VisitorParameters generatedParametersFromVisitOptions(OperationHandler.VisitOptions options) throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        OperationHandlerImpl handler = fixture.createHandler();
+
+        handler.visit(dummyVisitUri(), "", options);
+        return fixture.assignedParameters.get();
+    }
+
+    @Test
+    public void provided_wanted_document_count_is_propagated_to_visitor_parameters() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(123));
+        assertThat(params.getMaxTotalHits(), is((long)123));
+    }
+
+    @Test
+    public void wanted_document_count_is_1_unless_specified() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(emptyVisitOptions());
+        assertThat(params.getMaxTotalHits(), is((long)1));
+    }
+
+    @Test
+    public void too_low_wanted_document_count_is_bounded_to_1() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(-1));
+        assertThat(params.getMaxTotalHits(), is((long)1));
+
+        params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(Integer.MIN_VALUE));
+        assertThat(params.getMaxTotalHits(), is((long)1));
+
+        params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(0));
+        assertThat(params.getMaxTotalHits(), is((long)1));
+    }
+
+    @Test
+    public void too_high_wanted_document_count_is_bounded_to_upper_bound() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(OperationHandlerImpl.WANTED_DOCUMENT_COUNT_UPPER_BOUND + 1));
+        assertThat(params.getMaxTotalHits(), is((long)OperationHandlerImpl.WANTED_DOCUMENT_COUNT_UPPER_BOUND));
+
+        params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(Integer.MAX_VALUE));
+        assertThat(params.getMaxTotalHits(), is((long)OperationHandlerImpl.WANTED_DOCUMENT_COUNT_UPPER_BOUND));
+    }
+
 }

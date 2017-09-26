@@ -270,6 +270,7 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_response_part3));
     }
 
+    // TODO why is this a limitation?
     String visit_test_bad_uri = "/document/v1/namespace/document-type/group/abc?continuation=abc&selection=foo";
     String visit_test_bad_response = "Visiting does not support setting value for group/value in combination with expression";
 
@@ -292,6 +293,22 @@ public class RestApiTest {
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
         assertThat(rest, containsString(visit_test_response_selection_rewrite));
+    }
+
+    @Test
+    public void wanted_document_count_returned_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=321", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("min docs returned: 321"));
+    }
+
+    @Test
+    public void wanted_document_count_parameter_returns_error_response() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=aardvark", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("Invalid 'wantedDocumentCount' value. Expected integer"));
     }
 
     private String doRest(HttpRequestBase request) throws IOException {

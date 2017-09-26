@@ -49,6 +49,7 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     public static final int VISIT_TIMEOUT_MS = 120000;
+    public static final int WANTED_DOCUMENT_COUNT_UPPER_BOUND = 1000; // Approximates the max default size of a bucket
     private final DocumentAccess documentAccess;
     private final DocumentApiMetrics metricsHelper;
     private final ClusterEnumerator clusterEnumerator;
@@ -109,13 +110,8 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public VisitResult visit(
-            RestUri restUri,
-            String documentSelection,
-            Optional<String> cluster,
-            Optional<String> continuation) throws RestApiException {
-
-        VisitorParameters visitorParameters = createVisitorParameters(restUri, documentSelection, cluster, continuation);
+    public VisitResult visit(RestUri restUri, String documentSelection, VisitOptions options) throws RestApiException {
+        VisitorParameters visitorParameters = createVisitorParameters(restUri, documentSelection, options);
 
         VisitorControlHandler visitorControlHandler = new VisitorControlHandler();
         visitorParameters.setControlHandler(visitorControlHandler);
@@ -326,13 +322,13 @@ public class OperationHandlerImpl implements OperationHandler {
     private VisitorParameters createVisitorParameters(
             RestUri restUri,
             String documentSelection,
-            Optional<String> clusterName,
-            Optional<String> continuation)
+            VisitOptions options)
             throws RestApiException {
 
         StringBuilder selection = new StringBuilder();
 
         if (! documentSelection.isEmpty()) {
+            // TODO shouldn't selection be wrapped in () itself ?
             selection.append("(").append(documentSelection).append(" and ");
         }
         selection.append(restUri.getDocumentType()).append(" and (id.namespace=='").append(restUri.getNamespace()).append("')");
@@ -346,24 +342,26 @@ public class OperationHandlerImpl implements OperationHandler {
         params.setMaxBucketsPerVisitor(1);
         params.setMaxPending(32);
         params.setMaxFirstPassHits(1);
-        params.setMaxTotalHits(1);
+        params.setMaxTotalHits(options.wantedDocumentCount
+                .map(n -> Math.min(Math.max(n, 1), WANTED_DOCUMENT_COUNT_UPPER_BOUND))
+                .orElse(1));
         params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(1));
         params.setToTimestamp(0L);
         params.setFromTimestamp(0L);
         params.setSessionTimeoutMs(VISIT_TIMEOUT_MS);
 
-        params.visitInconsistentBuckets(true);
+        params.visitInconsistentBuckets(true); // TODO document this as part of consistency doc
         params.setVisitorOrdering(VisitorOrdering.ASCENDING);
 
-        params.setRoute(resolveClusterRoute(clusterName));
+        params.setRoute(resolveClusterRoute(options.cluster));
 
         params.setTraceLevel(0);
         params.setPriority(DocumentProtocol.Priority.NORMAL_4);
         params.setVisitRemoves(false);
 
-        if (continuation.isPresent()) {
+        if (options.continuation.isPresent()) {
             try {
-                params.setResumeToken(ContinuationHit.getToken(continuation.get()));
+                params.setResumeToken(ContinuationHit.getToken(options.continuation.get()));
             } catch (Exception e) {
                 throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
             }
