@@ -237,7 +237,7 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    _net->getExecutor().execute(vespalib::makeLambdaTask([&, req]() { doRequest(req);}));
+    _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequest(req);}));
 }
 
 void
