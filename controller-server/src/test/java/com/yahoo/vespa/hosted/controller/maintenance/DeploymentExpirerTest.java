@@ -22,7 +22,7 @@ public class DeploymentExpirerTest {
     @Test
     public void testDeploymentExpiry() throws IOException, InterruptedException {
         ControllerTester tester = new ControllerTester();
-        tester.getZoneRegistryMock().setDeploymentTimeToLive(new Zone(Environment.dev, RegionName.from("us-east-1")), Duration.ofDays(14));
+        tester.zoneRegistry().setDeploymentTimeToLive(new Zone(Environment.dev, RegionName.from("us-east-1")), Duration.ofDays(14));
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),
                                                           tester.clock(), new JobControl(new MockCuratorDb()));
         ApplicationId devApp = tester.createAndDeploy("tenant1", "domain1", "app1", Environment.dev, 123).id();

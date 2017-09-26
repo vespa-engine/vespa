@@ -46,7 +46,7 @@ public class VersionStatusTest {
     public void testSystemVersionIsControllerVersionIfConfigserversAreNewer() {
         ControllerTester tester = new ControllerTester();
         Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
-        tester.configServerClientMock().setDefaultConfigServerVersion(largerThanCurrent);
+        tester.configServer().setDefaultConfigServerVersion(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(Vtag.currentVersion, versionStatus.systemVersion().get().versionNumber());
     }
@@ -55,7 +55,7 @@ public class VersionStatusTest {
     public void testSystemVersionIsVersionOfOldestConfigServer() throws URISyntaxException {
         ControllerTester tester = new ControllerTester();
         Version oldest = new Version(5);
-        tester.configServerClientMock().configServerVersions().put(new URI("http://cfg.prod.corp-us-east-1.test"), oldest);
+        tester.configServer().configServerVersions().put(new URI("http://cfg.prod.corp-us-east-1.test"), oldest);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(oldest, versionStatus.systemVersion().get().versionNumber());
     }
@@ -95,7 +95,7 @@ public class VersionStatusTest {
         assertEquals("The version of this controller, the default config server version, plus the two versions above exist", 4, versions.size());
 
         VespaVersion v0 = versions.get(2);
-        assertEquals(tester.configServerClientMock().getDefaultConfigServerVersion(), v0.versionNumber());
+        assertEquals(tester.configServer().getDefaultConfigServerVersion(), v0.versionNumber());
         assertEquals(0, v0.statistics().failing().size());
         assertEquals(0, v0.statistics().production().size());
 
@@ -242,7 +242,7 @@ public class VersionStatusTest {
         ControllerTester tester = new ControllerTester();
         ApplicationController applications = tester.controller().applications();
 
-        tester.gitHubClientMock()
+        tester.gitHub()
                 .mockAny(false)
                 .knownTag(Vtag.currentVersion.toFullString(), "foo") // controller
                 .knownTag("6.1.0", "bar"); // config server
