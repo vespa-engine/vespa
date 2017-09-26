@@ -50,5 +50,4 @@ ln -sf $PREFIX/lib/jars/orchestrator-jar-with-dependencies.jar $INSTALLPATH/conf
 ln -sf $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/node-repository.jar
 ln -sf $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
 ln -snf $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
-ln -sf vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
 

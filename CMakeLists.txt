@@ -111,9 +111,6 @@ add_subdirectory(vespalog)
 add_subdirectory(vespamalloc)
 add_subdirectory(vsm)
 add_subdirectory(zkfacade)
-# Note: Change when cmake gets proper post-install support.
-# Post installation steps are run from dist subdirectory which needs to be the last add_subdirectory(...) call in this file.
-add_subdirectory(dist)
 
 # Create module targets with name ${MODULE}+module depending on every target defined within that module
 __create_module_targets(TARGETS "module")
