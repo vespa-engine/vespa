@@ -95,7 +95,7 @@ public class ControllerTest {
         // staging job - succeeding
         Version version1 = Version.fromString("6.1"); // Set in config server mock
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
-        applications.notifyJobCompletion(mockReport(app1, component, true, false));
+        applications.notifyJobCompletion(mockReport(app1, component, true));
         assertFalse("Revision is currently not known",
                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision().isPresent());
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
@@ -137,7 +137,7 @@ public class ControllerTest {
         tester.clock().advance(Duration.ofSeconds(1));
 
         // system and staging test job - succeeding
-        applications.notifyJobCompletion(mockReport(app1, component, true, false));
+        applications.notifyJobCompletion(mockReport(app1, component, true));
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, revision, false, tester.clock().instant())
@@ -164,7 +164,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        applications.notifyJobCompletion(mockReport(app1, component, true, false));
+        applications.notifyJobCompletion(mockReport(app1, component, true));
         try {
             tester.deploy(systemTest, app1, applicationPackage);
             fail("Expected exception due to unallowed production deployment removal");
@@ -201,10 +201,9 @@ public class ControllerTest {
         Version systemVersion = tester.controller().versionStatus().systemVersion().get().versionNumber();
 
         Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
-        applications.store(app1.with(app1.deploymentJobs().asSelfTriggering(false)), applications.lock(app1.id()));
 
         // First deployment: An application change
-        applications.notifyJobCompletion(mockReport(app1, component, true, false));
+        applications.notifyJobCompletion(mockReport(app1, component, true));
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -227,7 +226,7 @@ public class ControllerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        applications.notifyJobCompletion(mockReport(app1, component, true, false));
+        applications.notifyJobCompletion(mockReport(app1, component, true));
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -398,23 +397,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void selfTriggeringApplicationIsNotTriggered() {
-        ControllerTester tester = new ControllerTester();
-        ApplicationController applications = tester.controller().applications();
-
-        // Create application and report completion from component job
-        long projectId = 1;
-        TenantId tenant = tester.createTenant("tenant", "domain", 1L);
-        Application application = tester.createApplication(tenant, "application", "default", projectId);
-        applications.notifyJobCompletion(mockReport(application, component, true, true));
-
-        // Only component completion status is persisted and no further jobs are triggered
-        assertEquals(1, applications.get(application.id()).get().deploymentJobs().jobStatus().size());
-        assertStatus(JobStatus.initial(component).withCompletion(Optional.empty(), tester.clock().instant(), tester.controller()),
-                     application.id(), tester.controller());
-    }
-
-    @Test
     public void requeueOutOfCapacityStagingJob() {
         DeploymentTester tester = new DeploymentTester();
 
@@ -485,19 +467,18 @@ public class ControllerTest {
         assertEquals(expectedStatus, existingStatus);
     }
 
-    private JobReport mockReport(Application application, JobType jobType, Optional<JobError> jobError, boolean selfTriggering) {
+    private JobReport mockReport(Application application, JobType jobType, Optional<JobError> jobError) {
         return new JobReport(
                 application.id(),
                 jobType,
                 application.deploymentJobs().projectId().get(),
                 42,
-                jobError,
-                selfTriggering
+                jobError
         );
     }
 
-    private JobReport mockReport(Application application, JobType jobType, boolean success, boolean selfTriggering) {
-        return mockReport(application, jobType, JobError.from(success), selfTriggering);
+    private JobReport mockReport(Application application, JobType jobType, boolean success) {
+        return mockReport(application, jobType, JobError.from(success));
     }
 
     @Test
@@ -532,8 +513,7 @@ public class ControllerTest {
         ApplicationController applications = tester.controller().applications();TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
-        app = app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))))
-                .with(app.deploymentJobs().asSelfTriggering(false));
+        app = app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
         applications.store(app, applications.lock(app.id()));
         try {
             tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));

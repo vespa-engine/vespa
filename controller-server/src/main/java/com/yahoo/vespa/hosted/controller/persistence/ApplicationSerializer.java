@@ -61,7 +61,6 @@ public class ApplicationSerializer {
     private final String projectIdField = "projectId";
     private final String jobStatusField = "jobStatus";
     private final String jiraIssueIdField = "jiraIssueId";
-    private final String selfTriggeringField = "selfTriggering";
     
     // JobStatus field
     private final String jobTypeField = "jobType";
@@ -125,7 +124,6 @@ public class ApplicationSerializer {
         deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
         deploymentJobs.jiraIssueId().ifPresent(jiraIssueId -> cursor.setString(jiraIssueIdField, jiraIssueId));
-        cursor.setBool(selfTriggeringField, deploymentJobs.isSelfTriggering());
     }
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
@@ -218,9 +216,8 @@ public class ApplicationSerializer {
         Optional<Long> projectId = optionalLong(object.field(projectIdField));
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
         Optional<String> jiraIssueKey = optionalString(object.field(jiraIssueIdField));
-        boolean selfTriggering = object.field(selfTriggeringField).asBool();
 
-        return new DeploymentJobs(projectId, jobStatusList, jiraIssueKey, selfTriggering);
+        return new DeploymentJobs(projectId, jobStatusList, jiraIssueKey);
     }
 
     private Optional<Change> changeFromSlime(Inspector object) {

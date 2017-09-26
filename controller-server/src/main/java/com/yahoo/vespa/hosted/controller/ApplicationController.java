@@ -305,7 +305,6 @@ public class ApplicationController {
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
                 if ( ! triggeredWith(revision, application, jobType) && !canDeployDirectlyTo(zone, options) && jobType != null) {
                     // Triggering information is used to store which changes were made or attempted
-                    // - For self-triggered applications we don't have any trigger information, so we add it here.
                     // - For all applications, we don't have complete control over which revision is actually built,
                     //   so we update it here with what we actually triggered if necessary
                     application = application.with(application.deploymentJobs()

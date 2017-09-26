@@ -280,11 +280,6 @@ public class DeploymentTrigger {
             return application;
         }
 
-        if (application.deploymentJobs().isSelfTriggering()) {
-            log.info("Not triggering " + jobType + " for self-triggering " + application);
-            return application;
-        }
-
         // Ignore applications that are not associated with a project
         if (!application.deploymentJobs().projectId().isPresent()) {
             return application;

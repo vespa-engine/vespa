@@ -214,8 +214,7 @@ public class DeploymentTester {
                 jobType,
                 application.deploymentJobs().projectId().get(),
                 42,
-                jobError,
-                false
+                jobError
         );
     }
 

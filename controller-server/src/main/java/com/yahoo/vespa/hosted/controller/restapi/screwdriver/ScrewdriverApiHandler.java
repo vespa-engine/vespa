@@ -103,23 +103,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    /**
-     * Parse a JSON blob of the form:
-     * {
-     *     "tenant"        :   String
-     *     "application"   :   String
-     *     "instance"      :   String
-     *     "jobName"       :   String
-     *     "projectId"     :   long
-     *     "success"       :   boolean
-     *     "selfTriggering":   boolean
-     *     "vespaVersion"  :   String
-     * }
-     * and notify the controller of the report.
-     *
-     * @param request The JSON blob.
-     * @return 200
-     */
     private HttpResponse handleJobReportPost(HttpRequest request) {
         controller.applications().notifyJobCompletion(toJobReport(toSlime(request.getData()).get()));
         return new StringResponse("ok");
@@ -147,8 +130,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 JobType.fromId(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
-                jobError,
-                report.field("selfTriggering").asBool()
+                jobError
         );
     }
 
