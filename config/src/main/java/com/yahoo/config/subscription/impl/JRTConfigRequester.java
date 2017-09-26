@@ -2,6 +2,8 @@
 package com.yahoo.config.subscription.impl;
 
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -39,9 +41,9 @@ public class JRTConfigRequester implements RequestWaiter {
     private int fatalFailures = 0; // independent of transientFailures
     private int transientFailures = 0;  // independent of fatalFailures
     private final ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new JRTSourceThreadFactory());
-    private long suspendWarned;
-    private long noApplicationWarned;
-    private static final long delayBetweenWarnings = 60000; //ms
+    private Instant suspendWarningLogged;
+    private Instant noApplicationWarningLogged;
+    private static final Duration delayBetweenWarnings = Duration.ofSeconds(60);
     private final ConnectionPool connectionPool;
     static final float randomFraction = 0.2f;
     /* Time to be added to server timeout to create client timeout. This is the time allowed for the server to respond after serverTimeout has elapsed. */
@@ -146,12 +148,11 @@ public class JRTConfigRequester implements RequestWaiter {
                 break;
             case ErrorCode.APPLICATION_NOT_LOADED:
             case ErrorCode.UNKNOWN_VESPA_VERSION:
-                final long now = System.currentTimeMillis();
-                if (noApplicationWarned < (now - delayBetweenWarnings)) {
+                if (noApplicationWarningLogged.isBefore(Instant.now().minus(delayBetweenWarnings))) {
                     log.log(LogLevel.WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
                             ". Connection spec: " + connection.getAddress() +
                             ", error message: " + jrtReq.errorMessage());
-                    noApplicationWarned = now;
+                    noApplicationWarningLogged = Instant.now();
                 }
                 break;
             default:
@@ -197,12 +198,11 @@ public class JRTConfigRequester implements RequestWaiter {
                                          JRTConfigSubscription<ConfigInstance> sub,
                                          long delay,
                                          Connection connection) {
-        long now = System.currentTimeMillis();
         transientFailures++;
-        if (suspendWarned < (now - delayBetweenWarnings)) {
+        if (suspendWarningLogged.isBefore(Instant.now().minus(delayBetweenWarnings))) {
             log.log(LogLevel.INFO, "Connection to " + connection.getAddress() +
                     " failed or timed out, clients will keep existing config, will keep trying.");
-            suspendWarned = now;
+            suspendWarningLogged = Instant.now();
         }
         if (sub.getState() != ConfigSubscription.State.OPEN) return;
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
@@ -240,7 +240,8 @@ public class JRTConfigRequester implements RequestWaiter {
         // Reset counters pertaining to error handling here
         fatalFailures = 0;
         transientFailures = 0;
-        suspendWarned = 0;
+        suspendWarningLogged = Instant.MIN;
+        noApplicationWarningLogged = Instant.MIN;
         connection.setSuccess();
         sub.setLastCallBackOKTS(System.currentTimeMillis());
         if (jrtReq.hasUpdatedGeneration()) {
@@ -293,7 +294,10 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     public void close() {
-        suspendWarned = System.currentTimeMillis(); // Avoid printing warnings after this
+        // Fake that we have logged to avoid printing warnings after this
+        suspendWarningLogged = Instant.now();
+        noApplicationWarningLogged = Instant.now();
+
         connectionPool.close();
         scheduler.shutdown();
     }

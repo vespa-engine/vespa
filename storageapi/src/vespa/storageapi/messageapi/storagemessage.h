@@ -68,9 +68,7 @@ public: \
         return std::unique_ptr<storage::api::StorageReply>(new reply(*this)); \
     }
 
-namespace storage {
-
-namespace api {
+namespace storage::api {
 
 /**
  * @class MessageType
@@ -404,8 +402,7 @@ public:
      * This method is overloaded in subclasses and will call the correct
      * method in the MessageHandler interface.
      */
-    virtual bool callHandler(MessageHandler&,
-                             const StorageMessage::SP&) const = 0;
+    virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
 
     const documentapi::LoadType& getLoadType() const { return _loadType; }
     void setLoadType(const documentapi::LoadType& type) { _loadType = type; }
@@ -427,6 +424,4 @@ public:
     virtual bool hasSingleBucketId() const { return false; }
 };
 
-} // api
-} // storage
-
+}

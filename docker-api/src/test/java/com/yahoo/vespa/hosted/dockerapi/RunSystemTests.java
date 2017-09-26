@@ -155,7 +155,7 @@ public class RunSystemTests {
             logger.info("Pulling " + vespaBaseImage.asString() + " (This may take a while)");
             while (docker.pullImageAsyncIfNeeded(vespaBaseImage)) {
                 Thread.sleep(5000);
-            };
+            }
         }
 
         Path systestBuildDirectory = pathToVespaRepoInHost.resolve("docker-api/src/test/resources/systest/");

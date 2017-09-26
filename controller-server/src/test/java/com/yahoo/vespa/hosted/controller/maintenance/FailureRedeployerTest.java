@@ -296,4 +296,30 @@ public class FailureRedeployerTest {
         assertFalse("Change deployed", tester.application(application.id()).deploying().isPresent());
     }
 
+    @Test
+    public void ignoresPullRequestInstances() throws Exception {
+        DeploymentTester tester = new DeploymentTester();
+        tester.controllerTester().getZoneRegistryMock().setSystem(SystemName.cd);
+
+        // Current system version, matches version in test data
+        Version version = Version.fromString("6.42.1");
+        tester.configServerClientMock().setDefaultConfigServerVersion(version);
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+
+        // Load test data data
+        ApplicationSerializer serializer = new ApplicationSerializer();
+        byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/pr-instance-with-dead-locked-job.json"));
+        Slime slime = SlimeUtils.jsonToSlime(json);
+        Application application = serializer.fromSlime(slime);
+
+        try (Lock lock = tester.controller().applications().lock(application.id())) {
+            tester.controller().applications().store(application, lock);
+        }
+
+        // Failure redeployer does not restart deployment
+        tester.failureRedeployer().maintain();
+        assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
+    }
+
 }

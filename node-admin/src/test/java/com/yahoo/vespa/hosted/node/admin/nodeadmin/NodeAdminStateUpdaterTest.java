@@ -45,7 +45,7 @@ public class NodeAdminStateUpdaterTest {
     private final Duration convergeStateInterval = Duration.ofSeconds(30);
 
     private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
-            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock, convergeStateInterval));
+            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock, convergeStateInterval, null));
 
 
     @Test

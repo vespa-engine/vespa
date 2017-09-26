@@ -34,7 +34,7 @@ public class RPCSendV2 extends RPCSend {
     private final static String METHOD_NAME = "mbus.slime";
     private final static String METHOD_PARAMS = "bixbix";
     private final static String METHOD_RETURN = "bixbix";
-    private final Compressor compressor = new Compressor(CompressionType.LZ4, 3, 90, 1024);
+    private final Compressor compressor = new Compressor(CompressionType.LZ4, 3, 0.90, 1024);
 
     @Override
     protected String getReturnSpec() { return METHOD_RETURN; }

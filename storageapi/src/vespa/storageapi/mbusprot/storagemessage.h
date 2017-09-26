@@ -3,8 +3,7 @@
 
 #include <vespa/storageapi/messageapi/storagemessage.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class StorageMessage {
 public:
@@ -17,6 +16,5 @@ public:
 
 };
 
-} // protocol
-} // storage
+}
 

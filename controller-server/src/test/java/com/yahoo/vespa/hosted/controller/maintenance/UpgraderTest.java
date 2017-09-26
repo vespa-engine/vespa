@@ -2,11 +2,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -360,41 +358,6 @@ public class UpgraderTest {
         tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default3, false);
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
-    }
-
-    // TODO: Remove when corp-prod special casing is no longer needed
-    @Test
-    public void upgradesCanariesToControllerVersion() {
-        DeploymentTester tester = new DeploymentTester();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("canary")
-                .environment(Environment.prod)
-                .region("corp-us-east-1")
-                .build();
-
-        Version version = Version.fromString("5.0"); // Lower version than controller (6.10)
-        tester.updateVersionStatus(version);
-
-        // Application is on 5.0
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionCorpUsEast1);
-
-        // Canary in prod.corp-us-east-1 is upgraded to controller version
-        tester.upgrader().maintain();
-        assertEquals("Upgrade started", 1, tester.buildSystem().jobs().size());
-        assertEquals(Vtag.currentVersion, ((Change.VersionChange) tester.application(app.id()).deploying().get()).version());
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionCorpUsEast1);
-
-        // System is upgraded to newer version, no upgrade triggered for canary as version is lower than controller
-        version = Version.fromString("5.1");
-        tester.updateVersionStatus(version);
-        tester.upgrader().maintain();
-        assertTrue("No more jobs triggered", tester.buildSystem().jobs().isEmpty());
     }
 
 }

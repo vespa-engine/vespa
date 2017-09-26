@@ -17,6 +17,8 @@ chown -R vespa:vespa /opt/vespa
 export VESPA_CONFIG_SERVERS=$(hostname)
 
 /opt/vespa/bin/vespa-start-configserver
+# Give config server some time to come up before starting services
+sleep 5
 /opt/vespa/bin/vespa-start-services
 
 # Print log forever

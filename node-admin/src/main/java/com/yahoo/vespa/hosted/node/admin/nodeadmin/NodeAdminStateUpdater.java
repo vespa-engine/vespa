@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.concurrent.classlock.ClassLock;
+import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.concurrent.classlock.LockInterruptException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,16 +52,17 @@ public class NodeAdminStateUpdater {
     private final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
     private final ScheduledExecutorService specVerifierScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("specverifier"));
-    private Thread loopThread;
+    private final Thread loopThread;
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
-    private final StorageMaintainer storageMaintainer;
     private final NodeAdmin nodeAdmin;
     private final Clock clock;
     private final String dockerHostHostName;
     private final Duration nodeAdminConvergeStateInterval;
 
+    private final ClassLocking classLocking;
+    private Optional<ClassLock> classLock;
     private Instant lastTick;
 
     public NodeAdminStateUpdater(
@@ -67,15 +72,41 @@ public class NodeAdminStateUpdater {
             NodeAdmin nodeAdmin,
             String dockerHostHostName,
             Clock clock,
-            Duration nodeAdminConvergeStateInterval) {
+            Duration nodeAdminConvergeStateInterval,
+            ClassLocking classLocking) {
+        log.info(objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
-        this.storageMaintainer = storageMaintainer;
         this.nodeAdmin = nodeAdmin;
         this.dockerHostHostName = dockerHostHostName;
         this.clock = clock;
         this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
+        this.classLocking = classLocking;
         this.lastTick = clock.instant();
+
+        this.loopThread = new Thread(() -> {
+            log.info(objectToString() + ": Acquiring lock");
+            try {
+                classLock = Optional.of(classLocking.lockWhile(NodeAdminStateUpdater.class, () -> !terminated.get()));
+            } catch (LockInterruptException e) {
+                classLock = Optional.empty();
+                return;
+            }
+
+            log.info(objectToString() + ": Starting threads and schedulers");
+            nodeAdmin.start();
+            specVerifierScheduler.scheduleWithFixedDelay(() ->
+                    updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
+
+            while (! terminated.get()) {
+                tick();
+            }
+        });
+        this.loopThread.setName("tick-NodeAdminStateUpdater");
+    }
+
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
     public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
@@ -257,28 +288,20 @@ public class NodeAdminStateUpdater {
     }
 
     public void start() {
-        if (loopThread != null) {
-            throw new RuntimeException("Can not restart NodeAdminStateUpdater");
-        }
-
-        loopThread = new Thread(() -> {
-            while (! terminated.get()) tick();
-        });
-        loopThread.setName("tick-NodeAdminStateUpdater");
         loopThread.start();
-
-        specVerifierScheduler.scheduleWithFixedDelay(() ->
-                updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
     }
 
     public void stop() {
-        specVerifierScheduler.shutdown();
+        log.info(objectToString() + ": Stop called");
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
 
+        classLocking.interrupt();
+
         // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
+        specVerifierScheduler.shutdown();
 
         do {
             try {
@@ -291,5 +314,11 @@ public class NodeAdminStateUpdater {
 
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
+
+        classLock.ifPresent(lock -> {
+            log.info(objectToString() + ": Releasing lock");
+            lock.close();
+        });
+        log.info(objectToString() + ": Stop complete");
     }
 }

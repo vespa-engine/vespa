@@ -47,6 +47,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final StorageMaintainer storageMaintainer;
+    private final AclMaintainer aclMaintainer;
 
     private final Clock clock;
     private boolean previousWantFrozen;
@@ -67,6 +68,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
+        this.aclMaintainer = aclMaintainer;
 
         this.clock = clock;
         this.previousWantFrozen = true;
@@ -76,18 +78,6 @@ public class NodeAdminImpl implements NodeAdmin {
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
-
-        metricsScheduler.scheduleAtFixedRate(() -> {
-            try {
-                nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
-            } catch (Throwable e) {
-                logger.warning("Metric fetcher scheduler failed", e);
-            }
-        }, 0, 55, TimeUnit.SECONDS);
-
-        aclScheduler.scheduleWithFixedDelay(() -> {
-            if (!isFrozen()) aclMaintainer.run();
-        }, 30, 60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -176,6 +166,21 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(node -> node.getValue().debugInfo()).collect(Collectors.toList());
         debug.put("NodeAgents", nodeAgentDebugs);
         return debug;
+    }
+
+    @Override
+    public void start() {
+        metricsScheduler.scheduleAtFixedRate(() -> {
+            try {
+                nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
+            } catch (Throwable e) {
+                logger.warning("Metric fetcher scheduler failed", e);
+            }
+        }, 0, 55, TimeUnit.SECONDS);
+
+        aclScheduler.scheduleWithFixedDelay(() -> {
+            if (!isFrozen()) aclMaintainer.run();
+        }, 30, 60, TimeUnit.SECONDS);
     }
 
     @Override

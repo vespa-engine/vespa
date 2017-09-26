@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * Attempts redeployment of failed jobs and deployments.
  * 
  * @author bratseth
+ * @author mpolden
  */
 public class FailureRedeployer extends Maintainer {
 
@@ -26,7 +28,9 @@ public class FailureRedeployer extends Maintainer {
 
     @Override
     public void maintain() {
-        List<Application> applications = controller().applications().asList();
+        List<Application> applications = ApplicationList.from(controller().applications().asList())
+                .notPullRequest()
+                .asList();
         retryFailingJobs(applications);
         retryStuckJobs(applications);
     }

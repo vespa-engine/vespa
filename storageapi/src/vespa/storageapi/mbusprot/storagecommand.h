@@ -6,8 +6,7 @@
 #include <vespa/messagebus/message.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class StorageCommand : public mbus::Message, public StorageMessage {
 public:
@@ -30,5 +29,4 @@ private:
     api::StorageCommand::SP _cmd;
 };
 
-} // mbusprot
-} // storage
+}
