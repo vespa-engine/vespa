@@ -30,6 +30,9 @@ It is fine to submit issues also for feature requests and ideas, whether or not 
 
 There is also a [ToDo list](TODO.md) for larger things which nobody are working on yet.
 
+## Community
+If you have questions, want to share your experience or help others, please join our community on [Stack Overflow](http://stackoverflow.com/questions/tagged/vespa).
+
 ### Getting started
 See [README](README.md) for how to build and test Vespa. 
 
