@@ -8,7 +8,7 @@ import java.util.function.BooleanSupplier;
  * @author valerijf
  */
 public class ClassLocking {
-    private final Map<Class<?>, ClassLock> classLocks = new HashMap<>();
+    private final Map<String, ClassLock> classLocks = new HashMap<>();
     private final Object monitor = new Object();
 
     public ClassLock lock(Class<?> clazz) {
@@ -17,7 +17,7 @@ public class ClassLocking {
 
     public ClassLock lockWhile(Class<?> clazz, BooleanSupplier interruptCondition) {
         synchronized (monitor) {
-            while (classLocks.containsKey(clazz)) {
+            while (classLocks.containsKey(clazz.getName())) {
                 try {
                     monitor.wait();
                 } catch (InterruptedException ignored) {
@@ -29,15 +29,15 @@ public class ClassLocking {
             }
 
             ClassLock classLock = new ClassLock(this, clazz);
-            classLocks.put(clazz, classLock);
+            classLocks.put(clazz.getName(), classLock);
             return classLock;
         }
     }
 
     void unlock(Class<?> clazz, ClassLock classLock) {
         synchronized (monitor) {
-            if (classLock.equals(classLocks.get(clazz))) {
-                classLocks.remove(clazz);
+            if (classLock.equals(classLocks.get(clazz.getName()))) {
+                classLocks.remove(clazz.getName());
                 monitor.notifyAll();
             } else {
                 throw new IllegalArgumentException("Lock has already been released");
