@@ -13,6 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,25 +40,29 @@ import java.util.stream.Collectors;
 public class DeploymentSpec {
 
     /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
-    public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(), 
-                                                                  UpgradePolicy.defaultPolicy, 
-                                                                  ImmutableList.of(),
+    public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(),
+                                                                  UpgradePolicy.defaultPolicy,
+                                                                  Collections.emptyList(),
+                                                                  Collections.emptyList(),
                                                                   "<deployment version='1.0'/>");
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
+    private final List<TimeWindow> blockUpgrades;
     private final List<Step> steps;
     private final String xmlForm;
 
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, steps, null);
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
+                          List<TimeWindow> blockUpgrades, List<Step> steps) {
+        this(globalServiceId, upgradePolicy, blockUpgrades, steps, null);
     }
 
-    private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, 
-                           List<Step> steps, String xmlForm) {
+    private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
+                           List<TimeWindow> blockUpgrades, List<Step> steps, String xmlForm) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
+        this.blockUpgrades = blockUpgrades;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
         validateZones(this.steps);
@@ -137,6 +142,14 @@ public class DeploymentSpec {
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
     public UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
+    /** Returns whether upgrade can occur at the given instant */
+    public boolean canUpgradeAt(Instant instant) {
+        return blockUpgrades.stream().noneMatch(timeWindow -> timeWindow.includes(instant));
+    }
+
+    /** Returns time windows where upgrade is disallowed */
+    public List<TimeWindow> blockUpgrades() { return blockUpgrades; }
+
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() { return steps; }
 
@@ -210,7 +223,8 @@ public class DeploymentSpec {
             else if (readGlobalServiceId(environmentTag).isPresent())
                 throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
         }
-        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), steps, xmlForm);
+        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readBlockUpgradeWindows(root), steps,
+                                  xmlForm);
     }
     
     /** Returns the given attribute as an integer, or 0 if it is not present */
@@ -243,6 +257,23 @@ public class DeploymentSpec {
         else {
             return Optional.of(globalServiceId);
         }
+    }
+
+    private static List<TimeWindow> readBlockUpgradeWindows(Element root) {
+        List<TimeWindow> timeWindows = new ArrayList<>();
+        for (Element tag : XML.getChildren(root)) {
+            if (!"block-upgrade".equals(tag.getTagName())) {
+                continue;
+            }
+            String daySpec = tag.getAttribute("days");
+            String hourSpec = tag.getAttribute("hours");
+            String zoneSpec = tag.getAttribute("time-zone");
+            if (zoneSpec.isEmpty()) { // Default to UTC time zone
+                zoneSpec = "UTC";
+            }
+            timeWindows.add(TimeWindow.from(daySpec, hourSpec, zoneSpec));
+        }
+        return Collections.unmodifiableList(timeWindows);
     }
     
     private static UpgradePolicy readUpgradePolicy(Element root) {

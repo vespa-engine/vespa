@@ -6,6 +6,8 @@ import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -274,6 +276,32 @@ public class DeploymentSpecTest {
         } catch (IllegalArgumentException e) {
             assertEquals("prod.us-west-1 is listed twice in deployment.xml", e.getMessage());
         }
+    }
+
+    @Test
+    public void deploymentSpecWithBlockUpgrade() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                "  <block-upgrade days='mon,tue' hours='15-16'/>\n" +
+                "  <block-upgrade days='sat' hours='10' time-zone='CET'/>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(2, spec.blockUpgrades().size());
+        assertEquals(ZoneId.of("UTC"), spec.blockUpgrades().get(0).zone());
+        assertEquals(ZoneId.of("CET"), spec.blockUpgrades().get(1).zone());
+
+        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-18T14:15:30.00Z")));
+        assertFalse(spec.canUpgradeAt(Instant.parse("2017-09-18T15:15:30.00Z")));
+        assertFalse(spec.canUpgradeAt(Instant.parse("2017-09-18T16:15:30.00Z")));
+        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-18T17:15:30.00Z")));
+
+        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T09:15:30.00Z")));
+        assertFalse(spec.canUpgradeAt(Instant.parse("2017-09-23T08:15:30.00Z"))); // 10 in CET
+        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
     }
 
 }
