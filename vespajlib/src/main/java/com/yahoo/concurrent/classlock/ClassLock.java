@@ -1,6 +1,8 @@
 package com.yahoo.concurrent.classlock;
 
 /**
+ * An acquired lock which is released on close
+ *
  * @author valerijf
  */
 public class ClassLock implements AutoCloseable {
@@ -12,6 +14,11 @@ public class ClassLock implements AutoCloseable {
         this.clazz = clazz;
     }
 
+    /**
+     * Releases this lock
+     *
+     * @throws IllegalArgumentException if this lock has already been released
+     */
     @Override
     public void close() {
         classLocking.unlock(clazz, this);
