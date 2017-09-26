@@ -3,10 +3,9 @@
 
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
-#include "lambdatask.h"
+#include <vespa/vespalib/util/lambdatask.h>
 
-namespace search
-{
+namespace search {
 
 /**
  * Interface class to run multiple tasks in parallel, but tasks with same
@@ -50,7 +49,7 @@ public:
      */
     template <class FunctionType>
     void executeLambda(uint32_t executorId, FunctionType &&function) {
-        executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(executorId, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
     /**
      * Wait for all scheduled tasks to complete.
@@ -69,7 +68,7 @@ public:
     template <class FunctionType>
     void execute(uint64_t componentId, FunctionType &&function) {
         uint32_t executorId = getExecutorId(componentId);
-        executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(executorId, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
 
     /**
@@ -84,7 +83,7 @@ public:
     template <class FunctionType>
     void execute(vespalib::stringref componentId, FunctionType &&function) {
         uint32_t executorId = getExecutorId(componentId);
-        executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(executorId, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
 };
 

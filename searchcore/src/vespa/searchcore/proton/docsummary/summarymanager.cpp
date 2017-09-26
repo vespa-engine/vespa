@@ -9,7 +9,7 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
@@ -32,7 +32,7 @@ using search::IDocumentStore;
 using search::LogDocumentStore;
 using search::LogDataStore;
 using search::WriteableFileChunk;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;

@@ -2,14 +2,12 @@
 
 #include "gid_to_lid_change_handler.h"
 #include "i_gid_to_lid_change_listener.h"
-#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/document/base/globalid.h>
-#include <cassert>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <cassert>
 
-using search::makeLambdaTask;
-
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -21,7 +19,6 @@ GidToLidChangeHandler::GidToLidChangeHandler()
 
 {
 }
-
 
 GidToLidChangeHandler::~GidToLidChangeHandler()
 {

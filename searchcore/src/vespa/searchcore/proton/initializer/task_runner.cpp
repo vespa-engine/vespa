@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "task_runner.h"
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <future>
 
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
-namespace proton {
-
-namespace initializer {
+namespace proton::initializer {
 
 TaskRunner::TaskRunner(vespalib::Executor &executor)
     : _executor(executor),
@@ -126,6 +124,4 @@ TaskRunner::runTask(InitializerTask::SP rootTask,
     context->execute(makeLambdaTask([=]() { pollTask(context); } ));
 }
 
-} // namespace proton::initializer
-
-} // namespace proton
+}

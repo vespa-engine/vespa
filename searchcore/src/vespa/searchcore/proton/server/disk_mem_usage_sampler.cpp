@@ -2,10 +2,10 @@
 
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/timer.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <unistd.h>
 
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/document/annotation/annotation.h>
+#include "annotation.h"
 #include <vector>
 #include <cassert>
 

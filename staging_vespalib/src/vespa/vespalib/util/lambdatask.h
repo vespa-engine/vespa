@@ -3,7 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 
-namespace search {
+namespace vespalib {
 
 template <class FunctionType>
 class LambdaTask : public vespalib::Executor::Task {
@@ -26,4 +26,4 @@ makeLambdaTask(FunctionType &&function)
         (std::forward<FunctionType>(function));
 }
 
-} // namespace search
+}

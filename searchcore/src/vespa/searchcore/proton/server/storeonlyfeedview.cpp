@@ -26,7 +26,7 @@ using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using search::index::Schema;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::BucketInfoResult;

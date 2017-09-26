@@ -7,9 +7,10 @@
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/reflection.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/vespalib/data/slime/cursor.h>
 
@@ -236,6 +237,12 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
+    _net->getExecutor().execute(vespalib::makeLambdaTask([&, req]() { doRequest(req);}));
+}
+
+void
+RPCSend::doRequest(FRT_RPCRequest *req)
+{
     FRT_Values &args = *req->GetParams();
 
     std::unique_ptr<Params> params = toParams(args);

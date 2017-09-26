@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summarycompacttarget.h"
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <future>
 
 using search::IDocumentStore;
 using search::SerialNum;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
 

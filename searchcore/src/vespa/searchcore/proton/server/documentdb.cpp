@@ -56,7 +56,7 @@ using storage::spi::Timestamp;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using proton::initializer::TaskRunner;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using searchcorespi::IFlushTarget;
 
 namespace proton {

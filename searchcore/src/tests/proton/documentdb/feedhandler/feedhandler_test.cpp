@@ -50,7 +50,7 @@ using search::IDestructorCallback;
 using search::SerialNum;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::transactionlog::TransLogServer;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
