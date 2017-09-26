@@ -15,7 +15,7 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -86,8 +86,10 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
         }
     }
     if (shouldSend) {
-        _net.send(*this);
-        delete this;
+        _net.getExecutor().execute(vespalib::makeLambdaTask([this]() {
+            _net.send(*this);
+            delete this;
+        }));
     }
 }
 
