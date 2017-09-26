@@ -9,21 +9,6 @@ fi
 declare -r PREFIX="$1"
 declare -r INSTALLPATH="$DESTDIR/$PREFIX"
 
-# Rewrite config def file names
-for path in $INSTALLPATH/var/db/vespa/config_server/serverdb/classes/*.def; do
-    dir=$(dirname $path)
-    filename=$(basename $path)
-    namespace=$(grep '^ *namespace *=' $path | sed 's/ *namespace *= *//')
-    if [ "$namespace" ]; then
-        case $filename in
-            $namespace.*)
-                ;;
-            *)
-                mv $path $dir/$namespace.$filename ;;
-        esac
-    fi
-done
-
 mkdir -p $INSTALLPATH/conf/configserver/
 mkdir -p $INSTALLPATH/conf/configserver-app/
 mkdir -p $INSTALLPATH/conf/configserver-app/config-models/
@@ -66,11 +51,4 @@ ln -sf $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/c
 ln -sf $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
 ln -snf $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -sf vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
-
-# Setup default enviroment
-mkdir -p $INSTALLPATH/conf/vespa
-cat > $INSTALLPATH/conf/vespa/default-env.txt <<EOF
-fallback VESPA_HOME $PREFIX
-override VESPA_USER vespa
-EOF
 
