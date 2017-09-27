@@ -58,7 +58,7 @@ class CoredumpHandler {
 
     public void processAll() throws IOException {
         removeJavaCoredumps();
-        processAndReportCoredumps();
+        handleNewCoredumps();
         removeOldCoredumps();
     }
 
@@ -72,9 +72,9 @@ class CoredumpHandler {
         FileHelper.deleteDirectories(doneCoredumpsPath, Duration.ofDays(10), Optional.empty());
     }
 
-    private void processAndReportCoredumps() throws IOException {
-        Path processingCoredumps = processCoredumps();
-        reportCoredumps(processingCoredumps);
+    private void handleNewCoredumps() throws IOException {
+        Path processingCoredumps = enqueueCoredumps();
+        processAndReportCoredumps(processingCoredumps);
     }
 
 
@@ -82,7 +82,7 @@ class CoredumpHandler {
      * Moves a coredump to a new directory under the processing/ directory. Limit to only processing
      * one coredump at the time, starting with the oldest.
      */
-    Path processCoredumps() throws IOException {
+    Path enqueueCoredumps() throws IOException {
         Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
         processingCoredumpsPath.toFile().mkdirs();
         if (Files.list(processingCoredumpsPath).count() > 0) return processingCoredumpsPath;
@@ -92,7 +92,7 @@ class CoredumpHandler {
                 .min((Comparator.comparingLong(o -> o.toFile().lastModified())))
                 .ifPresent(coredumpPath -> {
                     try {
-                        startProcessing(coredumpPath, processingCoredumpsPath);
+                        enqueueCoredumpForProcessing(coredumpPath, processingCoredumpsPath);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to process coredump " + coredumpPath, e);
                     }
@@ -101,7 +101,7 @@ class CoredumpHandler {
         return processingCoredumpsPath;
     }
 
-    void reportCoredumps(Path processingCoredumpsPath) throws IOException {
+    void processAndReportCoredumps(Path processingCoredumpsPath) throws IOException {
         doneCoredumpsPath.toFile().mkdirs();
 
         Files.list(processingCoredumpsPath)
@@ -117,7 +117,7 @@ class CoredumpHandler {
                 });
     }
 
-    Path startProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
+    Path enqueueCoredumpForProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
         // Make coredump readable
         coredumpPath.toFile().setReadable(true, false);
 

@@ -87,7 +87,7 @@ public class CoredumpHandlerTest {
     @Test
     public void ignoresIncompleteCoredumps() throws IOException {
         Path coredumpPath = createCoredump(".core.dump", Instant.now());
-        Path processingPath = coredumpHandler.processCoredumps();
+        Path processingPath = coredumpHandler.enqueueCoredumps();
 
         // The 'processing' directory should be empty
         assertFolderContents(processingPath);
@@ -100,7 +100,7 @@ public class CoredumpHandlerTest {
     public void startProcessingTest() throws IOException {
         Path coredumpPath = createCoredump("core.dump", Instant.now());
         Path processingPath = crashPath.resolve("processing_dir");
-        coredumpHandler.startProcessing(coredumpPath, processingPath);
+        coredumpHandler.enqueueCoredumpForProcessing(coredumpPath, processingPath);
 
         // Contents of 'crash' should be only the 'processing' directory
         assertFolderContents(crashPath, processingPath.getFileName().toString());
@@ -120,7 +120,7 @@ public class CoredumpHandlerTest {
         createCoredump(oldestCoredump, startTime.minusSeconds(3600));
         createCoredump("core.dump1", startTime.minusSeconds(1000));
         createCoredump("core.dump2", startTime);
-        Path processingPath = coredumpHandler.processCoredumps();
+        Path processingPath = coredumpHandler.enqueueCoredumps();
 
         List<Path> processingCoredumps = Files.list(processingPath).collect(Collectors.toList());
         assertEquals(1, processingCoredumps.size());
@@ -131,8 +131,8 @@ public class CoredumpHandlerTest {
                 .collect(Collectors.toSet());
         assertEquals(Collections.singleton(oldestCoredump), filenamesInProcessingDirectory);
 
-        // Running processCoredumps should not start processing any new coredumps as we already are processing one
-        coredumpHandler.processCoredumps();
+        // Running enqueueCoredumps should not start processing any new coredumps as we already are processing one
+        coredumpHandler.enqueueCoredumps();
         assertEquals(processingCoredumps, Files.list(processingPath).collect(Collectors.toList()));
         filenamesInProcessingDirectory = Files.list(processingCoredumps.get(0))
                 .map(file -> file.getFileName().toString())
@@ -143,7 +143,7 @@ public class CoredumpHandlerTest {
     @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException, InterruptedException {
         createCoredump("core.dump", Instant.now());
-        Path processingPath = coredumpHandler.processCoredumps();
+        Path processingPath = coredumpHandler.enqueueCoredumps();
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
                 new RuntimeException("Expected to find directory with coredump in processing dir"));
         when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")), any())).thenReturn(metadata);
@@ -182,7 +182,7 @@ public class CoredumpHandlerTest {
         Path metadataPath = createProcessedCoredump(documentId);
 
         setNextHttpResponse(500, Optional.of("Internal server error"));
-        coredumpHandler.reportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
+        coredumpHandler.processAndReportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
         validateNextHttpPost(documentId, expectedMetadataFileContents);
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
