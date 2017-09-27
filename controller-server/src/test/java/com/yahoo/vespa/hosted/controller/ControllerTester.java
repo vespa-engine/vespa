@@ -9,7 +9,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
@@ -31,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.jira.JiraMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -48,78 +46,76 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Convenience methods for controller tests.
- * This completely wraps TestEnvironment to make it easier to get rid of that in the future.
- * 
+ *
  * @author bratseth
+ * @author mpolden
  */
 public final class ControllerTester {
 
-    private final ControllerDb db = new MemoryControllerDb();
-    private final AthensDbMock athensDb = new AthensDbMock();
-    private final ManualClock clock = new ManualClock();
-    private final ConfigServerClientMock configServerClientMock = new ConfigServerClientMock();
-    private final ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock();
-    private final GitHubMock gitHubMock = new GitHubMock();
-    private final CuratorDb curator = new MockCuratorDb();
-    private final MemoryNameService memoryNameService = new MemoryNameService();
-    private Controller controller = createController(db, curator, configServerClientMock, clock, gitHubMock,
-                                                     zoneRegistryMock, athensDb, memoryNameService);
-    
-    private static final Controller createController(ControllerDb db, CuratorDb curator,
-                                                     ConfigServerClientMock configServerClientMock, ManualClock clock,
-                                                     GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
-                                                     AthensDbMock athensDb, MemoryNameService nameService) {
-        Controller controller = new Controller(db,
-                                               curator,
-                                               new MemoryRotationRepository(),
-                                               gitHubClientMock,
-                                               new JiraMock(),
-                                               new MemoryEntityService(),
-                                               new MemoryGlobalRoutingService(),
-                                               zoneRegistryMock,
-                                               configServerClientMock,
-                                               new MockMetricsService(),
-                                               nameService,
-                                               new MockRoutingGenerator(),
-                                               new ChefMock(),
-                                               clock,
-                                               new AthensMock(athensDb));
-        controller.updateVersionStatus(VersionStatus.compute(controller));
-        return controller;
+    private final ControllerDb db;
+    private final AthensDbMock athensDb;
+    private final ManualClock clock;
+    private final ConfigServerClientMock configServer;
+    private final ZoneRegistryMock zoneRegistry;
+    private final GitHubMock gitHub;
+    private final CuratorDb curator;
+    private final MemoryNameService nameService;
+
+    private Controller controller;
+
+    public ControllerTester() {
+        this(new MemoryControllerDb(), new AthensDbMock(), new ManualClock(), new ConfigServerClientMock(),
+             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
+    }
+
+    public ControllerTester(ManualClock clock) {
+        this(new MemoryControllerDb(), new AthensDbMock(), clock, new ConfigServerClientMock(),
+             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
+    }
+
+    private ControllerTester(ControllerDb db, AthensDbMock athensDb, ManualClock clock,
+                             ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
+                             GitHubMock gitHub, CuratorDb curator, MemoryNameService nameService) {
+        this.db = db;
+        this.athensDb = athensDb;
+        this.clock = clock;
+        this.configServer = configServer;
+        this.zoneRegistry = zoneRegistry;
+        this.gitHub = gitHub;
+        this.curator = curator;
+        this.nameService = nameService;
+        this.controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry,
+                                           athensDb, nameService);
     }
 
     public Controller controller() { return controller; }
+
     public CuratorDb curator() { return curator; }
+
     public ManualClock clock() { return clock; }
+
     public AthensDbMock athensDb() { return athensDb; }
-    public MemoryNameService nameService() { return memoryNameService; }
+
+    public MemoryNameService nameService() { return nameService; }
+
+    public ZoneRegistryMock zoneRegistry() { return zoneRegistry; }
+
+    public ConfigServerClientMock configServer() { return configServer; }
+
+    public GitHubMock gitHub() { return gitHub; }
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(db, curator, configServerClientMock, clock, gitHubMock, zoneRegistryMock,
-                                      athensDb, memoryNameService);
+        controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry, athensDb, nameService);
     }
 
-    public ZoneRegistryMock getZoneRegistryMock() { return zoneRegistryMock; }
-
-    public ConfigServerClientMock configServerClientMock() { return configServerClientMock; }
-
-    public GitHubMock gitHubClientMock () { return gitHubMock; }
-
-    /** Set the application with the given id to currently be in the progress of rolling out the given change */
-    public void setDeploying(ApplicationId id, Optional<Change> change) {
-        try (Lock lock = controller.applications().lock(id)) {
-            controller.applications().store(controller.applications().require(id).withDeploying(change), lock);
-        }
-    }
-    
     /** Creates the given tenant and application and deploys it */
     public Application createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
         return createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, 
+    public Application createAndDeploy(String tenantName, String domainName, String applicationName,
                                        String instanceName, Zone zone, long projectId, Long propertyId) {
         TenantId tenant = createTenant(tenantName, domainName, propertyId);
         Application application = createApplication(tenant, applicationName, instanceName, projectId);
@@ -142,7 +138,7 @@ public final class ControllerTester {
     public Application createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
         return createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
-    
+
     public Zone toZone(Environment environment) {
         switch (environment) {
             case dev: case test: return new Zone(environment, RegionName.from("us-east-1"));
@@ -156,7 +152,7 @@ public final class ControllerTester {
         athensDb.addDomain(new AthensDbMock.Domain(domain));
         return domain;
     }
-    
+
     public TenantId createTenant(String tenantName, String domainName, Long propertyId) {
         TenantId id = new TenantId(tenantName);
         Optional<Tenant> existing = controller().tenants().tenant(id);
@@ -168,7 +164,7 @@ public final class ControllerTester {
         assertNotNull(controller().tenants().tenant(id));
         return id;
     }
-    
+
     public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = applicationId(tenant.id(), applicationName, instanceName);
         Application application = controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken))
@@ -198,6 +194,29 @@ public final class ControllerTester {
         return ApplicationId.from(TenantName.from(tenant),
                                   ApplicationName.from(application),
                                   InstanceName.from(instance));
+    }
+
+    private static Controller createController(ControllerDb db, CuratorDb curator,
+                                               ConfigServerClientMock configServerClientMock, ManualClock clock,
+                                               GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
+                                               AthensDbMock athensDb, MemoryNameService nameService) {
+        Controller controller = new Controller(db,
+                                               curator,
+                                               new MemoryRotationRepository(),
+                                               gitHubClientMock,
+                                               new JiraMock(),
+                                               new MemoryEntityService(),
+                                               new MemoryGlobalRoutingService(),
+                                               zoneRegistryMock,
+                                               configServerClientMock,
+                                               new MockMetricsService(),
+                                               nameService,
+                                               new MockRoutingGenerator(),
+                                               new ChefMock(),
+                                               clock,
+                                               new AthensMock(athensDb));
+        controller.updateVersionStatus(VersionStatus.compute(controller));
+        return controller;
     }
 
 }
