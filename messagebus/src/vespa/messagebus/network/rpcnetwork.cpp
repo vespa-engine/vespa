@@ -86,10 +86,11 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
         }
     }
     if (shouldSend) {
-        _net.getExecutor().execute(vespalib::makeLambdaTask([this]() {
+        auto rejected = _net.getExecutor().execute(vespalib::makeLambdaTask([this]() {
             _net.send(*this);
             delete this;
         }));
+        assert (!rejected);
     }
 }
 
