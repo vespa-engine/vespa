@@ -32,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.jira.JiraMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.cost.CostMock;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -78,7 +77,6 @@ public final class ControllerTester {
                                                new MemoryEntityService(),
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
-                                               new CostMock(),
                                                configServerClientMock,
                                                new MockMetricsService(),
                                                nameService,

@@ -18,8 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.CostApplication;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.Cost;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
@@ -28,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.common.NotFoundCheckedException;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -81,7 +78,6 @@ public class Controller extends AbstractComponent {
     private final EntityService entityService;
     private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
-    private final Cost cost;
     private final ConfigServerClient configServerClient;
     private final MetricsService metricsService;
     private final Chef chefClient;
@@ -98,19 +94,19 @@ public class Controller extends AbstractComponent {
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
                       GitHub gitHub, Jira jiraClient, EntityService entityService,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, Cost cost, ConfigServerClient configServerClient,
+                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Athens athens) {
         this(db, curator, rotationRepository,
              gitHub, jiraClient, entityService, globalRoutingService, zoneRegistry,
-             cost, configServerClient, metricsService, nameService, routingGenerator, chefClient,
+             configServerClient, metricsService, nameService, routingGenerator, chefClient,
              Clock.systemUTC(), athens);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
                       GitHub gitHub, Jira jiraClient, EntityService entityService,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, Cost cost, ConfigServerClient configServerClient,
+                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Clock clock, Athens athens) {
         Objects.requireNonNull(db, "Controller db cannot be null");
@@ -121,7 +117,6 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(entityService, "EntityService cannot be null");
         Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
-        Objects.requireNonNull(cost, "Cost cannot be null");
         Objects.requireNonNull(configServerClient, "ConfigServerClient cannot be null");
         Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         Objects.requireNonNull(nameService, "NameService cannot be null");
@@ -136,7 +131,6 @@ public class Controller extends AbstractComponent {
         this.entityService = entityService;
         this.globalRoutingService = globalRoutingService;
         this.zoneRegistry = zoneRegistry;
-        this.cost = cost;
         this.configServerClient = configServerClient;
         this.metricsService = metricsService;
         this.chefClient = chefClient;
@@ -174,12 +168,6 @@ public class Controller extends AbstractComponent {
     }
 
     public Clock clock() { return clock; }
-
-    public CostApplication getApplicationCost(com.yahoo.config.provision.ApplicationId application,
-                                              com.yahoo.config.provision.Zone zone)
-            throws NotFoundCheckedException {
-        return cost.getApplicationCost(zone, application);
-    }
 
     public URI getElkUri(Environment environment, RegionName region, DeploymentId deploymentId) {
         return elkUrl(zoneRegistry.getLogServerUri(environment, region), deploymentId);

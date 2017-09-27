@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.cost;
-
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
+package com.yahoo.vespa.hosted.controller.application;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,26 +9,26 @@ import java.util.Map;
  *
  * @author smorgrav
  */
-public class CostApplication {
+public class DeploymentCost {
 
-    private final Zone zone;
-    private final ApplicationId appId;
     private final double utilization;
     private final double waste;
     private final double tco;
 
-    private final Map<String, CostCluster> clusters;
-    
-    public CostApplication(Zone zone, ApplicationId appId, Map<String, CostCluster> clusterCosts) {
-        this.zone = zone;
-        this.appId = appId;
+    private final Map<String, ClusterCost> clusters;
+
+    public DeploymentCost() {
+        this(new HashMap<>());
+    }
+
+    public DeploymentCost(Map<String, ClusterCost> clusterCosts) {
         clusters = new HashMap<>(clusterCosts);
 
         double tco = 0;
         double util = 0;
         double waste = 0;
 
-        for (CostCluster costCluster : clusterCosts.values()) {
+        for (ClusterCost costCluster : clusterCosts.values()) {
             tco += costCluster.getTco();
             waste += costCluster.getWaste();
             int nodesInCluster = costCluster.getClusterInfo().getHostnames().size();
@@ -42,16 +39,8 @@ public class CostApplication {
         this.waste = waste;
         this.tco = tco;
     }
-    
-    public Zone getZone() {
-        return zone;
-    }
 
-    public ApplicationId getAppId() {
-        return appId;
-    }
-
-    public Map<String, CostCluster> getCluster() {
+    public Map<String, ClusterCost> getCluster() {
         return clusters;
     }
 

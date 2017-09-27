@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.api.integration.cost;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.application;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 /**
  * System resources as _ratios_ of available resources.
@@ -7,7 +7,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.cost;// Copyright 2017
  *
  * @author smorgrav
  */
-public class CostResources {
+public class ClusterUtilization {
 
     private final double memory;
     private final double cpu;
@@ -24,7 +24,7 @@ public class CostResources {
      * @param disk  Disk utilization
      * @param diskBusy Disk busy
      */
-    public CostResources(double memory, double cpu, double disk, double diskBusy) {
+    public ClusterUtilization(double memory, double cpu, double disk, double diskBusy) {
         this.memory = memory;
         this.cpu = cpu;
         this.disk = disk;

@@ -2,9 +2,12 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.Zone;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -18,6 +21,8 @@ public class Deployment {
     private final ApplicationRevision revision;
     private final Version version;
     private final Instant deployTime;
+    private final Map<Id, ClusterUtilization> clusterUtils = new HashMap<>();
+    private final Map<Id, ClusterInfo> clusterInfo = new HashMap<>();
 
     public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime) {
         Objects.requireNonNull(zone, "zone cannot be null");
@@ -42,9 +47,31 @@ public class Deployment {
     /** Returns the time this was deployed */
     public Instant at() { return deployTime; }
 
+    public Map<Id, ClusterUtilization> getClusterUtilization() {
+        return clusterUtils;
+    }
+
+    public Map<Id, ClusterInfo> getClusterInfo() {
+        return clusterInfo;
+    }
+
+    /**
+     * Calculate cost for this deployment.
+     *
+     * This is based on cluster utilization and cluster info.
+     */
+    public DeploymentCost calculateCost() {
+
+        Map<String, ClusterCost> costClusters = new HashMap<>();
+        for (Id clusterId : clusterUtils.keySet()) {
+            costClusters.put(clusterId.value(), new ClusterCost(clusterInfo.get(clusterId), clusterUtils.get(clusterId)));
+        }
+
+        return new DeploymentCost(costClusters);
+    }
+
     @Override
     public String toString() {
         return "deployment to " + zone + " of " + revision + " on version " + version + " at " + deployTime;
     }
-
 }

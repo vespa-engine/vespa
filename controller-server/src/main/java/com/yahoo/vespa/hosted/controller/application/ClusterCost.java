@@ -1,31 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.cost;
+package com.yahoo.vespa.hosted.controller.application;
 
 /**
- * Calculate tco and waste for one cluster within one Vespa application in one zone.
+ * Calculate tco and waste for one cluster within one deployment.
  *
  * @author smorgrav
  */
-public class CostCluster {
+public class ClusterCost {
     private final double tco;
     private final double waste;
-    private final CostClusterInfo clusterInfo;
-    private final CostResources systemUtilization;
-    private final CostResources targetUtilization;
-    private final CostResources resultUtilization;
+    private final ClusterInfo clusterInfo;
+    private final ClusterUtilization systemUtilization;
+    private final ClusterUtilization targetUtilization;
+    private final ClusterUtilization resultUtilization;
 
     /**
      * @param clusterInfo       Value object with cluster info e.g. the TCO for the hardware used
      * @param systemUtilization Utilization of system resources (as ratios)
-     * @param targetUtilization Target utilization (ratios - usually less than 1.0)
      */
-    public CostCluster(CostClusterInfo clusterInfo,
-                       CostResources systemUtilization,
-                       CostResources targetUtilization) {
+    public ClusterCost(ClusterInfo clusterInfo,
+                       ClusterUtilization systemUtilization) {
 
         this.clusterInfo = clusterInfo;
         this.systemUtilization = systemUtilization;
-        this.targetUtilization = targetUtilization;
+        this.targetUtilization = new ClusterUtilization(0.7,0.2, 0.7, 0.3);
         this.resultUtilization = calculateResultUtilization(systemUtilization, targetUtilization);
 
         this.tco = clusterInfo.getFlavor().cost() * Math.min(1, this.resultUtilization.getMaxUtilization());
@@ -40,29 +38,29 @@ public class CostCluster {
         return waste;
     }
 
-    public CostClusterInfo getClusterInfo() {
+    public ClusterInfo getClusterInfo() {
         return clusterInfo;
     }
 
-    public CostResources getSystemUtilization() {
+    public ClusterUtilization getSystemUtilization() {
         return systemUtilization;
     }
 
-    public CostResources getTargetUtilization() {
+    public ClusterUtilization getTargetUtilization() {
         return targetUtilization;
     }
 
-    public CostResources getResultUtilization() {
+    public ClusterUtilization getResultUtilization() {
         return resultUtilization;
     }
 
-    static CostResources calculateResultUtilization(CostResources system, CostResources target) {
+    static ClusterUtilization calculateResultUtilization(ClusterUtilization system, ClusterUtilization target) {
         double cpu = ratio(system.getCpu(),target.getCpu());
         double mem = ratio(system.getMemory(),target.getMemory());
         double disk = ratio(system.getDisk(),target.getDisk());
         double diskbusy = ratio(system.getDiskBusy(),target.getDiskBusy());
 
-        return new CostResources(mem, cpu, disk, diskbusy);
+        return new ClusterUtilization(mem, cpu, disk, diskbusy);
     }
 
     private static double ratio(double a, double b) {
