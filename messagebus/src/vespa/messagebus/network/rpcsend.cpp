@@ -148,8 +148,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
-    auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req]() { doRequestDone(req);}));
-    assert(!rejected);
+    doRequestDone(req);
 }
 
 void
@@ -221,10 +220,7 @@ RPCSend::decode(vespalib::stringref protocolName, const vespalib::Version & vers
 void
 RPCSend::handleReply(Reply::UP reply)
 {
-    auto rejected = _net->getExecutor().execute(makeLambdaTask([this, reply = std::move(reply)]() mutable {
-        doHandleReply(std::move(reply));
-    }));
-    assert (!rejected);
+    doHandleReply(std::move(reply));
 }
 
 void
@@ -252,8 +248,7 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req]() { doRequest(req);}));
-    assert(!rejected);
+    doRequest(req);
 }
 
 void
