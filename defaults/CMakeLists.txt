@@ -6,5 +6,3 @@ vespa_define_module(
     APPS
     src/apps/printdefault
 )
-
-install_fat_java_artifact(defaults)
