@@ -399,7 +399,7 @@ public class StorageMaintainer {
         }
 
         void updateNextHandleCoredumpsTime() {
-            nextHandleOldCoredumpsAt = clock.instant().plus(Duration.ofHours(1));
+            nextHandleOldCoredumpsAt = clock.instant().plus(Duration.ofMinutes(5));
         }
 
         boolean shouldHandleCoredumpsNow() {
