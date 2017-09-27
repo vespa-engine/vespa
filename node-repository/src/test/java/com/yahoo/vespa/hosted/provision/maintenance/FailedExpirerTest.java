@@ -75,8 +75,8 @@ public class FailedExpirerTest {
         clock.advance(Duration.ofDays(5));
         failedExpirer.run();
 
+        assertNodeHostnames(Node.State.failed, "node1");
         assertNodeHostnames(Node.State.parked, "node2", "node3");
-        assertNodeHostnames(Node.State.dirty, "node1");
     }
 
     @Test
