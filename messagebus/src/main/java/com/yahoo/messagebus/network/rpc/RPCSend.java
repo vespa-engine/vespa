@@ -107,6 +107,10 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
 
     @Override
     public final void handleRequestDone(Request req) {
+        net.getExecutor().execute(() -> doRequestDone(req));
+    }
+
+    private void doRequestDone(Request req) {
         SendContext ctx = (SendContext)req.getContext();
         String serviceName = ((RPCServiceAddress)ctx.recipient.getServiceAddress()).getServiceName();
         Reply reply = null;
@@ -157,6 +161,10 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
     @Override
     public final void invoke(Request request) {
         request.detach();
+        net.getExecutor().execute(() -> doInvoke(request));
+    }
+
+    private void doInvoke(Request request) {
         Params p = toParams(request.parameters());
 
         request.discardParameters(); // allow garbage collection of request parameters

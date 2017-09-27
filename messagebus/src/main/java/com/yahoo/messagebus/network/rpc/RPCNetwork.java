@@ -67,7 +67,7 @@ public class RPCNetwork implements Network, MethodHandler {
     private NetworkOwner owner;
     private final SlobrokConfigSubscriber slobroksConfig;
     private final LinkedHashMap<String, Route> lruRouteMap = new LinkedHashMap<>(10000, 0.5f, true);
-    private final ExecutorService sendService =
+    private final ExecutorService executor =
             new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
                                    0L, TimeUnit.SECONDS,
                                    new SynchronousQueue<>(false),
@@ -258,7 +258,7 @@ public class RPCNetwork implements Network, MethodHandler {
         } else if (ctx.hasError) {
             replyError(ctx, ErrorCode.HANDSHAKE_FAILED, "An error occured while resolving version.");
         } else {
-            sendService.execute(new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx));
+            executor.execute(new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx));
         }
     }
 
@@ -278,7 +278,7 @@ public class RPCNetwork implements Network, MethodHandler {
             listener.shutdown().join();
             orb.transport().shutdown().join();
             targetPool.flushTargets(true);
-            sendService.shutdown();
+            executor.shutdown();
             return true;
         }
         return false;
@@ -409,6 +409,10 @@ public class RPCNetwork implements Network, MethodHandler {
      */
     public OOSManager getOOSManager() {
         return oosManager;
+    }
+
+    ExecutorService getExecutor() {
+        return executor;
     }
 
     private class SendTask implements Runnable {
