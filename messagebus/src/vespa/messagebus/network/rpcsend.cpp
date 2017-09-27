@@ -148,7 +148,8 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
-    _net->getExecutor().execute(makeLambdaTask([this, req]() { doRequestDone(req);}));
+    auto task = _net->getExecutor().execute(makeLambdaTask([this, req]() { doRequestDone(req);}));
+    assert(!task);
 }
 
 void
