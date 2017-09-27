@@ -51,8 +51,17 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     /** The exception to throw on the next prepare run, or null to continue normally */
     private RuntimeException prepareException = null;
     
-    /** The version given in the previous prepare call, or null if no call has been made */
-    public Optional<Version> lastPrepareVersion = null;
+    private Optional<Version> lastPrepareVersion = Optional.empty();
+
+    /** The version given in the previous prepare call, or empty if no call has been made */
+    public Optional<Version> lastPrepareVersion() {
+        return lastPrepareVersion;
+    }
+
+    /** Return map of applications that may have been activated */
+    public Map<ApplicationId, Boolean> activated() {
+        return Collections.unmodifiableMap(applicationActivated);
+    }
     
     @Override
     public PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<Rotation> rotations, byte[] content) {
@@ -201,4 +210,5 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
                 ? endpoints.get(endpoint)
                 : result;
     }
+
 }
