@@ -15,7 +15,7 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -376,13 +376,13 @@ void
 RPCNetwork::sync()
 {
     SyncTask task(_scheduler);
+    _executor->sync();
     task.await();
 }
 
 void
 RPCNetwork::shutdown()
 {
-    _executor->sync();
     _transport->ShutDown(false);
     _threadPool->Close();
     _executor->shutdown();

@@ -15,6 +15,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using vespalib::make_string;
+using vespalib::makeLambdaTask;
 
 namespace mbus {
 
@@ -147,7 +148,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
-    _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequestDone(req);}));
+    doRequestDone(req);
 }
 
 void
@@ -219,6 +220,11 @@ RPCSend::decode(vespalib::stringref protocolName, const vespalib::Version & vers
 void
 RPCSend::handleReply(Reply::UP reply)
 {
+    doHandleReply(std::move(reply));
+}
+
+void
+RPCSend::doHandleReply(Reply::UP reply) {
     ReplyContext::UP ctx(static_cast<ReplyContext*>(reply->getContext().value.PTR));
     FRT_RPCRequest &req = ctx->getRequest();
     string version = ctx->getVersion().toString();
@@ -242,8 +248,7 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    auto rejected = _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequest(req);}));
-    assert(!rejected);
+    doRequest(req);
 }
 
 void

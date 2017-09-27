@@ -84,6 +84,7 @@ public:
 private:
     void doRequest(FRT_RPCRequest *req);
     void doRequestDone(FRT_RPCRequest *req);
+    void doHandleReply(std::unique_ptr<Reply> reply);
     void attach(RPCNetwork &net) final override;
     void handleDiscard(Context ctx) final override;
     void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
