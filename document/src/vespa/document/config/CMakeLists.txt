@@ -4,7 +4,5 @@ vespa_add_library(document_documentconfig OBJECT
     DEPENDS
 )
 vespa_generate_config(document_documentconfig documenttypes.def)
-install(FILES documenttypes.def RENAME document.documenttypes.def
-    DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES documentmanager.def RENAME document.config.documentmanager.def
-    DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(documenttypes.def document.documenttypes.def)
+install_config_definition(documentmanager.def document.config.documentmanager.def)

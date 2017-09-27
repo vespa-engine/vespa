@@ -4,8 +4,8 @@ vespa_add_library(vsm_vconfig OBJECT
     DEPENDS
 )
 vespa_generate_config(vsm_vconfig vsmfields.def)
-install(FILES vsmfields.def RENAME vespa.config.search.vsm.vsmfields.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(vsmfields.def vespa.config.search.vsm.vsmfields.def)
 vespa_generate_config(vsm_vconfig vsm.def)
-install(FILES vsm.def RENAME vespa.config.search.vsm.vsm.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(vsm.def vespa.config.search.vsm.vsm.def)
 vespa_generate_config(vsm_vconfig vsmsummary.def)
-install(FILES vsmsummary.def RENAME vespa.config.search.vsm.vsmsummary.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(vsmsummary.def vespa.config.search.vsm.vsmsummary.def)

@@ -17,4 +17,4 @@ vespa_add_library(filedistribution_filedistributionmodel STATIC
 vespa_generate_config(filedistribution_filedistributionmodel filereferences.def)
 
 vespa_add_target_external_dependency(filedistribution_filedistributionmodel zookeeper_mt)
-install(FILES filereferences.def RENAME cloud.config.filedistribution.filereferences.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(filereferences.def cloud.config.filedistribution.filereferences.def)

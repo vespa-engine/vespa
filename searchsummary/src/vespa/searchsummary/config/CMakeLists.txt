@@ -4,4 +4,4 @@ vespa_add_library(searchsummary_config OBJECT
     DEPENDS
 )
 vespa_generate_config(searchsummary_config juniperrc.def)
-install(FILES juniperrc.def RENAME vespa.config.search.summary.juniperrc.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(juniperrc.def vespa.config.search.summary.juniperrc.def)

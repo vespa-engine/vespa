@@ -40,3 +40,5 @@ vespa_define_module(
     src/tests/struct_anno
     src/tests/tensor_fieldvalue
 )
+
+install_java_artifact(document)

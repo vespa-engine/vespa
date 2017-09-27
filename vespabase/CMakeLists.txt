@@ -31,3 +31,7 @@ configure_file(src/vespa-configserver.service.in src/vespa-configserver.service 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/vespa.service ${CMAKE_CURRENT_BINARY_DIR}/src/vespa-configserver.service DESTINATION etc/systemd/system)
 
 install(FILES src/Defaults.pm DESTINATION lib/perl5/site_perl/Yahoo/Vespa)
+
+configure_file(conf/default-env.txt.in conf/default-env.txt @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/conf/default-env.txt DESTINATION conf/vespa)
+

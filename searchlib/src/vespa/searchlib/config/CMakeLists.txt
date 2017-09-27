@@ -4,4 +4,4 @@ vespa_add_library(searchlib_sconfig OBJECT
     DEPENDS
 )
 vespa_generate_config(searchlib_sconfig translogserver.def)
-install(FILES translogserver.def RENAME searchlib.translogserver.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(translogserver.def searchlib.translogserver.def)

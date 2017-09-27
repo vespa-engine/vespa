@@ -536,3 +536,23 @@ function(__export_include_directories TARGET)
         target_include_directories(${TARGET} PUBLIC ${LOCAL_INCLUDE_DIRS})
     endif()
 endfunction()
+
+function(install_config_definition)
+    if(ARGC GREATER 1)
+        install(FILES ${ARGV0} RENAME ${ARGV1} DESTINATION var/db/vespa/config_server/serverdb/classes)
+    else()
+        install(FILES ${ARGV0} DESTINATION var/db/vespa/config_server/serverdb/classes)
+    endif()
+endfunction()
+
+function(install_java_artifact NAME)
+    install(FILES "target/${NAME}.jar" DESTINATION lib/jars/)
+endfunction()
+
+function(install_java_artifact_dependencies NAME)
+    install(DIRECTORY "target/dependency/" DESTINATION lib/jars FILES_MATCHING PATTERN "*.jar")
+endfunction()
+
+function(install_fat_java_artifact NAME)
+    install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
+endfunction()

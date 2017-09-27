@@ -1,0 +1,2 @@
+fallback VESPA_HOME @CMAKE_INSTALL_PREFIX@
+override VESPA_USER vespa
