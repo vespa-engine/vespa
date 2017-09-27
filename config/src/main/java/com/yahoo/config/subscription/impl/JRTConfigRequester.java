@@ -41,8 +41,8 @@ public class JRTConfigRequester implements RequestWaiter {
     private int fatalFailures = 0; // independent of transientFailures
     private int transientFailures = 0;  // independent of fatalFailures
     private final ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new JRTSourceThreadFactory());
-    private Instant suspendWarningLogged;
-    private Instant noApplicationWarningLogged;
+    private Instant suspendWarningLogged = Instant.MIN;
+    private Instant noApplicationWarningLogged = Instant.MIN;
     private static final Duration delayBetweenWarnings = Duration.ofSeconds(60);
     private final ConnectionPool connectionPool;
     static final float randomFraction = 0.2f;
