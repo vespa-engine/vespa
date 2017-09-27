@@ -6,7 +6,7 @@ LOG_SETUP("visibility_handler_test");
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 using search::SerialNum;
 using proton::IGetSerialNum;
@@ -15,7 +15,7 @@ using proton::ExecutorThreadingService;
 using proton::test::ThreadingServiceObserver;
 using proton::IFeedView;
 using proton::VisibilityHandler;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using fastos::TimeStamp;
 
 namespace {

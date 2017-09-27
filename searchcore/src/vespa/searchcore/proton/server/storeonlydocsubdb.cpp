@@ -36,7 +36,7 @@ using search::GrowStrategy;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::IndexMetaInfo;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;

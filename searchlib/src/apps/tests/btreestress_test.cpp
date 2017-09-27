@@ -1,10 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("btreestress_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <string>
-#include <set>
-#include <iostream>
 #include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btreebuilder.h>
 #include <vespa/searchlib/btree/btreenodeallocator.h>
@@ -22,16 +18,17 @@ LOG_SETUP("btreestress_test");
 #include <vespa/searchlib/btree/btreestore.hpp>
 #include <vespa/searchlib/btree/btreeaggregator.hpp>
 
-
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchlib/common/lambdatask.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/lambdatask.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("btreestress_test");
 
 using MyTree = search::btree::BTree<uint32_t, uint32_t>;
 using MyTreeIterator = typename MyTree::Iterator;
 using MyTreeConstIterator = typename MyTree::ConstIterator;
 using GenerationHandler = vespalib::GenerationHandler;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 struct Fixture
 {

@@ -60,24 +60,25 @@ private:
 
     using SendAdapterMap = std::map<vespalib::Version, RPCSendAdapter*>;
 
-    INetworkOwner                                *_owner;
-    Identity                                      _ident;
-    std::unique_ptr<FastOS_ThreadPool>            _threadPool;
-    std::unique_ptr<FNET_Transport>               _transport;
-    std::unique_ptr<FRT_Supervisor>               _orb;
-    FNET_Scheduler                               &_scheduler;
-    std::unique_ptr<RPCTargetPool>                _targetPool;
-    TargetPoolTask                                _targetPoolTask;
-    std::unique_ptr<RPCServicePool>               _servicePool;
-    std::unique_ptr<slobrok::ConfiguratorFactory> _slobrokCfgFactory;
-    std::unique_ptr<slobrok::api::IMirrorAPI>     _mirror;
-    std::unique_ptr<slobrok::api::RegisterAPI>    _regAPI;
-    std::unique_ptr<OOSManager>                   _oosManager;
-    int                                           _requestedPort;
-    std::unique_ptr<RPCSendAdapter>               _sendV1;
-    std::unique_ptr<RPCSendAdapter>               _sendV2;
-    SendAdapterMap                                _sendAdapters;
-    CompressionConfig                             _compressionConfig;
+    INetworkOwner                                  *_owner;
+    Identity                                        _ident;
+    std::unique_ptr<FastOS_ThreadPool>              _threadPool;
+    std::unique_ptr<FNET_Transport>                 _transport;
+    std::unique_ptr<FRT_Supervisor>                 _orb;
+    FNET_Scheduler                                 &_scheduler;
+    std::unique_ptr<RPCTargetPool>                  _targetPool;
+    TargetPoolTask                                  _targetPoolTask;
+    std::unique_ptr<RPCServicePool>                 _servicePool;
+    std::unique_ptr<slobrok::ConfiguratorFactory>   _slobrokCfgFactory;
+    std::unique_ptr<slobrok::api::IMirrorAPI>       _mirror;
+    std::unique_ptr<slobrok::api::RegisterAPI>      _regAPI;
+    std::unique_ptr<OOSManager>                     _oosManager;
+    int                                             _requestedPort;
+    std::unique_ptr<vespalib::ThreadStackExecutor>  _executor;
+    std::unique_ptr<RPCSendAdapter>                 _sendV1;
+    std::unique_ptr<RPCSendAdapter>                 _sendV2;
+    SendAdapterMap                                  _sendAdapters;
+    CompressionConfig                               _compressionConfig;
 
     /**
      * Resolves and assigns a service address for the given recipient using the
@@ -235,6 +236,7 @@ public:
     const slobrok::api::IMirrorAPI &getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
     void invoke(FRT_RPCRequest *req);
+    vespalib::Executor & getExecutor();
 };
 
 } // namespace mbus

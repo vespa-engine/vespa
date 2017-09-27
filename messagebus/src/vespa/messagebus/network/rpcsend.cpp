@@ -7,9 +7,10 @@
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/reflection.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/vespalib/data/slime/cursor.h>
 
@@ -146,6 +147,11 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
+    _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequestDone(req);}));
+}
+
+void
+RPCSend::doRequestDone(FRT_RPCRequest *req) {
     SendContext::UP ctx(static_cast<SendContext*>(req->GetContext()._value.VOIDP));
     const string &serviceName = static_cast<RPCServiceAddress&>(ctx->getRecipient().getServiceAddress()).getServiceName();
     Reply::UP reply;
@@ -236,6 +242,13 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
+    auto rejected = _net->getExecutor().execute(vespalib::makeLambdaTask([this, req]() { doRequest(req);}));
+    assert(!rejected);
+}
+
+void
+RPCSend::doRequest(FRT_RPCRequest *req)
+{
     FRT_Values &args = *req->GetParams();
 
     std::unique_ptr<Params> params = toParams(args);

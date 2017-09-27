@@ -2,30 +2,13 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 using namespace vespalib;
 
-namespace {
-
-class Test : public vespalib::TestApp {
-    void requireThatClosuresCanBeWrappedInATask();
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("executor_test");
-
-    TEST_DO(requireThatClosuresCanBeWrappedInATask());
-
-    TEST_DONE();
-}
-
 void setBool(bool *b) { *b = true; }
-void Test::requireThatClosuresCanBeWrappedInATask() {
+
+TEST("require that closures can be wrapped as tasks") {
     bool called = false;
     Executor::Task::UP task = makeTask(makeClosure(setBool, &called));
     EXPECT_TRUE(!called);
@@ -33,6 +16,12 @@ void Test::requireThatClosuresCanBeWrappedInATask() {
     EXPECT_TRUE(called);
 }
 
-}  // namespace
+TEST("require that lambdas can be wrapped as tasks") {
+    bool called = false;
+    Executor::Task::UP task = makeLambdaTask([&called]() { called = true; });
+    EXPECT_TRUE(!called);
+    task->run();
+    EXPECT_TRUE(called);
+}
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

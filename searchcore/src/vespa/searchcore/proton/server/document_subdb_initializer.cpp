@@ -3,10 +3,10 @@
 #include "document_subdb_initializer.h"
 #include "idocumentsubdb.h"
 #include <future>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 

@@ -16,9 +16,6 @@
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/datatype/annotationtype.h>
-#include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/searchlib/util/rand48.h>
@@ -37,7 +34,7 @@ using document::SpanList;
 using document::StringFieldValue;
 using search::ScheduleTaskCallback;
 using search::index::schema::DataType;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;

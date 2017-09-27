@@ -24,7 +24,7 @@ using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 

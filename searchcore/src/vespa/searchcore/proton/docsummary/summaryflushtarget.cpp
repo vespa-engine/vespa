@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summaryflushtarget.h"
-#include <future>
 #include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 using search::IDocumentStore;
 using search::SerialNum;
@@ -91,7 +90,7 @@ SummaryFlushTarget::initFlush(SerialNum currentSerial)
     // Called by document db executor
     std::promise<Task::UP> promise;
     std::future<Task::UP> future = promise.get_future();
-    _summaryService.execute(search::makeLambdaTask(
+    _summaryService.execute(vespalib::makeLambdaTask(
                                   [&]() { promise.set_value(
                                           internalInitFlush(currentSerial));
                                   }));

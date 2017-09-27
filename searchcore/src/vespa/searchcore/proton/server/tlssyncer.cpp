@@ -3,11 +3,11 @@
 #include "tlssyncer.h"
 #include "igetserialnum.h"
 #include <vespa/vespalib/util/threadexecutor.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <future>
 
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::SerialNum;
 
 namespace proton {

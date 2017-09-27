@@ -13,7 +13,7 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/autoclosurecaller.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <sstream>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -31,7 +31,7 @@ using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using std::ostringstream;
 using vespalib::makeClosure;
 using vespalib::makeTask;

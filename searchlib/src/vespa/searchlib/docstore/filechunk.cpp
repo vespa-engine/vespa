@@ -5,7 +5,7 @@
 #include "summaryexceptions.h"
 #include "randreaders.h"
 #include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -345,14 +345,14 @@ FileChunk::appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWr
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
         std::promise<Chunk::UP> promisedChunk;
         std::future<Chunk::UP> futureChunk = promisedChunk.get_future();
-        executor.execute(makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
+        executor.execute(vespalib::makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
             const ChunkInfo & cInfo(_chunkInfo[chunkId]);
             vespalib::DataBuffer whole(0ul, ALIGNMENT);
             FileRandRead::FSP keepAlive(_file->read(cInfo.getOffset(), whole, cInfo.getSize()));
             promise.set_value(std::make_unique<Chunk>(chunkId, whole.getData(), whole.getDataLen()));
         }));
 
-        singleExecutor.execute(makeLambdaTask([args = &fixedParams, chunk = std::move(futureChunk)]() mutable {
+        singleExecutor.execute(vespalib::makeLambdaTask([args = &fixedParams, chunk = std::move(futureChunk)]() mutable {
             appendChunks(args, chunk.get());
         }));
     }

@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("memoryindex_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/memoryindex/memoryindex.h>
@@ -19,11 +18,14 @@ LOG_SETUP("memoryindex_test");
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("memoryindex_test");
+
 using document::Document;
 using document::FieldValue;
 using search::ScheduleTaskCallback;
 using search::index::schema::DataType;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;

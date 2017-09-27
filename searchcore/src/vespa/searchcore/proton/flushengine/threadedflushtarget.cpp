@@ -2,13 +2,13 @@
 
 #include "threadedflushtarget.h"
 #include <vespa/searchcore/proton/server/igetserialnum.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <future>
 #include <cassert>
 
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 

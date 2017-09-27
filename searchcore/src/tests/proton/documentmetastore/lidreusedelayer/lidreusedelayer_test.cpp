@@ -7,9 +7,9 @@ LOG_SETUP("lidreusedelayer_test");
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 

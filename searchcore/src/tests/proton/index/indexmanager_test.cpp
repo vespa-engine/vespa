@@ -43,7 +43,7 @@ using search::index::DocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
 using search::index::schema::DataType;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::memoryindex::CompactDocumentWordsStore;
 using search::memoryindex::Dictionary;
 using search::queryeval::Source;

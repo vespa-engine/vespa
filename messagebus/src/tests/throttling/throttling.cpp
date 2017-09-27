@@ -197,6 +197,7 @@ Test::testMaxPendingSize()
     EXPECT_EQUAL(2u, SimpleMessage("12").getApproxSize());
 
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("1")), "dst").isAccepted());
+    EXPECT_TRUE(waitQueueSize(dstQ, 1));
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("12")), "dst").isAccepted());
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1")), "dst").isAccepted());
 

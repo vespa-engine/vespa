@@ -4,7 +4,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <map>
@@ -13,7 +13,7 @@ LOG_SETUP("gid_to_lid_change_handler_test");
 
 using document::GlobalId;
 using document::DocumentId;
-using search::makeLambdaTask;
+using vespalib::makeLambdaTask;
 using search::SerialNum;
 
 namespace proton {
