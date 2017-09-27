@@ -52,11 +52,24 @@ private:
     static uint32_t asMask(DataType dataType) {
         return (1u << static_cast<unsigned int>(dataType));
     }
-    static uint32_t allTypesMask() {
-        return (asMask(DataType::REFERENCE) << 1) - 1;
-    }
     static uint32_t normalTypesMask() {
-        return asMask(DataType::BOOLEANTREE) - 1;
+        return (asMask(DataType::UINT1)  |
+                asMask(DataType::UINT2)  |
+                asMask(DataType::UINT4)  |
+                asMask(DataType::INT8)   |
+                asMask(DataType::INT16)  |
+                asMask(DataType::INT32)  |
+                asMask(DataType::INT64)  |
+                asMask(DataType::FLOAT)  |
+                asMask(DataType::DOUBLE) |
+                asMask(DataType::STRING) |
+                asMask(DataType::RAW));
+    }
+    static uint32_t allTypesMask() {
+        return (normalTypesMask()        |
+                asMask(DataType::BOOLEANTREE) |
+                asMask(DataType::TENSOR)      |
+                asMask(DataType::REFERENCE));
     }
     ParameterDataTypeSet(uint32_t typeMask)
         : _typeMask(typeMask)
