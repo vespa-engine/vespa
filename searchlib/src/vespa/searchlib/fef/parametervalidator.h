@@ -59,7 +59,7 @@ private:
     const StringVector             & _params;
     const ParameterDescriptions    & _descs;
 
-    void validateField(ParameterType::Enum type, ParameterCollection::Enum collection,
+    void validateField(ParameterType::Enum type, ParameterDataTypeSet dataTypeSet, ParameterCollection::Enum collection,
                        size_t i, Result & result);
     void validateNumber(ParameterType::Enum type, size_t i, Result & result);
     Result validate(const ParameterDescriptions::Description & desc);
