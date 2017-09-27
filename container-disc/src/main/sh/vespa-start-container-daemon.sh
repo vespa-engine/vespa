@@ -186,6 +186,7 @@ exec_jsvc () {
     configure_preload
     exec $numactlcmd $envcmd $jsvc_binary_name \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
+        -XX:+PreserveFramePointer \
         ${jsvc_opts} \
         ${memory_options} \
         ${jvm_gcopts} \
@@ -258,6 +259,7 @@ maybe_use_jsvc
 
 exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
+        -XX:+PreserveFramePointer \
         ${memory_options} \
         ${jvm_gcopts} \
         -XX:MaxJavaStackTraceDepth=-1 \
