@@ -9,9 +9,9 @@ import net.jpountz.lz4.LZ4Factory;
  * Wrapper for LZ4 compression that selects compression level based on properties.
  *
  * @author lulf
- * @since 5.19
  */
 public class LZ4PayloadCompressor {
+
     private static final LZ4Factory lz4Factory = LZ4Factory.safeInstance();
     private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL = "VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL";
     private static final int compressionLevel = getCompressionLevel();
@@ -36,4 +36,5 @@ public class LZ4PayloadCompressor {
     private LZ4Compressor getCompressor() {
         return (compressionLevel < 7) ? lz4Factory.fastCompressor() : lz4Factory.highCompressor();
     }
+
 }
