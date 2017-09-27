@@ -5,16 +5,33 @@ import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 /**
+ * This class is injectable to Vespa plugins and is used to acquire locks cross
+ * application deployments.
+ *
  * @author valerijf
  */
 public class ClassLocking {
     private final Map<String, ClassLock> classLocks = new HashMap<>();
     private final Object monitor = new Object();
 
+    /**
+     * Locks key. This will block until the key is acquired.
+     * Users of this <b>must</b> close any lock acquired.
+     */
     public ClassLock lock(Class<?> clazz) {
         return lockWhile(clazz, () -> true);
     }
 
+    /**
+     * Locks key. This will block until the key is acquired or the interrupt condition is
+     * no longer true. Condition is only checked at the start, everytime a lock is released
+     * and when {@link #interrupt()} is called.
+     *
+     * Users of this <b>must</b> close any lock acquired.
+     *
+     * @throws LockInterruptException if interruptCondition returned false before
+     * the lock could be acquired
+     */
     public ClassLock lockWhile(Class<?> clazz, BooleanSupplier interruptCondition) {
         synchronized (monitor) {
             while (classLocks.containsKey(clazz.getName())) {
@@ -45,6 +62,9 @@ public class ClassLocking {
         }
     }
 
+    /**
+     * Notifies {@link #lockWhile} to check the interrupt condition
+     */
     public void interrupt() {
         synchronized (monitor) {
             monitor.notifyAll();
