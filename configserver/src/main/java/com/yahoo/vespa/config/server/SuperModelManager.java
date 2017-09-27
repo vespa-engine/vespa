@@ -5,6 +5,7 @@ package com.yahoo.vespa.config.server;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
@@ -12,18 +13,13 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.GenerationCounter;
-import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.model.SuperModel;
+import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Provides a SuperModel - a model of all application instances,  and makes it stays
@@ -31,7 +27,7 @@ import java.util.stream.Collectors;
  */
 public class SuperModelManager implements SuperModelProvider {
     private final Zone zone;
-    private SuperModel superModel;  // Guarded by 'this' monitor
+    private SuperModelConfigProvider superModelConfigProvider;  // Guarded by 'this' monitor
     private final List<SuperModelListener> listeners = new ArrayList<>();  // Guarded by 'this' monitor
 
     // Generation of the super model
@@ -46,11 +42,16 @@ public class SuperModelManager implements SuperModelProvider {
         this.zone = new Zone(configserverConfig, nodeFlavors);
         this.generationCounter = generationCounter;
         this.masterGeneration = configserverConfig.masterGeneration();
-        makeNewSuperModel(new HashMap<>());
+        makeNewSuperModelConfigProvider(new SuperModel());
     }
 
+    @Override
     public synchronized SuperModel getSuperModel() {
-        return superModel;
+        return superModelConfigProvider.getSuperModel();
+    }
+
+    public synchronized SuperModelConfigProvider getSuperModelConfigProvider() {
+        return superModelConfigProvider;
     }
 
     public synchronized long getGeneration() {
@@ -58,60 +59,41 @@ public class SuperModelManager implements SuperModelProvider {
     }
 
     @Override
-    public synchronized List<ApplicationInfo> snapshot(SuperModelListener listener) {
+    public synchronized SuperModel snapshot(SuperModelListener listener) {
         listeners.add(listener);
-        return superModel.applicationModels().values().stream()
-                .flatMap(applications -> applications.values().stream())
-                .map(Application::toApplicationInfo)
-                .collect(Collectors.toList());
+        return superModelConfigProvider.getSuperModel();
+    }
+
+    @Override
+    public Zone getZone() {
+        return zone;
     }
 
     public synchronized void configActivated(TenantName tenant, ApplicationSet applicationSet) {
-        Map<TenantName, Map<ApplicationId, Application>> newModels = createModelCopy();
-        if (!newModels.containsKey(tenant)) {
-            // New application has been activated
-            newModels.put(tenant, new LinkedHashMap<>());
-        } else {
-            // Application has been redeployed
-        }
-
         // TODO: Should supermodel care about multiple versions?
-        Application application = applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now());
-        newModels.get(tenant).put(applicationSet.getId(), application);
+        ApplicationInfo applicationInfo = applicationSet
+                .getForVersionOrLatest(Optional.empty(), Instant.now())
+                .toApplicationInfo();
 
-        makeNewSuperModel(newModels);
-        listeners.stream().forEach(listener -> listener.applicationActivated(application.toApplicationInfo()));
+        SuperModel newSuperModel = this.superModelConfigProvider
+                .getSuperModel()
+                .cloneAndSetApplication(applicationInfo);
+        makeNewSuperModelConfigProvider(newSuperModel);
+        listeners.stream().forEach(listener ->
+                listener.applicationActivated(newSuperModel, applicationInfo.getApplicationId()));
     }
 
     public synchronized void applicationRemoved(ApplicationId applicationId) {
-        Map<TenantName, Map<ApplicationId, Application>> newModels = createModelCopy();
-        if (newModels.containsKey(applicationId.tenant())) {
-            newModels.get(applicationId.tenant()).remove(applicationId);
-            if (newModels.get(applicationId.tenant()).isEmpty()) {
-                newModels.remove(applicationId.tenant());
-            }
-        }
-
-        makeNewSuperModel(newModels);
-        listeners.stream().forEach(listener -> listener.applicationRemoved(applicationId));
+        SuperModel newSuperModel = this.superModelConfigProvider
+                .getSuperModel()
+                .cloneAndRemoveApplication(applicationId);
+        makeNewSuperModelConfigProvider(newSuperModel);
+        listeners.stream().forEach(listener ->
+                listener.applicationRemoved(newSuperModel, applicationId));
     }
 
-    private void makeNewSuperModel(Map<TenantName, Map<ApplicationId, Application>> newModels) {
+    private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {
         generation = masterGeneration + generationCounter.get();
-        superModel = new SuperModel(newModels, zone);
-    }
-
-    private Map<TenantName, Map<ApplicationId, Application>> createModelCopy() {
-        Map<TenantName, Map<ApplicationId, Application>> currentModels = superModel.applicationModels();
-        Map<TenantName, Map<ApplicationId, Application>> newModels = new LinkedHashMap<>();
-        for (Map.Entry<TenantName, Map<ApplicationId, Application>> entry : currentModels.entrySet()) {
-            Map<ApplicationId, Application> appMap = new LinkedHashMap<>();
-            newModels.put(entry.getKey(), appMap);
-            for (Map.Entry<ApplicationId, Application> appEntry : entry.getValue().entrySet()) {
-                appMap.put(appEntry.getKey(), appEntry.getValue());
-            }
-        }
-
-        return newModels;
+        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone);
     }
 }

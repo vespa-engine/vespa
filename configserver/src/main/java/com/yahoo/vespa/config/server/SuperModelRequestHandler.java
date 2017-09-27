@@ -5,14 +5,11 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -20,8 +17,6 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactoryFactory;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -72,7 +67,7 @@ public class SuperModelRequestHandler implements RequestHandler {
 
     private void updateHandler() {
         handler = new SuperModelController(
-                superModelManager.getSuperModel(),
+                superModelManager.getSuperModelConfigProvider(),
                 configDefinitionRepo,
                 superModelManager.getGeneration(),
                 responseFactory);

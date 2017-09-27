@@ -61,7 +61,7 @@ public class SuperModelRequestHandlerTest {
         assertThat(controller.getHandler().getGeneration(), is(gen));
         // Test that a new app is used when there already exist an application with the same id
         ApplicationId appId = new ApplicationId.Builder().tenant(tenantA).applicationName("foo").build();
-        assertThat(((TestApplication) controller.getHandler().getSuperModel().applicationModels().get(tenantA).get(appId)).version, is(2l));
+        assertThat(controller.getHandler().getSuperModel().applicationModels().get(tenantA).get(appId).getGeneration(), is(4l));
         gen = counter.increment();
         controller.reloadConfig(tenantA, createApp(tenantA, "bar", 2l, 3));
         assertThat(controller.getHandler().getGeneration(), is(gen));
