@@ -10,7 +10,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
+ *
  * @since 5.1.20
  */
 @Beta

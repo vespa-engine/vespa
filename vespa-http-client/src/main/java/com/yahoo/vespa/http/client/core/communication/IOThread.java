@@ -23,11 +23,12 @@ import java.util.logging.Logger;
 
 /**
  * Class for handling asynchronous feeding of new documents and processing of results.
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * 
+ * @author Einar M R Rosenvinge
  */
 @Beta
 class IOThread implements Runnable, AutoCloseable {
+
     private static Logger log = Logger.getLogger(IOThread.class.getName());
     private final Endpoint endpoint;
     private final GatewayConnection client;
@@ -403,4 +404,5 @@ class IOThread implements Runnable, AutoCloseable {
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }
+
 }

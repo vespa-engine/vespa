@@ -18,11 +18,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.22
+ * @author Einar M R Rosenvinge
  */
 @Beta
 class EndpointResultQueue {
+
     private static Logger log = Logger.getLogger(EndpointResultQueue.class.getName());
     private final OperationProcessor operationProcessor;
     private final Map<String, TimerFuture> futureByOperation = new HashMap<>();
@@ -58,8 +58,7 @@ class EndpointResultQueue {
         resultReceived(result, clusterId, true);
     }
 
-    private synchronized void resultReceived(
-            EndpointResult result, int clusterId, boolean duplicateGivesWarning) {
+    private synchronized void resultReceived(EndpointResult result, int clusterId, boolean duplicateGivesWarning) {
         operationProcessor.resultReceived(result, clusterId);
 
         TimerFuture timerFuture = futureByOperation.remove(result.getOperationId());
@@ -133,4 +132,5 @@ class EndpointResultQueue {
             return future;
         }
     }
+
 }

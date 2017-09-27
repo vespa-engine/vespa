@@ -13,8 +13,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Factory for creating {@link Session} instances.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 public final class SessionFactory {
 
@@ -77,4 +76,5 @@ public final class SessionFactory {
             return t;
         }
     }
+
 }

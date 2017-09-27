@@ -11,8 +11,7 @@ import java.util.concurrent.TimeUnit;
  * when creating {@link com.yahoo.vespa.http.client.Session}s. This class is immutable
  * and has no public constructor - to instantiate one, use a {@link Builder}.
 
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 @Immutable
 public final class FeedParams {
@@ -327,4 +326,5 @@ public final class FeedParams {
     public long getLocalQueueTimeOut() {
         return localQueueTimeOut;
     }
+
 }

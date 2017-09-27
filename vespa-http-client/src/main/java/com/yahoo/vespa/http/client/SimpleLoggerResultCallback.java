@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   "Result received: 34 (1 failed so far, 2003 sent, success rate 1999.23 docs/sec)."
  * On each failure it will print the Result object content. If tracing is enabled, it will print trace messages to
  * std err as well.
+ *
  * @author dybis
  */
 public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
@@ -99,4 +100,5 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
             }
         }
     }
+
 }

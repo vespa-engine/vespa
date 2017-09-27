@@ -9,8 +9,7 @@ import java.io.Serializable;
  * Represents an endpoint, in most cases a JDisc container
  * in a Vespa cluster configured with <code>document-api</code>.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
  */
 @Immutable
 public final class Endpoint implements Serializable {

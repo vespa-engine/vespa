@@ -10,6 +10,7 @@ import java.util.Random;
  * @author dybis
  */
 public class GatewayThrottler {
+
     private long backOffTimeMs = 0;
     private final long maxSleepTimeMs;
     private static Random random = new Random();
@@ -42,4 +43,5 @@ public class GatewayThrottler {
         Double result = expected * factor;
         return result.intValue();
     }
+
 }

@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of FeedClient. It is a thin layer on top of multiClusterHandler and multiClusterResultAggregator.
+ * 
  * @author dybis
  */
 public class FeedClientImpl implements FeedClient {

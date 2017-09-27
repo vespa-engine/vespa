@@ -21,6 +21,7 @@ import java.util.Optional;
  * @author valerijf
  */
 public class FormatInputStream {
+
     private InputStream inputStream;
     private Format format;
 
@@ -100,4 +101,5 @@ public class FormatInputStream {
     public enum Format {
         JSON, XML
     }
+
 }

@@ -14,6 +14,7 @@ import java.io.Writer;
 import java.util.List;
 
 public class OperationStats {
+
     private static JsonFactory jsonFactory = new JsonFactory();
     private final String sessionParamsAsXmlString;
     private List<ClusterConnection> clusters;
@@ -65,4 +66,5 @@ public class OperationStats {
             return "{ \"Error\" : \""+ e.getMessage() + "\"}";
         }
     }
+
 }

@@ -12,6 +12,7 @@ import java.util.Map;
  * This class is NOT thread-safe by design.
  */
 class DocumentSendInfo {
+
     private final Document document;
     private final Map<Integer, Result.Detail> detailByClusterId = new HashMap<>();
     // This is lazily populated as normal cases does not require retries.
@@ -68,4 +69,5 @@ class DocumentSendInfo {
     Document getDocument() {
         return document;
     }
+
 }
