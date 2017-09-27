@@ -378,13 +378,13 @@ void
 RPCNetwork::sync()
 {
     SyncTask task(_scheduler);
+    _executor->sync();
     task.await();
 }
 
 void
 RPCNetwork::shutdown()
 {
-    _executor->sync();
     _transport->ShutDown(false);
     _threadPool->Close();
     _executor->shutdown();
