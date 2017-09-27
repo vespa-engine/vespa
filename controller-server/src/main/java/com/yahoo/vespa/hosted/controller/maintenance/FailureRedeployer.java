@@ -50,7 +50,7 @@ public class FailureRedeployer extends Maintainer {
     }
 
     private void retryStuckJobs(List<Application> applications) {
-        Instant maxAge = controller().clock().instant().minus(jobTimeout);
+        Instant startOfGracePeriod = controller().clock().instant().minus(jobTimeout);
         for (Application application : applications) {
             Optional<JobStatus> job = oldestRunningJob(application);
             if (!job.isPresent()) {
@@ -60,7 +60,7 @@ public class FailureRedeployer extends Maintainer {
             if (!job.get().type().zone(controller().system()).isPresent()) {
                 continue;
             }
-            if (job.get().lastTriggered().get().at().isBefore(maxAge)) {
+            if (job.get().lastTriggered().get().at().isBefore(startOfGracePeriod)) {
                 triggerFailing(application, "Job " + job.get().type().id() +
                         " has been running for more than " + jobTimeout);
             }
