@@ -17,4 +17,4 @@ vespa_add_library(storage_visitor OBJECT
     storage_storageconfig
 )
 vespa_generate_config(storage_visitor stor-visitor.def)
-install(FILES stor-visitor.def RENAME vespa.config.content.core.stor-visitor.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(stor-visitor.def vespa.config.content.core.stor-visitor.def)

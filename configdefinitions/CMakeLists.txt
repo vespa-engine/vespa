@@ -8,3 +8,5 @@ vespa_define_module(
     LIBS
     src/vespa
 )
+
+install_fat_java_artifact(configdefinitions)
