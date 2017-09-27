@@ -285,6 +285,11 @@ public class DeploymentTrigger {
             return application;
         }
 
+        // Ignore applications that are not associated with a project
+        if (!application.deploymentJobs().projectId().isPresent()) {
+            return application;
+        }
+
         log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                cause));
