@@ -22,7 +22,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +86,7 @@ public class CoredumpHandlerTest {
 
     @Test
     public void ignoresIncompleteCoredumps() throws IOException {
-        Path coredumpPath = createCoredump(".core.dump");
+        Path coredumpPath = createCoredump(".core.dump", Instant.now());
         Path processingPath = coredumpHandler.processCoredumps();
 
         // The 'processing' directory should be empty
@@ -96,7 +98,7 @@ public class CoredumpHandlerTest {
 
     @Test
     public void startProcessingTest() throws IOException {
-        Path coredumpPath = createCoredump("core.dump");
+        Path coredumpPath = createCoredump("core.dump", Instant.now());
         Path processingPath = crashPath.resolve("processing_dir");
         coredumpHandler.startProcessing(coredumpPath, processingPath);
 
@@ -112,8 +114,35 @@ public class CoredumpHandlerTest {
     }
 
     @Test
+    public void limitToProcessingOneCoredumpAtTheTimeTest() throws IOException {
+        final String oldestCoredump = "core.dump0";
+        final Instant startTime = Instant.now();
+        createCoredump(oldestCoredump, startTime.minusSeconds(3600));
+        createCoredump("core.dump1", startTime.minusSeconds(1000));
+        createCoredump("core.dump2", startTime);
+        Path processingPath = coredumpHandler.processCoredumps();
+
+        List<Path> processingCoredumps = Files.list(processingPath).collect(Collectors.toList());
+        assertEquals(1, processingCoredumps.size());
+
+        // Make sure that the 1 coredump that we are processing is the oldest one
+        Set<String> filenamesInProcessingDirectory = Files.list(processingCoredumps.get(0))
+                .map(file -> file.getFileName().toString())
+                .collect(Collectors.toSet());
+        assertEquals(Collections.singleton(oldestCoredump), filenamesInProcessingDirectory);
+
+        // Running processCoredumps should not start processing any new coredumps as we already are processing one
+        coredumpHandler.processCoredumps();
+        assertEquals(processingCoredumps, Files.list(processingPath).collect(Collectors.toList()));
+        filenamesInProcessingDirectory = Files.list(processingCoredumps.get(0))
+                .map(file -> file.getFileName().toString())
+                .collect(Collectors.toSet());
+        assertEquals(Collections.singleton(oldestCoredump), filenamesInProcessingDirectory);
+    }
+
+    @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException, InterruptedException {
-        createCoredump("core.dump");
+        createCoredump("core.dump", Instant.now());
         Path processingPath = coredumpHandler.processCoredumps();
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
                 new RuntimeException("Expected to find directory with coredump in processing dir"));
@@ -182,9 +211,10 @@ public class CoredumpHandlerTest {
         assertEquals(expectedContentsOfFolder, actualContentsOfFolder);
     }
 
-    private Path createCoredump(String coredumpName) throws IOException {
+    private Path createCoredump(String coredumpName, Instant lastModified) throws IOException {
         Path coredumpPath = crashPath.resolve(coredumpName);
         coredumpPath.toFile().createNewFile();
+        coredumpPath.toFile().setLastModified(lastModified.toEpochMilli());
         return coredumpPath;
     }
 

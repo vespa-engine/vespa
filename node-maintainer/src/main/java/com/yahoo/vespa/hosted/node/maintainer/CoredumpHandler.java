@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -28,10 +29,10 @@ import java.util.stream.Collectors;
  *
  * @author freva
  */
-public class CoredumpHandler {
+class CoredumpHandler {
 
-    public static final String PROCESSING_DIRECTORY_NAME = "processing";
-    public static final String METADATA_FILE_NAME = "metadata.json";
+    static final String PROCESSING_DIRECTORY_NAME = "processing";
+    static final String METADATA_FILE_NAME = "metadata.json";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -77,13 +78,19 @@ public class CoredumpHandler {
     }
 
 
+    /**
+     * Moves a coredump to a new directory under the processing/ directory. Limit to only processing
+     * one coredump at the time, starting with the oldest.
+     */
     Path processCoredumps() throws IOException {
         Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
         processingCoredumpsPath.toFile().mkdirs();
+        if (Files.list(processingCoredumpsPath).count() > 0) return processingCoredumpsPath;
 
         Files.list(coredumpsPath)
                 .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
-                .forEach(coredumpPath -> {
+                .min((Comparator.comparingLong(o -> o.toFile().lastModified())))
+                .ifPresent(coredumpPath -> {
                     try {
                         startProcessing(coredumpPath, processingCoredumpsPath);
                     } catch (Throwable e) {
