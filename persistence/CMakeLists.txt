@@ -31,5 +31,4 @@ vespa_define_module(
 )
 
 install_fat_java_artifact(persistence)
-install(FILES src/main/resources/configdefinitions/persistence-rpc.def RENAME persistence.persistence-rpc.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(src/main/resources/configdefinitions/persistence-rpc.def persistence.persistence-rpc.def)

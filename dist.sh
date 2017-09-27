@@ -9,5 +9,5 @@ fi
 VERSION="$1"
 
 mkdir -p ~/rpmbuild/{SOURCES,SPECS}
-GZIP=-1 tar -zcf ~/rpmbuild/SOURCES/vespa-$VERSION.tar.gz --transform "flags=r;s,^,vespa-$VERSION/," *
+GZIP=-1 tar -zcf ~/rpmbuild/SOURCES/vespa-$VERSION.tar.gz --exclude target --exclude cmake-build-debug --transform "flags=r;s,^,vespa-$VERSION/," *
 sed -e "s,VESPA_VERSION,$VERSION,"  < dist/vespa.spec > ~/rpmbuild/SPECS/vespa-$VERSION.spec

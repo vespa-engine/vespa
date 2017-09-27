@@ -17,6 +17,6 @@ vespa_add_library(storage_bucketdb OBJECT
     storage_storageconfig
 )
 vespa_generate_config(storage_bucketdb stor-bucketdb.def)
-install(FILES stor-bucketdb.def RENAME vespa.config.content.core.stor-bucketdb.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(stor-bucketdb.def vespa.config.content.core.stor-bucketdb.def)
 vespa_generate_config(storage_bucketdb stor-bucket-init.def)
-install(FILES stor-bucket-init.def RENAME vespa.config.content.core.stor-bucket-init.def DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(stor-bucket-init.def vespa.config.content.core.stor-bucket-init.def)

@@ -10,5 +10,4 @@ vespa_define_module(
     src/vespa/fileacquirer
 )
 
-install(FILES src/main/resources/configdefinitions/filedistributorrpc.def RENAME cloud.config.filedistribution.filedistributorrpc.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(src/main/resources/configdefinitions/filedistributorrpc.def cloud.config.filedistribution.filedistributorrpc.def)

@@ -1,31 +1,16 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install(FILES src/main/resources/configdefinitions/application-metadata.def RENAME container.core.application-metadata.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/container-document.def RENAME container.core.document.container-document.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/container-http.def RENAME container.core.container-http.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/diagnostics.def RENAME container.core.diagnostics.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/health-monitor.def RENAME container.jdisc.config.health-monitor.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/http-filter.def RENAME container.core.http.http-filter.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/metrics-presentation.def RENAME metrics.metrics-presentation.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/mockservice.def RENAME container.handler.test.mockservice.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/qr-logging.def RENAME container.core.qr-logging.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/qr-searchers.def RENAME container.qr-searchers.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/qr-templates.def RENAME container.core.qr-templates.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/qr.def RENAME container.qr.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/servlet-config.def RENAME container.servlet.servlet-config.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/threadpool.def RENAME container.handler.threadpool.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
-install(FILES src/main/resources/configdefinitions/vip-status.def RENAME container.core.vip-status.def
-        DESTINATION var/db/vespa/config_server/serverdb/classes)
+install_config_definition(src/main/resources/configdefinitions/application-metadata.def container.core.application-metadata.def)
+install_config_definition(src/main/resources/configdefinitions/container-document.def container.core.document.container-document.def)
+install_config_definition(src/main/resources/configdefinitions/container-http.def container.core.container-http.def)
+install_config_definition(src/main/resources/configdefinitions/diagnostics.def container.core.diagnostics.def)
+install_config_definition(src/main/resources/configdefinitions/health-monitor.def container.jdisc.config.health-monitor.def)
+install_config_definition(src/main/resources/configdefinitions/http-filter.def container.core.http.http-filter.def)
+install_config_definition(src/main/resources/configdefinitions/metrics-presentation.def metrics.metrics-presentation.def)
+install_config_definition(src/main/resources/configdefinitions/mockservice.def container.handler.test.mockservice.def)
+install_config_definition(src/main/resources/configdefinitions/qr-logging.def container.core.qr-logging.def)
+install_config_definition(src/main/resources/configdefinitions/qr-searchers.def container.qr-searchers.def)
+install_config_definition(src/main/resources/configdefinitions/qr-templates.def container.core.qr-templates.def)
+install_config_definition(src/main/resources/configdefinitions/qr.def container.qr.def)
+install_config_definition(src/main/resources/configdefinitions/servlet-config.def container.servlet.servlet-config.def)
+install_config_definition(src/main/resources/configdefinitions/threadpool.def container.handler.threadpool.def)
+install_config_definition(src/main/resources/configdefinitions/vip-status.def container.core.vip-status.def)
