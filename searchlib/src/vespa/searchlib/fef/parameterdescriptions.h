@@ -41,11 +41,13 @@ struct ParameterCollection {
 /*
  * A set of accepted data types for a parameter.
  */
-struct ParameterDataTypeSet
+class ParameterDataTypeSet
 {
+public:
     using DataType = search::index::schema::DataType;
 
-    uint32_t typeMask;
+private:
+    uint32_t _typeMask;
 
     static uint32_t asMask(DataType dataType) {
         return (1u << static_cast<unsigned int>(dataType));
@@ -56,10 +58,11 @@ struct ParameterDataTypeSet
     static uint32_t normalTypesMask() {
         return asMask(DataType::BOOLEANTREE) - 1;
     }
-    ParameterDataTypeSet(uint32_t typeMask_in)
-        : typeMask(typeMask_in)
+    ParameterDataTypeSet(uint32_t typeMask)
+        : _typeMask(typeMask)
     {
     }
+public:
     ParameterDataTypeSet()
         : ParameterDataTypeSet(allTypesMask())
     {
@@ -68,7 +71,7 @@ struct ParameterDataTypeSet
         return ParameterDataTypeSet(normalTypesMask());
     }
     bool allowedType(DataType dataType) const {
-        return ((asMask(dataType) & typeMask) != 0);
+        return ((asMask(dataType) & _typeMask) != 0);
     }
 };
 
