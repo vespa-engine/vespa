@@ -217,7 +217,7 @@ public class ControllerTest {
 
         app1 = applications.require(app1.id());
         assertEquals("First deployment gets system version", systemVersion, app1.deployedVersion().get());
-        assertEquals(systemVersion, tester.configServerClientMock().lastPrepareVersion.get());
+        assertEquals(systemVersion, tester.configServer().lastPrepareVersion.get());
 
         // Unexpected deployment
         tester.deploy(productionUsWest1, app1, applicationPackage);
@@ -240,7 +240,7 @@ public class ControllerTest {
 
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
-        assertEquals(systemVersion, tester.configServerClientMock().lastPrepareVersion.get());
+        assertEquals(systemVersion, tester.configServer().lastPrepareVersion.get());
 
         // A deployment to the new region gets the same version
         applicationPackage = new ApplicationPackageBuilder()
@@ -251,7 +251,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
-        assertEquals(systemVersion, tester.configServerClientMock().lastPrepareVersion.get());
+        assertEquals(systemVersion, tester.configServer().lastPrepareVersion.get());
 
         // Version upgrade changes system version
         Change.VersionChange change = new Change.VersionChange(newSystemVersion);
@@ -263,7 +263,7 @@ public class ControllerTest {
 
         app1 = applications.require(app1.id());
         assertEquals("Version upgrade changes version", newSystemVersion, app1.deployedVersion().get());
-        assertEquals(newSystemVersion, tester.configServerClientMock().lastPrepareVersion.get());
+        assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion.get());
     }
 
     /** Adds a new version, higher than the current system version, makes it the system version and returns it */
@@ -600,14 +600,14 @@ public class ControllerTest {
     @Test
     public void testCleanupOfStaleDeploymentData() throws IOException {
         DeploymentTester tester = new DeploymentTester();
-        tester.controllerTester().getZoneRegistryMock().setSystem(SystemName.cd);
+        tester.controllerTester().zoneRegistry().setSystem(SystemName.cd);
 
         Supplier<Map<JobType, JobStatus>> statuses = () ->
                 tester.application(ApplicationId.from("vespa", "canary", "default")).deploymentJobs().jobStatus();
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");
-        tester.configServerClientMock().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultConfigServerVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
@@ -637,7 +637,7 @@ public class ControllerTest {
 
         // New version is released
         version = Version.fromString("6.142.1");
-        tester.configServerClientMock().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultConfigServerVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();

@@ -30,25 +30,47 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * This class provides convenience methods for testing deployments
+ *
  * @author bratseth
+ * @author mpolden
  */
 public class DeploymentTester {
 
-    private ControllerTester tester = new ControllerTester();
-    
-    private Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(2), 
-                                             new JobControl(tester.curator()));
-    private FailureRedeployer failureRedeployer = new FailureRedeployer(tester.controller(), Duration.ofMinutes(2),
-                                                                        new JobControl(tester.curator()));
+    private final ControllerTester tester;
+    private final Upgrader upgrader;
+    private final FailureRedeployer failureRedeployer;
+
+    public DeploymentTester() {
+        this(new ControllerTester());
+    }
+
+    public DeploymentTester(ControllerTester tester) {
+        this.tester = tester;
+        this.upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(2),
+                                     new JobControl(tester.curator()));
+        this.failureRedeployer = new FailureRedeployer(tester.controller(),
+                                                       Duration.ofMinutes(2),
+                                                       new JobControl(tester.curator()));
+    }
 
     public Upgrader upgrader() { return upgrader; }
+
     public FailureRedeployer failureRedeployer() { return failureRedeployer; }
+
     public Controller controller() { return tester.controller(); }
+
     public ApplicationController applications() { return tester.controller().applications(); }
+
     public BuildSystem buildSystem() { return tester.controller().applications().deploymentTrigger().buildSystem(); }
+
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
+
     public ManualClock clock() { return tester.clock(); }
+
     public ControllerTester controllerTester() { return tester; }
+
+    public ConfigServerClientMock configServer() { return tester.configServer(); }
 
     public Application application(String name) {
         return application(ApplicationId.from("tenant1", name, "default"));
@@ -63,8 +85,6 @@ public class DeploymentTester {
                 .filter(c -> c instanceof Change.VersionChange)
                 .map(Change.VersionChange.class::cast);
     }
-
-    public ConfigServerClientMock configServerClientMock() { return tester.configServerClientMock(); }
     
     public void updateVersionStatus(Version currentVersion) {
         controller().updateVersionStatus(VersionStatus.compute(controller(), currentVersion));
