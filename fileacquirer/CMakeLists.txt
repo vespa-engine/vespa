@@ -9,5 +9,3 @@ vespa_define_module(
     LIBS
     src/vespa/fileacquirer
 )
-
-install_config_definition(src/main/resources/configdefinitions/filedistributorrpc.def cloud.config.filedistribution.filedistributorrpc.def)
