@@ -20,7 +20,7 @@ public class MockedOperationHandler implements OperationHandler {
     @Override
     public VisitResult visit(RestUri restUri, String documentSelection, VisitOptions options) throws RestApiException {
         return new VisitResult(Optional.of("token"), "List of json docs, cont token "
-                + options.continuation.map(a->a).orElse("not set") + ", doc selection: '"
+                + options.continuation.orElse("not set") + ", doc selection: '"
                 + documentSelection + "'"
                 + options.wantedDocumentCount.map(n -> String.format(", min docs returned: %d", n)).orElse(""));
     }
