@@ -54,6 +54,18 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-model-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-provisioning</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_${scala.major-version}</artifactId>
             <scope>test</scope>
