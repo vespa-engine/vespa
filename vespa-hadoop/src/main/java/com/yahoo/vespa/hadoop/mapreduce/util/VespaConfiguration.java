@@ -11,6 +11,7 @@ import java.util.Properties;
 public class VespaConfiguration {
 
     public static final String ENDPOINT = "vespa.feed.endpoint";
+    public static final String DEFAULT_PORT = "vespa.feed.defaultport";
     public static final String PROXY_HOST = "vespa.feed.proxy.host";
     public static final String PROXY_PORT = "vespa.feed.proxy.port";
     public static final String DRYRUN = "vespa.feed.dryrun";
@@ -43,6 +44,11 @@ public class VespaConfiguration {
 
     public String endpoint() {
         return getString(ENDPOINT);
+    }
+
+
+    public int defaultPort() {
+        return getInt(DEFAULT_PORT, 4080);
     }
 
 
