@@ -12,6 +12,7 @@ public class VespaConfiguration {
 
     public static final String ENDPOINT = "vespa.feed.endpoint";
     public static final String DEFAULT_PORT = "vespa.feed.defaultport";
+    public static final String USE_SSL = "vespa.feed.ssl";
     public static final String PROXY_HOST = "vespa.feed.proxy.host";
     public static final String PROXY_PORT = "vespa.feed.proxy.port";
     public static final String DRYRUN = "vespa.feed.dryrun";
@@ -49,6 +50,11 @@ public class VespaConfiguration {
 
     public int defaultPort() {
         return getInt(DEFAULT_PORT, 4080);
+    }
+
+
+    public boolean useSSL() {
+        return getBoolean(USE_SSL, false);
     }
 
 

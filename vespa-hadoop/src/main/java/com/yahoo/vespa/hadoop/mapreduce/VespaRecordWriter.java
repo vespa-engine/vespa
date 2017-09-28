@@ -153,7 +153,7 @@ public class VespaRecordWriter extends RecordWriter {
         while (tokenizer.hasMoreTokens()) {
             String endpoint = tokenizer.nextToken().trim();
             sessionParams.addCluster(new Cluster.Builder().addEndpoint(
-                    Endpoint.create(endpoint, configuration.defaultPort(), false)
+                    Endpoint.create(endpoint, configuration.defaultPort(), configuration.useSSL())
             ).build());
         }
 
