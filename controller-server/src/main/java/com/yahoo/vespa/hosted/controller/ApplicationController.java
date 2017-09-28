@@ -590,7 +590,9 @@ public class ApplicationController {
 
     /** Returns whether a direct deployment to given zone is allowed */
     private static boolean canDeployDirectlyTo(Zone zone, DeployOptions options) {
-        return !options.screwdriverBuildJob.isPresent() || zone.environment().isManuallyDeployed();
+        return !options.screwdriverBuildJob.isPresent() ||
+               options.screwdriverBuildJob.get().screwdriverId == null ||
+               zone.environment().isManuallyDeployed();
     }
 
     private static final class ApplicationRotation {
