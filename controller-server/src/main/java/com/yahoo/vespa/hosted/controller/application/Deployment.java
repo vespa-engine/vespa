@@ -21,10 +21,14 @@ public class Deployment {
     private final ApplicationRevision revision;
     private final Version version;
     private final Instant deployTime;
-    private final Map<Id, ClusterUtilization> clusterUtils = new HashMap<>();
-    private final Map<Id, ClusterInfo> clusterInfo = new HashMap<>();
+    private final Map<Id, ClusterUtilization> clusterUtils;
+    private final Map<Id, ClusterInfo> clusterInfo;
 
     public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime) {
+        this(zone, revision, version, deployTime, new HashMap<>(), new HashMap<>());
+    }
+
+    public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime, Map<Id, ClusterUtilization> clusterUtils, Map<Id, ClusterInfo> clusterInfo) {
         Objects.requireNonNull(zone, "zone cannot be null");
         Objects.requireNonNull(revision, "revision cannot be null");
         Objects.requireNonNull(version, "version cannot be null");
@@ -33,6 +37,8 @@ public class Deployment {
         this.revision = revision;
         this.version = version;
         this.deployTime = deployTime;
+        this.clusterUtils = clusterUtils;
+        this.clusterInfo = clusterInfo;
     }
 
     /** Returns the zone this was deployed to */
@@ -47,12 +53,20 @@ public class Deployment {
     /** Returns the time this was deployed */
     public Instant at() { return deployTime; }
 
-    public Map<Id, ClusterUtilization> getClusterUtilization() {
+    public  Map<Id, ClusterInfo> clusterInfo() {
+        return clusterInfo;
+    }
+
+    public  Map<Id, ClusterUtilization> clusterUtils() {
         return clusterUtils;
     }
 
-    public Map<Id, ClusterInfo> getClusterInfo() {
-        return clusterInfo;
+    public Deployment withClusterUtils(Map<Id, ClusterUtilization> clusterUtilization) {
+        return new Deployment(zone, revision, version, deployTime, clusterUtilization, clusterInfo);
+    }
+
+    public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
+        return new Deployment(zone, revision, version, deployTime, clusterUtils, newClusterInfo);
     }
 
     /**

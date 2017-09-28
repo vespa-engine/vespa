@@ -16,7 +16,7 @@ public class ClusterInfo {
     private final ClusterSpec.Type clusterType;
     private final List<String> hostnames;
 
-    ClusterInfo(Flavor flavor, ClusterSpec.Type clusterType, List<String> hostnames) {
+    public ClusterInfo(Flavor flavor, ClusterSpec.Type clusterType, List<String> hostnames) {
         this.flavor = flavor;
         this.clusterType = clusterType;
         this.hostnames = hostnames;

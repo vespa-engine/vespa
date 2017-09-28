@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,7 +26,6 @@ public class NodeRepoInfoRetriever {
             try {
                 nodeRepoJsonModel = objectMapper.readValue(nodeInfoURL, NodeRepoJsonModel.class);
                 return nodeRepoJsonModel;
-
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to parse JSON from config server: " + nodeInfoURL.toString(), e);
             }

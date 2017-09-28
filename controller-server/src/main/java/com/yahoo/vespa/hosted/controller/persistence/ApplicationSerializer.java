@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -191,7 +192,8 @@ public class ApplicationSerializer {
         return new Deployment(zoneFromSlime(deploymentObject.field(zoneField)),
                               applicationRevisionFromSlime(deploymentObject.field(applicationPackageRevisionField)).get(),
                               Version.fromString(deploymentObject.field(versionField).asString()),
-                              Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()));
+                              Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
+                new HashMap<>(), new HashMap<>()); //TODO
     }
     
     private Zone zoneFromSlime(Inspector object) {
