@@ -90,7 +90,6 @@ Requires: zookeeper >= 3.4.9
 %define _extra_link_directory /opt/vespa-libtorrent/lib;/opt/vespa-cppunit/lib
 %define _extra_include_directory /opt/vespa-libtorrent/include;/opt/vespa-cppunit/include
 %define _vespa_boost_lib_suffix %{nil}
-%define _vespa_cxx_abi_flags -D_GLIBCXX_USE_CXX11_ABI=1
 %endif
 Requires: java-1.8.0-openjdk
 Requires: openssl
@@ -122,7 +121,6 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
        %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
        %{?_vespa_boost_lib_suffix:-DVESPA_BOOST_LIB_SUFFIX="%{_vespa_boost_lib_suffix}"} \
-       %{?_vespa_cxx_abi_flags:-DVESPA_CXX_ABI_FLAGS="%{_vespa_cxx_abi_flags}"} \
        .
 
 make %{_smp_mflags}
