@@ -18,6 +18,7 @@ using AVC = search::attribute::Config;
 using AVBT = search::attribute::BasicType;
 using AVCT = search::attribute::CollectionType;
 using CollectionType = FieldInfo::CollectionType;
+using DataType = FieldInfo::DataType;
 
 void
 Test::testAttributeMatch()
@@ -302,5 +303,14 @@ Test::testAttributeMatch()
             addScore("attributeMatch(wint).completeness", 0).
             addScore("attributeMatch(wint).fieldCompleteness", 0);
         ASSERT_TRUE(ft.execute(exp));
+    }
+    { // tensor attribute is not allowed
+        FtFeatureTest ft(_factory, "attributeMatch(tensor)");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tensor");
+        AttributePtr tensorAttr = AttributeFactory::createAttribute("tensor", AVC (AVBT::TENSOR, AVCT::SINGLE));
+        tensorAttr->addReservedDoc();
+        ft.getIndexEnv().getAttributeMap().add(tensorAttr);
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("tensor") != nullptr);
+        ASSERT_TRUE(!ft.setup());
     }
 }
