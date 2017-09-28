@@ -70,8 +70,8 @@ public class HttpHandler extends LoggingRequestHandler {
         }
     }
 
-    // Override default, since we need a higher timeout
-    // TODO: Make configurable? Should be higher than timeouts used by clients
+    // Override default, since we need a higher timeout for some calls
+    // TODO: Review and see if overriding only in SessionPrepareHandler is enough
     @Override
     public Duration getTimeout() {
         return Duration.ofSeconds(910);

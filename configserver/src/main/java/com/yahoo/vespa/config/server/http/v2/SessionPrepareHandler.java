@@ -52,6 +52,11 @@ public class SessionPrepareHandler extends SessionHandler {
     }
 
     @Override
+    public Duration getTimeout() {
+        return zookeeperBarrierTimeout.plus(Duration.ofSeconds(10));
+    }
+
+    @Override
     protected HttpResponse handlePUT(HttpRequest request) {
         Tenant tenant = getExistingTenant(request);
         TenantName tenantName = tenant.getName();
