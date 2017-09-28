@@ -12,9 +12,8 @@ In addition to the [public Travis build](https://travis-ci.org/vespa-engine/vesp
 we have a large acceptance and performance test suite which
 is also run continuously. We plan to add this to the open source code base later.
 
-All pull requests are reviewed by a member of the 
-[Vespa committers](https://github.com/orgs/vespa-engine/teams/vespa/members) team, regardless
-of who made it. If you want to become a committer, making some quality contributions is the way to start.
+All pull requests are reviewed by a member of the Vespa Committers team.
+If you want to become a committer, making some quality contributions is the way to start.
 
 ## Versioning
 Vespa uses semantic versioning - see
