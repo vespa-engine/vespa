@@ -83,6 +83,12 @@ public:
     static ParameterDataTypeSet normalTypeSet() {
         return ParameterDataTypeSet(normalTypesMask());
     }
+    static ParameterDataTypeSet int32OrInt64TypeSet() {
+        return ParameterDataTypeSet(asMask(DataType::INT32) | asMask(DataType::INT64));
+    }
+    static ParameterDataTypeSet normalOrTensorTypeSet() {
+        return ParameterDataTypeSet(normalTypesMask() | asMask(DataType::TENSOR));
+    }
     bool allowedType(DataType dataType) const {
         return ((asMask(dataType) & _typeMask) != 0);
     }

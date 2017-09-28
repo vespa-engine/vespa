@@ -103,6 +103,12 @@ DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespal
     return stash.create<DebugAttributeWaitExecutor>(env, attribute, _params);
 }
 
+fef::ParameterDescriptions
+DebugAttributeWaitBlueprint::getDescriptions() const
+{
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY).number();
+}
+
 //-----------------------------------------------------------------------------
 
 } // namespace features

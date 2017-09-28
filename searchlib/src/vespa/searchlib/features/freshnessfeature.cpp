@@ -89,6 +89,12 @@ FreshnessBlueprint::createInstance() const
     return Blueprint::UP(new FreshnessBlueprint());
 }
 
+fef::ParameterDescriptions
+FreshnessBlueprint::getDescriptions() const
+{
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY);
+}
+
 FeatureExecutor &
 FreshnessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {

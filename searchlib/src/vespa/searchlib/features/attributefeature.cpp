@@ -426,5 +426,14 @@ AttributeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, ve
     }
 }
 
+fef::ParameterDescriptions
+AttributeBlueprint::getDescriptions() const
+{
+    auto dataTypeSet = fef::ParameterDataTypeSet::normalOrTensorTypeSet();
+    return fef::ParameterDescriptions().
+        desc().attribute(dataTypeSet, fef::ParameterCollection::ANY).
+        desc().attribute(dataTypeSet, fef::ParameterCollection::ANY).string();
+}
+
 } // namespace features
 } // namespace search
