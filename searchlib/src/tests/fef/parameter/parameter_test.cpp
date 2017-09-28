@@ -9,6 +9,7 @@ LOG_SETUP("parameter_test");
 
 using namespace search::fef::test;
 using CollectionType = search::fef::FieldInfo::CollectionType;
+using DataType = search::fef::FieldInfo::DataType;
 
 namespace search {
 namespace fef {
@@ -135,6 +136,7 @@ ParameterTest::testValidator()
     IndexEnvironmentBuilder builder(env);
     builder.addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
         .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
+        .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tbar")
         .addField(FieldType::INDEX, CollectionType::ARRAY, "afoo")
         .addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wfoo")
         .addField(FieldType::INDEX, CollectionType::SINGLE, "hybrid");
@@ -156,6 +158,8 @@ ParameterTest::testValidator()
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().feature()));
     EXPECT_TRUE(validate(env, SL().add("123"), PDS().desc().number()));
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().string()));
+    EXPECT_TRUE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterCollection::ANY)));
+    EXPECT_TRUE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterCollection::ANY)));
     // first fail but second pass
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().field().desc().string()));
 
@@ -180,6 +184,8 @@ ParameterTest::testValidator()
     EXPECT_FALSE(validate(env, SL().add("hybrid"), PDS().desc().attributeField(ParameterCollection::ANY)));
     EXPECT_FALSE(validate(env, SL().add("12a"), PDS().desc().number()));
     EXPECT_FALSE(validate(env, SL().add("a12"), PDS().desc().number()));
+    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY)));
 
     // test repeat
     PDS d1 = PDS().desc().field().repeat();

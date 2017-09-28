@@ -25,6 +25,10 @@ bool checkCollectionType(ParameterCollection::Enum accept, CollectionType actual
     return false;
 }
 
+bool checkDataType(ParameterDataTypeSet accept, search::index::schema::DataType actual) {
+    return accept.allowedType(actual);
+}
+
 class ValidateException
 {
 public:
@@ -50,7 +54,9 @@ ParameterValidator::Result & ParameterValidator::Result::operator=(const Result 
 ParameterValidator::Result::~Result() { }
 
 void
-ParameterValidator::validateField(ParameterType::Enum type, ParameterCollection::Enum collection,
+ParameterValidator::validateField(ParameterType::Enum type,
+                                  ParameterDataTypeSet dataTypeSet,
+                                  ParameterCollection::Enum collection,
                                   size_t i, Result & result)
 {
     const FieldInfo * field = _indexEnv.getFieldByName(_params[i]);
@@ -73,6 +79,10 @@ ParameterValidator::validateField(ParameterType::Enum type, ParameterCollection:
             throw ValidateException(make_string("Param[%zu]: Expected field '%s' to support attribute lookup, but it does not",
                             i, _params[i].c_str()));
         }
+    }
+    if (!checkDataType(dataTypeSet, field->get_data_type())) {
+        throw ValidateException(make_string("Param[%zu]: field '%s' has inappropriate data type",
+                                            i, _params[i].c_str()));
     }
     if (!checkCollectionType(collection, field->collection())) {
         throw ValidateException(make_string("Param[%zu]: field '%s' has inappropriate collection type",
@@ -116,7 +126,7 @@ ParameterValidator::validate(const ParameterDescriptions::Description & desc)
         case ParameterType::INDEX_FIELD:
         case ParameterType::ATTRIBUTE_FIELD:
         case ParameterType::ATTRIBUTE:
-            validateField(type, param.collection, i, result);
+            validateField(type, param.dataTypeSet, param.collection, i, result);
             break;
         case ParameterType::NUMBER:
             validateNumber(type, i, result);

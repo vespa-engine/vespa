@@ -98,7 +98,7 @@ public:
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc().attributeField(fef::ParameterCollection::ANY);
+        return fef::ParameterDescriptions().desc().attributeField(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY);
     }
 
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;

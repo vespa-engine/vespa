@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/parameterdescriptions.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 
 #include <vespa/log/log.h>
@@ -271,7 +272,8 @@ AttributeMatchBlueprint::visitDumpFeatures(const IIndexEnvironment &env,
 {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const FieldInfo * field = env.getField(i);
-        if (field->type() == FieldType::ATTRIBUTE) {
+        if (field->type() == FieldType::ATTRIBUTE &&
+            ParameterDataTypeSet::normalTypeSet().allowedType(field->get_data_type())) {
             FeatureNameBuilder fnb;
             fnb.baseName(getBaseName()).parameter(field->name());
             visitor.visitDumpFeature(fnb.buildName());

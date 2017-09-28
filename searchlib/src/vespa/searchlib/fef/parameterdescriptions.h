@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchcommon/common/datatype.h>
 #include <vector>
 #include <cstddef>
 
@@ -37,16 +38,71 @@ struct ParameterCollection {
     };
 };
 
+/*
+ * A set of accepted data types for a parameter.
+ */
+class ParameterDataTypeSet
+{
+public:
+    using DataType = search::index::schema::DataType;
+
+private:
+    uint32_t _typeMask;
+
+    static uint32_t asMask(DataType dataType) {
+        return (1u << static_cast<unsigned int>(dataType));
+    }
+    static uint32_t normalTypesMask() {
+        return (asMask(DataType::UINT1)  |
+                asMask(DataType::UINT2)  |
+                asMask(DataType::UINT4)  |
+                asMask(DataType::INT8)   |
+                asMask(DataType::INT16)  |
+                asMask(DataType::INT32)  |
+                asMask(DataType::INT64)  |
+                asMask(DataType::FLOAT)  |
+                asMask(DataType::DOUBLE) |
+                asMask(DataType::STRING) |
+                asMask(DataType::RAW));
+    }
+    static uint32_t allTypesMask() {
+        return (normalTypesMask()        |
+                asMask(DataType::BOOLEANTREE) |
+                asMask(DataType::TENSOR)      |
+                asMask(DataType::REFERENCE));
+    }
+    ParameterDataTypeSet(uint32_t typeMask)
+        : _typeMask(typeMask)
+    {
+    }
+public:
+    ParameterDataTypeSet()
+        : ParameterDataTypeSet(allTypesMask())
+    {
+    }
+    static ParameterDataTypeSet normalTypeSet() {
+        return ParameterDataTypeSet(normalTypesMask());
+    }
+    bool allowedType(DataType dataType) const {
+        return ((asMask(dataType) & _typeMask) != 0);
+    }
+};
+
 /**
  * The description of a single parameter within a single
  * ParameterDescription object.
  **/
 struct ParamDescItem {
     ParameterType::Enum type;
+    ParameterDataTypeSet dataTypeSet;
     ParameterCollection::Enum collection;
     ParamDescItem(ParameterType::Enum t,
                   ParameterCollection::Enum c)
-        : type(t), collection(c) {}
+        : type(t), dataTypeSet(), collection(c) {}
+    ParamDescItem(ParameterType::Enum t,
+                  ParameterDataTypeSet dts,
+                  ParameterCollection::Enum c)
+        : type(t), dataTypeSet(dts), collection(c) {}
 };
 
 /**
@@ -101,6 +157,9 @@ private:
 
     Description & getCurrent() { return _descriptions.back(); }
     void addParameter(const ParamDescItem &param);
+    void addParameter(ParameterType::Enum type, ParameterDataTypeSet dataTypeSet, ParameterCollection::Enum collection) {
+        addParameter(ParamDescItem(type, dataTypeSet, collection));
+    }
     void addParameter(ParameterType::Enum type, ParameterCollection::Enum collection) {
         addParameter(ParamDescItem(type, collection));
     }
@@ -141,11 +200,19 @@ public:
         addParameter(ParameterType::ATTRIBUTE_FIELD, collection);
         return *this;
     }
+    ParameterDescriptions & attributeField(ParameterDataTypeSet dataTypeSet, ParameterCollection::Enum collection) {
+        addParameter(ParameterType::ATTRIBUTE_FIELD, dataTypeSet, collection);
+        return *this;
+    }
     /**
      * Adds an attribute parameter to the current description.
      */
     ParameterDescriptions & attribute(ParameterCollection::Enum collection) {
         addParameter(ParameterType::ATTRIBUTE, collection);
+        return *this;
+    }
+    ParameterDescriptions & attribute(ParameterDataTypeSet dataTypeSet, ParameterCollection::Enum collection) {
+        addParameter(ParameterType::ATTRIBUTE, dataTypeSet, collection);
         return *this;
     }
     /**
