@@ -461,12 +461,12 @@ Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,
         vespalib::slime::JsonFormat::encode(slime, buf, false);
         vespalib::Slime tmpSlime;
         size_t used = vespalib::slime::JsonFormat::decode(buf.get(), tmpSlime);
-        EXPECT_EQUAL(buf.get().size, used);
+        EXPECT_TRUE(used);
         slime = std::move(tmpSlime);
     }
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
-    EXPECT_EQUAL(exp.size(), used);
+    EXPECT_TRUE(used);
     return EXPECT_EQUAL(expSlime, slime);
 }
 
