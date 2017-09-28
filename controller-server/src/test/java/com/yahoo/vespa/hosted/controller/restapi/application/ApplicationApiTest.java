@@ -9,6 +9,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.ClusterCost;
@@ -19,9 +22,6 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,7 +53,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final String athensScrewdriverDomain = "screwdriver-domain";
 
     @Test
-    public void testApplicationApi() throws IOException {
+    public void testApplicationApi() throws Exception {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
@@ -267,9 +266,39 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", "", Request.Method.POST),
                 "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
     }
+
+    @Test
+    public void testDeployDirectly() throws Exception {
+        // Setup
+        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
+        ContainerTester tester = controllerTester.containerTester();
+        tester.updateSystemVersion();
+        addTenantAthensDomain(athensUserDomain, "mytenant");
+        addScrewdriverUserToDomain("screwdriveruser1", "domain1");
+
+        // Create tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1",
+                                      "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}",
+                                      Request.Method.POST),
+                              new File("tenant-without-applications.json"));
+
+        // Create application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1",
+                                      "",
+                                      Request.Method.POST),
+                              new File("application-reference.json"));
+
+        // POST (deploy) an application to a prod zone - allowed when project ID is not specified
+        HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/deploy",
+                                      entity,
+                                      Request.Method.POST,
+                                      athensScrewdriverDomain, "screwdriveruser1"),
+                              new File("deploy-result.json"));
+    }
     
     @Test
-    public void testErrorResponses() throws IOException, URISyntaxException {
+    public void testErrorResponses() throws Exception {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         tester.updateSystemVersion();
         addTenantAthensDomain("domain1", "mytenant");
@@ -385,7 +414,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
     
     @Test
-    public void testAuthorization() throws IOException, URISyntaxException {
+    public void testAuthorization() throws Exception {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         String authorizedUser = "mytenant";
         String unauthorizedUser = "othertenant";
