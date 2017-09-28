@@ -188,7 +188,6 @@ void make_matrix_test(Cursor &test, size_t x_size, size_t y_size) {
 //-----------------------------------------------------------------------------
 
 void make_map_test(Cursor &test, const Dict &x_dict_in) {
-    TensorSpec spec("tensor(x{})");
     nbostream sparse_base = make_sparse();
     sparse_base.putInt1_4Bytes(1);
     sparse_base.writeSmallString("x");
@@ -200,6 +199,7 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
     mixed_base.putInt1_4Bytes(x_dict_in.size());
     auto x_perm = make_permutations(x_dict_in);
     for (const Dict &x_dict: x_perm) {
+        TensorSpec spec("tensor(x{})");
         nbostream sparse = sparse_base;
         nbostream mixed = mixed_base;
         for (vespalib::string x: x_dict) {
@@ -214,13 +214,13 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
         add_binary(test, {sparse, mixed});
     }
     if (x_dict_in.empty()) {
+        TensorSpec spec("tensor(x{})");
         set_tensor(test, spec);
         add_binary(test, {sparse_base, mixed_base});
     }
 }
 
 void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string &y) {
-    TensorSpec spec("tensor(x{},y{})");
     nbostream sparse_base = make_sparse();
     sparse_base.putInt1_4Bytes(2);
     sparse_base.writeSmallString("x");
@@ -234,6 +234,7 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string 
     mixed_base.putInt1_4Bytes(x_dict_in.size() * 1);
     auto x_perm = make_permutations(x_dict_in);
     for (const Dict &x_dict: x_perm) {
+        TensorSpec spec("tensor(x{},y{})");
         nbostream sparse = sparse_base;
         nbostream mixed = mixed_base;
         for (vespalib::string x: x_dict) {
@@ -250,6 +251,7 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string 
         add_binary(test, {sparse, mixed});
     }
     if (x_dict_in.empty()) {
+        TensorSpec spec("tensor(x{},y{})");
         set_tensor(test, spec);
         add_binary(test, {sparse_base, mixed_base});
     }
@@ -264,7 +266,6 @@ void make_vector_map_test(Cursor &test,
     auto type_str = vespalib::make_string("tensor(%s{},%s[%zu])",
                                           mapped_name.c_str(), indexed_name.c_str(), indexed_size);
     ValueType type = ValueType::from_spec(type_str);
-    TensorSpec spec(type.to_spec()); // ensures type string is normalized
     nbostream mixed_base = make_mixed();
     mixed_base.putInt1_4Bytes(1);
     mixed_base.writeSmallString(mapped_name);
@@ -274,6 +275,7 @@ void make_vector_map_test(Cursor &test,
     mixed_base.putInt1_4Bytes(mapped_dict.size());
     auto mapped_perm = make_permutations(mapped_dict);
     for (const Dict &dict: mapped_perm) {
+        TensorSpec spec(type.to_spec()); // ensures type string is normalized
         nbostream mixed = mixed_base;
         for (vespalib::string label: dict) {
             mixed.writeSmallString(label);
@@ -287,6 +289,7 @@ void make_vector_map_test(Cursor &test,
         add_binary(test, mixed);
     }
     if (mapped_dict.empty()) {
+        TensorSpec spec(type.to_spec()); // ensures type string is normalized
         set_tensor(test, spec);
         add_binary(test, mixed_base);
     }
