@@ -76,5 +76,11 @@ AgeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib
     return stash.create<AgeExecutor>(attribute);
 }
 
+fef::ParameterDescriptions
+AgeBlueprint::getDescriptions() const
+{
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY);
+}
+
 }
 }

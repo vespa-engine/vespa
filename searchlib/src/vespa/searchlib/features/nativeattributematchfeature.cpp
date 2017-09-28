@@ -118,6 +118,12 @@ NativeAttributeMatchBlueprint::createInstance() const
     return Blueprint::UP(new NativeAttributeMatchBlueprint());
 }
 
+fef::ParameterDescriptions
+NativeAttributeMatchBlueprint::getDescriptions() const
+{
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY).repeat();
+}
+
 bool
 NativeAttributeMatchBlueprint::setup(const IIndexEnvironment & env,
                                      const ParameterList & params)

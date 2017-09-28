@@ -293,7 +293,7 @@ DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & 
 
 ParameterDescriptions
 DotProductBlueprint::getDescriptions() const {
-    return ParameterDescriptions().desc().attribute(ParameterCollection::ANY).string();
+    return ParameterDescriptions().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY).string();
 }
 
 Blueprint::UP

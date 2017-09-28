@@ -130,32 +130,12 @@ InternalMaxReduceProdJoinBlueprint::createInstance() const
 ParameterDescriptions
 InternalMaxReduceProdJoinBlueprint::getDescriptions() const
 {
-    return ParameterDescriptions().desc().attribute(ParameterCollection::ARRAY).string();
-}
-
-bool supportedAttributeType(Parameter param) {
-    const FieldInfo *attributeInfo = param.asField();
-    if (attributeInfo == nullptr) {
-        return false;
-    }
-    if (attributeInfo->collection() != FieldInfo::CollectionType::ARRAY) {
-        return false;
-    }
-    if (attributeInfo->get_data_type() == FieldInfo::DataType::INT64) {
-        return true;
-    }
-    if (attributeInfo->get_data_type() == FieldInfo::DataType::INT32) {
-        return true;
-    }
-    return false;
+    return ParameterDescriptions().desc().attribute(ParameterDataTypeSet::int32OrInt64TypeSet(), ParameterCollection::ARRAY).string();
 }
 
 bool
 InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
-    if (!supportedAttributeType(params[0])) {
-        return false;
-    }
     _attribute = params[0].getValue();
     _query = params[1].getValue();
     describeOutput("scalar", "Internal executor for optimized execution of reduce(join(A,Q,f(x,y)(x*y)),max)");
