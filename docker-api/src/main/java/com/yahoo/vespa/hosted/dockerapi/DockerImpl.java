@@ -419,7 +419,7 @@ public class DockerImpl implements Docker {
     @Override
     public void buildImage(File dockerfile, DockerImage image) {
         try {
-            dockerClient.buildImageCmd(dockerfile).withTag(image.asString())
+            dockerClient.buildImageCmd(dockerfile).withTags(Collections.singleton(image.asString()))
                     .exec(new BuildImageResultCallback()).awaitImageId();
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
