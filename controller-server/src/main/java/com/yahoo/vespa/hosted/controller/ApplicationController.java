@@ -278,7 +278,7 @@ public class ApplicationController {
             Version version;
             if (options.deployCurrentVersion)
                 version = application.currentVersion(controller, zone);
-            else if (canDeployDirectlyTo(zone, options))
+            else if (application.deploymentJobs().isSelfTriggering()) // legacy mode: let the client decide
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
             else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
                 return unexpectedDeployment(applicationId, zone, applicationPackage);
@@ -286,8 +286,10 @@ public class ApplicationController {
                 version = application.currentDeployVersion(controller, zone);
 
             // Ensure that the deploying change is tested
-            if (! canDeployDirectlyTo(zone, options) &&
-                ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
+            // FIXME: For now only for non-self-triggering applications - VESPA-8418
+            if ( ! application.deploymentJobs().isSelfTriggering() && 
+                 ! zone.environment().isManuallyDeployed() && 
+                 ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
                 throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                    " as pending " + application.deploying().get() +
                                                    " is untested");
@@ -303,7 +305,7 @@ public class ApplicationController {
                     application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if ( ! triggeredWith(revision, application, jobType) && !canDeployDirectlyTo(zone, options) && jobType != null) {
+                if ( ! triggeredWith(revision, application, jobType) && !zone.environment().isManuallyDeployed() && jobType != null) {
                     // Triggering information is used to store which changes were made or attempted
                     // - For self-triggered applications we don't have any trigger information, so we add it here.
                     // - For all applications, we don't have complete control over which revision is actually built,
@@ -586,11 +588,6 @@ public class ApplicationController {
      */
     public Lock lock(ApplicationId application) {
         return curator.lock(application, Duration.ofMinutes(10));
-    }
-
-    /** Returns whether a direct deployment to given zone is allowed */
-    private static boolean canDeployDirectlyTo(Zone zone, DeployOptions options) {
-        return !options.screwdriverBuildJob.isPresent() || zone.environment().isManuallyDeployed();
     }
 
     private static final class ApplicationRotation {

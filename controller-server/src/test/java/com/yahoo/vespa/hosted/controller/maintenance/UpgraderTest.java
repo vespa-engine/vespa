@@ -57,7 +57,7 @@ public class UpgraderTest {
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.buildSystem().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
-        assertEquals(version, tester.configServer().lastPrepareVersion().get());
+        assertEquals(version, tester.configServer().lastPrepareVersion.get());
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
@@ -107,7 +107,7 @@ public class UpgraderTest {
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.buildSystem().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
-        assertEquals(version, tester.configServer().lastPrepareVersion().get());
+        assertEquals(version, tester.configServer().lastPrepareVersion.get());
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
@@ -187,7 +187,7 @@ public class UpgraderTest {
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.buildSystem().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
-        assertEquals(version, tester.configServer().lastPrepareVersion().get());
+        assertEquals(version, tester.configServer().lastPrepareVersion.get());
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
