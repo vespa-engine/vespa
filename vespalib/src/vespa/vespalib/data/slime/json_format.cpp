@@ -489,6 +489,7 @@ JsonFormat::decode(Input &input, Slime &slime)
     InputReader reader(input);
     JsonDecoder decoder(reader);
     decoder.decodeValue(slime);
+    reader.try_unread();
     if (reader.failed()) {
         slime.wrap("partial_result");
         slime.get().setLong("offending_offset", reader.get_offset());

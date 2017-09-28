@@ -74,6 +74,22 @@ public:
     }
 
     /**
+     * Try to unread a single byte. This will work for data that is
+     * read, but not yet evicted. Note that after eof is found (the
+     * obtain function returns 0), unreading will not be possible.
+     *
+     * @return whether unreading could be performed
+     **/
+    bool try_unread() {
+        if (__builtin_expect(_pos > 0, true)) {
+            --_pos;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Read a continous sequence of bytes. Bytes within an input chunk
      * will be referenced directly. Reads crossing chunk boundries
      * will result in a gathering copy into a temporary buffer owned
