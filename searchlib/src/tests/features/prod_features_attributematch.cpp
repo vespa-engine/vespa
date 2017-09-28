@@ -307,9 +307,6 @@ Test::testAttributeMatch()
     { // tensor attribute is not allowed
         FtFeatureTest ft(_factory, "attributeMatch(tensor)");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tensor");
-        AttributePtr tensorAttr = AttributeFactory::createAttribute("tensor", AVC (AVBT::TENSOR, AVCT::SINGLE));
-        tensorAttr->addReservedDoc();
-        ft.getIndexEnv().getAttributeMap().add(tensorAttr);
         ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("tensor") != nullptr);
         ASSERT_TRUE(!ft.setup());
     }
