@@ -8,11 +8,11 @@ import java.util.Optional;
 /**
  * Abstract the backend stuff for the REST API, such as retrieving or updating documents.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public interface OperationHandler {
 
-    class VisitResult{
+    class VisitResult {
 
         public final Optional<String> token;
         public final String documentsAsJsonList;
@@ -23,7 +23,19 @@ public interface OperationHandler {
         }
     }
 
-    VisitResult visit(RestUri restUri, String documentSelection,  Optional<String> cluster, Optional<String> continuation) throws RestApiException;
+    class VisitOptions {
+        public final Optional<String> cluster;
+        public final Optional<String> continuation;
+        public final Optional<Integer> wantedDocumentCount;
+
+        public VisitOptions(Optional<String> cluster, Optional<String> continuation, Optional<Integer> wantedDocumentCount) {
+            this.cluster = cluster;
+            this.continuation = continuation;
+            this.wantedDocumentCount = wantedDocumentCount;
+        }
+    }
+
+    VisitResult visit(RestUri restUri, String documentSelection, VisitOptions options) throws RestApiException;
 
     void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException;
 

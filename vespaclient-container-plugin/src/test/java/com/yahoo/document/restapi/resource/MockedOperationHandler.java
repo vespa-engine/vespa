@@ -18,9 +18,11 @@ public class MockedOperationHandler implements OperationHandler {
     int deleteCount = 0;
 
     @Override
-    public VisitResult visit(RestUri restUri, String documentSelection, Optional<String> cluster, Optional<String> continuation) throws RestApiException {
-        return new VisitResult(Optional.of("token"), "List of json docs, cont token " + continuation.map(a->a).orElse("not set") + ", doc selection: '"
-                + documentSelection + "'");
+    public VisitResult visit(RestUri restUri, String documentSelection, VisitOptions options) throws RestApiException {
+        return new VisitResult(Optional.of("token"), "List of json docs, cont token "
+                + options.continuation.orElse("not set") + ", doc selection: '"
+                + documentSelection + "'"
+                + options.wantedDocumentCount.map(n -> String.format(", min docs returned: %d", n)).orElse(""));
     }
 
     @Override
