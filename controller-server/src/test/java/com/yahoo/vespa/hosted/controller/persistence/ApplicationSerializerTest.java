@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
@@ -14,6 +15,8 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
@@ -25,7 +28,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -37,10 +43,10 @@ import static org.junit.Assert.assertFalse;
 public class ApplicationSerializerTest {
 
     private static final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
-    
+
     private static final Zone zone1 = new Zone(Environment.from("prod"), RegionName.from("us-west-1"));
     private static final Zone zone2 = new Zone(Environment.from("prod"), RegionName.from("us-east-3"));
-    
+
     @Test
     public void testSerialization() {
         ControllerTester tester = new ControllerTester();
@@ -50,12 +56,13 @@ public class ApplicationSerializerTest {
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml("<validation-overrides version='1.0'>" +
                                                                               "  <allow until='2017-06-15'>deployment-removal</allow>" +
                                                                               "</validation-overrides>");
-        
+
         List<Deployment> deployments = new ArrayList<>();
         ApplicationRevision revision1 = ApplicationRevision.from("appHash1");
         ApplicationRevision revision2 = ApplicationRevision.from("appHash2", new SourceRevision("repo1", "branch1", "commit1"));
-        deployments.add(new Deployment(zone1, revision1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3)));
-        deployments.add(new Deployment(zone2, revision2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5)));
+        deployments.add(new Deployment(zone1, revision1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
+        deployments.add(new Deployment(zone2, revision2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
+                createClusterUtils(3, 0.2), createClusterInfo(3, 4)));
 
         Optional<Long> projectId = Optional.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
@@ -69,20 +76,20 @@ public class ApplicationSerializerTest {
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty());
 
-        Application original = new Application(ApplicationId.from("t1", "a1", "i1"), 
-                                               deploymentSpec, 
+        Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
+                                               deploymentSpec,
                                                validationOverrides,
-                                               deployments, deploymentJobs, 
-                                               Optional.of(new Change.VersionChange(Version.fromString("6.7"))), 
+                                               deployments, deploymentJobs,
+                                               Optional.of(new Change.VersionChange(Version.fromString("6.7"))),
                                                true);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
-        
+
         assertEquals(original.id(), serialized.id());
-        
+
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());
-        
+
         assertEquals(2, serialized.deployments().size());
         assertEquals(original.deployments().get(zone1).revision(), serialized.deployments().get(zone1).revision());
         assertEquals(original.deployments().get(zone2).revision(), serialized.deployments().get(zone2).revision());
@@ -98,9 +105,9 @@ public class ApplicationSerializerTest {
         assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest),
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
         assertEquals(original.deploymentJobs().failingSince(), serialized.deploymentJobs().failingSince());
-        
+
         assertEquals(original.hasOutstandingChange(), serialized.hasOutstandingChange());
-        
+
         assertEquals(original.deploying(), serialized.deploying());
 
         { // test more deployment serialization cases
@@ -121,6 +128,36 @@ public class ApplicationSerializerTest {
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
             assertEquals(original4.deploying(), serialized4.deploying());
         }
+    }
+
+    private Map<ClusterSpec.Id, ClusterInfo> createClusterInfo(int clusters, int hosts) {
+        Map<ClusterSpec.Id, ClusterInfo> result = new HashMap<>();
+
+        for (int cluster = 0; cluster < clusters; cluster++) {
+            List<String> hostnames = new ArrayList<>();
+            for (int host = 0; host < hosts; host++) {
+                hostnames.add("hostname" + cluster*host + host);
+            }
+
+            result.put(ClusterSpec.Id.from("id" + cluster), new ClusterInfo("flavor" + cluster, 10,
+                    ClusterSpec.Type.content, Collections.singletonList("hostname1")));
+        }
+        return result;
+    }
+
+    private Map<ClusterSpec.Id, ClusterUtilization> createClusterUtils(int clusters, double inc) {
+        Map<ClusterSpec.Id, ClusterUtilization> result = new HashMap<>();
+
+        ClusterUtilization util = new ClusterUtilization(0,0,0,0);
+        for (int cluster = 0; cluster < clusters; cluster++) {
+            double agg = cluster*inc;
+            result.put(ClusterSpec.Id.from("id" + cluster), new ClusterUtilization(
+                    util.getMemory()+ agg,
+                    util.getCpu()+ agg,
+                    util.getDisk() + agg,
+                    util.getDiskBusy() + agg));
+        }
+        return result;
     }
 
     @Test
@@ -183,5 +220,4 @@ public class ApplicationSerializerTest {
                 "  }\n" +
                 "}\n";
     }
-
 }

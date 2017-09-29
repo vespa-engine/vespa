@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.controller.application;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
 
 import java.util.List;
 
@@ -12,19 +11,23 @@ import java.util.List;
  * @author smorgrav
  */
 public class ClusterInfo {
-    private final Flavor flavor;
+    private final String flavor;
+    private final int cost;
     private final ClusterSpec.Type clusterType;
     private final List<String> hostnames;
 
-    public ClusterInfo(Flavor flavor, ClusterSpec.Type clusterType, List<String> hostnames) {
+    public ClusterInfo(String flavor, int cost, ClusterSpec.Type clusterType, List<String> hostnames) {
         this.flavor = flavor;
+        this.cost = cost;
         this.clusterType = clusterType;
         this.hostnames = hostnames;
     }
 
-    public Flavor getFlavor() {
+    public String getFlavor() {
         return flavor;
     }
+
+    public int getCost() { return cost; }
 
     public ClusterSpec.Type getClusterType() {
         return clusterType;

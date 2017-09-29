@@ -26,8 +26,8 @@ public class ClusterCost {
         this.targetUtilization = new ClusterUtilization(0.7,0.2, 0.7, 0.3);
         this.resultUtilization = calculateResultUtilization(systemUtilization, targetUtilization);
 
-        this.tco = clusterInfo.getFlavor().cost() * Math.min(1, this.resultUtilization.getMaxUtilization());
-        this.waste  = clusterInfo.getFlavor().cost() - tco;
+        this.tco = clusterInfo.getCost() * Math.min(1, this.resultUtilization.getMaxUtilization());
+        this.waste  = clusterInfo.getCost() - tco;
     }
 
     public double getTco() {

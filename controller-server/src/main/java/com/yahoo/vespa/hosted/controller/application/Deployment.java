@@ -33,6 +33,8 @@ public class Deployment {
         Objects.requireNonNull(revision, "revision cannot be null");
         Objects.requireNonNull(version, "version cannot be null");
         Objects.requireNonNull(deployTime, "deployTime cannot be null");
+        Objects.requireNonNull(clusterUtils, "deployTime cannot be null");
+        Objects.requireNonNull(clusterInfo, "deployTime cannot be null");
         this.zone = zone;
         this.revision = revision;
         this.version = version;
