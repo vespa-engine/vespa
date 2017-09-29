@@ -41,6 +41,7 @@ import java.util.Optional;
 
 /**
  * @author bratseth
+ * @author mpolden
  */
 public class ApplicationApiTest extends ControllerContainerTest {
 
@@ -103,6 +104,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", "6.1.0", Request.Method.POST),
                               new File("application-deployment.json"));
 
+        // DELETE (cancel) ongoing change
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", "", Request.Method.DELETE),
+                              new File("application-deployment-cancelled.json"));
+
+        // DELETE (cancel) again is a no-op
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", "", Request.Method.DELETE),
+                              new File("application-deployment-cancelled-no-op.json"));
+
         // POST (deploy) an application to a zone - manual user deployment
         HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy",
@@ -116,6 +125,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
         long screwdriverProjectId = 123;
 
         addScrewdriverUserToDomain("screwdriveruser1", "domain1"); // (Necessary but not provided in this API)
+
+        // Trigger deployment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", "6.1.0", Request.Method.POST),
+                              new File("application-deployment.json"));
 
         // ... systemtest
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/test-region/instance/default/",
