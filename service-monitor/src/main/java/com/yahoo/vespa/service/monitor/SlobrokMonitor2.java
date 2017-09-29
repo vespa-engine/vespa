@@ -97,7 +97,6 @@ public class SlobrokMonitor2 implements AutoCloseable {
             case "metricsproxy":
             case "slobrok":
             case "transactionlogserver":
-            case "ytracecleaner":
                 return Optional.empty();
 
             case "topleveldispatch":
