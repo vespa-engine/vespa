@@ -18,6 +18,7 @@ public interface FileDistribution {
 
     void sendDeployedFiles(String hostName, Set<FileReference> fileReferences);
     void reloadDeployFileDistributor();
+    // TODO: Remove when 6.150 is the oldest version used
     void limitSendingOfDeployedFilesTo(Collection<String> hostNames);
     void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames);
 
