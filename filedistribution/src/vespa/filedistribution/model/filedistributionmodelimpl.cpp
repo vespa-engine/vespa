@@ -4,7 +4,6 @@
 #include "zkfiledbmodel.h"
 #include "deployedfilestodownload.h"
 #include "filedistributionmodelimpl.h"
-#include <vespa/vespalib/util/stringfmt.h>
 #include <boost/filesystem.hpp>
 #include <zookeeper/zookeeper.h>
 

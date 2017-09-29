@@ -2,8 +2,6 @@
 
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
-#include <sstream>
-#include <iterator>
 
 using filedistribution::DeployedFilesToDownload;
 using filedistribution::Path;
