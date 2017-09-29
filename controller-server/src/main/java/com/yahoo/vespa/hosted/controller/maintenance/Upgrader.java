@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +21,8 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class Upgrader extends Maintainer {
+
+    private static final Duration upgradeTimeout = Duration.ofHours(12);
 
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
@@ -62,12 +65,13 @@ public class Upgrader extends Maintainer {
     
     private void upgrade(ApplicationList applications, Version version) {
         Change.VersionChange change = new Change.VersionChange(version);
+        Instant startOfUpgradePeriod = controller().clock().instant().minus(upgradeTimeout);
         cancelUpgradesOf(applications.upgradingToLowerThan(version));
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.onLowerVersionThan(version);
         applications = applications.notDeployingApplication(); // wait with applications deploying an application change
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
-        applications = applications.notRunningJobFor(change); // do not trigger multiple jobs simultaneously for same upgrade
+        applications = applications.notCurrentlyUpgrading(change, startOfUpgradePeriod); // do not trigger again if currently upgrading
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         for (Application application : applications.byIncreasingDeployedVersion().asList()) {
             try {
