@@ -139,15 +139,6 @@ public class SearchNode extends AbstractService implements
     }
 
     /**
-     * Returns the connection spec string that resolves to this search node.
-     *
-     * @return The connection string.
-     */
-    public String getConnectSpec() {
-        return "tcp/" + getHost().getHostName() + ":" + getRpcPort();
-    }
-
-    /**
      * Returns the number of ports needed by this service.
      *
      * @return The number of ports.
@@ -259,7 +250,6 @@ public class SearchNode extends AbstractService implements
             ptport(getDispatchPort()).
             rpcport(getRpcPort()).
             slime_messaging_port(getSlimeMessagingPort()).
-            rtcspec(getConnectSpec()).
             httpport(getHttpPort()).
             partition(getNodeSpec().partitionId()).
             clustername(getClusterName()).
