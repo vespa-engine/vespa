@@ -100,6 +100,8 @@ public class SessionPreparer {
                 preparation.distribute();
                 preparation.reloadDeployFileDistributor();
             }
+            log.log(LogLevel.DEBUG, () -> "time used " + params.getTimeoutBudget().timesUsed() +
+                    " : " + params.getApplicationId());
             return preparation.result();
         } catch (OutOfCapacityException e) {
             throw e;
