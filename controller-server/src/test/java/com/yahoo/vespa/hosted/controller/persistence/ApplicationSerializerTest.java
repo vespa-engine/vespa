@@ -67,7 +67,7 @@ public class ApplicationSerializerTest {
                                 .withTriggering(Version.fromString("5.6.6"), Optional.empty(), true, Instant.ofEpochMilli(5))
                                 .withCompletion(Optional.of(JobError.unknown), Instant.ofEpochMilli(6), tester.controller()));
 
-        DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty(), false);
+        DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty());
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"), 
                                                deploymentSpec, 
@@ -98,7 +98,6 @@ public class ApplicationSerializerTest {
         assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest),
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
         assertEquals(original.deploymentJobs().failingSince(), serialized.deploymentJobs().failingSince());
-        assertEquals(original.deploymentJobs().isSelfTriggering(), serialized.deploymentJobs().isSelfTriggering());
         
         assertEquals(original.hasOutstandingChange(), serialized.hasOutstandingChange());
         
@@ -167,8 +166,7 @@ public class ApplicationSerializerTest {
                 "          \"at\": 1505725189469\n" +
                 "        }\n" +
                 "      }\n" +
-                "    ],\n" +
-                "    \"selfTriggering\": false\n" +
+                "    ]\n" +
                 "  }\n" +
                 "}\n";
     }

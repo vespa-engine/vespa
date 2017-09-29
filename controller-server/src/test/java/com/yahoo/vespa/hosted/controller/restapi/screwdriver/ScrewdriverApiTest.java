@@ -74,7 +74,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         // Notifying about unknown job fails
         tester.containerTester().assertResponse(new Request("http://localhost:8080/screwdriver/v1/jobreport",
                                                             jsonReport(app.id(), JobType.productionUsEast3, projectId, 1L,
-                                                                       Optional.empty(), false, true)
+                                                                       Optional.empty())
                                                                     .getBytes(StandardCharsets.UTF_8),
                                                             Request.Method.POST),
                                                 new File("unexpected-completion.json"), 400);
@@ -141,21 +141,19 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
     
     private void notifyCompletion(ApplicationId app, long projectId, JobType jobType, Optional<JobError> error) throws IOException {
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/jobreport",
-                                   jsonReport(app, jobType, projectId, 1L, error, false, true).getBytes(StandardCharsets.UTF_8),
+                                   jsonReport(app, jobType, projectId, 1L, error).getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
                        200, "ok");
     }
 
     private static String jsonReport(ApplicationId applicationId, JobType jobType, long projectId, long buildNumber,
-                                     Optional<JobError> jobError, boolean selfTriggering, boolean gitChanges) {
+                                     Optional<JobError> jobError) {
         return
                 "{\n" +
                         "    \"projectId\"     : "  + projectId + ",\n" +
                         "    \"jobName\"       :\"" + jobType.id() + "\",\n" +
                         "    \"buildNumber\"   : "  + buildNumber + ",\n" +
                         jobError.map(message -> "    \"jobError\"      : \""  + message + "\",\n").orElse("") +
-                        "    \"selfTriggering\": "  + selfTriggering + ",\n" +
-                        "    \"gitChanges\"    : "  + gitChanges + ",\n" +
                         "    \"tenant\"        :\"" + applicationId.tenant().value() + "\",\n" +
                         "    \"application\"   :\"" + applicationId.application().value() + "\",\n" +
                         "    \"instance\"      :\"" + applicationId.instance().value() + "\"\n" +

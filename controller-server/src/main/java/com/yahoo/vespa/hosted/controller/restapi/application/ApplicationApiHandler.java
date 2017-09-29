@@ -687,9 +687,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                    "Version is not active in this system. " +
                                                    "Active versions: " + controller.versionStatus().versions());
 
-            // Since we manually triggered it we don't want this to be self-triggering for the time being 
-            controller.applications().store(application.with(application.deploymentJobs().asSelfTriggering(false)), lock);
-
             controller.applications().deploymentTrigger().triggerChange(application.id(), new Change.VersionChange(version));
             return new MessageResponse("Triggered deployment of " + application + " on version " + version);
         }
