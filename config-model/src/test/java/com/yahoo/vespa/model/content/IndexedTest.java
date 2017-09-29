@@ -198,7 +198,6 @@ public class IndexedTest extends ContentBaseTest {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         s.getStorageNodes().getConfig(builder);
         s.getStorageNodes().getChildren().get("3").getConfig(builder);
-        assertTrue(new StorServerConfig(builder).persistence_provider().rpc().connectspec().startsWith("tcp/localhost:191"));
     }
 
     @Test

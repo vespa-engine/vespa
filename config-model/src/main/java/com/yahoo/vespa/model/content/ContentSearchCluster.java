@@ -204,7 +204,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         return hasIndexedCluster() ? getIndexed().getSearchNodes() : nonIndexed;
     }
 
-    public SearchNode addSearchNode(ContentNode node, StorageGroup parentGroup, ModelElement element) {
+    public void addSearchNode(ContentNode node, StorageGroup parentGroup, ModelElement element) {
         AbstractConfigProducer parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
@@ -229,7 +229,6 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         } else {
             nonIndexed.add(snode);
         }
-        return snode;
     }
 
     /** Translates group ids to continuous 0-base "row" id integers */

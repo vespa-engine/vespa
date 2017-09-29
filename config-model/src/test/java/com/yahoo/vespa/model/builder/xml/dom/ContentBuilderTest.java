@@ -318,8 +318,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(partitionsConfig.dataset(0).engine(0).name_and_port().startsWith("tcp/node0:191"));
         IndexedSearchCluster sc = m.getContentClusters().get("clu").getSearch().getIndexed();
         assertEquals(2, sc.getSearchNodeCount());
-        assertTrue(sc.getSearchNode(0).getPersistenceProviderRpcPort() >= 19100);
-        assertTrue(sc.getSearchNode(0).getPersistenceProviderRpcPort() != sc.getSearchNode(1).getPersistenceProviderRpcPort());
     }
 
     @Test

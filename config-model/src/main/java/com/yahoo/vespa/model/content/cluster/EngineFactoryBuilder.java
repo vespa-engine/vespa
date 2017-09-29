@@ -22,8 +22,6 @@ public class EngineFactoryBuilder {
                 return new ProtonEngine.Factory(c.getSearch());
             } else if (persistence.getChild("dummy") != null) {
                 return new com.yahoo.vespa.model.content.engines.DummyPersistence.Factory();
-            } else if (persistence.getChild("rpc") != null) {
-                return new RPCEngine.Factory();
             }
         }
 

@@ -22,8 +22,8 @@ public class ProtonEngine {
 
         @Override
         public PersistenceEngine create(StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement) {
-            SearchNode searchNode = search.addSearchNode(storageNode, parentGroup, storageNodeElement);
-            return new ProtonProvider(storageNode, searchNode);
+            search.addSearchNode(storageNode, parentGroup, storageNodeElement);
+            return new ProtonProvider(storageNode);
         }
 
         @Override

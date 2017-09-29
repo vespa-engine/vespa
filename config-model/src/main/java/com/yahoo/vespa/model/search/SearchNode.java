@@ -103,9 +103,7 @@ public class SearchNode extends AbstractService implements
         this.flushOnShutdown = flushOnShutdown;
         portsMeta.on(0).tag("rpc").tag("rtc").tag("admin").tag("status");
         portsMeta.on(1).tag("fs4");
-        portsMeta.on(2).tag("srmp").tag("hack").tag("test");
-        portsMeta.on(3).tag("rpc").tag("engines-provider");
-        portsMeta.on(4).tag("http").tag("json").tag("health").tag("state");
+        portsMeta.on(2).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
         monitorService();
         this.tuning = tuning;
@@ -145,7 +143,7 @@ public class SearchNode extends AbstractService implements
      */
     @Override
     public int getPortCount() {
-        return 5;
+        return 3;
     }
 
     /**
@@ -155,15 +153,6 @@ public class SearchNode extends AbstractService implements
      */
     public int getRpcPort() {
         return getRelativePort(0);
-    }
-
-    /*
-     * Returns the rpc port used for the engines provider interface.
-     * @return The port
-     */
-
-    public int getPersistenceProviderRpcPort() {
-        return getRelativePort(3);
     }
 
     @Override
