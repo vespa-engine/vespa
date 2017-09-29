@@ -157,10 +157,6 @@ public class SearchNode extends AbstractService implements
         return getRelativePort(0);
     }
 
-    protected int getSlimeMessagingPort() {
-        return getRelativePort(2);
-    }
-
     /*
      * Returns the rpc port used for the engines provider interface.
      * @return The port
@@ -199,7 +195,7 @@ public class SearchNode extends AbstractService implements
     }
 
     public int getHttpPort() {
-        return getRelativePort(4);
+        return getRelativePort(2);
     }
 
     @Override
@@ -249,7 +245,6 @@ public class SearchNode extends AbstractService implements
         builder.
             ptport(getDispatchPort()).
             rpcport(getRpcPort()).
-            slime_messaging_port(getSlimeMessagingPort()).
             httpport(getHttpPort()).
             partition(getNodeSpec().partitionId()).
             clustername(getClusterName()).

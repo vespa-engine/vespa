@@ -11,9 +11,6 @@ ptport        int default=8003 restart
 ## Port to use for the rpcserver.
 rpcport       int default=8004 restart
 
-## Port used for Slime Message Passing (srmp protocol)
-slime_messaging_port int default=8005 restart
-
 ## Port to use for the web server
 httpport       int default=0 restart
 
