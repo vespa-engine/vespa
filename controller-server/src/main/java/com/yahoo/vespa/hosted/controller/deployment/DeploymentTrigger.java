@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -31,6 +32,7 @@ import java.util.logging.Logger;
  * This class is multithread safe.
  * 
  * @author bratseth
+ * @author mpolden
  */
 public class DeploymentTrigger {
     
@@ -97,26 +99,29 @@ public class DeploymentTrigger {
     /**
      * Called periodically to cause triggering of jobs in the background
      */
-    public void triggerFailing(ApplicationId applicationId, String cause) {
+    public void triggerFailing(ApplicationId applicationId, Duration timeout) {
         try (Lock lock = applications().lock(applicationId)) {
             Application application = applications().require(applicationId);
-            if (shouldRetryFromBeginning(application)) {
-                // failed for a long time: Discard existing change and restart from the component job
-                application = application.withDeploying(Optional.empty());
-                application = trigger(JobType.component, application, false, "Retrying failing deployment from beginning: " + cause, lock);
-                applications().store(application, lock);
-            } else {
-                // retry the failed job (with backoff)
-                for (JobType jobType : order.jobsFrom(application.deploymentSpec())) { // retry the *first* failing job
-                    JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-                    if (isFailing(jobStatus)) {
-                        if (shouldRetryNow(jobStatus)) {
-                            application = trigger(jobType, application, false, "Retrying failing job: " + cause, lock);
-                            applications().store(application, lock);
-                        }
-                        break;
+            if (!application.deploying().isPresent()) { // No ongoing change, no need to retry
+                return;
+            }
+            // Retry first failing job
+            for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
+                JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+                if (isFailing(application.deploying().get(), jobStatus)) {
+                    if (shouldRetryNow(jobStatus)) {
+                        application = trigger(jobType, application, false, "Retrying failing job", lock);
+                        applications().store(application, lock);
                     }
+                    break;
                 }
+            }
+            // Retry dead job
+            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), timeout);
+            if (firstDeadJob.isPresent()) {
+                application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job",
+                                      lock);
+                applications().store(application, lock);
             }
         }
     }
@@ -184,24 +189,26 @@ public class DeploymentTrigger {
     //--- End of methods which triggers deployment jobs ----------------------------
 
     private ApplicationController applications() { return controller.applications(); }
-    
-    private boolean isFailing(JobStatus jobStatusOrNull) {
-        return jobStatusOrNull != null && !jobStatusOrNull.isSuccess();
+
+    /** Returns whether a job is failing for the current change in the given application */
+    private boolean isFailing(Change change, JobStatus status) {
+        return status != null &&
+               !status.isSuccess() &&
+               status.lastCompletedFor(change);
     }
 
     private boolean isCapacityConstrained(JobType jobType) {
         return jobType == JobType.stagingTest || jobType == JobType.systemTest;
     }
 
-    private boolean shouldRetryFromBeginning(Application application) {
-        Instant eightHoursAgo = clock.instant().minus(Duration.ofHours(8));
-        Instant failingSince = application.deploymentJobs().failingSince();
-        if (failingSince != null && failingSince.isAfter(eightHoursAgo)) return false;
-
-        JobStatus componentJobStatus = application.deploymentJobs().jobStatus().get(JobType.component);
-        if (componentJobStatus == null) return true;
-        if ( ! componentJobStatus.lastCompleted().isPresent() ) return true;
-        return componentJobStatus.lastCompleted().get().at().isBefore(eightHoursAgo);
+    /** Returns the first job that has been running for more than the given timeout */
+    private Optional<JobStatus> firstDeadJob(DeploymentJobs jobs, Duration timeout) {
+        Instant startOfGracePeriod = controller.clock().instant().minus(timeout);
+        Optional<JobStatus> oldestRunningJob = jobs.jobStatus().values().stream()
+                .filter(JobStatus::inProgress)
+                .sorted(Comparator.comparing(status -> status.lastTriggered().get().at()))
+                .findFirst();
+        return oldestRunningJob.filter(job -> job.lastTriggered().get().at().isBefore(startOfGracePeriod));
     }
 
     /** Decide whether the job should be triggered by the periodic trigger */
