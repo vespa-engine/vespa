@@ -180,11 +180,7 @@ struct JsonDecoder {
     JsonDecoder(InputReader &reader) : in(reader), c(in.read()), key(), value() {}
 
     void next() {
-        if (in.obtain() > 0) {
-            c = in.read();
-        } else {
-            c = 0;
-        }
+        c = in.try_read();
     }
 
     bool skip(char x) {

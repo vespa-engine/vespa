@@ -74,6 +74,19 @@ public:
     }
 
     /**
+     * Try to read a single byte. This function will not fail the
+     * reader with buffer underflow if eof is reached.
+     *
+     * @return the next input byte, or 0 if eof is reached
+     **/
+    char try_read() {
+        if (__builtin_expect(obtain() > 0, true)) {
+            return _data.data[_pos++];
+        }
+        return 0;
+    }
+
+    /**
      * Try to unread a single byte. This will work for data that is
      * read, but not yet evicted. Note that after eof is found (the
      * obtain function returns 0), unreading will not be possible.
