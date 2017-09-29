@@ -26,7 +26,7 @@ reporterToSlime(HostReporter &hostReporter, vespalib::Slime &slime) {
     std::string jsonData = json.str();
     size_t parsed = JsonFormat::decode(Memory(jsonData), slime);
 
-    if (!parsed) {
+    if (parsed == 0) {
         CPPUNIT_FAIL("jsonData is not json:\n" + jsonData);
     }
 }

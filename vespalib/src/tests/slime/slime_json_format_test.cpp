@@ -64,13 +64,13 @@ std::string json_string(const std::string &str) {
 
 std::string normalize(const std::string &json) {
     Slime slime;
-    EXPECT_GREATER(vespalib::slime::JsonFormat::decode(json, slime), 0u);
+    EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime) > 0);
     return make_json(slime, true);
 }
 
 std::string normalize(Input &input) {
     Slime slime;
-    EXPECT_GREATER(vespalib::slime::JsonFormat::decode(input, slime), 0u);
+    EXPECT_TRUE(vespalib::slime::JsonFormat::decode(input, slime) > 0);
     return make_json(slime, true);
 }
 
