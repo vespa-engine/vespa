@@ -2,11 +2,11 @@
 package com.yahoo.vespa.orchestrator;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
-import com.yahoo.vespa.service.monitor.SlobrokAndConfigIntersector;
 
 import java.util.List;
 import java.util.Map;
@@ -21,24 +21,24 @@ import java.util.stream.Collectors;
  */
 public class ServiceMonitorInstanceLookupService implements InstanceLookupService {
 
-    private final SlobrokAndConfigIntersector slobrokAndConfigIntersector;
+    private final ServiceMonitor serviceMonitor;
 
     @Inject
-    public ServiceMonitorInstanceLookupService(SlobrokAndConfigIntersector slobrokAndConfigIntersector) {
-        this.slobrokAndConfigIntersector = slobrokAndConfigIntersector;
+    public ServiceMonitorInstanceLookupService(ServiceMonitor serviceMonitor) {
+        this.serviceMonitor = serviceMonitor;
     }
 
     @Override
     public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
         Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
-                = slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances();
+                = serviceMonitor.queryStatusOfAllApplicationInstances();
         return Optional.ofNullable(instanceMap.get(applicationInstanceReference));
     }
 
     @Override
     public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(HostName hostName) {
         Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap 
-                = slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances();
+                = serviceMonitor.queryStatusOfAllApplicationInstances();
         List<ApplicationInstance<ServiceMonitorStatus>> applicationInstancesUsingHost = instanceMap.entrySet().stream()
                 .filter(entry -> applicationInstanceUsesHost(entry.getValue(), hostName))
                 .map(Map.Entry::getValue)
@@ -56,7 +56,7 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
 
     @Override
     public Set<ApplicationInstanceReference> knownInstances() {
-        return slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances().keySet();
+        return serviceMonitor.queryStatusOfAllApplicationInstances().keySet();
     }
 
     private static boolean applicationInstanceUsesHost(ApplicationInstance<ServiceMonitorStatus> applicationInstance,
