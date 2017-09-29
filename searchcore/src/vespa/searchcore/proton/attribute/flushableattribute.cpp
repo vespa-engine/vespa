@@ -92,7 +92,7 @@ FlushableAttribute::Flusher::saveAttribute()
                                                  _syncToken);
     bool saveSuccess = true;
     if (_saver && _saver->hasGenerationGuard() &&
-        _fattr._hwInfo.slowDisk()) {
+        _fattr._hwInfo.disk().slow()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
     }

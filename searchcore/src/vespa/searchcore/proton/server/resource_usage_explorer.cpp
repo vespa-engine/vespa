@@ -9,11 +9,10 @@ using namespace vespalib::slime;
 namespace proton {
 
 void
-convertDiskStatsToSlime(const DiskMemUsageFilter::space_info &stats, Cursor &object)
+convertDiskStatsToSlime(const HwInfo &hwInfo, uint64_t diskUsedSizeBytes, Cursor &object)
 {
-    object.setLong("capacity", stats.capacity);
-    object.setLong("free", stats.free);
-    object.setLong("available", stats.available);
+    object.setLong("capacity", hwInfo.disk().sizeBytes());
+    object.setLong("used", diskUsedSizeBytes);
 }
 
 void
@@ -39,12 +38,12 @@ ResourceUsageExplorer::get_state(const vespalib::slime::Inserter &inserter, bool
         Cursor &disk = object.setObject("disk");
         disk.setDouble("usedRatio", _usageFilter.getDiskUsedRatio());
         disk.setDouble("usedLimit", config._diskLimit);
-        convertDiskStatsToSlime(_usageFilter.getDiskStats(), disk.setObject("stats"));
+        convertDiskStatsToSlime(_usageFilter.getHwInfo(), _usageFilter.getDiskUsedSize(), disk.setObject("stats"));
 
         Cursor &memory = object.setObject("memory");
         memory.setDouble("usedRatio", _usageFilter.getMemoryUsedRatio());
         memory.setDouble("usedLimit", config._memoryLimit);
-        memory.setLong("physicalMemory", _usageFilter.getPhysicalMemory());
+        memory.setLong("physicalMemory", _usageFilter.getHwInfo().memory().sizeBytes());
         convertMemoryStatsToSlime(_usageFilter.getMemoryStats(), memory.setObject("stats"));
     } else {
         object.setDouble("disk", _usageFilter.getDiskUsedRatio());

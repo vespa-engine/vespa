@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_filter.h>
 
 using proton::DiskMemUsageFilter;
+using proton::HwInfo;
 
 namespace fs = std::experimental::filesystem;
 
@@ -16,9 +18,9 @@ struct Fixture
     using Config = DiskMemUsageFilter::Config;
 
     Fixture()
-        : _filter(64 * 1024 * 1024)
+        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(64 * 1024 * 1024)))
     {
-        _filter.setDiskStats({.capacity = 100, .free = 100, .available=100});
+        _filter.setDiskUsedSize(0);
         _filter.setMemoryStats(vespalib::ProcessMemoryStats(10000000,
                                                             10000001,
                                                             10000002,
@@ -41,7 +43,7 @@ struct Fixture
     }
 
     void triggerDiskLimit() {
-        _filter.setDiskStats({.capacity = 100, .free = 20, .available=10});
+        _filter.setDiskUsedSize(90);
     }
 
     void triggerMemoryLimit()
@@ -76,7 +78,7 @@ TEST_F("Check that disk limit can be reached", Fixture)
                 "action: \"add more content nodes\", "
                 "reason: \"disk used (0.9) > disk limit (0.8)\", "
                 "stats: { "
-                "capacity: 100, free: 20, available: 10, diskUsed: 0.9, diskLimit: 0.8}}");
+                "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
 TEST_F("Check that memory limit can be reached", Fixture)
@@ -108,7 +110,7 @@ TEST_F("Check that both disk limit and memory limit can be reached", Fixture)
                 "action: \"add more content nodes\", "
                 "reason: \"disk used (0.9) > disk limit (0.8)\", "
                 "stats: { "
-                "capacity: 100, free: 20, available: 10, diskUsed: 0.9, diskLimit: 0.8}}");
+                "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

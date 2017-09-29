@@ -32,6 +32,7 @@
 #include <vespa/searchlib/expression/forcelink.hpp>
 
 #include <vespa/log/log.h>
+
 LOG_SETUP(".proton.server.proton");
 
 using document::DocumentTypeRepo;
@@ -75,12 +76,13 @@ setFS4Compression(const ProtonConfig & proton)
 }
 
 DiskMemUsageSampler::Config
-diskMemUsageSamplerConfig(const ProtonConfig &proton)
+diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 {
     return DiskMemUsageSampler::Config(
             proton.writefilter.memorylimit,
             proton.writefilter.disklimit,
-            proton.writefilter.sampleinterval);
+            proton.writefilter.sampleinterval,
+            hwInfo);
 }
 
 }
@@ -223,17 +225,22 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 {
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
-    const auto &samplerCfgArgs = protonConfig.hwinfo.disk;
-    HwInfoSampler::Config samplerCfg(samplerCfgArgs.writespeed,
-                                     samplerCfgArgs.slowwritespeedlimit,
-                                     samplerCfgArgs.samplewritesize);
+    const auto &hwDiskCfg = protonConfig.hwinfo.disk;
+    const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
+    // TODO: Forward disk size when performance impact of disk usage sampling is verified
+    HwInfoSampler::Config samplerCfg(0,
+                                     hwDiskCfg.writespeed,
+                                     hwDiskCfg.slowwritespeedlimit,
+                                     hwDiskCfg.samplewritesize,
+                                     hwDiskCfg.shared,
+                                     hwMemoryCfg.size);
     _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir,
                                                      samplerCfg);
     _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>
                            (protonConfig.basedir,
-                            diskMemUsageSamplerConfig(protonConfig));
+                            diskMemUsageSamplerConfig(protonConfig, _hwInfo));
 
     _metricsEngine.reset(new MetricsEngine());
     _metricsEngine->addMetricsHook(_metricsHook);
@@ -341,7 +348,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
 
-    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig));
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, _hwInfo));
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();

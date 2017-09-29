@@ -3,6 +3,7 @@
 #include "disk_mem_usage_filter.h"
 #include "i_disk_mem_usage_listener.h"
 #include <vespa/log/log.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 LOG_SETUP(".proton.server.disk_mem_usage_filter");
 
@@ -43,12 +44,12 @@ void
 makeDiskStatsMessage(std::ostream &os,
                      double diskUsed,
                      double diskLimit,
-                     const DiskMemUsageFilter::space_info &diskStats)
+                     const HwInfo &hwInfo,
+                     uint64_t usedDiskSizeBytes)
 {
     os << "stats: { ";
-    os << "capacity: " << diskStats.capacity << ", ";
-    os << "free: " << diskStats.free << ", ";
-    os << "available: " << diskStats.available << ", ";
+    os << "capacity: " << hwInfo.disk().sizeBytes() << ", ";
+    os << "used: " << usedDiskSizeBytes << ", ";
     os << "diskUsed: " << diskUsed << ", ";
     os << "diskLimit: " << diskLimit << "}";
 }
@@ -57,31 +58,31 @@ void
 makeDiskLimitMessage(std::ostream &os,
                      double diskUsed,
                      double diskLimit,
-                     const DiskMemUsageFilter::space_info &diskStats)
+                     const HwInfo &hwInfo,
+                     uint64_t usedDiskSizeBytes)
 {
     os << "diskLimitReached: { ";
     os << "action: \"add more content nodes\", ";
     os << "reason: \"disk used (" << diskUsed << ") > disk limit (" << diskLimit << ")\", ";
-    makeDiskStatsMessage(os, diskUsed, diskLimit, diskStats);
+    makeDiskStatsMessage(os, diskUsed, diskLimit, hwInfo, usedDiskSizeBytes);
     os << "}";
 }
-
 
 vespalib::string
 makeUnblockingMessage(double memoryUsed,
                       double memoryLimit,
                       const vespalib::ProcessMemoryStats &memoryStats,
-                      uint64_t physicalMemory,
+                      const HwInfo &hwInfo,
                       double diskUsed,
                       double diskLimit,
-                      const DiskMemUsageFilter::space_info &diskStats)
+                      uint64_t usedDiskSizeBytes)
 {
     std::ostringstream os;
     os << "memoryLimitOK: { ";
-    makeMemoryStatsMessage(os, memoryUsed, memoryLimit, memoryStats, physicalMemory);
+    makeMemoryStatsMessage(os, memoryUsed, memoryLimit, memoryStats, hwInfo.memory().sizeBytes());
     os << "}, ";
     os << "diskLimitOK: { ";
-    makeDiskStatsMessage(os, diskUsed, diskLimit, diskStats);
+    makeDiskStatsMessage(os, diskUsed, diskLimit, hwInfo, usedDiskSizeBytes);
     os << "}";
     return os.str();
 }
@@ -97,7 +98,7 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
     if (memoryUsed > _config._memoryLimit) {
         hasMessage = true;
         makeMemoryLimitMessage(message, memoryUsed,
-                _config._memoryLimit, _memoryStats, _physicalMemory);
+                _config._memoryLimit, _memoryStats, _hwInfo.memory().sizeBytes());
     }
     double diskUsed = getDiskUsedRatio(guard);
     if (diskUsed > _config._diskLimit) {
@@ -105,7 +106,7 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
             message << ", ";
         }
         hasMessage = true;
-        makeDiskLimitMessage(message, diskUsed, _config._diskLimit, _diskStats);
+        makeDiskLimitMessage(message, diskUsed, _config._diskLimit, _hwInfo, _diskUsedSizeBytes);
     }
     if (hasMessage) {
         if (_acceptWrite) {
@@ -118,10 +119,10 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
             vespalib::string unblockMsg = makeUnblockingMessage(memoryUsed,
                                                                 _config._memoryLimit,
                                                                 _memoryStats,
-                                                                _physicalMemory,
+                                                                _hwInfo,
                                                                 diskUsed,
                                                                 _config._diskLimit,
-                                                                _diskStats);
+                                                                _diskUsedSizeBytes);
             LOG(info, "Write operations are now un-blocked: '%s'", unblockMsg.c_str());
         }
         _state = State();
@@ -137,23 +138,23 @@ DiskMemUsageFilter::getMemoryUsedRatio(const Guard &guard) const
 {
     (void) guard;
     uint64_t unscaledMemoryUsed = _memoryStats.getAnonymousRss();
-    return static_cast<double>(unscaledMemoryUsed) / _physicalMemory;
+    return static_cast<double>(unscaledMemoryUsed) / _hwInfo.memory().sizeBytes();
 }
 
 double
 DiskMemUsageFilter::getDiskUsedRatio(const Guard &guard) const
 {
     (void) guard;
-    double availableDiskSpaceRatio = static_cast<double>(_diskStats.available) /
-                                     static_cast<double>(_diskStats.capacity);
-    return 1.0 - availableDiskSpaceRatio;
+    double usedDiskSpaceRatio = static_cast<double>(_diskUsedSizeBytes) /
+                                static_cast<double>(_hwInfo.disk().sizeBytes());
+    return usedDiskSpaceRatio;
 }
 
-DiskMemUsageFilter::DiskMemUsageFilter(uint64_t physicalMemory_in)
+DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
     : _lock(),
+      _hwInfo(hwInfo),
       _memoryStats(),
-      _physicalMemory(physicalMemory_in),
-      _diskStats(),
+      _diskUsedSizeBytes(),
       _config(),
       _state(),
       _acceptWrite(true),
@@ -172,10 +173,10 @@ DiskMemUsageFilter::setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in)
 }
 
 void
-DiskMemUsageFilter::setDiskStats(space_info diskStats_in)
+DiskMemUsageFilter::setDiskUsedSize(uint64_t diskUsedSizeBytes)
 {
     Guard guard(_lock);
-    _diskStats = diskStats_in;
+    _diskUsedSizeBytes = diskUsedSizeBytes;
     recalcState(guard);
 }
 
@@ -194,11 +195,11 @@ DiskMemUsageFilter::getMemoryStats() const
     return _memoryStats;
 }
 
-DiskMemUsageFilter::space_info
-DiskMemUsageFilter::getDiskStats() const
+uint64_t
+DiskMemUsageFilter::getDiskUsedSize() const
 {
     Guard guard(_lock);
-    return _diskStats;
+    return _diskUsedSizeBytes;
 }
 
 DiskMemUsageFilter::Config

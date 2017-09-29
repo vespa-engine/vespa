@@ -577,7 +577,7 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
 {
     constexpr uint32_t numDocs = 100;
     BaseFixture f(hwInfo);
-    vespalib::string attrName(hwInfo.slowDisk() ? "a11slow" : "a11fast");
+    vespalib::string attrName(hwInfo.disk().slow() ? "a11slow" : "a11fast");
     {
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
@@ -606,8 +606,8 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
 void
 Test::requireThatFlushedAttributeCanBeLoaded()
 {
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(false)));
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(true)));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(HwInfo::Disk(0, false, false), HwInfo::Memory(0))));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(HwInfo::Disk(0, true, false), HwInfo::Memory(0))));
 }
 
 int

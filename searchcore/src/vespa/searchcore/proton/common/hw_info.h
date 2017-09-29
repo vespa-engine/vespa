@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace proton {
 
 /*
@@ -9,19 +11,48 @@ namespace proton {
  */
 class HwInfo
 {
-    bool _slowDisk;
+public:
+    class Disk {
+    private:
+        uint64_t _sizeBytes;
+        bool _slow;
+        bool _shared;
+    public:
+        Disk(uint64_t sizeBytes_, bool slow_, bool shared_)
+            : _sizeBytes(sizeBytes_), _slow(slow_), _shared(shared_) {}
+        uint64_t sizeBytes() const { return _sizeBytes; }
+        bool slow() const { return _slow; }
+        bool shared() const { return _shared; }
+    };
+
+    class Memory {
+    private:
+        uint64_t _sizeBytes;
+    public:
+        Memory(uint64_t sizeBytes_) : _sizeBytes(sizeBytes_) {}
+        uint64_t sizeBytes() const { return _sizeBytes; }
+    };
+
+private:
+    Disk _disk;
+    Memory _memory;
+
 public:
     HwInfo()
-        : _slowDisk(false)
+        : _disk(0, false, false),
+          _memory(0)
     {
     }
 
-    HwInfo(bool slowDisk_in)
-        : _slowDisk(slowDisk_in)
+    HwInfo(const Disk &disk_,
+           const Memory &memory_)
+        : _disk(disk_),
+          _memory(memory_)
     {
     }
 
-    bool slowDisk() const { return _slowDisk; }
+    const Disk &disk() const { return _disk; }
+    const Memory &memory() const { return _memory; }
 };
 
 }

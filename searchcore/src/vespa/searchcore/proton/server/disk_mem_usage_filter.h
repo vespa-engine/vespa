@@ -4,12 +4,12 @@
 
 #include "i_disk_mem_usage_notifier.h"
 #include "disk_mem_usage_state.h"
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
-#include <mutex>
 #include <atomic>
 #include <experimental/filesystem>
-
+#include <mutex>
 
 namespace proton {
 
@@ -39,10 +39,10 @@ public:
     };
 
 private:
-    mutable Mutex _lock; // protect _memoryStats, _diskStats, _config, _state
+    mutable Mutex _lock; // protect _memoryStats, _usedDiskSizeBytes, _config, _state
+    HwInfo                       _hwInfo;
     vespalib::ProcessMemoryStats _memoryStats;
-    uint64_t                     _physicalMemory;
-    space_info                   _diskStats;
+    uint64_t                     _diskUsedSizeBytes;
     Config                       _config;
     State                        _state;
     std::atomic<bool>            _acceptWrite;
@@ -55,15 +55,15 @@ private:
     void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
 
 public:
-    DiskMemUsageFilter(uint64_t physicalMememory_in);
+    DiskMemUsageFilter(const HwInfo &hwInfo);
     ~DiskMemUsageFilter();
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
-    void setDiskStats(space_info diskStats_in);
+    void setDiskUsedSize(uint64_t diskUsedSizeBytes);
     void setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
-    space_info getDiskStats() const;
+    uint64_t getDiskUsedSize() const;
     Config getConfig() const;
-    uint64_t getPhysicalMemory() const { return _physicalMemory; }
+    const HwInfo &getHwInfo() const { return _hwInfo; }
     double getMemoryUsedRatio() const;
     double getDiskUsedRatio() const;
     bool acceptWriteOperation() const override;
