@@ -179,6 +179,8 @@ public class VespaConfiguration {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(ENDPOINT + ": " + endpoint() + "\n");
+        sb.append(DEFAULT_PORT + ": " + defaultPort() + "\n");
+        sb.append(USE_SSL + ": " + useSSL() + "\n");
         sb.append(PROXY_HOST + ": " + proxyHost() + "\n");
         sb.append(PROXY_PORT + ": " + proxyPort() + "\n");
         sb.append(DRYRUN + ": " +  dryrun() +"\n");
