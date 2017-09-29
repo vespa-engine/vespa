@@ -17,16 +17,10 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
@@ -217,7 +211,7 @@ public class ControllerTest {
 
         app1 = applications.require(app1.id());
         assertEquals("First deployment gets system version", systemVersion, app1.deployedVersion().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion.get());
+        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // Unexpected deployment
         tester.deploy(productionUsWest1, app1, applicationPackage);
@@ -240,7 +234,7 @@ public class ControllerTest {
 
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion.get());
+        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // A deployment to the new region gets the same version
         applicationPackage = new ApplicationPackageBuilder()
@@ -251,7 +245,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
-        assertEquals(systemVersion, tester.configServer().lastPrepareVersion.get());
+        assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // Version upgrade changes system version
         Change.VersionChange change = new Change.VersionChange(newSystemVersion);
@@ -263,7 +257,7 @@ public class ControllerTest {
 
         app1 = applications.require(app1.id());
         assertEquals("Version upgrade changes version", newSystemVersion, app1.deployedVersion().get());
-        assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion.get());
+        assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion().get());
     }
 
     /** Adds a new version, higher than the current system version, makes it the system version and returns it */
@@ -533,44 +527,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testLegacyDeployments() {
-        // Setup system
-        DeploymentTester tester = new DeploymentTester();
-        ApplicationController applications = tester.controller().applications();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-east-3")
-                .build();
-        Version systemVersion = tester.controller().versionStatus().systemVersion().get().versionNumber();
-
-        Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
-        applications.store(app1.with(app1.deploymentJobs().asSelfTriggering(true)), applications.lock(app1.id()));
-
-        // Scenario: App already on 6.0, Upgrade to 6.1 (systemversion)
-        Zone prodZone = new Zone(Environment.prod, RegionName.from("us-east-3"));
-        Zone stagingZone = new Zone(Environment.staging, RegionName.from("us-east-3"));
-        Version existingVersion = Version.fromString("6.0");
-
-        // Add deployment on existing version
-        legacyDeploy(tester.controller(), app1, applicationPackage, prodZone, Optional.of(existingVersion), false);
-
-        // Add dev/perf deployment on old version to verify that this does not affect Initialize staging step. VESPA-8469
-        Version devVersion = Version.fromString("5.0");
-        legacyDeploy(tester.controller(), app1, applicationPackage, new Zone(Environment.dev, RegionName.from("us-east-1")), Optional.of(devVersion), false);
-        legacyDeploy(tester.controller(), app1, applicationPackage, new Zone(Environment.perf, RegionName.from("us-east-3")), Optional.of(devVersion), false);
-
-        // Initialize staging on existing version
-        legacyDeploy(tester.controller(), app1, applicationPackage, stagingZone, Optional.of(systemVersion), true);
-        app1 = applications.require(app1.id());
-        assertEquals(existingVersion, app1.currentDeployVersion(tester.controller(), stagingZone));
-
-        // Upgrade to the new version in staging
-        legacyDeploy(tester.controller(), app1, applicationPackage, stagingZone, Optional.of(systemVersion), false);
-        app1 = applications.require(app1.id());
-        assertEquals(systemVersion, app1.currentDeployVersion(tester.controller(), stagingZone));
-    }
-
-    @Test
     public void testDeployUntestedChangeFails() {
         ControllerTester tester = new ControllerTester();
         ApplicationController applications = tester.controller().applications();TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
@@ -585,16 +541,6 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as pending version change to 6.3 is untested", e.getMessage());
         }
-    }
-
-    private void legacyDeploy(Controller controller, Application application, ApplicationPackage applicationPackage, Zone zone, Optional<Version> version, boolean deployCurrentVersion) {
-        ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().get()));
-        GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller.applications().deployApplication(application.id(),
-                zone,
-                applicationPackage,
-                new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), version, false, deployCurrentVersion));
-
     }
 
     @Test
@@ -677,6 +623,33 @@ public class ControllerTest {
         assertTrue(record.isPresent());
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name());
         assertEquals("fake-global-rotation-tenant1.app1", record.get().value());
+    }
+
+    @Test
+    public void testDeployWithoutProjectId() {
+        DeploymentTester tester = new DeploymentTester();
+        tester.controllerTester().zoneRegistry().setSystem(SystemName.cd);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("cd-us-central-1")
+                .build();
+
+        // Create application
+        Application app = tester.createApplication("app1", "tenant1", 1, 2L);
+
+        // Direct deploy is allowed when project ID is missing
+        Zone zone = new Zone(Environment.prod, RegionName.from("cd-us-central-1"));
+        // Same options as used in our integration tests
+        DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
+                                                  false);
+        tester.controller().applications().deployApplication(app.id(), zone, applicationPackage, options);
+
+        assertTrue("Application deployed and activated",
+                   tester.controllerTester().configServer().activated().getOrDefault(app.id(), false));
+
+        assertTrue("No job status added",
+                   tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
+
     }
 
 }
