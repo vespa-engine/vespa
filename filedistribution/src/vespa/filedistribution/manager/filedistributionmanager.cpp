@@ -9,8 +9,6 @@
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/zkfiledbmodel.h>
 #include <vespa/filedistribution/model/mockfiledistributionmodel.h>
-#include <vespa/filedistribution/model/zkfacade.h>
-#include <memory>
 
 using namespace filedistribution;
 

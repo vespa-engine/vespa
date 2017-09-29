@@ -6,7 +6,6 @@
 #include <vespa/defaults.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <zookeeper/zookeeper.h>
 #include <sstream>
 #include <thread>
