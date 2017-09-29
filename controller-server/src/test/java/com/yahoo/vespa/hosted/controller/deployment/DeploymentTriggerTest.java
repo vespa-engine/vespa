@@ -47,22 +47,29 @@ public class DeploymentTriggerTest {
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
 
+        // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
         assertEquals("Retried immediately", 1, tester.buildSystem().jobs().size());
-
         tester.buildSystem().takeJobsToRun();
         assertEquals("Job removed", 0, tester.buildSystem().jobs().size());
-        tester.clock().advance(Duration.ofHours(2));
+        tester.clock().advance(Duration.ofHours(4).plus(Duration.ofSeconds(1)));
         tester.failureRedeployer().maintain();
+
         assertEquals("Retried job", 1, tester.buildSystem().jobs().size());
         assertEquals(JobType.systemTest.id(), tester.buildSystem().jobs().get(0).jobName());
-
         tester.buildSystem().takeJobsToRun();
         assertEquals("Job removed", 0, tester.buildSystem().jobs().size());
+
+        // system-test succeeds and staging-test starts
+        tester.failureRedeployer().maintain();
+        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
+
+        // staging-test times out and is retried
+        tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.failureRedeployer().maintain();
-        assertEquals("Retried from the beginning", 1, tester.buildSystem().jobs().size());
-        assertEquals(JobType.component.id(), tester.buildSystem().jobs().get(0).jobName());
+        assertEquals("Retried dead job", 1, tester.buildSystem().jobs().size());
+        assertEquals(JobType.stagingTest.id(), tester.buildSystem().jobs().get(0).jobName());
     }
 
     @Test

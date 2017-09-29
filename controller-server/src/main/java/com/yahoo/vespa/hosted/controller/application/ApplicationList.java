@@ -127,9 +127,9 @@ public class ApplicationList {
         return listOf(list.stream().sorted(Comparator.comparing(application -> application.deployedVersion().orElse(Version.emptyVersion))));
     }
 
-    /** Returns the subset of applications which currently do not have any job in progress for the given change */
-    public ApplicationList notRunningJobFor(Change.VersionChange change) {
-        return listOf(list.stream().filter(a -> !hasRunningJob(a, change)));
+    /** Returns the subset of applications that are not upgrading or started upgrading before the grace period */
+    public ApplicationList notCurrentlyUpgrading(Change.VersionChange change, Instant startOfGracePeriod) {
+        return listOf(list.stream().filter(a -> !currentlyUpgrading(change, a, startOfGracePeriod)));
     }
 
     // ----------------------------------- Internal helpers
@@ -157,11 +157,12 @@ public class ApplicationList {
         return false;
     }
 
-    private static boolean hasRunningJob(Application application, Change.VersionChange change) {
+    private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant instant) {
         return application.deploymentJobs().jobStatus().values().stream()
                 .filter(JobStatus::inProgress)
-                .filter(jobStatus -> jobStatus.lastTriggered().isPresent())
-                .map(jobStatus -> jobStatus.lastTriggered().get())
+                .filter(status -> status.lastTriggered().isPresent())
+                .map(status -> status.lastTriggered().get())
+                .filter(jobRun -> jobRun.at().isAfter(instant))
                 .anyMatch(jobRun -> jobRun.version().equals(change.version()));
     }
     
