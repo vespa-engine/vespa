@@ -102,7 +102,6 @@ public class FileDistributor {
             }
         }
         dbHandler.sendDeployedFiles(fileSourceHost, allFilesToSend());
-        dbHandler.limitSendingOfDeployedFilesTo(union(getTargetHostnames(), fileSourceHost));
         dbHandler.removeDeploymentsThatHaveDifferentApplicationId(getTargetHostnames());
     }
 
