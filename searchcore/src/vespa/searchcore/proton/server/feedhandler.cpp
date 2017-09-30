@@ -467,8 +467,7 @@ FeedHandler::changeFeedState(FeedState::SP newState)
 
 
 void
-FeedHandler::changeFeedState(FeedState::SP newState,
-                             const vespalib::LockGuard &)
+FeedHandler::changeFeedState(FeedState::SP newState, const vespalib::LockGuard &)
 {
     LOG(debug,
         "Change feed state from '%s' -> '%s'",
@@ -485,8 +484,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
                          IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
                          IReplayConfig &replayConfig,
-                         search::transactionlog::Writer *tlsDirectWriter,
-                         TlsWriter *tls_writer)
+                         search::transactionlog::Writer & tlsDirectWriter,
+                         TlsWriter * tlsWriter)
     : search::transactionlog::TransLogClient::Session::Callback(),
       IDocumentMoveHandler(),
       IPruneRemovedDocumentsHandler(),
@@ -500,8 +499,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _writeFilter(writeFilter),
       _replayConfig(replayConfig),
       _tlsMgr(tlsSpec, docTypeName.getName()),
-      _tlsMgrWriter(_tlsMgr, tlsDirectWriter),
-      _tlsWriter(tls_writer ? *tls_writer : _tlsMgrWriter),
+      _tlsMgrWriter(_tlsMgr, &tlsDirectWriter),
+      _tlsWriter(tlsWriter ? *tlsWriter : _tlsMgrWriter),
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
@@ -830,6 +829,5 @@ FeedHandler::storeRemoteOperation(const FeedOperation &op)
         _serialNum = serialNum;
     }
 }
-
 
 } // namespace proton

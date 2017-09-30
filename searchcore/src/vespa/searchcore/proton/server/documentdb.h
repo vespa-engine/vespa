@@ -242,7 +242,7 @@ public:
                IDocumentDBOwner & owner,
                vespalib::ThreadExecutor & warmupExecutor,
                vespalib::ThreadStackExecutorBase & summaryExecutor,
-               search::transactionlog::Writer * tlsDirectWriter,
+               search::transactionlog::Writer & tlsDirectWriter,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,
                ConfigStore::UP config_store,
