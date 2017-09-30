@@ -52,7 +52,8 @@ public:
      * @param param Ppolicy specific parameter.
      * @return A newly created routing policy.
      */
-    virtual IRoutingPolicy::UP createPolicy(const string &name, const string &param) const = 0;
+    virtual IRoutingPolicy::UP createPolicy(const string &name,
+                                            const string &param) const = 0;
 
     /**
      * Encodes the protocol specific data of a routable into a byte array.
@@ -79,9 +80,6 @@ public:
      * @return The decoded routable.
      */
     virtual Routable::UP decode(const vespalib::Version &version, BlobRef data) const = 0; // throw()
-
-
-    virtual bool requireSequencing() const = 0;
 };
 
 } // namespace mbus
