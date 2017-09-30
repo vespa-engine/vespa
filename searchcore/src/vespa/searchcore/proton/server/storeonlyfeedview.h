@@ -7,7 +7,6 @@
 #include "isummaryadapter.h"
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
-#include "tlcproxy.h"
 #include "pendinglidtracker.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
@@ -61,10 +60,13 @@ public:
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
-    using FutureDoc = std::future<Document::UP>;
-    using PromisedDoc = std::promise<Document::UP>;
+    using FutureDoc = std::future<std::unique_ptr<Document>>;
+    using PromisedDoc = std::promise<std::unique_ptr<Document>>;
     using FutureStream = std::future<vespalib::nbostream>;
     using PromisedStream = std::promise<vespalib::nbostream>;
+    using DocumentSP = std::shared_ptr<Document>;
+    using DocumentUpdateSP = std::shared_ptr<DocumentUpdate>;
+
     using Lid = search::DocumentIdT;
 
     struct Context
@@ -157,7 +159,7 @@ private:
         return _writeService.summary();
     }
     void putSummary(SerialNum serialNum,  Lid lid, FutureStream doc, OnOperationDoneType onDone);
-    void putSummary(SerialNum serialNum,  Lid lid, Document::SP doc, OnOperationDoneType onDone);
+    void putSummary(SerialNum serialNum,  Lid lid, DocumentSP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  Lid lid, OnWriteDoneType onDone);
     void heartBeatSummary(SerialNum serialNum);
 
@@ -187,7 +189,7 @@ private:
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
 
-    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP upd,
+    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdateSP upd,
             OnOperationDoneType onWriteDone,PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
@@ -199,7 +201,7 @@ private:
     virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc,
                                bool immediateCommit, OnPutDoneType onWriteDone);
 
-    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const Document::SP &newDoc,
+    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual UpdateScope getUpdateScope(const DocumentUpdate &upd);

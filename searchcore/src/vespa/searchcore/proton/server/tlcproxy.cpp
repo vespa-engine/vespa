@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tlcproxy.h"
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.tlcproxy");
@@ -17,16 +17,8 @@ void TlcProxy::commit(search::SerialNum serialNum, search::transactionlog::Type 
     Packet packet;
     packet.add(entry);
     packet.close();
-    if (_tlsDirectWriter != NULL) {
-        _tlsDirectWriter->commit(_session.getDomain(), packet);
-    } else {
-        if (!_session.commit(vespalib::ConstBufferRef(packet.getHandle().c_str(), packet.getHandle().size()))) {
-            throw vespalib::IllegalStateException(vespalib::make_string(
-                        "Failed to commit packet %" PRId64
-                        " to TLS (type = %d, size = %d).",
-                        entry.serial(), type, (uint32_t)buf.size()));
-        }
-    }
+    _tlsDirectWriter.commit(_domain, packet);
+
 }
 
 void

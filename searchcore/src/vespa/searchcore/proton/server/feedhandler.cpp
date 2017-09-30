@@ -6,6 +6,7 @@
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
 #include "tlcproxy.h"
+#include "configstore.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
@@ -82,7 +83,7 @@ ignoreOperation(const DocumentOperation &op)
 
 
 void FeedHandler::TlsMgrWriter::storeOperation(const FeedOperation &op) {
-    TlcProxy(*_tls_mgr.getSession(), _tlsDirectWriter).storeOperation(op);
+    TlcProxy(_tls_mgr.getDomainName(), *_tlsDirectWriter).storeOperation(op);
 }
 bool FeedHandler::TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
