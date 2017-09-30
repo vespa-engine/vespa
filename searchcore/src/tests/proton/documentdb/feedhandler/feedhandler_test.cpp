@@ -411,12 +411,10 @@ struct MyTlsWriter : TlsWriter {
     bool erase_return;
 
     MyTlsWriter() : store_count(0), erase_count(0), erase_return(true) {}
-    virtual void storeOperation(const FeedOperation &) override { ++store_count; }
-    virtual bool erase(SerialNum) override { ++erase_count; return erase_return; }
+    void storeOperation(const FeedOperation &) override { ++store_count; }
+    bool erase(SerialNum) override { ++erase_count; return erase_return; }
 
-    virtual SerialNum
-    sync(SerialNum syncTo) override
-    {
+    SerialNum sync(SerialNum syncTo) override {
         return syncTo;
     } 
 };
@@ -452,7 +450,7 @@ struct FeedHandlerFixture
           _bucketDB(),
           _bucketDBHandler(_bucketDB),
           handler(writeService, tlsSpec, schema.getDocType(),
-                  feedMetrics._feed, _state, owner, writeFilter, replayConfig, NULL, &tls_writer)
+                  feedMetrics._feed, _state, owner, writeFilter, replayConfig, tls, &tls_writer)
     {
         _state.enterLoadState();
         _state.enterReplayTransactionLogState();
@@ -544,8 +542,7 @@ addLidToRemove(RemoveDocumentsOperation &op)
 TEST_F("require that handleMove calls FeedView", FeedHandlerFixture)
 {
     DocumentContext doc_context("doc:test:foo", *f.schema.builder);
-    MoveOperation op(doc_context.bucketId, Timestamp(2), doc_context.doc,
-                     DbDocumentId(0, 2), 1);
+    MoveOperation op(doc_context.bucketId, Timestamp(2), doc_context.doc, DbDocumentId(0, 2), 1);
     op.setDbDocumentId(DbDocumentId(1, 2));
     f.runAsMaster([&]() { f.handler.handleMove(op, IDestructorCallback::SP()); });
     EXPECT_EQUAL(1, f.feedView.move_count);

@@ -6,6 +6,7 @@
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
 #include "tlcproxy.h"
+#include "configstore.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
@@ -82,7 +83,7 @@ ignoreOperation(const DocumentOperation &op)
 
 
 void FeedHandler::TlsMgrWriter::storeOperation(const FeedOperation &op) {
-    TlcProxy(*_tls_mgr.getSession(), _tlsDirectWriter).storeOperation(op);
+    TlcProxy(_tls_mgr.getDomainName(), *_tlsDirectWriter).storeOperation(op);
 }
 bool FeedHandler::TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
@@ -466,8 +467,7 @@ FeedHandler::changeFeedState(FeedState::SP newState)
 
 
 void
-FeedHandler::changeFeedState(FeedState::SP newState,
-                             const vespalib::LockGuard &)
+FeedHandler::changeFeedState(FeedState::SP newState, const vespalib::LockGuard &)
 {
     LOG(debug,
         "Change feed state from '%s' -> '%s'",
@@ -484,8 +484,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
                          IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
                          IReplayConfig &replayConfig,
-                         search::transactionlog::Writer *tlsDirectWriter,
-                         TlsWriter *tls_writer)
+                         search::transactionlog::Writer & tlsDirectWriter,
+                         TlsWriter * tlsWriter)
     : search::transactionlog::TransLogClient::Session::Callback(),
       IDocumentMoveHandler(),
       IPruneRemovedDocumentsHandler(),
@@ -499,8 +499,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _writeFilter(writeFilter),
       _replayConfig(replayConfig),
       _tlsMgr(tlsSpec, docTypeName.getName()),
-      _tlsMgrWriter(_tlsMgr, tlsDirectWriter),
-      _tlsWriter(tls_writer ? *tls_writer : _tlsMgrWriter),
+      _tlsMgrWriter(_tlsMgr, &tlsDirectWriter),
+      _tlsWriter(tlsWriter ? *tlsWriter : _tlsMgrWriter),
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
@@ -829,6 +829,5 @@ FeedHandler::storeRemoteOperation(const FeedOperation &op)
         _serialNum = serialNum;
     }
 }
-
 
 } // namespace proton

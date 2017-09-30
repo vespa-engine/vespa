@@ -72,11 +72,9 @@ private:
             _tls_mgr(tls_mgr),
             _tlsDirectWriter(tlsDirectWriter)
         { }
-        virtual void storeOperation(const FeedOperation &op) override;
-        virtual bool erase(SerialNum oldest_to_keep) override;
-
-        virtual SerialNum
-        sync(SerialNum syncTo) override;
+        void storeOperation(const FeedOperation &op) override;
+        bool erase(SerialNum oldest_to_keep) override;
+        SerialNum sync(SerialNum syncTo) override;
     };
     typedef searchcorespi::index::IThreadingService IThreadingService;
 
@@ -126,10 +124,7 @@ private:
     void performRemove(FeedTokenUP token, RemoveOperation &op);
 private:
     void performGarbageCollect(FeedTokenUP token);
-
-    void
-    performCreateBucket(FeedTokenUP token, CreateBucketOperation &op);
-
+    void performCreateBucket(FeedTokenUP token, CreateBucketOperation &op);
     void performDeleteBucket(FeedTokenUP token, DeleteBucketOperation &op);
     void performSplit(FeedTokenUP token, SplitBucketOperation &op);
     void performJoin(FeedTokenUP token, JoinBucketsOperation &op);
@@ -186,8 +181,8 @@ public:
                 IFeedHandlerOwner &owner,
                 const IResourceWriteFilter &writerFilter,
                 IReplayConfig &replayConfig,
-                search::transactionlog::Writer *writer,
-                TlsWriter *tlsWriter = NULL);
+                search::transactionlog::Writer & writer,
+                TlsWriter * tlsWriter = nullptr);
 
     virtual
     ~FeedHandler();

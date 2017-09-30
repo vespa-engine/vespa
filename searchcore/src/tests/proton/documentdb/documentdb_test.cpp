@@ -107,22 +107,16 @@ Fixture::Fixture()
     config::DirSpec spec(TEST_PATH("cfg"));
     DocumentDBConfigHelper mgr(spec, "typea");
     BootstrapConfig::SP
-        b(new BootstrapConfig(1,
-                              documenttypesConfig,
-                              repo,
+        b(new BootstrapConfig(1, documenttypesConfig, repo,
                               std::make_shared<ProtonConfig>(),
                               std::make_shared<FiledistributorrpcConfig>(),
                               tuneFileDocumentDB));
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);
-    _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014",
-                             _queryLimiter, _clock, DocTypeName("typea"),
-                             ProtonConfig(),
-                             _myDBOwner, _summaryExecutor, _summaryExecutor, NULL, _dummy, _fileHeaderContext,
-                             ConfigStore::UP(new MemoryConfigStore),
-                             std::make_shared<vespalib::ThreadStackExecutor>
-                             (16, 128 * 1024),
-                             _hwInfo));
+    _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
+                             ProtonConfig(), _myDBOwner, _summaryExecutor, _summaryExecutor, _tls, _dummy,
+                             _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
+                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo));
     _db->start();
     _db->waitForOnlineState();
 }

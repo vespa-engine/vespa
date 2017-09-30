@@ -189,11 +189,10 @@ public:
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
                                _summaryExecutor,
-                               NULL,
+                               _tls,
                                _metricsWireService,
                                _fileHeaderContext,
-                               _config_stores.getConfigStore(
-                                       docType.toString()),
+                               _config_stores.getConfigStore(docType.toString()),
                                std::make_shared<vespalib::ThreadStackExecutor>
                                (16, 128 * 1024),
                                HwInfo()));

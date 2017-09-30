@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {
+
 class FeedOperation;
 
 /**
@@ -15,10 +16,7 @@ struct TlsWriter {
 
     virtual void storeOperation(const FeedOperation &op) = 0;
     virtual bool erase(search::SerialNum oldest_to_keep) = 0;
-
-    virtual search::SerialNum
-    sync(search::SerialNum syncTo) = 0;
+    virtual search::SerialNum sync(search::SerialNum syncTo) = 0;
 };
 
-}  // namespace proton
-
+}
