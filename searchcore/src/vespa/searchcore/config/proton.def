@@ -174,10 +174,10 @@ grouping.sessionmanager.maxentries int default=500 restart
 grouping.sessionmanager.pruning.interval double default=1.0
 
 ## Redundancy of documents.
-distribution.redundancy long default=1 restart
+distribution.redundancy long default=1
 
 ## Searchable copies of the documents.
-distribution.searchablecopies long default=1 restart
+distribution.searchablecopies long default=1
 
 ## Minimum initial size for any per document tables.
 grow.initial long default=1024 restart
