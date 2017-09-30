@@ -48,7 +48,6 @@ public:
         (void)data;
         throw std::exception();
     }
-    bool requireSequencing() const override { return false; }
 };
 
 int
