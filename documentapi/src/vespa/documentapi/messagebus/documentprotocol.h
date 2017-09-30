@@ -24,7 +24,7 @@ class SystemState;
 class IRoutingPolicyFactory;
 class IRoutableFactory;
 
-class DocumentProtocol : public mbus::IProtocol {
+class DocumentProtocol final : public mbus::IProtocol {
 private:
     std::unique_ptr<RoutingPolicyRepository>    _routingPolicyRepository;
     std::unique_ptr<RoutableRepository>         _routableRepository;
@@ -264,8 +264,7 @@ public:
      * @param buf A byte buffer that contains a serialized routable.
      * @return The deserialized routable.
      */
-    mbus::Routable::UP deserialize(uint32_t type,
-                                   document::ByteBuffer &buf) const;
+    mbus::Routable::UP deserialize(uint32_t type, document::ByteBuffer &buf) const;
 
     /**
      * This is a convenient entry to the {@link #merge(RoutingContext,std::set)} method by way of a routing
@@ -307,7 +306,7 @@ public:
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string &name, const mbus::string &param) const override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override;
     mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef data) const override;
+    bool requireSequencing() const override { return false; }
 };
 
 }
-
