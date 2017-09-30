@@ -221,7 +221,7 @@ void
 RPCSend::handleReply(Reply::UP reply)
 {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
-    if (protocol->requireSequencing()) {
+    if (!protocol || protocol->requireSequencing()) {
         doHandleReply(protocol, std::move(reply));
     } else {
         auto rejected = _net->getExecutor().execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
