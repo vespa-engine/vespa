@@ -220,11 +220,19 @@ RPCSend::decode(vespalib::stringref protocolName, const vespalib::Version & vers
 void
 RPCSend::handleReply(Reply::UP reply)
 {
-    doHandleReply(std::move(reply));
+    const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
+    if (!protocol || protocol->requireSequencing()) {
+        doHandleReply(protocol, std::move(reply));
+    } else {
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
+            doHandleReply(protocol, std::move(reply));
+        }));
+        assert (!rejected);
+    }
 }
 
 void
-RPCSend::doHandleReply(Reply::UP reply) {
+RPCSend::doHandleReply(const IProtocol * protocol, Reply::UP reply) {
     ReplyContext::UP ctx(static_cast<ReplyContext*>(reply->getContext().value.PTR));
     FRT_RPCRequest &req = ctx->getRequest();
     string version = ctx->getVersion().toString();
@@ -234,7 +242,7 @@ RPCSend::doHandleReply(Reply::UP reply) {
     }
     Blob payload(0);
     if (reply->getType() != 0) {
-        payload = _net->getOwner().getProtocol(reply->getProtocol())->encode(ctx->getVersion(), *reply);
+        payload = protocol->encode(ctx->getVersion(), *reply);
         if (payload.size() == 0) {
             reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occured while encoding the reply, see log."));
         }
