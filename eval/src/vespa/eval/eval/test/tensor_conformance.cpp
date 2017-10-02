@@ -1267,7 +1267,7 @@ struct TestContext {
         MappedFileInput file(path);
         Slime slime;
         EXPECT_TRUE(file.valid());
-        EXPECT_EQUAL(JsonFormat::decode(file, slime), file.get().size);
+        EXPECT_TRUE(JsonFormat::decode(file, slime) > 0);
         int64_t num_tests = slime.get()["num_tests"].asLong();
         Cursor &tests = slime.get()["tests"];
         EXPECT_GREATER(num_tests, 0u);

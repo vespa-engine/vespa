@@ -119,7 +119,7 @@ FieldBlock::FieldBlock(const vespalib::string &jsonInput)
     : input(jsonInput), slime(), binary(1024), json()
 {
     size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
-    EXPECT_EQUAL(jsonInput.size(), used);
+    EXPECT_TRUE(used > 0);
     {
         search::SlimeOutputRawBufAdapter adapter(binary);
         vespalib::slime::JsonFormat::encode(slime, adapter, true);
