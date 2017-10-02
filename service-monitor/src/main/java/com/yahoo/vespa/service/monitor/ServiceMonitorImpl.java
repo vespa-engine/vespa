@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -26,10 +27,18 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
                               ConfigserverConfig configserverConfig) {
         this.zone = superModelProvider.getZone();
-        this.configServerHostnames = configserverConfig.zookeeperserver().stream()
-                .map(server -> server.hostname())
-                .collect(Collectors.toList());
+        this.configServerHostnames = toConfigServerList(configserverConfig);
         superModelListener.start(superModelProvider);
+    }
+
+    private List<String> toConfigServerList(ConfigserverConfig configserverConfig) {
+        if (configserverConfig.multitenant()) {
+            return configserverConfig.zookeeperserver().stream()
+                    .map(server -> server.hostname())
+                    .collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
     }
 
     @Override

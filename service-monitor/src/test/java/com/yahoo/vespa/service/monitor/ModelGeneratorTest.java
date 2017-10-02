@@ -11,6 +11,7 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class ModelGeneratorTest {
     private final int PORT = 2;
 
     @Test
-    public void toApplicationModel() throws Exception {
+    public void toApplicationModelWithConfigServerApplication() throws Exception {
         SuperModel superModel =
                 ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
         ModelGenerator modelGenerator = new ModelGenerator();
@@ -71,6 +72,34 @@ public class ModelGeneratorTest {
             verifyConfigServerApplication(applicationInstance2);
             verifyOtherApplication(applicationInstance1);
         }
+    }
+
+    @Test
+    public void toApplicationModel() throws Exception {
+        SuperModel superModel =
+                ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
+        ModelGenerator modelGenerator = new ModelGenerator();
+
+        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
+
+        List<String> configServerHosts = Collections.emptyList();
+
+        SlobrokMonitor2 slobrokMonitor = mock(SlobrokMonitor2.class);
+        when(slobrokMonitor.getStatus(any(), any())).thenReturn(ServiceMonitorStatus.UP);
+
+        ServiceModel serviceModel =
+                modelGenerator.toServiceModel(
+                        superModel,
+                        zone,
+                        configServerHosts,
+                        slobrokMonitor);
+
+        Map<ApplicationInstanceReference,
+                ApplicationInstance<ServiceMonitorStatus>> applicationInstances =
+                serviceModel.getAllApplicationInstances();
+
+        assertEquals(1, applicationInstances.size());
+        verifyOtherApplication(applicationInstances.values().iterator().next());
     }
 
     private void verifyOtherApplication(ApplicationInstance<ServiceMonitorStatus> applicationInstance) {
