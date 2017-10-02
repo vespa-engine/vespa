@@ -8,7 +8,15 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.PathDoesNotExistException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -66,7 +74,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * more key/value pairs to the service-list dump.
      * Supported key datatypes are String, and values may be String or Integer.
      */
-    private HashMap<String, Object> serviceProperties = new LinkedHashMap<>();
+    private Map<String, Object> serviceProperties = new LinkedHashMap<>();
 
     /** The affinity properties of this service. */
     private Optional<Affinity> affinity = Optional.empty();
@@ -522,15 +530,13 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * The service HTTP port for health status
      * @return portnumber
      */
-    public int getHealthPort() {return -1;}
+    public int getHealthPort() { return -1;}
 
     /**
      * Overridden by subclasses. List of default dimensions to be added to this services metrics
      * @return The default dimensions for this service
      */
-    public HashMap<String, String> getDefaultMetricDimensions(){
-        return  new LinkedHashMap<>();
-    }
+    public HashMap<String, String> getDefaultMetricDimensions(){ return new LinkedHashMap<>(); }
 
     // For testing
     public int getNumPortsAllocated() {

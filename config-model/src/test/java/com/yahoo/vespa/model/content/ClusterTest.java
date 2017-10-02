@@ -506,7 +506,6 @@ public class ClusterTest extends ContentBaseTest {
             cluster.getStorageNodes().getConfig(builder);
             cluster.getStorageNodes().getChildren().get("0").getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals("tcp/localhost:19106", config.persistence_provider().rpc().connectspec());
         }
 
         {
@@ -514,7 +513,6 @@ public class ClusterTest extends ContentBaseTest {
             cluster.getStorageNodes().getConfig(builder);
             cluster.getStorageNodes().getChildren().get("1").getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals("tcp/localhost:19118", config.persistence_provider().rpc().connectspec());
         }
     }
 
@@ -602,7 +600,6 @@ public class ClusterTest extends ContentBaseTest {
     @Test
     public void testProviders() {
         testProvider("proton", StorServerConfig.Persistence_provider.Type.RPC);
-        testProvider("rpc", StorServerConfig.Persistence_provider.Type.RPC);
         testProvider("vds", StorServerConfig.Persistence_provider.Type.STORAGE);
         testProvider("dummy", StorServerConfig.Persistence_provider.Type.DUMMY);
     }
