@@ -3,8 +3,6 @@ package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
-import com.yahoo.cloud.config.ModelConfig;
-import com.yahoo.container.jdisc.config.HttpServerConfig;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscHttpRequestHandler;
