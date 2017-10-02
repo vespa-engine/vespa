@@ -13,8 +13,7 @@ AdminV2 =
    AdminSlobroks? &
    (LegacyAdminMonitoring | AdminMonitoring)? &
    (LegacyMetricConsumers | Metrics)? &
-   ClusterControllers? &
-   LogForwarding?
+   ClusterControllers?
  }
 
 AdminV3 =
@@ -33,8 +32,7 @@ AdminV4 =
     AdminV4LogServers? &
     GenericConfig* &
     (LegacyAdminMonitoring | AdminMonitoring)? &
-    (LegacyMetricConsumers | Metrics)? &
-    LogForwarding?
+    (LegacyMetricConsumers | Metrics)?
   }
 
 AdminV4Slobroks =
@@ -113,18 +111,4 @@ ClusterControllers = element cluster-controllers {
     element cluster-controller {
        service.attlist
     }+
-}
-
-LogForwarding = element logforwarding {
-    element forward {
-        attribute type {xsd:string } &
-        element source {
-            element log {  "access"| "vespa" }+
-        } &
-        element destination {
-            element endpoint { xsd:string } &
-            element index { xsd:string } # TODO: Mandatory or with a default value?
-        }
-    }+
-
 }
