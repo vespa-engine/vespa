@@ -121,7 +121,9 @@ public class ApplicationSerializer {
     }
     
     private void toSlime(DeploymentJobs deploymentJobs, Cursor cursor) {
-        deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
+        deploymentJobs.projectId()
+                .filter(id -> id > 0) // TODO: Discards invalid data. Remove filter after October 2017
+                .ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
         deploymentJobs.jiraIssueId().ifPresent(jiraIssueId -> cursor.setString(jiraIssueIdField, jiraIssueId));
     }
@@ -213,7 +215,8 @@ public class ApplicationSerializer {
     }
 
     private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
-        Optional<Long> projectId = optionalLong(object.field(projectIdField));
+        Optional<Long> projectId = optionalLong(object.field(projectIdField))
+                .filter(id -> id > 0); // TODO: Discards invalid data. Remove filter after October 2017
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
         Optional<String> jiraIssueKey = optionalString(object.field(jiraIssueIdField));
 
