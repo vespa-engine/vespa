@@ -31,6 +31,11 @@ import java.util.stream.Collectors;
 public class ModelGenerator {
     public static final String CLUSTER_ID_PROPERTY_NAME = "clustername";
 
+    /**
+     * Create service model based primarily on super model.
+     *
+     * If the configServerhosts is non-empty, a config server application is added.
+     */
     ServiceModel toServiceModel(
             SuperModel superModel,
             Zone zone,
@@ -47,10 +52,12 @@ public class ModelGenerator {
         }
 
         // The config server is part of the service model (but not super model)
-        ConfigServerApplication configServerApplication = new ConfigServerApplication();
-        ApplicationInstance<ServiceMonitorStatus> configServerApplicationInstance =
-                configServerApplication.toApplicationInstance(configServerHosts);
-        applicationInstances.put(configServerApplicationInstance.reference(), configServerApplicationInstance);
+        if (!configServerHosts.isEmpty()) {
+            ConfigServerApplication configServerApplication = new ConfigServerApplication();
+            ApplicationInstance<ServiceMonitorStatus> configServerApplicationInstance =
+                    configServerApplication.toApplicationInstance(configServerHosts);
+            applicationInstances.put(configServerApplicationInstance.reference(), configServerApplicationInstance);
+        }
 
         return new ServiceModel(applicationInstances);
     }
