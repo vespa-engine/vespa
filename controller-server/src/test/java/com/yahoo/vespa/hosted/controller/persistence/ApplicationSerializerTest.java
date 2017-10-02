@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +109,20 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.deploying(), serialized.deploying());
 
+        // Test cluster utilization
+        assertEquals(0, serialized.deployments().get(zone1).clusterUtils().size());
+        assertEquals(3, serialized.deployments().get(zone2).clusterUtils().size());
+        assertEquals(0.4, serialized.deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id2")).getCpu(), 0.01);
+        assertEquals(0.2, serialized.deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id1")).getCpu(), 0.01);
+        assertEquals(0.2, serialized.deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id1")).getMemory(), 0.01);
+
+        // Test cluster info
+        assertEquals(3, serialized.deployments().get(zone2).clusterInfo().size());
+        assertEquals(10, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getCost());
+        assertEquals(ClusterSpec.Type.content, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getClusterType());
+        assertEquals("flavor2", serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavor());
+        assertEquals(4, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getHostnames().size());
+
         { // test more deployment serialization cases
             Application original2 = original.withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1"))));
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
@@ -140,7 +153,7 @@ public class ApplicationSerializerTest {
             }
 
             result.put(ClusterSpec.Id.from("id" + cluster), new ClusterInfo("flavor" + cluster, 10,
-                    ClusterSpec.Type.content, Collections.singletonList("hostname1")));
+                    ClusterSpec.Type.content, hostnames));
         }
         return result;
     }

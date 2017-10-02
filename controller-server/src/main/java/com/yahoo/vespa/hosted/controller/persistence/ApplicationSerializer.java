@@ -126,14 +126,13 @@ public class ApplicationSerializer {
     }
 
     private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
-        Cursor array = object.setArray(clusterInfoField);
+        Cursor root = object.setObject(clusterInfoField);
         for (Map.Entry<ClusterSpec.Id, ClusterInfo> entry : clusters.entrySet()) {
-            toSlime(entry.getValue(), array.addObject(), entry.getKey().value());
+            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
         }
     }
 
-    private void toSlime(ClusterInfo info, Cursor object, String key) {
-        object = object.setObject(key);
+    private void toSlime(ClusterInfo info, Cursor object) {
         object.setString(clusterInfoFlavorField, info.getFlavor());
         object.setLong(clusterInfoCostField, info.getCost());
         object.setString(clusterInfoTypeField, info.getClusterType().name());
@@ -144,14 +143,13 @@ public class ApplicationSerializer {
     }
 
     private void clusterUtilsToSlime(Map<ClusterSpec.Id, ClusterUtilization> clusters, Cursor object) {
-        Cursor array = object.setArray(clusterUtilsField);
+        Cursor root = object.setObject(clusterUtilsField);
         for (Map.Entry<ClusterSpec.Id, ClusterUtilization> entry : clusters.entrySet()) {
-            toSlime(entry.getValue(), array.addObject(), entry.getKey().value());
+            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
         }
     }
 
-    private void toSlime(ClusterUtilization utils, Cursor object, String key) {
-        object = object.setObject(key);
+    private void toSlime(ClusterUtilization utils, Cursor object) {
         object.setDouble(clusterUtilsCpuField, utils.getCpu());
         object.setDouble(clusterUtilsMemField, utils.getMemory());
         object.setDouble(clusterUtilsDiskField, utils.getDisk());
@@ -259,7 +257,7 @@ public class ApplicationSerializer {
 
     private Map<ClusterSpec.Id, ClusterUtilization> clusterUtilsMapFromSlime(Inspector object) {
         Map<ClusterSpec.Id, ClusterUtilization> map = new HashMap<>();
-        object.traverse((String name, Inspector obect) -> map.put(new ClusterSpec.Id(name), clusterUtililzationFromSlime(obect)));
+        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterUtililzationFromSlime(value)));
         return map;
     }
 
@@ -276,7 +274,10 @@ public class ApplicationSerializer {
         String flavor = inspector.field(clusterInfoFlavorField).asString();
         int cost = (int)inspector.field(clusterInfoCostField).asLong();
         String type = inspector.field(clusterInfoTypeField).asString();
-        return new ClusterInfo(flavor, cost, ClusterSpec.Type.from(type), new ArrayList<>());
+
+        List<String> hostnames = new ArrayList<>();
+        inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
+        return new ClusterInfo(flavor, cost, ClusterSpec.Type.from(type), hostnames);
     }
 
     private Zone zoneFromSlime(Inspector object) {
