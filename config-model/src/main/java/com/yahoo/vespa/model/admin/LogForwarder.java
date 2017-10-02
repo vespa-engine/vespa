@@ -10,23 +10,37 @@ import java.util.List;
 
 public class LogForwarder extends AbstractService implements LogforwarderConfig.Producer {
 
-    private final String type;
-    private final List<String> sources;
-    private final String endpoints;
-    private final String indexName;
+    public static class Config {
+        public final String deploymentServer;
+        public final String clientName;
+
+        private Config(String ds, String cn) {
+            this.deploymentServer = ds;
+            this.clientName = cn;
+        }
+        public Config withDeploymentServer(String ds) {
+            return new Config(ds, clientName);
+        }
+        public Config withClientName(String cn) {
+            return new Config(deploymentServer, cn);
+        }
+    }
+
+    private final Config config;
 
     /**
      * Creates a new LogForwarder instance.
      */
     // TODO: Use proper types?
-    public LogForwarder(AbstractConfigProducer parent, int index, String type, List<String> sources, String endpoints, String indexName) {
+    public LogForwarder(AbstractConfigProducer parent, int index, Config config) {
         super(parent, "logforwarder." + index);
-        this.type = type;
-        this.sources = sources;
-        this.endpoints = endpoints;
-        this.indexName = indexName;
+        this.config = config;
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");
+    }
+
+    public static Config cfg() {
+        return new Config(null, null);
     }
 
     /**
@@ -39,21 +53,12 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     /**
      * @return The command used to start LogForwarder
      */
-    public String getStartupCommand() { return "exec $ROOT/libexec/vespa/vespa-logforwarder-start " + getConfigId(); }
+    public String getStartupCommand() { return "exec $ROOT/libexec/vespa/vespa-logforwarder-start -c " + getConfigId(); }
 
     @Override
     public void getConfig(LogforwarderConfig.Builder builder) {
-        List<LogforwarderConfig.Sources.Builder> sourceList = new ArrayList<>();
-        for (String s : this.sources) {
-            LogforwarderConfig.Sources.Builder source = new LogforwarderConfig.Sources.Builder();
-            source.log(s);
-            sourceList.add(source);
-        }
-
-        builder.type(type);
-        builder.endpoint(endpoints);
-        builder.index(indexName);
-        builder.sources(sourceList);
+        builder.deploymentServer(config.deploymentServer);
+        builder.clientName(config.clientName);
     }
 
 }

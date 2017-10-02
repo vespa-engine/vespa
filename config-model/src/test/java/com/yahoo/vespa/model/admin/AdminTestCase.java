@@ -264,25 +264,7 @@ public class AdminTestCase {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node0' />" +
                 "    <logforwarding>" +
-                "      <forward type='splunk'>" +
-                "        <source>" +
-                "          <log>access</log>" +
-                "          <log>vespa</log>" +
-                "        </source>" +
-                "        <destination>" +
-                "          <endpoint>host1:port,host2:port</endpoint>" +
-                "          <index>all</index>" +
-                "        </destination>" +
-                "      </forward>" +
-                "      <forward type='splunk'>" +
-                "        <source>" +
-                "          <log>access</log>" +
-                "        </source>" +
-                "        <destination>" +
-                "          <endpoint>host3:port</endpoint>" +
-                "          <index>access</index>" +
-                "        </destination>" +
-                "      </forward>" +
+                "      <splunk deployment-server='foo:123' client-name='foocli'/>" +
                 "    </logforwarding>" +
                 "  </admin>" +
                 "</services>";
@@ -290,7 +272,10 @@ public class AdminTestCase {
         VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
 
         Set<String> configIds = vespaModel.getConfigIds();
-        // 2 logforwarders on each host
-        IntStream.of(0, 1).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
+        // 1 logforwarder on each host
+        assertTrue(configIds.toString(), configIds.contains("admin/logforwarder.0"));
     }
 }
+
+
+

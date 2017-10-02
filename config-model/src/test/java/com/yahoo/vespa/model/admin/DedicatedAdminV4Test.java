@@ -149,25 +149,7 @@ public class DedicatedAdminV4Test {
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
                 "    <logforwarding>" +
-                "      <forward type='splunk'>" +
-                "        <source>" +
-                "          <log>access</log>" +
-                "          <log>vespa</log>" +
-                "        </source>" +
-                "        <destination>" +
-                "          <endpoint>host1:port,host2:port</endpoint>" +
-                "          <index>all</index>" +
-                "        </destination>" +
-                "      </forward>" +
-                "      <forward type='splunk'>" +
-                "        <source>" +
-                "          <log>access</log>" +
-                "        </source>" +
-                "        <destination>" +
-                "          <endpoint>host3:port</endpoint>" +
-                "          <index>access</index>" +
-                "        </destination>" +
-                "      </forward>" +
+                "      <splunk deployment-server='foo:123' client-name='foocli'/>" +
                 "    </logforwarding>" +
                 "  </admin>" +
                 "</services>";
@@ -176,15 +158,15 @@ public class DedicatedAdminV4Test {
         assertEquals(3, model.getHosts().size());
 
         assertHostContainsServices(model, "hosts/myhost0",
-                                   "filedistributorservice", "logd", "logforwarder", "logforwarder2", "slobrok");
+                                   "filedistributorservice", "logd", "logforwarder", "slobrok");
         assertHostContainsServices(model, "hosts/myhost1",
-                                   "filedistributorservice", "logd", "logforwarder", "logforwarder2", "slobrok");
+                                   "filedistributorservice", "logd", "logforwarder", "slobrok");
         assertHostContainsServices(model, "hosts/myhost2",
-                                   "filedistributorservice", "logd", "logforwarder", "logforwarder2", "logserver");
+                                   "filedistributorservice", "logd", "logforwarder", "logserver");
 
         Set<String> configIds = model.getConfigIds();
-        // 2 logforwarders on each host
-        IntStream.of(0, 1, 2, 3, 4, 5).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
+        // 1 logforwarder on each host
+        IntStream.of(0, 1, 2).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
 
         // First forwarder
         {
@@ -192,27 +174,18 @@ public class DedicatedAdminV4Test {
             model.getConfig(builder, "admin/logforwarder.0");
             LogforwarderConfig config = new LogforwarderConfig(builder);
 
-            assertEquals("splunk", config.type());
-            assertEquals("host1:port,host2:port", config.endpoint());
-            assertEquals("all", config.index());
-            List<LogforwarderConfig.Sources> sources = config.sources();
-            assertEquals(2, sources.size());
-            assertEquals("access", sources.get(0).log());
-            assertEquals("vespa", sources.get(1).log());
+            assertEquals("foo:123", config.deploymentServer());
+            assertEquals("foocli", config.clientName());
         }
 
-        // Two forwarders on each host, so forwarder with id admin/logforwarder.3 should be different
+        // Other host's forwarder
         {
             LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
-            model.getConfig(builder, "admin/logforwarder.3");
+            model.getConfig(builder, "admin/logforwarder.2");
             LogforwarderConfig config = new LogforwarderConfig(builder);
 
-            assertEquals("splunk", config.type());
-            assertEquals("host3:port", config.endpoint());
-            assertEquals("access", config.index());
-            List<LogforwarderConfig.Sources> sources = config.sources();
-            assertEquals(1, sources.size());
-            assertEquals("access", sources.get(0).log());
+            assertEquals("foo:123", config.deploymentServer());
+            assertEquals("foocli", config.clientName());
         }
     }
 

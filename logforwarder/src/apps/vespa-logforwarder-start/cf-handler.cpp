@@ -25,12 +25,9 @@ CfHandler::doConfigure()
     std::unique_ptr<LogforwarderConfig> cfg(_handle->getConfig());
     const LogforwarderConfig& config(*cfg);
 
-    printf("logforwarder type: %s\n", config.type.c_str());
-    for (unsigned int i = 0; i < config.sources.size(); ++i) {
-        printf("source %d  is: %s\n", i, config.sources[i].log.c_str());
-    }
-    printf("endpoint: %s\n", config.endpoint.c_str());
-    printf("index: %s\n", config.index.c_str());
+    printf("logforwarder:\n");
+    printf(" deployment server: %s\n", config.deploymentServer.c_str());
+    printf(" client name: %s\n", config.clientName.c_str());
 }
 
 void
