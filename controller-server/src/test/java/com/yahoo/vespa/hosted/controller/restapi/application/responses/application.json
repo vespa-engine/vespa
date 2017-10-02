@@ -8,71 +8,119 @@
       "success": true,
       "lastTriggered": {
         "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
         "at": "(ignore)"
       },
       "lastCompleted": {
         "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
         "at": "(ignore)"
       },
       "lastSuccess": {
         "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
         "at": "(ignore)"
       }
     },
     {
-      "type":"staging-test",
-      "success":true,
-      "lastTriggered":{
-        "version":"(ignore)",
-        "at":"(ignore)"
+      "type": "staging-test",
+      "success": true,
+      "lastTriggered": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
       },
-      "lastCompleted":{
-        "version":"(ignore)",
-        "at":"(ignore)"
+      "lastCompleted": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
       },
-      "lastSuccess":{
-        "version":"(ignore)",
-        "at":"(ignore)"
+      "lastSuccess": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
       }
     },
     {
-      "type":"production-corp-us-east-1",
-      "success":false,
-      "lastTriggered":{
-        "version":"(ignore)",
-        "revision":{
-          "hash":"(ignore)",
-          "source":{
-            "gitRepository":"repository1",
-            "gitBranch":"master",
-            "gitCommit":"commit1"
+      "type": "production-corp-us-east-1",
+      "success": false,
+      "lastTriggered": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
           }
         },
-        "at":"(ignore)"
+        "at": "(ignore)"
       },
-      "lastCompleted":{
-        "version":"(ignore)",
-        "revision":{
-          "hash":"(ignore)",
-          "source":{
-            "gitRepository":"repository1",
-            "gitBranch":"master",
-            "gitCommit":"commit1"
+      "lastCompleted": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
           }
         },
-        "at":"(ignore)"
+        "at": "(ignore)"
       },
-      "firstFailing":{
-        "version":"(ignore)",
-        "revision":{
-          "hash":"(ignore)",
-          "source":{
-            "gitRepository":"repository1",
-            "gitBranch":"master",
-            "gitCommit":"commit1"
+      "firstFailing": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
           }
         },
-        "at":"(ignore)"
+        "at": "(ignore)"
       }
     }
   ],
@@ -91,14 +139,14 @@
       "environment": "prod",
       "region": "corp-us-east-1",
       "instance": "default",
-      "bcpStatus": {"rotationStatus":"UNKNOWN"},
+      "bcpStatus": {
+        "rotationStatus": "UNKNOWN"
+      },
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default"
     }
-  ]
-  ,
-  "metrics":
-    {
-      "queryServiceQuality":0.5,
-      "writeServiceQuality":0.7
-    }
+  ],
+  "metrics": {
+    "queryServiceQuality": 0.5,
+    "writeServiceQuality": 0.7
+  }
 }

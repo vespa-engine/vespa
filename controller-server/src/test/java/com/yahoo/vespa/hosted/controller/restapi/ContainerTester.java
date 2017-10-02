@@ -78,8 +78,8 @@ public class ContainerTester {
 
     public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {
         Response response = container.handleRequest(request);
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
         assertEquals(expectedResponse, response.getBodyAsString());
+        assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 
     private Set<String> fieldsToCensor(String fieldNameOrNull, Inspector value, Set<String> fieldsToCensor) {

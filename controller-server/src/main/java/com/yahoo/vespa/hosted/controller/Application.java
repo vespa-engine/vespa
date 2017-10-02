@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,8 +44,9 @@ public class Application {
 
     /** Creates an empty application */
     public Application(ApplicationId id) {
-        this(id, DeploymentSpec.empty, ValidationOverrides.empty, ImmutableMap.of(), new DeploymentJobs(0L),
-             Optional.empty(), false); // TODO: Get rid of the 0
+        this(id, DeploymentSpec.empty, ValidationOverrides.empty, ImmutableMap.of(),
+             new DeploymentJobs(Optional.empty(), Collections.emptyList(), Optional.empty()),
+             Optional.empty(), false);
     }
 
     /** Used from persistence layer: Do not use */
@@ -52,7 +54,7 @@ public class Application {
                        List<Deployment> deployments, 
                        DeploymentJobs deploymentJobs, Optional<Change> deploying, boolean outstandingChange) {
         this(id, deploymentSpec, validationOverrides, 
-             deployments.stream().collect(Collectors.toMap(d -> d.zone(), d -> d)), 
+             deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
              deploymentJobs, deploying, outstandingChange);
     }
 

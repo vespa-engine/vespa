@@ -131,27 +131,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("application-deployment.json"));
 
         // ... systemtest
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/test-region/instance/default/",
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/",
                                       createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)),
                                       Request.Method.POST,
                                       athensScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/test-region/instance/default",
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default",
                                       "",
                                       Request.Method.DELETE),
-                              "Deactivated tenant/tenant1/application/application1/environment/test/region/test-region/instance/default");
+                              "Deactivated tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default");
         controllerTester.notifyJobCompletion(id, screwdriverProjectId, true, DeploymentJobs.JobType.systemTest); // Called through the separate screwdriver/v1 API
 
         // ... staging
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/staging-region/instance/default/",
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default/",
                                       createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)),
                                       Request.Method.POST,
                                       athensScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/staging-region/instance/default",
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default",
                                       "",
                                       Request.Method.DELETE),
-                              "Deactivated tenant/tenant1/application/application1/environment/staging/region/staging-region/instance/default");
+                              "Deactivated tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default");
         controllerTester.notifyJobCompletion(id, screwdriverProjectId, true, DeploymentJobs.JobType.stagingTest);
 
         // ... prod zone

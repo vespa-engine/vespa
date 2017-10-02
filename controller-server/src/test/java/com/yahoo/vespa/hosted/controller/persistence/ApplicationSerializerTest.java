@@ -138,17 +138,30 @@ public class ApplicationSerializerTest {
         assertFalse(application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).lastCompleted().get().upgrade());
     }
 
-    private Slime applicationSlime(boolean error) {
-        return SlimeUtils.jsonToSlime(applicationJson(error).getBytes(StandardCharsets.UTF_8));
+    // TODO: Remove after October 2017
+    @Test
+    public void testLegacySerializationWithZeroProjectId() {
+        Application original = applicationSerializer.fromSlime(applicationSlime(0, false));
+        assertFalse(original.deploymentJobs().projectId().isPresent());
+        Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
+        assertFalse(serialized.deploymentJobs().projectId().isPresent());
     }
 
-    private String applicationJson(boolean error) {
+    private Slime applicationSlime(boolean error) {
+        return applicationSlime(123, error);
+    }
+
+    private Slime applicationSlime(long projectId, boolean error) {
+        return SlimeUtils.jsonToSlime(applicationJson(projectId, error).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String applicationJson(long projectId, boolean error) {
         return
                 "{\n" +
                 "  \"id\": \"t1:a1:i1\",\n" +
                 "  \"deploymentSpecField\": \"<deployment version='1.0'/>\",\n" +
                 "  \"deploymentJobs\": {\n" +
-                "    \"projectId\": 123,\n" +
+                "    \"projectId\": " + projectId + ",\n" +
                 "    \"jobStatus\": [\n" +
                 "      {\n" +
                 "        \"jobType\": \"system-test\",\n" +

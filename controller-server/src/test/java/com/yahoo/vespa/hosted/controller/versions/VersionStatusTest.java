@@ -131,20 +131,20 @@ public class VersionStatusTest {
         tester.upgradeSystem(version0);
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application canary2 = tester.createAndDeploy("canary2", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 00, "default");
-        Application default1 = tester.createAndDeploy("default1", 11, "default");
-        Application default2 = tester.createAndDeploy("default2", 22, "default");
-        Application default3 = tester.createAndDeploy("default3", 33, "default");
-        Application default4 = tester.createAndDeploy("default4", 44, "default");
-        Application default5 = tester.createAndDeploy("default5", 55, "default");
-        Application default6 = tester.createAndDeploy("default6", 66, "default");
-        Application default7 = tester.createAndDeploy("default7", 77, "default");
-        Application default8 = tester.createAndDeploy("default8", 88, "default");
-        Application default9 = tester.createAndDeploy("default9", 99, "default");
-        Application conservative0 = tester.createAndDeploy("conservative1", 000, "conservative");
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application canary2 = tester.createAndDeploy("canary2", 3, "canary");
+        Application default0 = tester.createAndDeploy("default0", 4, "default");
+        Application default1 = tester.createAndDeploy("default1", 5, "default");
+        Application default2 = tester.createAndDeploy("default2", 6, "default");
+        Application default3 = tester.createAndDeploy("default3", 7, "default");
+        Application default4 = tester.createAndDeploy("default4", 8, "default");
+        Application default5 = tester.createAndDeploy("default5", 9, "default");
+        Application default6 = tester.createAndDeploy("default6", 10, "default");
+        Application default7 = tester.createAndDeploy("default7", 11, "default");
+        Application default8 = tester.createAndDeploy("default8", 12, "default");
+        Application default9 = tester.createAndDeploy("default9", 13, "default");
+        Application conservative0 = tester.createAndDeploy("conservative1", 14, "conservative");
 
 
         // The following applications should not affect confidence calculation:

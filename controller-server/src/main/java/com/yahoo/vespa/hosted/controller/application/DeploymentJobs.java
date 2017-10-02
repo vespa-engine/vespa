@@ -32,24 +32,20 @@ public class DeploymentJobs {
     private final ImmutableMap<JobType, JobStatus> status;
     private final Optional<String> jiraIssueId;
 
-    /** Creates an empty set of deployment jobs */
-    public DeploymentJobs(long projectId) {
-        this(Optional.of(projectId), ImmutableMap.of(), Optional.empty());
-    }
-    
-    public DeploymentJobs(Optional<Long> projectId, Collection<JobStatus> jobStatusEntries, Optional<String> jiraIssueId) {
+    public DeploymentJobs(Optional<Long> projectId, Collection<JobStatus> jobStatusEntries,
+                          Optional<String> jiraIssueId) {
         this(projectId, asMap(jobStatusEntries), jiraIssueId);
     }
-    
+
     private DeploymentJobs(Optional<Long> projectId, Map<JobType, JobStatus> status, Optional<String> jiraIssueId) {
-        Objects.requireNonNull(projectId, "projectId cannot be null");
+        requireId(projectId, "projectId cannot be null or <= 0");
         Objects.requireNonNull(status, "status cannot be null");
         Objects.requireNonNull(jiraIssueId, "jiraIssueId cannot be null");
         this.projectId = projectId;
         this.status = ImmutableMap.copyOf(status);
         this.jiraIssueId = jiraIssueId;
     }
-    
+
     private static Map<JobType, JobStatus> asMap(Collection<JobStatus> jobStatusEntries) {
         ImmutableMap.Builder<JobType, JobStatus> b = new ImmutableMap.Builder<>();
         for (JobStatus jobStatusEntry : jobStatusEntries)
@@ -304,6 +300,17 @@ public class DeploymentJobs {
                     .filter(b -> !b)
                     .map(ignored -> unknown);
         }
+    }
+
+    private static Optional<Long> requireId(Optional<Long> id, String message) {
+        Objects.requireNonNull(id, message);
+        if (!id.isPresent()) {
+            return id;
+        }
+        if (id.get() <= 0) {
+            throw new IllegalArgumentException(message);
+        }
+        return id;
     }
 
 }

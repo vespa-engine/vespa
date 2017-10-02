@@ -39,12 +39,12 @@ public class UpgraderTest {
         assertEquals("No applications: Nothing to do", 0, tester.buildSystem().jobs().size());
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 2, "default");
-        Application default1 = tester.createAndDeploy("default1", 3, "default");
-        Application default2 = tester.createAndDeploy("default2", 4, "default");
-        Application conservative0 = tester.createAndDeploy("conservative0", 5, "conservative");
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application conservative0 = tester.createAndDeploy("conservative0", 6, "conservative");
 
         tester.upgrader().maintain();
         assertEquals("All already on the right version: Nothing to do", 0, tester.buildSystem().jobs().size());
@@ -163,18 +163,18 @@ public class UpgraderTest {
         assertEquals("No applications: Nothing to do", 0, tester.buildSystem().jobs().size());
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0",  2, "default");
-        Application default1 = tester.createAndDeploy("default1",  3, "default");
-        Application default2 = tester.createAndDeploy("default2",  4, "default");
-        Application default3 = tester.createAndDeploy("default3",  5, "default");
-        Application default4 = tester.createAndDeploy("default4",  6, "default");
-        Application default5 = tester.createAndDeploy("default5",  7, "default");
-        Application default6 = tester.createAndDeploy("default6",  8, "default");
-        Application default7 = tester.createAndDeploy("default7",  9, "default");
-        Application default8 = tester.createAndDeploy("default8", 10, "default");
-        Application default9 = tester.createAndDeploy("default9", 11, "default");
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0",  3, "default");
+        Application default1 = tester.createAndDeploy("default1",  4, "default");
+        Application default2 = tester.createAndDeploy("default2",  5, "default");
+        Application default3 = tester.createAndDeploy("default3",  6, "default");
+        Application default4 = tester.createAndDeploy("default4",  7, "default");
+        Application default5 = tester.createAndDeploy("default5",  8, "default");
+        Application default6 = tester.createAndDeploy("default6",  9, "default");
+        Application default7 = tester.createAndDeploy("default7",  10, "default");
+        Application default8 = tester.createAndDeploy("default8", 11, "default");
+        Application default9 = tester.createAndDeploy("default9", 12, "default");
 
         tester.upgrader().maintain();
         assertEquals("All already on the right version: Nothing to do", 0, tester.buildSystem().jobs().size());
@@ -275,13 +275,13 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 2, "default");
-        Application default1 = tester.createAndDeploy("default1", 3, "default");
-        Application default2 = tester.createAndDeploy("default2", 4, "default");
-        Application default3 = tester.createAndDeploy("default3", 5, "default");
-        Application default4 = tester.createAndDeploy("default4", 6, "default");
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application default3 = tester.createAndDeploy("default3", 6, "default");
+        Application default4 = tester.createAndDeploy("default4", 7, "default");
 
         // New version is released
         version = Version.fromString("5.1");
@@ -321,13 +321,13 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 2, "default");
-        Application default1 = tester.createAndDeploy("default1", 3, "default");
-        Application default2 = tester.createAndDeploy("default2", 4, "default");
-        Application default3 = tester.createAndDeploy("default3", 5, "default");
-        Application default4 = tester.createAndDeploy("default4", 5, "default");
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application default3 = tester.createAndDeploy("default3", 6, "default");
+        Application default4 = tester.createAndDeploy("default4", 7, "default");
 
         // New version is released
         version = Version.fromString("5.1");
@@ -412,13 +412,13 @@ public class UpgraderTest {
                 .build();
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 0, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 2, "default");
-        Application default1 = tester.createAndDeploy("default1", 3, "default");
-        Application default2 = tester.createAndDeploy("default2", 4, "default");
-        Application default3 = tester.createAndDeploy("default3", 5, "default");
-        Application default4 = tester.createAndDeploy("default4", 6, "default");
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application default3 = tester.createAndDeploy("default3", 6, "default");
+        Application default4 = tester.createAndDeploy("default4", 7, "default");
 
         // New version is released
         version = Version.fromString("5.1");
