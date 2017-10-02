@@ -56,6 +56,9 @@ public class SearchNode extends AbstractService implements
     private TransactionLogServer tls;
     private AbstractService serviceLayerService;
     private final Optional<Tuning> tuning;
+    private static final int RPC_PORT = 0;
+    private static final int FS4_PORT = 1;
+    private static final int HEALTH_PORT = 2;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<SearchNode> {
 
@@ -101,9 +104,9 @@ public class SearchNode extends AbstractService implements
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;
         this.flushOnShutdown = flushOnShutdown;
-        portsMeta.on(0).tag("rpc").tag("rtc").tag("admin").tag("status");
-        portsMeta.on(1).tag("fs4");
-        portsMeta.on(2).tag("http").tag("json").tag("health").tag("state");
+        portsMeta.on(RPC_PORT).tag("rpc").tag("rtc").tag("admin").tag("status");
+        portsMeta.on(FS4_PORT).tag("fs4");
+        portsMeta.on(HEALTH_PORT).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
         monitorService();
         this.tuning = tuning;
@@ -152,7 +155,7 @@ public class SearchNode extends AbstractService implements
      * @return The port.
      */
     public int getRpcPort() {
-        return getRelativePort(0);
+        return getRelativePort(RPC_PORT);
     }
 
     @Override
@@ -180,11 +183,11 @@ public class SearchNode extends AbstractService implements
     }
 
     public int getDispatchPort() {
-        return getRelativePort(1);
+        return getRelativePort(FS4_PORT);
     }
 
     public int getHttpPort() {
-        return getRelativePort(4);
+        return getRelativePort(HEALTH_PORT);
     }
 
     @Override
