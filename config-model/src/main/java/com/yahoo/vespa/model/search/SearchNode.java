@@ -146,7 +146,7 @@ public class SearchNode extends AbstractService implements
      */
     @Override
     public int getPortCount() {
-        return 5;
+        return 3;
     }
 
     /**
