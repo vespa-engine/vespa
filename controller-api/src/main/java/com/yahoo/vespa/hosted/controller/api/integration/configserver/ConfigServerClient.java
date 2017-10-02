@@ -66,4 +66,6 @@ public interface ConfigServerClient {
      * @throws IOException If trouble contacting the server
      */
     EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) throws IOException;
+
+    //JsonNode getClusterInfo(DeploymentId deployment, String endpoint) throws IOException;
 }

@@ -1,4 +1,5 @@
-package com.yahoo.vespa.hosted.controller.maintenance;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -20,7 +22,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Fetch info about hardware, hostnames and cluster specifications and update applications.
+ * Maintain info about hardware, hostnames and cluster specifications.
+ *
+ * This is used to calculate cost metrics for the application api.
  *
  * @author smorgrav
  */
@@ -28,14 +32,13 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     private final Controller controller;
 
-    public ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl) {
+    ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl) {
         super(controller, duration, jobControl);
         this.controller = controller;
     }
 
     private static String clusterid(NodeRepositoryJsonModel.Node node) {
         return node.membership.clusterId;
-
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeRepositoryJsonModel nodes) {
@@ -46,6 +49,7 @@ public class ClusterInfoMaintainer extends Maintainer {
                 .filter(node -> node.membership != null)
                 .collect(Collectors.groupingBy(ClusterInfoMaintainer::clusterid));
 
+        // For each cluster - get info
         for (String id : clusters.keySet()) {
             List<NodeRepositoryJsonModel.Node> clusterNodes = clusters.get(id);
 
@@ -61,6 +65,7 @@ public class ClusterInfoMaintainer extends Maintainer {
         return infoMap;
     }
 
+    // TODO use appId in url
     private NodeRepositoryJsonModel getApplicationNodes(ApplicationId appId, Zone zone) {
         NodeRepositoryJsonModel nodesResponse = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -77,11 +82,14 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
+
         for (Application application : controller().applications().asList()) {
+            Lock lock = controller().applications().lock(application.id());
             for (Deployment deployment : application.deployments().values()) {
                 NodeRepositoryJsonModel appNodes = getApplicationNodes(application.id(), deployment.zone());
                 Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(appNodes);
-                application.with(deployment.withClusterInfo(clusterInfo));
+                Application app = application.with(deployment.withClusterInfo(clusterInfo));
+                controller.applications().store(app, lock);
             }
         }
     }

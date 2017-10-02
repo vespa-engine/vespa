@@ -2,7 +2,21 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 /**
- * Calculate tco and waste for one cluster within one deployment.
+ * Calculate utilization relative to the target utilization,
+ * tco and waste for one cluster of one deployment.
+ *
+ * The target utilization is defined the following assumptions:
+ * 1. CPU contention starts to cause problems on 0.8
+ * 2. Memory management starts to casue problems on 0.7
+ * 3. Load is evenly divided between two deployments - each deployments can handle the other.
+ * 4. Memory and disk are agnostic to query load.
+ * 5. Peak utilization (daily variations) are twice the size of the average.
+ *
+ * With this in mind we get:
+ * CPU: 0.8/2/2 = 0.2
+ * Mem: 0.7
+ * Disk: 0.7
+ * Disk busy: 0.3
  *
  * @author smorgrav
  */
@@ -30,10 +44,12 @@ public class ClusterCost {
         this.waste  = clusterInfo.getCost() - tco;
     }
 
+    /** @return TCO in dollars */
     public double getTco() {
         return tco;
     }
 
+    /** @return Waste in dollars */
     public double getWaste() {
         return waste;
     }

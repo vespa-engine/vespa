@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Calculates cost for for an application instance.
+ * Calculates cost for for an application deployment.
  *
  * @author smorgrav
  */
@@ -17,11 +17,7 @@ public class DeploymentCost {
 
     private final Map<String, ClusterCost> clusters;
 
-    public DeploymentCost() {
-        this(new HashMap<>());
-    }
-
-    public DeploymentCost(Map<String, ClusterCost> clusterCosts) {
+    DeploymentCost(Map<String, ClusterCost> clusterCosts) {
         clusters = new HashMap<>(clusterCosts);
 
         double tco = 0;

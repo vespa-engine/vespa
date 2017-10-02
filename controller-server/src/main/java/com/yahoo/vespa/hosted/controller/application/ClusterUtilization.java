@@ -1,4 +1,5 @@
-package com.yahoo.vespa.hosted.controller.application;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.application;
 
 /**
  * System resources as _ratios_ of available resources.
@@ -17,7 +18,7 @@ public class ClusterUtilization {
 
     /**
      * Resource utilization as ratios. The ratio is normally between 0 and 1 where
-     * one is fully utilized but can be higher as it consumes more than it are guaranteed.
+     * one is fully utilized - but can be higher as it consumes more than it are guaranteed.
      *
      * @param memory Memory utilization
      * @param cpu  CPU utilization
