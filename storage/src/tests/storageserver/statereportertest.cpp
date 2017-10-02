@@ -130,7 +130,7 @@ vespalib::Slime slime; \
     size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime); \
     vespalib::SimpleBuffer buffer;                                      \
     JsonFormat::encode(slime, buffer, false); \
-    if (parsed == 0) { \
+    if (jsonData.size() != parsed) { \
         std::ostringstream error; \
         error << "Failed to parse JSON: '\n" \
               << jsonData << "'\n:" << buffer.get().make_string() << "\n"; \

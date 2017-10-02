@@ -632,7 +632,8 @@ TEST("testOptionalDecodeOrder") {
 
 Slime from_json(const vespalib::string &json) {
     Slime slime;
-    EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime) > 0);
+    size_t size = vespalib::slime::JsonFormat::decode(json, slime);
+    EXPECT_EQUAL(size, json.size());
     return slime;
 }
 

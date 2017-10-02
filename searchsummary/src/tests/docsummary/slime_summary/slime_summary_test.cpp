@@ -24,7 +24,7 @@ struct FieldBlock {
         : slime(), binary(1024)
     {
         size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
-        EXPECT_TRUE(used > 0);
+        EXPECT_EQUAL(jsonInput.size(), used);
         search::SlimeOutputRawBufAdapter adapter(binary);
         vespalib::slime::BinaryFormat::encode(slime, adapter);
     }
