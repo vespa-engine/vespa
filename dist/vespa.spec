@@ -118,7 +118,7 @@ source %{_devtoolset_enable} || true
 source %{_rhmaven33_enable} || true
 %endif
 sh bootstrap.sh java
-mvn -nsu -T 2C install -DskipTests -Dmaven.javadoc.skip=true
+mvn -nsu -T 2C install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
@@ -152,18 +152,18 @@ chmod +x /etc/profile.d/vespa.sh
 exit 0
 
 %post
-%systemd_post vespa-configserver.service 
-%systemd_post vespa.service 
+%systemd_post vespa-configserver.service
+%systemd_post vespa.service
 
 %preun
 %systemd_preun vespa.service
 %systemd_preun vespa-configserver.service
 
 %postun
-%systemd_postun_with_restart vespa.service 
-%systemd_postun_with_restart vespa-configserver.service 
+%systemd_postun_with_restart vespa.service
+%systemd_postun_with_restart vespa-configserver.service
 rm -f /etc/profile.d/vespa.sh
-userdel vespa 
+userdel vespa
 
 %files
 %defattr(-,vespa,vespa,-)
