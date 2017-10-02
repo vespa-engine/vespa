@@ -51,7 +51,7 @@ public class ContainerControllerTester {
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
         controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
-        upgrader = new Upgrader(controller, Duration.ofMinutes(2), new JobControl(new MockCuratorDb()));
+        upgrader = new Upgrader(controller, Duration.ofMinutes(2), 100, new JobControl(new MockCuratorDb()));
     }
 
     public Controller controller() { return controller; }
