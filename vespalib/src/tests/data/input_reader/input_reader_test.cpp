@@ -112,4 +112,47 @@ TEST("expect that obtain does not set failure state on input reader") {
     }
 }
 
+TEST("require that bytes can be unread when appropriate") {
+    const char *data = "12345";
+    MemoryInput memory_input(data);
+    ChunkedInput input(memory_input, 3);
+    InputReader src(input);
+    EXPECT_TRUE(!src.try_unread());
+    EXPECT_EQUAL(src.read(), '1');
+    EXPECT_EQUAL(src.read(), '2');
+    EXPECT_EQUAL(src.read(), '3');
+    EXPECT_TRUE(src.try_unread());
+    EXPECT_TRUE(src.try_unread());
+    EXPECT_TRUE(src.try_unread());
+    EXPECT_TRUE(!src.try_unread());
+    EXPECT_EQUAL(src.read(), '1');
+    EXPECT_EQUAL(src.read(), '2');
+    EXPECT_EQUAL(src.read(), '3');
+    EXPECT_EQUAL(src.read(), '4');
+    EXPECT_TRUE(src.try_unread());
+    EXPECT_TRUE(!src.try_unread());
+    EXPECT_EQUAL(src.read(), '4');
+    EXPECT_EQUAL(src.read(), '5');
+    EXPECT_EQUAL(src.obtain(), 0u);
+    EXPECT_TRUE(!src.try_unread());
+    EXPECT_TRUE(!src.failed());
+}
+
+TEST("require that try read finds eof without failing the reader") {
+    const char *data = "12345";
+    MemoryInput memory_input(data);
+    ChunkedInput input(memory_input, 3);
+    InputReader src(input);
+    EXPECT_EQUAL(src.try_read(), '1');
+    EXPECT_EQUAL(src.try_read(), '2');
+    EXPECT_EQUAL(src.try_read(), '3');
+    EXPECT_EQUAL(src.try_read(), '4');
+    EXPECT_EQUAL(src.try_read(), '5');
+    EXPECT_TRUE(src.try_unread());
+    EXPECT_EQUAL(src.try_read(), '5');
+    EXPECT_EQUAL(src.try_read(), '\0');
+    EXPECT_TRUE(!src.try_unread());
+    EXPECT_TRUE(!src.failed());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

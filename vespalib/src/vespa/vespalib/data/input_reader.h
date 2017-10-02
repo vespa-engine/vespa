@@ -74,6 +74,35 @@ public:
     }
 
     /**
+     * Try to read a single byte. This function will not fail the
+     * reader with buffer underflow if eof is reached.
+     *
+     * @return the next input byte, or 0 if eof is reached
+     **/
+    char try_read() {
+        if (__builtin_expect(obtain() > 0, true)) {
+            return _data.data[_pos++];
+        }
+        return 0;
+    }
+
+    /**
+     * Try to unread a single byte. This will work for data that is
+     * read, but not yet evicted. Note that after eof is found (the
+     * obtain function returns 0), unreading will not be possible.
+     *
+     * @return whether unreading could be performed
+     **/
+    bool try_unread() {
+        if (__builtin_expect(_pos > 0, true)) {
+            --_pos;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Read a continous sequence of bytes. Bytes within an input chunk
      * will be referenced directly. Reads crossing chunk boundries
      * will result in a gathering copy into a temporary buffer owned

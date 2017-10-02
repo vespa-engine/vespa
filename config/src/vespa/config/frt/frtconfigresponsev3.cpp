@@ -58,11 +58,13 @@ FRTConfigResponseV3::readConfigValue() const
     Slime * rawData = new Slime();
     SlimePtr payloadData(rawData);
     DecompressedData data(decompress(((*_returnValues)[1]._data._buf), ((*_returnValues)[1]._data._len), info.compressionType, info.uncompressedSize));
-    size_t consumedSize = JsonFormat::decode(data.memRef, *rawData);
-    if (consumedSize != data.size) {
-        std::string json(make_json(*payloadData, true));
-        LOG(error, "Error decoding JSON. Consumed size: %lu, uncompressed size: %u, compression type: %s, assumed uncompressed size(%u), compressed size: %u, slime(%s)", consumedSize, data.size, compressionTypeToString(info.compressionType).c_str(), info.uncompressedSize, ((*_returnValues)[1]._data._len), json.c_str());
-        assert(false);
+    if (data.memRef.size > 0) {
+        size_t consumedSize = JsonFormat::decode(data.memRef, *rawData);
+        if (consumedSize == 0) {
+            std::string json(make_json(*payloadData, true));
+            LOG(error, "Error decoding JSON. Consumed size: %lu, uncompressed size: %u, compression type: %s, assumed uncompressed size(%u), compressed size: %u, slime(%s)", consumedSize, data.size, compressionTypeToString(info.compressionType).c_str(), info.uncompressedSize, ((*_returnValues)[1]._data._len), json.c_str());
+            assert(false);
+        }
     }
     if (LOG_WOULD_LOG(spam)) {
         LOG(spam, "read config value md5(%s), payload size: %lu", md5.c_str(), data.memRef.size);

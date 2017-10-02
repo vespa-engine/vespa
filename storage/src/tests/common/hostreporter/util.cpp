@@ -24,10 +24,10 @@ reporterToSlime(HostReporter &hostReporter, vespalib::Slime &slime) {
     hostReporter.report(stream);
     stream << End();
     std::string jsonData = json.str();
-    size_t parsedSize = JsonFormat::decode(Memory(jsonData), slime);
+    size_t parsed = JsonFormat::decode(Memory(jsonData), slime);
 
-    if (jsonData.size() != parsedSize) {
-        CPPUNIT_FAIL("Sizes of jsonData mismatched, probably not json:\n" + jsonData);
+    if (parsed == 0) {
+        CPPUNIT_FAIL("jsonData is not json:\n" + jsonData);
     }
 }
 }
