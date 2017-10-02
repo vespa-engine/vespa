@@ -180,11 +180,7 @@ struct JsonDecoder {
     JsonDecoder(InputReader &reader) : in(reader), c(in.read()), key(), value() {}
 
     void next() {
-        if (in.obtain() > 0) {
-            c = in.read();
-        } else {
-            c = 0;
-        }
+        c = in.try_read();
     }
 
     bool skip(char x) {
@@ -489,6 +485,7 @@ JsonFormat::decode(Input &input, Slime &slime)
     InputReader reader(input);
     JsonDecoder decoder(reader);
     decoder.decodeValue(slime);
+    reader.try_unread();
     if (reader.failed()) {
         slime.wrap("partial_result");
         slime.get().setLong("offending_offset", reader.get_offset());

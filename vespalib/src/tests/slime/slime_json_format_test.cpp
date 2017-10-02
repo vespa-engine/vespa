@@ -1,10 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/input.h>
+#include <vespa/vespalib/data/memory_input.h>
 #include <iostream>
 #include <fstream>
 
 using namespace vespalib::slime::convenience;
+using vespalib::Input;
+using vespalib::MemoryInput;
 
 std::string make_json(const Slime &slime, bool compact) {
     vespalib::SimpleBuffer buf;
@@ -60,7 +64,13 @@ std::string json_string(const std::string &str) {
 
 std::string normalize(const std::string &json) {
     Slime slime;
-    EXPECT_GREATER(vespalib::slime::JsonFormat::decode(json, slime), 0u);
+    EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime) > 0);
+    return make_json(slime, true);
+}
+
+std::string normalize(Input &input) {
+    Slime slime;
+    EXPECT_TRUE(vespalib::slime::JsonFormat::decode(input, slime) > 0);
     return make_json(slime, true);
 }
 
@@ -357,6 +367,21 @@ TEST_F("decode bytes not null-terminated", Slime) {
     std::string str = buf.str();
     Memory mem(str.c_str(), 18911);
     EXPECT_TRUE(parse_json_bytes(mem, f));
+}
+
+TEST("require that multiple adjacent values can be decoded from a single input") {
+    vespalib::string data("true{}false[]null\"foo\"'bar'1.5null");
+    MemoryInput input(data);
+    EXPECT_EQUAL(std::string("true"), normalize(input));
+    EXPECT_EQUAL(std::string("{}"), normalize(input));
+    EXPECT_EQUAL(std::string("false"), normalize(input));
+    EXPECT_EQUAL(std::string("[]"), normalize(input));
+    EXPECT_EQUAL(std::string("null"), normalize(input));
+    EXPECT_EQUAL(std::string("\"foo\""), normalize(input));
+    EXPECT_EQUAL(std::string("\"bar\""), normalize(input));
+    EXPECT_EQUAL(std::string("1.5"), normalize(input));
+    EXPECT_EQUAL(std::string("null"), normalize(input));
+    EXPECT_EQUAL(input.obtain().size, 0u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

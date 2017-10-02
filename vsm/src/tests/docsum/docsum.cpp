@@ -116,7 +116,7 @@ DocsumTest::assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv
 
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
-    EXPECT_EQUAL(exp.size(), used);
+    EXPECT_TRUE(used > 0);
     EXPECT_EQUAL(expSlime, gotSlime);
 }
 

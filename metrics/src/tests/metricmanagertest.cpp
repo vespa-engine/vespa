@@ -779,7 +779,7 @@ void MetricManagerTest::testJsonOutput()
     using namespace vespalib::slime;
     vespalib::Slime slime;
     size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime);
-    if (jsonData.size() != parsed) {
+    if (parsed == 0) {
         vespalib::SimpleBuffer buffer;
         JsonFormat::encode(slime, buffer, false);
         std::ostringstream ost;
