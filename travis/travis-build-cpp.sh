@@ -11,6 +11,7 @@ export CCACHE_MAXSIZE="1250M"
 export CCACHE_COMPRESS=1
 NUM_THREADS=4
 ccache --print-config
+source /etc/profile.d/devtoolset-6.sh || true
 
 cd ${BUILD_DIR}
 bash ${SOURCE_DIR}/bootstrap-cpp.sh ${SOURCE_DIR} ${BUILD_DIR}
