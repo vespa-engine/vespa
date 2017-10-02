@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -80,7 +79,7 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
-    private final AtomicInteger applicationSerialNo = new AtomicInteger(0);
+    private volatile int applicationSerialNo = 0;
     private HandlersConfigurerDi configurer;
     private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
@@ -173,12 +172,10 @@ public final class ConfiguredApplication implements Application {
         startAndStopServers();
 
         log.info("Switching to the latest deployed set of configurations and components. " +
-                 "Application switch number: " + applicationSerialNo.getAndIncrement());
+                 "Application switch number: " + (applicationSerialNo++));
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
-        log.info("Initializing new set of configurations and components. " +
-                         "Application switch number: " + applicationSerialNo.get());
         ContainerBuilder builder = activator.newContainerBuilder();
         setupGuiceBindings(builder.guiceModules());
         return builder;
