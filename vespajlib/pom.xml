@@ -11,7 +11,7 @@
   <packaging>container-plugin</packaging>
   <version>6-SNAPSHOT</version>
   <description>
-    Library for use in Java components of Vespa. Shared code which did
+    Library for use in Java components of Vespa. Shared code which do
     not fit anywhere else.
   </description>
 

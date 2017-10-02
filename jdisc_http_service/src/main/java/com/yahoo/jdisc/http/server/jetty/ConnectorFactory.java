@@ -49,8 +49,7 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.PEM;
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.21.0
+ * @author Einar M R Rosenvinge
  */
 public class ConnectorFactory {
 
