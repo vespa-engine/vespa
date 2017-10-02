@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  * Maintenance job which schedules applications for Vespa version upgrade
  * 
  * @author bratseth
+ * @author mpolden
  */
 public class Upgrader extends Maintainer {
 

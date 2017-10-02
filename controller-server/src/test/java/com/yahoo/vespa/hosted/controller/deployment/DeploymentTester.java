@@ -37,6 +37,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTester {
 
+    // Set a long interval so that maintainers never do scheduled runs during tests
+    private static final Duration maintenanceInterval = Duration.ofDays(1);
+
     private final ControllerTester tester;
     private final Upgrader upgrader;
     private final FailureRedeployer failureRedeployer;
@@ -47,10 +50,8 @@ public class DeploymentTester {
 
     public DeploymentTester(ControllerTester tester) {
         this.tester = tester;
-        this.upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(2),
-                                     new JobControl(tester.curator()));
-        this.failureRedeployer = new FailureRedeployer(tester.controller(),
-                                                       Duration.ofMinutes(2),
+        this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()));
+        this.failureRedeployer = new FailureRedeployer(tester.controller(), maintenanceInterval,
                                                        new JobControl(tester.curator()));
     }
 

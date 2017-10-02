@@ -236,15 +236,11 @@ public class ControllerTest {
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // A deployment to the new region gets the same version
-        applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .region("us-east-3")
-                .build();
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
+        assertFalse("Change deployed", app1.deploying().isPresent());
 
         // Version upgrade changes system version
         Change.VersionChange change = new Change.VersionChange(newSystemVersion);
