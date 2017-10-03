@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeMessageResp
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
+import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -76,7 +77,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                 return Optional.empty();
             }
             return Optional.of(createContainerNodeSpec(nodeResponse));
-        } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
+        } catch (HttpException.NotFoundException e) {
             return Optional.empty();
         }
     }
@@ -90,7 +91,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                     .map(node -> new ContainerAclSpec(
                             node.hostname, node.ipAddress, ContainerName.fromHostname(node.trustedBy)))
                     .collect(Collectors.toList());
-        } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
+        } catch (HttpException.NotFoundException e) {
             return Collections.emptyList();
         }
     }

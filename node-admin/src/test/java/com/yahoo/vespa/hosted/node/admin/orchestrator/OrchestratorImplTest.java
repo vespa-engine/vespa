@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
+import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
@@ -12,7 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author freva
@@ -56,7 +59,7 @@ public class OrchestratorImplTest {
                 any(Integer.class),
                 any(),
                 any()
-        )).thenThrow(requestExecutor.new NotFoundException("Not Found"));
+        )).thenThrow(new HttpException.NotFoundException("Not Found"));
 
         orchestrator.suspend(hostName);
     }
@@ -102,7 +105,7 @@ public class OrchestratorImplTest {
                 any(String.class),
                 any(Integer.class),
                 any()
-        )).thenThrow(requestExecutor.new NotFoundException("Not Found"));
+        )).thenThrow(new HttpException.NotFoundException("Not Found"));
 
         orchestrator.resume(hostName);
     }

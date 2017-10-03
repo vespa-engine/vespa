@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 
+import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
@@ -40,8 +41,11 @@ public class OrchestratorImpl implements Orchestrator {
                     port,
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
-        } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
+        } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
+        } catch (HttpException e) {
+            throw new OrchestratorException("Failed to suspend " + hostName + ": " +
+                    e.toString());
         } catch (Exception e) {
             throw new RuntimeException("Got error on suspend", e);
         }
@@ -55,11 +59,14 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspend(String parentHostName, List<String> hostNames) {
         final BatchOperationResult batchOperationResult;
         try {
-             batchOperationResult = requestExecutor.put(
+            batchOperationResult = requestExecutor.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                     port,
+                    port,
                     Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                     BatchOperationResult.class);
+        } catch (HttpException e) {
+            throw new OrchestratorException("Failed to batch suspend for " +
+                    parentHostName + ": " + e.toString());
         } catch (Exception e) {
             throw new RuntimeException("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
         }
@@ -75,8 +82,11 @@ public class OrchestratorImpl implements Orchestrator {
         try {
             String path = getSuspendPath(hostName);
             response = requestExecutor.delete(path, port, UpdateHostResponse.class);
-        } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
+        } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
+        } catch (HttpException e) {
+            throw new OrchestratorException("Failed to suspend " + hostName + ": " +
+                    e.toString());
         } catch (Exception e) {
             throw new RuntimeException("Got error on resume", e);
         }
