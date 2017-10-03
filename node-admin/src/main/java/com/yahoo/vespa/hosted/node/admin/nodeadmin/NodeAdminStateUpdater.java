@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -178,7 +179,7 @@ public class NodeAdminStateUpdater {
 
         try {
             convergeState(wantedStateCopy);
-        } catch (OrchestratorException | ConvergenceException e) {
+        } catch (OrchestratorException | ConvergenceException | HttpException e) {
             log.info("Unable to converge to " + wantedStateCopy + ": " + e.getMessage());
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Error while trying to converge to " + wantedStateCopy, e);

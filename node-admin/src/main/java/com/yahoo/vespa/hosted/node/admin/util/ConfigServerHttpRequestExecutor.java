@@ -17,7 +17,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -72,13 +71,6 @@ public class ConfigServerHttpRequestExecutor {
         HttpUriRequest createRequest(String configserver) throws JsonProcessingException, UnsupportedEncodingException;
     }
 
-    public class NotFoundException extends RuntimeException {
-        private static final long serialVersionUID = 4791511887L;
-        public NotFoundException(String message) {
-            super(message);
-        }
-    }
-
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
@@ -99,9 +91,9 @@ public class ConfigServerHttpRequestExecutor {
                 }
 
                 try {
-                    if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
-                        throw new NotFoundException("Not found returned from " + configServer);
-                    }
+                    HttpException.throwOnFailure(
+                            response.getStatusLine().getStatusCode(),
+                            "Config server " + configServer);
 
                     try {
                         return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
