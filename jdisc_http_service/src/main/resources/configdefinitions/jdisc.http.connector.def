@@ -67,7 +67,7 @@ ssl.keyStorePath                    string   default=""
 ssl.pemKeyStore.keyPath             string   default=""
 ssl.pemKeyStore.certificatePath     string   default=""
 
-ssl.trustStoreType                  enum { JKS }  default="JKS"
+ssl.trustStoreType                  enum { JKS }  default=JKS
 
 # JKS only - the path to the truststore.
 ssl.trustStorePath                  string   default=""

@@ -174,28 +174,24 @@ public class ConnectorFactory {
             factory.setIncludeCipherSuites(ciphs);
         }
 
-
-        Optional<String> password = Optional.of(sslConfig.keyDbKey())
-                                            .filter(key -> !key.isEmpty())
-                                            .map(secretStore::getSecret);
-
+        Optional<String> keyDbPassword = secret(sslConfig.keyDbKey());
         switch (sslConfig.keyStoreType()) {
             case PEM:
                 factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore(), keyStoreChannels));
-                if (password.isPresent())
+                if (keyDbPassword.isPresent())
                     log.warning("Encrypted PEM key stores are not supported.");
                 break;
             case JKS:
                 factory.setKeyStorePath(sslConfig.keyStorePath());
                 factory.setKeyStoreType(sslConfig.keyStoreType().toString());
-                factory.setKeyStorePassword(password.orElseThrow(passwordRequiredForJKSKeyStore("key")));
+                factory.setKeyStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("key")));
                 break;
         }
 
         if (!sslConfig.trustStorePath().isEmpty()) {
             factory.setTrustStorePath(sslConfig.trustStorePath());
-            factory.setTrustStoreType(sslConfig.trustStoreType().toString());
-            factory.setTrustStorePassword(password.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
+            factory.setTrustStoreType(sslConfig.trustStoreType().toString());            
+            factory.setTrustStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
         }
 
         factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
@@ -203,6 +199,11 @@ public class ConnectorFactory {
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
     }
 
+    /** Returns the secret password with the given name, or empty if the password name is null or empty */
+    private Optional<String> secret(String keyname) {
+        return Optional.of(keyname).filter(key -> !key.isEmpty()).map(secretStore::getSecret);
+    }
+    
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private Supplier<RuntimeException> passwordRequiredForJKSKeyStore(String type) {
         return () -> new RuntimeException(String.format("Password is required for JKS %s store", type));
