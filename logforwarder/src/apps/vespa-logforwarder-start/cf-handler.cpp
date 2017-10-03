@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cf-handler.h"
+#include <dirent.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <vespa/defaults.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
@@ -26,12 +30,12 @@ cfFilePath() {
     std::string path = vespa::Defaults::underVespaHome("var/db/vespa/splunk");
     DIR *dp = opendir(path.c_str());
     if (dp == NULL) {
-        if (errno != ENOTDIR || mkdir(path.c_str() != 0)) {
+        if (errno != ENOTDIR || mkdir(path.c_str(), 0755) != 0) {
             perror(path.c_str());
         }
     }
     if (dp != NULL) closedir(dp);
-    path += "/deploymentclient.conf;
+    path += "/deploymentclient.conf";
     return path;
 }
 }

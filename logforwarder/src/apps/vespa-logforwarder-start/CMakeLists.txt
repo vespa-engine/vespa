@@ -8,6 +8,5 @@ vespa_add_executable(vespa-logforwarder-start_app
     INSTALL bin
     DEPENDS
     config_cloudconfig
+    configdefinitions
 )
-vespa_generate_config(vespa-logforwarder-start_app logforwarder.def)
-install(FILES logforwarder.def RENAME cloud.config.logforwarder.def DESTINATION var/db/vespa/config_server/serverdb/classes)

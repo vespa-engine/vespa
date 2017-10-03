@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/config/config.h>
-#include "config-logforwarder.h"
+#include <vespa/config-logforwarder.h>
 
 using cloud::config::LogforwarderConfig;
 
