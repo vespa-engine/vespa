@@ -97,6 +97,7 @@ final class SynchronousRequestResponseHandler {
         for (Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
             discRequest.headers().add(entry.getKey(), entry.getValue());
         }
+        discRequest.context().putAll(request.getAttributes());
         return discRequest;
     }
 
