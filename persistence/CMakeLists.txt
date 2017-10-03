@@ -17,7 +17,6 @@ vespa_define_module(
     src/vespa/persistence
     src/vespa/persistence/conformancetest
     src/vespa/persistence/dummyimpl
-    src/vespa/persistence/proxy
     src/vespa/persistence/spi
 
     TEST_DEPENDS
@@ -26,7 +25,6 @@ vespa_define_module(
     TESTS
     src/tests
     src/tests/dummyimpl
-    src/tests/proxy
     src/tests/spi
 )
 
