@@ -43,7 +43,7 @@
     <preprocess:include file='config-models.xml' required='false' />
     <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
-    <component id="com.yahoo.vespa.service.monitor.SlobrokAndConfigIntersector" bundle="orchestrator" />
+    <component id="com.yahoo.vespa.service.monitor.ServiceMonitorImpl" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.status.ZookeeperStatusService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
