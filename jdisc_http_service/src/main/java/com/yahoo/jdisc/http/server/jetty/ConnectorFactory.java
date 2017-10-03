@@ -190,8 +190,9 @@ public class ConnectorFactory {
 
         if (!sslConfig.trustStorePath().isEmpty()) {
             factory.setTrustStorePath(sslConfig.trustStorePath());
-            factory.setTrustStoreType(sslConfig.trustStoreType().toString());            
-            factory.setTrustStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
+            factory.setTrustStoreType(sslConfig.trustStoreType().toString());      
+            if (sslConfig.useTrustStorePassword())
+                factory.setTrustStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
         }
 
         factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
