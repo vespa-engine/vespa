@@ -9,12 +9,14 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -137,6 +139,50 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                 .get(JobType.stagingTest);
         assertFalse(jobStatus.isSuccess());
         assertEquals(JobError.outOfCapacity, jobStatus.jobError().get());
+    }
+
+    @Test
+    public void testTriggerJobForApplication() throws Exception {
+        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+        BuildSystem buildSystem = tester.controller().applications().deploymentTrigger().buildSystem();
+        tester.containerTester().updateSystemVersion();
+
+        Application app = tester.createApplication();
+        try (Lock lock = tester.controller().applications().lock(app.id())) {
+            app = app.withProjectId(1);
+            tester.controller().applications().store(app, lock);
+        }
+
+        // Unknown application
+        assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/foo/application/bar",
+                                   new byte[0], Request.Method.POST),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application 'foo.bar'\"}");
+
+        // Invalid job
+        assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
+                                   app.id().tenant().value() + "/application/" + app.id().application().value(),
+                                   "invalid".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown job id 'invalid'\"}");
+
+        // component is triggered if no job is specified in request body
+        assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
+                                   app.id().tenant().value() + "/application/" + app.id().application().value(),
+                                   new byte[0], Request.Method.POST),
+                       200, "{\"message\":\"Triggered component for tenant1.application1\"}");
+
+        assertFalse(buildSystem.jobs().isEmpty());
+        assertEquals(JobType.component.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(1L, buildSystem.jobs().get(0).projectId());
+        buildSystem.takeJobsToRun();
+
+        // Triggers specific job when given
+        assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
+                                   app.id().tenant().value() + "/application/" + app.id().application().value(),
+                                   "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
+                       200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
+        assertFalse(buildSystem.jobs().isEmpty());
+        assertEquals(JobType.stagingTest.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(1L, buildSystem.jobs().get(0).projectId());
     }
     
     private void notifyCompletion(ApplicationId app, long projectId, JobType jobType, Optional<JobError> error) throws IOException {

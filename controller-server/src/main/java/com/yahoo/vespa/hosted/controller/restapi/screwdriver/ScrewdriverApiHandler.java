@@ -12,12 +12,14 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
+import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,13 +39,14 @@ import java.util.logging.Logger;
  * on completion.
  * 
  * @author bratseth
+ * @author mpolden
  */
+@SuppressWarnings("unused") // Handler
 public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(ScrewdriverApiHandler.class.getName());
 
     private final Controller controller;
-    // TODO: Remember to distinguish between PR jobs and component ones, by adding reports to the right jobs?
 
     public ScrewdriverApiHandler(Executor executor, AccessLog accessLog, Controller controller) {
         super(executor, accessLog);
@@ -51,24 +55,13 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
+        Method method = request.getMethod();
         try {
-            Method method = request.getMethod();
-            String path = request.getUri().getPath();
             switch (method) {
-                case GET: switch (path) {
-                    case "/screwdriver/v1/release/vespa": return vespaVersion();
-                    case "/screwdriver/v1/jobsToRun": return buildJobResponse(controller.applications().deploymentTrigger().buildSystem().jobs());
-                    default: return ErrorResponse.notFoundError(String.format( "No '%s' handler at '%s'", method, path));
-                }
-                case POST: switch (path) {
-                    case "/screwdriver/v1/jobreport": return handleJobReportPost(request);
-                    default: return ErrorResponse.notFoundError(String.format( "No '%s' handler at '%s'", method, path));
-                }
-                case DELETE: switch (path) {
-                    case "/screwdriver/v1/jobsToRun": return buildJobResponse(controller.applications().deploymentTrigger().buildSystem().takeJobsToRun());
-                    default: return ErrorResponse.notFoundError(String.format( "No '%s' handler at '%s'", method, path));
-                }
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+                case GET: return get(request);
+                case POST: return post(request);
+                case DELETE: return delete(request);
+                default: return ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
             }
         } catch (IllegalArgumentException|IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
@@ -77,7 +70,57 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
     }
-    
+
+    private HttpResponse get(HttpRequest request) {
+        Path path = new Path(request.getUri().getPath());
+        if (path.matches("/screwdriver/v1/release/vespa")) {
+            return vespaVersion();
+        }
+        if (path.matches("/screwdriver/v1/jobsToRun")) {
+            return buildJobs(controller.applications().deploymentTrigger().buildSystem().jobs());
+        }
+        return notFound(request);
+    }
+
+    private HttpResponse post(HttpRequest request) {
+        Path path = new Path(request.getUri().getPath());
+        if (path.matches("/screwdriver/v1/jobreport")) {
+            return notifyJobCompletion(request);
+        }
+        if (path.matches("/screwdriver/v1/trigger/tenant/{tenant}/application/{application}")) {
+            return trigger(request, path.get("tenant"), path.get("application"));
+        }
+        return notFound(request);
+    }
+
+    private HttpResponse delete(HttpRequest request) {
+        Path path = new Path(request.getUri().getPath());
+        if (path.matches("/screwdriver/v1/jobsToRun")) {
+            return buildJobs(controller.applications().deploymentTrigger().buildSystem().takeJobsToRun());
+        }
+        return notFound(request);
+    }
+
+    private HttpResponse trigger(HttpRequest request, String tenantName, String applicationName) {
+        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
+        Optional<Application> application = controller.applications().get(applicationId);
+        if (!application.isPresent()) {
+            return ErrorResponse.notFoundError("No such application '" + applicationId.toShortString() + "'");
+        }
+        JobType jobType = Optional.of(asString(request.getData()))
+                .filter(s -> !s.isEmpty())
+                .map(JobType::fromId)
+                .orElse(JobType.component);
+        // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
+        // front of the queue
+        controller.applications().deploymentTrigger().buildSystem().addJob(application.get().id(), jobType, true);
+
+        Slime slime = new Slime();
+        Cursor cursor = slime.setObject();
+        cursor.setString("message", "Triggered " + jobType.id() + " for " + application.get().id());
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse vespaVersion() {
         VespaVersion version = controller.versionStatus().version(controller.systemVersion());
         if (version == null) 
@@ -92,7 +135,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         
     }
 
-    private HttpResponse buildJobResponse(List<BuildJob> buildJobs) {
+    private HttpResponse buildJobs(List<BuildJob> buildJobs) {
         Slime slime = new Slime();
         Cursor buildJobArray = slime.setArray();
         for (BuildJob buildJob : buildJobs) {
@@ -103,7 +146,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse handleJobReportPost(HttpRequest request) {
+    private HttpResponse notifyJobCompletion(HttpRequest request) {
         controller.applications().notifyJobCompletion(toJobReport(toSlime(request.getData()).get()));
         return new StringResponse("ok");
     }
@@ -132,6 +175,19 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 report.field("buildNumber").asLong(),
                 jobError
         );
+    }
+
+    private static String asString(InputStream in) {
+        Scanner scanner = new Scanner(in).useDelimiter("\\A");
+        if (scanner.hasNext()) {
+            return scanner.next();
+        }
+        return "";
+    }
+
+    private static HttpResponse notFound(HttpRequest request) {
+        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+                                                         request.getUri().getPath()));
     }
 
 }
