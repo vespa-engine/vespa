@@ -65,10 +65,10 @@ public class AclMaintainer implements Runnable {
         final Command rollback = new PolicyCommand(Chain.INPUT, Action.ACCEPT);
         log.info("Start modifying ACL rules for " + containerName.asString());
         try {
-            log.info("Running ACL command '" + flush.asString() + "'");
+            log.debug("Running ACL command '" + flush.asString() + "'");
             dockerOperations.executeCommandInNetworkNamespace(containerName, flush.asArray(IPTABLES_COMMAND));
             acl.toCommands().forEach(command -> {
-                log.info("Running ACL command '" + command.asString() + "' for " + containerName.asString());
+                log.debug("Running ACL command '" + command.asString() + "' for " + containerName.asString());
                 dockerOperations.executeCommandInNetworkNamespace(containerName,
                                                                   command.asArray(IPTABLES_COMMAND));
             });
