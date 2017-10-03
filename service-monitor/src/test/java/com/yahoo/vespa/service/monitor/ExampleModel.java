@@ -26,7 +26,7 @@ public class ExampleModel {
 
     static final String CLUSTER_ID = "cluster-id";
     static final String SERVICE_NAME = "service-name";
-    static final String SERVICE_TYPE = "service-type";
+    static final String SERVICE_TYPE = SlobrokMonitor2.SLOBROK_SERVICE_TYPE;
     static final String CONFIG_ID = "config-id";
     static final String TENANT = "tenant";
     static final String APPLICATION_NAME = "application";

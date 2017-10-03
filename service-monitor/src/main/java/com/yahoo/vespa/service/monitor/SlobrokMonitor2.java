@@ -17,10 +17,12 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 public class SlobrokMonitor2 implements AutoCloseable {
+    public static final String SLOBROK_SERVICE_TYPE = "slobrok";
     public static final String SLOBROK_RPC_PORT_TAG = "rpc";
 
     private static final Logger log = Logger.getLogger(SlobrokMonitor2.class.getName());
@@ -53,6 +55,10 @@ public class SlobrokMonitor2 implements AutoCloseable {
         for (ApplicationInfo application : superModel.getAllApplicationInfos()) {
             for (HostInfo host : application.getModel().getHosts()) {
                 for (ServiceInfo service : host.getServices()) {
+                    if (!Objects.equals(service.getServiceType(), SLOBROK_SERVICE_TYPE)) {
+                        continue;
+                    }
+
                     for (PortInfo port : service.getPorts()) {
                         if (port.getTags().contains(SLOBROK_RPC_PORT_TAG)) {
                             Spec spec = new Spec(host.getHostname(), port.getPort());
