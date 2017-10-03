@@ -43,7 +43,9 @@ tcpNoDelay                          bool     default=true
 # Whether to enable SSL for this connector.
 ssl.enabled                         bool     default=false
 
-# The KeyDB key.
+# The name of the key to the password to the key store if in the secret store, if JKS is used.
+# Must be empty with PEM
+# By default this is also used to look up the password to the trust store. 
 ssl.keyDbKey                        string   default=""
 
 # Names of protocols to exclude.
@@ -67,10 +69,14 @@ ssl.keyStorePath                    string   default=""
 ssl.pemKeyStore.keyPath             string   default=""
 ssl.pemKeyStore.certificatePath     string   default=""
 
-ssl.trustStoreType                  enum { JKS }  default="JKS"
+ssl.trustStoreType                  enum { JKS }  default=JKS
 
 # JKS only - the path to the truststore.
 ssl.trustStorePath                  string   default=""
+
+# Whether we should use keyDbKey as password to the trust store (true, default),
+# or use no password with the trust store (false)
+ssl.useTrustStorePassword           bool   default=true
 
 # The algorithm name used by the KeyManagerFactory.
 ssl.sslKeyManagerFactoryAlgorithm   string   default="SunX509"

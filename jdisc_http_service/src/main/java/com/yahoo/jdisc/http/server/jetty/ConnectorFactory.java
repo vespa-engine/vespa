@@ -73,15 +73,12 @@ public class ConnectorFactory {
         ConnectorConfig.Ssl ssl = config.ssl();
 
         if (ssl.keyStoreType() == JKS) {
-            if (! ssl.pemKeyStore().keyPath().isEmpty()
-                    || ! ssl.pemKeyStore().certificatePath().isEmpty())
-                throw new IllegalArgumentException(
-                        "Setting pemKeyStore attributes does not make sense when keyStoreType==JKS.");
+            if (! ssl.pemKeyStore().keyPath().isEmpty() || ! ssl.pemKeyStore().certificatePath().isEmpty())
+                throw new IllegalArgumentException("pemKeyStore attributes can not be set when keyStoreType is JKS.");
         }
         if (ssl.keyStoreType() == PEM) {
             if (! ssl.keyStorePath().isEmpty())
-                throw new IllegalArgumentException(
-                        "Setting keyStorePath does not make sense when keyStoreType==PEM");
+                throw new IllegalArgumentException("keyStorePath can not be set when keyStoreType is PEM");
         }
     }
 
@@ -90,7 +87,7 @@ public class ConnectorFactory {
     }
 
     public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch, Map<Path, FileChannel> keyStoreChannels) {
-        final ServerConnector connector;
+        ServerConnector connector;
         if (connectorConfig.ssl().enabled()) {
             connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
                                                  newSslConnectionFactory(keyStoreChannels),
@@ -115,7 +112,7 @@ public class ConnectorFactory {
     }
 
     private HttpConnectionFactory newHttpConnectionFactory() {
-        final HttpConfiguration httpConfig = new HttpConfiguration();
+        HttpConfiguration httpConfig = new HttpConfiguration();
         httpConfig.setSendDateHeader(true);
         httpConfig.setSendServerVersion(false);
         httpConfig.setSendXPoweredBy(false);
@@ -133,7 +130,7 @@ public class ConnectorFactory {
     private SslConnectionFactory newSslConnectionFactory(Map<Path, FileChannel> keyStoreChannels) {
         Ssl sslConfig = connectorConfig.ssl();
 
-        final SslContextFactory factory = new SslContextFactory();
+        SslContextFactory factory = new SslContextFactory();
         switch (sslConfig.clientAuth()) {
             case NEED_AUTH:
                 factory.setNeedClientAuth(true);
@@ -148,21 +145,21 @@ public class ConnectorFactory {
         }
 
         if (!sslConfig.excludeProtocol().isEmpty()) {
-            final String[] prots = new String[sslConfig.excludeProtocol().size()];
+            String[] prots = new String[sslConfig.excludeProtocol().size()];
             for (int i = 0; i < prots.length; i++) {
                 prots[i] = sslConfig.excludeProtocol(i).name();
             }
             factory.setExcludeProtocols(prots);
         }
         if (!sslConfig.includeProtocol().isEmpty()) {
-            final String[] prots = new String[sslConfig.includeProtocol().size()];
+            String[] prots = new String[sslConfig.includeProtocol().size()];
             for (int i = 0; i < prots.length; i++) {
                 prots[i] = sslConfig.includeProtocol(i).name();
             }
             factory.setIncludeProtocols(prots);
         }
         if (!sslConfig.excludeCipherSuite().isEmpty()) {
-            final String[] ciphs = new String[sslConfig.excludeCipherSuite().size()];
+            String[] ciphs = new String[sslConfig.excludeCipherSuite().size()];
             for (int i = 0; i < ciphs.length; i++) {
                 ciphs[i] = sslConfig.excludeCipherSuite(i).name();
             }
@@ -170,36 +167,32 @@ public class ConnectorFactory {
 
         }
         if (!sslConfig.includeCipherSuite().isEmpty()) {
-            final String[] ciphs = new String[sslConfig.includeCipherSuite().size()];
+            String[] ciphs = new String[sslConfig.includeCipherSuite().size()];
             for (int i = 0; i < ciphs.length; i++) {
                 ciphs[i] = sslConfig.includeCipherSuite(i).name();
             }
             factory.setIncludeCipherSuites(ciphs);
-
         }
 
-
-        Optional<String> password = Optional.of(sslConfig.keyDbKey()).
-                filter(key -> !key.isEmpty()).map(secretStore::getSecret);
-
+        Optional<String> keyDbPassword = secret(sslConfig.keyDbKey());
         switch (sslConfig.keyStoreType()) {
             case PEM:
                 factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore(), keyStoreChannels));
-                if (password.isPresent()) {
+                if (keyDbPassword.isPresent())
                     log.warning("Encrypted PEM key stores are not supported.");
-                }
                 break;
             case JKS:
                 factory.setKeyStorePath(sslConfig.keyStorePath());
                 factory.setKeyStoreType(sslConfig.keyStoreType().toString());
-                factory.setKeyStorePassword(password.orElseThrow(passwordRequiredForJKSKeyStore("key")));
+                factory.setKeyStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("key")));
                 break;
         }
 
         if (!sslConfig.trustStorePath().isEmpty()) {
             factory.setTrustStorePath(sslConfig.trustStorePath());
-            factory.setTrustStoreType(sslConfig.trustStoreType().toString());
-            factory.setTrustStorePassword(password.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
+            factory.setTrustStoreType(sslConfig.trustStoreType().toString());      
+            if (sslConfig.useTrustStorePassword())
+                factory.setTrustStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
         }
 
         factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
@@ -207,6 +200,11 @@ public class ConnectorFactory {
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
     }
 
+    /** Returns the secret password with the given name, or empty if the password name is null or empty */
+    private Optional<String> secret(String keyname) {
+        return Optional.of(keyname).filter(key -> !key.isEmpty()).map(secretStore::getSecret);
+    }
+    
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private Supplier<RuntimeException> passwordRequiredForJKSKeyStore(String type) {
         return () -> new RuntimeException(String.format("Password is required for JKS %s store", type));
@@ -224,9 +222,7 @@ public class ConnectorFactory {
             KeyStoreReaderForPath(String pathString) {
                 Path path = Paths.get(pathString);
                 channel = Optional.ofNullable(keyStoreChannels.get(path));
-                readerForPath = new ReaderForPath(
-                        channel.map(this::getReader).orElseGet(() -> getReader(path)),
-                        path);
+                readerForPath = new ReaderForPath(channel.map(this::getReader).orElseGet(() -> getReader(path)), path);
             }
 
             private Reader getReader(FileChannel channel) {
@@ -275,12 +271,8 @@ public class ConnectorFactory {
         private final boolean tcpNoDelay;
         private final ServerSocketChannel channelOpenedByActivator;
 
-        private JDiscServerConnector(
-                final ConnectorConfig config,
-                final Metric metric,
-                final Server server,
-                final ServerSocketChannel channelOpenedByActivator,
-                final ConnectionFactory... factories) {
+        private JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, 
+                                     ServerSocketChannel channelOpenedByActivator, ConnectionFactory... factories) {
             super(server, factories);
             this.channelOpenedByActivator = channelOpenedByActivator;
             this.tcpKeepAlive = config.tcpKeepAliveEnabled();
@@ -304,8 +296,7 @@ public class ConnectorFactory {
             try {
                 socket.setKeepAlive(tcpKeepAlive);
                 socket.setTcpNoDelay(tcpNoDelay);
-            } catch (final SocketException ignored) {
-
+            } catch (SocketException ignored) {
             }
         }
 
@@ -350,7 +341,8 @@ public class ConnectorFactory {
             localPortField.set(this, localPort);
         }
 
-        private void uglySetChannel(ServerSocketChannel channelOpenedByActivator) throws NoSuchFieldException, IllegalAccessException {
+        private void uglySetChannel(ServerSocketChannel channelOpenedByActivator) throws NoSuchFieldException, 
+                                                                                         IllegalAccessException {
             Field acceptChannelField = ServerConnector.class.getDeclaredField("_acceptChannel");
             acceptChannelField.setAccessible(true);
             acceptChannelField.set(this, channelOpenedByActivator);
@@ -364,4 +356,5 @@ public class ConnectorFactory {
             return (JDiscServerConnector)request.getAttribute(REQUEST_ATTRIBUTE);
         }
     }
+
 }
