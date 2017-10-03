@@ -262,25 +262,26 @@ struct MyConfigSnapshot
     Schema _schema;
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
+    BootstrapConfig::SP  _bootstrap;
     MyConfigSnapshot(const Schema &schema,
                      const vespalib::string &cfgDir)
         : _schema(schema),
           _builder(_schema),
-          _cfg()
+          _cfg(),
+          _bootstrap()
     {
         DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig
             (new DocumenttypesConfig(_builder.getDocumenttypesConfig()));
         TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB());
-        BootstrapConfig::SP bootstrap
-            (new BootstrapConfig(1,
+        _bootstrap = std::make_shared<BootstrapConfig>(1,
                                  documenttypesConfig,
                                  _builder.getDocumentTypeRepo(),
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
-                                 tuneFileDocumentDB));
+                                 tuneFileDocumentDB);
         config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
-        mgr.forwardConfig(bootstrap);
+        mgr.forwardConfig(_bootstrap);
         mgr.nextGeneration(1);
         _cfg = mgr.getConfig();
     }
@@ -292,8 +293,8 @@ struct FixtureBase
     ExecutorThreadingService _writeService;
     ThreadStackExecutor _summaryExecutor;
     typename Traits::Config _cfg;
-        std::shared_ptr<BucketDBOwner> _bucketDB;
-        BucketDBHandler _bucketDBHandler;
+    std::shared_ptr<BucketDBOwner> _bucketDB;
+    BucketDBHandler _bucketDBHandler;
     typename Traits::Context _ctx;
     typename Traits::Schema _baseSchema;
     MyConfigSnapshot::UP _snapshot;
@@ -354,12 +355,8 @@ struct FixtureBase
         cmpResult.documenttypesChanged = true;
         cmpResult.documentTypeRepoChanged = true;
         MyDocumentDBReferenceResolver resolver;
-        IReprocessingTask::List tasks =
-                _subDb.applyConfig(*newCfg->_cfg,
-                        *_snapshot->_cfg,
-                        serialNum,
-                        ReconfigParams(cmpResult),
-                        resolver);
+        auto tasks = _subDb.applyConfig(newCfg->_bootstrap->getProtonConfig(), *newCfg->_cfg, *_snapshot->_cfg,
+                                        serialNum, ReconfigParams(cmpResult), resolver);
         _snapshot = std::move(newCfg);
         if (!tasks.empty()) {
             ReprocessingRunner runner;

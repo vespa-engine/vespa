@@ -100,6 +100,7 @@ public:
     bool canShrinkLidSpace() const override;
     size_t getEstimatedShrinkLidSpaceGain() const override;
     void shrinkLidSpace() override;
+    void reconfigure(const Config & config);
 
 private:
     bool useCache() const;

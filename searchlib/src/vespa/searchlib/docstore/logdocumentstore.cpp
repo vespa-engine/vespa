@@ -25,5 +25,11 @@ LogDocumentStore::~LogDocumentStore()
 {
 }
 
+void
+LogDocumentStore::reconfigure(const Config & config) {
+    DocumentStore::reconfigure(config);
+    _backingStore.reconfigure(config.getLogConfig());
+}
+
 } // namespace search
 

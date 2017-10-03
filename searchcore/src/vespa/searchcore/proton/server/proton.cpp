@@ -258,7 +258,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     switch (flush.strategy) {
     case ProtonConfig::Flush::MEMORY: {
         MemoryFlush::SP memoryFlush = std::make_shared<MemoryFlush>(
-                MemoryFlushConfigUpdater::convertConfig(flush.memory));
+                MemoryFlushConfigUpdater::convertConfig(flush.memory), fastos::ClockSystem::now());
         _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory);
         _diskMemUsageSampler->notifier().addDiskMemUsageListener(_memoryFlushConfigUpdater.get());
         strategy = memoryFlush;
@@ -518,7 +518,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                       const DocumentDBConfig::SP &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
-    const ProtonConfig &config(*bootstrapConfig->getProtonConfigSP());
+    const ProtonConfig &config(bootstrapConfig->getProtonConfig());
 
     std::lock_guard<std::shared_timed_mutex> guard(_mutex);
     DocTypeName docTypeName(docType.getName());
@@ -547,7 +547,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                       _queryLimiter,
                                       _clock,
                                       docTypeName,
-                                      config,
+                                      bootstrapConfig->getProtonConfigSP(),
                                       *this,
                                       *_warmupExecutor,
                                       *_summaryExecutor,

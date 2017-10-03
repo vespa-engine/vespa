@@ -6,15 +6,9 @@
 #include "logdatastore.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
+namespace common { class FileHeaderContext; }
 
 /**
  * Simple document store that contains serialized Document instances.
@@ -56,8 +50,7 @@ public:
                      transactionlog::SyncProxy &tlSyncer,
                      const IBucketizer::SP & bucketizer);
     ~LogDocumentStore();
-    LogDataStore::Config       & getLogConfig()       { return _backingStore.getConfig(); }
-    const LogDataStore::Config & getLogConfig() const { return _backingStore.getConfig(); }
+    void reconfigure(const Config & config);
 private:
     void compact(uint64_t syncToken) override       { _backingStore.compact(syncToken); }
     LogDataStore _backingStore;

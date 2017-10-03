@@ -5,8 +5,6 @@
 #include "simplereply.h"
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingcontext.h>
-#include <vespa/messagebus/routing/routingnodeiterator.h>
-#include <cstdlib>
 
 namespace mbus {
 

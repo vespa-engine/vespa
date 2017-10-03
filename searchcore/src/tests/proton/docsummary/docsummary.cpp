@@ -209,7 +209,7 @@ public:
         _configMgr.nextGeneration(0);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { abort(); }
         _ddb.reset(new DocumentDB("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
-                                  DocTypeName(docTypeName), ProtonConfig(), *this, _summaryExecutor, _summaryExecutor,
+                                  DocTypeName(docTypeName), std::make_shared<ProtonConfig>(), *this, _summaryExecutor, _summaryExecutor,
                                   _tls, _dummy, _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo)),
         _ddb->start();
@@ -233,11 +233,8 @@ public:
         typedef DocumentMetaStore::Result PutRes;
         IDocumentMetaStore &dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
         uint32_t docSize = 1;
-        PutRes putRes(dms.put(docId.getGlobalId(),
-                              BucketFactory::getBucketId(docId),
-                              Timestamp(0u),
-                              docSize,
-                              lid));
+        PutRes putRes(dms.put(docId.getGlobalId(), BucketFactory::getBucketId(docId),
+                              Timestamp(0u), docSize, lid));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().incSerialNum();
         _aw->put(serialNum, doc, lid, true, std::shared_ptr<IDestructorCallback>());
@@ -255,8 +252,7 @@ public:
         op.setDbDocumentId(dbdId);
         op.setPrevDbDocumentId(prevDbdId);
         _ddb->getFeedHandler().storeOperation(op);
-        SearchView *sv(dynamic_cast<SearchView *>
-                       (_ddb->getReadySubDB()->getSearchView().get()));
+        SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));
         if (sv != NULL) {
             // cf. FeedView::putAttributes()
             DocIdLimit &docIdLimit = sv->getDocIdLimit();

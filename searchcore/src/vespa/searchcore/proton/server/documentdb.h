@@ -96,6 +96,7 @@ private:
     DocumentDBConfig::SP          _initConfigSnapshot;
     SerialNum                     _initConfigSerialNum;
     vespalib::VarHolder<DocumentDBConfig::SP> _pendingConfigSnapshot;
+    vespalib::VarHolder<std::shared_ptr<ProtonConfig>> _pendingProtonConfigSnapshot;
     mutable std::mutex            _configMutex;  // protects _active* below.
     mutable std::condition_variable _configCV;
     DocumentDBConfig::SP          _activeConfigSnapshot;
@@ -139,11 +140,13 @@ private:
     void internalInit();
     void initManagers();
     void initFinish(DocumentDBConfig::SP configSnapshot);
-    void performReconfig(DocumentDBConfig::SP configSnapshot);
+    void performReconfig(std::shared_ptr<ProtonConfig> bootstrapConfig, DocumentDBConfig::SP configSnapshot);
     void closeSubDBs();
 
-    void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params);
-    void applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum);
+    void applySubDBConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
+                          SerialNum serialNum, const ReconfigParams &params);
+    void applyConfig(std::shared_ptr<ProtonConfig> bootstrapConfig,
+                     DocumentDBConfig::SP configSnapshot, SerialNum serialNum);
 
     /**
      * Save initial config if we don't have any saved config snapshots.
@@ -163,7 +166,7 @@ private:
      * Redo interrupted reprocessing if last entry in transaction log
      * is a config change.
      */
-    virtual void enterRedoReprocessState() override;
+    void enterRedoReprocessState() override;
     void enterApplyLiveConfigState();
 
     /**
@@ -238,7 +241,7 @@ public:
                matching::QueryLimiter & queryLimiter,
                const vespalib::Clock &clock,
                const DocTypeName &docTypeName,
-               const ProtonConfig &protonCfg,
+               const std::shared_ptr<ProtonConfig> &protonCfg,
                IDocumentDBOwner & owner,
                vespalib::ThreadExecutor & warmupExecutor,
                vespalib::ThreadStackExecutorBase & summaryExecutor,
@@ -391,17 +394,15 @@ public:
 
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
 
-    /**
-     * Implements IReplayConfig API.
-     */
-    virtual void replayConfig(SerialNum serialNum) override;
+    void replayConfig(SerialNum serialNum) override;
 
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
 
-    void newConfigSnapshot(DocumentDBConfig::SP snapshot);
+    void newConfigSnapshot(std::shared_ptr<ProtonConfig> bootstrapConfig, DocumentDBConfig::SP snapshot);
 
     // Implements DocumentDBConfigOwner
-    void reconfigure(const DocumentDBConfig::SP & snapshot) override;
+    void reconfigure(const std::shared_ptr<ProtonConfig> & bootstrapConfig,
+                     const DocumentDBConfig::SP & snapshot) override;
 
     int64_t getActiveGeneration() const;
 
@@ -432,7 +433,7 @@ public:
      *
      * Sync transaction log to syncTo.
      */
-    virtual void sync(SerialNum syncTo) override;
+    void sync(SerialNum syncTo) override;
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();
@@ -440,4 +441,3 @@ public:
 };
 
 } // namespace proton
-

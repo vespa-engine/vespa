@@ -179,6 +179,20 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache)
     return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 
+LogDocumentStore::Config
+deriveConfig(const ProtonConfig::Summary & summary) {
+    DocumentStore::Config config(getStoreConfig(summary.cache));
+    const ProtonConfig::Summary::Log & log(summary.log);
+    const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
+
+    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
+    LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
+                                   log.minfilesizefactor, log.numthreads, log.compact2activefile,
+                                   deriveCompression(log.compact.compression), fileConfig);
+    logConfig.disableCrcOnRead(chunk.skipcrconread);
+    return LogDocumentStore::Config(config, logConfig);
+}
+
 }
 
 SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
@@ -196,17 +210,8 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
       _tuneFileSummary(tuneFileSummary),
       _currentSerial(0u)
 {
-    DocumentStore::Config config(getStoreConfig(summary.cache));
-    const ProtonConfig::Summary::Log & log(summary.log);
-    const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
-
-    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
-    LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
-                                   log.minfilesizefactor, log.numthreads, log.compact2activefile,
-                                   deriveCompression(log.compact.compression), fileConfig);
-    logConfig.disableCrcOnRead(chunk.skipcrconread);
     _docStore.reset(new LogDocumentStore(executor, baseDir,
-                                         LogDocumentStore::Config(config, logConfig),
+                                         deriveConfig(summary),
                                          growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
                                          summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
 }
@@ -259,6 +264,11 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
     }
     ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore));
     return ret;
+}
+
+void SummaryManager::reconfigure(const ProtonConfig::Summary & summary) {
+    LogDocumentStore & docStore = dynamic_cast<LogDocumentStore &> (*_docStore);
+    docStore.reconfigure(deriveConfig(summary));
 }
 
 } // namespace proton

@@ -11,12 +11,10 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
                           const vespalib::string baseDir,
                           const vespalib::string &subDbName,
                           const DocTypeName &docTypeName,
-                          vespalib::ThreadStackExecutorBase &
-                          summaryExecutor,
+                          vespalib::ThreadStackExecutorBase &summaryExecutor,
                           const ProtonConfig::Summary protonSummaryCfg,
                           const search::TuneFileSummary &tuneFile,
-                          const search::common::FileHeaderContext &
-                          fileHeaderContext,
+                          const search::common::FileHeaderContext &fileHeaderContext,
                           search::transactionlog::SyncProxy &tlSyncer,
                           IBucketizerSP bucketizer,
                           std::shared_ptr<SummaryManager::SP> result)
@@ -53,6 +51,5 @@ SummaryManagerInitializer::run()
     int64_t elapsedTimeMs = (endTime - startTime).ms();
     EventLogger::loadDocumentStoreComplete(_subDbName, elapsedTimeMs);
 }
-
 
 } // namespace proton

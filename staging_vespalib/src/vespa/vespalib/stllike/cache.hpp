@@ -21,6 +21,13 @@ cache<P>::reserveElements(size_t elems) {
 }
 
 template< typename P >
+cache<P> &
+cache<P>::setCapacityBytes(size_t sz) {
+    _maxBytes = sz;
+    return *this;
+}
+
+template< typename P >
 void
 cache<P>::invalidate(const K & key) {
     vespalib::LockGuard guard(_hashLock);

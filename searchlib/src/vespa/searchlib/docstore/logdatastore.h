@@ -74,11 +74,10 @@ public:
 
         size_t getNumThreads() const { return _numThreads; }
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
-        void disableCrcOnRead(bool v) { _skipCrcOnRead = v; }
         bool compact2ActiveFile() const { return _compactToActiveFile; }
         const CompressionConfig & compactCompression() const { return _compactCompression; }
-
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
+        Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}
     private:
         size_t                      _maxFileSize;
         double                      _maxDiskBloatFactor;
@@ -201,18 +200,17 @@ public:
     static NameIdSet findIncompleteCompactedFiles(const NameIdSet & partList);
 
     NameIdSet getAllActiveFiles() const;
+    void reconfigure(const Config & config);
 
 private:
     class WrapVisitor;
     class WrapVisitorProgress;
     class FileChunkHolder;
 
-    void waitForUnblock();
-
     // Implements ISetLid API
     void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
 
-    void compactWorst();
+    void compactWorst(double bloatLimit, double spreadLimit);
     void compactFile(FileId chunkId);
 
     typedef attribute::RcuVector<uint64_t> LidInfoVector;
@@ -257,9 +255,6 @@ private:
         _active = fileId;
     }
 
-    bool isBucketSpreadTooLarge(double spread) const {
-        return (spread >= _config.getMaxBucketSpread());
-    }
     double getMaxBucketSpread() const;
 
     FileChunk::UP createReadOnlyFile(FileId fileId, NameId nameId);
@@ -272,13 +267,6 @@ private:
     void requireSpace(LockGuard guard, WriteableFileChunk & active);
     bool isReadOnly() const { return _readOnly; }
     void updateSerialNum();
-
-    bool isBloatOverLimit() const {
-        return isBloatOverLimit(getDiskBloat(), getDiskFootprint());
-    }
-    bool isBloatOverLimit(uint64_t bloat, uint64_t usage) const {
-        return (usage*_config.getMaxDiskBloatFactor() < bloat);
-    }
 
     size_t computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketizer, FileId fileId) const;
 
@@ -301,7 +289,7 @@ private:
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
-    std::pair<bool, FileId> findNextToCompact();
+    std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit);
     void incGeneration();
     bool canShrinkLidSpace(const vespalib::LockGuard &guard) const;
 
@@ -326,4 +314,3 @@ private:
 };
 
 } // namespace search
-

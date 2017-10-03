@@ -21,9 +21,4 @@ EmptyReply::getType() const {
     return 0;
 }
 
-Blob
-EmptyReply::encode() const {
-    return Blob(0);
-}
-
 } // namespace mbus

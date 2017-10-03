@@ -186,11 +186,11 @@ grow.add int default=1 restart
 grow.numdocs int default=10000 restart
 
 ## Control cache size in bytes.
-summary.cache.maxbytes long default=0 restart
+summary.cache.maxbytes long default=0
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
-summary.cache.allowvisitcaching bool default=true restart
+summary.cache.allowvisitcaching bool default=true
 
 ## Control number of cache entries preallocated.
 ## Default is no preallocation
@@ -198,69 +198,71 @@ summary.cache.allowvisitcaching bool default=true restart
 summary.cache.initialentries long default=0 restart
 
 ## Control compression type of the summary while in the cache.
-summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
+summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4
 
 ## Control compression level of the summary while in cache.
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
 ## 9 is a reasonable default for both
-summary.cache.compression.level int default=9 restart
+summary.cache.compression.level int default=9
 
 ## Control compression type of the summary while in memory during compaction
 ## NB So far only stragey=LOG honours it.
-summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
+summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD
 
 ## Control compression level of the summary while in memory during compaction
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
 ## 9 is a reasonable default for both
-summary.log.compact.compression.level int default=9 restart
+summary.log.compact.compression.level int default=9
 
 ## Control compression type of the summary
-summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
+summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD
 
 ## Control compression level of the summary
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
 ## 9 is a reasonable default for both. Going above for ZSTD can give an improvement,
 ## but is better done in conjunction with increasing chunk size.
-summary.log.chunk.compression.level int default=9 restart
+summary.log.chunk.compression.level int default=9
 
 ## Max size in bytes per chunk.
-summary.log.chunk.maxbytes int default=65536 restart
+summary.log.chunk.maxbytes int default=65536
 
 ## Max number of documents in each chunk.
 ## TODO Deprecated and ignored. Remove soon.
-summary.log.chunk.maxentries int default=256 restart
+summary.log.chunk.maxentries int default=256
 
 ## Skip crc32 check on read.
-summary.log.chunk.skipcrconread bool default=false restart
+summary.log.chunk.skipcrconread bool default=false
 
 ## Control how compation is done, write to the front or to new const file.
-summary.log.compact2activefile bool default=false restart
+summary.log.compact2activefile bool default=false
 
 ## Max size per summary file.
-summary.log.maxfilesize long default=1000000000 restart
+summary.log.maxfilesize long default=1000000000
 
 ## Max number of removes per summary file.
 ## TODO Deprecated and ignored. Remove soon.
-summary.log.maxentriesperfile long default=20000000 restart
+summary.log.maxentriesperfile long default=20000000
 
 ## Max disk bloat factor. This will trigger compacting.
-summary.log.maxdiskbloatfactor double default=0.1 restart
+summary.log.maxdiskbloatfactor double default=0.1
 
 ## Max bucket spread within a single summary file. This will trigger bucket order compacting.
 ## Only used when summary.compact2buckets is true.
-summary.log.maxbucketspread double default=2.5 restart
+summary.log.maxbucketspread double default=2.5
 
 ## If a file goes below this ratio compared to allowed max size it will be joined to the front.
 ## Value in the range [0.0, 1.0]
-summary.log.minfilesizefactor double default=0.2 restart
+summary.log.minfilesizefactor double default=0.2
 
 ## Number of threads used for compressing incomming documents/compacting.
 summary.log.numthreads int default=8 restart
 
 ## Control io options during flush of stored documents.
-summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
+summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
 
 ## Control io options during read of stored documents.
+## All summary.read options will take effect immediately on new files written.
+## On old files it will take effect either upon compact or on restart.
 summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
