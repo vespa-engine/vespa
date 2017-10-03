@@ -5,6 +5,8 @@ import com.google.common.annotations.Beta;
 import net.jcip.annotations.Immutable;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A request for use with {@link com.yahoo.application.container.JDisc#handleRequest(Request)}.
@@ -20,6 +22,7 @@ public class Request {
     private final String uri;
     private final byte[] body;
     private final Method method;
+    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
 
     /**
      * Creates a Request with an empty body.
@@ -96,6 +99,13 @@ public class Request {
      */
     public String getUri() {
         return uri;
+    }
+
+    /**
+     * @return a mutable attribute map for this request.
+     */
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override
