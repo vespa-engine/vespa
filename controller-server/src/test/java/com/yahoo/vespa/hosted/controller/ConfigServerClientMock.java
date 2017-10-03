@@ -215,6 +215,26 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
 
     @Override
     public NodeList getNodeList(DeploymentId deployment) throws IOException {
-        return new NodeList();
+        NodeList list = new NodeList();
+        list.nodes = new ArrayList<>();
+        NodeList.Node hostA = new NodeList.Node();
+        hostA.hostname = "hostA";
+        hostA.cost = 10;
+        hostA.flavor = "C-2B/24/500";
+        hostA.membership = new NodeList.Node.Membership();
+        hostA.membership.clusterId = "clusterA";
+        hostA.membership.clusterType = "container";
+        list.nodes.add(hostA);
+
+        NodeList.Node hostB = new NodeList.Node();
+        hostB.hostname = "hostB";
+        hostB.cost = 20;
+        hostB.flavor = "C-2C/24/500";
+        hostB.membership = new NodeList.Node.Membership();
+        hostB.membership.clusterId = "clusterB";
+        hostB.membership.clusterType = "content";
+        list.nodes.add(hostB);
+
+        return list;
     }
 }
