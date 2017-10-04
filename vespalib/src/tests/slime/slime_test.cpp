@@ -4,6 +4,7 @@ LOG_SETUP("slime_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/strfmt.h>
+#include <type_traits>
 
 using namespace vespalib::slime::convenience;
 
@@ -394,6 +395,52 @@ TEST("require that we can resolve to symbol table from a cursor") {
     EXPECT_TRUE(sb == slime.lookup(B));
     EXPECT_TRUE(sc == slime.lookup(C));
     EXPECT_TRUE(sd == slime.lookup(D));
+}
+
+template <typename T>
+void verify_cursor_ref(T &&) {
+    EXPECT_TRUE((std::is_same<Cursor&,T>::value));
+}
+
+template <typename T>
+void verify_inspector_ref(T &&) {
+    EXPECT_TRUE((std::is_same<Inspector&,T>::value));
+}
+
+TEST("require that top-level convenience accessors work as expected for objects") {
+    Slime object;
+    Cursor &c = object.setObject();
+    c.setLong("a", 10);
+    c.setLong("b", 20);
+    c.setLong("c", 30);
+    Symbol sym_b = object.lookup("b");
+    const Slime &const_object = object;
+    TEST_DO(verify_cursor_ref(object[0]));
+    TEST_DO(verify_inspector_ref(const_object[0]));
+    EXPECT_EQUAL(object[0].asLong(), 0);
+    EXPECT_EQUAL(object[sym_b].asLong(), 20);
+    EXPECT_EQUAL(object["c"].asLong(), 30);
+    EXPECT_EQUAL(const_object[0].asLong(), 0);
+    EXPECT_EQUAL(const_object[sym_b].asLong(), 20);
+    EXPECT_EQUAL(const_object["c"].asLong(), 30);
+}
+
+TEST("require that top-level convenience accessors work as expected for arrays") {
+    Slime array;
+    Cursor &c = array.setArray();
+    c.addLong(10);
+    c.addLong(20);
+    c.addLong(30);
+    Symbol sym_b(1);
+    const Slime &const_array = array;
+    TEST_DO(verify_cursor_ref(array[0]));
+    TEST_DO(verify_inspector_ref(const_array[0]));
+    EXPECT_EQUAL(array[0].asLong(), 10);
+    EXPECT_EQUAL(array[sym_b].asLong(), 0);
+    EXPECT_EQUAL(array["c"].asLong(), 0);
+    EXPECT_EQUAL(const_array[0].asLong(), 10);
+    EXPECT_EQUAL(const_array[sym_b].asLong(), 0);
+    EXPECT_EQUAL(const_array["c"].asLong(), 0);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
