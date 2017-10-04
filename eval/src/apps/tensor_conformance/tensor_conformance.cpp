@@ -250,8 +250,8 @@ void for_each_test(Input &in,
     while (in.obtain().size > 0) {
         Slime slime;
         if (JsonFormat::decode(in, slime)) {
-            bool is_test = slime.get()["expression"].valid();
-            bool is_summary = slime.get()["num_tests"].valid();
+            bool is_test = slime["expression"].valid();
+            bool is_summary = slime["num_tests"].valid();
             ASSERT_TRUE(is_test != is_summary);
             if (is_test) {
                 ++num_tests;
@@ -259,7 +259,7 @@ void for_each_test(Input &in,
                 handle_test(slime);
             } else {
                 got_summary = true;
-                ASSERT_EQUAL(slime.get()["num_tests"].asLong(), int64_t(num_tests));
+                ASSERT_EQUAL(slime["num_tests"].asLong(), int64_t(num_tests));
                 handle_summary(slime);
             }
         } else {
@@ -274,7 +274,7 @@ void for_each_test(Input &in,
 void evaluate(Input &in, Output &out) {
     auto handle_test = [&out](Slime &slime)
                        {
-                           insert_value(slime.get()["result"], "prod_cpp",
+                           insert_value(slime["result"], "prod_cpp",
                                    eval_expr(slime.get(), DefaultTensorEngine::ref()));
                            write_compact(slime, out);
                        };
@@ -300,10 +300,10 @@ void verify(Input &in, Output &out) {
     auto handle_test = [&out,&result_map](Slime &slime)
                        {
                            TensorSpec reference_result = eval_expr(slime.get(), SimpleTensorEngine::ref());
-                           for (const auto &result: extract_fields(slime.get()["result"])) {
+                           for (const auto &result: extract_fields(slime["result"])) {
                                ++result_map[result];
                                TEST_STATE(make_string("verifying result: '%s'", result.c_str()).c_str());
-                               if (!EXPECT_EQUAL(reference_result, extract_value(slime.get()["result"][result]))) {
+                               if (!EXPECT_EQUAL(reference_result, extract_value(slime["result"][result]))) {
                                    dump_test(slime.get());
                                }
                            }
