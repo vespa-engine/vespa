@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public class PolledBuildSystemTest {
 
     @Parameterized.Parameters(name = "jobType={0}")
-    public static Iterable<?> capacityConstrainedJobs() {
+    public static Iterable<? extends Object> capacityConstrainedJobs() {
         return Arrays.asList(JobType.systemTest, JobType.stagingTest);
     }
 
@@ -37,32 +37,26 @@ public class PolledBuildSystemTest {
         DeploymentTester tester = new DeploymentTester();
         BuildSystem buildSystem = new PolledBuildSystem(tester.controller(), new MockCuratorDb());
 
-        int project1 = 1;
-        int project2 = 2;
-        int project3 = 3;
+        int fooProjectId = 1;
+        int barProjectId = 2;
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();
-        ApplicationId app1 = tester.createAndDeploy("app1", project1, applicationPackage).id();
-        ApplicationId app2 = tester.createAndDeploy("app2", project2, applicationPackage).id();
-        ApplicationId app3 = tester.createAndDeploy("app3", project3, applicationPackage).id();
+        ApplicationId foo = tester.createAndDeploy("app1", fooProjectId, applicationPackage).id();
+        ApplicationId bar = tester.createAndDeploy("app2", barProjectId, applicationPackage).id();
 
         // Trigger jobs in capacity constrained environment
-        buildSystem.addJob(app1, jobType, false);
-        buildSystem.addJob(app2, jobType, false);
-        buildSystem.addJob(app3, jobType, false);
+        buildSystem.addJob(foo, jobType, false);
+        buildSystem.addJob(bar, jobType, false);
 
-        // A limited number of jobs are offered at a time:
-        // First offer
+        // Capacity constrained jobs are returned one a at a time
         List<BuildJob> nextJobs = buildSystem.takeJobsToRun();
-        assertEquals(2, nextJobs.size());
-        assertEquals(project1, nextJobs.get(0).projectId());
-        assertEquals(project2, nextJobs.get(1).projectId());
+        assertEquals(1, nextJobs.size());
+        assertEquals(fooProjectId, nextJobs.get(0).projectId());
 
-        // Second offer
         nextJobs = buildSystem.takeJobsToRun();
         assertEquals(1, nextJobs.size());
-        assertEquals(project3, nextJobs.get(0).projectId());
+        assertEquals(barProjectId, nextJobs.get(0).projectId());
     }
 
 }
