@@ -45,8 +45,8 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
         bucket.toString().c_str(),
         deviceIndex, targetDisk);
 
-    spi::Bucket from(bucket, spi::PartitionId(deviceIndex));
-    spi::Bucket to(bucket, spi::PartitionId(targetDisk));
+    spi::Bucket from(document::Bucket(document::BucketSpace::placeHolder(), bucket), spi::PartitionId(deviceIndex));
+    spi::Bucket to(document::Bucket(document::BucketSpace::placeHolder(), bucket), spi::PartitionId(targetDisk));
 
     spi::Result result(
             _provider.move(from, spi::PartitionId(targetDisk), context));

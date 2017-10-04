@@ -5,11 +5,13 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/multioperation.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/persistencetestutils.h>
 
 using document::DocumentTypeRepo;
 using document::TestDocRepo;
+using storage::spi::test::makeBucket;
 
 namespace storage {
 
@@ -30,7 +32,7 @@ public:
         spi::Context context(spi::LoadType(0, "default"), spi::Priority(0),
                              spi::Trace::TraceLevel(0));
         getPersistenceProvider().createBucket(
-                spi::Bucket(document::BucketId(16, 4), spi::PartitionId(0)),
+                makeBucket(document::BucketId(16, 4)),
                 context);
     }
 

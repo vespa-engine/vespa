@@ -67,7 +67,7 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
     if (_calc->nodeRetired() && !isActive) {
         return;
     }
-    const bool shouldBeReady = _calc->shouldBeReady(bucket);
+    const bool shouldBeReady = _calc->shouldBeReady(document::Bucket(document::BucketSpace::placeHolder(), bucket));
     const bool wantReady = shouldBeReady || isActive;
     LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
               bucket.toString().c_str(), bool2str(shouldBeReady), bool2str(isActive));
@@ -213,7 +213,7 @@ BucketMoveJob::maybeCancelMover(DocumentBucketMover &mover)
     if (!mover.bucketDone()) {
         bool ready = mover.getSource() == &_ready;
         if (isBlocked() ||
-            _calc->shouldBeReady(mover.getBucket()) == ready) {
+            _calc->shouldBeReady(document::Bucket(document::BucketSpace::placeHolder(), mover.getBucket())) == ready) {
             mover.cancel();
         }
     }

@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/persistence/spi/test.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
+
+using storage::spi::test::makeBucket;
 
 namespace storage {
 
@@ -61,7 +64,7 @@ struct Fixture {
     ~Fixture() {}
 
     void perform_spi_operation() {
-        errorWrapper.getBucketInfo(spi::Bucket(document::BucketId(16, 1234), spi::PartitionId(0)));
+        errorWrapper.getBucketInfo(makeBucket(document::BucketId(16, 1234)));
     }
 
     void check_no_listener_invoked_for_error(MockErrorListener& listener, spi::Result::ErrorType error) {

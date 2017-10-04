@@ -210,7 +210,8 @@ private:
 void
 MemFilePersistenceProvider::handleBucketCorruption(const FileSpecification& file) const
 {
-    spi::Bucket fixBucket(file.getBucketId(),
+    spi::Bucket fixBucket(document::Bucket(document::BucketSpace::placeHolder(),
+                                           file.getBucketId()),
                           spi::PartitionId(file.getDirectory().getIndex()));
 
     // const_cast is nasty, but maintain() must necessarily be able to

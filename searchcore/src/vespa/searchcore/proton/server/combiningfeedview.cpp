@@ -273,17 +273,18 @@ CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
 bool
 CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
 {
+    document::Bucket dbucket(document::BucketSpace::placeHolder(), bucket);
     LOG(debug,
         "shouldBeReady(%s): forceReady(%s), clusterUp(%s), calcReady(%s)",
         bucket.toString().c_str(),
         (_forceReady ? "true" : "false"),
         (_clusterUp ? "true" : "false"),
         (_calc.get() != NULL ?
-         (_calc->shouldBeReady(bucket) ? "true" : "false") : "null"));
+         (_calc->shouldBeReady(dbucket) ? "true" : "false") : "null"));
     const documentmetastore::IBucketHandler *readyMetaStore =
         _metaStores[getReadyFeedViewId()];
     bool isActive = readyMetaStore->getBucketDB().takeGuard()->isActiveBucket(bucket);
-    return _forceReady || isActive || _calc->shouldBeReady(bucket);
+    return _forceReady || isActive || _calc->shouldBeReady(dbucket);
 }
 
 } // namespace proton

@@ -19,6 +19,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/result.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/server/documentretriever.h>
@@ -69,6 +70,7 @@ using storage::spi::Bucket;
 using storage::spi::GetResult;
 using storage::spi::PartitionId;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucket;
 using vespalib::make_string;
 using vespalib::string;
 using namespace document::config_builder;
@@ -324,12 +326,12 @@ TEST_F("require that document retriever can retrieve document meta data",
 TEST_F("require that document retriever can retrieve bucket meta data",
        Fixture) {
     DocumentMetaData::Vector result;
-    f._retriever->getBucketMetaData(Bucket(f.bucket_id, PartitionId(0)), result);
+    f._retriever->getBucketMetaData(makeBucket(f.bucket_id, PartitionId(0)), result);
     ASSERT_EQUAL(1u, result.size());
     EXPECT_EQUAL(f.lid, result[0].lid);
     EXPECT_EQUAL(f.timestamp, result[0].timestamp);
     result.clear();
-    f._retriever->getBucketMetaData(Bucket(BucketId(f.bucket_id.getId() + 1),
+    f._retriever->getBucketMetaData(makeBucket(BucketId(f.bucket_id.getId() + 1),
                                          PartitionId(0)), result);
     EXPECT_EQUAL(0u, result.size());
 }

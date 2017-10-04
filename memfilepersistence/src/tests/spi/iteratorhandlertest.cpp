@@ -4,7 +4,10 @@
 #include <tests/spi/memfiletestutils.h>
 #include <tests/spi/simulatedfailurefile.h>
 #include <tests/spi/options_builder.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/document/select/parser.h>
+
+using storage::spi::test::makeBucket;
 
 namespace storage {
 namespace memfile {
@@ -119,7 +122,7 @@ IteratorHandlerTest::createSelection(const std::string& docSel) const
 void
 IteratorHandlerTest::testCreateIterator()
 {
-    spi::Bucket b(BucketId(16, 1234), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 1234)));
 
     spi::CreateIteratorResult iter1(create(b, createSelection("true")));
     CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1), iter1.getIteratorId());
@@ -287,7 +290,7 @@ IteratorHandlerTest::testSomeSlotsRemovedBetweenInvocations()
 {
     std::vector<DocAndTimestamp> docs = feedDocs(100, 4096, 4096);
 
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     spi::Selection sel(createSelection("true"));
 
     spi::CreateIteratorResult iter(create(b, sel));
@@ -327,7 +330,7 @@ IteratorHandlerTest::testAllSlotsRemovedBetweenInvocations()
 {
     std::vector<DocAndTimestamp> docs = feedDocs(100, 4096, 4096);
 
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     spi::Selection sel(createSelection("true"));
 
     spi::CreateIteratorResult iter(create(b, sel));
@@ -359,7 +362,7 @@ IteratorHandlerTest::testAllSlotsRemovedBetweenInvocations()
 void
 IteratorHandlerTest::testIterateMetadataOnly()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     std::vector<DocAndTimestamp> docs = feedDocs(10);
 
     CPPUNIT_ASSERT(
@@ -415,7 +418,7 @@ IteratorHandlerTest::testIterateHeadersOnly()
         clearBody(*docs[i].first);
     }
 
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     spi::Selection sel(createSelection("true"));
 
     spi::CreateIteratorResult iter(create(b, sel, spi::NEWEST_DOCUMENT_ONLY,
@@ -436,7 +439,7 @@ IteratorHandlerTest::testIterateLargeDocument()
     std::vector<DocAndTimestamp> largedoc;
     largedoc.push_back(docs.back());
 
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     spi::Selection sel(createSelection("true"));
 
     spi::CreateIteratorResult iter(create(b, sel));
@@ -455,7 +458,7 @@ IteratorHandlerTest::testDocumentsRemovedBetweenInvocations()
     int docCount = 100;
     std::vector<DocAndTimestamp> docs = feedDocs(docCount);
 
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     spi::Selection sel(createSelection("true"));
 
     spi::CreateIteratorResult iter(create(b, sel));
@@ -497,7 +500,7 @@ IteratorHandlerTest::doTestUnrevertableRemoveBetweenInvocations(bool includeRemo
     int docCount = 100;
     std::vector<DocAndTimestamp> docs = feedDocs(docCount);
 
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     spi::Selection sel(createSelection("true"));
     spi::CreateIteratorResult iter(
             create(b, sel,
@@ -591,7 +594,7 @@ IteratorHandlerTest::testMatchTimestampRangeDocAltered()
                      OperationHandler::PERSIST_REMOVE_IF_FOUND));
     flush(bucketId);
 
-    spi::Bucket b(bucketId, spi::PartitionId(0));
+    spi::Bucket b(makeBucket(bucketId));
 
     {
         spi::Selection sel(createSelection("true"));
@@ -696,7 +699,7 @@ IteratorHandlerTest::testMatchTimestampRangeDocAltered()
 void
 IteratorHandlerTest::testIterateAllVersions()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     std::vector<DocAndTimestamp> docs;
 
     Document::SP originalDoc(createRandomDocumentAtLocation(
@@ -733,7 +736,7 @@ IteratorHandlerTest::testIterateAllVersions()
 void
 IteratorHandlerTest::testFieldSetFiltering()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     Document::SP doc(createRandomDocumentAtLocation(
                              4, 1001, 110, 110));
     doc->setValue(doc->getField("headerval"), document::IntFieldValue(42));
@@ -760,7 +763,7 @@ IteratorHandlerTest::testFieldSetFiltering()
 void
 IteratorHandlerTest::testIteratorInactiveOnException()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     feedDocs(10);
 
     env()._cache.clear();
@@ -787,7 +790,7 @@ IteratorHandlerTest::testIteratorInactiveOnException()
 void
 IteratorHandlerTest::testDocsCachedBeforeDocumentSelection()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     std::vector<DocAndTimestamp> docs = feedDocs(100, 4096, 4096);
 
     env()._cache.clear();
@@ -816,7 +819,7 @@ IteratorHandlerTest::testDocsCachedBeforeDocumentSelection()
 void
 IteratorHandlerTest::testTimestampRangeLimitedPrefetch()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     // Feed docs with timestamp range [1000, 1100)
     feedDocs(100, 4096, 4096);
 
@@ -904,7 +907,7 @@ IteratorHandlerTest::testCachePrefetchRequirements()
 void
 IteratorHandlerTest::testBucketEvictedFromCacheOnIterateException()
 {
-    spi::Bucket b(BucketId(16, 4), spi::PartitionId(0));
+    spi::Bucket b(makeBucket(BucketId(16, 4)));
     feedDocs(10);
     env()._cache.clear();
 

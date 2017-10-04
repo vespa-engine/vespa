@@ -32,6 +32,11 @@ public:
             return std::hash<Type>()(bs.getId());
         }
     };
+
+    /*
+     * Temporary placeholder value while wiring in use of BucketSpace in APIs.
+     */
+    static BucketSpace placeHolder() { return BucketSpace(0); }
 private:
     Type _id;
 };

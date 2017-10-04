@@ -52,7 +52,7 @@ AbstractPersistenceProvider::getModifiedBuckets() const
 Result
 AbstractPersistenceProvider::move(const Bucket& source, PartitionId target, Context& context)
 {
-    spi::Bucket to(source.getBucketId(), spi::PartitionId(target));
+    spi::Bucket to(source.getBucket(), spi::PartitionId(target));
 
     return join(source, source, to, context);
 }

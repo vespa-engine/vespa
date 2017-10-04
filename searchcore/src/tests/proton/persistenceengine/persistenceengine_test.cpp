@@ -2,6 +2,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/persistence/spi/documentselection.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
@@ -35,6 +36,7 @@ using storage::spi::Result;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
+using storage::spi::test::makeBucket;
 using namespace proton;
 using namespace vespalib;
 
@@ -378,8 +380,8 @@ BucketId bckId1(1);
 BucketId bckId2(2);
 BucketId bckId3(3);
 Bucket bucket0;
-Bucket bucket1(bckId1, partId);
-Bucket bucket2(bckId2, partId);
+Bucket bucket1(makeBucket(bckId1, partId));
+Bucket bucket2(makeBucket(bckId2, partId));
 BucketChecksum checksum1(1);
 BucketChecksum checksum2(2);
 BucketChecksum checksum3(1+2);
