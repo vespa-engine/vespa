@@ -3,7 +3,6 @@ vespa_add_library(persistence
     SOURCES
     $<TARGET_OBJECTS:persistence_dummyimpl>
     $<TARGET_OBJECTS:persistence_spi>
-    $<TARGET_OBJECTS:persistence_proxy>
     INSTALL lib64
     DEPENDS
 )

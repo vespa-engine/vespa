@@ -18,7 +18,6 @@
 #include "forcelink.h"
 #include <vespa/storageserver/app/memfileservicelayerprocess.h>
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
-#include <vespa/storageserver/app/rpcservicelayerprocess.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
 #include <iostream>
@@ -43,8 +42,6 @@ Process::UP createProcess(vespalib::stringref configId) {
             return Process::UP(new MemFileServiceLayerProcess(configId));
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::DUMMY:
             return Process::UP(new DummyServiceLayerProcess(configId));
-        case vespa::config::content::core::StorServerConfig::PersistenceProvider::RPC:
-            return Process::UP(new RpcServiceLayerProcess(configId));
         default:
             throw vespalib::IllegalStateException(
                     "Unknown persistence provider.", VESPA_STRLOC);
