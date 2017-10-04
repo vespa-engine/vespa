@@ -7,7 +7,6 @@
     <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
   </parent>
-  <groupId>com.yahoo.vespa</groupId>
   <artifactId>configgen</artifactId>
   <packaging>jar</packaging>
   <version>6-SNAPSHOT</version>
@@ -26,10 +25,6 @@
     <dependency>
       <groupId>org.scala-lang.modules</groupId>
       <artifactId>scala-xml_${scala.major-version}</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-parser-combinators_${scala.major-version}</artifactId>
     </dependency>
   </dependencies>
   <build>

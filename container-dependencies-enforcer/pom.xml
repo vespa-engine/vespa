@@ -123,7 +123,6 @@
                                                 <include>org.javassist:javassist:[3.20.0-GA]:jar:provided</include>
                                                 <include>org.json:json:[20090211]:jar:provided</include>
                                                 <include>org.jvnet.mimepull:mimepull:[1.9.6]:jar:provided</include>
-                                                <include>org.scala-lang.modules:scala-parser-combinators_2.11:[1.0.1]:jar:provided</include>
                                                 <include>org.slf4j:jcl-over-slf4j:[1.7.5]:jar:provided</include>
                                                 <include>org.slf4j:log4j-over-slf4j:[1.7.5]:jar:provided</include>
                                                 <include>org.slf4j:slf4j-api:[1.7.5]:jar:provided</include>
