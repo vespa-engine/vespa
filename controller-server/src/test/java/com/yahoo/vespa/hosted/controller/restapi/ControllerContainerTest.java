@@ -49,8 +49,6 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerClientMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.cost.MockInsightBackend'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.cost.CostMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.MockMetricsService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>" +

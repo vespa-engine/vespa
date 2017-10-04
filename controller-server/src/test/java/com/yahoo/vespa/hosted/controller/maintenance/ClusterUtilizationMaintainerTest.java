@@ -32,7 +32,7 @@ public class ClusterUtilizationMaintainerTest {
 
         deployment = tester.controller().applications().get(app).get().deployments().values().stream().findAny().get();
         Assert.assertEquals(1, deployment.clusterUtils().size());
-        Assert.assertEquals(55.54, deployment.clusterUtils().get(ClusterSpec.Id.from("default")).getCpu(), Double.MIN_VALUE);
+        Assert.assertEquals(0.5554, deployment.clusterUtils().get(ClusterSpec.Id.from("default")).getCpu(), Double.MIN_VALUE);
     }
 
 }

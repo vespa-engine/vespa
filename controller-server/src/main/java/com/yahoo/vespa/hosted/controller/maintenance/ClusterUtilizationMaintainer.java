@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,13 +30,13 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     }
 
     private Map<ClusterSpec.Id, ClusterUtilization> getUpdatedClusterUtilizations(ApplicationId app, Zone zone) {
-        List<MetricsService.ClusterCostMetrics> systemMetrics = controller.metricsService().getClusterCostMetrics(app, zone);
+        Map<String, MetricsService.SystemMetrics> systemMetrics = controller.metricsService().getSystemMetrics(app, zone);
 
         Map<ClusterSpec.Id, ClusterUtilization> utilizationMap = new HashMap<>();
-        for (MetricsService.ClusterCostMetrics clusterCostMetrics : systemMetrics) {
-            MetricsService.CostMetrics systemMetric = clusterCostMetrics.costMetrics();
+        for (Map.Entry<String, MetricsService.SystemMetrics> metrics : systemMetrics.entrySet()) {
+            MetricsService.SystemMetrics systemMetric = metrics.getValue();
             ClusterUtilization utilization = new ClusterUtilization(systemMetric.memUtil() / 100, systemMetric.cpuUtil() / 100, systemMetric.diskUtil(), 0);
-            utilizationMap.put(new ClusterSpec.Id(clusterCostMetrics.clusterId()), utilization);
+            utilizationMap.put(new ClusterSpec.Id(metrics.getKey()), utilization);
         }
 
         return utilizationMap;
