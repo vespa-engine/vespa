@@ -1096,7 +1096,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
         object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
         object.setLong("tco", (int)clusterCost.getTco());
-        object.setString("flavor", clusterCost.getClusterInfo().getClusterType().name());
+        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
         object.setLong("waste", (int)clusterCost.getWaste());
         object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
         Cursor utilObject = object.setObject("util");
@@ -1105,10 +1105,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         utilObject.setDouble("disk", clusterCost.getResultUtilization().getDisk());
         utilObject.setDouble("diskBusy", clusterCost.getResultUtilization().getDiskBusy());
         Cursor usageObject = object.setObject("usage");
-        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu() * 100);
-        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory() * 100);
-        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk() * 100);
-        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy() * 100);
+        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu());
+        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory());
+        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk());
+        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy());
         Cursor hostnamesArray = object.setArray("hostnames");
         for (String hostname : clusterCost.getClusterInfo().getHostnames())
             hostnamesArray.addString(hostname);

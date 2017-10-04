@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -14,6 +16,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
@@ -30,6 +35,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -162,7 +171,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.GET),
                               new File("application.json"));
         // GET an application deployment
-        addMockObservedApplicationCost("tenant1", "application1", "default");
+        addMockObservedApplicationCost(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", "", Request.Method.GET),
                               new File("deployment.json"));
         // POST a 'restart application' command
@@ -692,32 +701,48 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // system-test
         String testPath = String.format("/application/v4/tenant/%s/application/%s/environment/test/region/us-east-1/instance/default",
-                                        application.tenant().value(), application.application().value());
+                application.tenant().value(), application.application().value());
         tester.assertResponse(request(testPath,
-                                      deployData,
-                                      Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
-                              new File("deploy-result.json"));
+                deployData,
+                Request.Method.POST,
+                athensScrewdriverDomain, "screwdriveruser1"),
+                new File("deploy-result.json"));
         tester.assertResponse(request(testPath,
-                                      "",
-                                      Request.Method.DELETE),
-                              "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
+                "",
+                Request.Method.DELETE),
+                "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.systemTest);
 
         // staging
         String stagingPath = String.format("/application/v4/tenant/%s/application/%s/environment/staging/region/us-east-3/instance/default",
-                                           application.tenant().value(), application.application().value());
+                application.tenant().value(), application.application().value());
         tester.assertResponse(request(stagingPath,
-                                      deployData,
-                                      Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
-                              new File("deploy-result.json"));
+                deployData,
+                Request.Method.POST,
+                athensScrewdriverDomain, "screwdriveruser1"),
+                new File("deploy-result.json"));
         tester.assertResponse(request(stagingPath,
-                                      "",
-                                      Request.Method.DELETE),
-                              "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
+                "",
+                Request.Method.DELETE),
+                "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
 
-    private void addMockObservedApplicationCost(String tenant, String application, String instance) {}
+    private void addMockObservedApplicationCost(ContainerControllerTester controllerTester) {
+        for (Application application : controllerTester.controller().applications().asList()) {
+            for (Deployment deployment : application.deployments().values()) {
+                Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
+                List<String> hostnames = new ArrayList<>();
+                hostnames.add("host1");
+                hostnames.add("host2");
+                clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, ClusterSpec.Type.content, hostnames));
+                Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
+                clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3,0.6,0.4,0.3));
+                deployment = deployment.withClusterInfo(clusterInfo);
+                deployment = deployment.withClusterUtils(clusterUtils);
+                application = application.with(deployment);
+                controllerTester.controller().applications().store(application, controllerTester.controller().applications().lock(application.id()));
+            }
+        }
+    }
 }
