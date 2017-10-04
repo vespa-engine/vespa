@@ -65,7 +65,7 @@ object CloudSubscriberFactory {
     override def waitNextGeneration() = {
       require(!handles.isEmpty)
 
-      /* Catch and ignore config exceptions due to missing config values for parameters that do
+      /* Catch and just log config exceptions due to missing config values for parameters that do
        * not have a default value. These exceptions occur when the user has removed a component
        * from services.xml, and the component takes a config that has parameters without a
        * default value in the def-file. There is a new 'components' config underway, where the
@@ -79,7 +79,9 @@ object CloudSubscriberFactory {
         } catch {
           case e: IllegalArgumentException =>
             numExceptions += 1
-            log.log(LogLevel.DEBUG, "Ignoring exception from the config library: " + e.getMessage + "\n" + e.getStackTrace)
+            log.warning("Got exception from the config system (please ignore the exception if you just removed "
+                          + "a component from your application that used the mentioned config): "
+                          + e.getMessage + "\n" + e.getStackTrace)
             if (numExceptions >= 5)
               throw new IllegalArgumentException("Failed retrieving the next config generation.", e)
         }
