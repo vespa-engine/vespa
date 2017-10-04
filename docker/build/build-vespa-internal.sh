@@ -13,6 +13,12 @@ CALLER_GID=$3
 
 cd /vespa
 ./dist.sh ${VESPA_VERSION}
+
+yum -y install epel-release
+yum -y install centos-release-scl
+yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+
+yum-builddep -y ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 rpmbuild -bb ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 chown ${CALLER_UID}:${CALLER_GID} ~/rpmbuild/RPMS/x86_64/*.rpm
 mv ~/rpmbuild/RPMS/x86_64/*.rpm /vespa/docker 
