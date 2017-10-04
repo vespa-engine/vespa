@@ -8,7 +8,8 @@ public interface BuildService {
 
     /**
      * Enqueue a job defined by "buildJob in an external build system, and return the outcome of the enqueue request.
-     * This method should return @false only when a retry is in order, and @true otherwise, e.g., on succes, or for invalid jobs.
+     * This method should return @false only when a retry is in order, and @true otherwise, e.g., on success, or for
+     * invalid jobs.
      */
     boolean trigger(BuildJob buildJob);
 
