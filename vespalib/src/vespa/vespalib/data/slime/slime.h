@@ -130,6 +130,12 @@ public:
 
     Inspector &get() const { return _root.get(); }
 
+    template <typename ID>
+    Inspector &operator[](ID id) const { return get()[id]; }
+
+    template <typename ID>
+    Cursor &operator[](ID id) { return get()[id]; }
+
     Cursor &setNix() {
         return _root.set(slime::NixValueFactory());
     }
