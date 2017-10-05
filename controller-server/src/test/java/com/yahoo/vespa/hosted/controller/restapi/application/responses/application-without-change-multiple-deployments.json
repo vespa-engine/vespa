@@ -1,0 +1,204 @@
+{
+  "deploymentJobs": [
+    {
+      "type": "component",
+      "success": true,
+      "lastCompleted": {
+        "version": "(ignore)",
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "version": "(ignore)",
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "system-test",
+      "success": true,
+      "lastTriggered": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "staging-test",
+      "success": true,
+      "lastTriggered": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "production-us-west-1",
+      "success": true,
+      "lastTriggered": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "production-us-east-3",
+      "success": true,
+      "lastTriggered": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "at": "(ignore)"
+      }
+    }
+  ],
+  "compileVersion": "(ignore)",
+  "globalRotations": [
+    "http://fake-global-rotation-tenant1.application1"
+  ],
+  "instances": [
+    {
+      "environment": "prod",
+      "region": "us-west-1",
+      "instance": "default",
+      "bcpStatus": {
+        "rotationStatus": "IN"
+      },
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default"
+    },
+    {
+      "environment": "prod",
+      "region": "us-east-3",
+      "instance": "default",
+      "bcpStatus": {
+        "rotationStatus": "UNKNOWN"
+      },
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default"
+    }
+  ],
+  "metrics": {
+    "queryServiceQuality": 0.5,
+    "writeServiceQuality": 0.7
+  }
+}

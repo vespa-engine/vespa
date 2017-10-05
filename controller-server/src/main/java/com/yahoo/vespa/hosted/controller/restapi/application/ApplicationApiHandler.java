@@ -62,6 +62,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.common.NotFoundCheckedException;
@@ -97,6 +98,7 @@ import java.util.logging.Level;
  * on hosted Vespa.
  * 
  * @author bratseth
+ * @author mpolden
  */
 @SuppressWarnings("unused") // created by injection
 public class ApplicationApiHandler extends LoggingRequestHandler {
@@ -123,7 +125,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 case PUT: return handlePUT(request);
                 case POST: return handlePOST(request);
                 case DELETE: return handleDELETE(request);
-                case OPTIONS: return handleOPTIONS(request);
+                case OPTIONS: return handleOPTIONS();
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
         }
@@ -152,7 +154,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
         if (path.matches("/application/v4/athensDomain")) return athensDomains(request);
-        if (path.matches("/application/v4/property")) return properties(request);
+        if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/cookiefreshness")) return cookieFreshness(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
@@ -202,7 +204,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
     
-    private HttpResponse handleOPTIONS(HttpRequest request) {
+    private HttpResponse handleOPTIONS() {
         // We implement this to avoid redirect loops on OPTIONS requests from browsers, but do not really bother
         // spelling out the methods supported at each path, which we should
         EmptyJsonResponse response = new EmptyJsonResponse();
@@ -211,8 +213,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
     
     private HttpResponse root(HttpRequest request) {
-        return new ResourceResponse(request,
-                                    "user", "tenant", "tenant-pipeline", "athensDomain", "property", "cookiefreshness");
+        return new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain",
+                                    "property", "cookiefreshness");
     }
     
     private HttpResponse authenticatedUser(HttpRequest request) {
@@ -270,7 +272,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse properties(HttpRequest request) {
+    private HttpResponse properties() {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor array = response.setArray("properties");
@@ -324,9 +326,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 toSlime(((Change.ApplicationChange)application.deploying().get()).revision().get(), deployingObject.setObject("revision"));
         }
 
-        // Deployment jobs 
+        // Jobs sorted according to deployment spec
+        Map<DeploymentJobs.JobType, JobStatus> jobStatus = controller.applications().deploymentTrigger()
+                .deploymentOrder()
+                .sortBy(application.deploymentSpec(), application.deploymentJobs().jobStatus());
+
         Cursor deploymentsArray = response.setArray("deploymentJobs");
-        for (JobStatus job : application.deploymentJobs().jobStatus().values()) {
+        for (JobStatus job : jobStatus.values()) {
             Cursor jobObject = deploymentsArray.addObject();            
             jobObject.setString("type", job.type().id());
             jobObject.setBool("success", job.isSuccess());
@@ -348,9 +354,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (URI rotation : rotations)
             globalRotationsArray.addString(rotation.toString());
 
-        // Deployments
+        // Deployments sorted according to deployment spec
+        Map<Zone, Deployment> deployments = controller.applications().deploymentTrigger()
+                .deploymentOrder()
+                .sortBy(application.deploymentSpec().zones(), application.deployments());
         Cursor instancesArray = response.setArray("instances");
-        for (Deployment deployment : application.deployments().values()) {
+        for (Deployment deployment : deployments.values()) {
             Cursor deploymentObject = instancesArray.addObject();
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());

@@ -309,6 +309,74 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       athensScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
     }
+
+    @Test
+    public void testSortsDeploymentsAndJobs() throws Exception {
+        // Setup
+        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
+        ContainerTester tester = controllerTester.containerTester();
+        tester.updateSystemVersion();
+        addTenantAthensDomain(athensUserDomain, "mytenant");
+        addScrewdriverUserToDomain("screwdriveruser1", "domain1");
+
+        // Create tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1",
+                                      "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}",
+                                      Request.Method.POST),
+                              new File("tenant-without-applications.json"));
+
+        // Create application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1",
+                                      "",
+                                      Request.Method.POST),
+                              new File("application-reference.json"));
+
+        // Deploy
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .region("us-east-3")
+                .build();
+        ApplicationId id = ApplicationId.from("tenant1", "application1", "default");
+        long projectId = 1;
+        HttpEntity deployData = createApplicationDeployData(applicationPackage, Optional.of(projectId));
+
+        startAndTestChange(controllerTester, id, projectId, deployData);
+
+        // us-east-3
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy",
+                                      deployData,
+                                      Request.Method.POST,
+                                      athensScrewdriverDomain, "screwdriveruser1"),
+                              new File("deploy-result.json"));
+        controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
+
+        // New zone is added before us-east-3
+        applicationPackage = new ApplicationPackageBuilder()
+                // These decides the ordering of deploymentJobs and instances in the response
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+        deployData = createApplicationDeployData(applicationPackage, Optional.of(projectId));
+        startAndTestChange(controllerTester, id, projectId, deployData);
+
+        // us-west-1
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy",
+                                      deployData,
+                                      Request.Method.POST,
+                                      athensScrewdriverDomain, "screwdriveruser1"),
+                              new File("deploy-result.json"));
+        controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsWest1);
+
+        // us-east-3
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy",
+                                      deployData,
+                                      Request.Method.POST,
+                                      athensScrewdriverDomain, "screwdriveruser1"),
+                              new File("deploy-result.json"));
+        controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.GET),
+                              new File("application-without-change-multiple-deployments.json"));
+    }
     
     @Test
     public void testErrorResponses() throws Exception {
@@ -642,6 +710,42 @@ public class ApplicationApiTest extends ControllerContainerTest {
         
         mock.setApplicationCost(new ApplicationId.Builder().tenant(tenant).applicationName(application).instanceName(instance).build(),
                                 new ApplicationCost("prod.us-west-1", tenant, application + "." + instance, 37, 1.0f, 0.0f, clusterCosts));
+    }
+
+    private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
+                                    HttpEntity deployData) throws IOException {
+        ContainerTester tester = controllerTester.containerTester();
+
+        // Trigger application change
+        controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.component);
+
+        // system-test
+        String testPath = String.format("/application/v4/tenant/%s/application/%s/environment/test/region/us-east-1/instance/default",
+                                        application.tenant().value(), application.application().value());
+        tester.assertResponse(request(testPath,
+                                      deployData,
+                                      Request.Method.POST,
+                                      athensScrewdriverDomain, "screwdriveruser1"),
+                              new File("deploy-result.json"));
+        tester.assertResponse(request(testPath,
+                                      "",
+                                      Request.Method.DELETE),
+                              "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
+        controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.systemTest);
+
+        // staging
+        String stagingPath = String.format("/application/v4/tenant/%s/application/%s/environment/staging/region/us-east-3/instance/default",
+                                           application.tenant().value(), application.application().value());
+        tester.assertResponse(request(stagingPath,
+                                      deployData,
+                                      Request.Method.POST,
+                                      athensScrewdriverDomain, "screwdriveruser1"),
+                              new File("deploy-result.json"));
+        tester.assertResponse(request(stagingPath,
+                                      "",
+                                      Request.Method.DELETE),
+                              "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
+        controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
     
 }

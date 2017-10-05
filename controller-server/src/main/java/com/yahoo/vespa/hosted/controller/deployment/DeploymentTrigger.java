@@ -308,4 +308,6 @@ public class DeploymentTrigger {
 
     public BuildSystem buildSystem() { return buildSystem; }
 
+    public DeploymentOrder deploymentOrder() { return order; }
+
 }

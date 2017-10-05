@@ -1,9 +1,13 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
@@ -11,10 +15,15 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
@@ -104,6 +113,27 @@ public class DeploymentOrder {
                 .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
+    /** Returns job status sorted according to deployment spec */
+    public Map<JobType, JobStatus> sortBy(DeploymentSpec deploymentSpec, Map<JobType, JobStatus> jobStatus) {
+        List<DeploymentJobs.JobType> jobs = jobsFrom(deploymentSpec);
+        return jobStatus.entrySet().stream()
+                .sorted(Comparator.comparingInt(kv -> jobs.indexOf(kv.getKey())))
+                .collect(Collectors.collectingAndThen(toLinkedMap(Map.Entry::getKey, Map.Entry::getValue),
+                                                      Collections::unmodifiableMap));
+    }
+
+    /** Returns deployments sorted according to declared zones */
+    public Map<Zone, Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Map<Zone, Deployment> deployments) {
+        List<Zone> productionZones = zones.stream()
+                .filter(z -> z.environment() == Environment.prod && z.region().isPresent())
+                .map(z -> new Zone(z.environment(), z.region().get()))
+                .collect(Collectors.toList());
+        return deployments.entrySet().stream()
+                .sorted(Comparator.comparingInt(kv -> productionZones.indexOf(kv.getKey())))
+                .collect(Collectors.collectingAndThen(toLinkedMap(Map.Entry::getKey, Map.Entry::getValue),
+                                                      Collections::unmodifiableMap));
+    }
+
     /** Returns jobs for the given step */
     private List<JobType> jobsFrom(DeploymentSpec.Step step) {
         return step.zones().stream()
@@ -164,6 +194,15 @@ public class DeploymentOrder {
             totalDelay = totalDelay.plus(((DeploymentSpec.Delay) s).duration());
         }
         return totalDelay;
+    }
+
+    private static <T, K, U> Collector<T, ?, Map<K,U>> toLinkedMap(Function<? super T, ? extends K> keyMapper,
+                                                                   Function<? super T, ? extends U> valueMapper) {
+        return Collectors.toMap(keyMapper, valueMapper,
+                                (u, v) -> {
+                                    throw new IllegalStateException(String.format("Duplicate key %s", u));
+                                },
+                                LinkedHashMap::new);
     }
 
 }
