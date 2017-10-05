@@ -30,11 +30,12 @@ cfFilePath() {
     std::string path = vespa::Defaults::underVespaHome("var/db/vespa/splunk");
     DIR *dp = opendir(path.c_str());
     if (dp == NULL) {
-        if (errno != ENOTDIR || mkdir(path.c_str(), 0755) != 0) {
+        if (errno != ENOENT || mkdir(path.c_str(), 0755) != 0) {
             perror(path.c_str());
         }
+    } else {
+        closedir(dp);
     }
-    if (dp != NULL) closedir(dp);
     path += "/deploymentclient.conf";
     return path;
 }
@@ -77,7 +78,6 @@ CfHandler::start(const char *configId)
     LOG(debug, "Reading configuration with id '%s'", configId);
     try {
         subscribe(configId, CONFIG_TIMEOUT_MS);
-        doConfigure();
     } catch (config::ConfigTimeoutException & ex) {
         LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
         exit(EXIT_FAILURE);
