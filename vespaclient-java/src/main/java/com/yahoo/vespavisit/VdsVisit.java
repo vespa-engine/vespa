@@ -261,7 +261,7 @@ public class VdsVisit {
                 .longOpt("cluster")
                 .hasArg(true)
                 .argName("cluster")
-                .desc("Visit the given VDS cluster.")
+                .desc("Visit the given cluster.")
                 .build());
 
         options.addOption("v", "verbose", false, "Indent XML, show progress and info on STDERR.");
