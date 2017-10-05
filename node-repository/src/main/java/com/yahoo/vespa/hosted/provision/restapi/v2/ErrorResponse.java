@@ -11,6 +11,11 @@ import java.io.OutputStream;
 
 import static com.yahoo.jdisc.Response.Status.*;
 
+/**
+ * Error responses with JSON bodies
+ * 
+ * @author bratseth
+ */
 public class ErrorResponse extends HttpResponse {
 
     private final Slime slime = new Slime();

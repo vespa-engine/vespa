@@ -257,4 +257,18 @@ public class RankingExpression implements Serializable {
         return root.evaluate(context);
     }
 
+    /**
+     * Creates a ranking expression from a string
+     * 
+     * @throws IllegalArgumentException if the string is not a valid ranking expression
+     */
+    public static RankingExpression from(String expression) {
+        try {
+            return new RankingExpression(expression);
+        }
+        catch (ParseException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
 }
