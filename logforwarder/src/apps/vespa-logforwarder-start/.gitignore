@@ -1,0 +1,3 @@
+vespa-logforwarder-start
+config-logforwarder.cpp
+config-logforwarder.h

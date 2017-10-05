@@ -26,6 +26,9 @@
         <metric-set id="my-set2" />
       </consumer>
     </metrics>
+    <logforwarding>
+      <splunk deployment-server="foo:8989" client-name="foobar"/>
+    </logforwarding>
   </admin>
 
   <config name="bar">

@@ -1,0 +1,5 @@
+Utility for log forwarding management
+
+currently this only supports "splunk", and
+just saves splunk config in a file using the
+appropriate format.
