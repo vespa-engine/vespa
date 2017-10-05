@@ -11,6 +11,7 @@ sig_atomic_t stop = 0;
 
 SigCatch::SigCatch()
 {
+    sigPermanent(SIGPIPE, SIG_IGN);
     sigPermanent(SIGTERM, setStopFlag);
     sigPermanent(SIGINT, setStopFlag);
 }
