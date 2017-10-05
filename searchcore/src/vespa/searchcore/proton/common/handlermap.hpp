@@ -43,12 +43,13 @@ public:
     public:
         typedef std::unique_ptr<Snapshot> UP;
 
-        Snapshot(StdMap &map) : _handlers(), _offset(0) {
+        Snapshot(const StdMap &map) : _handlers(), _offset(0) {
             _handlers.reserve(map.size());
-            for (MapIterator pos = map.begin(); pos != map.end(); ++pos) {
-                _handlers.push_back(pos->second);
+            for (auto itr : map) {
+                _handlers.push_back(itr.second);
             }
         }
+        Snapshot(std::vector<HandlerSP> &&handlers) : _handlers(std::move(handlers)), _offset(0) {}
         bool valid() const override { return (_offset < _handlers.size()); }
         T *get() const override { return _handlers[_offset].get(); }
         HandlerSP getSP() const { return _handlers[_offset]; }
@@ -162,7 +163,7 @@ public:
      * @return handler sequence
      **/
     std::unique_ptr<Snapshot>
-    snapshot()
+    snapshot() const
     {
         return std::unique_ptr<Snapshot>(new Snapshot(_handlers));
     }

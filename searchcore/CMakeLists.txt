@@ -122,6 +122,7 @@ vespa_define_module(
     src/tests/proton/metrics/metrics_engine
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
+    src/tests/proton/persistenceengine/persistence_handler_map
     src/tests/proton/proton
     src/tests/proton/proton_config_fetcher
     src/tests/proton/proton_configurer
