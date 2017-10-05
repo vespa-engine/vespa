@@ -19,7 +19,6 @@ import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
 

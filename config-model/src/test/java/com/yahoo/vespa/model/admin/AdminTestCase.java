@@ -276,6 +276,3 @@ public class AdminTestCase {
         assertTrue(configIds.toString(), configIds.contains("admin/logforwarder.0"));
     }
 }
-
-
-
