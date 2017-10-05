@@ -9,7 +9,6 @@ import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Transforms function nodes to reference nodes if a macro shadows a built-in function.
