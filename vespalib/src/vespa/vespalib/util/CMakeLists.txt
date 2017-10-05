@@ -37,6 +37,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     rwlock.cpp
     sequence.cpp
     sha1.cpp
+    sig_catch.cpp
     signalhandler.cpp
     simple_thread_bundle.cpp
     slaveproc.cpp

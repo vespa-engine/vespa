@@ -25,6 +25,7 @@ Shutdown shutdown;
 SignalHandler SignalHandler::HUP(SIGHUP);
 SignalHandler SignalHandler::INT(SIGINT);
 SignalHandler SignalHandler::TERM(SIGTERM);
+SignalHandler SignalHandler::CHLD(SIGCHLD);
 SignalHandler SignalHandler::PIPE(SIGPIPE);
 SignalHandler SignalHandler::SEGV(SIGSEGV);
 SignalHandler SignalHandler::ABRT(SIGABRT);
