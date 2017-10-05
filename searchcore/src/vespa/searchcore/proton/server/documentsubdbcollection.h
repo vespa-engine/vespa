@@ -126,7 +126,6 @@ public:
 
     std::shared_ptr<initializer::InitializerTask>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
                       const vespa::config::search::core::ProtonConfig::Index & indexCfg);
 
     void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager);

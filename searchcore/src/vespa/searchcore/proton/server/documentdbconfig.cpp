@@ -150,7 +150,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.tuneFileDocumentDBChanged = !equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get());
     retval.schemaChanged = !equals<Schema>(_schema.get(), rhs._schema.get());
     retval.maintenanceChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get());
-    retval.storeChanged = _storeConfig != rhs._storeConfig;
+    retval.storeChanged = (_storeConfig != rhs._storeConfig);
     retval.visibilityDelayChanged = (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
     return retval;
 }

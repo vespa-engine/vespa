@@ -120,12 +120,10 @@ SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexMana
 
 DocumentSubDbInitializer::UP
 SearchableDocSubDB::
-createInitializer(const DocumentDBConfig &configSnapshot,
-                  SerialNum configSerialNum,
-                  const ProtonConfig::Summary &protonSummaryCfg,
+createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                   const ProtonConfig::Index &indexCfg) const
 {
-    auto result = Parent::createInitializer(configSnapshot, configSerialNum, protonSummaryCfg, indexCfg);
+    auto result = Parent::createInitializer(configSnapshot, configSerialNum, indexCfg);
     auto indexTask = createIndexManagerInitializer(configSnapshot, configSerialNum, indexCfg,
                                                    result->writableResult().writableIndexManager());
     result->addDependency(indexTask);
@@ -148,13 +146,10 @@ reconfigureMatchingMetrics(const RankProfilesConfig &cfg)
     for (const auto &profile : cfg.rankprofile) {
         search::fef::Properties properties;
         for (const auto &property : profile.fef.property) {
-            properties.add(property.name,
-                           property.value);
+            properties.add(property.name, property.value);
         }
         size_t numDocIdPartitions = search::fef::indexproperties::matching::NumThreadsPerSearch::lookup(properties);
-        _metricsWireService.addRankProfile(_metrics,
-                                           profile.name,
-                                           numDocIdPartitions);
+        _metricsWireService.addRankProfile(_metrics, profile.name, numDocIdPartitions);
     }
 }
 
@@ -162,7 +157,7 @@ IReprocessingTask::List
 SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
-//    StoreOnlyDocSubDB::reconfigure(protonConfig);
+    StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     if (params.shouldMatchersChange() && _addMetrics) {

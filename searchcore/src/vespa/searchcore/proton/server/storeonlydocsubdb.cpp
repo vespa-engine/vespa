@@ -237,7 +237,7 @@ StoreOnlyDocSubDB::getNewestFlushedSerial()
 
 initializer::InitializerTask::SP
 StoreOnlyDocSubDB::
-createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
+createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCfg,
                                 const search::TuneFileSummary &tuneFile,
                                 search::IBucketizer::SP bucketizer,
                                 std::shared_ptr<SummaryManager::SP> result) const
@@ -246,7 +246,7 @@ createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
     vespalib::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
         (grow, baseDir, getSubDbName(), _docTypeName, _summaryExecutor,
-         protonSummaryCfg, tuneFile, _fileHeaderContext, _tlSyncer, bucketizer, result);
+         storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, bucketizer, result);
 }
 
 void
@@ -307,10 +307,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
 }
 
 DocumentSubDbInitializer::UP
-StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
-                                     SerialNum configSerialNum,
-                                     const ProtonConfig::Summary &
-                                     protonSummaryCfg,
+StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                                      const ProtonConfig::Index &indexCfg) const
 {
     (void) configSerialNum;
@@ -323,7 +320,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
                                        result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
     auto summaryTask =
-        createSummaryManagerInitializer(protonSummaryCfg,
+        createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
                                         configSnapshot.getTuneFileDocumentDBSP()->_summary,
                                         result->result().documentMetaStore()->documentMetaStore(),
                                         result->writableResult().writableSummaryManager());
@@ -445,7 +442,7 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
     (void) params;
     (void) resolver;
     assert(_writeService.master().isCurrentThread());
-//    reconfigure(protonConfig);
+    reconfigure(newConfigSnapshot.getStoreConfig());
     initFeedView(newConfigSnapshot);
     updateLidReuseDelayer(&newConfigSnapshot);
     _owner.syncFeedView();
@@ -453,9 +450,9 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
 }
 
 void
-StoreOnlyDocSubDB::reconfigure(const ProtonConfig & config)
+StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config)
 {
-    _rSummaryMgr->reconfigure(config.summary);
+    _rSummaryMgr->reconfigure(config);
 }
 
 proton::IAttributeManager::SP

@@ -330,7 +330,6 @@ struct FixtureBase
                 DocumentSubDbInitializer::SP task =
                     _subDb.createInitializer(*_snapshot->_cfg,
                                              Traits::configSerial(),
-                                             ProtonConfig::Summary(),
                                              ProtonConfig::Index());
                 vespalib::ThreadStackExecutor executor(1, 1024 * 1024);
                 initializer::TaskRunner taskRunner(executor);
@@ -341,14 +340,10 @@ struct FixtureBase
     void basicReconfig(SerialNum serialNum) {
         runInMaster([&] () { performReconfig(serialNum, TwoAttrSchema(), ConfigDir2::dir()); });
     }
-    void reconfig(SerialNum serialNum,
-                  const Schema &reconfigSchema,
-                  const vespalib::string &reconfigConfigDir) {
+    void reconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
         runInMaster([&] () { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
-        }
-    void performReconfig(SerialNum serialNum,
-                  const Schema &reconfigSchema,
-                  const vespalib::string &reconfigConfigDir) {
+    }
+    void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
         MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;

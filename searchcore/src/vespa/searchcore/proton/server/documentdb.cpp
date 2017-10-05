@@ -122,7 +122,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _initGate(),
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
-      _protonSummaryCfg(protonCfg.summary),
       _protonIndexCfg(protonCfg.index),
       _config_store(std::move(config_store)),
       _sessionManager(new matching::SessionManager(protonCfg.grouping.sessionmanager.maxentries)),
@@ -256,7 +255,7 @@ DocumentDB::initManagers()
     DocumentDBConfig::SP configSnapshot(_initConfigSnapshot);
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask =
-        _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _protonSummaryCfg, _protonIndexCfg);
+        _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _protonIndexCfg);
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
     std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>(*initializeThreads));

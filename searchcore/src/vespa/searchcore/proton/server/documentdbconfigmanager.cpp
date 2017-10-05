@@ -28,6 +28,11 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
+using vespalib::compression::CompressionConfig;
+using search::LogDocumentStore;
+using search::LogDataStore;
+using search::DocumentStore;
+using search::WriteableFileChunk;
 
 namespace proton {
 
@@ -87,7 +92,9 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
     return oldSchema;
 }
 
-static DocumentDBMaintenanceConfig::SP
+namespace {
+
+DocumentDBMaintenanceConfig::SP
 buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                        const vespalib::string &docTypeName)
 {
@@ -133,12 +140,43 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.maintenancejobs.maxoutstandingmoveops));
 }
 
-namespace {
+template<typename T>
+CompressionConfig
+deriveCompression(const T & config) {
+    CompressionConfig compression;
+    if (config.type == T::LZ4) {
+        compression.type = CompressionConfig::LZ4;
+    } else if (config.type == T::ZSTD) {
+        compression.type = CompressionConfig::ZSTD;
+    }
+    compression.compressionLevel = config.level;
+    return compression;
+}
+
+DocumentStore::Config
+getStoreConfig(const ProtonConfig::Summary::Cache & cache)
+{
+    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+}
+
+LogDocumentStore::Config
+deriveConfig(const ProtonConfig::Summary & summary) {
+    DocumentStore::Config config(getStoreConfig(summary.cache));
+    const ProtonConfig::Summary::Log & log(summary.log);
+    const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
+
+    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
+    LogDataStore::Config logConfig;
+    logConfig.setMaxFileSize(log.maxfilesize).setMaxDiskBloatFactor(log.maxdiskbloatfactor)
+            .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
+            .setNumThreads(log.numthreads).compact2ActiveFile(log.compact2activefile)
+            .compactCompression(deriveCompression(log.compact.compression)).setFileConfig(fileConfig)
+            .disableCrcOnRead(chunk.skipcrconread);
+    return LogDocumentStore::Config(config, logConfig);
+}
 
 search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton) {
-    (void) proton;
-    search::LogDocumentStore::Config config;
-    return config;
+    return deriveConfig(proton.summary);
 }
 
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;

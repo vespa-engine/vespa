@@ -63,7 +63,7 @@ public:
 
     virtual std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const ProtonConfig::Summary &protonSummaryCfg, const ProtonConfig::Index &indexCfg) const = 0;
+                      const ProtonConfig::Index &indexCfg) const = 0;
 
     // Called by master thread
     virtual void setup(const DocumentSubDbInitializerResult &initResult) = 0;

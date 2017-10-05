@@ -168,14 +168,11 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc,
 initializer::InitializerTask::SP
 DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapshot,
                                            SerialNum configSerialNum,
-                                           const ProtonConfig::Summary & protonSummaryCfg,
                                            const ProtonConfig::Index & indexCfg)
 {
-    DocumentSubDbCollectionInitializer::SP task =
-        std::make_shared<DocumentSubDbCollectionInitializer>();
+    DocumentSubDbCollectionInitializer::SP task = std::make_shared<DocumentSubDbCollectionInitializer>();
     for (auto subDb : _subDBs) {
-        DocumentSubDbInitializer::SP
-            subTask(subDb->createInitializer(configSnapshot, configSerialNum, protonSummaryCfg, indexCfg));
+        DocumentSubDbInitializer::SP subTask(subDb->createInitializer(configSnapshot, configSerialNum, indexCfg));
         task->add(subTask);
     }
     return task;

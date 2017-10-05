@@ -37,8 +37,9 @@ class GidToLidChangeHandler;
  *
  * This class is used directly by the "0.ready" sub database for handling all ready documents.
  */
-class SearchableDocSubDB : public FastAccessDocSubDB,
-                           public searchcorespi::IIndexManager::Reconfigurer
+class
+SearchableDocSubDB : public FastAccessDocSubDB,
+                     public searchcorespi::IIndexManager::Reconfigurer
 
 {
 public:
@@ -111,7 +112,6 @@ public:
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
                       const vespa::config::search::core::ProtonConfig::Index &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;

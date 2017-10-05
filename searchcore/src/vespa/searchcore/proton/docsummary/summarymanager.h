@@ -3,12 +3,11 @@
 
 #include "isummarymanager.h"
 #include "fieldcacherepo.h"
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchlib/docstore/idatastore.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -24,7 +23,6 @@ namespace proton {
 class SummaryManager : public ISummaryManager
 {
 public:
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
     class SummarySetup : public ISummarySetup {
     private:
         std::unique_ptr<search::docsummary::DynamicDocsumWriter> _docsumWriter;
@@ -66,7 +64,7 @@ private:
 public:
     typedef std::shared_ptr<SummaryManager> SP;
     SummaryManager(vespalib::ThreadExecutor & executor,
-                   const ProtonConfig::Summary & summary,
+                   const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
                    const vespalib::string &baseDir,
                    const DocTypeName &docTypeName,
@@ -89,7 +87,7 @@ public:
                        const search::IAttributeManager::SP &attributeMgr) override;
 
     search::IDocumentStore & getBackingStore() override { return *_docStore; }
-    void reconfigure(const ProtonConfig::Summary & summary);
+    void reconfigure(const search::LogDocumentStore::Config & config);
 };
 
 } // namespace proton

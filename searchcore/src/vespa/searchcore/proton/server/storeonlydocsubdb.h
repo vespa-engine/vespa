@@ -175,7 +175,7 @@ protected:
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     std::shared_ptr<initializer::InitializerTask>
-    createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
+    createSummaryManagerInitializer(const search::LogDocumentStore::Config & protonSummaryCfg,
                                     const search::TuneFileSummary &tuneFile,
                                     search::IBucketizer::SP bucketizer,
                                     std::shared_ptr<SummaryManager::SP> result) const;
@@ -197,7 +197,7 @@ protected:
     using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
     virtual void updateLidReuseDelayer(const LidReuseDelayerConfig &config);
-    void reconfigure(const ProtonConfig & protonConfig);
+    void reconfigure(const search::LogDocumentStore::Config & protonConfig);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB();
@@ -207,7 +207,7 @@ public:
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const ProtonConfig::Summary &protonSummaryCfg, const ProtonConfig::Index &indexCfg) const override;
+                      const ProtonConfig::Index &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;

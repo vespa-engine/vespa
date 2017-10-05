@@ -8,7 +8,6 @@
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
-#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -20,7 +19,6 @@ LOG_SETUP(".proton.docsummary.summarymanager");
 using namespace config;
 using namespace document;
 using namespace search::docsummary;
-using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using vespalib::make_string;
@@ -53,14 +51,14 @@ public:
                                      searchcorespi::index::IThreadService & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget();
-    virtual Task::UP initFlush(SerialNum currentSerial) override;
+    Task::UP initFlush(SerialNum currentSerial) override;
 };
 
-ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type,
-                                                                   Component component, SerialNum flushedSerialNum,
-                                                                   Time lastFlushTime,
-                                                                   searchcorespi::index::IThreadService & summaryService,
-                                                                   std::shared_ptr<ICompactableLidSpace> target)
+ShrinkSummaryLidSpaceFlushTarget::
+ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
+                                 SerialNum flushedSerialNum, Time lastFlushTime,
+                                 searchcorespi::index::IThreadService & summaryService,
+                                 std::shared_ptr<ICompactableLidSpace> target)
     : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, lastFlushTime, std::move(target)),
       _summaryService(summaryService)
 {
@@ -139,56 +137,15 @@ SummaryManager::SummarySetup::createDocsumStore(const vespalib::string &resultCl
 
 
 ISummaryManager::ISummarySetup::SP
-SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
-                                   const SummarymapConfig & summarymapCfg,
-                                   const JuniperrcConfig & juniperCfg,
-                                   const DocumentTypeRepo::SP &repo,
+SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const SummarymapConfig & summarymapCfg,
+                                   const JuniperrcConfig & juniperCfg, const DocumentTypeRepo::SP &repo,
                                    const search::IAttributeManager::SP &attributeMgr)
 {
     return std::make_shared<SummarySetup>(_baseDir, _docTypeName, summaryCfg, summarymapCfg,
                                           juniperCfg, attributeMgr, _docStore, repo);
 }
 
-namespace {
-
-template<typename T>
-CompressionConfig
-deriveCompression(const T & config) {
-    CompressionConfig compression;
-    if (config.type == T::LZ4) {
-        compression.type = CompressionConfig::LZ4;
-    } else if (config.type == T::ZSTD) {
-        compression.type = CompressionConfig::ZSTD;
-    }
-    compression.compressionLevel = config.level;
-    return compression;
-}
-
-DocumentStore::Config
-getStoreConfig(const ProtonConfig::Summary::Cache & cache)
-{
-    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
-}
-
-LogDocumentStore::Config
-deriveConfig(const ProtonConfig::Summary & summary) {
-    DocumentStore::Config config(getStoreConfig(summary.cache));
-    const ProtonConfig::Summary::Log & log(summary.log);
-    const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
-
-    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
-    LogDataStore::Config logConfig;
-    logConfig.setMaxFileSize(log.maxfilesize).setMaxDiskBloatFactor(log.maxdiskbloatfactor)
-            .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
-            .setNumThreads(log.numthreads).compact2ActiveFile(log.compact2activefile)
-            .compactCompression(deriveCompression(log.compact.compression)).setFileConfig(fileConfig)
-            .disableCrcOnRead(chunk.skipcrconread);
-    return LogDocumentStore::Config(config, logConfig);
-}
-
-}
-
-SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const ProtonConfig::Summary & summary,
+SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDocumentStore::Config & storeConfig,
                                const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
                                const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
@@ -199,9 +156,8 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const Proton
       _tuneFileSummary(tuneFileSummary),
       _currentSerial(0u)
 {
-    _docStore.reset(new LogDocumentStore(executor, baseDir, deriveConfig(summary),
-                                         growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
-                                         summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
+    _docStore = std::make_shared<LogDocumentStore>(executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
+                                                   fileHeaderContext, tlSyncer, bucketizer);
 }
 
 SummaryManager::~SummaryManager() {}
@@ -254,9 +210,9 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
     return ret;
 }
 
-void SummaryManager::reconfigure(const ProtonConfig::Summary & summary) {
+void SummaryManager::reconfigure(const LogDocumentStore::Config & config) {
     LogDocumentStore & docStore = dynamic_cast<LogDocumentStore &> (*_docStore);
-    docStore.reconfigure(deriveConfig(summary));
+    docStore.reconfigure(config);
 }
 
 } // namespace proton

@@ -215,10 +215,9 @@ FastAccessDocSubDB::~FastAccessDocSubDB() { }
 
 DocumentSubDbInitializer::UP
 FastAccessDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                                      const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
                                       const vespa::config::search::core::ProtonConfig::Index &indexCfg) const
 {
-    auto result = Parent::createInitializer(configSnapshot, configSerialNum, protonSummaryCfg, indexCfg);
+    auto result = Parent::createInitializer(configSnapshot, configSerialNum, indexCfg);
     auto attrMgrInitTask = createAttributeManagerInitializer(configSnapshot, configSerialNum,
                                                              result->getDocumentMetaStoreInitTask(),
                                                              result->result().documentMetaStore()->documentMetaStore(),
@@ -255,7 +254,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
 {
     (void) resolver;
 
-    // reconfigure(protonConfig);
+    reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     /*
