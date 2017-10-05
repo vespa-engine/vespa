@@ -14,9 +14,10 @@ import java.nio.ByteBuffer;
  * <p>Some static io convenience methods.</p>
  *
  * @author  bratseth
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public abstract class IOUtils {
+
     static private final Charset utf8Charset = Charset.forName("utf-8");
 
     /** Closes a writer, or does nothing if the writer is null */
@@ -408,6 +409,11 @@ public abstract class IOUtils {
             ret.appendCodePoint(c);
         buffered.close();
         return ret.toString();
+    }
+
+    /** Read an input stream completely into a string */
+    public static String readAll(InputStream stream, Charset charset) throws IOException {
+        return readAll(new InputStreamReader(stream, charset));
     }
 
     /** Convenience method for closing a list of readers. Does nothing if the given reader list is null. */

@@ -21,6 +21,7 @@ import java.util.logging.Level;
  * 
  * @author bratseth
  */
+@SuppressWarnings("unused") // Created by injection
 public class ControllerApiHandler extends LoggingRequestHandler {
 
     private final ControllerMaintenance maintenance;
