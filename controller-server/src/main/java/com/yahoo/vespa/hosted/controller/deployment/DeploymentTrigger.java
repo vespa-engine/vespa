@@ -102,9 +102,8 @@ public class DeploymentTrigger {
     public void triggerFailing(ApplicationId applicationId, Duration timeout) {
         try (Lock lock = applications().lock(applicationId)) {
             Application application = applications().require(applicationId);
-            if (!application.deploying().isPresent()) { // No ongoing change, no need to retry
-                return;
-            }
+            if (!application.deploying().isPresent()) return; // No ongoing change, no need to retry
+
             // Retry first failing job
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);

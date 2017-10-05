@@ -98,6 +98,7 @@ import java.util.logging.Level;
  * 
  * @author bratseth
  */
+@SuppressWarnings("unused") // created by injection
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
