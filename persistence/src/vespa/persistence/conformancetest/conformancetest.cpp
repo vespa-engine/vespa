@@ -18,6 +18,7 @@
 
 using document::BucketId;
 using storage::spi::test::makeBucket;
+using storage::spi::test::makeBucketSpace;
 
 namespace storage::spi {
 
@@ -417,12 +418,12 @@ void ConformanceTest::testListBuckets() {
     spi->flush(bucket3, context);
 
     {
-        BucketIdListResult result = spi->listBuckets(PartitionId(1));
+        BucketIdListResult result = spi->listBuckets(makeBucketSpace(), PartitionId(1));
         CPPUNIT_ASSERT(result.getList().empty());
     }
 
     {
-        BucketIdListResult result = spi->listBuckets(partId);
+        BucketIdListResult result = spi->listBuckets(makeBucketSpace(), partId);
         const BucketIdListResult::List &bucketList = result.getList();
         CPPUNIT_ASSERT_EQUAL(3u, (uint32_t)bucketList.size());
         CPPUNIT_ASSERT(std::find(bucketList.begin(), bucketList.end(), bucketId1) != bucketList.end());
@@ -2119,7 +2120,7 @@ void ConformanceTest::testGetModifiedBuckets()
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
     CPPUNIT_ASSERT_EQUAL(0,
-                         (int)spi->getModifiedBuckets().getList().size());
+                         (int)spi->getModifiedBuckets(makeBucketSpace()).getList().size());
 }
 
 void ConformanceTest::testBucketActivation()

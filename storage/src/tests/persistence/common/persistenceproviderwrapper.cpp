@@ -66,11 +66,11 @@ PersistenceProviderWrapper::getPartitionStates() const
 }
 
 spi::BucketIdListResult
-PersistenceProviderWrapper::listBuckets(spi::PartitionId partitionId) const
+PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionId partitionId) const
 {
-    LOG_SPI("listBuckets(" << uint16_t(partitionId) << ")");
+    LOG_SPI("listBuckets(" << bucketSpace.getId() << ", " << uint16_t(partitionId) << ")");
     CHECK_ERROR(spi::BucketIdListResult, FAIL_LIST_BUCKETS);
-    return _spi.listBuckets(partitionId);
+    return _spi.listBuckets(bucketSpace, partitionId);
 }
 
 spi::Result

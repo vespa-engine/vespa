@@ -282,7 +282,7 @@ PersistenceEngine::getPartitionStates() const
 
 
 BucketIdListResult
-PersistenceEngine::listBuckets(PartitionId id) const
+PersistenceEngine::listBuckets(BucketSpace, PartitionId id) const
 {
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
@@ -592,7 +592,7 @@ PersistenceEngine::deleteBucket(const Bucket& b, Context&)
 
 
 BucketIdListResult
-PersistenceEngine::getModifiedBuckets() const
+PersistenceEngine::getModifiedBuckets(BucketSpace) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     typedef BucketIdListResultV MBV;
