@@ -48,21 +48,16 @@ class ShrinkSummaryLidSpaceFlushTarget : public  ShrinkLidSpaceFlushTarget
     searchcorespi::index::IThreadService & _summaryService;
 
 public:
-    ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name,
-                                     Type type,
-                                     Component component,
-                                     SerialNum flushedSerialNum,
-                                     Time lastFlushTime,
+    ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
+                                     SerialNum flushedSerialNum, Time lastFlushTime,
                                      searchcorespi::index::IThreadService & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget();
     virtual Task::UP initFlush(SerialNum currentSerial) override;
 };
 
-ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name,
-                                                                   Type type,
-                                                                   Component component,
-                                                                   SerialNum flushedSerialNum,
+ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type,
+                                                                   Component component, SerialNum flushedSerialNum,
                                                                    Time lastFlushTime,
                                                                    searchcorespi::index::IThreadService & summaryService,
                                                                    std::shared_ptr<ICompactableLidSpace> target)
@@ -85,13 +80,9 @@ ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
 }
 
 SummaryManager::SummarySetup::
-SummarySetup(const vespalib::string & baseDir,
-             const DocTypeName & docTypeName,
-             const SummaryConfig & summaryCfg,
-             const SummarymapConfig & summarymapCfg,
-             const JuniperrcConfig & juniperCfg,
-             const search::IAttributeManager::SP &attributeMgr,
-             const search::IDocumentStore::SP & docStore,
+SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, const SummaryConfig & summaryCfg,
+             const SummarymapConfig & summarymapCfg, const JuniperrcConfig & juniperCfg,
+             const search::IAttributeManager::SP &attributeMgr, const search::IDocumentStore::SP & docStore,
              const DocumentTypeRepo::SP &repo)
     : _docsumWriter(),
       _wordFolder(),
@@ -186,23 +177,21 @@ deriveConfig(const ProtonConfig::Summary & summary) {
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
 
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
-    LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
-                                   log.minfilesizefactor, log.numthreads, log.compact2activefile,
-                                   deriveCompression(log.compact.compression), fileConfig);
-    logConfig.disableCrcOnRead(chunk.skipcrconread);
+    LogDataStore::Config logConfig;
+    logConfig.setMaxFileSize(log.maxfilesize).setMaxDiskBloatFactor(log.maxdiskbloatfactor)
+            .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
+            .setNumThreads(log.numthreads).compact2ActiveFile(log.compact2activefile)
+            .compactCompression(deriveCompression(log.compact.compression)).setFileConfig(fileConfig)
+            .disableCrcOnRead(chunk.skipcrconread);
     return LogDocumentStore::Config(config, logConfig);
 }
 
 }
 
-SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
-                               const ProtonConfig::Summary & summary,
-                               const search::GrowStrategy & growStrategy,
-                               const vespalib::string &baseDir,
-                               const DocTypeName &docTypeName,
-                               const TuneFileSummary &tuneFileSummary,
-                               const FileHeaderContext &fileHeaderContext,
-                               search::transactionlog::SyncProxy &tlSyncer,
+SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const ProtonConfig::Summary & summary,
+                               const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
+                               const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
+                               const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
                                const search::IBucketizer::SP & bucketizer)
     : _baseDir(baseDir),
       _docTypeName(docTypeName),
@@ -210,8 +199,7 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
       _tuneFileSummary(tuneFileSummary),
       _currentSerial(0u)
 {
-    _docStore.reset(new LogDocumentStore(executor, baseDir,
-                                         deriveConfig(summary),
+    _docStore.reset(new LogDocumentStore(executor, baseDir, deriveConfig(summary),
                                          growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
                                          summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
 }

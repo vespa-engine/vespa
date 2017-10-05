@@ -11,6 +11,8 @@
 #include <iostream>
 
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/compressionconfig.h>
+
 LOG_SETUP("file_chunk_test");
 
 using namespace search;
@@ -208,6 +210,17 @@ TEST("require that entries with lid >= docIdLimit are skipped in updateLidMap()"
         f.updateLidMap(1000);
         assertUpdateLidMap(f);
     }
+}
+
+using vespalib::compression::CompressionConfig;
+
+TEST("require that operator == detects inequality") {
+    using C = WriteableFileChunk::Config;
+    EXPECT_TRUE(C() == C());
+    EXPECT_TRUE(C({}, 1) == C({}, 1));
+    EXPECT_FALSE(C({}, 2) == C({}, 1));
+    EXPECT_FALSE(C({}, 1) == C({}, 2));
+    EXPECT_FALSE(C({CompressionConfig::LZ4, 9, 60}, 2) == C({}, 2));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

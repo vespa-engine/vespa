@@ -202,20 +202,17 @@ TEST("test that DirectIOPadding works accordng to spec") {
 TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
     EXPECT_TRUE(FastOS_File::MakeDirectory("growing"));
-    LogDataStore::Config config(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
-                                WriteableFileChunk::Config(CompressionConfig(CompressionConfig::LZ4, 9, 60), 1000));
+    LogDataStore::Config config; //(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
+                                // WriteableFileChunk::Config(CompressionConfig(CompressionConfig::LZ4, 9, 60), 1000));
+    config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
+            .setNumThreads(8).compact2ActiveFile(true).compactCompression({CompressionConfig::LZ4})
+            .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
     vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
     {
-        LogDataStore datastore(executor,
-                               "growing",
-                               config,
-                               GrowStrategy(),
-                               TuneFileSummary(),
-                               fileHeaderContext,
-                               tlSyncer,
-                               NULL);
+        LogDataStore datastore(executor, "growing", config, GrowStrategy(),
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         srand(7);
         char buffer[12000];
         SerialNum lastSyncToken(0);
@@ -245,14 +242,8 @@ TEST("testGrowing") {
         checkStats(datastore, 31000, 30000);
     }
     {
-        LogDataStore datastore(executor,
-                               "growing",
-                               config,
-                               GrowStrategy(),
-                               TuneFileSummary(),
-                               fileHeaderContext,
-                               tlSyncer,
-                               NULL);
+        LogDataStore datastore(executor, "growing", config, GrowStrategy(),
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         checkStats(datastore, 30000, 30000);
     }
 
@@ -527,14 +518,13 @@ VisitCacheStore::VisitCacheStore() :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
     _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
-            LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,CompressionConfig::LZ4,
-                                 WriteableFileChunk::Config(CompressionConfig(), 16384))),
+            LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0).setNumThreads(1)
+                    .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
     _fileHeaderContext(),
     _executor(_config.getLogConfig().getNumThreads(), 128*1024),
     _tlSyncer(),
-    _datastore(_executor, _myDir.getDir(), _config,
-               GrowStrategy(), TuneFileSummary(),
-               _fileHeaderContext, _tlSyncer, NULL),
+    _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
+               TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr),
     _inserted(),
     _serial(1)
 { }
@@ -696,14 +686,8 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     LogDataStore::Config config;
     vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
     MyTlSyncer tlSyncer;
-    LogDataStore store(executor,
-                       testDir.getDir(),
-                       config,
-                       GrowStrategy(),
-                       TuneFileSummary(),
-                       fileHeaderContext,
-                       tlSyncer,
-                       NULL);
+    LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
+                       TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQUAL(0, store.getLastFlushTime().time());
     uint64_t flushToken = store.initFlush(5);
     EXPECT_EQUAL(5u, flushToken);
@@ -757,9 +741,7 @@ TEST("testBucketDensityComputer") {
 LogDataStore::Config
 getBasicConfig(size_t maxFileSize)
 {
-    CompressionConfig compCfg;
-    WriteableFileChunk::Config fileCfg;
-    return LogDataStore::Config(maxFileSize, 0.2, 2.5, 0.2, 1, true, compCfg, fileCfg);
+    return LogDataStore::Config().setMaxFileSize(maxFileSize);
 }
 
 vespalib::string
@@ -794,14 +776,8 @@ struct Fixture {
           serialNum(0),
           fileHeaderCtx(),
           tlSyncer(),
-          store(executor,
-                dirName,
-                getBasicConfig(maxFileSize),
-                GrowStrategy(),
-                TuneFileSummary(),
-                fileHeaderCtx,
-                tlSyncer,
-                nullptr)
+          store(executor, dirName, getBasicConfig(maxFileSize), GrowStrategy(),
+                TuneFileSummary(), fileHeaderCtx, tlSyncer, nullptr)
     {
         dir.cleanup(dirCleanup);
     }
@@ -995,6 +971,20 @@ TEST("require that findIncompleteCompactedFiles does expected filtering") {
     EXPECT_EXCEPTION(LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,202,204})).empty(),
                      vespalib::IllegalStateException, "3 consecutive files {200, 201, 202}. Impossible");
 
+}
+
+TEST("require that config equality operator detects inequality") {
+    using C = LogDataStore::Config;
+    EXPECT_TRUE(C() == C());
+    EXPECT_FALSE(C() == C().setMaxFileSize(1));
+    EXPECT_FALSE(C() == C().setMaxDiskBloatFactor(0.3));
+    EXPECT_FALSE(C() == C().setMaxBucketSpread(0.3));
+    EXPECT_FALSE(C() == C().setMinFileSizeFactor(0.3));
+    EXPECT_FALSE(C() == C().setNumThreads(3));
+    EXPECT_FALSE(C() == C().setFileConfig(WriteableFileChunk::Config({}, 70)));
+    EXPECT_FALSE(C() == C().disableCrcOnRead(true));
+    EXPECT_FALSE(C() == C().compact2ActiveFile(false));
+    EXPECT_FALSE(C() == C().compactCompression({CompressionConfig::ZSTD}));
 }
 
 TEST_MAIN() {

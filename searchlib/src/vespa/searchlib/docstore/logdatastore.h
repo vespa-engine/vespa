@@ -36,36 +36,16 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
-        Config()
-            : _maxFileSize(1000000000ul),
-              _maxDiskBloatFactor(0.2),
-              _maxBucketSpread(2.5),
-              _minFileSizeFactor(0.2),
-              _numThreads(8),
-              _skipCrcOnRead(false),
-              _compactToActiveFile(true),
-              _compactCompression(CompressionConfig::LZ4),
-              _fileConfig()
-        { }
+        Config();
 
-        Config(size_t maxFileSize,
-               double maxDiskBloatFactor,
-               double maxBucketSpread,
-               double minFileSizeFactor,
-               size_t numThreads,
-               bool compactToActiveFile,
-               const CompressionConfig & compactCompression,
-               const WriteableFileChunk::Config & fileConfig)
-            : _maxFileSize(maxFileSize),
-              _maxDiskBloatFactor(maxDiskBloatFactor),
-              _maxBucketSpread(maxBucketSpread),
-              _minFileSizeFactor(minFileSizeFactor),
-              _numThreads(numThreads),
-              _skipCrcOnRead(false),
-              _compactToActiveFile(compactToActiveFile),
-              _compactCompression(compactCompression),
-              _fileConfig(fileConfig)
-        { }
+        Config & setMaxFileSize(size_t v) { _maxFileSize = v; return *this; }
+        Config & setMaxDiskBloatFactor(double v) { _maxDiskBloatFactor = v; return *this; }
+        Config & setMaxBucketSpread(double v) { _maxBucketSpread = v; return *this; }
+        Config & setMinFileSizeFactor(double v) { _minFileSizeFactor = v; return *this; }
+
+        Config & setNumThreads(size_t v) { _numThreads = v; return *this; }
+        Config & compactCompression(CompressionConfig v) { _compactCompression = v; return *this; }
+        Config & setFileConfig(WriteableFileChunk::Config v) { _fileConfig = v; return *this; }
 
         size_t getMaxFileSize() const { return _maxFileSize; }
         double getMaxDiskBloatFactor() const { return _maxDiskBloatFactor; }
@@ -74,10 +54,14 @@ public:
 
         size_t getNumThreads() const { return _numThreads; }
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
-        bool compact2ActiveFile() const { return _compactToActiveFile; }
+        bool compact2ActiveFile() const { return _compact2ActiveFile; }
         const CompressionConfig & compactCompression() const { return _compactCompression; }
+
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
         Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}
+        Config & compact2ActiveFile(bool v) { _compact2ActiveFile = v; return *this; }
+
+        bool operator == (const Config &) const;
     private:
         size_t                      _maxFileSize;
         double                      _maxDiskBloatFactor;
@@ -85,7 +69,7 @@ public:
         double                      _minFileSizeFactor;
         size_t                      _numThreads;
         bool                        _skipCrcOnRead;
-        bool                        _compactToActiveFile;
+        bool                        _compact2ActiveFile;
         CompressionConfig           _compactCompression;
         WriteableFileChunk::Config  _fileConfig;
     };
@@ -105,15 +89,10 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::ThreadExecutor &executor,
-                 const vespalib::string &dirName,
-                 const Config & config,
-                 const GrowStrategy &growStrategy,
-                 const TuneFileSummary &tune,
+    LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
+                 const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
-                 transactionlog::SyncProxy &tlSyncer,
-                 const IBucketizer::SP & bucketizer,
-                 bool readOnly = false);
+                 transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer, bool readOnly = false);
 
     ~LogDataStore();
 

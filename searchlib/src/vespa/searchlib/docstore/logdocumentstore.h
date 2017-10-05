@@ -44,14 +44,10 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDocumentStore(vespalib::ThreadExecutor & executor,
-                     const vespalib::string & baseDir,
-                     const Config & config,
-                     const GrowStrategy & growStrategy,
-                     const TuneFileSummary &tuneFileSummary,
+    LogDocumentStore(vespalib::ThreadExecutor & executor, const vespalib::string & baseDir, const Config & config,
+                     const GrowStrategy & growStrategy, const TuneFileSummary &tuneFileSummary,
                      const common::FileHeaderContext &fileHeaderContext,
-                     transactionlog::SyncProxy &tlSyncer,
-                     const IBucketizer::SP & bucketizer);
+                     transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer);
     ~LogDocumentStore();
     void reconfigure(const Config & config);
 private:

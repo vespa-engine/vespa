@@ -44,6 +44,7 @@ public:
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         bool allowVisitCaching() const { return _allowVisitCaching; }
         Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
+        bool operator == (const Config &) const;
     private:
         CompressionConfig _compression;
         size_t _maxCacheBytes;

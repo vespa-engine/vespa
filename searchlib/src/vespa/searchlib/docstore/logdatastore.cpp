@@ -29,15 +29,35 @@ using docstore::StoreByBucket;
 using docstore::BucketCompacter;
 using namespace std::literals;
 
-LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
-                           const vespalib::string &dirName,
-                           const Config &config,
-                           const GrowStrategy &growStrategy,
-                           const TuneFileSummary &tune,
-                           const FileHeaderContext &fileHeaderContext,
-                           transactionlog::SyncProxy &tlSyncer,
-                           const IBucketizer::SP & bucketizer,
-                           bool readOnly)
+LogDataStore::Config::Config()
+    : _maxFileSize(1000000000ul),
+      _maxDiskBloatFactor(0.2),
+      _maxBucketSpread(2.5),
+      _minFileSizeFactor(0.2),
+      _numThreads(8),
+      _skipCrcOnRead(false),
+      _compact2ActiveFile(true),
+      _compactCompression(CompressionConfig::LZ4),
+      _fileConfig()
+{ }
+
+bool
+LogDataStore::Config::operator == (const Config & rhs) const {
+    return (_maxBucketSpread == rhs._maxBucketSpread) &&
+            (_maxDiskBloatFactor == rhs._maxDiskBloatFactor) &&
+            (_maxFileSize == rhs._maxFileSize) &&
+            (_minFileSizeFactor == rhs._minFileSizeFactor) &&
+            (_compact2ActiveFile == rhs._compact2ActiveFile) &&
+            (_skipCrcOnRead == rhs._skipCrcOnRead) &&
+            (_numThreads == rhs._numThreads) &&
+            (_compactCompression == rhs._compactCompression) &&
+            (_fileConfig == rhs._fileConfig);
+}
+
+LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
+                           const GrowStrategy &growStrategy, const TuneFileSummary &tune,
+                           const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
+                           const IBucketizer::SP & bucketizer, bool readOnly)
     : IDataStore(dirName),
       _config(config),
       _tune(tune),

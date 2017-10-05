@@ -196,6 +196,15 @@ public:
 using VisitCache = docstore::VisitCache;
 using docstore::Value;
 
+bool
+DocumentStore::Config::operator == (const Config &rhs) const {
+    return (_maxCacheBytes == rhs._maxCacheBytes) &&
+            (_allowVisitCaching == rhs._allowVisitCaching) &&
+            (_initialCacheEntries == rhs._initialCacheEntries) &&
+            (_compression == rhs._compression);
+}
+
+
 DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
       _config(config),

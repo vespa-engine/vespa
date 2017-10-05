@@ -10,7 +10,7 @@ using common::FileHeaderContext;
 bool
 LogDocumentStore::Config::operator == (const Config & rhs) const {
     (void) rhs;
-    return true;
+    return DocumentStore::Config::operator ==(rhs) && (_logConfig == rhs._logConfig);
 }
 
 LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
