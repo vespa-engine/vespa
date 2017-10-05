@@ -230,11 +230,13 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
     virtual ~MyProtonConfigurerOwner() { }
 
     virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName &docTypeName,
+                                                  document::BucketSpace bucketSpace,
                                                   const vespalib::string &configId,
                                                   const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
                                                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                                                   InitializeThreads initializeThreads) override
     {
+        (void) bucketSpace;
         (void) configId;
         (void) bootstrapConfig;
         (void) initializeThreads;

@@ -209,7 +209,8 @@ public:
         _configMgr.nextGeneration(0);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { abort(); }
         _ddb.reset(new DocumentDB("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
-                                  DocTypeName(docTypeName), *b->getProtonConfigSP(), *this, _summaryExecutor, _summaryExecutor,
+                                  DocTypeName(docTypeName), document::BucketSpace::placeHolder(),
+				  *b->getProtonConfigSP(), *this, _summaryExecutor, _summaryExecutor,
                                   _tls, _dummy, _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo)),
         _ddb->start();

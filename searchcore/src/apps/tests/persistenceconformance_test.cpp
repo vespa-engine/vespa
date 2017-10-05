@@ -186,6 +186,7 @@ public:
                                _queryLimiter,
                                _clock,
                                docType,
+                               document::BucketSpace::placeHolder(),
                                *b->getProtonConfigSP(),
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
@@ -316,7 +317,7 @@ public:
             LOG(info, "putHandler(%s)", itr->first.toString().c_str());
             IPersistenceHandler::SP proxy(
                     new PersistenceHandlerProxy(itr->second));
-            putHandler(itr->first, proxy);
+            putHandler(document::BucketSpace::placeHolder(), itr->first, proxy);
         }
     }
 
@@ -328,7 +329,7 @@ public:
         const DocumentDBMap &docDbs = _docDbRepo->getDocDbs();
         for (DocumentDBMap::const_iterator itr = docDbs.begin();
              itr != docDbs.end(); ++itr) {
-            IPersistenceHandler::SP proxy(removeHandler(itr->first));
+            IPersistenceHandler::SP proxy(removeHandler(itr->second->getBucketSpace(), itr->first));
         }
     }
 

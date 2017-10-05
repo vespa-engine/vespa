@@ -356,9 +356,10 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
 }
 
 IDocumentDBConfigOwner *
-Proton::addDocumentDB(const DocTypeName & docTypeName,
-                      const vespalib::string & configId,
-                      const BootstrapConfig::SP & bootstrapConfig,
+Proton::addDocumentDB(const DocTypeName &docTypeName,
+                      document::BucketSpace bucketSpace,
+                      const vespalib::string &configId,
+                      const BootstrapConfig::SP &bootstrapConfig,
                       const DocumentDBConfig::SP &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
@@ -368,7 +369,7 @@ Proton::addDocumentDB(const DocTypeName & docTypeName,
         if (docType != NULL) {
             LOG(info, "Add document database: doctypename(%s), configid(%s)",
                 docTypeName.toString().c_str(), configId.c_str());
-            return addDocumentDB(*docType, bootstrapConfig, documentDBConfig, initializeThreads).get();
+            return addDocumentDB(*docType, bucketSpace, bootstrapConfig, documentDBConfig, initializeThreads).get();
         } else {
 
             LOG(warning,
@@ -514,6 +515,7 @@ Proton::getDocumentDB(const document::DocumentType &docType)
 
 DocumentDB::SP
 Proton::addDocumentDB(const document::DocumentType &docType,
+                      document::BucketSpace bucketSpace,
                       const BootstrapConfig::SP &bootstrapConfig,
                       const DocumentDBConfig::SP &documentDBConfig,
                       InitializeThreads initializeThreads)
@@ -547,6 +549,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                       _queryLimiter,
                                       _clock,
                                       docTypeName,
+                                      bucketSpace,
                                       config,
                                       *this,
                                       *_warmupExecutor,
@@ -585,7 +588,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
             _persistenceEngine->populateInitialBucketDB(*persistenceHandler);
         }
         // TODO: Fix race with new cluster state setting.
-        _persistenceEngine->putHandler(docTypeName, persistenceHandler);
+        _persistenceEngine->putHandler(bucketSpace, docTypeName, persistenceHandler);
     }
     SearchHandlerProxy::SP searchHandler(new SearchHandlerProxy(ret));
     _summaryEngine->putSearchHandler(docTypeName, searchHandler);
@@ -604,8 +607,9 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     {
         std::lock_guard<std::shared_timed_mutex> guard(_mutex);
         DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
-        if (it == _documentDBMap.end())
+        if (it == _documentDBMap.end()) {
             return;
+        }
         old = it->second;
         _documentDBMap.erase(it);
     }
@@ -616,7 +620,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
             // Not allowed to get to service layer to call pause().
             std::unique_lock<std::shared_timed_mutex> persistenceWguard(_persistenceEngine->getWLock());
             IPersistenceHandler::SP oldHandler;
-            oldHandler = _persistenceEngine->removeHandler(docTypeName);
+            oldHandler = _persistenceEngine->removeHandler(old->getBucketSpace(), docTypeName);
             if (_initComplete && oldHandler) {
                 // TODO: Fix race with bucket db modifying ops.
                 _persistenceEngine->grabExtraModifiedBuckets(*oldHandler);

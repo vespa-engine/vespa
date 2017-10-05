@@ -114,7 +114,9 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     _owner.applyConfig(bootstrapConfig);
     for (const auto &ddbConfig : protonConfig.documentdb) {
         DocTypeName docTypeName(ddbConfig.inputdoctypename);
-        configureDocumentDB(*configSnapshot, docTypeName, ddbConfig.configid, initializeThreads);
+        // TODO: set bucket space based on config when available
+        document::BucketSpace bucketSpace = document::BucketSpace::placeHolder();
+        configureDocumentDB(*configSnapshot, docTypeName, bucketSpace, ddbConfig.configid, initializeThreads);
     }
     pruneDocumentDBs(*configSnapshot);
     size_t gen = bootstrapConfig->getGeneration();
@@ -124,7 +126,11 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
 }
 
 void
-ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot, const DocTypeName &docTypeName, const vespalib::string &configId, const InitializeThreads &initializeThreads)
+ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot,
+                                      const DocTypeName &docTypeName,
+                                      document::BucketSpace bucketSpace,
+                                      const vespalib::string &configId,
+                                      const InitializeThreads &initializeThreads)
 {
     // called by proton executor thread
     const auto &bootstrapConfig = configSnapshot.getBootstrapConfig();
@@ -134,7 +140,7 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
     const auto &documentDBConfig = cfgitr->second;
     auto dbitr(_documentDBs.find(docTypeName));
     if (dbitr == _documentDBs.end()) {
-        auto *newdb = _owner.addDocumentDB(docTypeName, configId, bootstrapConfig, documentDBConfig, initializeThreads);
+        auto *newdb = _owner.addDocumentDB(docTypeName, bucketSpace, configId, bootstrapConfig, documentDBConfig, initializeThreads);
         if (newdb != nullptr) {
             auto insres = _documentDBs.insert(std::make_pair(docTypeName, newdb));
             assert(insres.second);

@@ -114,6 +114,7 @@ Fixture::Fixture()
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);
     _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
+                             document::BucketSpace::placeHolder(),
                              *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _tls, _dummy,
                              _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
                              std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo));

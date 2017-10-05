@@ -14,6 +14,7 @@
 #include <set>
 
 using document::BucketId;
+using document::BucketSpace;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
@@ -432,8 +433,8 @@ struct SimpleFixture {
           engine(_owner, _writeFilter, -1, false),
           hset()
     {
-        engine.putHandler(DocTypeName(doc1->getType()), hset.phandler1);
-        engine.putHandler(DocTypeName(doc2->getType()), hset.phandler2);
+        engine.putHandler(BucketSpace::placeHolder(), DocTypeName(doc1->getType()), hset.phandler1);
+        engine.putHandler(BucketSpace::placeHolder(), DocTypeName(doc2->getType()), hset.phandler2);
     }
 };
 

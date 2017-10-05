@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
@@ -21,6 +22,7 @@ class IProtonConfigurerOwner
 public:
     virtual ~IProtonConfigurerOwner() { }
     virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName &docTypeName,
+                                                  document::BucketSpace bucketSpace,
                                                   const vespalib::string &configId,
                                                   const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
                                                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig,

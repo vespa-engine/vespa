@@ -78,6 +78,7 @@ private:
     using ProtonConfig = vespa::config::search::core::ProtonConfig;
 
     DocTypeName                   _docTypeName;
+    document::BucketSpace         _bucketSpace;
     vespalib::string              _baseDir;
     uint32_t                      _defaultExecutorTaskLimit;
     uint32_t                      _semiUnboundExecutorTaskLimit;
@@ -233,16 +234,17 @@ public:
      * @param config_store Access to read and write configs.
      */
     DocumentDB(const vespalib::string &baseDir,
-               const DocumentDBConfig::SP & currentSnapshot,
+               const DocumentDBConfig::SP &currentSnapshot,
                const vespalib::string &tlsSpec,
-               matching::QueryLimiter & queryLimiter,
+               matching::QueryLimiter &queryLimiter,
                const vespalib::Clock &clock,
                const DocTypeName &docTypeName,
+               document::BucketSpace bucketSpace,
                const ProtonConfig &protonCfg,
-               IDocumentDBOwner & owner,
-               vespalib::ThreadExecutor & warmupExecutor,
-               vespalib::ThreadStackExecutorBase & summaryExecutor,
-               search::transactionlog::Writer & tlsDirectWriter,
+               IDocumentDBOwner &owner,
+               vespalib::ThreadExecutor &warmupExecutor,
+               vespalib::ThreadStackExecutorBase &summaryExecutor,
+               search::transactionlog::Writer &tlsDirectWriter,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,
                ConfigStore::UP config_store,
@@ -392,6 +394,7 @@ public:
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     void newConfigSnapshot(DocumentDBConfig::SP snapshot);
     void reconfigure(const DocumentDBConfig::SP & snapshot) override;
     int64_t getActiveGeneration() const;

@@ -3,6 +3,7 @@
 
 #include "document_iterator.h"
 #include "i_resource_write_filter.h"
+#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
@@ -102,9 +103,12 @@ public:
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine();
 
-    IPersistenceHandler::SP putHandler(const DocTypeName &docType, const IPersistenceHandler::SP &handler);
+    IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace,
+                                       const DocTypeName &docType,
+                                       const IPersistenceHandler::SP &handler);
     IPersistenceHandler::SP getHandler(const DocTypeName &docType) const;
-    IPersistenceHandler::SP removeHandler(const DocTypeName &docType);
+    IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace,
+                                          const DocTypeName &docType);
 
     // Implements PersistenceProvider
     virtual Result initialize() override;

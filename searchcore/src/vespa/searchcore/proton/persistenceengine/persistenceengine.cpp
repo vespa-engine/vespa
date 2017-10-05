@@ -233,9 +233,11 @@ PersistenceEngine::~PersistenceEngine()
 
 
 IPersistenceHandler::SP
-PersistenceEngine::putHandler(const DocTypeName &docType,
+PersistenceEngine::putHandler(document::BucketSpace bucketSpace,
+                              const DocTypeName &docType,
                               const IPersistenceHandler::SP &handler)
 {
+    (void) bucketSpace;
     LockGuard guard(_lock);
     return _handlers.putHandler(docType, handler);
 }
@@ -250,8 +252,10 @@ PersistenceEngine::getHandler(const DocTypeName &docType) const
 
 
 IPersistenceHandler::SP
-PersistenceEngine::removeHandler(const DocTypeName &docType)
+PersistenceEngine::removeHandler(document::BucketSpace bucketSpace,
+                                 const DocTypeName &docType)
 {
+    (void) bucketSpace;
     // TODO: Grab bucket list and treat them as modified
     LockGuard guard(_lock);
     return _handlers.removeHandler(docType);
