@@ -330,12 +330,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId appId = params.getApplicationId();
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
-        Optional<Version> currentActiveVespaVersion = Optional.empty();
-        if (currentActiveApplicationSet.isPresent()) {
-            currentActiveVespaVersion = Optional.of(getExistingSession(tenant, appId).getVespaVersion());
-        }
-        return session.prepare(logger, params, currentActiveApplicationSet, currentActiveVespaVersion,
-                               tenant.getPath(), clock.instant());
+        return session.prepare(logger, params, currentActiveApplicationSet, tenant.getPath(), clock.instant());
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
