@@ -23,13 +23,14 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 
 import java.io.File;
@@ -51,7 +52,9 @@ public class ContainerControllerTester {
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
         controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
-        upgrader = new Upgrader(controller, Duration.ofMinutes(2), new JobControl(new MockCuratorDb()));
+        CuratorDb curatorDb = new MockCuratorDb();
+        curatorDb.writeUpgradesPerMinute(100);
+        upgrader = new Upgrader(controller, Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
     }
 
     public Controller controller() { return controller; }
@@ -110,6 +113,10 @@ public class ContainerControllerTester {
     
     public void assertResponse(Request request, File expectedResponse) throws IOException {
         containerTester.assertResponse(request, expectedResponse);
+    }
+
+    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {
+        containerTester.assertResponse(request, expectedResponse, expectedStatusCode);
     }
 
 }
