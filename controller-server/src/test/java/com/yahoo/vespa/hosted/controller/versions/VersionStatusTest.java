@@ -221,9 +221,10 @@ public class VersionStatusTest {
         tester.completeUpgrade(canary1, version3, "canary");
         tester.completeUpgrade(canary2, version3, "canary");
         tester.upgradeSystem(version3);
-        tester.completeUpgradeWithError(default0, version3, "default", stagingTest);
+        tester.completeUpgrade(default0, version3, "default");
         tester.completeUpgradeWithError(default1, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default2, version3, "default", stagingTest);
+        tester.completeUpgradeWithError(default3, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default9, version3, "default", stagingTest);
 
         versionStatus = VersionStatus.compute(tester.controller());
@@ -231,8 +232,26 @@ public class VersionStatusTest {
 
         assertEquals("No deployments: Low",
                      VespaVersion.Confidence.low, confidence(versions, version0));
-        assertEquals("40% of defaults failed: Broken",
+        assertEquals("80% of defaults failed: broken",
                      VespaVersion.Confidence.broken, confidence(versions, version3));
+        assertEquals("Current version of this - no deployments: Low",
+                     VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
+
+
+        // more application upgrade, enough "default" apps fail to mark version
+        // as normal (5 of 9 is above 50%)
+        tester.completeUpgrade(default4, version3, "default");
+        tester.completeUpgrade(default5, version3, "default");
+        tester.completeUpgrade(default6, version3, "default");
+        tester.completeUpgrade(default7, version3, "default");
+
+        versionStatus = VersionStatus.compute(tester.controller());
+        versions = versionStatus.versions();
+
+        assertEquals("No deployments: Low",
+                     VespaVersion.Confidence.low, confidence(versions, version0));
+        assertEquals("37.5% of defaults failed: normal",
+                     VespaVersion.Confidence.normal, confidence(versions, version3));
         assertEquals("Current version of this - no deployments: Low",
                      VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
     }
