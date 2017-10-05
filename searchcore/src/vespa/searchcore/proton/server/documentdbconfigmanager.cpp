@@ -135,6 +135,12 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
 
 namespace {
 
+search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton) {
+    (void) proton;
+    search::LogDocumentStore::Config config;
+    return config;
+}
+
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
 using AttributesConfigBuilder = vespa::config::search::AttributesConfigBuilder;
 using AttributesConfigBuilderSP = std::shared_ptr<AttributesConfigBuilder>;
@@ -189,18 +195,13 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     }
 
     int64_t generation = snapshot.getGeneration();
-    LOG(debug,
-        "Forwarded generation %"
-                PRId64
-                ", generation %"
-                PRId64,
-        _bootstrapConfig->getGeneration(), generation);
+    LOG(debug, "Forwarded generation %" PRId64 ", generation %" PRId64, _bootstrapConfig->getGeneration(), generation);
     if (!_ignoreForwardedConfig && _bootstrapConfig->getGeneration() != generation) {
         return;
     }
 
     int64_t currentGeneration = -1;
-    if (current.get() != NULL) {
+    if (current) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
         newRankingConstants = current->getRankingConstantsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
@@ -245,13 +246,11 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newRankingConstants = std::make_shared<RankingConstants>(constants);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
-        std::unique_ptr<IndexschemaConfig> indexschemaConfig =
-            snapshot.getConfig<IndexschemaConfig>(_configId);
+        std::unique_ptr<IndexschemaConfig> indexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
         search::index::Schema schema;
         search::index::SchemaBuilder::build(*indexschemaConfig, schema);
         if (!search::index::SchemaUtil::validateSchema(schema)) {
-            LOG(error,
-                "Cannot use bad index schema, validation failed");
+            LOG(error, "Cannot use bad index schema, validation failed");
             abort();
         }
         newIndexschemaConfig = IndexschemaConfigSP(indexschemaConfig.release());
@@ -272,14 +271,10 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newImportedFieldsConfig = ImportedFieldsConfigSP(snapshot.getConfig<ImportedFieldsConfig>(_configId).release());
     }
 
-    Schema::SP schema(buildSchema(*newAttributesConfig,
-                                  *newSummaryConfig,
-                                  *newIndexschemaConfig));
-    newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig,
-                                                  _docTypeName);
-    if (newMaintenanceConfig.get() != NULL &&
-        oldMaintenanceConfig.get() != NULL &&
-        *newMaintenanceConfig == *oldMaintenanceConfig) {
+    Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
+    newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
+    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig());
+    if (newMaintenanceConfig && oldMaintenanceConfig && *newMaintenanceConfig == *oldMaintenanceConfig) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
     ConfigSnapshot extraConfigs(snapshot.subset(_extraConfigKeys));
@@ -298,6 +293,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  _bootstrapConfig->getTuneFileDocumentDBSP(),
                                  schema,
                                  newMaintenanceConfig,
+                                 storeConfig,
                                  _configId,
                                  _docTypeName,
                                  extraConfigs));

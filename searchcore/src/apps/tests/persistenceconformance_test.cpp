@@ -128,6 +128,7 @@ public:
                         std::make_shared<TuneFileDocumentDB>(),
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),
+                        search::LogDocumentStore::Config(),
                         "client",
                         docTypeName.getName()));
     }

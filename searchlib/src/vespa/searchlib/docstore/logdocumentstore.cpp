@@ -7,6 +7,12 @@ namespace search {
 using vespalib::nbostream;
 using common::FileHeaderContext;
 
+bool
+LogDocumentStore::Config::operator == (const Config & rhs) const {
+    (void) rhs;
+    return true;
+}
+
 LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
                                    const vespalib::string & baseDir,
                                    const Config & config,
@@ -18,12 +24,9 @@ LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
     : DocumentStore(config, _backingStore),
       _backingStore(executor, baseDir, config.getLogConfig(), growStrategy,
                     tuneFileSummary, fileHeaderContext, tlSyncer, bucketizer)
-{
-}
+{}
 
-LogDocumentStore::~LogDocumentStore()
-{
-}
+LogDocumentStore::~LogDocumentStore() {}
 
 void
 LogDocumentStore::reconfigure(const Config & config) {

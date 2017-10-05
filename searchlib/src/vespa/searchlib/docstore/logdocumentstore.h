@@ -20,12 +20,15 @@ class LogDocumentStore : public DocumentStore
 public:
     class Config : public DocumentStore::Config {
     public:
+        Config() : DocumentStore::Config(), _logConfig() { }
         Config(const DocumentStore::Config & base, const LogDataStore::Config & log) :
             DocumentStore::Config(base),
             _logConfig(log)
         { }
         const LogDataStore::Config & getLogConfig() const { return _logConfig; }
         LogDataStore::Config & getLogConfig() { return _logConfig; }
+        bool operator == (const Config & rhs) const;
+        bool operator != (const Config & rhs) const { return ! (*this == rhs); }
     private:
         LogDataStore::Config _logConfig;
     };

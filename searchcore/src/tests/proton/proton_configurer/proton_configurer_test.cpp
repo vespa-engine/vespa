@@ -86,6 +86,7 @@ struct DBConfigFixture {
              std::make_shared<TuneFileDocumentDB>(),
              buildSchema(),
              std::make_shared<DocumentDBMaintenanceConfig>(),
+             search::LogDocumentStore::Config(),
              configId,
              docTypeName,
              config::ConfigSnapshot());
