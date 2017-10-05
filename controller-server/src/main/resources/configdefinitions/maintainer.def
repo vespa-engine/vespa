@@ -2,3 +2,4 @@
 namespace=vespa.hosted.controller.maintenance.config
 
 intervalMinutes int default=30
+upgradesPerMinute double default=0.5

@@ -24,11 +24,14 @@ import java.util.logging.Logger;
 public class Upgrader extends Maintainer {
 
     private static final Duration upgradeTimeout = Duration.ofHours(12);
+    
+    private final double upgradesPerMinute;
 
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
-    public Upgrader(Controller controller, Duration interval, JobControl jobControl) {
+    public Upgrader(Controller controller, Duration interval, double upgradesPerMinute, JobControl jobControl) {
         super(controller, interval, jobControl);
+        this.upgradesPerMinute = upgradesPerMinute;
     }
 
     /**
@@ -37,8 +40,7 @@ public class Upgrader extends Maintainer {
     @Override
     public void maintain() {
         VespaVersion target = controller().versionStatus().version(controller().systemVersion());
-        if (target == null) return; // we don't have information about the current system version at this time
-        
+
         switch (target.confidence()) {
             case broken:
                 ApplicationList toCancel = applications().upgradingTo(target.versionNumber())
@@ -74,6 +76,7 @@ public class Upgrader extends Maintainer {
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.notCurrentlyUpgrading(change, startOfUpgradePeriod); // do not trigger again if currently upgrading
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
+        applications = applications.first(Math.max(1, (int)(maintenanceInterval().getSeconds() * ( upgradesPerMinute / 60)))); // throttle
         for (Application application : applications.byIncreasingDeployedVersion().asList()) {
             try {
                 controller().applications().deploymentTrigger().triggerChange(application.id(), change);

@@ -50,7 +50,7 @@ public class DeploymentTester {
 
     public DeploymentTester(ControllerTester tester) {
         this.tester = tester;
-        this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()));
+        this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, 100, new JobControl(tester.curator()));
         this.failureRedeployer = new FailureRedeployer(tester.controller(), maintenanceInterval,
                                                        new JobControl(tester.curator()));
     }

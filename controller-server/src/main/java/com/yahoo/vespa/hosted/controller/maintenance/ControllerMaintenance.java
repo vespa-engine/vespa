@@ -45,7 +45,7 @@ public class ControllerMaintenance extends AbstractComponent {
         failureRedeployer = new FailureRedeployer(controller, maintenanceInterval, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, maintenanceInterval, jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(3), jobControl);
-        upgrader = new Upgrader(controller, maintenanceInterval, jobControl);
+        upgrader = new Upgrader(controller, maintenanceInterval, maintainerConfig.upgradesPerMinute(), jobControl);
         delayedDeployer = new DelayedDeployer(controller, maintenanceInterval, jobControl);
     }
     
