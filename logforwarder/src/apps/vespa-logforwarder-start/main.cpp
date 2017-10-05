@@ -7,14 +7,14 @@
 LOG_SETUP("vespa-logforwarder-start");
 
 #include "cf-handler.h"
-#include "sig-catch.h"
+#include <vespa/vespalib/util/sig_catch.h>
 
 class Wrapper {
     const char *_configId;
 public:
     Wrapper(const char *cfid) : _configId(cfid) {}
     void run() {
-        SigCatch catcher;
+        vespalib::SigCatch catcher;
         CfHandler handler;
         handler.start(_configId);
         while (! catcher.receivedStopSignal()) {
