@@ -109,7 +109,7 @@ public:
     // Implements PersistenceProvider
     virtual Result initialize() override;
     virtual PartitionStateListResult getPartitionStates() const override;
-    virtual BucketIdListResult listBuckets(PartitionId) const override;
+    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
     virtual Result setClusterState(const ClusterState& calc) override;
     virtual Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     virtual BucketInfoResult getBucketInfo(const Bucket&) const override;
@@ -124,7 +124,7 @@ public:
 
     virtual Result createBucket(const Bucket &bucketId, Context &) override ;
     virtual Result deleteBucket(const Bucket&, Context&) override;
-    virtual BucketIdListResult getModifiedBuckets() const override;
+    virtual BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     virtual Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 

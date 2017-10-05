@@ -37,6 +37,7 @@ using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using storage::spi::test::makeBucket;
+using storage::spi::test::makeBucketSpace;
 using namespace proton;
 using namespace vespalib;
 
@@ -592,8 +593,8 @@ TEST_F("require that listBuckets() is routed to handlers and merged", SimpleFixt
     f.hset.handler2.bucketList.push_back(bckId2);
     f.hset.handler2.bucketList.push_back(bckId3);
 
-    EXPECT_TRUE(f.engine.listBuckets(PartitionId(1)).getList().empty());
-    BucketIdListResult result = f.engine.listBuckets(partId);
+    EXPECT_TRUE(f.engine.listBuckets(makeBucketSpace(), PartitionId(1)).getList().empty());
+    BucketIdListResult result = f.engine.listBuckets(makeBucketSpace(), partId);
     const BucketIdListResult::List &bucketList = result.getList();
     EXPECT_EQUAL(3u, bucketList.size());
     EXPECT_EQUAL(bckId1, bucketList[0]);
@@ -678,7 +679,7 @@ TEST_F("require that getModifiedBuckets() is routed to handlers and merged", Sim
     f.hset.handler2.modBucketList.push_back(bckId2);
     f.hset.handler2.modBucketList.push_back(bckId3);
 
-    BucketIdListResult result = f.engine.getModifiedBuckets();
+    BucketIdListResult result = f.engine.getModifiedBuckets(makeBucketSpace());
     const BucketIdListResult::List &bucketList = result.getList();
     EXPECT_EQUAL(3u, bucketList.size());
     EXPECT_EQUAL(bckId1, bucketList[0]);

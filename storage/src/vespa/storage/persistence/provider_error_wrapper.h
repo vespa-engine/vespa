@@ -43,7 +43,7 @@ public:
 
     spi::Result initialize() override;
     spi::PartitionStateListResult getPartitionStates() const override;
-    spi::BucketIdListResult listBuckets(spi::PartitionId) const override;
+    spi::BucketIdListResult listBuckets(BucketSpace bucketSpace, spi::PartitionId) const override;
     spi::Result setClusterState(const spi::ClusterState&)  override;
     spi::Result setActiveState(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState) override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
@@ -59,7 +59,7 @@ public:
     spi::Result destroyIterator(spi::IteratorId, spi::Context&) override;
     spi::Result createBucket(const spi::Bucket&, spi::Context&) override;
     spi::Result deleteBucket(const spi::Bucket&, spi::Context&) override;
-    spi::BucketIdListResult getModifiedBuckets() const override;
+    spi::BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     spi::Result maintain(const spi::Bucket& bucket, spi::MaintenanceLevel level) override;
     spi::Result split(const spi::Bucket& source, const spi::Bucket& target1, const spi::Bucket& target2, spi::Context&) override;
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2, const spi::Bucket& target, spi::Context&) override;

@@ -4,6 +4,11 @@
 
 namespace storage::spi::test {
 
+document::BucketSpace makeBucketSpace()
+{
+    return document::BucketSpace::placeHolder();
+}
+
 Bucket makeBucket(document::BucketId bucketId, PartitionId partitionId)
 {
     return Bucket(document::Bucket(document::BucketSpace::placeHolder(), bucketId), partitionId);

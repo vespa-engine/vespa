@@ -463,7 +463,7 @@ PersistenceThread::handleReadBucketList(ReadBucketList& cmd)
                                        _env._metrics.readBucketList,
                                        _env._component.getClock()));
 
-    spi::BucketIdListResult result(_spi.listBuckets(cmd.getPartition()));
+    spi::BucketIdListResult result(_spi.listBuckets(document::BucketSpace::placeHolder(), cmd.getPartition()));
     if (checkForError(result, *tracker)) {
         ReadBucketListReply::SP reply(new ReadBucketListReply(cmd));
         result.getList().swap(reply->getBuckets());

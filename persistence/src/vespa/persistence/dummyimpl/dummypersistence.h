@@ -132,7 +132,7 @@ public:
     ~DummyPersistence();
 
     PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(PartitionId) const override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
 
     void setModifiedBuckets(const BucketIdListResult::List& result);
 
@@ -140,7 +140,7 @@ public:
      * Returns the list set by setModifiedBuckets(), then clears
      * the list.
      */
-    BucketIdListResult getModifiedBuckets() const override;
+    BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 
     Result setClusterState(const ClusterState& newState) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;

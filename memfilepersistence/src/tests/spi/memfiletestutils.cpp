@@ -14,6 +14,7 @@
 
 using document::DocumentType;
 using storage::spi::test::makeBucket;
+using storage::spi::test::makeBucketSpace;
 
 namespace storage {
 namespace memfile {
@@ -114,7 +115,7 @@ std::string
 MemFileTestUtils::getModifiedBuckets()
 {
     spi::BucketIdListResult result(
-            getPersistenceProvider().getModifiedBuckets());
+            getPersistenceProvider().getModifiedBuckets(makeBucketSpace()));
     const spi::BucketIdListResult::List& list(result.getList());
     std::ostringstream ss;
     for (size_t i = 0; i < list.size(); ++i) {

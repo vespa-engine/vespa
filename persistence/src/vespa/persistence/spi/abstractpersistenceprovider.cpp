@@ -43,7 +43,7 @@ AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
 }
 
 BucketIdListResult
-AbstractPersistenceProvider::getModifiedBuckets() const
+AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
 {
     BucketIdListResult::List list;
     return BucketIdListResult(list);

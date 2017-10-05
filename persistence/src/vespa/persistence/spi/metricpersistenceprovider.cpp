@@ -104,10 +104,10 @@ Impl::getPartitionStates() const
 }
 
 BucketIdListResult
-Impl::listBuckets(PartitionId v1) const
+Impl::listBuckets(BucketSpace bucketSpace, PartitionId v1) const
 {
     PRE_PROCESS(2);
-    BucketIdListResult r(_next->listBuckets(v1));
+    BucketIdListResult r(_next->listBuckets(bucketSpace, v1));
     POST_PROCESS(2, r);
     return r;
 }
@@ -250,10 +250,10 @@ Impl::deleteBucket(const Bucket& v1, Context& v2)
 }
 
 BucketIdListResult
-Impl::getModifiedBuckets() const
+Impl::getModifiedBuckets(BucketSpace bucketSpace) const
 {
     PRE_PROCESS(18);
-    BucketIdListResult r(_next->getModifiedBuckets());
+    BucketIdListResult r(_next->getModifiedBuckets(bucketSpace));
     POST_PROCESS(18, r);
     return r;
 }

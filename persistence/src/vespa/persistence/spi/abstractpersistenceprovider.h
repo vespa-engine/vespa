@@ -64,7 +64,7 @@ public:
     /**
      * Default impl empty.
      */
-    BucketIdListResult getModifiedBuckets() const override;
+    BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 
     /**
      * Uses join by default.

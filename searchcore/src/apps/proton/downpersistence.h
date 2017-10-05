@@ -28,7 +28,7 @@ public:
 
     Result initialize() override;
     PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(PartitionId) const override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
     Result setClusterState(const ClusterState&) override;
     Result setActiveState(const Bucket&, BucketInfo::ActiveState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
@@ -47,7 +47,7 @@ public:
     Result destroyIterator(IteratorId id, Context&) override;
     Result createBucket(const Bucket&, Context&) override;
     Result deleteBucket(const Bucket&, Context&) override;
-    BucketIdListResult getModifiedBuckets() const override;
+    BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     Result maintain(const Bucket&, MaintenanceLevel level) override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;

@@ -41,8 +41,8 @@ public:
     ~MemFilePersistenceProvider();
 
     spi::PartitionStateListResult getPartitionStates() const override;
-    spi::BucketIdListResult listBuckets(spi::PartitionId) const override;
-    spi::BucketIdListResult getModifiedBuckets() const override;
+    spi::BucketIdListResult listBuckets(BucketSpace bucketSpace, spi::PartitionId) const override;
+    spi::BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
     spi::Result put(const spi::Bucket&, spi::Timestamp,
                     const spi::DocumentSP&, spi::Context&) override;
