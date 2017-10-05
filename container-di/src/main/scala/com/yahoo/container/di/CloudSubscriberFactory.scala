@@ -7,7 +7,6 @@ import com.yahoo.config.ConfigInstance
 import com.yahoo.config.subscription.{ConfigHandle, ConfigSource, ConfigSourceSet, ConfigSubscriber}
 import com.yahoo.container.di.CloudSubscriberFactory._
 import com.yahoo.container.di.config.{Subscriber, SubscriberFactory}
-import com.yahoo.log.LogLevel
 import com.yahoo.vespa.config.ConfigKey
 
 import scala.collection.JavaConverters._
@@ -80,8 +79,7 @@ object CloudSubscriberFactory {
           case e: IllegalArgumentException =>
             numExceptions += 1
             log.warning("Got exception from the config system (please ignore the exception if you just removed "
-                          + "a component from your application that used the mentioned config): "
-                          + e.getMessage + "\n" + e.getStackTrace)
+                          + "a component from your application that used the mentioned config): " + e.getMessage)
             if (numExceptions >= 5)
               throw new IllegalArgumentException("Failed retrieving the next config generation.", e)
         }
