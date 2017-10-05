@@ -118,9 +118,8 @@ public:
     void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager)  override;
 
     IReprocessingTask::List
-    applyConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
-                const DocumentDBConfig &oldConfigSnapshot, SerialNum serialNum,
-                const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
 
     void clearViews() override;
 

@@ -51,7 +51,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     }
     void setup(const DocumentSubDbInitializerResult &) override {}
     void initViews(const DocumentDBConfig &, const proton::matching::SessionManager::SP &) override {}
-    IReprocessingTask::List applyConfig(const ProtonConfig &, const DocumentDBConfig &, const DocumentDBConfig &,
+    IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,
                                         SerialNum, const ReconfigParams &, IDocumentDBReferenceResolver &) override
     {
         return IReprocessingTask::List();

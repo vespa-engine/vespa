@@ -213,9 +213,8 @@ public:
     void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;
 
     IReprocessingTask::List
-    applyConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
-                const DocumentDBConfig &oldConfigSnapshot, SerialNum serialNum,
-                const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
     IFeedView::SP getFeedView() const override { return _iFeedView.get(); }

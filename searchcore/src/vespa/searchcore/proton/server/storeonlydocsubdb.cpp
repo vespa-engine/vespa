@@ -437,16 +437,15 @@ StoreOnlyDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
 }
 
 IReprocessingTask::List
-StoreOnlyDocSubDB::applyConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
-                               const DocumentDBConfig &oldConfigSnapshot, SerialNum serialNum,
-                               const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
+StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                               SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
     (void) oldConfigSnapshot;
     (void) serialNum;
     (void) params;
     (void) resolver;
     assert(_writeService.master().isCurrentThread());
-    reconfigure(protonConfig);
+//    reconfigure(protonConfig);
     initFeedView(newConfigSnapshot);
     updateLidReuseDelayer(&newConfigSnapshot);
     _owner.syncFeedView();

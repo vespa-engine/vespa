@@ -159,11 +159,10 @@ reconfigureMatchingMetrics(const RankProfilesConfig &cfg)
 }
 
 IReprocessingTask::List
-SearchableDocSubDB::applyConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
-                                const DocumentDBConfig &oldConfigSnapshot, SerialNum serialNum,
-                                const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
+SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
-    StoreOnlyDocSubDB::reconfigure(protonConfig);
+//    StoreOnlyDocSubDB::reconfigure(protonConfig);
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     if (params.shouldMatchersChange() && _addMetrics) {

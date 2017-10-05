@@ -185,7 +185,7 @@ public:
                                _queryLimiter,
                                _clock,
                                docType,
-                               std::make_shared<ProtonConfig>(),
+                               *b->getProtonConfigSP(),
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
                                _summaryExecutor,

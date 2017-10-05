@@ -85,7 +85,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        matching::QueryLimiter & queryLimiter,
                        const vespalib::Clock &clock,
                        const DocTypeName &docTypeName,
-                       const std::shared_ptr<ProtonConfig> & protonCfg,
+                       const ProtonConfig & protonCfg,
                        IDocumentDBOwner & owner,
                        vespalib::ThreadExecutor & warmupExecutor,
                        vespalib::ThreadStackExecutorBase & summaryExecutor,
@@ -104,17 +104,16 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _docTypeName(docTypeName),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
-      _defaultExecutorTaskLimit(protonCfg->indexing.tasklimit),
-      _semiUnboundExecutorTaskLimit(protonCfg->indexing.semiunboundtasklimit),
-      _indexingThreads(protonCfg->indexing.threads),
-      _writeService(std::max(1, protonCfg->indexing.threads),
+      _defaultExecutorTaskLimit(protonCfg.indexing.tasklimit),
+      _semiUnboundExecutorTaskLimit(protonCfg.indexing.semiunboundtasklimit),
+      _indexingThreads(protonCfg.indexing.threads),
+      _writeService(std::max(1, protonCfg.indexing.threads),
                     indexing_thread_stack_size,
                     _defaultExecutorTaskLimit),
       _initializeThreads(initializeThreads),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
       _pendingConfigSnapshot(configSnapshot),
-      _pendingProtonConfigSnapshot(protonCfg),
       _configMutex(),
       _configCV(),
       _activeConfigSnapshot(),
@@ -123,12 +122,12 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _initGate(),
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
-      _protonSummaryCfg(protonCfg->summary),
-      _protonIndexCfg(protonCfg->index),
+      _protonSummaryCfg(protonCfg.summary),
+      _protonIndexCfg(protonCfg.index),
       _config_store(std::move(config_store)),
-      _sessionManager(new matching::SessionManager(protonCfg->grouping.sessionmanager.maxentries)),
+      _sessionManager(new matching::SessionManager(protonCfg.grouping.sessionmanager.maxentries)),
       _metricsWireService(metricsWireService),
-      _metricsHook(*this, _docTypeName.getName(), protonCfg->numthreadspersearch),
+      _metricsHook(*this, _docTypeName.getName(), protonCfg.numthreadspersearch),
       _feedView(),
       _refCount(),
       _syncFeedViewEnabled(false),
@@ -141,7 +140,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                    _state, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor,
               summaryExecutor, fileHeaderContext, metricsWireService, getMetricsCollection(),
-              queryLimiter, clock, _configMutex, _baseDir, *protonCfg, hwInfo),
+              queryLimiter, clock, _configMutex, _baseDir, protonCfg, hwInfo),
       _maintenanceController(_writeService.master(), summaryExecutor, _docTypeName),
       _visibility(_feedHandler, _writeService, _feedView),
       _lidSpaceCompactionHandlers(),
@@ -282,11 +281,10 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
 
 
 void
-DocumentDB::newConfigSnapshot(std::shared_ptr<ProtonConfig> protonConfig, DocumentDBConfig::SP snapshot)
+DocumentDB::newConfigSnapshot(DocumentDBConfig::SP snapshot)
 {
     // Called by executor thread
     _pendingConfigSnapshot.set(snapshot);
-    _pendingProtonConfigSnapshot.set(protonConfig);
     {
         lock_guard guard(_configMutex);
         if (_activeConfigSnapshot.get() == NULL) {
@@ -305,7 +303,7 @@ DocumentDB::newConfigSnapshot(std::shared_ptr<ProtonConfig> protonConfig, Docume
             return;
         }
     }
-    masterExecute([this] () { performReconfig(_pendingProtonConfigSnapshot.get(), _pendingConfigSnapshot.get()); } );
+    masterExecute([this] () { performReconfig(_pendingConfigSnapshot.get()); } );
 }
 
 
@@ -345,10 +343,10 @@ DocumentDB::enterOnlineState()
 }
 
 void
-DocumentDB::performReconfig(std::shared_ptr<ProtonConfig> bootstrapConfig, DocumentDBConfig::SP configSnapshot)
+DocumentDB::performReconfig(DocumentDBConfig::SP configSnapshot)
 {
     // Called by executor thread
-    applyConfig(std::move(bootstrapConfig), std::move(configSnapshot), getCurrentSerialNumber());
+    applyConfig(std::move(configSnapshot), getCurrentSerialNumber());
     if (_state.getState() == DDBState::State::APPLY_LIVE_CONFIG) {
         enterReprocessState();
     }
@@ -356,7 +354,7 @@ DocumentDB::performReconfig(std::shared_ptr<ProtonConfig> bootstrapConfig, Docum
 
 
 void
-DocumentDB::applySubDBConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
+DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
                              SerialNum serialNum, const ReconfigParams &params)
 {
     auto registry = _owner.getDocumentDBReferenceRegistry();
@@ -368,12 +366,11 @@ DocumentDB::applySubDBConfig(const ProtonConfig & protonConfig, const DocumentDB
     assert(newDocType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(),
                                          *oldDocType, _refCount, _writeService.attributeFieldWriter());
-    _subDBs.applyConfig(protonConfig, newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
+    _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
 }
 
 void
-DocumentDB::applyConfig(std::shared_ptr<ProtonConfig> protonConfig,
-                        DocumentDBConfig::SP configSnapshot, SerialNum serialNum)
+DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum)
 {
     // Always called by executor thread:
     // Called by performReconfig() by executor thread during normal
@@ -432,7 +429,7 @@ DocumentDB::applyConfig(std::shared_ptr<ProtonConfig> protonConfig,
         _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
-        applySubDBConfig(*protonConfig, *configSnapshot, serialNum, params);
+        applySubDBConfig(*configSnapshot, serialNum, params);
         if (serialNum < _feedHandler.getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.
             _subDBs.getReprocessingRunner().reset();
@@ -769,10 +766,9 @@ DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum ser
 }
 
 void
-DocumentDB::reconfigure(const std::shared_ptr<ProtonConfig> & protonConfig,
-                        const DocumentDBConfig::SP & snapshot)
+DocumentDB::reconfigure(const DocumentDBConfig::SP & snapshot)
 {
-    masterExecute([this, protonConfig, snapshot]() { newConfigSnapshot(protonConfig, snapshot); });
+    masterExecute([this, snapshot]() { newConfigSnapshot(snapshot); });
     // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
     while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) && !_state.getClosed()) {
@@ -809,7 +805,7 @@ DocumentDB::enterApplyLiveConfigState()
         lock_guard guard(_configMutex);
         (void) _state.enterApplyLiveConfigState();
     }
-    masterExecute([this]() { performReconfig(_pendingProtonConfigSnapshot.get(), _pendingConfigSnapshot.get()); });
+    masterExecute([this]() { performReconfig(_pendingConfigSnapshot.get()); });
 }
 
 
@@ -867,7 +863,7 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
     configSnapshot = DocumentDBConfigScout::scout(configSnapshot, *_pendingConfigSnapshot.get());
     // Ignore configs that are not relevant during replay of transaction log
     configSnapshot = DocumentDBConfig::makeReplayConfig(configSnapshot);
-    applyConfig(_pendingProtonConfigSnapshot.get(), configSnapshot, serialNum);
+    applyConfig(configSnapshot, serialNum);
     LOG(info,
         "DocumentDB(%s): Replayed config with serialNum=%" PRIu64,
         _docTypeName.toString().c_str(), serialNum);

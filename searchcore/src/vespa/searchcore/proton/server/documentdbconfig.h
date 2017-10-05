@@ -10,21 +10,16 @@
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
 
-namespace vespa {
-    namespace config {
-        namespace search {
-            namespace internal {
-                class InternalSummaryType;
-                class InternalSummarymapType;
-                class InternalRankProfilesType;
-                class InternalAttributesType;
-                class InternalIndexschemaType;
-                class InternalImportedFieldsType;
-            }
-            namespace summary { namespace internal { class InternalJuniperrcType; } }
-        }
-    }
+namespace vespa::config::search::internal {
+    class InternalSummaryType;
+    class InternalSummarymapType;
+    class InternalRankProfilesType;
+    class InternalAttributesType;
+    class InternalIndexschemaType;
+    class InternalImportedFieldsType;
 }
+namespace vespa::config::search::summary { namespace internal { class InternalJuniperrcType; } }
+
 
 namespace document { namespace internal { class InternalDocumenttypesType; } }
 

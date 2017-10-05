@@ -129,10 +129,7 @@ public:
                       const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
                       const vespa::config::search::core::ProtonConfig::Index & indexCfg);
 
-    void
-    initViews(const DocumentDBConfig &configSnapshot,
-              const SessionManagerSP &sessionManager);
-
+    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager);
     void clearViews();
     void onReplayDone();
     void onReprocessDone(SerialNum serialNum);
@@ -141,9 +138,8 @@ public:
 
     void pruneRemovedFields(SerialNum serialNum);
 
-    void applyConfig(const ProtonConfig & bootstrapConfig, const DocumentDBConfig &newConfigSnapshot,
-                     const DocumentDBConfig &oldConfigSnapshot, SerialNum serialNum,
-                     const ReconfigParams &params, IDocumentDBReferenceResolver &resolver);
+    void applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                     SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver);
 
     IFeedViewSP getFeedView();
     IFlushTargetList getFlushTargets();

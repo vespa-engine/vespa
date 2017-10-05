@@ -251,8 +251,7 @@ DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
 
 
 void
-DocumentSubDBCollection::applyConfig(const ProtonConfig & protonConfig,
-                                     const DocumentDBConfig &newConfigSnapshot,
+DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                      const DocumentDBConfig &oldConfigSnapshot,
                                      SerialNum serialNum,
                                      const ReconfigParams &params,
@@ -261,8 +260,7 @@ DocumentSubDBCollection::applyConfig(const ProtonConfig & protonConfig,
     _reprocessingRunner.reset();
     for (auto subDb : _subDBs) {
         IReprocessingTask::List tasks;
-        tasks = subDb->applyConfig(protonConfig, newConfigSnapshot, oldConfigSnapshot,
-                                   serialNum, params, resolver);
+        tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver);
         _reprocessingRunner.addTasks(tasks);
     }
 }

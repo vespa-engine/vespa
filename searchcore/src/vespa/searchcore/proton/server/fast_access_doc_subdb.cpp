@@ -250,13 +250,12 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 }
 
 IReprocessingTask::List
-FastAccessDocSubDB::applyConfig(const ProtonConfig & protonConfig, const DocumentDBConfig &newConfigSnapshot,
-                                const DocumentDBConfig &oldConfigSnapshot, SerialNum serialNum,
-                                const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
+FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
     (void) resolver;
 
-    reconfigure(protonConfig);
+    // reconfigure(protonConfig);
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     /*

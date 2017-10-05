@@ -209,7 +209,7 @@ struct MyDocumentDBConfigOwner : public IDocumentDBConfigOwner
     }
     ~MyDocumentDBConfigOwner() { }
 
-    void reconfigure(const std::shared_ptr<ProtonConfig> & protonConfig, const DocumentDBConfig::SP & config) override;
+    void reconfigure(const DocumentDBConfig::SP & config) override;
 };
 
 struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
@@ -267,7 +267,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
 };
 
 void
-MyDocumentDBConfigOwner::reconfigure(const std::shared_ptr<ProtonConfig> &,const DocumentDBConfig::SP & config)
+MyDocumentDBConfigOwner::reconfigure(const DocumentDBConfig::SP & config)
 {
     _owner.reconfigureDocumentDB(_name, config);
 }

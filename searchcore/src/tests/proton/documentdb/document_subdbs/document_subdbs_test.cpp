@@ -355,7 +355,7 @@ struct FixtureBase
         cmpResult.documenttypesChanged = true;
         cmpResult.documentTypeRepoChanged = true;
         MyDocumentDBReferenceResolver resolver;
-        auto tasks = _subDb.applyConfig(newCfg->_bootstrap->getProtonConfig(), *newCfg->_cfg, *_snapshot->_cfg,
+        auto tasks = _subDb.applyConfig(*newCfg->_cfg, *_snapshot->_cfg,
                                         serialNum, ReconfigParams(cmpResult), resolver);
         _snapshot = std::move(newCfg);
         if (!tasks.empty()) {

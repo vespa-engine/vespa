@@ -140,7 +140,7 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
             assert(insres.second);
         }
     } else {
-        dbitr->second->reconfigure(bootstrapConfig->getProtonConfigSP(), documentDBConfig);
+        dbitr->second->reconfigure(documentDBConfig);
     }
 }
 
