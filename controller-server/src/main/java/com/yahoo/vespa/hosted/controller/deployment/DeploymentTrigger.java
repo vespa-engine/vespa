@@ -115,6 +115,7 @@ public class DeploymentTrigger {
                     break;
                 }
             }
+
             // Retry dead job
             Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), timeout);
             if (firstDeadJob.isPresent()) {
@@ -213,16 +214,15 @@ public class DeploymentTrigger {
     /** Decide whether the job should be triggered by the periodic trigger */
     private boolean shouldRetryNow(JobStatus job) {
         if (job.isSuccess()) return false;
+        if (job.inProgress()) return false;
 
-        if ( ! job.lastCompleted().isPresent()) return true; // Retry when we don't hear back
-
-        // Always retry if we haven't tried in 4 hours
-        if (job.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.ofHours(4)))) return true;
-
-        // Wait for 10% of the time since it started failing
+        // Retry after 10% of the time since it started failing
         Duration aTenthOfFailTime = Duration.ofMillis( (clock.millis() - job.firstFailing().get().at().toEpochMilli()) / 10);
         if (job.lastCompleted().get().at().isBefore(clock.instant().minus(aTenthOfFailTime))) return true;
-        
+
+        // ... or retry anyway if we haven't tried in 4 hours
+        if (job.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.ofHours(4)))) return true;
+
         return false;
     }
     
