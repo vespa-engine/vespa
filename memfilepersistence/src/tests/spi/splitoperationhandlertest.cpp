@@ -2,8 +2,10 @@
 
 #include "memfiletestutils.h"
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/persistence/spi/test.h>
 
 using document::DocumentType;
+using storage::spi::test::makeBucket;
 
 namespace storage {
 namespace memfile {
@@ -60,9 +62,9 @@ SplitOperationHandlerTest::testSimple()
 
     SplitOperationHandler handler(env());
     spi::Result result = getPersistenceProvider().split(
-            spi::Bucket(sourceBucket, spi::PartitionId(0)),
-            spi::Bucket(target1, spi::PartitionId(0)),
-            spi::Bucket(target2, spi::PartitionId(0)),
+            makeBucket(sourceBucket),
+            makeBucket(target1),
+            makeBucket(target2),
             context);
 
     env()._cache.clear();
@@ -116,9 +118,9 @@ SplitOperationHandlerTest::doTestMultiDisk(uint16_t sourceDisk,
 
     SplitOperationHandler handler(env());
     spi::Result result = getPersistenceProvider().split(
-            spi::Bucket(sourceBucket, spi::PartitionId(sourceDisk)),
-            spi::Bucket(target1, spi::PartitionId(targetDisk0)),
-            spi::Bucket(target2, spi::PartitionId(targetDisk1)),
+            makeBucket(sourceBucket, spi::PartitionId(sourceDisk)),
+            makeBucket(target1, spi::PartitionId(targetDisk0)),
+            makeBucket(target2, spi::PartitionId(targetDisk1)),
             context);
 
     env()._cache.clear();
@@ -183,9 +185,9 @@ SplitOperationHandlerTest::testExceptionDuringSplittingEvictsAllBuckets()
     try {
         SplitOperationHandler handler(env());
         spi::Result result = getPersistenceProvider().split(
-                spi::Bucket(sourceBucket, spi::PartitionId(0)),
-                spi::Bucket(target1, spi::PartitionId(0)),
-                spi::Bucket(target2, spi::PartitionId(0)),
+                makeBucket(sourceBucket),
+                makeBucket(target1),
+                makeBucket(target2),
                 context);
         CPPUNIT_FAIL("Exception not thrown on flush failure");
     } catch (std::exception&) {

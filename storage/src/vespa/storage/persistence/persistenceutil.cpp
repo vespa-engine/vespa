@@ -166,7 +166,7 @@ PersistenceUtil::getBucketInfo(const document::BucketId& bId, int disk) const
     }
 
     spi::BucketInfoResult response =
-        _spi.getBucketInfo(spi::Bucket(bId, spi::PartitionId(disk)));
+        _spi.getBucketInfo(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), bId), spi::PartitionId(disk)));
 
     return convertBucketInfo(response.getBucketInfo());
 }

@@ -4,14 +4,14 @@
 
 #include <memory>
 
-namespace document { class BucketId; }
+namespace document { class Bucket; }
 
 namespace proton {
 
 struct IBucketStateCalculator
 {
     typedef std::shared_ptr<IBucketStateCalculator> SP;
-    virtual bool shouldBeReady(const document::BucketId &bucket) const = 0;
+    virtual bool shouldBeReady(const document::Bucket &bucket) const = 0;
     virtual bool clusterUp() const = 0;
     virtual bool nodeUp() const = 0;
     virtual bool nodeInitializing() const = 0;

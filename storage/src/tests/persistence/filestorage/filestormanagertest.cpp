@@ -28,6 +28,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
@@ -38,6 +39,7 @@ LOG_SETUP(".filestormanagertest");
 using std::unique_ptr;
 using document::Document;
 using namespace storage::api;
+using storage::spi::test::makeBucket;
 
 #define ASSERT_SINGLE_REPLY(replytype, reply, link, time) \
 reply = 0; \
@@ -154,7 +156,7 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
         spi::Context context(defaultLoadType, spi::Priority(0),
                              spi::Trace::TraceLevel(0));
         _node->getPersistenceProvider().createBucket(
-                spi::Bucket(bid, spi::PartitionId(disk)), context);
+                makeBucket(bid, spi::PartitionId(disk)), context);
 
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "foo",
@@ -1306,7 +1308,7 @@ FileStorManagerTest::testPriority()
                              spi::Trace::TraceLevel(0));
 
         _node->getPersistenceProvider().createBucket(
-                spi::Bucket(bucket, spi::PartitionId(0)), context);
+                makeBucket(bucket), context);
     }
 
     // Populate bucket with the given data
@@ -1395,7 +1397,7 @@ FileStorManagerTest::testSplit1()
                                              documents[i]->getId()).getRawId());
 
             _node->getPersistenceProvider().createBucket(
-                    spi::Bucket(bucket, spi::PartitionId(0)), context);
+                    makeBucket(bucket), context);
 
             std::shared_ptr<api::PutCommand> cmd(
                     new api::PutCommand(bucket, documents[i], 100 + i));
@@ -1570,7 +1572,7 @@ FileStorManagerTest::testSplitSingleGroup()
                                 documents[i]->getId()).getRawId());
 
             _node->getPersistenceProvider().createBucket(
-                    spi::Bucket(bucket, spi::PartitionId(0)), context);
+                    makeBucket(bucket), context);
 
             std::shared_ptr<api::PutCommand> cmd(
                     new api::PutCommand(bucket, documents[i], 100 + i));
@@ -1645,7 +1647,7 @@ FileStorManagerTest::putDoc(DummyStorageLink& top,
     document::BucketId bucket(16, factory.getBucketId(docId).getRawId());
     //std::cerr << "doc bucket is " << bucket << " vs source " << source << "\n";
     _node->getPersistenceProvider().createBucket(
-            spi::Bucket(target, spi::PartitionId(0)), context);
+            makeBucket(target), context);
     Document::SP doc(new Document(*_testdoctype1, docId));
     std::shared_ptr<api::PutCommand> cmd(
             new api::PutCommand(target, doc, docNum+1));
@@ -1920,7 +1922,7 @@ createIterator(DummyStorageLink& link,
                framework::MicroSecTime toTime = framework::MicroSecTime::max(),
                bool headerOnly = false)
 {
-    spi::Bucket bucket(bucketId, spi::PartitionId(0));
+    spi::Bucket bucket(makeBucket(bucketId));
 
     spi::Selection selection =
         spi::Selection(spi::DocumentSelection(docSel));
@@ -2877,7 +2879,7 @@ FileStorManagerTest::testSetBucketActiveState()
     createBucket(bid, disk);
     spi::dummy::DummyPersistence& provider(
             dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider()));
-    CPPUNIT_ASSERT(!provider.isActive(spi::Bucket(bid, spi::PartitionId(disk))));
+    CPPUNIT_ASSERT(!provider.isActive(makeBucket(bid, spi::PartitionId(disk))));
 
     {
         std::shared_ptr<api::SetBucketStateCommand> cmd(
@@ -2895,7 +2897,7 @@ FileStorManagerTest::testSetBucketActiveState()
         CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
-    CPPUNIT_ASSERT(provider.isActive(spi::Bucket(bid, spi::PartitionId(disk))));
+    CPPUNIT_ASSERT(provider.isActive(makeBucket(bid, spi::PartitionId(disk))));
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
@@ -2939,7 +2941,7 @@ FileStorManagerTest::testSetBucketActiveState()
         CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
-    CPPUNIT_ASSERT(!provider.isActive(spi::Bucket(bid, spi::PartitionId(disk))));
+    CPPUNIT_ASSERT(!provider.isActive(makeBucket(bid, spi::PartitionId(disk))));
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(

@@ -5,6 +5,7 @@ LOG_SETUP("buckethandler_test");
 #include <vespa/searchcore/proton/server/ibucketstatechangedhandler.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace proton;
@@ -14,6 +15,7 @@ using storage::spi::Bucket;
 using storage::spi::BucketInfo;
 using storage::spi::PartitionId;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucket;
 using vespalib::ThreadStackExecutor;
 using proton::test::BucketStateCalculator;
 
@@ -144,7 +146,7 @@ struct Fixture
     }
     void sync() { _exec.sync(); }
     void handleGetBucketInfo(const BucketId &bucket) {
-        _handler.handleGetBucketInfo(Bucket(bucket, PART_ID), _bucketInfo);
+        _handler.handleGetBucketInfo(makeBucket(bucket, PART_ID), _bucketInfo);
     }
     void
     setNodeUp(bool value)

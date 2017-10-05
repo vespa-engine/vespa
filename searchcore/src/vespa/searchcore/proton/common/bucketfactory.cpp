@@ -21,7 +21,7 @@ BucketFactory::getBucketId(const DocumentId &docId)
 Bucket
 BucketFactory::getBucket(const DocumentId &docId)
 {
-    return Bucket(getBucketId(docId), PartitionId(0));
+    return Bucket(document::Bucket(document::BucketSpace::placeHolder(), getBucketId(docId)), PartitionId(0));
 }
 
 } // namespace proton
