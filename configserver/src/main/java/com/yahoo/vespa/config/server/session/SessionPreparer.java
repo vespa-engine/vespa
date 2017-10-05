@@ -87,9 +87,11 @@ public class SessionPreparer {
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
     public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
-                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
+                                       Optional<ApplicationSet> currentActiveApplicationSet,
+                                       Optional<com.yahoo.component.Version> currentActiveVespaVersion, Path tenantPath,
                                        Instant now) {
-        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
+        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet,
+                                                  currentActiveVespaVersion, tenantPath);
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -134,7 +136,9 @@ public class SessionPreparer {
         private final PreparedModelsBuilder preparedModelsBuilder;
 
         Preparation(SessionContext context, DeployLogger logger, PrepareParams params,
-                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
+                    Optional<ApplicationSet> currentActiveApplicationSet,
+                    Optional<com.yahoo.component.Version> currentActiveVespaVersion,
+                    Path tenantPath) {
             this.context = context;
             this.logger = logger;
             this.params = params;
@@ -142,7 +146,7 @@ public class SessionPreparer {
             this.tenantPath = tenantPath;
 
             this.applicationId = params.getApplicationId();
-            this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
+            this.vespaVersion = wantedVespaVersion(params, currentActiveVespaVersion, configserverConfig.hostedVespa());
             this.rotations = new Rotations(curator, tenantPath);
             this.rotationsSet = getRotations(params.rotations());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
@@ -161,6 +165,17 @@ public class SessionPreparer {
                                                                    params,
                                                                    currentActiveApplicationSet,
                                                                    properties);
+        }
+
+        private com.yahoo.component.Version wantedVespaVersion(PrepareParams params,
+                                                               Optional<com.yahoo.component.Version> currentActiveVespaVersion,
+                                                               boolean hostedVespa) {
+            if (params.vespaVersion().isPresent())
+                return params.vespaVersion().get();
+            else if (hostedVespa)
+                return currentActiveVespaVersion.orElse(Vtag.currentVersion);
+            else
+                return Vtag.currentVersion;
         }
 
         void checkTimeout(String step) {

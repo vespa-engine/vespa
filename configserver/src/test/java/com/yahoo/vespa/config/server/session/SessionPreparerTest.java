@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -100,31 +101,24 @@ public class SessionPreparerTest extends TestWithCurator {
 
     @Test(expected = InvalidApplicationException.class)
     public void require_that_application_validation_exception_is_not_caught() throws IOException, SAXException {
-        FilesApplicationPackage app = getApplicationPackage(invalidTestApp);
-        preparer.prepare(getContext(app), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(invalidTestApp, new PrepareParams.Builder().build());
     }
 
     @Test
     public void require_that_application_validation_exception_is_ignored_if_forced() throws IOException, SAXException {
-        FilesApplicationPackage app = getApplicationPackage(invalidTestApp);
-        preparer.prepare(getContext(app), getLogger(),
-                         new PrepareParams.Builder().ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                         Optional.empty(), tenantPath, Instant.now());
+        prepare(invalidTestApp,
+                new PrepareParams.Builder().ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build());
     }
 
     @Test
     public void require_that_zookeeper_is_not_written_to_if_dryrun() throws IOException {
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                         new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                         Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
         assertFalse(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                         new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                         Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().sendDeployedFilesCalled, is(0));
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().limitSendingOfDeployedFilesToCalled, is(0));
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().reloadDeployFileDistributorCalled, is(0));
@@ -132,7 +126,7 @@ public class SessionPreparerTest extends TestWithCurator {
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().build());
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().sendDeployedFilesCalled, is(2));
         // Should be called only once no matter how many model versions are built
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().reloadDeployFileDistributorCalled, is(1));
@@ -145,7 +139,7 @@ public class SessionPreparerTest extends TestWithCurator {
                 new TestModelFactory(Version.fromIntValues(1, 2, 3)),
                 new FailingModelFactory(Version.fromIntValues(3, 2, 1), new IllegalArgumentException("BOOHOO"))));
         preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().build());
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -154,14 +148,14 @@ public class SessionPreparerTest extends TestWithCurator {
                 new TestModelFactory(Version.fromIntValues(3, 2, 3)),
                 new FailingModelFactory(Version.fromIntValues(1, 2, 1), new IllegalArgumentException("BOOHOO"))));
         preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().build());
     }
 
     @Test(expected = InvalidApplicationException.class)
     public void require_exception_for_overlapping_host() throws IOException {
         SessionContext ctx = getContext(getApplicationPackage(testApp));
         ((HostRegistry<ApplicationId>)ctx.getHostValidator()).update(applicationId("foo"), Collections.singletonList("mytesthost"));
-        preparer.prepare(ctx, new BaseDeployLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(new PrepareParams.Builder().build(), new BaseDeployLogger(), ctx);
     }
     
     @Test
@@ -173,7 +167,7 @@ public class SessionPreparerTest extends TestWithCurator {
             System.out.println(level + ": "+message);
             if (level.equals(LogLevel.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
         };
-        preparer.prepare(ctx, logger, new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, new PrepareParams.Builder().build(), logger);
         assertEquals(logged.toString(), "");
     }
 
@@ -184,7 +178,7 @@ public class SessionPreparerTest extends TestWithCurator {
                                .tenant(tenant)
                                .applicationName("foo").instanceName("quux").build();
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
-        preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        prepare(testApp, params);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
         assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
         assertThat(zkc.readApplicationId(), is(origId));
@@ -199,10 +193,8 @@ public class SessionPreparerTest extends TestWithCurator {
                 new ConfigChangeActionsModelFactory(Version.fromIntValues(1, 2, 4),
                         new MockRestartAction("other change", Arrays.asList(service)))));
         preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        List<RestartActions.Entry> actions =
-                preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                                 new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now())
-                        .getRestartActions().getEntries();
+        List<RestartActions.Entry> actions = prepare(testApp, new PrepareParams.Builder().build())
+                .getRestartActions().getEntries();
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
     }
@@ -217,7 +209,7 @@ public class SessionPreparerTest extends TestWithCurator {
         final ApplicationId applicationId = applicationId("test");
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
         File app = new File("src/test/resources/deploy/app");
-        preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        prepare(app, params);
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
     }
 
@@ -233,7 +225,7 @@ public class SessionPreparerTest extends TestWithCurator {
         new Rotations(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
         final PrepareParams params = new PrepareParams.Builder().applicationId(applicationId).build();
         final File app = new File("src/test/resources/deploy/app");
-        preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath, Instant.now());
+        prepare(app, params);
 
         // check that the rotation from zookeeper were used
         final ModelContext modelContext = modelFactory.getModelContext();
@@ -242,6 +234,19 @@ public class SessionPreparerTest extends TestWithCurator {
 
         // Check that the persisted value is still the same
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
+    }
+
+    private ConfigChangeActions prepare(File app, PrepareParams params) throws IOException {
+        return prepare(app, params, getLogger());
+    }
+
+    private ConfigChangeActions prepare(File app, PrepareParams params, DeployLogger logger) throws IOException {
+        return prepare(params, logger, getContext(getApplicationPackage(app)));
+    }
+
+    private ConfigChangeActions prepare(PrepareParams params, DeployLogger logger, SessionContext sessionContext) throws IOException {
+        return preparer.prepare(sessionContext, logger, params, Optional.empty(),
+                                Optional.empty(), tenantPath, Instant.now());
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {
@@ -254,12 +259,8 @@ public class SessionPreparerTest extends TestWithCurator {
         return FilesApplicationPackage.fromFile(appDir);
     }
 
-    DeployHandlerLogger getLogger() {
-        return getLogger(false);
-    }
-
-    DeployHandlerLogger getLogger(boolean verbose) {
-        return new DeployHandlerLogger(new Slime().get(), verbose,
+    private DeployHandlerLogger getLogger() {
+        return new DeployHandlerLogger(new Slime().get(), false,
                                        new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
     }
 

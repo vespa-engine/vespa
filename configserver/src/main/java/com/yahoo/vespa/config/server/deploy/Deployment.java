@@ -111,6 +111,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                                    .vespaVersion(version.toString())
                                                    .build(),
                         Optional.empty(),
+                        Optional.empty(),
                         tenantPath,
                         clock.instant());
         this.prepared = true;

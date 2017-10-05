@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -102,6 +103,21 @@ public class HostedDeployTest {
                 // success
             }
         }
+    }
+
+    // If on hosted vespa and no version is given, the version for the current active application should be used
+    // This might be the case for manual/emergency deployments not coming from controller
+    @Test
+    public void deployWithoutVersionShouldUseActiveVersionOnHostedVespa() throws InterruptedException, IOException {
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
+        String vespaVersion = "4.5.6";
+        ApplicationId initialApplicationId = tester.deployApp("myApp", vespaVersion, Instant.now());
+        long initialSessionId = tester.tenant().getApplicationRepo().getSessionIdForApplication(initialApplicationId);
+
+        ApplicationId applicationId = tester.deployApp("myApp", Instant.now()); // no version
+        long sessionId = tester.tenant().getApplicationRepo().getSessionIdForApplication(applicationId);
+        assertNotEquals(initialSessionId, sessionId);
+        assertEquals(vespaVersion, tester.tenant().getLocalSessionRepo().getSession(sessionId).getVespaVersion().toFullString());
     }
 
     @Test
