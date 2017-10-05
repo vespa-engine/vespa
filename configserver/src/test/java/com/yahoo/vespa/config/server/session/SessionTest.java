@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -19,18 +18,14 @@ import java.util.Optional;
 public class SessionTest {
 
     public static class MockSessionPreparer extends SessionPreparer {
-        boolean isPrepared = false;
+        public boolean isPrepared = false;
 
         public MockSessionPreparer() {
-            super(null, null, null, null,
-                  null, null, new MockCurator(), null);
+            super(null, null, null, null, null, null, new MockCurator(), null);
         }
 
         @Override
-        public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
-                                           Optional<ApplicationSet> currentActiveApplicationSet,
-                                           Optional<Version> currentVespaVersion,
-                                           Path tenantPath, Instant now) {
+        public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params, Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, Instant now) {
             isPrepared = true;
             return new ConfigChangeActions(new ArrayList<>());
         }

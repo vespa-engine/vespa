@@ -140,14 +140,9 @@ public class DeployTester {
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);
-        LocalSession activeSession = tenant.getLocalSessionRepo().getActiveSession(id);
-        Optional<com.yahoo.component.Version> currentActiveVespaVersion = Optional.empty();
-        if (activeSession != null)
-            currentActiveVespaVersion = Optional.of(activeSession.getVespaVersion());
         session.prepare(new SilentDeployLogger(),
                         paramsBuilder.build(),
                         Optional.empty(),
-                        currentActiveVespaVersion,
                         tenant.getPath(),
                         now);
         session.createActivateTransaction().commit();

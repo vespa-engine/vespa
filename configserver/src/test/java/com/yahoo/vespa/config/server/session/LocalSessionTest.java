@@ -173,7 +173,7 @@ public class LocalSessionTest {
     }
 
     private void doPrepare(LocalSession session, PrepareParams params, Instant now) {
-        session.prepare(getLogger(false), params, Optional.empty(), Optional.empty(), tenantPath, now);
+        session.prepare(getLogger(false), params, Optional.empty(), tenantPath, now);
     }
 
     DeployHandlerLogger getLogger(boolean verbose) {

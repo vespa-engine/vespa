@@ -61,14 +61,12 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     public ConfigChangeActions prepare(DeployLogger logger, 
                                        PrepareParams params, 
-                                       Optional<ApplicationSet> currentActiveApplicationSet,
-                                       Optional<Version> currentActiveVespaVersion,
+                                       Optional<ApplicationSet> currentActiveApplicationSet, 
                                        Path tenantPath,
                                        Instant now) {
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
         ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params,
-                                                              currentActiveApplicationSet, currentActiveVespaVersion,
-                                                              tenantPath, now);
+                                                              currentActiveApplicationSet, tenantPath, now);
         setPrepared();
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;

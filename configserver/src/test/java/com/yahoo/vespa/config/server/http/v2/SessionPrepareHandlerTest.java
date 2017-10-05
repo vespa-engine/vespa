@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -409,8 +408,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         @Override
         public ConfigChangeActions prepare(DeployLogger logger,
                                            PrepareParams params,
-                                           Optional<ApplicationSet> applicationSet,
-                                           Optional<Version> currentActiveVespaVersion,
+                                           Optional<ApplicationSet> application,
                                            Path tenantPath,
                                            Instant now) {
             throw exception;

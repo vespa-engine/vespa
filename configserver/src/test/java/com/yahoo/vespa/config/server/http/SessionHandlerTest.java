@@ -104,10 +104,7 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params,
-                                           Optional<ApplicationSet> applicationSet,
-                                           Optional<com.yahoo.component.Version> currentActiveVespaVersion,
-                                           Path tenantPath, Instant now) {
+        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
             status = Session.Status.PREPARE;
             if (doVerboseLogging) {
                 logger.log(LogLevel.DEBUG, "debuglog");
