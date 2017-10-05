@@ -2,7 +2,11 @@
 
 #include "mapbucketdatabase.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <ostream>
+
+#include <vespa/log/bufferedlogger.h>
+LOG_SETUP(".mapbucketdatabase");
 
 namespace storage {
 
@@ -136,10 +140,24 @@ MapBucketDatabase::remove(const document::BucketId& bucket)
     remove(0, 0, bucket);
 }
 
+namespace {
+
+void __attribute__((noinline)) log_empty_bucket_insertion(const document::BucketId& id) {
+    // Use buffered logging to avoid spamming the logs in case this is triggered for
+    // many buckets simultaneously.
+    LOGBP(error, "Inserted empty bucket %s into database.\n%s",
+          id.toString().c_str(), vespalib::getStackTrace(2).c_str());
+}
+
+}
+
 void
 MapBucketDatabase::update(const Entry& newEntry)
 {
     assert(newEntry.valid());
+    if (newEntry->getNodeCount() == 0) {
+        log_empty_bucket_insertion(newEntry.getBucketId());
+    }
     LOG_BUCKET_OPERATION_NO_LOCK(
             newEntry.getBucketId(),
             vespalib::make_string(
