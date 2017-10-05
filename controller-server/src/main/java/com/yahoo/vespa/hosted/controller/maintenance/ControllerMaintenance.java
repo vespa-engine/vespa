@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.Issues;
 import com.yahoo.vespa.hosted.controller.api.integration.Properties;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
 
@@ -33,7 +34,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final DelayedDeployer delayedDeployer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller,
+    public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric, Chef chefClient,
                                  Contacts contactsClient, Properties propertiesClient, Issues issuesClient) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
@@ -45,9 +46,11 @@ public class ControllerMaintenance extends AbstractComponent {
         failureRedeployer = new FailureRedeployer(controller, maintenanceInterval, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, maintenanceInterval, jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(3), jobControl);
-        upgrader = new Upgrader(controller, maintenanceInterval, jobControl);
+        upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
         delayedDeployer = new DelayedDeployer(controller, maintenanceInterval, jobControl);
     }
+
+    public Upgrader upgrader() { return upgrader; }
     
     /** Returns control of the maintenance jobs of this */
     public JobControl jobControl() { return jobControl; }

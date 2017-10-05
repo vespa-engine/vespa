@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -192,6 +193,23 @@ public class CuratorDb {
         transaction.commit();
     }
 
+    public double readUpgradesPerMinute() {
+        Optional<byte[]> n = curator.getData(upgradePerMinutePath());
+        if (!n.isPresent() || n.get().length == 0) {
+            return 0.5; // Default if value has never been written
+        }
+        return ByteBuffer.wrap(n.get()).getDouble();
+    }
+
+    public void writeUpgradesPerMinute(double n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("Upgrades per minute must be >= 0");
+        }
+        NestedTransaction transaction = new NestedTransaction();
+        curator.set(upgradePerMinutePath(), ByteBuffer.allocate(Double.BYTES).putDouble(n).array());
+        transaction.commit();
+    }
+
     // -------------- Paths --------------------------------------------------
 
     private Path systemVersionPath() {
@@ -220,6 +238,10 @@ public class CuratorDb {
 
     private Path jobQueuePath(DeploymentJobs.JobType jobType) {
         return root.append("jobQueues").append(jobType.name());
+    }
+
+    private Path upgradePerMinutePath() {
+        return root.append("upgrader").append("upgradesPerMinute");
     }
 
 }

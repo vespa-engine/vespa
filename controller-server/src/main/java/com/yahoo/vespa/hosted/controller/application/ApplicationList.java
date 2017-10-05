@@ -116,6 +116,12 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
     }
 
+    /** Returns the first n application in this (or all, if there are less than n). */
+    public ApplicationList first(int n) {
+        if (list.size() < n) return this;
+        return new ApplicationList(list.subList(0, n));
+    }
+
      // ----------------------------------- Sorting
 
     /**
