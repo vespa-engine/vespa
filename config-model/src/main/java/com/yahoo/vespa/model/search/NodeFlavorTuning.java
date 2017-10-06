@@ -27,7 +27,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         setHwInfo(builder);
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder.summary.log);
-        tuneDocumentStoreNumThreads(builder.summary.log);
+        tuneDocumentStoreNumThreads(builder.background);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
     }
@@ -56,8 +56,8 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         builder.maxfilesize(fileSizeBytes);
     }
 
-    private void tuneDocumentStoreNumThreads(ProtonConfig.Summary.Log.Builder builder) {
-        builder.numthreads(max(8, (int)nodeFlavor.getMinCpuCores()/2));
+    private void tuneDocumentStoreNumThreads(ProtonConfig.Background.Builder builder) {
+        builder.threads(max(8, (int)nodeFlavor.getMinCpuCores()/2));
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {

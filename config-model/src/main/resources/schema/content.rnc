@@ -353,6 +353,9 @@ Tuning = element tuning {
       }? &
       element initialize {
          element threads { xsd:nonNegativeInteger }?
+      }? &
+      element background {
+         element threads { xsd:nonNegativeInteger }?
       }?
    }?
 }
