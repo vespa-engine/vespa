@@ -19,6 +19,7 @@ public class ReservedMacroNamesTestCase {
 
     @Test
     public void requireThatMacrosWithReservedNamesIssueAWarning() throws ParseException {
+        TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -49,11 +50,7 @@ public class ReservedMacroNamesTestCase {
                         "        }\n" +
                         "    }\n" +
                         "}\n");
-        builder.build();
-        Search search = builder.getSearch();
-        TestDeployLogger deployLogger = new TestDeployLogger();
-        ReservedMacroNames processor = new ReservedMacroNames(search, deployLogger, rankProfileRegistry, null);
-        processor.process();
+        builder.build(deployLogger);
 
         assertTrue(deployLogger.log.contains("sigmoid") && deployLogger.log.contains("test_rank_profile"));
         assertTrue(deployLogger.log.contains("sigmoid") && deployLogger.log.contains("test_rank_profile_2"));
