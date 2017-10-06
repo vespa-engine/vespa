@@ -17,7 +17,7 @@ public interface AutonomousCarbonUnitsWhoFixApplications {
      * @param applicationId ID of the application with failing deployments.
      * @return ID of the created issue.
      */
-    IssueID fileIssue(ApplicationId applicationId);
+    IssueId fileIssue(ApplicationId applicationId);
 
     /**
      * Notifies those responsible for the Vespa platform that too many applications are failing.
@@ -25,31 +25,31 @@ public interface AutonomousCarbonUnitsWhoFixApplications {
      * @param applicationIds IDs of all applications with failing deployments.
      * @return ID of the created issue.
      */
-    IssueID fileIssue(Collection<ApplicationId> applicationIds);
+    IssueId fileIssue(Collection<ApplicationId> applicationIds);
 
     /**
-     * @param issueID ID of the issue to escalate.
+     * @param issueId ID of the issue to escalate.
      */
-    void escalateIssue(IssueID issueID);
+    void escalateIssue(IssueId issueId);
 
     /**
-     * @param issueID ID of the issue to examine.
+     * @param issueId ID of the issue to examine.
      * @return Whether the given issue is under investigation.
      */
-    boolean isOpen(IssueID issueID);
+    boolean isOpen(IssueId issueId);
 
     /**
-     * @param issueID IF of the issue to examine.
+     * @param issueId IF of the issue to examine.
      * @return Whether the given issue is actively worked on.
      */
-    boolean isActive(IssueID issueID);
+    boolean isActive(IssueId issueId);
 
 
-    class IssueID {
+    class IssueId {
 
         protected final String id;
 
-        private IssueID(String id) {
+        protected IssueId(String id) {
             this.id = id;
         }
 
@@ -58,8 +58,8 @@ public interface AutonomousCarbonUnitsWhoFixApplications {
             return id;
         }
 
-        public static IssueID from(String value) {
-            return new IssueID(value);
+        public static IssueId from(String value) {
+            return new IssueId(value);
         }
 
     }
