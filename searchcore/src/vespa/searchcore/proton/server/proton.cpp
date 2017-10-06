@@ -623,7 +623,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
             oldHandler = _persistenceEngine->removeHandler(old->getBucketSpace(), docTypeName);
             if (_initComplete && oldHandler) {
                 // TODO: Fix race with bucket db modifying ops.
-                _persistenceEngine->grabExtraModifiedBuckets(*oldHandler);
+                _persistenceEngine->grabExtraModifiedBuckets(old->getBucketSpace(), *oldHandler);
             }
         }
         _persistenceEngine->destroyIterators();
