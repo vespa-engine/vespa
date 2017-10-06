@@ -245,7 +245,9 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             if (equals("maxfilesize", e)) {
                 s.logStore.maxFileSize = asLong(e);
             } else if (equals("maxdiskbloatfactor", e)) {
-                s.logStore.maxDiskBloatFactor = asDouble(e);
+                parent.deployLogger().log(Level.WARNING,
+                        "Element 'maxdiskbloatfactor is deprecated and ignored." +
+                        " The min value from flush.memory.xxx.diskbloatfactor is used instead");
             } else if (equals("minfilesizefactor", e)) {
                 s.logStore.minFileSizeFactor = asDouble(e);
             } else if (equals("numthreads", e)) {
