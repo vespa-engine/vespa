@@ -152,6 +152,7 @@ public class DeploymentIssueReporter extends Maintainer {
         applications.forEach(application ->
                 application.deploymentJobs().jiraIssueId().ifPresent(jiraIssueId -> {
                     Issues.IssueInfo issueInfo = issues.fetch(jiraIssueId);
+                    // TODO: Consider a different check here; no comments or reassignments, for instance.
                     if (issueInfo.updated().isBefore(controller().clock().instant().minus(maxInactivityAge)))
                         escalateAndComment(issueInfo, application);
                 }));
