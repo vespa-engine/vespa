@@ -585,7 +585,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         if (!_isInitializing) {
             _persistenceEngine->
                 propagateSavedClusterState(*persistenceHandler);
-            _persistenceEngine->populateInitialBucketDB(*persistenceHandler);
+            _persistenceEngine->populateInitialBucketDB(bucketSpace, *persistenceHandler);
         }
         // TODO: Fix race with new cluster state setting.
         _persistenceEngine->putHandler(bucketSpace, docTypeName, persistenceHandler);

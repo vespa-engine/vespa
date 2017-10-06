@@ -3,6 +3,7 @@
 
 #include "document_iterator.h"
 #include "i_resource_write_filter.h"
+#include "persistence_handler_map.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
@@ -17,7 +18,8 @@ class IPersistenceEngineOwner;
 
 class PersistenceEngine : public storage::spi::AbstractPersistenceProvider {
 private:
-    typedef vespalib::Sequence<IPersistenceHandler *> PersistenceHandlerSequence;
+    using PersistenceHandlerSequence = vespalib::Sequence<IPersistenceHandler *>;
+    using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
     using DocumentUpdate = document::DocumentUpdate;
     using Bucket = storage::spi::Bucket;
     using BucketIdListResult = storage::spi::BucketIdListResult;
@@ -39,23 +41,6 @@ private:
     using Timestamp = storage::spi::Timestamp;
     using TimestampList = storage::spi::TimestampList;
     using UpdateResult = storage::spi::UpdateResult;
-    class HandlerSnapshot {
-    private:
-        PersistenceHandlerSequence::UP _handlers;
-        size_t                         _size;
-    public:
-        typedef std::unique_ptr<HandlerSnapshot> UP;
-        HandlerSnapshot(PersistenceHandlerSequence::UP handlers_, size_t size_) :
-            _handlers(handlers_.release()),
-            _size(size_)
-        {}
-        HandlerSnapshot(const HandlerSnapshot &) = delete;
-        HandlerSnapshot & operator = (const HandlerSnapshot &) = delete;
-
-        size_t size() const { return _size; }
-        PersistenceHandlerSequence &handlers() { return *_handlers; }
-        static PersistenceHandlerSequence::UP release(HandlerSnapshot && rhs) { return std::move(rhs._handlers); }
-    };
 
     struct IteratorEntry {
         PersistenceHandlerSequence::UP handler_sequence;
@@ -79,7 +64,7 @@ private:
 
     const ssize_t                           _defaultSerializedSize;
     const bool                              _ignoreMaxBytes;
-    mutable HandlerMap<IPersistenceHandler> _handlers;
+    mutable PersistenceHandlerMap           _handlers;
     vespalib::Lock                          _lock;
     Iterators                               _iterators;
     vespalib::Lock                          _iterators_lock;
@@ -89,8 +74,12 @@ private:
     mutable BucketIdListResultV             _extraModifiedBuckets;
     mutable std::shared_timed_mutex         _rwMutex;
 
+    IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace,
+                                       const DocTypeName &docType) const;
     HandlerSnapshot::UP getHandlerSnapshot() const;
-    HandlerSnapshot::UP getHandlerSnapshot(const document::DocumentId &) const;
+    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace,
+                                           const document::DocumentId &docId) const;
 
     void saveClusterState(const ClusterState &calc);
     ClusterState::SP savedClusterState() const;
@@ -106,7 +95,6 @@ public:
     IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace,
                                        const DocTypeName &docType,
                                        const IPersistenceHandler::SP &handler);
-    IPersistenceHandler::SP getHandler(const DocTypeName &docType) const;
     IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace,
                                           const DocTypeName &docType);
 
@@ -137,7 +125,7 @@ public:
     void destroyIterators();
     void propagateSavedClusterState(IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(IPersistenceHandler &handler);
-    void populateInitialBucketDB(IPersistenceHandler &targetHandler);
+    void populateInitialBucketDB(BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
     std::unique_lock<std::shared_timed_mutex> getWLock() const;
 };
 
