@@ -53,6 +53,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IFrozenBucketHandler &fbHandler,
                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                     const vespalib::string &docTypeName,
+                    document::BucketSpace bucketSpace,
                     IDocumentMoveHandler &moveHandler,
                     IBucketModifiedHandler &bucketModifiedHandler,
                     IClusterStateChangedNotifier &clusterStateChangedNotifier,
@@ -74,7 +75,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 bucketStateChangedNotifier,
                                 diskMemUsageNotifier,
                                 blockableConfig,
-                                docTypeName));
+                                docTypeName, bucketSpace));
     controller.registerJobInMasterThread(std::move(trackJob(jobTrackers.getBucketMove(),
                                                             std::move(bmj))));
 }
@@ -91,6 +92,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IFrozenBucketHandler &fbHandler,
                                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                                     const vespalib::string &docTypeName,
+                                    document::BucketSpace bucketSpace,
                                     IPruneRemovedDocumentsHandler &prdHandler,
                                     IDocumentMoveHandler &moveHandler,
                                     IBucketModifiedHandler &bucketModifiedHandler,
@@ -119,7 +121,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                      fbHandler, jobTrackers.getLidSpaceCompact(),
                                      diskMemUsageNotifier, clusterStateChangedNotifier, calc);
     }
-    injectBucketMoveJob(controller, fbHandler, bucketCreateNotifier, docTypeName, moveHandler, bucketModifiedHandler,
+    injectBucketMoveJob(controller, fbHandler, bucketCreateNotifier, docTypeName, bucketSpace, moveHandler, bucketModifiedHandler,
                         clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers,
                         diskMemUsageNotifier, config.getBlockableJobConfig());
     controller.registerJobInMasterThread(std::make_unique<SampleAttributeUsageJob>

@@ -39,6 +39,7 @@ struct MaintenanceJobsInjector
                            IFrozenBucketHandler &fbHandler,
                            bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                            const vespalib::string &docTypeName,
+                           document::BucketSpace bucketSpace,
                            IPruneRemovedDocumentsHandler &prdHandler,
                            IDocumentMoveHandler &moveHandler,
                            IBucketModifiedHandler &bucketModifiedHandler,

@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
@@ -53,6 +54,7 @@ using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucketSpace;
 using vespalib::Slime;
 using vespalib::makeClosure;
 using vespalib::makeTask;
@@ -962,7 +964,7 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
         MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp,
-                                            _lscHandlers, _fh, _mc, _bucketCreateNotifier, _docTypeName.getName(),
+                                            _lscHandlers, _fh, _mc, _bucketCreateNotifier, _docTypeName.getName(), makeBucketSpace(),
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
                                             _calc,
                                             _diskMemUsageNotifier,
