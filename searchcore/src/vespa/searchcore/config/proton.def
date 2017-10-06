@@ -234,6 +234,7 @@ summary.log.chunk.maxentries int default=256
 summary.log.chunk.skipcrconread bool default=false
 
 ## Control how compation is done, write to the front or to new const file.
+## TODO: Remove, will always be false
 summary.log.compact2activefile bool default=false
 
 ## Max size per summary file.
@@ -272,6 +273,7 @@ summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
 summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
 
 ## Enable compact for bucket oriented access.
+## TODO: Unused, always bucket order.
 summary.compact2buckets bool default=true restart
 
 ## The name of the input document type
