@@ -70,7 +70,7 @@ private:
 
     const ssize_t                           _defaultSerializedSize;
     const bool                              _ignoreMaxBytes;
-    mutable PersistenceHandlerMap           _handlers;
+    PersistenceHandlerMap                   _handlers;
     vespalib::Lock                          _lock;
     Iterators                               _iterators;
     vespalib::Lock                          _iterators_lock;
