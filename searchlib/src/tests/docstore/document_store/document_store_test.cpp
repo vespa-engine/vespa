@@ -77,7 +77,7 @@ TEST("require that LogDocumentStore::Config equality operator detects inequality
     EXPECT_TRUE(C() == C());
     EXPECT_FALSE(C() != C());
     EXPECT_FALSE(C(DC(CompressionConfig::NONE, 100000, 100), LC()) == C());
-    EXPECT_FALSE(C(DC(), LC().setNumThreads(7)) == C());
+    EXPECT_FALSE(C(DC(), LC().setMaxBucketSpread(7)) == C());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

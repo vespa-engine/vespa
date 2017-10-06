@@ -43,7 +43,6 @@ public:
         Config & setMaxBucketSpread(double v) { _maxBucketSpread = v; return *this; }
         Config & setMinFileSizeFactor(double v) { _minFileSizeFactor = v; return *this; }
 
-        Config & setNumThreads(size_t v) { _numThreads = v; return *this; }
         Config & compactCompression(CompressionConfig v) { _compactCompression = v; return *this; }
         Config & setFileConfig(WriteableFileChunk::Config v) { _fileConfig = v; return *this; }
 
@@ -52,7 +51,6 @@ public:
         double getMaxBucketSpread() const { return _maxBucketSpread; }
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
 
-        size_t getNumThreads() const { return _numThreads; }
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
         bool compact2ActiveFile() const { return _compact2ActiveFile; }
         const CompressionConfig & compactCompression() const { return _compactCompression; }
@@ -67,7 +65,6 @@ public:
         double                      _maxDiskBloatFactor;
         double                      _maxBucketSpread;
         double                      _minFileSizeFactor;
-        size_t                      _numThreads;
         bool                        _skipCrcOnRead;
         bool                        _compact2ActiveFile;
         CompressionConfig           _compactCompression;

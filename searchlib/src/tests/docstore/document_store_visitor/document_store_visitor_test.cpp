@@ -234,9 +234,9 @@ Fixture::Fixture()
     : _baseDir("visitor"),
       _repo(makeDocTypeRepoConfig()),
       _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0, 0),
-                   LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0).setNumThreads(1)
+                   LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                            .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
-      _executor(_storeConfig.getLogConfig().getNumThreads(), 128 * 1024),
+      _executor(1, 128 * 1024),
       _fileHeaderContext(),
       _tlSyncer(),
       _store(),
