@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fastos/file.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domain");
@@ -20,15 +21,11 @@ using std::runtime_error;
 
 namespace search::transactionlog {
 
-Domain::Domain(const string &domainName,
-               const string & baseDir,
-               vespalib::ThreadStackExecutor & executor,
-               uint64_t domainPartSize,
-               bool useFsync,
-               DomainPart::Crc defaultCrcType,
-               const FileHeaderContext &fileHeaderContext) :
+Domain::Domain(const string &domainName, const string & baseDir,
+               vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize, bool useFsync,
+               DomainPart::Crc defaultCrcType, const FileHeaderContext &fileHeaderContext) :
     _defaultCrcType(defaultCrcType),
-    _executor(executor),
+    _sessionExecutor(sessionExecutor),
     _sessionId(1),
     _useFsync(useFsync),
     _syncMonitor(),
@@ -54,10 +51,10 @@ Domain::Domain(const string &domainName,
     const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
     for (const int64_t partId : partIdVector) {
         if ( partId != -1) {
-            _executor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
+            _sessionExecutor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
         }
     }
-    _executor.sync();
+    _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _useFsync, _defaultCrcType, _fileHeaderContext, false));
     }
@@ -111,8 +108,7 @@ Domain::getDomainInfo() const
     DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard));
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
-        info.parts.emplace_back(PartInfo(part.range(), part.size(),
-                                         part.byteSize(), part.fileName()));
+        info.parts.emplace_back(PartInfo(part.range(), part.size(), part.byteSize(), part.fileName()));
     }
     return info;
 }
@@ -198,7 +194,7 @@ Domain::triggerSyncNow()
     if (!_pendingSync) {
         _pendingSync = true;
         DomainPart::SP dp(_parts.rbegin()->second);
-        _executor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
+        _sessionExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
     }
 }
 
@@ -302,7 +298,7 @@ void Domain::commit(const Packet & packet)
     }
 }
 
-bool Domain::erase(const SerialNum & to)
+bool Domain::erase(SerialNum to)
 {
     bool retval(true);
     /// Do not erase the last element
@@ -320,7 +316,8 @@ bool Domain::erase(const SerialNum & to)
     return retval;
 }
 
-int Domain::visit(const Domain::SP & domain, const SerialNum & from, const SerialNum & to, FRT_Supervisor & supervisor, FNET_Connection *conn)
+int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
+                  FRT_Supervisor & supervisor, FNET_Connection *conn)
 {
     assert(this == domain.get());
     cleanSessions();
@@ -354,7 +351,7 @@ int Domain::closeSession(int sessionId)
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             retval = 1;
-            _executor.sync();
+            _sessionExecutor.sync();
         }
     }
     if (retval == 1) {
@@ -371,7 +368,7 @@ int Domain::closeSession(int sessionId)
     return retval;
 }
 
-int Domain::subscribe(const Domain::SP & domain, const SerialNum & from, FRT_Supervisor & supervisor, FNET_Connection *conn)
+int Domain::subscribe(const Domain::SP & domain, SerialNum from, FRT_Supervisor & supervisor, FNET_Connection *conn)
 {
     assert(this == domain.get());
     cleanSessions();

@@ -32,7 +32,6 @@
 #include <vespa/searchlib/expression/forcelink.hpp>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".proton.server.proton");
 
 using document::DocumentTypeRepo;
