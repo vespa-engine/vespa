@@ -53,6 +53,7 @@ public:
 class DocumentDBConfigHelper
 {
 public:
+    DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName);
     DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName,
                            const config::ConfigKeySet &extraConfigKeys);
 

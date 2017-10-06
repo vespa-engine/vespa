@@ -7,14 +7,13 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/helper/legacy.h>
-#include <vespa/log/log.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/time/time_box.h>
-#include <thread>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 
 using namespace config;
@@ -377,9 +376,11 @@ forwardConfig(const BootstrapConfig::SP & config)
     }
 }
 
+DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName)
+    : DocumentDBConfigHelper(spec, docTypeName, config::ConfigKeySet())
+{ }
 
-DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec,
-                                               const vespalib::string &docTypeName,
+DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName,
                                                const config::ConfigKeySet &extraConfigKeys)
         : _mgr("", docTypeName),
           _retriever()
@@ -394,8 +395,7 @@ DocumentDBConfigHelper::~DocumentDBConfigHelper() { }
 bool
 DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
 {
-    config::ConfigSnapshot
-            snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
+    config::ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
     if (snapshot.empty())
         return false;
     _mgr.update(snapshot);
