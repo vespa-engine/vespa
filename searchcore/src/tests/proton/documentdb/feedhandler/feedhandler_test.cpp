@@ -6,7 +6,7 @@
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
-#include <vespa/searchcore/proton/common/bucketfactory.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>

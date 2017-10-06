@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_matching_test_app TEST
     SOURCES
     matching_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_fconfig
     searchcore_matching
