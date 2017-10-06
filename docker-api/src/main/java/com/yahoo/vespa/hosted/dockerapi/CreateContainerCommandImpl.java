@@ -155,7 +155,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
         networkMode
                 .filter(mode -> ! mode.toLowerCase().equals("host"))
-                .ifPresent(mode -> containerCmd.withMacAddress(generateRandomMACAddress()));
+                .ifPresent(mode -> containerCmd.withMacAddress(generateMACAddress(hostName, ipv4Address, ipv6Address)));
 
         memoryInB.ifPresent(containerCmd::withMemory);
         cpuShares.ifPresent(containerCmd::withCpuShares);
@@ -206,8 +206,11 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 + dockerImage.asString();
     }
 
-    private String generateRandomMACAddress() {
-        final String seed = hostName + ipv4Address.orElse("") + ipv6Address.orElse("");
+    /**
+     * Generates a pseudo-random MAC address based on the hostname, IPv4- and IPv6-address.
+     */
+    static String generateMACAddress(String hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
+        final String seed = hostname + ipv4Address.orElse("") + ipv6Address.orElse("");
         Random rand = getPRNG(seed);
         byte[] macAddr = new byte[6];
         rand.nextBytes(macAddr);
