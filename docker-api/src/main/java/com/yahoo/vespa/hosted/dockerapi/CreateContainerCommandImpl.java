@@ -9,6 +9,7 @@ import com.github.dockerjava.api.model.Ulimit;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final DockerClient docker;
@@ -205,17 +207,25 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     private String generateRandomMACAddress() {
-        Random rand = new SecureRandom();
+        final String seed = hostName + ipv4Address.orElse("") + ipv6Address.orElse("");
+        Random rand = getPRNG(seed);
         byte[] macAddr = new byte[6];
         rand.nextBytes(macAddr);
 
         // Set second-last bit (locally administered MAC address), unset last bit (unicast)
         macAddr[0] = (byte) ((macAddr[0] | 2) & 254);
-        StringBuilder sb = new StringBuilder(18);
-        for (byte b : macAddr) {
-            sb.append(":").append(String.format("%02x", b));
-        }
+        return IntStream.range(0, macAddr.length)
+                .mapToObj(i -> String.format("%02x", macAddr[i]))
+                .collect(Collectors.joining(":"));
+    }
 
-        return sb.substring(1);
+    private static Random getPRNG(String seed) {
+        try {
+            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
+            rand.setSeed(seed.getBytes());
+            return rand;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to get pseudo-random number generator", e);
+        }
     }
 }
