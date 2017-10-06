@@ -1,0 +1,88 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 4660 (0x1234)
+    Signature Algorithm: md5WithRSAEncryption
+        Issuer: C=US, ST=California, L=Sunnyvale, O=Yahoo Inc., OU=Information Technology, CN=darkmoist-lm.trondheim.corp.yahoo.com
+        Validity
+            Not Before: Sep  2 10:32:37 2014 GMT
+            Not After : Aug  7 10:32:37 2019 GMT
+        Subject: C=US, ST=California, O=Yahoo Inc., OU=Information Technology, CN=darkmoist-lm.trondheim.corp.yahoo.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:d4:cd:7b:e0:29:9e:cd:01:21:26:ae:60:e3:3a:
+                    0d:19:6e:b1:ae:49:f3:9f:37:45:7d:77:95:b0:6d:
+                    63:ef:b3:7c:e8:29:15:ad:8b:b6:40:b6:c5:12:1e:
+                    7e:c9:6b:75:15:2f:31:30:2a:6b:1c:00:bb:b3:a7:
+                    31:ab:84:e5:32:52:1d:3e:bb:7d:71:f0:ff:9f:21:
+                    b8:9d:cb:6a:65:34:de:cc:22:81:a2:53:0f:7b:9c:
+                    d8:a9:b6:a5:3d:8b:31:5e:b1:cb:da:51:12:0e:68:
+                    64:6a:2e:4a:c1:50:ee:0c:6d:a1:30:6b:3f:1c:97:
+                    37:76:fd:03:8a:1a:55:1d:7e:2d:14:fb:24:09:4e:
+                    a6:04:cf:f8:f9:bb:01:78:f5:7f:c7:b5:3a:52:76:
+                    ce:4d:79:4f:83:59:84:90:a5:ef:58:25:bd:95:d6:
+                    f5:90:bf:fa:8b:4b:9f:d1:63:d1:75:2c:c8:00:de:
+                    2d:72:0e:a6:d8:48:ed:36:87:63:21:7d:77:d3:93:
+                    9e:12:f0:69:11:a1:90:63:2f:f9:6b:5d:a6:d2:65:
+                    91:7c:ad:5d:6a:4f:63:79:21:a4:7b:7d:8c:2c:a4:
+                    48:3c:d1:9e:a7:66:6c:d8:9c:ce:c9:54:fa:0e:1f:
+                    fd:28:25:7a:ea:e7:4c:2c:86:11:45:a5:dc:b7:5e:
+                    fa:97
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier: 
+                64:31:6B:9A:8E:FF:27:ED:E2:F4:4F:30:D5:A6:0D:45:9C:29:D3:81
+            X509v3 Authority Key Identifier: 
+                DirName:/C=US/ST=California/L=Sunnyvale/O=Yahoo Inc./OU=Information Technology/CN=darkmoist-lm.trondheim.corp.yahoo.com
+                serial:9B:F0:C8:38:83:81:2B:C3
+
+    Signature Algorithm: md5WithRSAEncryption
+         81:82:99:e9:b1:04:d3:f4:49:c3:b4:49:8a:0a:9a:49:29:51:
+         d3:f0:03:0e:2f:d5:7a:2c:44:65:74:15:de:36:41:e3:d3:c3:
+         69:ff:99:0a:dc:fb:a7:26:c2:3f:a0:40:a6:51:32:47:02:d8:
+         c5:35:ac:f6:e5:c2:65:7a:90:cc:a1:58:4f:1e:8b:7c:e7:77:
+         07:c2:15:41:38:0f:f7:ca:bd:fb:3e:22:27:0d:90:b5:6f:a7:
+         2c:10:1c:31:d6:9b:c0:53:db:a8:65:5a:06:97:1a:62:4e:e5:
+         7f:98:57:8a:60:d6:db:f8:57:ca:ea:f0:44:d0:9e:4c:bb:48:
+         1c:b4:5f:0f:b4:26:c7:f1:ca:61:f3:7b:21:03:4f:f2:e6:46:
+         04:ea:88:7d:0f:41:24:32:a5:07:57:3c:6f:e1:a6:ca:12:b0:
+         c1:8c:50:a7:e1:68:80:9b:63:83:e2:de:e5:3c:30:2e:06:12:
+         66:4c:6c:f8:55:88:62:00:1e:72:4b:ea:78:88:0c:31:95:e5:
+         38:fa:78:78:a8:e9:80:3f:42:63:e6:37:f7:4b:47:ff:38:0a:
+         3e:83:7c:ef:70:ea:43:24:06:45:51:3e:f5:ef:6e:ef:99:bc:
+         47:70:3f:8b:d0:8f:a8:e7:50:3f:c7:94:27:fb:24:bf:c4:8c:
+         db:a5:86:6c
+-----BEGIN CERTIFICATE-----
+MIIEvjCCA6agAwIBAgICEjQwDQYJKoZIhvcNAQEEBQAwgZwxCzAJBgNVBAYTAlVT
+MRMwEQYDVQQIEwpDYWxpZm9ybmlhMRIwEAYDVQQHEwlTdW5ueXZhbGUxEzARBgNV
+BAoTCllhaG9vIEluYy4xHzAdBgNVBAsTFkluZm9ybWF0aW9uIFRlY2hub2xvZ3kx
+LjAsBgNVBAMTJWRhcmttb2lzdC1sbS50cm9uZGhlaW0uY29ycC55YWhvby5jb20w
+HhcNMTQwOTAyMTAzMjM3WhcNMTkwODA3MTAzMjM3WjCBiDELMAkGA1UEBhMCVVMx
+EzARBgNVBAgTCkNhbGlmb3JuaWExEzARBgNVBAoTCllhaG9vIEluYy4xHzAdBgNV
+BAsTFkluZm9ybWF0aW9uIFRlY2hub2xvZ3kxLjAsBgNVBAMTJWRhcmttb2lzdC1s
+bS50cm9uZGhlaW0uY29ycC55YWhvby5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IB
+DwAwggEKAoIBAQDUzXvgKZ7NASEmrmDjOg0ZbrGuSfOfN0V9d5WwbWPvs3zoKRWt
+i7ZAtsUSHn7Ja3UVLzEwKmscALuzpzGrhOUyUh0+u31x8P+fIbidy2plNN7MIoGi
+Uw97nNiptqU9izFescvaURIOaGRqLkrBUO4MbaEwaz8clzd2/QOKGlUdfi0U+yQJ
+TqYEz/j5uwF49X/HtTpSds5NeU+DWYSQpe9YJb2V1vWQv/qLS5/RY9F1LMgA3i1y
+DqbYSO02h2MhfXfTk54S8GkRoZBjL/lrXabSZZF8rV1qT2N5IaR7fYwspEg80Z6n
+ZmzYnM7JVPoOH/0oJXrq50wshhFFpdy3XvqXAgMBAAGjggEaMIIBFjAJBgNVHRME
+AjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0
+ZTAdBgNVHQ4EFgQUZDFrmo7/J+3i9E8w1aYNRZwp04EwgbsGA1UdIwSBszCBsKGB
+oqSBnzCBnDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNV
+BAcTCVN1bm55dmFsZTETMBEGA1UEChMKWWFob28gSW5jLjEfMB0GA1UECxMWSW5m
+b3JtYXRpb24gVGVjaG5vbG9neTEuMCwGA1UEAxMlZGFya21vaXN0LWxtLnRyb25k
+aGVpbS5jb3JwLnlhaG9vLmNvbYIJAJvwyDiDgSvDMA0GCSqGSIb3DQEBBAUAA4IB
+AQCBgpnpsQTT9EnDtEmKCppJKVHT8AMOL9V6LERldBXeNkHj08Np/5kK3PunJsI/
+oECmUTJHAtjFNaz25cJlepDMoVhPHot853cHwhVBOA/3yr37PiInDZC1b6csEBwx
+1pvAU9uoZVoGlxpiTuV/mFeKYNbb+FfK6vBE0J5Mu0gctF8PtCbH8cph83shA0/y
+5kYE6oh9D0EkMqUHVzxv4abKErDBjFCn4WiAm2OD4t7lPDAuBhJmTGz4VYhiAB5y
+S+p4iAwxleU4+nh4qOmAP0Jj5jf3S0f/OAo+g3zvcOpDJAZFUT71727vmbxHcD+L
+0I+o51A/x5Qn+yS/xIzbpYZs
+-----END CERTIFICATE-----

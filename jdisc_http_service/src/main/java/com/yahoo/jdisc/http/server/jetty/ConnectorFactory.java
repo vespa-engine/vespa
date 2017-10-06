@@ -10,14 +10,14 @@ import com.yahoo.jdisc.http.ConnectorConfig.Ssl.PemKeyStore;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.ReaderForPath;
 import com.yahoo.jdisc.http.ssl.SslKeyStore;
-import com.yahoo.jdisc.http.ssl.SslKeyStoreFactory;
+import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.ConnectionFactory;
-import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -55,13 +55,11 @@ public class ConnectorFactory {
 
     private final static Logger log = Logger.getLogger(ConnectorFactory.class.getName());
     private final ConnectorConfig connectorConfig;
-    private final SslKeyStoreFactory sslKeyStoreFactory;
     private final SecretStore secretStore;
 
     @Inject
-    public ConnectorFactory(ConnectorConfig connectorConfig, SslKeyStoreFactory sslKeyStoreFactory, SecretStore secretStore) {
+    public ConnectorFactory(ConnectorConfig connectorConfig, SecretStore secretStore) {
         this.connectorConfig = connectorConfig;
-        this.sslKeyStoreFactory = sslKeyStoreFactory;
         this.secretStore = secretStore;
 
         if (connectorConfig.ssl().enabled())
@@ -254,8 +252,9 @@ public class ConnectorFactory {
 
         try (KeyStoreReaderForPath certificateReader = new KeyStoreReaderForPath(pemKeyStore.certificatePath());
              KeyStoreReaderForPath keyReader = new KeyStoreReaderForPath(pemKeyStore.keyPath())) {
-            SslKeyStore keyStore = sslKeyStoreFactory.createKeyStore(certificateReader.readerForPath,
-                                                                     keyReader.readerForPath);
+            SslKeyStore keyStore = new PemSslKeyStore(
+                    new com.yahoo.jdisc.http.ssl.pem.PemKeyStore.KeyStoreLoadParameter(
+                            certificateReader.readerForPath, keyReader.readerForPath));
             return keyStore.loadJavaKeyStore();
         } catch (Exception e) {
             throw new RuntimeException("Failed setting up key store for " + pemKeyStore.keyPath() + ", " + pemKeyStore.certificatePath(), e);
