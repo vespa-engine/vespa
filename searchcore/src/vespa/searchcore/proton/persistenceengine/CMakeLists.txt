@@ -4,6 +4,7 @@ vespa_add_library(searchcore_persistenceengine STATIC
     document_iterator.cpp
     i_document_retriever.cpp
     persistenceengine.cpp
+    persistence_handler_map.cpp
     transport_latch.cpp
     DEPENDS
 )

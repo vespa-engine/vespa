@@ -31,6 +31,7 @@ public:
 
     const document::Bucket &getBucket() const { return _bucket; }
     document::BucketId getBucketId() const { return _bucket.getBucketId(); }
+    document::BucketSpace getBucketSpace() const { return _bucket.getBucketSpace(); }
     PartitionId getPartition() const { return _partition; }
 
     /** Convert easily to a document bucket id to make class easy to use. */

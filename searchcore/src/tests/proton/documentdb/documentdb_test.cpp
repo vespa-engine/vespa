@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/proton/common/dummydbowner.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/fastos/file.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/testlib/receptor.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -19,20 +24,17 @@
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fastos/file.h>
 
+using namespace cloud::config::filedistribution;
+using namespace proton;
+using namespace storage::spi::test;
+using namespace vespalib::slime;
 
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumenttypesConfig;
-using namespace cloud::config::filedistribution;
-using namespace proton;
-using namespace vespalib::slime;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
@@ -114,6 +116,7 @@ Fixture::Fixture()
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);
     _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
+                             makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _tls, _dummy,
                              _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
                              std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo));

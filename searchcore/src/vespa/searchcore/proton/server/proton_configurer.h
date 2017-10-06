@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include "executor_thread_service.h"
 #include "i_proton_configurer.h"
+#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <map>
 #include <mutex>
-#include "executor_thread_service.h"
 
 namespace proton {
 
@@ -37,8 +38,11 @@ class ProtonConfigurer : public IProtonConfigurer
     bool skipConfig(const ProtonConfigSnapshot *configSnapshot, bool initialConfig);
     void applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapshot,
                      InitializeThreads initializeThreads, bool initialConfig);
-    void configureDocumentDB(const ProtonConfigSnapshot &configSnapshot, const DocTypeName &docTypeName, const vespalib::string &configId, const InitializeThreads &initializeThreads);
+    void configureDocumentDB(const ProtonConfigSnapshot &configSnapshot,
+                             const DocTypeName &docTypeName, document::BucketSpace bucketSpace,
+                             const vespalib::string &configId, const InitializeThreads &initializeThreads);
     void pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot);
+
 public:
     ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
                      IProtonConfigurerOwner &owner);

@@ -1,15 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/proton/common/dummydbowner.h>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
-#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchcore/proton/docsummary/documentstoreadapter.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
+#include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/idocumentsubdb.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
@@ -21,17 +27,12 @@
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/transactionlog/translogserver.h>
-#include <tests/proton/common/dummydbowner.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/transactionlog/nosyncproxy.h>
+#include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/config/helper/configgetter.hpp>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
@@ -43,6 +44,7 @@ using namespace search::engine;
 using namespace search::index;
 using namespace search::transactionlog;
 using namespace search;
+using namespace storage::spi::test;
 
 using document::DocumenttypesConfig;
 using search::TuneFileDocumentDB;
@@ -209,7 +211,8 @@ public:
         _configMgr.nextGeneration(0);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { abort(); }
         _ddb.reset(new DocumentDB("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
-                                  DocTypeName(docTypeName), *b->getProtonConfigSP(), *this, _summaryExecutor, _summaryExecutor,
+                                  DocTypeName(docTypeName), makeBucketSpace(),
+				  *b->getProtonConfigSP(), *this, _summaryExecutor, _summaryExecutor,
                                   _tls, _dummy, _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo)),
         _ddb->start();
