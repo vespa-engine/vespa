@@ -585,7 +585,7 @@ PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
     MBV extraModifiedBuckets;
     {
         LockGuard guard(_lock);
-        extraModifiedBuckets.swap(_extraModifiedBuckets);
+        extraModifiedBuckets.swap(_extraModifiedBuckets[bucketSpace]);
     }
     HandlerSnapshot::UP snap = getHandlerSnapshot(bucketSpace);
     SynchronizedBucketIdListResultHandler resultHandler(snap->size() + extraModifiedBuckets.size());
@@ -699,13 +699,13 @@ PersistenceEngine::propagateSavedClusterState(IPersistenceHandler &handler)
 }
 
 void
-PersistenceEngine::grabExtraModifiedBuckets(IPersistenceHandler &handler)
+PersistenceEngine::grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler)
 {
     BucketIdListResultHandler resultHandler;
     handler.handleListBuckets(resultHandler);
     auto result = std::make_shared<BucketIdListResult>(resultHandler.getResult());
     LockGuard guard(_lock);
-    _extraModifiedBuckets.push_back(result);
+    _extraModifiedBuckets[bucketSpace].push_back(result);
 }
 
 

@@ -5,7 +5,7 @@
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
-#include <vespa/searchcore/proton/common/bucketfactory.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>

@@ -914,6 +914,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             _maintenanceController, // IFrozenBucketHandler
             _subDBs.getBucketCreateNotifier(),
             _docTypeName.getName(),
+            _bucketSpace,
             _feedHandler, // IPruneRemovedDocumentsHandler
             _feedHandler, // IDocumentMoveHandler
             _clusterStateHandler, // IBucketModifiedHandler
@@ -1308,6 +1309,18 @@ void
 DocumentDB::waitForOnlineState()
 {
     _state.waitForOnlineState();
+}
+
+vespalib::string
+DocumentDB::getName() const
+{
+    return _docTypeName.getName();
+}
+
+document::BucketSpace
+DocumentDB::getBucketSpace() const
+{
+    return _bucketSpace;
 }
 
 uint32_t

@@ -59,19 +59,25 @@ private:
               in_use(false),
               bucket_guards() {}
     };
+    struct BucketSpaceHash {
+        std::size_t operator() (const document::BucketSpace &bucketSpace) const { return bucketSpace.getId(); }
+    };
+
     typedef std::map<IteratorId, IteratorEntry *> Iterators;
     typedef std::vector<std::shared_ptr<BucketIdListResult> > BucketIdListResultV;
+    using ExtraModifiedBuckets = std::unordered_map<BucketSpace, BucketIdListResultV, BucketSpaceHash>;
+
 
     const ssize_t                           _defaultSerializedSize;
     const bool                              _ignoreMaxBytes;
-    mutable PersistenceHandlerMap           _handlers;
+    PersistenceHandlerMap                   _handlers;
     vespalib::Lock                          _lock;
     Iterators                               _iterators;
     vespalib::Lock                          _iterators_lock;
     IPersistenceEngineOwner                &_owner;
     const IResourceWriteFilter             &_writeFilter;
     ClusterState::SP                        _clusterState;
-    mutable BucketIdListResultV             _extraModifiedBuckets;
+    mutable ExtraModifiedBuckets            _extraModifiedBuckets;
     mutable std::shared_timed_mutex         _rwMutex;
 
     IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace,
@@ -124,7 +130,7 @@ public:
 
     void destroyIterators();
     void propagateSavedClusterState(IPersistenceHandler &handler);
-    void grabExtraModifiedBuckets(IPersistenceHandler &handler);
+    void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void populateInitialBucketDB(BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
     std::unique_lock<std::shared_timed_mutex> getWLock() const;
 };

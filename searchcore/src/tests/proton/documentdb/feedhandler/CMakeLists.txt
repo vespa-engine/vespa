@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_feedhandler_test_app TEST
     SOURCES
     feedhandler_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_bucketdb
     searchcore_persistenceengine

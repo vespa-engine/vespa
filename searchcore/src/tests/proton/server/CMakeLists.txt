@@ -33,6 +33,7 @@ vespa_add_executable(searchcore_feedstates_test_app TEST
     SOURCES
     feedstates_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_bucketdb
     searchcore_persistenceengine

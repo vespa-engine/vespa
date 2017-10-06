@@ -3,7 +3,6 @@ vespa_add_library(searchcore_pcommon STATIC
     SOURCES
     attributefieldvaluenode.cpp
     attrupdate.cpp
-    bucketfactory.cpp
     cachedselect.cpp
     commit_time_tracker.cpp
     dbdocumentid.cpp

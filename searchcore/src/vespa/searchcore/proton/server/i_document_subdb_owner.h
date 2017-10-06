@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/document/bucket/bucketspace.h>
 #include <memory>
 
 namespace proton {
@@ -15,6 +16,7 @@ class IDocumentSubDBOwner
 public:
     virtual ~IDocumentSubDBOwner() {}
     virtual void syncFeedView() = 0;
+    virtual document::BucketSpace getBucketSpace() const = 0;
     virtual vespalib::string getName() const = 0;
     virtual uint32_t getDistributionKey() const = 0;
 };

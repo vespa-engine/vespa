@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_feedview_test_app TEST
     SOURCES
     feedview_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_index
     searchcore_feedoperation
