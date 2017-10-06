@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.rule.*;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * Transforms function nodes to reference nodes if a macro shadows a built-in function.
@@ -24,8 +21,6 @@ import java.util.logging.Level;
  * @author lesters
  */
 class MacroShadower extends ExpressionTransformer {
-
-    private static final DeployLogger logger = new BaseDeployLogger();
 
     private final Map<String, RankProfile.Macro> macros;
 
@@ -60,11 +55,9 @@ class MacroShadower extends ExpressionTransformer {
         int functionArity = function.getFunction().arity();
         int macroArity = macro.getFormalParams() != null ? macro.getFormalParams().size() : 0;
         if (functionArity != macroArity) {
-            logger.log(Level.WARNING, "Macro \"" + name + "\" has the same name as a built-in function. Due to different number of arguments, the built-in function will be used.");
             return transformChildren(function);
         }
 
-        logger.log(Level.WARNING, "Macro \"" + name + "\" shadows the built-in function with the same name.");
         ReferenceNode node = new ReferenceNode(name, function.children(), null);
         return transformChildren(node);
     }
