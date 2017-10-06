@@ -233,4 +233,14 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("initialize.threads 7"));
     }
 
+    @Test
+    public void requireThatWeCanParseBackgroundTag() {
+        Tuning t = createTuning(parseXml("<background>",
+                "<threads>7</threads>",
+                "</background>"));
+        assertEquals(7, t.searchNode.background.threads.intValue());
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("background.threads 7"));
+    }
+
 }

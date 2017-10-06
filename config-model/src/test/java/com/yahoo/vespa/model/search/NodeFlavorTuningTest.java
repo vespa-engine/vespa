@@ -97,7 +97,7 @@ public class NodeFlavorTuningTest {
     }
 
     private static void assertDocumentStoreNumThreads(int numThreads, double numCores) {
-        assertEquals(numThreads, configFromNumCoresSetting(numCores).summary().log().numthreads());
+        assertEquals(numThreads, configFromNumCoresSetting(numCores).background().threads());
     }
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {

@@ -34,7 +34,6 @@ LogDataStore::Config::Config()
       _maxDiskBloatFactor(0.2),
       _maxBucketSpread(2.5),
       _minFileSizeFactor(0.2),
-      _numThreads(8),
       _skipCrcOnRead(false),
       _compact2ActiveFile(true),
       _compactCompression(CompressionConfig::LZ4),
@@ -49,7 +48,6 @@ LogDataStore::Config::operator == (const Config & rhs) const {
             (_minFileSizeFactor == rhs._minFileSizeFactor) &&
             (_compact2ActiveFile == rhs._compact2ActiveFile) &&
             (_skipCrcOnRead == rhs._skipCrcOnRead) &&
-            (_numThreads == rhs._numThreads) &&
             (_compactCompression == rhs._compactCompression) &&
             (_fileConfig == rhs._fileConfig);
 }

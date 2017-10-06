@@ -205,9 +205,9 @@ TEST("testGrowing") {
     LogDataStore::Config config; //(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
                                 // WriteableFileChunk::Config(CompressionConfig(CompressionConfig::LZ4, 9, 60), 1000));
     config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
-            .setNumThreads(8).compact2ActiveFile(true).compactCompression({CompressionConfig::LZ4})
+            .compact2ActiveFile(true).compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
-    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    vespalib::ThreadStackExecutor executor(8, 128*1024);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
     {
@@ -276,30 +276,26 @@ void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz
 TEST("testTruncatedIdxFile"){
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128*1024);
     MyTlSyncer tlSyncer;
     {
         // Files comes from the 'growing test'.
-        LogDataStore datastore(executor,
-                               TEST_PATH("bug-7257706"), config,
-                               GrowStrategy(), TuneFileSummary(),
-                               fileHeaderContext, tlSyncer, NULL);
+        LogDataStore datastore(executor, TEST_PATH("bug-7257706"), config, GrowStrategy(),
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     }
     const char * magic = "mumbo jumbo";
     {
-        LogDataStore datastore(executor, "bug-7257706-truncated", config,
-                               GrowStrategy(), TuneFileSummary(),
-                               fileHeaderContext, tlSyncer, NULL);
+        LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(331ul, datastore.lastSyncToken());
         datastore.write(332, 7, magic, strlen(magic));
         datastore.write(333, 8, magic, strlen(magic));
         datastore.flush(datastore.initFlush(334));
     }
     {
-        LogDataStore datastore(executor, "bug-7257706-truncated", config,
-                               GrowStrategy(), TuneFileSummary(),
-                               fileHeaderContext, tlSyncer, NULL);
+        LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(334ul, datastore.lastSyncToken());
     }
 }
@@ -307,7 +303,7 @@ TEST("testTruncatedIdxFile"){
 TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128*1024);
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "dangling-test", config,
                            GrowStrategy(), TuneFileSummary(),
@@ -320,7 +316,7 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
 TEST("testThatIncompleteCompactedFilesAreRemoved") {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128*1024);
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "incompletecompact-test", config,
                            GrowStrategy(), TuneFileSummary(),
@@ -340,11 +336,10 @@ public:
         _myDir("visitcache"),
         _config(),
         _fileHeaderContext(),
-        _executor(_config.getNumThreads(), 128*1024),
+        _executor(1, 128*1024),
         _tlSyncer(),
-        _datastore(_executor, _myDir.getDir(), _config,
-                           GrowStrategy(), TuneFileSummary(),
-                           _fileHeaderContext, _tlSyncer, NULL)
+        _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
+                   TuneFileSummary(), _fileHeaderContext, _tlSyncer, NULL)
     { }
     ~VisitStore();
     IDataStore & getStore() { return _datastore; }
@@ -518,10 +513,10 @@ VisitCacheStore::VisitCacheStore() :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
     _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
-            LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0).setNumThreads(1)
+            LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                     .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
     _fileHeaderContext(),
-    _executor(_config.getLogConfig().getNumThreads(), 128*1024),
+    _executor(1, 128*1024),
     _tlSyncer(),
     _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
                TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr),
@@ -596,11 +591,10 @@ TEST("testWriteRead") {
     {
         EXPECT_TRUE(FastOS_File::MakeDirectory("empty"));
         DummyFileHeaderContext fileHeaderContext;
-        vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+        vespalib::ThreadStackExecutor executor(1, 128*1024);
         MyTlSyncer tlSyncer;
-        LogDataStore datastore(executor, "empty", config,
-                               GrowStrategy(), TuneFileSummary(),
-                               fileHeaderContext, tlSyncer, NULL);
+        LogDataStore datastore(executor, "empty", config, GrowStrategy(),
+                               TuneFileSummary(), fileHeaderContext, tlSyncer, NULL);
         ASSERT_TRUE(datastore.lastSyncToken() == 0);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
         EXPECT_LESS(0u, headerFootprint);
@@ -633,7 +627,7 @@ TEST("testWriteRead") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+        vespalib::ThreadStackExecutor executor(1, 128*1024);
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config,
                                GrowStrategy(), TuneFileSummary(),
@@ -684,7 +678,7 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     fastos::TimeStamp before(fastos::ClockSystem::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
-    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128*1024);
     MyTlSyncer tlSyncer;
     LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
                        TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
@@ -980,7 +974,6 @@ TEST("require that config equality operator detects inequality") {
     EXPECT_FALSE(C() == C().setMaxDiskBloatFactor(0.3));
     EXPECT_FALSE(C() == C().setMaxBucketSpread(0.3));
     EXPECT_FALSE(C() == C().setMinFileSizeFactor(0.3));
-    EXPECT_FALSE(C() == C().setNumThreads(3));
     EXPECT_FALSE(C() == C().setFileConfig(WriteableFileChunk::Config({}, 70)));
     EXPECT_FALSE(C() == C().disableCrcOnRead(true));
     EXPECT_FALSE(C() == C().compact2ActiveFile(false));
