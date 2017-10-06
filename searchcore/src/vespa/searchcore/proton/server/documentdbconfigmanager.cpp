@@ -160,14 +160,16 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache)
 }
 
 LogDocumentStore::Config
-deriveConfig(const ProtonConfig::Summary & summary) {
+deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush) {
     DocumentStore::Config config(getStoreConfig(summary.cache));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
+    const
 
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
     LogDataStore::Config logConfig;
-    logConfig.setMaxFileSize(log.maxfilesize).setMaxDiskBloatFactor(log.maxdiskbloatfactor)
+    logConfig.setMaxFileSize(log.maxfilesize)
+            .setMaxDiskBloatFactor(std::min(flush.diskbloatfactor, flush.each.diskbloatfactor))
             .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
             .setNumThreads(log.numthreads).compact2ActiveFile(log.compact2activefile)
             .compactCompression(deriveCompression(log.compact.compression)).setFileConfig(fileConfig)
@@ -176,7 +178,7 @@ deriveConfig(const ProtonConfig::Summary & summary) {
 }
 
 search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton) {
-    return deriveConfig(proton.summary);
+    return deriveConfig(proton.summary, proton.flush.memory);
 }
 
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
@@ -224,10 +226,10 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     MaintenanceConfigSP newMaintenanceConfig;
 
     if (!_ignoreForwardedConfig) {
-        if (_bootstrapConfig->getDocumenttypesConfigSP().get() == NULL ||
-            _bootstrapConfig->getDocumentTypeRepoSP().get() == NULL ||
-            _bootstrapConfig->getProtonConfigSP().get() == NULL ||
-            _bootstrapConfig->getTuneFileDocumentDBSP().get() == NULL) {
+        if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
+            _bootstrapConfig->getDocumentTypeRepoSP() &&
+            _bootstrapConfig->getProtonConfigSP() &&
+            _bootstrapConfig->getTuneFileDocumentDBSP())) {
             return;
         }
     }
@@ -344,8 +346,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 
 
 DocumentDBConfigManager::
-DocumentDBConfigManager(const vespalib::string &configId,
-                        const vespalib::string &docTypeName)
+DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string &docTypeName)
     : _configId(configId),
       _docTypeName(docTypeName),
       _bootstrapConfig(),
