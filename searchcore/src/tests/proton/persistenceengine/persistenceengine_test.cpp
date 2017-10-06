@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/repo/documenttyperepo.h>
+
+#include <vespa/config-stor-distribution.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/documentselection.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config-stor-distribution.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <set>
 
 using document::BucketId;
@@ -24,13 +26,13 @@ using storage::spi::BucketChecksum;
 using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
 using storage::spi::BucketInfoResult;
-using storage::spi::Context;
 using storage::spi::ClusterState;
+using storage::spi::Context;
 using storage::spi::CreateIteratorResult;
 using storage::spi::DocumentSelection;
 using storage::spi::GetResult;
-using storage::spi::IteratorId;
 using storage::spi::IterateResult;
+using storage::spi::IteratorId;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
@@ -433,8 +435,8 @@ struct SimpleFixture {
           engine(_owner, _writeFilter, -1, false),
           hset()
     {
-        engine.putHandler(BucketSpace::placeHolder(), DocTypeName(doc1->getType()), hset.phandler1);
-        engine.putHandler(BucketSpace::placeHolder(), DocTypeName(doc2->getType()), hset.phandler2);
+        engine.putHandler(makeBucketSpace(), DocTypeName(doc1->getType()), hset.phandler1);
+        engine.putHandler(makeBucketSpace(), DocTypeName(doc2->getType()), hset.phandler2);
     }
 };
 
