@@ -47,17 +47,13 @@ private:
     class CompareTarget
     {
     public:
-        CompareTarget(OrderType order,
-                      const flushengine::TlsStatsMap &tlsStatsMap)
+        CompareTarget(OrderType order, const flushengine::TlsStatsMap &tlsStatsMap)
             : _order(order),
               _tlsStatsMap(tlsStatsMap)
         { }
 
-        bool
-        operator ()(const FlushContext::SP &lfc,
-                    const FlushContext::SP &rfc) const;
+        bool operator ()(const FlushContext::SP &lfc, const FlushContext::SP &rfc) const;
     private:
-
         OrderType     _order;
         const flushengine::TlsStatsMap &_tlsStatsMap;
     };
@@ -66,20 +62,16 @@ public:
     using SP = std::shared_ptr<MemoryFlush>;
 
     MemoryFlush();
-
-    MemoryFlush(const Config &config,
-                fastos::TimeStamp startTime = fastos::TimeStamp(fastos::ClockSystem::now()));
+    explicit MemoryFlush(const Config &config) : MemoryFlush(config, fastos::ClockSystem::now()) { }
+    MemoryFlush(const Config &config, fastos::TimeStamp startTime);
     ~MemoryFlush();
 
-    // Implements IFlushStrategy
-    virtual FlushContext::List
+    FlushContext::List
     getFlushTargets(const FlushContext::List &targetList,
-                    const flushengine::TlsStatsMap &
-                    tlsStatsMap) const override;
+                    const flushengine::TlsStatsMap &tlsStatsMap) const override;
 
     void setConfig(const Config &config);
     Config getConfig() const;
 };
 
 } // namespace proton
-

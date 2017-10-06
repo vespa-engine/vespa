@@ -8,7 +8,6 @@
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
-#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -20,7 +19,6 @@ LOG_SETUP(".proton.docsummary.summarymanager");
 using namespace config;
 using namespace document;
 using namespace search::docsummary;
-using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using vespalib::make_string;
@@ -48,24 +46,19 @@ class ShrinkSummaryLidSpaceFlushTarget : public  ShrinkLidSpaceFlushTarget
     searchcorespi::index::IThreadService & _summaryService;
 
 public:
-    ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name,
-                                     Type type,
-                                     Component component,
-                                     SerialNum flushedSerialNum,
-                                     Time lastFlushTime,
+    ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
+                                     SerialNum flushedSerialNum, Time lastFlushTime,
                                      searchcorespi::index::IThreadService & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget();
-    virtual Task::UP initFlush(SerialNum currentSerial) override;
+    Task::UP initFlush(SerialNum currentSerial) override;
 };
 
-ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name,
-                                                                   Type type,
-                                                                   Component component,
-                                                                   SerialNum flushedSerialNum,
-                                                                   Time lastFlushTime,
-                                                                   searchcorespi::index::IThreadService & summaryService,
-                                                                   std::shared_ptr<ICompactableLidSpace> target)
+ShrinkSummaryLidSpaceFlushTarget::
+ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
+                                 SerialNum flushedSerialNum, Time lastFlushTime,
+                                 searchcorespi::index::IThreadService & summaryService,
+                                 std::shared_ptr<ICompactableLidSpace> target)
     : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, lastFlushTime, std::move(target)),
       _summaryService(summaryService)
 {
@@ -85,13 +78,9 @@ ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
 }
 
 SummaryManager::SummarySetup::
-SummarySetup(const vespalib::string & baseDir,
-             const DocTypeName & docTypeName,
-             const SummaryConfig & summaryCfg,
-             const SummarymapConfig & summarymapCfg,
-             const JuniperrcConfig & juniperCfg,
-             const search::IAttributeManager::SP &attributeMgr,
-             const search::IDocumentStore::SP & docStore,
+SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, const SummaryConfig & summaryCfg,
+             const SummarymapConfig & summarymapCfg, const JuniperrcConfig & juniperCfg,
+             const search::IAttributeManager::SP &attributeMgr, const search::IDocumentStore::SP & docStore,
              const DocumentTypeRepo::SP &repo)
     : _docsumWriter(),
       _wordFolder(),
@@ -148,47 +137,18 @@ SummaryManager::SummarySetup::createDocsumStore(const vespalib::string &resultCl
 
 
 ISummaryManager::ISummarySetup::SP
-SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
-                                   const SummarymapConfig & summarymapCfg,
-                                   const JuniperrcConfig & juniperCfg,
-                                   const DocumentTypeRepo::SP &repo,
+SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const SummarymapConfig & summarymapCfg,
+                                   const JuniperrcConfig & juniperCfg, const DocumentTypeRepo::SP &repo,
                                    const search::IAttributeManager::SP &attributeMgr)
 {
     return std::make_shared<SummarySetup>(_baseDir, _docTypeName, summaryCfg, summarymapCfg,
                                           juniperCfg, attributeMgr, _docStore, repo);
 }
 
-namespace {
-
-template<typename T>
-CompressionConfig
-deriveCompression(const T & config) {
-    CompressionConfig compression;
-    if (config.type == T::LZ4) {
-        compression.type = CompressionConfig::LZ4;
-    } else if (config.type == T::ZSTD) {
-        compression.type = CompressionConfig::ZSTD;
-    }
-    compression.compressionLevel = config.level;
-    return compression;
-}
-
-DocumentStore::Config
-getStoreConfig(const ProtonConfig::Summary::Cache & cache)
-{
-    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
-}
-
-}
-
-SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
-                               const ProtonConfig::Summary & summary,
-                               const search::GrowStrategy & growStrategy,
-                               const vespalib::string &baseDir,
-                               const DocTypeName &docTypeName,
-                               const TuneFileSummary &tuneFileSummary,
-                               const FileHeaderContext &fileHeaderContext,
-                               search::transactionlog::SyncProxy &tlSyncer,
+SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDocumentStore::Config & storeConfig,
+                               const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
+                               const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
+                               const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
                                const search::IBucketizer::SP & bucketizer)
     : _baseDir(baseDir),
       _docTypeName(docTypeName),
@@ -196,19 +156,8 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
       _tuneFileSummary(tuneFileSummary),
       _currentSerial(0u)
 {
-    DocumentStore::Config config(getStoreConfig(summary.cache));
-    const ProtonConfig::Summary::Log & log(summary.log);
-    const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
-
-    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
-    LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
-                                   log.minfilesizefactor, log.numthreads, log.compact2activefile,
-                                   deriveCompression(log.compact.compression), fileConfig);
-    logConfig.disableCrcOnRead(chunk.skipcrconread);
-    _docStore.reset(new LogDocumentStore(executor, baseDir,
-                                         LogDocumentStore::Config(config, logConfig),
-                                         growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
-                                         summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
+    _docStore = std::make_shared<LogDocumentStore>(executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
+                                                   fileHeaderContext, tlSyncer, bucketizer);
 }
 
 SummaryManager::~SummaryManager() {}
@@ -259,6 +208,11 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
     }
     ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore));
     return ret;
+}
+
+void SummaryManager::reconfigure(const LogDocumentStore::Config & config) {
+    LogDocumentStore & docStore = dynamic_cast<LogDocumentStore &> (*_docStore);
+    docStore.reconfigure(config);
 }
 
 } // namespace proton

@@ -104,6 +104,7 @@ public:
     void invalidate(uint32_t key) { remove(key); }
 
     CacheStats getCacheStats() const;
+    void reconfigure(size_t cacheSize, const CompressionConfig &compression);
 private:
     /**
      * This implments the interface the cache uses when it has a cache miss.
@@ -120,10 +121,11 @@ private:
         bool read(const KeySet &key, CompressedBlobSet &blobs) const;
         void write(const KeySet &, const CompressedBlobSet &) { }
         void erase(const KeySet &) { }
-        const CompressionConfig &getCompression() const { return _compression; }
+        void reconfigure(const CompressionConfig &compression);
+
     private:
-        IDataStore                        &_backingStore;
-        const CompressionConfig  _compression;
+        IDataStore        &_backingStore;
+        CompressionConfig  _compression;
     };
 
     using CacheParams = vespalib::CacheParam<

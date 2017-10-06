@@ -3,12 +3,11 @@
 
 #include "isummarymanager.h"
 #include "fieldcacherepo.h"
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchlib/docstore/idatastore.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -16,13 +15,8 @@
 #include <vespa/fastlib/text/normwordfolder.h>
 
 namespace searchcorespi::index { class IThreadService; }
-namespace search {
-
-class IBucketizer;
-
-namespace common { class FileHeaderContext; }
-
-}
+namespace search { class IBucketizer; }
+namespace search::common { class FileHeaderContext; }
 
 namespace proton {
 
@@ -50,32 +44,27 @@ public:
                      const search::IDocumentStore::SP & docStore,
                      const document::DocumentTypeRepo::SP &repo);
 
-        /**
-         * Implements ISummarySetup.
-         */
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
         search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
 
-        search::docsummary::IDocsumStore::UP createDocsumStore(
-                const vespalib::string &resultClassName) override;
+        search::docsummary::IDocsumStore::UP createDocsumStore(const vespalib::string &resultClassName) override;
 
-        // Inherit doc from IDocsumEnvironment
-        virtual search::IAttributeManager * getAttributeManager() override { return _attributeMgr.get(); }
-        virtual vespalib::string lookupIndex(const vespalib::string & s) const override { (void) s; return ""; }
-        virtual juniper::Juniper * getJuniper() override { return _juniperConfig.get(); }
+        search::IAttributeManager * getAttributeManager() override { return _attributeMgr.get(); }
+        vespalib::string lookupIndex(const vespalib::string & s) const override { (void) s; return ""; }
+        juniper::Juniper * getJuniper() override { return _juniperConfig.get(); }
     };
 
 private:
     vespalib::string               _baseDir;
     DocTypeName                    _docTypeName;
-    search::IDocumentStore::SP     _docStore;
+    std::shared_ptr<search::IDocumentStore> _docStore;
     const search::TuneFileSummary  _tuneFileSummary;
     uint64_t                       _currentSerial;
 
 public:
     typedef std::shared_ptr<SummaryManager> SP;
     SummaryManager(vespalib::ThreadExecutor & executor,
-                   const vespa::config::search::core::ProtonConfig::Summary & summary,
+                   const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
                    const vespalib::string &baseDir,
                    const DocTypeName &docTypeName,
@@ -87,22 +76,18 @@ public:
 
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const document::Document & doc);
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const vespalib::nbostream & doc);
-
     void removeDocument(uint64_t syncToken, search::DocumentIdT lid);
     searchcorespi::IFlushTarget::List getFlushTargets(searchcorespi::index::IThreadService & summaryService);
 
-    /**
-     * Implements ISummaryManager.
-     */
-    virtual ISummarySetup::SP
+    ISummarySetup::SP
     createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
                        const vespa::config::search::SummarymapConfig &summarymapCfg,
                        const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
                        const document::DocumentTypeRepo::SP &repo,
                        const search::IAttributeManager::SP &attributeMgr) override;
 
-    virtual search::IDocumentStore & getBackingStore() override { return *_docStore; }
-
+    search::IDocumentStore & getBackingStore() override { return *_docStore; }
+    void reconfigure(const search::LogDocumentStore::Config & config);
 };
 
 } // namespace proton

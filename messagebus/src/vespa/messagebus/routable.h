@@ -171,4 +171,3 @@ public:
 };
 
 } // namespace mbus
-

@@ -12,7 +12,6 @@
 using proton::matching::SessionManager;
 using search::index::Schema;
 using search::SerialNum;
-using vespa::config::search::core::ProtonConfig;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
@@ -169,17 +168,11 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc,
 initializer::InitializerTask::SP
 DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapshot,
                                            SerialNum configSerialNum,
-                                           const ProtonConfig::Summary & protonSummaryCfg,
                                            const ProtonConfig::Index & indexCfg)
 {
-    DocumentSubDbCollectionInitializer::SP task =
-        std::make_shared<DocumentSubDbCollectionInitializer>();
+    DocumentSubDbCollectionInitializer::SP task = std::make_shared<DocumentSubDbCollectionInitializer>();
     for (auto subDb : _subDBs) {
-        DocumentSubDbInitializer::SP
-            subTask(subDb->createInitializer(configSnapshot,
-                                             configSerialNum,
-                                             protonSummaryCfg,
-                                             indexCfg));
+        DocumentSubDbInitializer::SP subTask(subDb->createInitializer(configSnapshot, configSerialNum, indexCfg));
         task->add(subTask);
     }
     return task;
@@ -264,8 +257,7 @@ DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
     _reprocessingRunner.reset();
     for (auto subDb : _subDBs) {
         IReprocessingTask::List tasks;
-        tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot,
-                                   serialNum, params, resolver);
+        tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver);
         _reprocessingRunner.addTasks(tasks);
     }
 }

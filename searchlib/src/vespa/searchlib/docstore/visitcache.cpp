@@ -145,11 +145,24 @@ VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) cons
     return ! blobs.empty();
 }
 
+void
+VisitCache::BackingStore::reconfigure(const CompressionConfig &compression) {
+    _compression = compression;
+}
+
+
 VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const CompressionConfig &compression) :
     _store(store, compression),
     _cache(std::make_unique<Cache>(_store, cacheSize))
 {
 }
+
+void
+VisitCache::reconfigure(size_t cacheSize, const CompressionConfig &compression) {
+    _store.reconfigure(compression);
+    _cache->setCapacityBytes(cacheSize);
+}
+
 
 VisitCache::Cache::IdSet
 VisitCache::Cache::findSetsContaining(const LockGuard &, const KeySet & keys) const {

@@ -11,7 +11,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
-#include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
@@ -215,14 +214,11 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
 FastAccessDocSubDB::~FastAccessDocSubDB() { }
 
 DocumentSubDbInitializer::UP
-FastAccessDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
-                                      SerialNum configSerialNum,
-                                      const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
+FastAccessDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                                       const vespa::config::search::core::ProtonConfig::Index &indexCfg) const
 {
-    auto result = Parent::createInitializer(configSnapshot, configSerialNum, protonSummaryCfg, indexCfg);
-    auto attrMgrInitTask = createAttributeManagerInitializer(configSnapshot,
-                                                             configSerialNum,
+    auto result = Parent::createInitializer(configSnapshot, configSerialNum, indexCfg);
+    auto attrMgrInitTask = createAttributeManagerInitializer(configSnapshot, configSerialNum,
                                                              result->getDocumentMetaStoreInitTask(),
                                                              result->result().documentMetaStore()->documentMetaStore(),
                                                              result->writableResult().writableAttributeManager());
@@ -253,13 +249,12 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 }
 
 IReprocessingTask::List
-FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                                const DocumentDBConfig &oldConfigSnapshot,
-                                SerialNum serialNum,
-                                const ReconfigParams &params,
-                                IDocumentDBReferenceResolver &resolver)
+FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
     (void) resolver;
+
+    reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     /*

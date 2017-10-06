@@ -98,13 +98,9 @@ public:
         const uint32_t _subDbId;
         const SubDbType _subDbType;
 
-        Config(const DocTypeName &docTypeName,
-               const vespalib::string &subName,
-               const vespalib::string &baseDir,
-               const search::GrowStrategy &attributeGrow,
-               size_t attributeGrowNumDocs,
-               uint32_t subDbId,
-               SubDbType subDbType);
+        Config(const DocTypeName &docTypeName, const vespalib::string &subName,
+               const vespalib::string &baseDir, const search::GrowStrategy &attributeGrow,
+               size_t attributeGrowNumDocs, uint32_t subDbId, SubDbType subDbType);
         ~Config();
     };
 
@@ -179,7 +175,7 @@ protected:
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     std::shared_ptr<initializer::InitializerTask>
-    createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
+    createSummaryManagerInitializer(const search::LogDocumentStore::Config & protonSummaryCfg,
                                     const search::TuneFileSummary &tuneFile,
                                     search::IBucketizer::SP bucketizer,
                                     std::shared_ptr<SummaryManager::SP> result) const;
@@ -201,7 +197,7 @@ protected:
     using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
     virtual void updateLidReuseDelayer(const LidReuseDelayerConfig &config);
-
+    void reconfigure(const search::LogDocumentStore::Config & protonConfig);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB();
@@ -210,35 +206,21 @@ public:
     vespalib::string getName() const override { return _subName; }
 
     std::unique_ptr<DocumentSubDbInitializer>
-    createInitializer(const DocumentDBConfig &configSnapshot,
-                      SerialNum configSerialNum,
-                      const ProtonConfig::Summary &protonSummaryCfg,
+    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                       const ProtonConfig::Index &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;
 
     IReprocessingTask::List
-    applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum,
-                const ReconfigParams &params,
-                IDocumentDBReferenceResolver &resolver) override;
+    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
     IFeedView::SP getFeedView() const override { return _iFeedView.get(); }
 
-    void clearViews() override {
-        _iFeedView.clear();
-        _iSearchView.clear();
-    }
+    void clearViews() override;
 
-    /**
-     * Returns the summary manager that this database uses to manage
-     * document summaries of the corresponding document type.
-     *
-     * @return The summary manager.
-     */
     const ISummaryManager::SP &getSummaryManager() const override { return _iSummaryMgr; }
     IAttributeManager::SP getAttributeManager() const override;
     const std::shared_ptr<searchcorespi::IIndexManager> & getIndexManager() const override;
@@ -259,8 +241,8 @@ public:
     IDocumentRetriever::UP getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
     void close() override;
-    virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
-    virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
+    std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
+    void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
 };
 
-} // namespace proton
+}

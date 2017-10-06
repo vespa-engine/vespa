@@ -108,13 +108,12 @@ private:
 
     ClusterStateHandler           _clusterStateHandler;
     BucketHandler                 _bucketHandler;
-    ProtonConfig::Summary         _protonSummaryCfg;
     ProtonConfig::Index           _protonIndexCfg;
     ConfigStore::UP               _config_store;
     std::shared_ptr<matching::SessionManager>  _sessionManager; // TODO: This should not have to be a shared pointer.
     MetricsWireService             &_metricsWireService;
     MetricsUpdateHook             _metricsHook;
-    vespalib::VarHolder<IFeedView::SP>      _feedView;
+    vespalib::VarHolder<IFeedView::SP> _feedView;
     MonitoredRefCount             _refCount;
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
@@ -142,7 +141,8 @@ private:
     void performReconfig(DocumentDBConfig::SP configSnapshot);
     void closeSubDBs();
 
-    void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params);
+    void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
+                          SerialNum serialNum, const ReconfigParams &params);
     void applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum);
 
     /**
@@ -163,7 +163,7 @@ private:
      * Redo interrupted reprocessing if last entry in transaction log
      * is a config change.
      */
-    virtual void enterRedoReprocessState() override;
+    void enterRedoReprocessState() override;
     void enterApplyLiveConfigState();
 
     /**
@@ -390,24 +390,12 @@ public:
     void release() { _refCount.release(); }
 
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
-
-    /**
-     * Implements IReplayConfig API.
-     */
-    virtual void replayConfig(SerialNum serialNum) override;
-
+    void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
-
     void newConfigSnapshot(DocumentDBConfig::SP snapshot);
-
-    // Implements DocumentDBConfigOwner
     void reconfigure(const DocumentDBConfig::SP & snapshot) override;
-
     int64_t getActiveGeneration() const;
-
-    // Implements IDocumentSubDBOwner
     void syncFeedView() override;
-
     vespalib::string getName() const override { return _docTypeName.getName(); }
     uint32_t getDistributionKey() const override;
 
@@ -432,7 +420,7 @@ public:
      *
      * Sync transaction log to syncTo.
      */
-    virtual void sync(SerialNum syncTo) override;
+    void sync(SerialNum syncTo) override;
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();
@@ -440,4 +428,3 @@ public:
 };
 
 } // namespace proton
-

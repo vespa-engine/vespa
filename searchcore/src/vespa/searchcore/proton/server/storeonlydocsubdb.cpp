@@ -62,7 +62,6 @@ IIndexWriter::SP nullIndexWriter;
 
 }
 
-
 StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName,
                                   const vespalib::string &subName,
                                   const vespalib::string &baseDir,
@@ -152,6 +151,12 @@ StoreOnlyDocSubDB::~StoreOnlyDocSubDB()
     _rSummaryMgr.reset();
 }
 
+void
+StoreOnlyDocSubDB::clearViews() {
+    _iFeedView.clear();
+    _iSearchView.clear();
+}
+
 size_t
 StoreOnlyDocSubDB::getNumDocs() const
 {
@@ -232,7 +237,7 @@ StoreOnlyDocSubDB::getNewestFlushedSerial()
 
 initializer::InitializerTask::SP
 StoreOnlyDocSubDB::
-createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
+createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCfg,
                                 const search::TuneFileSummary &tuneFile,
                                 search::IBucketizer::SP bucketizer,
                                 std::shared_ptr<SummaryManager::SP> result) const
@@ -241,9 +246,7 @@ createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
     vespalib::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
         (grow, baseDir, getSubDbName(), _docTypeName, _summaryExecutor,
-         protonSummaryCfg,
-         tuneFile,
-         _fileHeaderContext, _tlSyncer, bucketizer, result);
+         storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, bucketizer, result);
 }
 
 void
@@ -251,8 +254,7 @@ StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager)
 {
     _rSummaryMgr = summaryManager;
     _iSummaryMgr = _rSummaryMgr; // Upcast allowed with std::shared_ptr
-    _flushedDocumentStoreSerialNum =
-        _iSummaryMgr->getBackingStore().lastSyncToken();
+    _flushedDocumentStoreSerialNum = _iSummaryMgr->getBackingStore().lastSyncToken();
     _summaryAdapter.reset(new SummaryAdapter(_rSummaryMgr));
 }
 
@@ -274,15 +276,9 @@ createDocumentMetaStoreInitializer(const search::TuneFileAttributes &tuneFile,
     // initializers to get hold of document meta store instance in
     // their constructors.
     *result = std::make_shared<DocumentMetaStoreInitializerResult>
-              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName,
-                                                   grow,
-                                                   gidCompare, _subDbType),
-               tuneFile);
+              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, gidCompare, _subDbType), tuneFile);
     return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>
-        (baseDir,
-         getSubDbName(),
-         _docTypeName.toString(),
-         (*result)->documentMetaStore());
+        (baseDir, getSubDbName(), _docTypeName.toString(), (*result)->documentMetaStore());
 }
 
 
@@ -293,36 +289,25 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
     vespalib::string name = DocumentMetaStore::getFixedName();
     DocumentMetaStore::SP dms(dmsResult->documentMetaStore());
     if (dms->isLoaded()) {
-        _flushedDocumentMetaStoreSerialNum =
-            dms->getStatus().getLastSyncToken();
+        _flushedDocumentMetaStoreSerialNum = dms->getStatus().getLastSyncToken();
     }
     _bucketDBHandlerInitializer.
-        addDocumentMetaStore(dms.get(),
-                             _flushedDocumentMetaStoreSerialNum);
+        addDocumentMetaStore(dms.get(), _flushedDocumentMetaStoreSerialNum);
     _metaStoreCtx.reset(new DocumentMetaStoreContext(dms));
     LOG(debug, "Added document meta store '%s' with flushed serial num %lu",
                name.c_str(), _flushedDocumentMetaStoreSerialNum);
     _dms = dms;
-    _dmsFlushTarget.reset(new DocumentMetaStoreFlushTarget(dms,
-                                                           _tlsSyncer,
-                                  baseDir,
-                                  dmsResult->tuneFile(),
-                                  _fileHeaderContext, _hwInfo));
+    _dmsFlushTarget = std::make_shared<DocumentMetaStoreFlushTarget>(dms, _tlsSyncer, baseDir, dmsResult->tuneFile(),
+                                                                     _fileHeaderContext, _hwInfo);
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
-    _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>
-                       ("documentmetastore.shrink",
-                        Type::GC, Component::ATTRIBUTE,
-                        _flushedDocumentMetaStoreSerialNum,
-                        _dmsFlushTarget->getLastFlushTime(),
-                        dms);
+    _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>("documentmetastore.shrink", Type::GC,
+                                                                   Component::ATTRIBUTE, _flushedDocumentMetaStoreSerialNum,
+                                                                   _dmsFlushTarget->getLastFlushTime(), dms);
 }
 
 DocumentSubDbInitializer::UP
-StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
-                                     SerialNum configSerialNum,
-                                     const ProtonConfig::Summary &
-                                     protonSummaryCfg,
+StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                                      const ProtonConfig::Index &indexCfg) const
 {
     (void) configSerialNum;
@@ -331,19 +316,14 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
                   (const_cast<StoreOnlyDocSubDB &>(*this),
                    _writeService.master());
     auto dmsInitTask =
-    createDocumentMetaStoreInitializer(configSnapshot.
-                                       getTuneFileDocumentDBSP()->_attr,
-                                       result->writableResult().
-                                       writableDocumentMetaStore());
+    createDocumentMetaStoreInitializer(configSnapshot.getTuneFileDocumentDBSP()->_attr,
+                                       result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
     auto summaryTask =
-        createSummaryManagerInitializer(protonSummaryCfg,
-                                        configSnapshot.
-                                        getTuneFileDocumentDBSP()->_summary,
-                                        result->result().documentMetaStore()->
-                                        documentMetaStore(),
-                                        result->writableResult().
-                                        writableSummaryManager());
+        createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
+                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
+                                        result->result().documentMetaStore()->documentMetaStore(),
+                                        result->writableResult().writableSummaryManager());
     result->addDependency(summaryTask);
     summaryTask->addDependency(dmsInitTask);
 
@@ -367,9 +347,7 @@ StoreOnlyDocSubDB::getFlushTargets()
     IFlushTarget::List ret;
     for (const auto &target : getFlushTargetsInternal()) {
         ret.push_back(IFlushTarget::SP
-                (new ThreadedFlushTarget(_writeService.master(),
-                                         _getSerialNum,
-                                         target, _subName)));
+                (new ThreadedFlushTarget(_writeService.master(), _getSerialNum, target, _subName)));
     }
     return ret;
 }
@@ -400,12 +378,8 @@ StoreOnlyDocSubDB::getFeedViewPersistentParams()
 {
     SerialNum flushedDMSSN(_flushedDocumentMetaStoreSerialNum);
     SerialNum flushedDSSN(_flushedDocumentStoreSerialNum);
-    return StoreOnlyFeedView::PersistentParams(flushedDMSSN,
-            flushedDSSN,
-            _docTypeName,
-            _metrics.feed,
-            _subDbId,
-            _subDbType);
+    return StoreOnlyFeedView::PersistentParams(flushedDMSSN, flushedDSSN, _docTypeName,
+                                               _metrics.feed, _subDbId, _subDbType);
 }
 
 void
@@ -460,21 +434,25 @@ StoreOnlyDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
 }
 
 IReprocessingTask::List
-StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                               const DocumentDBConfig &oldConfigSnapshot,
-                               SerialNum serialNum,
-                               const ReconfigParams &params,
-                               IDocumentDBReferenceResolver &resolver)
+StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                               SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
     (void) oldConfigSnapshot;
     (void) serialNum;
     (void) params;
     (void) resolver;
     assert(_writeService.master().isCurrentThread());
+    reconfigure(newConfigSnapshot.getStoreConfig());
     initFeedView(newConfigSnapshot);
     updateLidReuseDelayer(&newConfigSnapshot);
     _owner.syncFeedView();
     return IReprocessingTask::List();
+}
+
+void
+StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config)
+{
+    _rSummaryMgr->reconfigure(config);
 }
 
 proton::IAttributeManager::SP
@@ -579,8 +557,7 @@ StoreOnlyDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &resolver)
 
 void
 StoreOnlySubDBFileHeaderContext::
-addTags(vespalib::GenericHeader &header,
-        const vespalib::string &name) const
+addTags(vespalib::GenericHeader &header, const vespalib::string &name) const
 {
     _parentFileHeaderContext.addTags(header, name);
     typedef GenericHeader::Tag Tag;

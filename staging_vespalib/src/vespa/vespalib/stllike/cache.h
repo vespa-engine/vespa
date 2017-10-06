@@ -71,6 +71,8 @@ public:
      */
     cache & reserveElements(size_t elems);
 
+    cache & setCapacityBytes(size_t sz);
+
     size_t capacity()                  const { return Lru::capacity(); }
     size_t capacityBytes()             const { return _maxBytes; }
     size_t size()                      const { return Lru::size(); }

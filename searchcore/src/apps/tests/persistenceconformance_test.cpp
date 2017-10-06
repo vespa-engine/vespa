@@ -128,6 +128,7 @@ public:
                         std::make_shared<TuneFileDocumentDB>(),
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),
+                        search::LogDocumentStore::Config(),
                         "client",
                         docTypeName.getName()));
     }
@@ -185,7 +186,7 @@ public:
                                _queryLimiter,
                                _clock,
                                docType,
-                               ProtonConfig(),
+                               *b->getProtonConfigSP(),
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
                                _summaryExecutor,

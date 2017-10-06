@@ -32,8 +32,7 @@ getName(const IFlushHandler & handler, const IFlushTarget & target)
 static constexpr uint64_t gibi = UINT64_C(1024) * UINT64_C(1024) * UINT64_C(1024);
 
 uint64_t
-estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats,
-                                    SerialNum flushedSerialNum)
+estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats, SerialNum flushedSerialNum)
 {
     if (flushedSerialNum < tlsStats.getFirstSerial()) {
         return tlsStats.getNumBytes();
@@ -45,8 +44,7 @@ estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats,
     if (flushedSerialNum >= tlsStats.getLastSerial()) {
         return 0u;
     }
-    double bytesPerEntry = static_cast<double>(tlsStats.getNumBytes()) /
-                           numEntries;
+    double bytesPerEntry = static_cast<double>(tlsStats.getNumBytes()) / numEntries;
     return bytesPerEntry * (tlsStats.getLastSerial() - flushedSerialNum);
 }
 
@@ -89,13 +87,15 @@ MemoryFlush::MemoryFlush()
 
 MemoryFlush::~MemoryFlush() { }
 
-MemoryFlush::Config MemoryFlush::getConfig() const
+MemoryFlush::Config
+MemoryFlush::getConfig() const
 {
     vespalib::LockGuard guard(_lock);
     return _config;
 }
 
-void MemoryFlush::setConfig(const Config &config)
+void
+MemoryFlush::setConfig(const Config &config)
 {
     vespalib::LockGuard guard(_lock);
     _config = config;
@@ -116,7 +116,8 @@ getOrderName(MemoryFlush::OrderType &orderType)
     return "DEFAULT";
 }
 
-size_t computeGain(const IFlushTarget::DiskGain & gain) {
+size_t
+computeGain(const IFlushTarget::DiskGain & gain) {
     return std::max(100000000l, std::max(gain.getBefore(), gain.getAfter()));
 }
 bool isDiskBloatToHigh(const IFlushTarget::DiskGain & totalDisk,
@@ -131,8 +132,7 @@ bool isDiskBloatToHigh(const IFlushTarget::DiskGain & totalDisk,
 
 FlushContext::List
 MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
-                             const flushengine::TlsStatsMap &
-                             tlsStatsMap) const
+                             const flushengine::TlsStatsMap & tlsStatsMap) const
 {
     OrderType order(DEFAULT);
     uint64_t totalMemory(0);
@@ -219,8 +219,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
 
 
 bool
-MemoryFlush::CompareTarget::operator()(const FlushContext::SP &lfc,
-                                       const FlushContext::SP &rfc) const
+MemoryFlush::CompareTarget::operator()(const FlushContext::SP &lfc, const FlushContext::SP &rfc) const
 {
     const IFlushTarget &lhs = *lfc->getTarget();
     const IFlushTarget &rhs = *rfc->getTarget();

@@ -2,7 +2,6 @@
 #pragma once
 
 #include "reply.h"
-#include "blob.h"
 
 namespace mbus {
 
@@ -16,34 +15,10 @@ namespace mbus {
  */
 class EmptyReply : public Reply {
 public:
-    /**
-     * Constructs a new instance of this class.
-     */
     EmptyReply();
-
-    /**
-     * This method returns the empty string to signal that it does not belong to
-     * a protocol.
-     *
-     * @return ""
-     */
     const string & getProtocol() const override;
-
-    /**
-     * This method returns the message type id reserved for empty replies: 0
-     *
-     * @return 0
-     */
     uint32_t getType() const override;
-
-    /**
-     * Encodes this reply into an empty blob.
-     *
-     * @return empty blob
-     */
-    Blob encode() const;
-
     uint8_t priority() const override { return 8; }
 };
 
-} // namespace mbus
+}

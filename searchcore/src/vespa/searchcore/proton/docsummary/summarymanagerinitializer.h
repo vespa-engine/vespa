@@ -16,18 +16,17 @@ namespace proton {
 class SummaryManagerInitializer : public initializer::InitializerTask
 {
     using IBucketizerSP = std::shared_ptr<search::IBucketizer>;
-    using ProtonConfig = vespa::config::search::core::ProtonConfig;
-    const search::GrowStrategy         _grow;
-    const vespalib::string             _baseDir;
-    const vespalib::string             _subDbName;
-    const DocTypeName                  _docTypeName;
-    vespalib::ThreadExecutor          &_summaryExecutor;
-    const ProtonConfig::Summary        _protonSummaryCfg;
-    const search::TuneFileSummary      _tuneFile;
+    const search::GrowStrategy               _grow;
+    const vespalib::string                   _baseDir;
+    const vespalib::string                   _subDbName;
+    const DocTypeName                        _docTypeName;
+    vespalib::ThreadExecutor                &_summaryExecutor;
+    const search::LogDocumentStore::Config   _storeCfg;
+    const search::TuneFileSummary            _tuneFile;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    search::transactionlog::SyncProxy &_tlSyncer;
-    const IBucketizerSP                _bucketizer;
-    std::shared_ptr<SummaryManager::SP> _result;
+    search::transactionlog::SyncProxy       &_tlSyncer;
+    const IBucketizerSP                      _bucketizer;
+    std::shared_ptr<SummaryManager::SP>      _result;
 
 public:
     using SP = std::shared_ptr<SummaryManagerInitializer>;
@@ -38,12 +37,13 @@ public:
                               const vespalib::string &subDbName,
                               const DocTypeName &docTypeName,
                               vespalib::ThreadStackExecutorBase & summaryExecutor,
-                              const ProtonConfig::Summary protonSummaryCfg,
+                              const search::LogDocumentStore::Config & storeCfg,
                               const search::TuneFileSummary &tuneFile,
                               const search::common::FileHeaderContext & fileHeaderContext,
                               search::transactionlog::SyncProxy &tlSyncer,
                               IBucketizerSP bucketizer,
                               std::shared_ptr<SummaryManager::SP> result);
+    ~SummaryManagerInitializer();
     void run() override;
 };
 

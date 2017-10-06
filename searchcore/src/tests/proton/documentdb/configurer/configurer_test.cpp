@@ -206,7 +206,7 @@ Fixture::initViewSet(ViewSet &views)
                                                       views._hwInfo));
     ProtonConfig protonCfg;
     SummaryManager::SP summaryMgr(
-            new SummaryManager(_summaryExecutor, ProtonConfig::Summary(),
+            new SummaryManager(_summaryExecutor, search::LogDocumentStore::Config(),
                                GrowStrategy(), BASE_DIR, views._docTypeName,
                                TuneFileSummary(), views._fileHeaderContext,
                                views._noTlSyncer, search::IBucketizer::SP()));

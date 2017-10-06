@@ -23,10 +23,7 @@ public:
     {
     public:
         using CompressionConfig = vespalib::compression::CompressionConfig;
-        Config()
-            : _compression(CompressionConfig::LZ4, 9, 60),
-              _maxChunkBytes(0x10000)
-        { }
+        Config() : Config({CompressionConfig::LZ4, 9, 60}, 0x10000) { }
 
         Config(const CompressionConfig &compression, size_t maxChunkBytes)
             : _compression(compression),
@@ -35,6 +32,9 @@ public:
 
         const CompressionConfig & getCompression() const { return _compression; }
         size_t getMaxChunkBytes() const { return _maxChunkBytes; }
+        bool operator == (const Config & rhs) const {
+            return (_compression == rhs._compression) && (_maxChunkBytes == rhs._maxChunkBytes);
+        }
     private:
         CompressionConfig _compression;
         size_t _maxChunkBytes;
@@ -42,16 +42,11 @@ public:
 
 public:
     typedef std::unique_ptr<WriteableFileChunk> UP;
-    WriteableFileChunk(vespalib::ThreadExecutor & executor,
-                       FileId fileId, NameId nameId,
-                       const vespalib::string & baseName,
-                       uint64_t initialSerialNum,
-                       uint32_t docIdLimit,
-                       const Config & config,
-                       const TuneFileSummary &tune,
-                       const common::FileHeaderContext &fileHeaderContext,
-                       const IBucketizer * bucketizer,
-                       bool crcOnReadDisabled);
+    WriteableFileChunk(vespalib::ThreadExecutor & executor, FileId fileId, NameId nameId,
+                       const vespalib::string & baseName, uint64_t initialSerialNum,
+                       uint32_t docIdLimit, const Config & config,
+                       const TuneFileSummary &tune, const common::FileHeaderContext &fileHeaderContext,
+                       const IBucketizer * bucketizer, bool crcOnReadDisabled);
     ~WriteableFileChunk();
 
     ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const override;

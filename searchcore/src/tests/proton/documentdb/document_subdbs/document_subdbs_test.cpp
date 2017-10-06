@@ -262,25 +262,26 @@ struct MyConfigSnapshot
     Schema _schema;
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
+    BootstrapConfig::SP  _bootstrap;
     MyConfigSnapshot(const Schema &schema,
                      const vespalib::string &cfgDir)
         : _schema(schema),
           _builder(_schema),
-          _cfg()
+          _cfg(),
+          _bootstrap()
     {
         DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig
             (new DocumenttypesConfig(_builder.getDocumenttypesConfig()));
         TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB());
-        BootstrapConfig::SP bootstrap
-            (new BootstrapConfig(1,
+        _bootstrap = std::make_shared<BootstrapConfig>(1,
                                  documenttypesConfig,
                                  _builder.getDocumentTypeRepo(),
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
-                                 tuneFileDocumentDB));
+                                 tuneFileDocumentDB);
         config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
-        mgr.forwardConfig(bootstrap);
+        mgr.forwardConfig(_bootstrap);
         mgr.nextGeneration(1);
         _cfg = mgr.getConfig();
     }
@@ -292,8 +293,8 @@ struct FixtureBase
     ExecutorThreadingService _writeService;
     ThreadStackExecutor _summaryExecutor;
     typename Traits::Config _cfg;
-        std::shared_ptr<BucketDBOwner> _bucketDB;
-        BucketDBHandler _bucketDBHandler;
+    std::shared_ptr<BucketDBOwner> _bucketDB;
+    BucketDBHandler _bucketDBHandler;
     typename Traits::Context _ctx;
     typename Traits::Schema _baseSchema;
     MyConfigSnapshot::UP _snapshot;
@@ -329,7 +330,6 @@ struct FixtureBase
                 DocumentSubDbInitializer::SP task =
                     _subDb.createInitializer(*_snapshot->_cfg,
                                              Traits::configSerial(),
-                                             ProtonConfig::Summary(),
                                              ProtonConfig::Index());
                 vespalib::ThreadStackExecutor executor(1, 1024 * 1024);
                 initializer::TaskRunner taskRunner(executor);
@@ -340,26 +340,18 @@ struct FixtureBase
     void basicReconfig(SerialNum serialNum) {
         runInMaster([&] () { performReconfig(serialNum, TwoAttrSchema(), ConfigDir2::dir()); });
     }
-    void reconfig(SerialNum serialNum,
-                  const Schema &reconfigSchema,
-                  const vespalib::string &reconfigConfigDir) {
+    void reconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
         runInMaster([&] () { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
-        }
-    void performReconfig(SerialNum serialNum,
-                  const Schema &reconfigSchema,
-                  const vespalib::string &reconfigConfigDir) {
+    }
+    void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
         MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;
         cmpResult.documenttypesChanged = true;
         cmpResult.documentTypeRepoChanged = true;
         MyDocumentDBReferenceResolver resolver;
-        IReprocessingTask::List tasks =
-                _subDb.applyConfig(*newCfg->_cfg,
-                        *_snapshot->_cfg,
-                        serialNum,
-                        ReconfigParams(cmpResult),
-                        resolver);
+        auto tasks = _subDb.applyConfig(*newCfg->_cfg, *_snapshot->_cfg,
+                                        serialNum, ReconfigParams(cmpResult), resolver);
         _snapshot = std::move(newCfg);
         if (!tasks.empty()) {
             ReprocessingRunner runner;

@@ -2,41 +2,23 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/noncopyable.hpp>
 #include <vespa/vespalib/util/sync.h>
 
-namespace vespalib
-{
-
+namespace vespalib {
 
 template <typename T>
-class VarHolder : public noncopyable
+class VarHolder
 {
-
-    T			_v;
-    vespalib::Lock      _lock;
-
+    T     _v;
+    Lock  _lock;
 public:
-    VarHolder(void)
-        : _v(),
-          _lock()
-    {
-    }
+    VarHolder() : _v(), _lock() {}
+    explicit VarHolder(const T &v) : _v(v), _lock() {}
+    VarHolder(const VarHolder &) = delete;
+    VarHolder & operator = (const VarHolder &) = delete;
+    ~VarHolder() {}
 
-    explicit
-    VarHolder(const T &v)
-        : _v(v),
-          _lock()
-    {
-    }
-
-    ~VarHolder(void)
-    {
-    }
-
-    void
-    set(const T &v)
-    {
+    void set(const T &v) {
         T old;
         {
             vespalib::LockGuard guard(_lock);
@@ -45,19 +27,12 @@ public:
         }
     }
 
-    void
-    clear(void)
-    {
-        set(T());
-    }
+    void clear() { set(T()); }
 
-    T
-    get(void) const
-    {
+    T get() const {
         vespalib::LockGuard guard(_lock);
         return _v;
     }
 };
 
-}  // namespace vespalib
-
+}

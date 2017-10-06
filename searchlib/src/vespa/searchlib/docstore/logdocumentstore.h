@@ -6,15 +6,9 @@
 #include "logdatastore.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
+namespace common { class FileHeaderContext; }
 
 /**
  * Simple document store that contains serialized Document instances.
@@ -26,12 +20,15 @@ class LogDocumentStore : public DocumentStore
 public:
     class Config : public DocumentStore::Config {
     public:
+        Config() : DocumentStore::Config(), _logConfig() { }
         Config(const DocumentStore::Config & base, const LogDataStore::Config & log) :
             DocumentStore::Config(base),
             _logConfig(log)
         { }
         const LogDataStore::Config & getLogConfig() const { return _logConfig; }
         LogDataStore::Config & getLogConfig() { return _logConfig; }
+        bool operator == (const Config & rhs) const;
+        bool operator != (const Config & rhs) const { return ! (*this == rhs); }
     private:
         LogDataStore::Config _logConfig;
     };
@@ -47,17 +44,12 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDocumentStore(vespalib::ThreadExecutor & executor,
-                     const vespalib::string & baseDir,
-                     const Config & config,
-                     const GrowStrategy & growStrategy,
-                     const TuneFileSummary &tuneFileSummary,
+    LogDocumentStore(vespalib::ThreadExecutor & executor, const vespalib::string & baseDir, const Config & config,
+                     const GrowStrategy & growStrategy, const TuneFileSummary &tuneFileSummary,
                      const common::FileHeaderContext &fileHeaderContext,
-                     transactionlog::SyncProxy &tlSyncer,
-                     const IBucketizer::SP & bucketizer);
+                     transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer);
     ~LogDocumentStore();
-    LogDataStore::Config       & getLogConfig()       { return _backingStore.getConfig(); }
-    const LogDataStore::Config & getLogConfig() const { return _backingStore.getConfig(); }
+    void reconfigure(const Config & config);
 private:
     void compact(uint64_t syncToken) override       { _backingStore.compact(syncToken); }
     LogDataStore _backingStore;
