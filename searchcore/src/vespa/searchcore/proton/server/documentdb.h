@@ -394,12 +394,15 @@ public:
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
-    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     void newConfigSnapshot(DocumentDBConfig::SP snapshot);
     void reconfigure(const DocumentDBConfig::SP & snapshot) override;
     int64_t getActiveGeneration() const;
+    /*
+     * Implements IDocumentSubDBOwner
+     */
     void syncFeedView() override;
-    vespalib::string getName() const override { return _docTypeName.getName(); }
+    document::BucketSpace getBucketSpace() const override;
+    vespalib::string getName() const override;
     uint32_t getDistributionKey() const override;
 
     /**

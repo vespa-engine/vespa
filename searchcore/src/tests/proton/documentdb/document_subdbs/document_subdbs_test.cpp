@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
@@ -51,6 +52,7 @@ using search::test::DirectoryHandler;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucketSpace;
 using vespa::config::search::core::ProtonConfig;
 using vespalib::mkdir;
 
@@ -78,6 +80,7 @@ struct MySubDBOwner : public IDocumentSubDBOwner
     uint32_t _syncCnt;
     MySubDBOwner() : _syncCnt(0) {}
     void syncFeedView() override { ++_syncCnt; }
+    document::BucketSpace getBucketSpace() const override { return makeBucketSpace(); }
     vespalib::string getName() const override { return "owner"; }
     uint32_t getDistributionKey() const override { return -1; }
 };

@@ -62,6 +62,7 @@ private:
     using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     SubDBVector _subDBs;
+    IDocumentSubDBOwner     &_owner;
     IBucketStateCalculatorSP _calc;
     const uint32_t _readySubDbId;
     const uint32_t _remSubDbId;

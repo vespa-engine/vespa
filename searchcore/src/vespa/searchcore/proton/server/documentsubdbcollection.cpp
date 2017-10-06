@@ -4,6 +4,7 @@
 #include "commit_and_wait_document_retriever.h"
 #include "document_subdb_collection_initializer.h"
 #include "documentsubdbcollection.h"
+#include "i_document_subdb_owner.h"
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
 
@@ -34,6 +35,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const ProtonConfig &protonCfg,
         const HwInfo &hwInfo)
     : _subDBs(),
+      _owner(owner),
       _calc(),
       _readySubDbId(0),
       _remSubDbId(1),
@@ -274,7 +276,7 @@ DocumentSubDBCollection::getFeedView()
     IFeedView::SP newFeedView;
     assert(views.size() >= 1);
     if (views.size() > 1) {
-        return IFeedView::SP(new CombiningFeedView(views, _calc));
+        return IFeedView::SP(new CombiningFeedView(views, _owner.getBucketSpace(), _calc));
     } else {
         assert(views.front() != NULL);
         return views.front();
