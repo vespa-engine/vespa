@@ -7,14 +7,13 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/helper/legacy.h>
-#include <vespa/log/log.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/time/time_box.h>
-#include <thread>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 
 using namespace config;
@@ -28,6 +27,11 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
+using vespalib::compression::CompressionConfig;
+using search::LogDocumentStore;
+using search::LogDataStore;
+using search::DocumentStore;
+using search::WriteableFileChunk;
 
 namespace proton {
 
@@ -87,7 +91,9 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
     return oldSchema;
 }
 
-static DocumentDBMaintenanceConfig::SP
+namespace {
+
+DocumentDBMaintenanceConfig::SP
 buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                        const vespalib::string &docTypeName)
 {
@@ -133,7 +139,45 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.maintenancejobs.maxoutstandingmoveops));
 }
 
-namespace {
+template<typename T>
+CompressionConfig
+deriveCompression(const T & config) {
+    CompressionConfig compression;
+    if (config.type == T::LZ4) {
+        compression.type = CompressionConfig::LZ4;
+    } else if (config.type == T::ZSTD) {
+        compression.type = CompressionConfig::ZSTD;
+    }
+    compression.compressionLevel = config.level;
+    return compression;
+}
+
+DocumentStore::Config
+getStoreConfig(const ProtonConfig::Summary::Cache & cache)
+{
+    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+}
+
+LogDocumentStore::Config
+deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush) {
+    DocumentStore::Config config(getStoreConfig(summary.cache));
+    const ProtonConfig::Summary::Log & log(summary.log);
+    const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
+    const
+
+    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
+    LogDataStore::Config logConfig;
+    logConfig.setMaxFileSize(log.maxfilesize)
+            .setMaxDiskBloatFactor(std::min(flush.diskbloatfactor, flush.each.diskbloatfactor))
+            .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
+            .compact2ActiveFile(log.compact2activefile).compactCompression(deriveCompression(log.compact.compression))
+            .setFileConfig(fileConfig).disableCrcOnRead(chunk.skipcrconread);
+    return LogDocumentStore::Config(config, logConfig);
+}
+
+search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton) {
+    return deriveConfig(proton.summary, proton.flush.memory);
+}
 
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
 using AttributesConfigBuilder = vespa::config::search::AttributesConfigBuilder;
@@ -180,27 +224,22 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     MaintenanceConfigSP newMaintenanceConfig;
 
     if (!_ignoreForwardedConfig) {
-        if (_bootstrapConfig->getDocumenttypesConfigSP().get() == NULL ||
-            _bootstrapConfig->getDocumentTypeRepoSP().get() == NULL ||
-            _bootstrapConfig->getProtonConfigSP().get() == NULL ||
-            _bootstrapConfig->getTuneFileDocumentDBSP().get() == NULL) {
+        if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
+            _bootstrapConfig->getDocumentTypeRepoSP() &&
+            _bootstrapConfig->getProtonConfigSP() &&
+            _bootstrapConfig->getTuneFileDocumentDBSP())) {
             return;
         }
     }
 
     int64_t generation = snapshot.getGeneration();
-    LOG(debug,
-        "Forwarded generation %"
-                PRId64
-                ", generation %"
-                PRId64,
-        _bootstrapConfig->getGeneration(), generation);
+    LOG(debug, "Forwarded generation %" PRId64 ", generation %" PRId64, _bootstrapConfig->getGeneration(), generation);
     if (!_ignoreForwardedConfig && _bootstrapConfig->getGeneration() != generation) {
         return;
     }
 
     int64_t currentGeneration = -1;
-    if (current.get() != NULL) {
+    if (current) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
         newRankingConstants = current->getRankingConstantsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
@@ -245,13 +284,11 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newRankingConstants = std::make_shared<RankingConstants>(constants);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
-        std::unique_ptr<IndexschemaConfig> indexschemaConfig =
-            snapshot.getConfig<IndexschemaConfig>(_configId);
+        std::unique_ptr<IndexschemaConfig> indexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
         search::index::Schema schema;
         search::index::SchemaBuilder::build(*indexschemaConfig, schema);
         if (!search::index::SchemaUtil::validateSchema(schema)) {
-            LOG(error,
-                "Cannot use bad index schema, validation failed");
+            LOG(error, "Cannot use bad index schema, validation failed");
             abort();
         }
         newIndexschemaConfig = IndexschemaConfigSP(indexschemaConfig.release());
@@ -272,14 +309,10 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newImportedFieldsConfig = ImportedFieldsConfigSP(snapshot.getConfig<ImportedFieldsConfig>(_configId).release());
     }
 
-    Schema::SP schema(buildSchema(*newAttributesConfig,
-                                  *newSummaryConfig,
-                                  *newIndexschemaConfig));
-    newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig,
-                                                  _docTypeName);
-    if (newMaintenanceConfig.get() != NULL &&
-        oldMaintenanceConfig.get() != NULL &&
-        *newMaintenanceConfig == *oldMaintenanceConfig) {
+    Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
+    newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
+    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig());
+    if (newMaintenanceConfig && oldMaintenanceConfig && *newMaintenanceConfig == *oldMaintenanceConfig) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
     ConfigSnapshot extraConfigs(snapshot.subset(_extraConfigKeys));
@@ -298,6 +331,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  _bootstrapConfig->getTuneFileDocumentDBSP(),
                                  schema,
                                  newMaintenanceConfig,
+                                 storeConfig,
                                  _configId,
                                  _docTypeName,
                                  extraConfigs));
@@ -310,8 +344,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 
 
 DocumentDBConfigManager::
-DocumentDBConfigManager(const vespalib::string &configId,
-                        const vespalib::string &docTypeName)
+DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string &docTypeName)
     : _configId(configId),
       _docTypeName(docTypeName),
       _bootstrapConfig(),
@@ -342,9 +375,11 @@ forwardConfig(const BootstrapConfig::SP & config)
     }
 }
 
+DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName)
+    : DocumentDBConfigHelper(spec, docTypeName, config::ConfigKeySet())
+{ }
 
-DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec,
-                                               const vespalib::string &docTypeName,
+DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName,
                                                const config::ConfigKeySet &extraConfigKeys)
         : _mgr("", docTypeName),
           _retriever()
@@ -359,8 +394,7 @@ DocumentDBConfigHelper::~DocumentDBConfigHelper() { }
 bool
 DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
 {
-    config::ConfigSnapshot
-            snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
+    config::ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
     if (snapshot.empty())
         return false;
     _mgr.update(snapshot);

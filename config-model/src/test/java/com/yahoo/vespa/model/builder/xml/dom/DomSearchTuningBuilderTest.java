@@ -184,7 +184,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "</cache>",
                 "<logstore>",
                 "<maxfilesize>512</maxfilesize>",
-                "<maxdiskbloatfactor>1.4</maxdiskbloatfactor>",
                 "<minfilesizefactor>0.3</minfilesizefactor>",
                 "<numthreads>7</numthreads>",
                 "<chunk>",
@@ -204,7 +203,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 t.searchNode.summary.store.cache.compression.type);
         assertEquals(3, t.searchNode.summary.store.cache.compression.level.intValue());
         assertEquals(512, t.searchNode.summary.store.logStore.maxFileSize.longValue());
-        assertEquals(1.4, t.searchNode.summary.store.logStore.maxDiskBloatFactor, DELTA);
         assertEquals(0.3, t.searchNode.summary.store.logStore.minFileSizeFactor, DELTA);
         assertEquals(7, t.searchNode.summary.store.logStore.numThreads.intValue());
         assertEquals(256, t.searchNode.summary.store.logStore.chunk.maxSize.intValue());
@@ -219,7 +217,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("summary.cache.compression.type NONE"));
         assertThat(cfg, containsString("summary.cache.compression.level 3"));
         assertThat(cfg, containsString("summary.log.maxfilesize 512"));
-        assertThat(cfg, containsString("summary.log.maxdiskbloatfactor 1.4"));
         assertThat(cfg, containsString("summary.log.minfilesizefactor 0.3"));
         assertThat(cfg, containsString("summary.log.chunk.maxbytes 256"));
         assertThat(cfg, containsString("summary.log.chunk.compression.type LZ4"));
@@ -234,6 +231,16 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(7, t.searchNode.initialize.threads.intValue());
         String cfg = getProtonCfg(t);
         assertThat(cfg, containsString("initialize.threads 7"));
+    }
+
+    @Test
+    public void requireThatWeCanParseBackgroundTag() {
+        Tuning t = createTuning(parseXml("<background>",
+                "<threads>7</threads>",
+                "</background>"));
+        assertEquals(7, t.searchNode.background.threads.intValue());
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("background.threads 7"));
     }
 
 }

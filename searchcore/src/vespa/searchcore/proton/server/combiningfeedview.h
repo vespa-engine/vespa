@@ -29,6 +29,7 @@ private:
     IBucketStateCalculator::SP                    _calc;
     bool                                          _clusterUp;
     bool                                          _forceReady;
+    document::BucketSpace                         _bucketSpace;
 
     const ISimpleDocumentMetaStore * getDocumentMetaStorePtr() const override;
 
@@ -59,6 +60,7 @@ public:
     typedef std::shared_ptr<CombiningFeedView> SP;
 
     CombiningFeedView(const std::vector<IFeedView::SP> &views,
+                      document::BucketSpace bucketSpace,
                       const IBucketStateCalculator::SP &calc);
 
     virtual ~CombiningFeedView();

@@ -210,7 +210,8 @@ private:
 void
 MemFilePersistenceProvider::handleBucketCorruption(const FileSpecification& file) const
 {
-    spi::Bucket fixBucket(file.getBucketId(),
+    spi::Bucket fixBucket(document::Bucket(document::BucketSpace::placeHolder(),
+                                           file.getBucketId()),
                           spi::PartitionId(file.getDirectory().getIndex()));
 
     // const_cast is nasty, but maintain() must necessarily be able to
@@ -410,7 +411,7 @@ MemFilePersistenceProvider::getPartitionStates() const
 }
 
 spi::BucketIdListResult
-MemFilePersistenceProvider::listBuckets(spi::PartitionId partition) const
+MemFilePersistenceProvider::listBuckets(BucketSpace, spi::PartitionId partition) const
 {
     spi::BucketIdListResult::List buckets;
     _fileScanner->buildBucketList(buckets, partition, 0, 1);
@@ -418,7 +419,7 @@ MemFilePersistenceProvider::listBuckets(spi::PartitionId partition) const
 }
 
 spi::BucketIdListResult
-MemFilePersistenceProvider::getModifiedBuckets() const
+MemFilePersistenceProvider::getModifiedBuckets(BucketSpace) const
 {
     document::BucketId::List modified;
     _env->swapModifiedBuckets(modified); // Atomic op

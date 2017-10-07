@@ -4,6 +4,7 @@
 #include "commit_and_wait_document_retriever.h"
 #include "document_subdb_collection_initializer.h"
 #include "documentsubdbcollection.h"
+#include "i_document_subdb_owner.h"
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
 
@@ -12,7 +13,6 @@
 using proton::matching::SessionManager;
 using search::index::Schema;
 using search::SerialNum;
-using vespa::config::search::core::ProtonConfig;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
@@ -35,6 +35,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const ProtonConfig &protonCfg,
         const HwInfo &hwInfo)
     : _subDBs(),
+      _owner(owner),
       _calc(),
       _readySubDbId(0),
       _remSubDbId(1),
@@ -169,17 +170,11 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc,
 initializer::InitializerTask::SP
 DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapshot,
                                            SerialNum configSerialNum,
-                                           const ProtonConfig::Summary & protonSummaryCfg,
                                            const ProtonConfig::Index & indexCfg)
 {
-    DocumentSubDbCollectionInitializer::SP task =
-        std::make_shared<DocumentSubDbCollectionInitializer>();
+    DocumentSubDbCollectionInitializer::SP task = std::make_shared<DocumentSubDbCollectionInitializer>();
     for (auto subDb : _subDBs) {
-        DocumentSubDbInitializer::SP
-            subTask(subDb->createInitializer(configSnapshot,
-                                             configSerialNum,
-                                             protonSummaryCfg,
-                                             indexCfg));
+        DocumentSubDbInitializer::SP subTask(subDb->createInitializer(configSnapshot, configSerialNum, indexCfg));
         task->add(subTask);
     }
     return task;
@@ -264,8 +259,7 @@ DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
     _reprocessingRunner.reset();
     for (auto subDb : _subDBs) {
         IReprocessingTask::List tasks;
-        tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot,
-                                   serialNum, params, resolver);
+        tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver);
         _reprocessingRunner.addTasks(tasks);
     }
 }
@@ -282,7 +276,7 @@ DocumentSubDBCollection::getFeedView()
     IFeedView::SP newFeedView;
     assert(views.size() >= 1);
     if (views.size() > 1) {
-        return IFeedView::SP(new CombiningFeedView(views, _calc));
+        return IFeedView::SP(new CombiningFeedView(views, _owner.getBucketSpace(), _calc));
     } else {
         assert(views.front() != NULL);
         return views.front();

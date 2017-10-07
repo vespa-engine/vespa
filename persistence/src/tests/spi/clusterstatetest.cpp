@@ -169,7 +169,7 @@ ClusterStateTest::testReady()
 {
     lib::ClusterState s("version:1 storage:3 distributor:3");
 
-    Bucket b(document::BucketId(16, 1), PartitionId(0));
+    Bucket b(document::Bucket(document::BucketSpace::placeHolder(), document::BucketId(16, 1)), PartitionId(0));
 
     // With 3 copies, this bucket has ideal state 0, 2, 1
 

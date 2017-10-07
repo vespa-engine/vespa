@@ -49,6 +49,9 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         admin.addSlobroks(getSlobroks(admin, XML.getChild(adminE, "slobroks")));
         if ( ! admin.multitenant())
             admin.setClusterControllers(addConfiguredClusterControllers(admin, adminE));
+
+        ModelElement adminElement = new ModelElement(adminE);
+        addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
 
     private List<Configserver> parseConfigservers(Admin admin, Element adminE) {

@@ -3,9 +3,12 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/persistence/spi/test.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+
+using storage::spi::test::makeBucket;
 
 namespace storage {
 
@@ -73,7 +76,7 @@ FileStorModifiedBucketsTest::modifyBuckets(uint32_t first, uint32_t count)
     for (uint32_t i = 0; i < count; ++i) {
         buckets.push_back(document::BucketId(16, first + i));
         _node->getPersistenceProvider().setActiveState(
-                spi::Bucket(buckets[i], spi::PartitionId(0)),
+                makeBucket(buckets[i]),
                 spi::BucketInfo::ACTIVE);
     }
 
@@ -91,7 +94,7 @@ FileStorModifiedBucketsTest::modifiedBucketsSendNotifyBucketChange()
 
     for (uint32_t i = 0; i < numBuckets; ++i) {
         document::BucketId bucket(16, i);
-        createBucket(spi::Bucket(bucket, spi::PartitionId(0)));
+        createBucket(makeBucket(bucket));
         c.sendPut(bucket, DocumentIndex(0), PutTimestamp(1000));
     }
     c.top.waitForMessages(numBuckets, MSG_WAIT_TIME);
@@ -119,7 +122,7 @@ FileStorModifiedBucketsTest::fileStorRepliesToRecheckBucketCommands()
     setClusterState("storage:1 distributor:1");
 
     document::BucketId bucket(16, 0);
-    createBucket(spi::Bucket(bucket, spi::PartitionId(0)));
+    createBucket(makeBucket(bucket));
     c.sendPut(bucket, DocumentIndex(0), PutTimestamp(1000));
     c.top.waitForMessages(1, MSG_WAIT_TIME);
     c.top.reset();
@@ -131,7 +134,7 @@ FileStorModifiedBucketsTest::fileStorRepliesToRecheckBucketCommands()
     // If we don't reply to the recheck bucket commands, we won't trigger
     // a new round of getModifiedBuckets and recheck commands.
     c.top.reset();
-    createBucket(spi::Bucket(document::BucketId(16, 1), spi::PartitionId(0)));
+    createBucket(makeBucket(document::BucketId(16, 1)));
     modifyBuckets(1, 1);
     c.top.waitForMessages(1, MSG_WAIT_TIME);
     assertIsNotifyCommandWithActiveBucket(*c.top.getReply(0));

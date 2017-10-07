@@ -36,57 +36,37 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
-        Config()
-            : _maxFileSize(1000000000ul),
-              _maxDiskBloatFactor(0.2),
-              _maxBucketSpread(2.5),
-              _minFileSizeFactor(0.2),
-              _numThreads(8),
-              _skipCrcOnRead(false),
-              _compactToActiveFile(true),
-              _compactCompression(CompressionConfig::LZ4),
-              _fileConfig()
-        { }
+        Config();
 
-        Config(size_t maxFileSize,
-               double maxDiskBloatFactor,
-               double maxBucketSpread,
-               double minFileSizeFactor,
-               size_t numThreads,
-               bool compactToActiveFile,
-               const CompressionConfig & compactCompression,
-               const WriteableFileChunk::Config & fileConfig)
-            : _maxFileSize(maxFileSize),
-              _maxDiskBloatFactor(maxDiskBloatFactor),
-              _maxBucketSpread(maxBucketSpread),
-              _minFileSizeFactor(minFileSizeFactor),
-              _numThreads(numThreads),
-              _skipCrcOnRead(false),
-              _compactToActiveFile(compactToActiveFile),
-              _compactCompression(compactCompression),
-              _fileConfig(fileConfig)
-        { }
+        Config & setMaxFileSize(size_t v) { _maxFileSize = v; return *this; }
+        Config & setMaxDiskBloatFactor(double v) { _maxDiskBloatFactor = v; return *this; }
+        Config & setMaxBucketSpread(double v) { _maxBucketSpread = v; return *this; }
+        Config & setMinFileSizeFactor(double v) { _minFileSizeFactor = v; return *this; }
+
+        Config & compactCompression(CompressionConfig v) { _compactCompression = v; return *this; }
+        Config & setFileConfig(WriteableFileChunk::Config v) { _fileConfig = v; return *this; }
 
         size_t getMaxFileSize() const { return _maxFileSize; }
         double getMaxDiskBloatFactor() const { return _maxDiskBloatFactor; }
         double getMaxBucketSpread() const { return _maxBucketSpread; }
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
 
-        size_t getNumThreads() const { return _numThreads; }
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
-        void disableCrcOnRead(bool v) { _skipCrcOnRead = v; }
-        bool compact2ActiveFile() const { return _compactToActiveFile; }
+        bool compact2ActiveFile() const { return _compact2ActiveFile; }
         const CompressionConfig & compactCompression() const { return _compactCompression; }
 
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
+        Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}
+        Config & compact2ActiveFile(bool v) { _compact2ActiveFile = v; return *this; }
+
+        bool operator == (const Config &) const;
     private:
         size_t                      _maxFileSize;
         double                      _maxDiskBloatFactor;
         double                      _maxBucketSpread;
         double                      _minFileSizeFactor;
-        size_t                      _numThreads;
         bool                        _skipCrcOnRead;
-        bool                        _compactToActiveFile;
+        bool                        _compact2ActiveFile;
         CompressionConfig           _compactCompression;
         WriteableFileChunk::Config  _fileConfig;
     };
@@ -106,15 +86,10 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::ThreadExecutor &executor,
-                 const vespalib::string &dirName,
-                 const Config & config,
-                 const GrowStrategy &growStrategy,
-                 const TuneFileSummary &tune,
+    LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
+                 const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
-                 transactionlog::SyncProxy &tlSyncer,
-                 const IBucketizer::SP & bucketizer,
-                 bool readOnly = false);
+                 transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer, bool readOnly = false);
 
     ~LogDataStore();
 
@@ -201,18 +176,17 @@ public:
     static NameIdSet findIncompleteCompactedFiles(const NameIdSet & partList);
 
     NameIdSet getAllActiveFiles() const;
+    void reconfigure(const Config & config);
 
 private:
     class WrapVisitor;
     class WrapVisitorProgress;
     class FileChunkHolder;
 
-    void waitForUnblock();
-
     // Implements ISetLid API
     void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
 
-    void compactWorst();
+    void compactWorst(double bloatLimit, double spreadLimit);
     void compactFile(FileId chunkId);
 
     typedef attribute::RcuVector<uint64_t> LidInfoVector;
@@ -257,9 +231,6 @@ private:
         _active = fileId;
     }
 
-    bool isBucketSpreadTooLarge(double spread) const {
-        return (spread >= _config.getMaxBucketSpread());
-    }
     double getMaxBucketSpread() const;
 
     FileChunk::UP createReadOnlyFile(FileId fileId, NameId nameId);
@@ -272,13 +243,6 @@ private:
     void requireSpace(LockGuard guard, WriteableFileChunk & active);
     bool isReadOnly() const { return _readOnly; }
     void updateSerialNum();
-
-    bool isBloatOverLimit() const {
-        return isBloatOverLimit(getDiskBloat(), getDiskFootprint());
-    }
-    bool isBloatOverLimit(uint64_t bloat, uint64_t usage) const {
-        return (usage*_config.getMaxDiskBloatFactor() < bloat);
-    }
 
     size_t computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketizer, FileId fileId) const;
 
@@ -301,7 +265,7 @@ private:
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
-    std::pair<bool, FileId> findNextToCompact();
+    std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit);
     void incGeneration();
     bool canShrinkLidSpace(const vespalib::LockGuard &guard) const;
 
@@ -326,4 +290,3 @@ private:
 };
 
 } // namespace search
-

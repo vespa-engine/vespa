@@ -99,7 +99,7 @@ BenchmarkDataStoreApp::benchmark(const vespalib::string & dir, size_t numReads, 
         tuning._randRead.setWantMemoryMap();
     }
     search::index::DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128*1024);
     transactionlog::NoSyncProxy noTlSyncer;
     LogDataStore store(executor, dir, config, growStrategy, tuning,
                        fileHeaderContext,

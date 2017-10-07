@@ -67,7 +67,7 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
     if (_calc->nodeRetired() && !isActive) {
         return;
     }
-    const bool shouldBeReady = _calc->shouldBeReady(bucket);
+    const bool shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, bucket));
     const bool wantReady = shouldBeReady || isActive;
     LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
               bucket.toString().c_str(), bool2str(shouldBeReady), bool2str(isActive));
@@ -160,7 +160,8 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               IBucketStateChangedNotifier &bucketStateChangedNotifier,
               IDiskMemUsageNotifier &diskMemUsageNotifier,
               const BlockableMaintenanceJobConfig &blockableConfig,
-              const vespalib::string &docTypeName)
+              const vespalib::string &docTypeName,
+              document::BucketSpace bucketSpace)
     : BlockableMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0, blockableConfig),
       IClusterStateChangedHandler(),
       IBucketFreezeListener(),
@@ -177,6 +178,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _scanPos(),
       _scanPass(FIRST_SCAN_PASS),
       _endPos(),
+      _bucketSpace(bucketSpace),
       _delayedBuckets(),
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
@@ -213,7 +215,7 @@ BucketMoveJob::maybeCancelMover(DocumentBucketMover &mover)
     if (!mover.bucketDone()) {
         bool ready = mover.getSource() == &_ready;
         if (isBlocked() ||
-            _calc->shouldBeReady(mover.getBucket()) == ready) {
+            _calc->shouldBeReady(document::Bucket(_bucketSpace, mover.getBucket())) == ready) {
             mover.cancel();
         }
     }

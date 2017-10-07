@@ -3,7 +3,10 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/persistence/spi/test.h>
 #include <tests/persistence/persistencetestutils.h>
+
+using storage::spi::test::makeBucket;
 
 namespace storage {
 namespace {
@@ -174,8 +177,7 @@ PersistenceThread_SplitTest::doTest(SplitCase splitCase)
     uint64_t splitMask = 1 << (splitLevelToDivide - 1);
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
-    spi::Bucket bucket(document::BucketId(currentSplitLevel, 1),
-                       spi::PartitionId(0));
+    spi::Bucket bucket(makeBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
     spi.deleteBucket(bucket, context);
     spi.createBucket(bucket, context);

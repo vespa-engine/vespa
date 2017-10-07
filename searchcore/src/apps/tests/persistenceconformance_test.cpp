@@ -2,40 +2,42 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
-#include <vespa/searchcore/proton/server/bootstrapconfig.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
-#include <tests/proton/common/dummydbowner.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
 
 using namespace config;
 using namespace proton;
-using namespace vespa::config::search;
+using namespace cloud::config::filedistribution;
+using namespace storage::spi::test;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
-using namespace cloud::config::filedistribution;
+using namespace vespa::config::search;
 
 using std::shared_ptr;
 using document::DocumentType;
@@ -128,6 +130,7 @@ public:
                         std::make_shared<TuneFileDocumentDB>(),
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),
+                        search::LogDocumentStore::Config(),
                         "client",
                         docTypeName.getName()));
     }
@@ -185,7 +188,8 @@ public:
                                _queryLimiter,
                                _clock,
                                docType,
-                               ProtonConfig(),
+                               makeBucketSpace(),
+                               *b->getProtonConfigSP(),
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
                                _summaryExecutor,
@@ -315,7 +319,7 @@ public:
             LOG(info, "putHandler(%s)", itr->first.toString().c_str());
             IPersistenceHandler::SP proxy(
                     new PersistenceHandlerProxy(itr->second));
-            putHandler(itr->first, proxy);
+            putHandler(itr->second->getBucketSpace(), itr->first, proxy);
         }
     }
 
@@ -327,7 +331,7 @@ public:
         const DocumentDBMap &docDbs = _docDbRepo->getDocDbs();
         for (DocumentDBMap::const_iterator itr = docDbs.begin();
              itr != docDbs.end(); ++itr) {
-            IPersistenceHandler::SP proxy(removeHandler(itr->first));
+            IPersistenceHandler::SP proxy(removeHandler(itr->second->getBucketSpace(), itr->first));
         }
     }
 

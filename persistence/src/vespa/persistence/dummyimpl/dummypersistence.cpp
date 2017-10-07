@@ -341,7 +341,7 @@ DummyPersistence::getPartitionStates() const
 
 
 BucketIdListResult
-DummyPersistence::listBuckets(PartitionId id) const
+DummyPersistence::listBuckets(BucketSpace, PartitionId id) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "listBuckets(%u)", uint16_t(id));
@@ -363,7 +363,7 @@ DummyPersistence::setModifiedBuckets(const BucketIdListResult::List& buckets)
 }
 
 BucketIdListResult
-DummyPersistence::getModifiedBuckets() const
+DummyPersistence::getModifiedBuckets(BucketSpace) const
 {
     vespalib::MonitorGuard lock(_monitor);
     return BucketIdListResult(_modifiedBuckets);

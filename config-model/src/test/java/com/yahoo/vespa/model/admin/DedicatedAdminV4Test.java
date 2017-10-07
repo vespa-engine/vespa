@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -16,13 +17,13 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author lulf
@@ -139,6 +140,53 @@ public class DedicatedAdminV4Test {
                                    "slobrok", "logd", "filedistributorservice", "qrserver");
         assertHostContainsServices(model, "hosts/myhost3",
                                    "slobrok", "logd", "filedistributorservice", "qrserver");
+    }
+
+    @Test
+    public void testLogForwarding() throws IOException, SAXException {
+        String services = "<services>" +
+                "  <admin version='4.0'>" +
+                "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
+                "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
+                "    <logforwarding>" +
+                "      <splunk deployment-server='foo:123' client-name='foocli'/>" +
+                "    </logforwarding>" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel model = createModel(hosts, services);
+        assertEquals(3, model.getHosts().size());
+
+        assertHostContainsServices(model, "hosts/myhost0",
+                                   "filedistributorservice", "logd", "logforwarder", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost1",
+                                   "filedistributorservice", "logd", "logforwarder", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost2",
+                                   "filedistributorservice", "logd", "logforwarder", "logserver");
+
+        Set<String> configIds = model.getConfigIds();
+        // 1 logforwarder on each host
+        IntStream.of(0, 1, 2).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
+
+        // First forwarder
+        {
+            LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
+            model.getConfig(builder, "admin/logforwarder.0");
+            LogforwarderConfig config = new LogforwarderConfig(builder);
+
+            assertEquals("foo:123", config.deploymentServer());
+            assertEquals("foocli", config.clientName());
+        }
+
+        // Other host's forwarder
+        {
+            LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
+            model.getConfig(builder, "admin/logforwarder.2");
+            LogforwarderConfig config = new LogforwarderConfig(builder);
+
+            assertEquals("foo:123", config.deploymentServer());
+            assertEquals("foocli", config.clientName());
+        }
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {

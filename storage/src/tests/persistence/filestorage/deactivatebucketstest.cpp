@@ -3,9 +3,12 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/persistence/spi/test.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+
+using storage::spi::test::makeBucket;
 
 namespace storage {
 
@@ -41,7 +44,7 @@ DeactivateBucketsTest::bucketsInDatabaseDeactivatedWhenNodeDownInClusterState()
             lib::ClusterState::CSP(new lib::ClusterState(upState)));
 
     document::BucketId bucket(8, 123);
-    spi::Bucket spiBucket(bucket, spi::PartitionId(0));
+    spi::Bucket spiBucket(makeBucket(bucket));
 
     createBucket(bucket);
     api::BucketInfo serviceLayerInfo(1, 2, 3, 4, 5, true, true);

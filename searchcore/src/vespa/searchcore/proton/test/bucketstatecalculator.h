@@ -3,6 +3,7 @@
 
 #include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
 #include <vespa/document/bucket/bucketidlist.h>
+#include <vespa/document/bucket/bucket.h>
 
 namespace proton::test {
 
@@ -56,9 +57,9 @@ public:
     void resetAsked() { _asked.clear(); }
 
     // Implements IBucketStateCalculator
-    bool shouldBeReady(const document::BucketId &bucket) const override {
-        _asked.push_back(bucket);
-        return _ready.count(bucket) == 1;
+    bool shouldBeReady(const document::Bucket &bucket) const override {
+        _asked.push_back(bucket.getBucketId());
+        return _ready.count(bucket.getBucketId()) == 1;
     }
 
     bool clusterUp() const override { return _clusterUp; }

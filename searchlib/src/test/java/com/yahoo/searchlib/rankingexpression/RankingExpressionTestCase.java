@@ -1,11 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
+import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
+import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
+import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.TensorFunction;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -49,6 +58,18 @@ public class RankingExpressionTestCase {
         assertParse("query(var1) + query(var2) - (query(var3) * query(var4)) / query(var5)", " $var1 + $var2 -($var3 * $var4)/ $var5 ");
         assertParse("query(var1) + query(var2) - query(var3) * (query(var4) / query(var5))", " $var1 + $var2 - $var3 *($var4 / $var5)");
         assertParse("if (if (f1.out < query(p1), 0, 1) < if (f2.out < query(p2), 0, 1), f3.out, query(p3))", "if(if(f1.out<$p1,0,1)<if(f2.out<$p2,0,1),f3.out,$p3)");
+    }
+    
+    @Test
+    public void testProgrammaticBuilding() throws ParseException {
+        ReferenceNode input = new ReferenceNode("input");
+        ReferenceNode constant = new ReferenceNode("constant");
+        ArithmeticNode product = new ArithmeticNode(input, ArithmeticOperator.MULTIPLY, constant);
+        Reduce sum = new Reduce(new TensorFunctionNode.TensorFunctionExpressionNode(product), Reduce.Aggregator.sum);
+        RankingExpression expression = new RankingExpression(new TensorFunctionNode(sum));
+
+        RankingExpression expected = new RankingExpression("sum(input * constant)");
+        assertEquals(expected.toString(), expression.toString());
     }
 
     @Test

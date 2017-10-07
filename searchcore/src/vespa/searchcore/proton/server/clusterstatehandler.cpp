@@ -39,7 +39,7 @@ public:
           _nodeRetired(_calc.nodeRetired())
     {
     }
-    bool shouldBeReady(const document::BucketId &bucket) const override {
+    bool shouldBeReady(const document::Bucket &bucket) const override {
         return _calc.shouldBeReady(Bucket(bucket, PartitionId(0)));
     }
     bool clusterUp() const override { return _clusterUp; }

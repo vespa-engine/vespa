@@ -138,6 +138,7 @@ private:
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
 
     virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName & docTypeName,
+                                                  document::BucketSpace bucketSpace,
                                                   const vespalib::string & configid,
                                                   const BootstrapConfig::SP & bootstrapConfig,
                                                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
@@ -190,6 +191,7 @@ public:
 
     DocumentDB::SP
     addDocumentDB(const document::DocumentType &docType,
+                  document::BucketSpace bucketSpace,
                   const BootstrapConfig::SP &configSnapshot,
                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                   InitializeThreads initializeThreads);

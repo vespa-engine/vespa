@@ -4,7 +4,10 @@
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <vespa/persistence/spi/test.h>
 #include <sstream>
+
+using storage::spi::test::makeBucket;
 
 namespace storage {
 
@@ -50,7 +53,7 @@ FileStorTestFixture::createBucket(const document::BucketId& bid)
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     _node->getPersistenceProvider().createBucket(
-            spi::Bucket(bid, spi::PartitionId(0)), context);
+            makeBucket(bid), context);
 
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(bid, "foo",

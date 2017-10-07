@@ -56,49 +56,24 @@ public:
     getDocumenttypesConfigSP() const { return _documenttypes; }
 
     const document::DocumentTypeRepo::SP &
-    getDocumentTypeRepoSP() const
-    {
-        return _repo;
-    }
+    getDocumentTypeRepoSP() const { return _repo; }
 
     const vespa::config::search::core::ProtonConfig &
-    getProtonConfig() const
-    {
-        return *_proton;
-    }
+    getProtonConfig() const { return *_proton; }
 
     const ProtonConfigSP &
-    getProtonConfigSP() const
-    {
-        return _proton;
-    }
+    getProtonConfigSP() const { return _proton; }
 
     const search::TuneFileDocumentDB::SP &
-    getTuneFileDocumentDBSP() const
-    {
-        return _tuneFileDocumentDB;
-    }
+    getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
 
-    int64_t
-    getGeneration() const
-    {
-        return _generation;
-    }
-
-    void
-    setGeneration(int64_t generation)
-    {
-        _generation = generation;
-    }
+    int64_t getGeneration() const { return _generation; }
 
     /**
      * Shared pointers are checked for identity, not equality.
      */
-    bool
-    operator==(const BootstrapConfig &rhs) const;
-
-    bool
-    valid() const;
+    bool operator==(const BootstrapConfig &rhs) const;
+    bool valid() const;
 };
 
 } // namespace proton

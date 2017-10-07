@@ -15,25 +15,27 @@
 #pragma once
 
 #include <persistence/spi/types.h>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 
 namespace storage {
 namespace spi {
 
 class Bucket {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     PartitionId _partition;
 
 public:
-    Bucket() : _bucket(0), _partition(0) {}
-    Bucket(const document::BucketId& b, PartitionId p)
+    Bucket() : _bucket(document::BucketSpace::placeHolder(), document::BucketId(0)), _partition(0) {}
+    Bucket(const document::Bucket& b, PartitionId p)
         : _bucket(b), _partition(p) {}
 
-    const document::BucketId& getBucketId() const { return _bucket; }
+    const document::Bucket &getBucket() const { return _bucket; }
+    document::BucketId getBucketId() const { return _bucket.getBucketId(); }
+    document::BucketSpace getBucketSpace() const { return _bucket.getBucketSpace(); }
     PartitionId getPartition() const { return _partition; }
 
     /** Convert easily to a document bucket id to make class easy to use. */
-    operator const document::BucketId&() const { return _bucket; }
+    operator document::BucketId() const { return _bucket.getBucketId(); }
 
     bool operator==(const Bucket& o) const {
         return (_bucket == o._bucket && _partition == o._partition);

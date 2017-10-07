@@ -252,9 +252,6 @@ StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
 {
     int fieldId = field.getId();
     std::unique_ptr<ByteBuffer> serialized(value->serialize());
-    if (serialized->getLength() >= 0x4000000) { // Max 64 MB fields.
-        throw SerializeException(make_string("Field value for field %i larger than 64 MB", fieldId), VESPA_STRLOC);
-    }
     serialized->flip();
     if (_chunks.empty()) {
         _chunks.push_back(SerializableArray::UP(new SerializableArray()));

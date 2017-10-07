@@ -6,7 +6,6 @@ import com.yahoo.searchlib.rankingexpression.rule.*;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Transforms function nodes to reference nodes if a macro shadows a built-in function.
@@ -22,8 +21,6 @@ import java.util.logging.Logger;
  * @author lesters
  */
 class MacroShadower extends ExpressionTransformer {
-
-    private static final Logger log = Logger.getLogger(MacroShadower.class.getName());
 
     private final Map<String, RankProfile.Macro> macros;
 
@@ -58,11 +55,9 @@ class MacroShadower extends ExpressionTransformer {
         int functionArity = function.getFunction().arity();
         int macroArity = macro.getFormalParams() != null ? macro.getFormalParams().size() : 0;
         if (functionArity != macroArity) {
-            log.warning("Macro \"" + name + "\" has the same name as a built-in function. Due to different number of arguments, the built-in function will be used.");
             return transformChildren(function);
         }
 
-        log.warning("Macro \"" + name + "\" shadows the built-in function with the same name.");
         ReferenceNode node = new ReferenceNode(name, function.children(), null);
         return transformChildren(node);
     }

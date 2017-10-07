@@ -93,31 +93,23 @@ protected:
     virtual IFlushTargetList getFlushTargetsInternal() override;
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
-    IReprocessingTask::UP
-    createReprocessingTask(IReprocessingInitializer &initializer,
-                           const document::DocumentTypeRepo::SP &docTypeRepo) const;
+    IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
+                                                 const document::DocumentTypeRepo::SP &docTypeRepo) const;
 
 public:
     FastAccessDocSubDB(const Config &cfg, const Context &ctx);
-
     ~FastAccessDocSubDB();
 
-    virtual std::unique_ptr<DocumentSubDbInitializer>
-    createInitializer(const DocumentDBConfig &configSnapshot,
-                      SerialNum configSerialNum,
-                      const ProtonConfig::Summary &protonSummaryCfg,
+    std::unique_ptr<DocumentSubDbInitializer>
+    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                       const ProtonConfig::Index &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
+    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager) override;
 
-    void initViews(const DocumentDBConfig &configSnapshot,
-                   const SessionManagerSP &sessionManager) override;
-
-    IReprocessingTask::List applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                                        const DocumentDBConfig &oldConfigSnapshot,
-                                        SerialNum serialNum,
-                                        const ReconfigParams &params,
-                                        IDocumentDBReferenceResolver &resolver) override;
+    IReprocessingTask::List
+    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
 
     proton::IAttributeManager::SP getAttributeManager() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;

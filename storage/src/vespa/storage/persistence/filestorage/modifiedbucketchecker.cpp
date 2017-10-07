@@ -120,7 +120,7 @@ ModifiedBucketChecker::onInternalReply(
 bool
 ModifiedBucketChecker::requestModifiedBucketsFromProvider()
 {
-    spi::BucketIdListResult result(_provider.getModifiedBuckets());
+    spi::BucketIdListResult result(_provider.getModifiedBuckets(document::BucketSpace::placeHolder()));
     if (result.hasError()) {
         LOG(debug, "getModifiedBuckets() failed: %s",
             result.toString().c_str());

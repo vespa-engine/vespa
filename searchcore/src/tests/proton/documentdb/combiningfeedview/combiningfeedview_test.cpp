@@ -2,6 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("combiningfeedview_test");
 
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/test/test.h>
@@ -13,6 +14,7 @@ using document::DocumentUpdate;
 using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucketSpace;
 using namespace proton;
 
 typedef std::vector<IFeedView::SP> FeedViewVector;
@@ -142,7 +144,7 @@ struct Fixture
         _removed(_builder.getRepo(), _bucketDB, SubDbType::REMOVED),
         _notReady(_builder.getRepo(), _bucketDB, SubDbType::NOTREADY),
         _calc(new test::BucketStateCalculator()),
-        _view(getVector(_ready, _removed, _notReady), _calc)
+        _view(getVector(_ready, _removed, _notReady), makeBucketSpace(), _calc)
     {
         _builder.createDoc(1, 1);
         _builder.createDoc(2, 2);

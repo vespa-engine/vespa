@@ -171,39 +171,22 @@ PersistenceEngine::HandlerSnapshot::UP
 PersistenceEngine::getHandlerSnapshot() const
 {
     LockGuard guard(_lock);
-    return std::make_unique<HandlerSnapshot>(_handlers.snapshot(), _handlers.size());
+    return _handlers.getHandlerSnapshot();
 }
-
-namespace {
-template <typename T>
-class SequenceOfOne : public Sequence<T> {
-    bool _done;
-    T _value;
-public:
-    SequenceOfOne(const T &value) : _done(false), _value(value) {}
-
-    virtual bool valid() const override { return !_done; }
-    virtual T get() const override { return _value; }
-    virtual void next() override { _done = true; }
-};
-
-template <typename T>
-typename Sequence<T>::UP make_sequence(const T &value) {
-    return typename Sequence<T>::UP(new SequenceOfOne<T>(value));
-}
-}  // namespace
 
 PersistenceEngine::HandlerSnapshot::UP
-PersistenceEngine::getHandlerSnapshot(const DocumentId &id) const {
-    if (!id.hasDocType()) {
-        return getHandlerSnapshot();
-    }
-    IPersistenceHandler::SP handler = getHandler(DocTypeName(id.getDocType()));
-    if (!handler.get()) {
-        return HandlerSnapshot::UP();
-    }
-    return HandlerSnapshot::UP(
-            new HandlerSnapshot(make_sequence(handler.get()), 1));
+PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace) const
+{
+    LockGuard guard(_lock);
+    return _handlers.getHandlerSnapshot(bucketSpace);
+}
+
+PersistenceEngine::HandlerSnapshot::UP
+PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace,
+                                      const DocumentId &id) const
+{
+    LockGuard guard(_lock);
+    return _handlers.getHandlerSnapshot(bucketSpace, id);
 }
 
 PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner,
@@ -233,28 +216,31 @@ PersistenceEngine::~PersistenceEngine()
 
 
 IPersistenceHandler::SP
-PersistenceEngine::putHandler(const DocTypeName &docType,
+PersistenceEngine::putHandler(document::BucketSpace bucketSpace,
+                              const DocTypeName &docType,
                               const IPersistenceHandler::SP &handler)
 {
     LockGuard guard(_lock);
-    return _handlers.putHandler(docType, handler);
+    return _handlers.putHandler(bucketSpace, docType, handler);
 }
 
 
 IPersistenceHandler::SP
-PersistenceEngine::getHandler(const DocTypeName &docType) const
+PersistenceEngine::getHandler(document::BucketSpace bucketSpace,
+                              const DocTypeName &docType) const
 {
     LockGuard guard(_lock);
-    return _handlers.getHandler(docType);
+    return _handlers.getHandler(bucketSpace, docType);
 }
 
 
 IPersistenceHandler::SP
-PersistenceEngine::removeHandler(const DocTypeName &docType)
+PersistenceEngine::removeHandler(document::BucketSpace bucketSpace,
+                                 const DocTypeName &docType)
 {
     // TODO: Grab bucket list and treat them as modified
     LockGuard guard(_lock);
-    return _handlers.removeHandler(docType);
+    return _handlers.removeHandler(bucketSpace, docType);
 }
 
 
@@ -282,7 +268,7 @@ PersistenceEngine::getPartitionStates() const
 
 
 BucketIdListResult
-PersistenceEngine::listBuckets(PartitionId id) const
+PersistenceEngine::listBuckets(BucketSpace bucketSpace, PartitionId id) const
 {
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
@@ -291,7 +277,7 @@ PersistenceEngine::listBuckets(PartitionId id) const
         BucketIdListResult::List emptyList;
         return BucketIdListResult(emptyList);
     }
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(bucketSpace);
     BucketIdListResultHandler resultHandler;
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -323,7 +309,7 @@ PersistenceEngine::setActiveState(const Bucket& bucket,
                                   storage::spi::BucketInfo::ActiveState newState)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(bucket.getBucketSpace());
     GenericResultHandler resultHandler(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -340,7 +326,7 @@ PersistenceEngine::getBucketInfo(const Bucket& b) const
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace());
     BucketInfoResultHandler resultHandler;
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -374,7 +360,7 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
                         "Old id scheme not supported in elastic mode (%s)",
                         doc->getId().toString().c_str()));
     }
-    IPersistenceHandler::SP handler = getHandler(docType);
+    IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     if (handler.get() == NULL) {
         return Result(Result::PERMANENT_ERROR,
                       make_string("No handler for document type '%s'",
@@ -397,7 +383,7 @@ PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, C
         b.toString().c_str(),
         static_cast<uint64_t>(t.getValue()),
         did.toString().c_str());
-    HandlerSnapshot::UP snap = getHandlerSnapshot(did);
+    HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace(), did);
     if (!snap.get()) {
         return RemoveResult(false);
     }
@@ -432,7 +418,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         docType.toString().c_str(),
         upd->getId().toString().c_str(),
         (upd->getCreateIfNonExistent() ? "true" : "false"));
-    IPersistenceHandler::SP handler = getHandler(docType);
+    IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     TransportLatch latch(1);
     if (handler.get() != NULL) {
         FeedToken token(latch, mbus::Reply::UP(new documentapi::UpdateDocumentReply()));
@@ -453,7 +439,7 @@ PersistenceEngine::get(const Bucket& b,
                        Context& context) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    HandlerSnapshot::UP snapshot = getHandlerSnapshot();
+    HandlerSnapshot::UP snapshot = getHandlerSnapshot(b.getBucketSpace());
 
     for (PersistenceHandlerSequence & handlers = snapshot->handlers(); handlers.valid(); handlers.next()) {
         BucketGuard::UP bucket_guard = handlers.get()->lockBucket(b);
@@ -486,7 +472,7 @@ PersistenceEngine::createIterator(const Bucket &bucket,
                                   Context & context)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    HandlerSnapshot::UP snapshot = getHandlerSnapshot();
+    HandlerSnapshot::UP snapshot = getHandlerSnapshot(bucket.getBucketSpace());
 
     auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, fields, selection,
                                                  versions, _defaultSerializedSize, _ignoreMaxBytes);
@@ -562,7 +548,7 @@ PersistenceEngine::createBucket(const Bucket &b, Context &)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LOG(spam, "createBucket(%s)", b.toString().c_str());
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace());
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -579,7 +565,7 @@ PersistenceEngine::deleteBucket(const Bucket& b, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LOG(spam, "deleteBucket(%s)", b.toString().c_str());
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace());
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -592,16 +578,16 @@ PersistenceEngine::deleteBucket(const Bucket& b, Context&)
 
 
 BucketIdListResult
-PersistenceEngine::getModifiedBuckets() const
+PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     typedef BucketIdListResultV MBV;
     MBV extraModifiedBuckets;
     {
         LockGuard guard(_lock);
-        extraModifiedBuckets.swap(_extraModifiedBuckets);
+        extraModifiedBuckets.swap(_extraModifiedBuckets[bucketSpace]);
     }
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(bucketSpace);
     SynchronizedBucketIdListResultHandler resultHandler(snap->size() + extraModifiedBuckets.size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -620,7 +606,9 @@ PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Buck
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LOG(spam, "split(%s, %s, %s)", source.toString().c_str(), target1.toString().c_str(), target2.toString().c_str());
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    assert(source.getBucketSpace() == target1.getBucketSpace());
+    assert(source.getBucketSpace() == target2.getBucketSpace());
+    HandlerSnapshot::UP snap = getHandlerSnapshot(source.getBucketSpace());
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -637,7 +625,9 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LOG(spam, "join(%s, %s, %s)", source1.toString().c_str(), source2.toString().c_str(), target.toString().c_str());
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    assert(source1.getBucketSpace() == target.getBucketSpace());
+    assert(source2.getBucketSpace() == target.getBucketSpace());
+    HandlerSnapshot::UP snap = getHandlerSnapshot(target.getBucketSpace());
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -709,13 +699,13 @@ PersistenceEngine::propagateSavedClusterState(IPersistenceHandler &handler)
 }
 
 void
-PersistenceEngine::grabExtraModifiedBuckets(IPersistenceHandler &handler)
+PersistenceEngine::grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler)
 {
     BucketIdListResultHandler resultHandler;
     handler.handleListBuckets(resultHandler);
     auto result = std::make_shared<BucketIdListResult>(resultHandler.getResult());
     LockGuard guard(_lock);
-    _extraModifiedBuckets.push_back(result);
+    _extraModifiedBuckets[bucketSpace].push_back(result);
 }
 
 
@@ -742,9 +732,10 @@ public:
 };
 
 void
-PersistenceEngine::populateInitialBucketDB(IPersistenceHandler &targetHandler)
+PersistenceEngine::populateInitialBucketDB(BucketSpace bucketSpace,
+                                           IPersistenceHandler &targetHandler)
 {
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    HandlerSnapshot::UP snap = getHandlerSnapshot(bucketSpace);
     
     size_t snapSize(snap->size());
     size_t flawed = 0;

@@ -112,8 +112,7 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
 }
 
 void
-SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP
-                                      indexManager)
+SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexManager)
 {
     _indexMgr = indexManager;
     _indexWriter.reset(new IndexWriter(_indexMgr));
@@ -121,20 +120,12 @@ SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP
 
 DocumentSubDbInitializer::UP
 SearchableDocSubDB::
-createInitializer(const DocumentDBConfig &configSnapshot,
-                  SerialNum configSerialNum,
-                  const ProtonConfig::Summary &protonSummaryCfg,
+createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                   const ProtonConfig::Index &indexCfg) const
 {
-    auto result = Parent::createInitializer(configSnapshot,
-                                            configSerialNum,
-                                            protonSummaryCfg,
-                                            indexCfg);
-    auto indexTask = createIndexManagerInitializer(configSnapshot,
-                                                   configSerialNum,
-                                                   indexCfg,
-                                                   result->writableResult().
-                                                   writableIndexManager());
+    auto result = Parent::createInitializer(configSnapshot, configSerialNum, indexCfg);
+    auto indexTask = createIndexManagerInitializer(configSnapshot, configSerialNum, indexCfg,
+                                                   result->writableResult().writableIndexManager());
     result->addDependency(indexTask);
     return result;
 }
@@ -155,23 +146,18 @@ reconfigureMatchingMetrics(const RankProfilesConfig &cfg)
     for (const auto &profile : cfg.rankprofile) {
         search::fef::Properties properties;
         for (const auto &property : profile.fef.property) {
-            properties.add(property.name,
-                           property.value);
+            properties.add(property.name, property.value);
         }
         size_t numDocIdPartitions = search::fef::indexproperties::matching::NumThreadsPerSearch::lookup(properties);
-        _metricsWireService.addRankProfile(_metrics,
-                                           profile.name,
-                                           numDocIdPartitions);
+        _metricsWireService.addRankProfile(_metrics, profile.name, numDocIdPartitions);
     }
 }
 
 IReprocessingTask::List
-SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                                const DocumentDBConfig &oldConfigSnapshot,
-                                SerialNum serialNum,
-                                const ReconfigParams &params,
-                                IDocumentDBReferenceResolver &resolver)
+SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
+    StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     if (params.shouldMatchersChange() && _addMetrics) {
@@ -199,8 +185,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
 }
 
 void
-SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
-                              const SessionManager::SP &sessionManager)
+SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const SessionManager::SP &sessionManager)
 {
     assert(_writeService.master().isCurrentThread());
 
@@ -208,16 +193,9 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
     const Schema::SP &schema = configSnapshot.getSchemaSP();
     const IIndexManager::SP &indexMgr = getIndexManager();
     _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
-    Matchers::SP matchers(_configurer.
-                          createMatchers(schema,
-                                  configSnapshot.getRankProfilesConfig()).
-                          release());
-    MatchView::SP matchView(new MatchView(matchers,
-                                          indexMgr->getSearchable(),
-                                          attrMgr,
-                                          sessionManager,
-                                          _metaStoreCtx,
-                                          _docIdLimit));
+    Matchers::SP matchers(_configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig()).release());
+    MatchView::SP matchView(new MatchView(matchers, indexMgr->getSearchable(), attrMgr,
+                                          sessionManager, _metaStoreCtx, _docIdLimit));
     _rSearchView.set(SearchView::SP(
                               new SearchView(
                                       getSummaryManager()->createSummarySetup(
@@ -368,6 +346,13 @@ SearchableDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &resolver)
 {
     auto attrMgr = getAttributeManager();
     resolver.teardown(*attrMgr);
+}
+
+void
+SearchableDocSubDB::clearViews() {
+    _rFeedView.clear();
+    _rSearchView.clear();
+    Parent::clearViews();
 }
 
 } // namespace proton

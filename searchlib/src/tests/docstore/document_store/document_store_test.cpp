@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/docstore/documentstore.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/document/repo/documenttyperepo.h>
 
@@ -28,19 +28,19 @@ struct NullDataStore : IDataStore {
     fastos::TimeStamp getLastFlushTime() const override { return fastos::TimeStamp(); }
     void accept(IDataStoreVisitor &, IDataStoreVisitorProgress &, bool) override { }
     double getVisitCost() const override { return 1.0; }
-    virtual DataStoreStorageStats getStorageStats() const override {
+    DataStoreStorageStats getStorageStats() const override {
         return DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
     }
-    virtual MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
-    virtual std::vector<DataStoreFileChunkStats>
+    MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
+    std::vector<DataStoreFileChunkStats>
     getFileChunkStats() const override {
         std::vector<DataStoreFileChunkStats> result;
         return result;
     }
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
-    virtual bool canShrinkLidSpace() const override { return false; }
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }
-    virtual void shrinkLidSpace() override {}
+    void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
+    bool canShrinkLidSpace() const override { return false; }
+    size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }
+    void shrinkLidSpace() override {}
 };
 
 TEST_FFF("require that uncache docstore lookups are counted",
@@ -59,6 +59,25 @@ TEST_FFF("require that cached docstore lookups are counted",
     EXPECT_EQUAL(0u, f3.getCacheStats().misses);
     f3.read(1, repo);
     EXPECT_EQUAL(1u, f3.getCacheStats().misses);
+}
+
+TEST("require that DocumentStore::Config equality operator detects inequality") {
+    using C = DocumentStore::Config;
+    EXPECT_TRUE(C() == C());
+    EXPECT_TRUE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::NONE, 100000, 100));
+    EXPECT_FALSE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::NONE, 100000, 99));
+    EXPECT_FALSE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::NONE, 100001, 100));
+    EXPECT_FALSE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::LZ4, 100000, 100));
+}
+
+TEST("require that LogDocumentStore::Config equality operator detects inequality") {
+    using C = LogDocumentStore::Config;
+    using LC = LogDataStore::Config;
+    using DC = DocumentStore::Config;
+    EXPECT_TRUE(C() == C());
+    EXPECT_FALSE(C() != C());
+    EXPECT_FALSE(C(DC(CompressionConfig::NONE, 100000, 100), LC()) == C());
+    EXPECT_FALSE(C(DC(), LC().setMaxBucketSpread(7)) == C());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

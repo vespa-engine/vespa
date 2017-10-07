@@ -38,7 +38,7 @@ DownPersistence::getPartitionStates() const
 }
 
 BucketIdListResult
-DownPersistence::listBuckets(PartitionId) const
+DownPersistence::listBuckets(BucketSpace, PartitionId) const
 {
     return BucketIdListResult(errorResult.getErrorCode(),
                               errorResult.getErrorMessage());
@@ -148,7 +148,7 @@ DownPersistence::deleteBucket(const Bucket&, Context&)
 
 
 BucketIdListResult
-DownPersistence::getModifiedBuckets() const
+DownPersistence::getModifiedBuckets(BucketSpace) const
 {
     return BucketIdListResult(errorResult.getErrorCode(),
                               errorResult.getErrorMessage());

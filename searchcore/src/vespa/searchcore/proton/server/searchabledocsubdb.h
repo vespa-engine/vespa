@@ -37,8 +37,9 @@ class GidToLidChangeHandler;
  *
  * This class is used directly by the "0.ready" sub database for handling all ready documents.
  */
-class SearchableDocSubDB : public FastAccessDocSubDB,
-                           public searchcorespi::IIndexManager::Reconfigurer
+class
+SearchableDocSubDB : public FastAccessDocSubDB,
+                     public searchcorespi::IIndexManager::Reconfigurer
 
 {
 public:
@@ -96,9 +97,6 @@ private:
     void initFeedView(const IAttributeWriter::SP &attrWriter, const DocumentDBConfig &configSnapshot);
     void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
 
-    /**
-     * Implements IndexManagerReconfigurer API.
-     */
     bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
     void reconfigureIndexSearchable();
     void syncViews();
@@ -113,32 +111,17 @@ public:
     ~SearchableDocSubDB();
 
     std::unique_ptr<DocumentSubDbInitializer>
-    createInitializer(const DocumentDBConfig &configSnapshot,
-                      SerialNum configSerialNum,
-                      const vespa::config::search::core::
-                      ProtonConfig::Summary &protonSummaryCfg,
-                      const vespa::config::search::core::
-                      ProtonConfig::Index &indexCfg) const override;
+    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
+                      const vespa::config::search::core::ProtonConfig::Index &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
-
-    void
-    initViews(const DocumentDBConfig &configSnapshot,
-              const SessionManagerSP &sessionManager)  override;
+    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager)  override;
 
     IReprocessingTask::List
-    applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum,
-                const ReconfigParams &params,
-                IDocumentDBReferenceResolver &resolver) override;
+    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
 
-    void clearViews() override
-    {
-        _rFeedView.clear();
-        _rSearchView.clear();
-        Parent::clearViews();
-    }
+    void clearViews() override;
 
     proton::IAttributeManager::SP getAttributeManager() const override {
         return _rSearchView.get()->getAttributeManager();
@@ -159,10 +142,9 @@ public:
     search::SearchableStats getSearchableStats() const override ;
     IDocumentRetriever::UP getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
-    virtual void close() override;
-    virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
-    virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
+    void close() override;
+    std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
+    void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
 };
 
 } // namespace proton
-

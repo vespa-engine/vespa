@@ -6,12 +6,14 @@
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/persistence/spi/test.h>
 #include <functional>
 
 using std::unique_ptr;
 using std::shared_ptr;
 
 using namespace std::string_literals;
+using storage::spi::test::makeBucket;
 
 namespace storage {
 
@@ -42,7 +44,7 @@ public:
 
         createBucket(BUCKET_ID);
         getPersistenceProvider().createBucket(
-            spi::Bucket(BUCKET_ID, spi::PartitionId(0)),
+                makeBucket(BUCKET_ID),
             context);
 
         thread = createPersistenceThread(0);

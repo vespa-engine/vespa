@@ -91,6 +91,7 @@ private:
     ScanPosition                       _scanPos;
     uint32_t                           _scanPass;
     ScanPosition                       _endPos;
+    document::BucketSpace              _bucketSpace;
 
     typedef std::set<document::BucketId>    DelayedBucketSet;
 
@@ -147,7 +148,8 @@ public:
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
                   IDiskMemUsageNotifier &diskMemUsageNotifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
-                  const vespalib::string &docTypeName);
+                  const vespalib::string &docTypeName,
+                  document::BucketSpace bucketSpace);
 
     virtual ~BucketMoveJob();
 

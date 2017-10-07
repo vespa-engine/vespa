@@ -59,6 +59,7 @@ namespace spi {
 struct PersistenceProvider
 {
     typedef std::unique_ptr<PersistenceProvider> UP;
+    using BucketSpace = document::BucketSpace;
 
     virtual ~PersistenceProvider();
 
@@ -84,7 +85,7 @@ struct PersistenceProvider
      * Return list of buckets that provider has stored on the given partition.
      * Typically called once per partition on startup.
      */
-    virtual BucketIdListResult listBuckets(PartitionId) const = 0;
+    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const = 0;
 
     /**
      * Updates the persistence provider with the last cluster state.
@@ -384,7 +385,7 @@ struct PersistenceProvider
      * should clear it's list of modified buckets, so that the next call does
      * not return the same buckets.
      */
-    virtual BucketIdListResult getModifiedBuckets() const = 0;
+    virtual BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const = 0;
 
     /**
      * Allows the provider to do periodic maintenance and verification.

@@ -28,8 +28,7 @@ using vespalib::compression::CompressionConfig;
 using vespalib::asciistream;
 using index::DummyFileHeaderContext;
 
-namespace
-{
+namespace {
 
 const string doc_type_name = "test";
 const string header_name = doc_type_name + ".header";
@@ -80,16 +79,8 @@ class MyTlSyncer : public transactionlog::SyncProxy
     SerialNum _syncedTo;
     
 public:
-    MyTlSyncer()
-        : _syncedTo(0)
-    {
-    }
-
-    void
-    sync(SerialNum syncTo) override
-    {
-        _syncedTo = syncTo;
-    }
+    MyTlSyncer() : _syncedTo(0) {}
+    void sync(SerialNum syncTo) override { _syncedTo = syncTo; }
 };
 
 
@@ -106,9 +97,7 @@ public:
     MyVisitorBase(DocumentTypeRepo &repo, uint32_t docIdLimit, bool before);
 };
 
-MyVisitorBase::MyVisitorBase(DocumentTypeRepo &repo,
-                             uint32_t docIdLimit,
-                             bool before)
+MyVisitorBase::MyVisitorBase(DocumentTypeRepo &repo, uint32_t docIdLimit, bool before)
     : _repo(repo),
       _visitCount(0u),
       _visitRmCount(0u),
@@ -125,11 +114,8 @@ class MyVisitor : public MyVisitorBase,
 public:
     using MyVisitorBase::MyVisitorBase;
 
-    virtual void
-    visit(uint32_t lid, const Document &doc) override;
-
-    virtual void
-    visit(uint32_t lid) override;
+    void visit(uint32_t lid, const Document &doc) override;
+    void visit(uint32_t lid) override;
 };
 
 
@@ -184,11 +170,8 @@ public:
 
     MyVisitorProgress();
 
-    virtual void
-    updateProgress(double progress) override;
-
-    virtual double
-    getProgress() const;
+    void updateProgress(double progress) override;
+    double getProgress() const;
 };
 
 
@@ -232,53 +215,28 @@ struct Fixture
     BitVector::UP _valid;
 
     Fixture();
-
     ~Fixture();
 
-    Document::UP
-    makeDoc(uint32_t i);
-
-    void
-    resetDocStore();
-
-    void
-    mkdir();
-
-    void
-    rmdir();
-
-    void
-    setDocIdLimit(uint32_t docIdLimit);
-
-    void
-    put(const Document &doc, uint32_t lid);
-
-    void
-    remove(uint32_t lid);
-    
-    void
-    flush();
-
-    void
-    populate(uint32_t low, uint32_t high, uint32_t docIdLimit);
-
-    void
-    applyRemoves(uint32_t rmDocs);
-
-    void
-    checkRemovePostCond(uint32_t numDocs,
-                        uint32_t docIdLimit,
-                        uint32_t rmDocs,
-                        bool before);
+    Document::UP makeDoc(uint32_t i);
+    void resetDocStore();
+    void mkdir();
+    void rmdir();
+    void setDocIdLimit(uint32_t docIdLimit);
+    void put(const Document &doc, uint32_t lid);
+    void remove(uint32_t lid);
+    void flush();
+    void populate(uint32_t low, uint32_t high, uint32_t docIdLimit);
+    void applyRemoves(uint32_t rmDocs);
+    void checkRemovePostCond(uint32_t numDocs, uint32_t docIdLimit, uint32_t rmDocs, bool before);
 };
 
 Fixture::Fixture()
     : _baseDir("visitor"),
       _repo(makeDocTypeRepoConfig()),
       _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0, 0),
-                   LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true, CompressionConfig::LZ4,
-                                        WriteableFileChunk::Config(CompressionConfig(), 16384))),
-      _executor(_storeConfig.getLogConfig().getNumThreads(), 128 * 1024),
+                   LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
+                           .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
+      _executor(1, 128 * 1024),
       _fileHeaderContext(),
       _tlSyncer(),
       _store(),
@@ -307,14 +265,8 @@ Fixture::makeDoc(uint32_t i)
 void
 Fixture::resetDocStore()
 {
-    _store.reset(new LogDocumentStore(_executor,
-                                      _baseDir,
-                                      _storeConfig,
-                                      GrowStrategy(),
-                                      TuneFileSummary(),
-                                      _fileHeaderContext,
-                                      _tlSyncer,
-                                      NULL));
+    _store.reset(new LogDocumentStore(_executor, _baseDir, _storeConfig, GrowStrategy(),
+                                      TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr));
 }
 
 

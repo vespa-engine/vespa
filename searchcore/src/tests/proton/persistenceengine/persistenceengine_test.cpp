@@ -1,18 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/repo/documenttyperepo.h>
+
+#include <vespa/config-stor-distribution.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/documentselection.h>
+#include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config-stor-distribution.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <set>
 
 using document::BucketId;
+using document::BucketSpace;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
@@ -22,19 +26,21 @@ using storage::spi::BucketChecksum;
 using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
 using storage::spi::BucketInfoResult;
-using storage::spi::Context;
 using storage::spi::ClusterState;
+using storage::spi::Context;
 using storage::spi::CreateIteratorResult;
 using storage::spi::DocumentSelection;
 using storage::spi::GetResult;
-using storage::spi::IteratorId;
 using storage::spi::IterateResult;
+using storage::spi::IteratorId;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
+using storage::spi::test::makeBucket;
+using storage::spi::test::makeBucketSpace;
 using namespace proton;
 using namespace vespalib;
 
@@ -378,8 +384,8 @@ BucketId bckId1(1);
 BucketId bckId2(2);
 BucketId bckId3(3);
 Bucket bucket0;
-Bucket bucket1(bckId1, partId);
-Bucket bucket2(bckId2, partId);
+Bucket bucket1(makeBucket(bckId1, partId));
+Bucket bucket2(makeBucket(bckId2, partId));
 BucketChecksum checksum1(1);
 BucketChecksum checksum2(2);
 BucketChecksum checksum3(1+2);
@@ -429,8 +435,8 @@ struct SimpleFixture {
           engine(_owner, _writeFilter, -1, false),
           hset()
     {
-        engine.putHandler(DocTypeName(doc1->getType()), hset.phandler1);
-        engine.putHandler(DocTypeName(doc2->getType()), hset.phandler2);
+        engine.putHandler(makeBucketSpace(), DocTypeName(doc1->getType()), hset.phandler1);
+        engine.putHandler(makeBucketSpace(), DocTypeName(doc2->getType()), hset.phandler2);
     }
 };
 
@@ -590,8 +596,8 @@ TEST_F("require that listBuckets() is routed to handlers and merged", SimpleFixt
     f.hset.handler2.bucketList.push_back(bckId2);
     f.hset.handler2.bucketList.push_back(bckId3);
 
-    EXPECT_TRUE(f.engine.listBuckets(PartitionId(1)).getList().empty());
-    BucketIdListResult result = f.engine.listBuckets(partId);
+    EXPECT_TRUE(f.engine.listBuckets(makeBucketSpace(), PartitionId(1)).getList().empty());
+    BucketIdListResult result = f.engine.listBuckets(makeBucketSpace(), partId);
     const BucketIdListResult::List &bucketList = result.getList();
     EXPECT_EQUAL(3u, bucketList.size());
     EXPECT_EQUAL(bckId1, bucketList[0]);
@@ -676,7 +682,7 @@ TEST_F("require that getModifiedBuckets() is routed to handlers and merged", Sim
     f.hset.handler2.modBucketList.push_back(bckId2);
     f.hset.handler2.modBucketList.push_back(bckId3);
 
-    BucketIdListResult result = f.engine.getModifiedBuckets();
+    BucketIdListResult result = f.engine.getModifiedBuckets(makeBucketSpace());
     const BucketIdListResult::List &bucketList = result.getList();
     EXPECT_EQUAL(3u, bucketList.size());
     EXPECT_EQUAL(bckId1, bucketList[0]);

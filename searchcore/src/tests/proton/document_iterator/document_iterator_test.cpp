@@ -6,6 +6,7 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
@@ -43,6 +44,7 @@ using storage::spi::IterateResult;
 using storage::spi::PartitionId;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucket;
 
 using namespace proton;
 using namespace search::index;
@@ -50,7 +52,7 @@ using namespace search::index;
 const uint64_t largeNum = 10000000;
 
 Bucket bucket(size_t x) {
-    return Bucket(BucketId(x), PartitionId(0));
+    return makeBucket(BucketId(x));
 }
 
 Selection selectAll() {

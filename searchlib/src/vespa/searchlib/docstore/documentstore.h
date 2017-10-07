@@ -44,6 +44,7 @@ public:
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         bool allowVisitCaching() const { return _allowVisitCaching; }
         Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
+        bool operator == (const Config &) const;
     private:
         CompressionConfig _compression;
         size_t _maxCacheBytes;
@@ -100,6 +101,7 @@ public:
     bool canShrinkLidSpace() const override;
     size_t getEstimatedShrinkLidSpaceGain() const override;
     void shrinkLidSpace() override;
+    void reconfigure(const Config & config);
 
 private:
     bool useCache() const;

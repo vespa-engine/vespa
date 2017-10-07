@@ -42,3 +42,4 @@ Testing
 .preprocessed/
 .DS_Store
 install_manifest.txt
+*.cbp

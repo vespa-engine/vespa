@@ -102,9 +102,8 @@ public class DeploymentTrigger {
     public void triggerFailing(ApplicationId applicationId, Duration timeout) {
         try (Lock lock = applications().lock(applicationId)) {
             Application application = applications().require(applicationId);
-            if (!application.deploying().isPresent()) { // No ongoing change, no need to retry
-                return;
-            }
+            if (!application.deploying().isPresent()) return; // No ongoing change, no need to retry
+
             // Retry first failing job
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
@@ -116,6 +115,7 @@ public class DeploymentTrigger {
                     break;
                 }
             }
+
             // Retry dead job
             Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), timeout);
             if (firstDeadJob.isPresent()) {
@@ -214,16 +214,15 @@ public class DeploymentTrigger {
     /** Decide whether the job should be triggered by the periodic trigger */
     private boolean shouldRetryNow(JobStatus job) {
         if (job.isSuccess()) return false;
+        if (job.inProgress()) return false;
 
-        if ( ! job.lastCompleted().isPresent()) return true; // Retry when we don't hear back
-
-        // Always retry if we haven't tried in 4 hours
-        if (job.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.ofHours(4)))) return true;
-
-        // Wait for 10% of the time since it started failing
+        // Retry after 10% of the time since it started failing
         Duration aTenthOfFailTime = Duration.ofMillis( (clock.millis() - job.firstFailing().get().at().toEpochMilli()) / 10);
         if (job.lastCompleted().get().at().isBefore(clock.instant().minus(aTenthOfFailTime))) return true;
-        
+
+        // ... or retry anyway if we haven't tried in 4 hours
+        if (job.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.ofHours(4)))) return true;
+
         return false;
     }
     
@@ -308,5 +307,7 @@ public class DeploymentTrigger {
     }
 
     public BuildSystem buildSystem() { return buildSystem; }
+
+    public DeploymentOrder deploymentOrder() { return order; }
 
 }

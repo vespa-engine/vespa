@@ -2,7 +2,7 @@
 
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
-#include <vespa/searchcore/proton/common/bucketfactory.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
 #include <vespa/searchcore/proton/server/documentbucketmover.h>
@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace proton;
@@ -31,6 +32,7 @@ using search::index::DocBuilder;
 using search::index::Schema;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
+using storage::spi::test::makeBucketSpace;
 using vespalib::make_string;
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
@@ -622,7 +624,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
            _notReady._subDb, _fbh, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
            _diskMemUsageNotifier, blockableConfig,
-           "test"),
+           "test", makeBucketSpace()),
       _runner(_bmj)
 {
 }

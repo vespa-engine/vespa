@@ -41,6 +41,7 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       tuneFileDocumentDBChanged(false),
       schemaChanged(false),
       maintenanceChanged(false),
+      storeChanged(false),
       visibilityDelayChanged(false)
 { }
 
@@ -59,6 +60,7 @@ DocumentDBConfig::DocumentDBConfig(
                const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
                const Schema::SP &schema,
                const DocumentDBMaintenanceConfig::SP &maintenance,
+               const search::LogDocumentStore::Config & storeConfig,
                const vespalib::string &configId,
                const vespalib::string &docTypeName,
                const config::ConfigSnapshot & extraConfigs)
@@ -78,6 +80,7 @@ DocumentDBConfig::DocumentDBConfig(
       _tuneFileDocumentDB(tuneFileDocumentDB),
       _schema(schema),
       _maintenance(maintenance),
+      _storeConfig(storeConfig),
       _extraConfigs(extraConfigs),
       _orig(),
       _delayedAttributeAspects(false)
@@ -102,6 +105,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _tuneFileDocumentDB(cfg._tuneFileDocumentDB),
       _schema(cfg._schema),
       _maintenance(cfg._maintenance),
+      _storeConfig(cfg._storeConfig),
       _extraConfigs(cfg._extraConfigs),
       _orig(cfg._orig),
       _delayedAttributeAspects(false)
@@ -112,31 +116,20 @@ DocumentDBConfig::~DocumentDBConfig() { }
 bool
 DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
 {
-    return equals<RankProfilesConfig>(_rankProfiles.get(),
-                                      rhs._rankProfiles.get()) &&
-           equals<RankingConstants>(_rankingConstants.get(),
-                                    rhs._rankingConstants.get()) &&
-           equals<IndexschemaConfig>(_indexschema.get(),
-                                     rhs._indexschema.get()) &&
-           equals<AttributesConfig>(_attributes.get(),
-                                    rhs._attributes.get()) &&
-           equals<SummaryConfig>(_summary.get(),
-                                 rhs._summary.get()) &&
-           equals<SummarymapConfig>(_summarymap.get(),
-                                    rhs._summarymap.get()) &&
-           equals<JuniperrcConfig>(_juniperrc.get(),
-                                   rhs._juniperrc.get()) &&
-           equals<DocumenttypesConfig>(_documenttypes.get(),
-                                       rhs._documenttypes.get()) &&
+    return equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get()) &&
+           equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get()) &&
+           equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get()) &&
+           equals<AttributesConfig>(_attributes.get(), rhs._attributes.get()) &&
+           equals<SummaryConfig>(_summary.get(), rhs._summary.get()) &&
+           equals<SummarymapConfig>(_summarymap.get(), rhs._summarymap.get()) &&
+           equals<JuniperrcConfig>(_juniperrc.get(), rhs._juniperrc.get()) &&
+           equals<DocumenttypesConfig>(_documenttypes.get(), rhs._documenttypes.get()) &&
            _repo.get() == rhs._repo.get() &&
-           equals<ImportedFieldsConfig >(_importedFields.get(),
-                                         rhs._importedFields.get()) &&
-           equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(),
-                                      rhs._tuneFileDocumentDB.get()) &&
-           equals<Schema>(_schema.get(),
-                          rhs._schema.get()) &&
-        equals<DocumentDBMaintenanceConfig>(_maintenance.get(),
-                rhs._maintenance.get());
+           equals<ImportedFieldsConfig >(_importedFields.get(), rhs._importedFields.get()) &&
+           equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get()) &&
+           equals<Schema>(_schema.get(), rhs._schema.get()) &&
+           equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get()) &&
+           _storeConfig == rhs._storeConfig;
 }
 
 
@@ -144,36 +137,21 @@ DocumentDBConfig::ComparisonResult
 DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
 {
     ComparisonResult retval;
-    retval.rankProfilesChanged =
-        !equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get());
-    retval.rankingConstantsChanged =
-        !equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get());
-    retval.indexschemaChanged =
-        !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
-    retval.attributesChanged =
-        !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get());
-    retval.summaryChanged =
-        !equals<SummaryConfig>(_summary.get(), rhs._summary.get());
-    retval.summarymapChanged =
-        !equals<SummarymapConfig>(_summarymap.get(), rhs._summarymap.get());
-    retval.juniperrcChanged =
-        !equals<JuniperrcConfig>(_juniperrc.get(), rhs._juniperrc.get());
-    retval.documenttypesChanged =
-        !equals<DocumenttypesConfig>(_documenttypes.get(),
-                rhs._documenttypes.get());
+    retval.rankProfilesChanged = !equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get());
+    retval.rankingConstantsChanged = !equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get());
+    retval.indexschemaChanged = !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
+    retval.attributesChanged = !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get());
+    retval.summaryChanged = !equals<SummaryConfig>(_summary.get(), rhs._summary.get());
+    retval.summarymapChanged = !equals<SummarymapConfig>(_summarymap.get(), rhs._summarymap.get());
+    retval.juniperrcChanged = !equals<JuniperrcConfig>(_juniperrc.get(), rhs._juniperrc.get());
+    retval.documenttypesChanged = !equals<DocumenttypesConfig>(_documenttypes.get(), rhs._documenttypes.get());
     retval.documentTypeRepoChanged = _repo.get() != rhs._repo.get();
-    retval.importedFieldsChanged =
-            !equals<ImportedFieldsConfig >(_importedFields.get(), rhs._importedFields.get());
-    retval.tuneFileDocumentDBChanged =
-        !equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(),
-                rhs._tuneFileDocumentDB.get());
-    retval.schemaChanged =
-        !equals<Schema>(_schema.get(), rhs._schema.get());
-    retval.maintenanceChanged =
-        !equals<DocumentDBMaintenanceConfig>(_maintenance.get(),
-                rhs._maintenance.get());
-    retval.visibilityDelayChanged =
-            (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
+    retval.importedFieldsChanged = !equals<ImportedFieldsConfig >(_importedFields.get(), rhs._importedFields.get());
+    retval.tuneFileDocumentDBChanged = !equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get());
+    retval.schemaChanged = !equals<Schema>(_schema.get(), rhs._schema.get());
+    retval.maintenanceChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get());
+    retval.storeChanged = (_storeConfig != rhs._storeConfig);
+    retval.visibilityDelayChanged = (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
     return retval;
 }
 
@@ -181,19 +159,19 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
 bool
 DocumentDBConfig::valid() const
 {
-    return (_rankProfiles.get() != NULL) &&
-           (_rankingConstants.get() != NULL) &&
-           (_indexschema.get() != NULL) &&
-           (_attributes.get() != NULL) &&
-           (_summary.get() != NULL) &&
-           (_summarymap.get() != NULL) &&
-           (_juniperrc.get() != NULL) &&
-           (_documenttypes.get() != NULL) &&
-           (_repo.get() != NULL) &&
-           (_importedFields.get() != NULL) &&
-           (_tuneFileDocumentDB.get() != NULL) &&
-           (_schema.get() != NULL) &&
-           (_maintenance.get() != NULL);
+    return _rankProfiles &&
+           _rankingConstants &&
+           _indexschema &&
+           _attributes &&
+           _summary &&
+           _summarymap &&
+           _juniperrc &&
+           _documenttypes &&
+           _repo &&
+           _importedFields &&
+           _tuneFileDocumentDB &&
+           _schema &&
+           _maintenance;
 }
 
 namespace
@@ -234,6 +212,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._tuneFileDocumentDB,
                 o._schema,
                 o._maintenance,
+                o._storeConfig,
                 o._configId,
                 o._docTypeName,
                 o._extraConfigs);
@@ -274,6 +253,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _tuneFileDocumentDB,
             _schema,
             _maintenance,
+            _storeConfig,
             _configId,
             _docTypeName,
             _extraConfigs);
@@ -309,6 +289,7 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._tuneFileDocumentDB,
                    n._schema,
                    n._maintenance,
+                   n._storeConfig,
                    n._configId,
                    n._docTypeName,
                    n._extraConfigs);

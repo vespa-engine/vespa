@@ -25,7 +25,8 @@ ReconfigParams::configHasChanged() const
             _res.importedFieldsChanged ||
             _res.tuneFileDocumentDBChanged ||
             _res.schemaChanged ||
-            _res.maintenanceChanged;
+            _res.maintenanceChanged ||
+            _res.storeChanged;
 }
 
 bool
@@ -56,14 +57,14 @@ bool
 ReconfigParams::shouldSummaryManagerChange() const
 {
     return  _res.summaryChanged || _res.summarymapChanged || _res.juniperrcChanged
-            || _res.documentTypeRepoChanged || _res.documenttypesChanged;
+            || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged;
 }
 
 bool
 ReconfigParams::shouldSubDbsChange() const
 {
     return shouldMatchersChange() || shouldAttributeManagerChange() || shouldSummaryManagerChange()
-           || _res.documentTypeRepoChanged || _res.documenttypesChanged;
+           || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged;
 }
 
 bool

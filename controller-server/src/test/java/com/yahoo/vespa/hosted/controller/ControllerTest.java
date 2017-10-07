@@ -396,64 +396,76 @@ public class ControllerTest {
     public void requeueOutOfCapacityStagingJob() {
         DeploymentTester tester = new DeploymentTester();
 
-        long fooProjectId = 1;
-        long barProjectId = 2;
-        Application foo = tester.createApplication("app1", "foo", fooProjectId, 1L);
-        Application bar = tester.createApplication("app2", "bar", barProjectId, 1L);
+        long project1 = 1;
+        long project2 = 2;
+        long project3 = 3;
+        Application app1 = tester.createApplication("app1", "tenant1", project1, 1L);
+        Application app2 = tester.createApplication("app2", "tenant2", project2, 1L);
+        Application app3 = tester.createApplication("app3", "tenant3", project3, 1L);
         BuildSystem buildSystem = tester.controller().applications().deploymentTrigger().buildSystem();
 
-        // foo: passes system test
-        tester.notifyJobCompletion(component, foo, true);
-        tester.deployAndNotify(foo, applicationPackage, true, systemTest);
+        // all applications: system-test completes successfully
+        tester.notifyJobCompletion(component, app1, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
 
-        // bar: passes system test
-        tester.notifyJobCompletion(component, bar, true);
-        tester.deployAndNotify(bar, applicationPackage, true, systemTest);
+        tester.notifyJobCompletion(component, app2, true);
+        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
 
-        // foo and bar: staging test jobs queued
-        assertEquals(2, buildSystem.jobs().size());
+        tester.notifyJobCompletion(component, app3, true);
+        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
 
-        // foo: staging-test job fails with out of capacity and is added to the front of the queue
-        {
-            tester.deploy(stagingTest, foo, applicationPackage);
-            tester.notifyJobCompletion(stagingTest, foo, Optional.of(JobError.outOfCapacity));
-            List<BuildJob> nextJobs = buildSystem.takeJobsToRun();
-            assertEquals("staging-test jobs are returned one at a time",1, nextJobs.size());
-            assertEquals(stagingTest.id(), nextJobs.get(0).jobName());
-            assertEquals(fooProjectId, nextJobs.get(0).projectId());
-        }
+        // all applications: staging test jobs queued
+        assertEquals(3, buildSystem.jobs().size());
 
-        // bar: Completes deployment
-        tester.deployAndNotify(bar, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(bar, applicationPackage, true, productionCorpUsEast1);
+        // app1: staging-test job fails with out of capacity and is added to the front of the queue
+        tester.deploy(stagingTest, app1, applicationPackage);
+        tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));
+        assertEquals(stagingTest.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(project1, buildSystem.jobs().get(0).projectId());
 
-        // foo: 15 minutes pass, staging-test job is still failing due out of capacity, but is no longer re-queued by
+        // app2 and app3: Completes deployment
+        tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app2, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
+
+        // app1: 15 minutes pass, staging-test job is still failing due out of capacity, but is no longer re-queued by
         // out of capacity retry mechanism
         tester.clock().advance(Duration.ofMinutes(15));
-        tester.notifyJobCompletion(component, foo, true);
-        tester.deployAndNotify(foo, applicationPackage, true, systemTest);
-        tester.deploy(stagingTest, foo, applicationPackage);
+        tester.notifyJobCompletion(component, app1, true);
+        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deploy(stagingTest, app1, applicationPackage);
         assertEquals(1, buildSystem.takeJobsToRun().size());
-        tester.notifyJobCompletion(stagingTest, foo, Optional.of(JobError.outOfCapacity));
+        tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));
         assertTrue("No jobs queued", buildSystem.jobs().isEmpty());
 
-        // bar: New change triggers another staging-test job
-        tester.notifyJobCompletion(component, bar, true);
-        tester.deployAndNotify(bar, applicationPackage, true, systemTest);
-        assertEquals(1, buildSystem.jobs().size());
+        // app2 and app3: New change triggers staging-test jobs
+        tester.notifyJobCompletion(component, app2, true);
+        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
 
-        // foo: 4 hours pass in total, staging-test job is re-queued by periodic trigger mechanism and added at the
+        tester.notifyJobCompletion(component, app3, true);
+        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
+
+        assertEquals(2, buildSystem.jobs().size());
+
+        // app1: 4 hours pass in total, staging-test job is re-queued by periodic trigger mechanism and added at the
         // back of the queue
         tester.clock().advance(Duration.ofHours(3));
         tester.clock().advance(Duration.ofMinutes(50));
         tester.failureRedeployer().maintain();
 
         List<BuildJob> nextJobs = buildSystem.takeJobsToRun();
+        assertEquals(2, nextJobs.size());
         assertEquals(stagingTest.id(), nextJobs.get(0).jobName());
-        assertEquals(barProjectId, nextJobs.get(0).projectId());
+        assertEquals(project2, nextJobs.get(0).projectId());
+        assertEquals(stagingTest.id(), nextJobs.get(1).jobName());
+        assertEquals(project3, nextJobs.get(1).projectId());
+
+        // And finally the requeued job for app1
         nextJobs = buildSystem.takeJobsToRun();
+        assertEquals(1, nextJobs.size());
         assertEquals(stagingTest.id(), nextJobs.get(0).jobName());
-        assertEquals(fooProjectId, nextJobs.get(0).projectId());
+        assertEquals(project1, nextJobs.get(0).projectId());
     }
 
     private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {

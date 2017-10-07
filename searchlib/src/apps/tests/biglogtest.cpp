@@ -134,7 +134,7 @@ factory<LogDataStore>::factory(std::string dir)
     : DioTune(),
       _fileHeaderContext(),
       _config(),
-      _executor(_config.getNumThreads(), 128*1024),
+      _executor(1, 128*1024),
       _noTlSyncer(),
       _datastore(_executor, dir, _config, GrowStrategy(), tuning, _fileHeaderContext, _noTlSyncer, NULL)
 {}

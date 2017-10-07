@@ -15,9 +15,7 @@
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 struct DummyDocumentSubDb : public IDocumentSubDB
 {
@@ -45,19 +43,13 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return "dummysubdb"; }
     DocumentSubDbInitializer::UP
-    createInitializer(const DocumentDBConfig &,
-                      SerialNum,
-                      const vespa::config::search::core::ProtonConfig::
-                      Summary &,
-                      const vespa::config::search::core::
-                      ProtonConfig::Index &) const override {
+    createInitializer(const DocumentDBConfig &, SerialNum,
+                      const vespa::config::search::core::ProtonConfig::Index &) const override {
         return std::make_unique<DocumentSubDbInitializer>
-            (const_cast<DummyDocumentSubDb &>(*this),
-             _writeService->master());
+            (const_cast<DummyDocumentSubDb &>(*this), _writeService->master());
     }
     void setup(const DocumentSubDbInitializerResult &) override {}
-    void initViews(const DocumentDBConfig &,
-                   const proton::matching::SessionManager::SP &) override {}
+    void initViews(const DocumentDBConfig &, const proton::matching::SessionManager::SP &) override {}
     IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,
                                         SerialNum, const ReconfigParams &, IDocumentDBReferenceResolver &) override
     {
@@ -93,13 +85,10 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
         return matching::MatchingStats();
     }
-    virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override {
+    std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override {
         return std::shared_ptr<IDocumentDBReference>();
     }
-    virtual void tearDownReferences(IDocumentDBReferenceResolver &) override { }
+    void tearDownReferences(IDocumentDBReferenceResolver &) override { }
 };
 
-} // namespace test
-
-} // namespace proton
-
+}

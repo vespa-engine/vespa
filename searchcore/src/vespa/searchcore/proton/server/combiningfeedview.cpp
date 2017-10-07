@@ -34,13 +34,15 @@ getRepo(const std::vector<IFeedView::SP> &views)
 };
 
 CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
+                                     document::BucketSpace bucketSpace,
                                      const IBucketStateCalculator::SP &calc)
     : _repo(getRepo(views)),
       _views(views),
       _metaStores(),
       _calc(calc),
       _clusterUp(calc.get() != NULL && calc->clusterUp()),
-      _forceReady(!_clusterUp || !hasNotReadyFeedView())
+      _forceReady(!_clusterUp || !hasNotReadyFeedView()),
+      _bucketSpace(bucketSpace)
 {
     _metaStores.reserve(views.size());
     for (const auto &view : views) {
@@ -273,17 +275,18 @@ CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
 bool
 CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
 {
+    document::Bucket dbucket(_bucketSpace, bucket);
     LOG(debug,
         "shouldBeReady(%s): forceReady(%s), clusterUp(%s), calcReady(%s)",
         bucket.toString().c_str(),
         (_forceReady ? "true" : "false"),
         (_clusterUp ? "true" : "false"),
         (_calc.get() != NULL ?
-         (_calc->shouldBeReady(bucket) ? "true" : "false") : "null"));
+         (_calc->shouldBeReady(dbucket) ? "true" : "false") : "null"));
     const documentmetastore::IBucketHandler *readyMetaStore =
         _metaStores[getReadyFeedViewId()];
     bool isActive = readyMetaStore->getBucketDB().takeGuard()->isActiveBucket(bucket);
-    return _forceReady || isActive || _calc->shouldBeReady(bucket);
+    return _forceReady || isActive || _calc->shouldBeReady(dbucket);
 }
 
 } // namespace proton

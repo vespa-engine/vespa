@@ -51,6 +51,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin);
         assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, version)), admin);
+
+        addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
 
     private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin) {

@@ -34,8 +34,7 @@ private:
                 const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
 
 public:
-    DocumentDBConfigManager(const vespalib::string &configId,
-                            const vespalib::string &docTypeName);
+    DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string &docTypeName);
     ~DocumentDBConfigManager();
     void update(const config::ConfigSnapshot & snapshot);
 
@@ -54,9 +53,9 @@ public:
 class DocumentDBConfigHelper
 {
 public:
-    DocumentDBConfigHelper(const config::DirSpec &spec,
-                           const vespalib::string &docTypeName,
-                           const config::ConfigKeySet &extraConfigKeys = config::ConfigKeySet());
+    DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName);
+    DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName,
+                           const config::ConfigKeySet &extraConfigKeys);
 
     ~DocumentDBConfigHelper();
     bool nextGeneration(int timeoutInMillis);

@@ -29,15 +29,33 @@ using docstore::StoreByBucket;
 using docstore::BucketCompacter;
 using namespace std::literals;
 
-LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
-                           const vespalib::string &dirName,
-                           const Config &config,
-                           const GrowStrategy &growStrategy,
-                           const TuneFileSummary &tune,
-                           const FileHeaderContext &fileHeaderContext,
-                           transactionlog::SyncProxy &tlSyncer,
-                           const IBucketizer::SP & bucketizer,
-                           bool readOnly)
+LogDataStore::Config::Config()
+    : _maxFileSize(1000000000ul),
+      _maxDiskBloatFactor(0.2),
+      _maxBucketSpread(2.5),
+      _minFileSizeFactor(0.2),
+      _skipCrcOnRead(false),
+      _compact2ActiveFile(true),
+      _compactCompression(CompressionConfig::LZ4),
+      _fileConfig()
+{ }
+
+bool
+LogDataStore::Config::operator == (const Config & rhs) const {
+    return (_maxBucketSpread == rhs._maxBucketSpread) &&
+            (_maxDiskBloatFactor == rhs._maxDiskBloatFactor) &&
+            (_maxFileSize == rhs._maxFileSize) &&
+            (_minFileSizeFactor == rhs._minFileSizeFactor) &&
+            (_compact2ActiveFile == rhs._compact2ActiveFile) &&
+            (_skipCrcOnRead == rhs._skipCrcOnRead) &&
+            (_compactCompression == rhs._compactCompression) &&
+            (_fileConfig == rhs._fileConfig);
+}
+
+LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
+                           const GrowStrategy &growStrategy, const TuneFileSummary &tune,
+                           const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
+                           const IBucketizer::SP & bucketizer, bool readOnly)
     : IDataStore(dirName),
       _config(config),
       _tune(tune),
@@ -65,6 +83,10 @@ LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
     preload();
     updateLidMap(getLastFileChunkDocIdLimit());
     updateSerialNum();
+}
+
+void LogDataStore::reconfigure(const Config & config) {
+    _config = config;
 }
 
 void
@@ -274,12 +296,9 @@ LogDataStore::compact(uint64_t syncToken)
     uint64_t usage = getDiskFootprint();
     uint64_t bloat = getDiskBloat();
     LOG(debug, "%s", bloatMsg(bloat, usage).c_str());
-    if ((_fileChunks.size() > 1) &&
-           ( isBucketSpreadTooLarge(getMaxBucketSpread()) ||
-             isBloatOverLimit(bloat, usage)))
-    {
+    if (_fileChunks.size() > 1) {
         LOG(info, "%s. Will compact", bloatMsg(bloat, usage).c_str());
-        compactWorst();
+        compactWorst(_config.getMaxDiskBloatFactor(), _config.getMaxBucketSpread());
         usage = getDiskFootprint();
         bloat = getDiskBloat();
         LOG(info, "Done compacting. %s", bloatMsg(bloat, usage).c_str());
@@ -299,7 +318,7 @@ LogDataStore::getMaxCompactGain() const
         bloat = 0;
     }
     size_t spreadAsBloat = diskFootPrint * (1.0 - 1.0/maxSpread);
-    if ( ! isBucketSpreadTooLarge(maxSpread)) {
+    if ( maxSpread < _config.getMaxBucketSpread()) {
         spreadAsBloat = 0;
     }
     return (bloat + spreadAsBloat);
@@ -348,7 +367,7 @@ LogDataStore::getMaxBucketSpread() const
 }
 
 std::pair<bool, LogDataStore::FileId>
-LogDataStore::findNextToCompact()
+LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit)
 {
     typedef std::multimap<double, FileId, std::greater<double>> CostMap;
     CostMap worstBloat;
@@ -376,10 +395,10 @@ LogDataStore::findNextToCompact()
         }
     }
     std::pair<bool, FileId> retval(false, FileId(-1));
-    if ( ! worstBloat.empty() && (worstBloat.begin()->first > _config.getMaxDiskBloatFactor())) {
+    if ( ! worstBloat.empty() && (worstBloat.begin()->first > bloatLimit)) {
         retval.first = true;
         retval.second = worstBloat.begin()->second;
-    } else if ( ! worstSpread.empty() && (worstSpread.begin()->first > _config.getMaxBucketSpread())) {
+    } else if ( ! worstSpread.empty() && (worstSpread.begin()->first > spreadLimit)) {
         retval.first = true;
         retval.second = worstSpread.begin()->second;
     }
@@ -390,8 +409,8 @@ LogDataStore::findNextToCompact()
 }
 
 void
-LogDataStore::compactWorst() {
-    auto worst = findNextToCompact();
+LogDataStore::compactWorst(double bloatLimit, double spreadLimit) {
+    auto worst = findNextToCompact(bloatLimit, spreadLimit);
     if (worst.first) {
         compactFile(worst.second);
     }

@@ -5,7 +5,7 @@
 #include <vespa/document/base/globalid.h>
 #include <initializer_list>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchcore/proton/common/bucketfactory.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>

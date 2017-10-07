@@ -86,6 +86,7 @@ struct DBConfigFixture {
              std::make_shared<TuneFileDocumentDB>(),
              buildSchema(),
              std::make_shared<DocumentDBMaintenanceConfig>(),
+             search::LogDocumentStore::Config(),
              configId,
              docTypeName,
              config::ConfigSnapshot());
@@ -207,9 +208,9 @@ struct MyDocumentDBConfigOwner : public IDocumentDBConfigOwner
           _owner(owner)
     {
     }
-    virtual ~MyDocumentDBConfigOwner() { }
+    ~MyDocumentDBConfigOwner() { }
 
-    virtual void reconfigure(const DocumentDBConfig::SP & config) override;
+    void reconfigure(const DocumentDBConfig::SP & config) override;
 };
 
 struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
@@ -229,11 +230,13 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
     virtual ~MyProtonConfigurerOwner() { }
 
     virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName &docTypeName,
+                                                  document::BucketSpace bucketSpace,
                                                   const vespalib::string &configId,
                                                   const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
                                                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                                                   InitializeThreads initializeThreads) override
     {
+        (void) bucketSpace;
         (void) configId;
         (void) bootstrapConfig;
         (void) initializeThreads;

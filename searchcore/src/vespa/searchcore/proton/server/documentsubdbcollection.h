@@ -51,9 +51,10 @@ namespace initializer { class InitializerTask; }
 
 class DocumentSubDBCollection {
 public:
-    typedef std::vector<IDocumentSubDB *> SubDBVector;
-    typedef SubDBVector::const_iterator const_iterator;
-    typedef search::SerialNum      SerialNum;
+    using SubDBVector = std::vector<IDocumentSubDB *>;
+    using const_iterator = SubDBVector::const_iterator;
+    using SerialNum = search::SerialNum;
+    using ProtonConfig = vespa::config::search::core::ProtonConfig;
 
 private:
     using IFeedViewSP = std::shared_ptr<IFeedView>;
@@ -61,13 +62,14 @@ private:
     using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     SubDBVector _subDBs;
+    IDocumentSubDBOwner     &_owner;
     IBucketStateCalculatorSP _calc;
     const uint32_t _readySubDbId;
     const uint32_t _remSubDbId;
     const uint32_t _notReadySubDbId;
-    typedef std::shared_ptr<std::vector<std::shared_ptr<IDocumentRetriever>> > RetrieversSP;
+    using RetrieversSP = std::shared_ptr<std::vector<std::shared_ptr<IDocumentRetriever>> >;
     vespalib::VarHolder<RetrieversSP> _retrievers;
-    typedef std::vector<std::shared_ptr<IReprocessingTask>> ReprocessingTasks;
+    using ReprocessingTasks = std::vector<std::shared_ptr<IReprocessingTask>>;
     ReprocessingRunner _reprocessingRunner;
     std::shared_ptr<BucketDBOwner> _bucketDB;
     std::unique_ptr<bucketdb::BucketDBHandler> _bucketDBHandler;
@@ -124,15 +126,10 @@ public:
     }
 
     std::shared_ptr<initializer::InitializerTask>
-    createInitializer(const DocumentDBConfig &configSnapshot,
-                      SerialNum configSerialNum,
-                      const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
+    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                       const vespa::config::search::core::ProtonConfig::Index & indexCfg);
 
-    void
-    initViews(const DocumentDBConfig &configSnapshot,
-              const SessionManagerSP &sessionManager);
-
+    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager);
     void clearViews();
     void onReplayDone();
     void onReprocessDone(SerialNum serialNum);
@@ -141,12 +138,8 @@ public:
 
     void pruneRemovedFields(SerialNum serialNum);
 
-    void
-    applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum,
-                const ReconfigParams &params,
-                IDocumentDBReferenceResolver &resolver);
+    void applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
+                     SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver);
 
     IFeedViewSP getFeedView();
     IFlushTargetList getFlushTargets();
@@ -156,6 +149,4 @@ public:
     void tearDownReferences(IDocumentDBReferenceResolver &resolver);
 };
 
-
 } // namespace proton
-
