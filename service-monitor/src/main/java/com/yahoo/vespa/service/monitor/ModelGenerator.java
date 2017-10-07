@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModel;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
@@ -40,14 +41,16 @@ public class ModelGenerator {
             SuperModel superModel,
             Zone zone,
             List<String> configServerHosts,
-            SlobrokMonitor2 slobrokMonitor) {
-        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> applicationInstances = new HashMap<>();
+            SlobrokMonitorManager slobrokMonitorManager) {
+        Map<ApplicationInstanceReference,
+                ApplicationInstance<ServiceMonitorStatus>> applicationInstances = new HashMap<>();
 
         for (ApplicationInfo applicationInfo : superModel.getAllApplicationInfos()) {
+
             ApplicationInstance<ServiceMonitorStatus> applicationInstance = toApplicationInstance(
                     applicationInfo,
                     zone,
-                    slobrokMonitor);
+                    slobrokMonitorManager);
             applicationInstances.put(applicationInstance.reference(), applicationInstance);
         }
 
@@ -65,7 +68,7 @@ public class ModelGenerator {
     ApplicationInstance<ServiceMonitorStatus> toApplicationInstance(
             ApplicationInfo applicationInfo,
             Zone zone,
-            SlobrokMonitor2 slobrokMonitor) {
+            SlobrokMonitorManager slobrokMonitorManager) {
         Map<ServiceClusterKey, Set<ServiceInstance<ServiceMonitorStatus>>> groupedServiceInstances = new HashMap<>();
 
         for (HostInfo host : applicationInfo.getModel().getHosts()) {
@@ -73,7 +76,11 @@ public class ModelGenerator {
             for (ServiceInfo serviceInfo : host.getServices()) {
                 ServiceClusterKey serviceClusterKey = toServiceClusterKey(serviceInfo);
                 ServiceInstance<ServiceMonitorStatus> serviceInstance =
-                        toServiceInstance(serviceInfo, hostName, slobrokMonitor);
+                        toServiceInstance(
+                                applicationInfo.getApplicationId(),
+                                serviceInfo,
+                                hostName,
+                                slobrokMonitorManager);
 
                 if (!groupedServiceInstances.containsKey(serviceClusterKey)) {
                     groupedServiceInstances.put(serviceClusterKey, new HashSet<>());
@@ -104,12 +111,18 @@ public class ModelGenerator {
     }
 
     ServiceInstance<ServiceMonitorStatus> toServiceInstance(
+            ApplicationId applicationId,
             ServiceInfo serviceInfo,
             HostName hostName,
-            SlobrokMonitor2 slobrokMonitor) {
+            SlobrokMonitorManager slobrokMonitorManager) {
         ConfigId configId = new ConfigId(serviceInfo.getConfigId());
-        ServiceMonitorStatus serviceStatus = slobrokMonitor.getStatus(toServiceType(serviceInfo), configId);
-        return new ServiceInstance<>(configId, hostName,serviceStatus);
+
+        ServiceMonitorStatus status = slobrokMonitorManager.getStatus(
+                applicationId,
+                toServiceType(serviceInfo),
+                configId);
+
+        return new ServiceInstance<>(configId, hostName, status);
     }
 
     ApplicationInstanceId toApplicationInstanceId(ApplicationInfo applicationInfo, Zone zone) {

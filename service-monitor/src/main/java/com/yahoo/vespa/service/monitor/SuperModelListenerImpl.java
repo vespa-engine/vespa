@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.monitor;
 
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
@@ -13,15 +14,14 @@ import java.util.logging.Logger;
 public class SuperModelListenerImpl implements SuperModelListener {
     private static final Logger logger = Logger.getLogger(SuperModelListenerImpl.class.getName());
 
-    // Guard for updating superModel and slobrokMonitor exclusively and atomically:
-    //  - superModel and slobrokMonitor must be updated in combination (exclusively and atomically)
-    //  - Anyone may take a snapshot of superModel for reading purposes, hence volatile.
+    // superModel and slobrokMonitorManager are always updated together
+    // and atomically using this monitor.
     private final Object monitor = new Object();
-    private final SlobrokMonitor2 slobrokMonitor;
-    private volatile SuperModel superModel;
+    private final SlobrokMonitorManager slobrokMonitorManager;
+    private SuperModel superModel;
 
-    SuperModelListenerImpl(SlobrokMonitor2 slobrokMonitor) {
-        this.slobrokMonitor = slobrokMonitor;
+    SuperModelListenerImpl(SlobrokMonitorManager slobrokMonitorManager) {
+        this.slobrokMonitorManager = slobrokMonitorManager;
     }
 
     void start(SuperModelProvider superModelProvider) {
@@ -30,38 +30,39 @@ public class SuperModelListenerImpl implements SuperModelListener {
             // since applicationActivated()/applicationRemoved() may be called
             // asynchronously even before snapshot() returns.
             SuperModel snapshot = superModelProvider.snapshot(this);
-            exclusiveUpdate(snapshot);
+
+            snapshot.getAllApplicationInfos().stream().forEach(application ->
+                    applicationActivated(superModel, application));
         }
     }
 
     @Override
-    public void applicationActivated(SuperModel superModel, ApplicationId applicationId) {
+    public void applicationActivated(SuperModel superModel, ApplicationInfo application) {
         synchronized (monitor) {
-            exclusiveUpdate(superModel);
+            this.superModel = superModel;
+            slobrokMonitorManager.applicationActivated(superModel, application);
         }
     }
 
     @Override
     public void applicationRemoved(SuperModel superModel, ApplicationId id) {
         synchronized (monitor) {
-            exclusiveUpdate(superModel);
+            this.superModel = superModel;
+            slobrokMonitorManager.applicationRemoved(superModel, id);
         }
     }
 
     ServiceModel createServiceModelSnapshot(Zone zone, List<String> configServerHostnames) {
-        // Save a snapshot of volatile this.superModel outside of synchronized block.
-        SuperModel superModelSnapshot = this.superModel;
-
         ModelGenerator modelGenerator = new ModelGenerator();
+
+        // TODO: Add latency and calls-per-second metrics
+        // If calculating the service model is too expensive per call, then
+        // cache the generated snapshot, invalidate after X seconds.
+        // WARNING: The slobrok monitor manager may be out-of-sync with super model (no locking)
         return modelGenerator.toServiceModel(
-                superModelSnapshot,
+                superModel,
                 zone,
                 configServerHostnames,
-                slobrokMonitor);
-    }
-
-    private void exclusiveUpdate(SuperModel superModel) {
-        this.superModel = superModel;
-        slobrokMonitor.updateSlobrokList(superModel);
+                slobrokMonitorManager);
     }
 }

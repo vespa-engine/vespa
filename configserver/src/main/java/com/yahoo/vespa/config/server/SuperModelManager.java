@@ -80,7 +80,7 @@ public class SuperModelManager implements SuperModelProvider {
                 .cloneAndSetApplication(applicationInfo);
         makeNewSuperModelConfigProvider(newSuperModel);
         listeners.stream().forEach(listener ->
-                listener.applicationActivated(newSuperModel, applicationInfo.getApplicationId()));
+                listener.applicationActivated(newSuperModel, applicationInfo));
     }
 
     public synchronized void applicationRemoved(ApplicationId applicationId) {

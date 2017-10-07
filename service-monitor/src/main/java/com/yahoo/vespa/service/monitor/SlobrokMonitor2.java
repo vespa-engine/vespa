@@ -5,27 +5,22 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.applicationmodel.ConfigId;
-import com.yahoo.vespa.applicationmodel.ServiceType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.logging.Logger;
 
+/**
+ * Class to manage Slobrok
+ */
 public class SlobrokMonitor2 implements AutoCloseable {
     public static final String SLOBROK_SERVICE_TYPE = "slobrok";
     public static final String SLOBROK_RPC_PORT_TAG = "rpc";
-
-    private static final Logger log = Logger.getLogger(SlobrokMonitor2.class.getName());
 
     private final SlobrokList slobrokList;
     private final Mirror mirror;
@@ -44,84 +39,39 @@ public class SlobrokMonitor2 implements AutoCloseable {
         this(slobrokList, new Mirror(new Supervisor(new Transport()), slobrokList));
     }
 
-    void updateSlobrokList(SuperModel superModel) {
-        // If we ever need to optimize this method, then we should make this class
-        // have a Map<ApplicationId, List<String>>, mapping each application to
-        // its list of specs. Then, whenever a single application is activated or removed,
-        // only modify that List<String>.
+    void updateSlobrokList(ApplicationInfo application) {
+        List<String> slobrokSpecs = getSlobrokSpecs(application);
+        slobrokList.setup(slobrokSpecs.toArray(new String[0]));
+    }
 
+    List<String> getSlobrokSpecs(ApplicationInfo applicationInfo) {
         List<String> slobrokSpecs = new ArrayList<>();
 
-        for (ApplicationInfo application : superModel.getAllApplicationInfos()) {
-            for (HostInfo host : application.getModel().getHosts()) {
-                for (ServiceInfo service : host.getServices()) {
-                    if (!Objects.equals(service.getServiceType(), SLOBROK_SERVICE_TYPE)) {
-                        continue;
-                    }
+        for (HostInfo host : applicationInfo.getModel().getHosts()) {
+            for (ServiceInfo service : host.getServices()) {
+                if (!Objects.equals(service.getServiceType(), SLOBROK_SERVICE_TYPE)) {
+                    continue;
+                }
 
-                    for (PortInfo port : service.getPorts()) {
-                        if (port.getTags().contains(SLOBROK_RPC_PORT_TAG)) {
-                            Spec spec = new Spec(host.getHostname(), port.getPort());
-                            slobrokSpecs.add(spec.toString());
-                        }
+                for (PortInfo port : service.getPorts()) {
+                    if (port.getTags().contains(SLOBROK_RPC_PORT_TAG)) {
+                        Spec spec = new Spec(host.getHostname(), port.getPort());
+                        slobrokSpecs.add(spec.toString());
                     }
                 }
             }
         }
 
-        slobrokList.setup(slobrokSpecs.toArray(new String[0]));
-    }
-
-    ServiceMonitorStatus getStatus(ServiceType serviceType, ConfigId configId) {
-        Optional<String> slobrokServiceName = lookup(serviceType, configId);
-        if (slobrokServiceName.isPresent()) {
-            if (mirror.lookup(slobrokServiceName.get()).length != 0) {
-                return ServiceMonitorStatus.UP;
-            } else {
-                return ServiceMonitorStatus.DOWN;
-            }
-        } else {
-            return ServiceMonitorStatus.NOT_CHECKED;
-        }
+        return slobrokSpecs;
     }
 
     @Override
     public void close() {
+        // TODO: Make sure registeredInSlobrok returns DOWN from now on (concurrently)
         mirror.shutdown();
     }
 
-    // Package-private for testing
-    Optional<String> lookup(ServiceType serviceType, ConfigId configId) {
-        switch (serviceType.s()) {
-            case "adminserver":
-            case "config-sentinel":
-            case "configproxy":
-            case "configserver":
-            case "filedistributorservice":
-            case "logd":
-            case "logserver":
-            case "metricsproxy":
-            case "slobrok":
-            case "transactionlogserver":
-                return Optional.empty();
-
-            case "topleveldispatch":
-                return Optional.of(configId.s());
-
-            case "qrserver":
-            case "container":
-            case "docprocservice":
-            case "container-clustercontroller":
-                return Optional.of("vespa/service/" + configId.s());
-
-            case "searchnode": //TODO: handle only as storagenode instead of both as searchnode/storagenode
-                return Optional.of(configId.s() + "/realtimecontroller");
-            case "distributor":
-            case "storagenode":
-                return Optional.of("storage/cluster." + configId.s());
-            default:
-                log.log(LogLevel.DEBUG, "Unknown service type " + serviceType.s() + " with config id " + configId.s());
-                return Optional.empty();
-        }
+    boolean registeredInSlobrok(String slobrokServiceName) {
+        return mirror.lookup(slobrokServiceName).length > 0;
     }
 }

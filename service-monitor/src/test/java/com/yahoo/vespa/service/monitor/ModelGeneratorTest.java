@@ -41,15 +41,16 @@ public class ModelGeneratorTest {
         List<String> configServerHosts = Stream.of("cfg1", "cfg2", "cfg3")
                 .collect(Collectors.toList());
 
-        SlobrokMonitor2 slobrokMonitor = mock(SlobrokMonitor2.class);
-        when(slobrokMonitor.getStatus(any(), any())).thenReturn(ServiceMonitorStatus.UP);
+        SlobrokMonitorManager slobrokMonitorManager = mock(SlobrokMonitorManager.class);
+        when(slobrokMonitorManager.getStatus(any(), any(), any()))
+                .thenReturn(ServiceMonitorStatus.UP);
 
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(
                         superModel,
                         zone,
                         configServerHosts,
-                        slobrokMonitor);
+                        slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,
                 ApplicationInstance<ServiceMonitorStatus>> applicationInstances =
@@ -84,15 +85,16 @@ public class ModelGeneratorTest {
 
         List<String> configServerHosts = Collections.emptyList();
 
-        SlobrokMonitor2 slobrokMonitor = mock(SlobrokMonitor2.class);
-        when(slobrokMonitor.getStatus(any(), any())).thenReturn(ServiceMonitorStatus.UP);
+        SlobrokMonitorManager slobrokMonitorManager = mock(SlobrokMonitorManager.class);
+        when(slobrokMonitorManager.getStatus(any(), any(), any()))
+                .thenReturn(ServiceMonitorStatus.UP);
 
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(
                         superModel,
                         zone,
                         configServerHosts,
-                        slobrokMonitor);
+                        slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,
                 ApplicationInstance<ServiceMonitorStatus>> applicationInstances =

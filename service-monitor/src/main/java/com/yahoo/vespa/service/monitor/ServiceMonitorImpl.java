@@ -18,16 +18,16 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     private static final Logger logger = Logger.getLogger(ServiceMonitorImpl.class.getName());
 
     private final Zone zone;
-    private final List<String> configServerHostnames;
-    private final SlobrokMonitor2 slobrokMonitor = new SlobrokMonitor2();
+    private final List<String> configServerHosts;
+    private final SlobrokMonitorManager slobrokMonitorManager = new SlobrokMonitorManager();
     private final SuperModelListenerImpl superModelListener =
-            new SuperModelListenerImpl(slobrokMonitor);
+            new SuperModelListenerImpl(slobrokMonitorManager);
 
     @Inject
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
                               ConfigserverConfig configserverConfig) {
         this.zone = superModelProvider.getZone();
-        this.configServerHostnames = toConfigServerList(configserverConfig);
+        this.configServerHosts = toConfigServerList(configserverConfig);
         superModelListener.start(superModelProvider);
     }
 
@@ -47,7 +47,7 @@ public class ServiceMonitorImpl implements ServiceMonitor {
         // If we ever need to optimize this method, then consider reusing ServiceModel snapshots
         // for up to X ms.
         ServiceModel serviceModel =
-                superModelListener.createServiceModelSnapshot(zone, configServerHostnames);
+                superModelListener.createServiceModelSnapshot(zone, configServerHosts);
         return serviceModel.getAllApplicationInstances();
     }
 }
