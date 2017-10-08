@@ -7,6 +7,8 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.service.monitor.internal.LatencyMeasurement;
+import com.yahoo.vespa.service.monitor.internal.ServiceMonitorMetrics;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -14,14 +16,18 @@ import java.util.logging.Logger;
 public class SuperModelListenerImpl implements SuperModelListener {
     private static final Logger logger = Logger.getLogger(SuperModelListenerImpl.class.getName());
 
+    private final ServiceMonitorMetrics metrics;
+
     // superModel and slobrokMonitorManager are always updated together
     // and atomically using this monitor.
     private final Object monitor = new Object();
     private final SlobrokMonitorManager slobrokMonitorManager;
     private SuperModel superModel;
 
-    SuperModelListenerImpl(SlobrokMonitorManager slobrokMonitorManager) {
+    SuperModelListenerImpl(SlobrokMonitorManager slobrokMonitorManager,
+                           ServiceMonitorMetrics metrics) {
         this.slobrokMonitorManager = slobrokMonitorManager;
+        this.metrics = metrics;
     }
 
     void start(SuperModelProvider superModelProvider) {
@@ -55,14 +61,18 @@ public class SuperModelListenerImpl implements SuperModelListener {
     ServiceModel createServiceModelSnapshot(Zone zone, List<String> configServerHostnames) {
         ModelGenerator modelGenerator = new ModelGenerator();
 
-        // TODO: Add latency and calls-per-second metrics
-        // If calculating the service model is too expensive per call, then
-        // cache the generated snapshot, invalidate after X seconds.
-        // WARNING: The slobrok monitor manager may be out-of-sync with super model (no locking)
-        return modelGenerator.toServiceModel(
-                superModel,
-                zone,
-                configServerHostnames,
-                slobrokMonitorManager);
+        try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
+            // Reference 'measurement' in a dummy statement, otherwise the compiler
+            // complains about "auto-closeable resource is never referenced in body of
+            // corresponding try statement". Why hasn't javac fixed this!?
+            measurement.hashCode();
+
+            // WARNING: The slobrok monitor manager may be out-of-sync with super model (no locking)
+            return modelGenerator.toServiceModel(
+                    superModel,
+                    zone,
+                    configServerHostnames,
+                    slobrokMonitorManager);
+        }
     }
 }
