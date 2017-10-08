@@ -293,6 +293,7 @@ public class Mirror implements IMirror {
             target.close();
             target = null;
         }
+        specs = new Entry[0];
     }
 
     /**
