@@ -27,7 +27,7 @@ public class PolledBuildSystem implements BuildSystem {
     private static final Logger log = Logger.getLogger(PolledBuildSystem.class.getName());
 
     // The number of jobs to offer, on each poll, for zones that have limited capacity
-    private static final int maxCapacityConstraintedJobsToOffer = 2;
+    private static final int maxCapacityConstrainedJobsToOffer = 2;
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -95,7 +95,7 @@ public class PolledBuildSystem implements BuildSystem {
 
                     // Return a limited number of jobs at a time for capacity constrained zones
                     if (removeFromQueue && isCapacityConstrained(jobType) &&
-                        ++capacityConstrainedJobsOffered >= maxCapacityConstraintedJobsToOffer) {
+                        ++capacityConstrainedJobsOffered >= maxCapacityConstrainedJobsToOffer) {
                         break;
                     }
                 }

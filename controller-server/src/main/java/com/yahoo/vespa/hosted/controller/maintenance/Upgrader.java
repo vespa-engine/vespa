@@ -73,6 +73,7 @@ public class Upgrader extends Maintainer {
         Instant startOfUpgradePeriod = controller().clock().instant().minus(upgradeTimeout);
         cancelUpgradesOf(applications.upgradingToLowerThan(version));
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
+        applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.notDeployingApplication(); // wait with applications deploying an application change
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
