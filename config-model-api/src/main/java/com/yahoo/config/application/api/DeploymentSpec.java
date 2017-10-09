@@ -48,28 +48,28 @@ public class DeploymentSpec {
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
-    private final List<TimeWindow> blockUpgrades;
+    private final List<ChangeBlocker> changeBlockers;
     private final List<Step> steps;
     private final String xmlForm;
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                          List<TimeWindow> blockUpgrades, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, blockUpgrades, steps, null);
+                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
+        this(globalServiceId, upgradePolicy, changeBlockers, steps, null);
     }
 
     private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                           List<TimeWindow> blockUpgrades, List<Step> steps, String xmlForm) {
+                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
-        this.blockUpgrades = blockUpgrades;
+        this.changeBlockers = changeBlockers;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
         validateZones(this.steps);
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
-    private static void validateTotalDelay(List<Step> steps) {
+    private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().filter(step -> step instanceof Delay)
                                                .mapToLong(delay -> ((Delay)delay).duration().getSeconds())
                                                .sum();
@@ -123,7 +123,6 @@ public class DeploymentSpec {
     /** 
      * Removes the first occurrence of a deployment step to the given environment and returns it.
      * 
-     * @param environment
      * @return the removed step, or null if it is not present
      */
     private static DeclaredZone remove(Environment environment, List<Step> steps) {
@@ -144,11 +143,18 @@ public class DeploymentSpec {
 
     /** Returns whether upgrade can occur at the given instant */
     public boolean canUpgradeAt(Instant instant) {
-        return blockUpgrades.stream().noneMatch(timeWindow -> timeWindow.includes(instant));
+        return changeBlockers.stream().filter(block -> block.blocksVersions())
+                                      .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns time windows where upgrade is disallowed */
-    public List<TimeWindow> blockUpgrades() { return blockUpgrades; }
+    /** Returns whether an application revision change can occur at the given instant */
+    public boolean canChangeRevisionAt(Instant instant) {
+        return changeBlockers.stream().filter(block -> block.blocksRevisions())
+                                      .noneMatch(block -> block.window().includes(instant));
+    }
+
+    /** Returns time windows where upgrades are disallowed */
+    public List<ChangeBlocker> changeBlocker() { return changeBlockers; }
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() { return steps; }
@@ -223,8 +229,7 @@ public class DeploymentSpec {
             else if (readGlobalServiceId(environmentTag).isPresent())
                 throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
         }
-        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readBlockUpgradeWindows(root), steps,
-                                  xmlForm);
+        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readChangeBlockers(root), steps, xmlForm);
     }
     
     /** Returns the given attribute as an integer, or 0 if it is not present */
@@ -259,21 +264,31 @@ public class DeploymentSpec {
         }
     }
 
-    private static List<TimeWindow> readBlockUpgradeWindows(Element root) {
-        List<TimeWindow> timeWindows = new ArrayList<>();
+    private static List<ChangeBlocker> readChangeBlockers(Element root) {
+        List<ChangeBlocker> changeBlockers = new ArrayList<>();
         for (Element tag : XML.getChildren(root)) {
-            if (!"block-upgrade".equals(tag.getTagName())) {
-                continue;
-            }
+            // TODO: Remove block-upgrade on Vespa 7
+            if ( ! "block-change".equals(tag.getTagName()) && !"block-upgrade".equals(tag.getTagName())) continue;
+            
+            boolean blockVersions = trueOrMissing(tag.getAttribute("versions"));
+            boolean blockRevisions = trueOrMissing(tag.getAttribute("revisions")) 
+                                    && !tag.getTagName().equals("block-upgrade"); //  TODO: Remove condition on Vespa 7
+
             String daySpec = tag.getAttribute("days");
             String hourSpec = tag.getAttribute("hours");
             String zoneSpec = tag.getAttribute("time-zone");
             if (zoneSpec.isEmpty()) { // Default to UTC time zone
                 zoneSpec = "UTC";
             }
-            timeWindows.add(TimeWindow.from(daySpec, hourSpec, zoneSpec));
+            changeBlockers.add(new ChangeBlocker(blockRevisions, blockVersions, 
+                                                 TimeWindow.from(daySpec, hourSpec, zoneSpec)));
         }
-        return Collections.unmodifiableList(timeWindows);
+        return Collections.unmodifiableList(changeBlockers);
+    }
+    
+    /** Returns true if the given value is "true", or if it is missing */
+    private static boolean trueOrMissing(String value) {
+        return value == null || value.isEmpty() || value.equals("true");
     }
     
     private static UpgradePolicy readUpgradePolicy(Element root) {
@@ -472,6 +487,25 @@ public class DeploymentSpec {
         defaultPolicy,
         /** Will upgrade after most default applications upgraded successfully */
         conservative
+    }
+
+    /** A blocking of changes in a given time window */
+    public static class ChangeBlocker {
+        
+        private final boolean revision;
+        private final boolean version;
+        private final TimeWindow window;
+        
+        private ChangeBlocker(boolean revision, boolean version, TimeWindow window) {
+            this.revision = revision;
+            this.version = version;
+            this.window = window;
+        }
+        
+        public boolean blocksRevisions() { return revision; }
+        public boolean blocksVersions() { return version; }
+        public TimeWindow window() { return window; }
+        
     }
 
 }
