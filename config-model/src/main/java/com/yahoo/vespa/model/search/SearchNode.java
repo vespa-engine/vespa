@@ -58,7 +58,7 @@ public class SearchNode extends AbstractService implements
     private final Optional<Tuning> tuning;
     private static final int RPC_PORT = 0;
     private static final int FS4_PORT = 1;
-    private static final int HEALTH_PORT = 2;
+    private static final int HEALTH_PORT = 4;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<SearchNode> {
 
