@@ -245,7 +245,7 @@ public:
     bool validate(search::queryeval::SearchIterator *iterator, bool verbose) const;
 
     bool
-    validate(std::shared_ptr<search::diskindex::FieldReader> &fieldReader,
+    validate(search::diskindex::FieldReader &fieldReader,
              uint32_t wordNum,
              const fef::TermFieldMatchDataArray &matchData,
              bool verbose) const;
@@ -254,7 +254,7 @@ public:
     void validate(const BitVector &bv) const;
 
     bool
-    dump(std::shared_ptr<search::diskindex::FieldWriter> &fieldWriter,
+    dump(search::diskindex::FieldWriter &fieldWriter,
          bool verbose) const;
 
     const std::string &getName() const { return _name; }

@@ -32,14 +32,15 @@ FieldWriter::FieldWriter(uint32_t docIdLimit,
 
 FieldWriter::~FieldWriter() { }
 
-void
-FieldWriter::earlyOpen(const vespalib::string &prefix,
-                       uint32_t minSkipDocs,
-                       uint32_t minChunkDocs,
-                       bool dynamicKPosOccFormat,
-                       const Schema &schema,
-                       const uint32_t indexId,
-                       const TuneFileSeqWrite &tuneFileWrite)
+bool
+FieldWriter::open(const vespalib::string &prefix,
+                  uint32_t minSkipDocs,
+                  uint32_t minChunkDocs,
+                  bool dynamicKPosOccFormat,
+                  const Schema &schema,
+                  const uint32_t indexId,
+                  const TuneFileSeqWrite &tuneFileWrite,
+                  const FileHeaderContext &fileHeaderContext)
 {
     _prefix = prefix;
     vespalib::string name = prefix + "posocc.dat.compressed";
@@ -62,7 +63,7 @@ FieldWriter::earlyOpen(const vespalib::string &prefix,
         params.set("minChunkDocs", minChunkDocs);
     }
 
-    _dictFile.reset(new PageDict4FileSeqWrite);
+    _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
     _posoccfile.reset(diskindex::makePosOccWrite(name,
@@ -73,15 +74,7 @@ FieldWriter::earlyOpen(const vespalib::string &prefix,
                                                  schema,
                                                  indexId,
                                                  tuneFileWrite));
-}
-
-
-bool
-FieldWriter::lateOpen(const TuneFileSeqWrite &tuneFileWrite,
-                      const FileHeaderContext &fileHeaderContext)
-{
     vespalib::string cname = _prefix + "dictionary";
-    vespalib::string name = _prefix + "posocc.dat.compressed";
 
     // Open output dictionary file
     if (!_dictFile->open(cname, tuneFileWrite, fileHeaderContext)) {

@@ -116,14 +116,6 @@ public:
           const DocIdMapping &docIdMapping);
 
     virtual bool
-    earlyOpen(const vespalib::string &prefix,
-              const TuneFileSeqRead &tuneFileRead);
-
-    virtual bool
-    lateOpen(const vespalib::string &prefix,
-             const TuneFileSeqRead &tuneFileRead);
-
-    virtual bool
     open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead);
 
     virtual bool
@@ -159,14 +151,6 @@ public:
     FieldReaderEmpty(const IndexIterator &index);
 
     virtual bool
-    earlyOpen(const vespalib::string &prefix,
-              const TuneFileSeqRead &tuneFileRead) override;
-
-    virtual bool
-    lateOpen(const vespalib::string &prefix,
-             const TuneFileSeqRead &tuneFileRead) override;
-
-    virtual bool
     open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead)
         override;
 
@@ -200,4 +184,3 @@ public:
 } // namespace diskindex
 
 } // namespace search
-

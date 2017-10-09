@@ -71,12 +71,10 @@ public:
 
     uint64_t getSparseWordNum() const { return _wordNum; }
 
-    void earlyOpen(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
-                   bool dynamicKPosOccFormat, const Schema &schema, uint32_t indexId,
-                   const TuneFileSeqWrite &tuneFileWrite);
-
-    bool lateOpen(const TuneFileSeqWrite &tuneFileWrite,
-                  const search::common::FileHeaderContext &fileHeaderContext);
+    bool open(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
+              bool dynamicKPosOccFormat, const Schema &schema, uint32_t indexId,
+              const TuneFileSeqWrite &tuneFileWrite,
+              const search::common::FileHeaderContext &fileHeaderContext);
 
     bool close();
 

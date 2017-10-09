@@ -106,8 +106,8 @@ FieldReader::setup(const WordNumMapping &wordNumMapping,
 
 
 bool
-FieldReader::earlyOpen(const vespalib::string &prefix,
-                       const TuneFileSeqRead &tuneFileRead)
+FieldReader::open(const vespalib::string &prefix,
+                  const TuneFileSeqRead &tuneFileRead)
 {
     vespalib::string name = prefix + "posocc.dat.compressed";
     FastOS_StatInfo statInfo;
@@ -122,28 +122,20 @@ FieldReader::earlyOpen(const vespalib::string &prefix,
         return false;
     }
 
-    _dictFile.reset(new search::diskindex::PageDict4FileSeqRead);
+    _dictFile = std::make_unique<PageDict4FileSeqRead>();
     PostingListParams featureParams;
-    _oldposoccfile.reset(search::diskindex::makePosOccRead(name,
-                                  _dictFile.get(),
-                                  dynamicKPosOccFormat,
-                                  featureParams,
-                                  tuneFileRead));
-    return true;
-}
-
-
-bool
-FieldReader::lateOpen(const vespalib::string &prefix,
-                      const TuneFileSeqRead &tuneFileRead)
-{
+    _oldposoccfile.reset(makePosOccRead(name,
+                                        _dictFile.get(),
+                                        dynamicKPosOccFormat,
+                                        featureParams,
+                                        tuneFileRead));
     vespalib::string cname = prefix + "dictionary";
-    vespalib::string name = prefix + "posocc.dat.compressed";
 
     if (!_dictFile->open(cname, tuneFileRead)) {
         LOG(error,
             "Could not open posocc count file %s for read",
             cname.c_str());
+        return false;
     }
 
     // open posocc.dat
@@ -151,6 +143,7 @@ FieldReader::lateOpen(const vespalib::string &prefix,
         LOG(error,
             "Could not open posocc file %s for read",
             name.c_str());
+        return false;
     }
     _oldWordNum = noWordNum();
     _wordNum = _oldWordNum;
@@ -159,17 +152,6 @@ FieldReader::lateOpen(const vespalib::string &prefix,
     params.get("docIdLimit", _docIdLimit);
     return true;
 }
-
-
-bool
-FieldReader::open(const vespalib::string &prefix,
-                  const TuneFileSeqRead &tuneFileRead)
-{
-    if (!earlyOpen(prefix, tuneFileRead))
-        return false;
-    return lateOpen(prefix, tuneFileRead);
-}
-
 
 bool
 FieldReader::close()
@@ -230,26 +212,6 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
 FieldReaderEmpty::FieldReaderEmpty(const IndexIterator &index)
     : _index(index)
 {
-}
-
-
-bool
-FieldReaderEmpty::earlyOpen(const vespalib::string &prefix,
-                            const TuneFileSeqRead &tuneFileRead)
-{
-    (void) prefix;
-    (void) tuneFileRead;
-    return true;
-}
-
-
-bool
-FieldReaderEmpty::lateOpen(const vespalib::string &prefix,
-                           const TuneFileSeqRead &tuneFileRead)
-{
-    (void) prefix;
-    (void) tuneFileRead;
-    return true;
 }
 
 

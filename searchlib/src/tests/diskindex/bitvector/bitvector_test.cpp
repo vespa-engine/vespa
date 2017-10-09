@@ -47,8 +47,7 @@ FieldWriterWrapper::open(const std::string &path,
                         const common::FileHeaderContext &fileHeaderContext)
 {
     vespalib::mkdir(path, false);
-    _writer.earlyOpen(path, 64, 10000, false, schema, indexId, tuneFileWrite);
-    return _writer.lateOpen(tuneFileWrite, fileHeaderContext);
+    return _writer.open(path, 64, 10000, false, schema, indexId, tuneFileWrite, fileHeaderContext);
 }
 
 FieldWriterWrapper &

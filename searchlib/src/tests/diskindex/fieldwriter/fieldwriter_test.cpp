@@ -87,9 +87,6 @@ makeWordString(uint64_t wordNum)
 }
 
 
-typedef std::shared_ptr<FieldReader> FieldReaderSP;
-typedef std::shared_ptr<FieldWriter> FieldWriterSP;
-
 class FieldWriterTest : public FastOS_Application
 {
 private:
@@ -143,7 +140,7 @@ FieldWriterTest::~FieldWriterTest()
 class WrappedFieldWriter
 {
 public:
-    FieldWriterSP _fieldWriter;
+    std::unique_ptr<FieldWriter> _fieldWriter;
 private:
     bool _dynamicK;
     uint32_t _numWordIds;
@@ -160,8 +157,6 @@ public:
                       uint32_t docIdLimit);
     ~WrappedFieldWriter();
 
-    void earlyOpen();
-    void lateOpen();
     void open();
     void close();
 };
@@ -187,32 +182,16 @@ WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
 
 
 void
-WrappedFieldWriter::earlyOpen()
-{
-    TuneFileSeqWrite tuneFileWrite;
-    _fieldWriter.reset(new  FieldWriter(_docIdLimit, _numWordIds));
-    _fieldWriter->earlyOpen(_namepref,
-                            minSkipDocs, minChunkDocs, _dynamicK, _schema,
-                            _indexId,
-                            tuneFileWrite);
-}
-
-
-void
-WrappedFieldWriter::lateOpen()
+WrappedFieldWriter::open()
 {
     TuneFileSeqWrite tuneFileWrite;
     DummyFileHeaderContext fileHeaderContext;
     fileHeaderContext.disableFileName();
-    _fieldWriter->lateOpen(tuneFileWrite, fileHeaderContext);
-}
-
-
-void
-WrappedFieldWriter::open()
-{
-    earlyOpen();
-    lateOpen();
+    _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds);
+    _fieldWriter->open(_namepref,
+                       minSkipDocs, minChunkDocs, _dynamicK, _schema,
+                       _indexId,
+                       tuneFileWrite, fileHeaderContext);
 }
 
 
@@ -227,7 +206,7 @@ WrappedFieldWriter::close()
 class WrappedFieldReader
 {
 public:
-    FieldReaderSP _fieldReader;
+    std::unique_ptr<FieldReader> _fieldReader;
 private:
     std::string _namepref;
     uint32_t _numWordIds;
@@ -243,8 +222,6 @@ public:
                       uint32_t docIdLimit);
 
     ~WrappedFieldReader();
-    void earlyOpen();
-    void lateOpen();
     void open();
     void close();
 };
@@ -276,34 +253,16 @@ WrappedFieldReader::~WrappedFieldReader()
 {
 }
 
-
 void
-WrappedFieldReader::earlyOpen()
-{
-    TuneFileSeqRead tuneFileRead;
-    _fieldReader.reset(new FieldReader());
-    _fieldReader->earlyOpen(_namepref, tuneFileRead);
-}
-
-
-void
-WrappedFieldReader::lateOpen()
+WrappedFieldReader::open()
 {
     TuneFileSeqRead tuneFileRead;
     _wmap.setup(_numWordIds);
     _dmap.setup(_docIdLimit);
+    _fieldReader = std::make_unique<FieldReader>();
     _fieldReader->setup(_wmap, _dmap);
-    _fieldReader->lateOpen(_namepref, tuneFileRead);
+    _fieldReader->open(_namepref, tuneFileRead);
 }
-
-
-void
-WrappedFieldReader::open()
-{
-    earlyOpen();
-    lateOpen();
-}
-
 
 void
 WrappedFieldReader::close()
@@ -343,7 +302,7 @@ writeField(FakeWordSet &wordSet,
         for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
             FakeWord &fw = *wordSet._words[wc][wi];
             ostate._fieldWriter->newWord(makeWordString(wordNum));
-            fw.dump(ostate._fieldWriter, false);
+            fw.dump(*ostate._fieldWriter, false);
             ++wordNum;
         }
     }
@@ -396,7 +355,7 @@ readField(FakeWordSet &wordSet,
             TermFieldMatchDataArray tfmda;
             tfmda.add(&mdfield1);
 
-            fw.validate(istate._fieldReader, wordNum,
+            fw.validate(*istate._fieldReader, wordNum,
                         tfmda, verbose);
             ++wordNum;
         }
