@@ -9,10 +9,8 @@
 #include <vespa/searchlib/index/postinglisthandle.h>
 #include <vespa/searchlib/diskindex/zcposocc.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
-#include <vespa/searchlib/diskindex/checkpointfile.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -29,7 +27,6 @@ using search::TuneFileRandRead;
 using search::TuneFileSeqRead;
 using search::TuneFileSeqWrite;
 using search::common::FileHeaderContext;
-using search::diskindex::CheckPointFile;
 using search::diskindex::DocIdMapping;
 using search::diskindex::FieldReader;
 using search::diskindex::FieldWriter;
@@ -48,7 +45,6 @@ using search::index::SchemaUtil;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using search::queryeval::SearchIterator;
-using vespalib::nbostream;
 
 using namespace search::index;
 
@@ -144,7 +140,7 @@ FieldWriterTest::~FieldWriterTest()
 }
 
 
-class WrappedFieldWriter : public search::fakedata::CheckPointCallback
+class WrappedFieldWriter
 {
 public:
     FieldWriterSP _fieldWriter;
@@ -164,13 +160,10 @@ public:
                       uint32_t docIdLimit);
     ~WrappedFieldWriter();
 
-    void checkPoint() override;
     void earlyOpen();
     void lateOpen();
     void open();
     void close();
-    void writeCheckPoint();
-    void readCheckPoint(bool first);
 };
 
 WrappedFieldWriter::~WrappedFieldWriter() {}
@@ -231,43 +224,7 @@ WrappedFieldWriter::close()
 }
 
 
-void
-WrappedFieldWriter::writeCheckPoint()
-{
-    CheckPointFile chkptfile("chkpt");
-    nbostream out;
-    _fieldWriter->checkPointWrite(out);
-    chkptfile.write(out, DummyFileHeaderContext());
-}
-
-
-void
-WrappedFieldWriter::readCheckPoint(bool first)
-{
-    CheckPointFile chkptfile("chkpt");
-    nbostream in;
-    bool openRes = chkptfile.read(in);
-    assert(first || openRes);
-    (void) first;
-    if (!openRes)
-        return;
-    _fieldWriter->checkPointRead(in);
-    assert(in.empty());
-}
-
-
-void
-WrappedFieldWriter::checkPoint()
-{
-    writeCheckPoint();
-    _fieldWriter.reset();
-    earlyOpen();
-    readCheckPoint(false);
-    lateOpen();
-}
-
-
-class WrappedFieldReader : public search::fakedata::CheckPointCallback
+class WrappedFieldReader
 {
 public:
     FieldReaderSP _fieldReader;
@@ -290,17 +247,13 @@ public:
     void lateOpen();
     void open();
     void close();
-    void writeCheckPoint();
-    void readCheckPoint(bool first);
-    virtual void checkPoint() override;
 };
 
 
 WrappedFieldReader::WrappedFieldReader(const vespalib::string &namepref,
                                      uint32_t numWordIds,
                                      uint32_t docIdLimit)
-    : search::fakedata::CheckPointCallback(),
-      _fieldReader(),
+    : _fieldReader(),
       _namepref(dirprefix + namepref),
       _numWordIds(numWordIds),
       _docIdLimit(docIdLimit),
@@ -361,42 +314,6 @@ WrappedFieldReader::close()
 
 
 void
-WrappedFieldReader::writeCheckPoint()
-{
-    CheckPointFile chkptfile("chkpt");
-    nbostream out;
-    _fieldReader->checkPointWrite(out);
-    chkptfile.write(out, DummyFileHeaderContext());
-}
-
-
-void
-WrappedFieldReader::readCheckPoint(bool first)
-{
-    CheckPointFile chkptfile("chkpt");
-    nbostream in;
-    bool openRes = chkptfile.read(in);
-    assert(first || openRes);
-    (void) first;
-    if (!openRes)
-        return;
-    _fieldReader->checkPointRead(in);
-    assert(in.empty());
-}
-
-
-void
-WrappedFieldReader::checkPoint()
-{
-    writeCheckPoint();
-    _fieldReader.reset();
-    earlyOpen();
-    readCheckPoint(false);
-    lateOpen();
-}
-
-
-void
 writeField(FakeWordSet &wordSet,
            uint32_t docIdLimit,
            const std::string &namepref,
@@ -422,16 +339,11 @@ writeField(FakeWordSet &wordSet,
     ostate.open();
 
     unsigned int wordNum = 1;
-    uint32_t checkPointCheck = 0;
-    uint32_t checkPointInterval = 12227;
     for (unsigned int wc = 0; wc < wordSet._words.size(); ++wc) {
         for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
             FakeWord &fw = *wordSet._words[wc][wi];
             ostate._fieldWriter->newWord(makeWordString(wordNum));
-            fw.dump(ostate._fieldWriter, false,
-                    checkPointCheck,
-                    checkPointInterval,
-                    NULL);
+            fw.dump(ostate._fieldWriter, false);
             ++wordNum;
         }
     }
@@ -441,74 +353,6 @@ writeField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave writeField, "
-        "namepref=%s, dynamicK=%s"
-        " elapsed=%10.6f",
-        namepref.c_str(),
-        dynamicKStr,
-        after - before);
-}
-
-
-void
-writeFieldCheckPointed(FakeWordSet &wordSet,
-             uint32_t docIdLimit,
-             const std::string &namepref,
-             bool dynamicK)
-{
-    const char *dynamicKStr = dynamicK ? "true" : "false";
-
-    FastOS_Time tv;
-    double before;
-    double after;
-    bool first = true;
-
-    LOG(info,
-        "enter writeFieldCheckPointed, "
-        "namepref=%s, dynamicK=%s",
-        namepref.c_str(),
-        dynamicKStr);
-    tv.SetNow();
-    before = tv.Secs();
-
-    unsigned int wordNum = 1;
-    uint32_t checkPointCheck = 0;
-    uint32_t checkPointInterval = 12227;
-    for (unsigned int wc = 0; wc < wordSet._words.size(); ++wc) {
-        for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
-            FakeWord &fw = *wordSet._words[wc][wi];
-
-            WrappedFieldWriter ostate(namepref,
-                                     dynamicK,
-                                     wordSet.getNumWords(), docIdLimit);
-            ostate.earlyOpen();
-            ostate.readCheckPoint(first);
-            first = false;
-            ostate.lateOpen();
-            ostate._fieldWriter->newWord(makeWordString(wordNum));
-            fw.dump(ostate._fieldWriter, false,
-                    checkPointCheck,
-                    checkPointInterval,
-                    &ostate);
-            ostate.writeCheckPoint();
-            ++wordNum;
-        }
-    }
-    do {
-        WrappedFieldWriter ostate(namepref,
-                                 dynamicK,
-                                 wordSet.getNumWords(), docIdLimit);
-        ostate.earlyOpen();
-        ostate.readCheckPoint(first);
-        ostate.lateOpen();
-        ostate.close();
-    } while (0);
-    CheckPointFile dropper("chkpt");
-    dropper.remove();
-
-    tv.SetNow();
-    after = tv.Secs();
-    LOG(info,
-        "leave writeFieldCheckPointed, "
         "namepref=%s, dynamicK=%s"
         " elapsed=%10.6f",
         namepref.c_str(),
@@ -545,8 +389,6 @@ readField(FakeWordSet &wordSet,
     TermFieldMatchData mdfield1;
 
     unsigned int wordNum = 1;
-    uint32_t checkPointCheck = 0;
-    uint32_t checkPointInterval = 12227;
     for (unsigned int wc = 0; wc < wordSet._words.size(); ++wc) {
         for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
             FakeWord &fw = *wordSet._words[wc][wi];
@@ -555,8 +397,7 @@ readField(FakeWordSet &wordSet,
             tfmda.add(&mdfield1);
 
             fw.validate(istate._fieldReader, wordNum,
-                        tfmda, verbose,
-                        checkPointCheck, checkPointInterval, &istate);
+                        tfmda, verbose);
             ++wordNum;
         }
     }
@@ -564,8 +405,6 @@ readField(FakeWordSet &wordSet,
     istate.close();
     tv.SetNow();
     after = tv.Secs();
-    CheckPointFile dropper("chkpt");
-    dropper.remove();
     LOG(info,
         "leave readField, "
         "namepref=%s, dynamicK=%s"
@@ -762,35 +601,23 @@ void
 testFieldWriterVariants(FakeWordSet &wordSet,
                         uint32_t docIdLimit, bool verbose)
 {
-    CheckPointFile dropper("chkpt");
-    dropper.remove();
     disableSkip();
     writeField(wordSet, docIdLimit, "new4", true);
     readField(wordSet, docIdLimit, "new4", true, verbose);
     readField(wordSet, docIdLimit, "new4", true, verbose);
-    writeFieldCheckPointed(wordSet, docIdLimit, "new6", true);
     writeField(wordSet, docIdLimit, "new5", false);
     readField(wordSet, docIdLimit, "new5", false, verbose);
-    writeFieldCheckPointed(wordSet, docIdLimit, "new7", false);
     enableSkip();
     writeField(wordSet, docIdLimit, "newskip4", true);
     readField(wordSet, docIdLimit, "newskip4", true, verbose);
-    writeFieldCheckPointed(wordSet, docIdLimit, "newskip6",
-                                      true);
     writeField(wordSet, docIdLimit, "newskip5", false);
     readField(wordSet, docIdLimit, "newskip5", false, verbose);
-    writeFieldCheckPointed(wordSet, docIdLimit, "newskip7",
-                                      false);
     enableSkipChunks();
     writeField(wordSet, docIdLimit, "newchunk4", true);
     readField(wordSet, docIdLimit, "newchunk4", true, verbose);
-    writeFieldCheckPointed(wordSet, docIdLimit, "newchunk6",
-                                      true);
     writeField(wordSet, docIdLimit, "newchunk5", false);
     readField(wordSet, docIdLimit,
                 "newchunk5",false, verbose);
-    writeFieldCheckPointed(wordSet, docIdLimit, "newchunk7",
-                                      false);
     disableSkip();
     fusionField(wordSet.getNumWords(),
                 docIdLimit,
@@ -855,8 +682,6 @@ void
 testFieldWriterVariantsWithHighLids(FakeWordSet &wordSet, uint32_t docIdLimit,
                              bool verbose)
 {
-    CheckPointFile dropper("chkpt");
-    dropper.remove();
     disableSkip();
     writeField(wordSet, docIdLimit, "hlid4", true);
     readField(wordSet, docIdLimit, "hlid4", true, verbose);
