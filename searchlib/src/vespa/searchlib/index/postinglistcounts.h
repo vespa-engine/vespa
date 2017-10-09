@@ -4,8 +4,6 @@
 #include <vector>
 #include <cstdint>
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 namespace index {
@@ -47,12 +45,6 @@ public:
                     _numDocs == rhs._numDocs &&
                     _lastDoc == rhs._lastDoc);
         }
-
-        friend vespalib::nbostream &
-        operator<<(vespalib::nbostream &out, const Segment &segment);
-
-        friend vespalib::nbostream &
-        operator>>(vespalib::nbostream &in, Segment &segment);
     };
 
     /**
@@ -92,12 +84,6 @@ public:
                 _bitLength == rhs._bitLength &&
                 _segments == rhs._segments);
     }
-
-    friend vespalib::nbostream &
-    operator<<(vespalib::nbostream &out, const PostingListCounts &counts);
-
-    friend vespalib::nbostream &
-    operator>>(vespalib::nbostream &in, PostingListCounts &counts);
 };
 
 void swap(PostingListCounts & a, PostingListCounts & b);
@@ -115,12 +101,6 @@ public:
           _accNumDocs(0u),
           _counts()
     { }
-
-    friend vespalib::nbostream &
-    operator<<(vespalib::nbostream &out, const PostingListOffsetAndCounts &offsetAndCounts);
-
-    friend vespalib::nbostream &
-    operator>>(vespalib::nbostream &in, PostingListOffsetAndCounts &offsetAndCounts);
 };
 
 } // namespace index

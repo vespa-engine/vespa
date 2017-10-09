@@ -7,7 +7,6 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistcountfile.h>
-#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.extposocc");
