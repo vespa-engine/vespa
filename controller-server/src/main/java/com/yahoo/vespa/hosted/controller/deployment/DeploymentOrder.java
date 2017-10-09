@@ -52,8 +52,8 @@ public class DeploymentOrder {
             return Collections.emptyList();
         }
 
-        // Always trigger system test after component as deployment spec might not be available yet (e.g. if this is a
-        // new application with no previous deployments)
+        // Always trigger system test after component as deployment spec might not be available yet 
+        // (e.g. if this is a new application with no previous deployments)
         if (job == JobType.component) {
             return Collections.singletonList(JobType.systemTest);
         }
@@ -93,6 +93,9 @@ public class DeploymentOrder {
     public boolean isFirst(JobType job) {
         return job == JobType.component;
     }
+
+    /** Returns whether this is the last job before production */
+    public boolean isLastBeforeProduction(JobType jobType) { return jobType == JobType.stagingTest; }
 
     /** Returns whether the given job is last in a deployment */
     public boolean isLast(JobType job, Application application) {

@@ -366,7 +366,7 @@ public class UpgraderTest {
     }
 
     @Test
-    public void testConsidersBlockUpgradeWindow() {
+    public void testBlockVersionChange() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-26T18:00:00.00Z")); // A tuesday
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
         Version version = Version.fromString("5.0");
@@ -375,7 +375,7 @@ public class UpgraderTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
                 // Block upgrades on tuesday in hours 18 and 19
-                .blockUpgrade("tue", "18-19", "UTC")
+                .blockChange(false, true, "tue", "18-19", "UTC")
                 .region("us-west-1")
                 .build();
 

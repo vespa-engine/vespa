@@ -313,7 +313,7 @@ public class DeploymentSpecTest {
     public void deploymentSpecWithChangeBlocker() {
         StringReader r = new StringReader(
                 "<deployment>\n" +
-                "  <block-change revisions='false' days='mon,tue' hours='15-16'/>\n" +
+                "  <block-change revision='false' days='mon,tue' hours='15-16'/>\n" +
                 "  <block-change days='sat' hours='10' time-zone='CET'/>\n" +
                 "  <prod>\n" +
                 "    <region active='true'>us-west-1</region>\n" +
