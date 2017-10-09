@@ -1,0 +1,29 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.hosted.athenz.identityproviderservice.config
+
+# Athenz domain
+domain                            string
+
+# Athenz service name
+serviceName                       string
+
+# Current key version
+keyVersion                        int           default=0
+
+# HTTPS port for Athenz Provider Service endpoint
+port                              int           default=8443
+
+# File name prefix for private and public key. Component assumes suffix .[priv|pub].<version>.
+keyPathPrefix                     string
+
+# InstanceConfirmation API path
+apiPath                           string        default="/athenz/v1/provider/instance"
+
+# Athenz principal authority header name
+athenzPrincipalHeaderName         string        default="Athenz-Principal-Auth"
+
+# Athenz ZTS server url
+ztsUrl                            string
+
+# Certificate DNS suffix
+certDnsSuffix                     string

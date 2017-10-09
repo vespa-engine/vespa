@@ -499,6 +499,11 @@
                 <version>${jackson2.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.infradna.tool</groupId>
                 <artifactId>bridge-method-annotation</artifactId>
                 <version>1.4</version>
@@ -958,6 +963,7 @@
         <module>application-deploy-plugin</module>
         <module>application-model</module>
         <module>application-preprocessor</module>
+        <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>clustercontroller-apps</module>

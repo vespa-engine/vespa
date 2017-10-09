@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+   http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>athenz-identity-provider-service</artifactId>
+    <packaging>container-plugin</packaging>
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>6-SNAPSHOT</version>
+    </parent>
+    <dependencies>
+        <!-- COMPILE -->
+        <dependency>
+            <groupId>com.yahoo.athenz</groupId>
+            <artifactId>athenz-zms-java-client</artifactId>
+            <scope>compile</scope>
+            <exclusions>
+                <!--Exclude all Jersey bundles provided by JDisc-->
+                <exclusion>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                    <artifactId>jersey-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish.jersey.media</groupId>
+                    <artifactId>jersey-media-json-jackson</artifactId>
+                </exclusion>
+                <!-- BouncyCastle is not bundled due to class loading issues
+                when security provider is registered from inside a OSGi bundle -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.athenz</groupId>
+            <artifactId>athenz-zts-java-client</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- PROVIDED -->
+        <!-- BouncyCastle should be available through jdisc_http_service at runtime -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-test</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.4.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
