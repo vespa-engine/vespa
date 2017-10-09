@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
@@ -109,6 +110,12 @@ public class ApplicationList {
      */
     public ApplicationList notPullRequest() {
         return listOf(list.stream().filter(a -> ! a.id().instance().value().startsWith("default-pr")));
+    }
+
+    /** Returns the subset of applications which have at least one production deployment */
+    public ApplicationList hasProductionDeployment() {
+        return listOf(list.stream().filter(a -> a.deployments().keySet().stream()
+                .anyMatch(zone -> zone.environment() == Environment.prod)));
     }
 
     /** Returns the subset of applications that are allowed to upgrade at the given time */
