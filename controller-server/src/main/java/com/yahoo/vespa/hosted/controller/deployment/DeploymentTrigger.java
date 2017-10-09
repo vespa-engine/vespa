@@ -65,17 +65,26 @@ public class DeploymentTrigger {
             Application application = applications().require(report.applicationId());
             application = application.withJobCompletion(report, clock.instant(), controller);
             
-            // Handle successful first and last job
-            if (order.isFirst(report.jobType()) && report.success()) { // the first job tells us that a change occurred
-                if (application.deploying().isPresent() && ! application.deploymentJobs().hasFailures()) { // postpone until the current deployment is done
-                    applications().store(application.withOutstandingChange(true), lock);
+            // Handle successful starting and ending
+            if (report.success()) {
+                if (order.isFirst(report.jobType())) {
+                    // the first job tells us that a change occurred
+                    if (application.deploying().isPresent() && !application.deploymentJobs().hasFailures()) { // postpone until the current deployment is done
+                        applications().store(application.withOutstandingChange(true), lock);
+                        return;
+                    } else { // start a new change deployment
+                        application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
+                    }
+                } 
+                else if (order.isLastBeforeProduction(report.jobType()) && application.deployingBlocked(clock.instant())) {
+                    // run tests to provide feedback on errors but stop before production
+                    applications().store(application.withDeploying(Optional.empty()), lock);
                     return;
                 }
-                else { // start a new change deployment
-                    application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
+                else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
+                    // change completed
+                    application = application.withDeploying(Optional.empty());
                 }
-            } else if (order.isLast(report.jobType(), application) && report.success() && application.deploymentJobs().isDeployed(application.deploying())) {
-                application = application.withDeploying(Optional.empty());
             }
 
             // Trigger next

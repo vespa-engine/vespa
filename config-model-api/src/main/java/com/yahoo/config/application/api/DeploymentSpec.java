@@ -270,8 +270,8 @@ public class DeploymentSpec {
             // TODO: Remove block-upgrade on Vespa 7
             if ( ! "block-change".equals(tag.getTagName()) && !"block-upgrade".equals(tag.getTagName())) continue;
             
-            boolean blockVersions = trueOrMissing(tag.getAttribute("versions"));
-            boolean blockRevisions = trueOrMissing(tag.getAttribute("revisions")) 
+            boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
+            boolean blockRevisions = trueOrMissing(tag.getAttribute("revision")) 
                                     && !tag.getTagName().equals("block-upgrade"); //  TODO: Remove condition on Vespa 7
 
             String daySpec = tag.getAttribute("days");

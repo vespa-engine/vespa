@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -11,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -254,6 +257,41 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsWest1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionApNortheast1);
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+    }
+
+    @Test
+    public void testBlockRevisionChange() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:30:00.00Z")); // Tuesday, 17:30
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        ApplicationPackageBuilder applicationPackageBuilder = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                // Block revision changes on tuesday in hours 18 and 19
+                .blockChange(true, false, "tue", "18-19", "UTC")
+                .region("us-west-1");
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
+
+        tester.clock().advance(Duration.ofHours(1)); // Enter block window: 18:30
+        
+        String searchDefinition =
+                "search test {\n" +
+                "  document test {\n" +
+                "    field test type string {\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n";
+        ApplicationPackage changedApplication = applicationPackageBuilder.searchDefinition(searchDefinition).build();
+
+        tester.deployTestOnly(app, changedApplication);
+        assertFalse(tester.application("app1").deploying().isPresent());
+
+        tester.clock().advance(Duration.ofHours(2)); // Exit block window: 20:30
+
+        tester.deployCompletely(app, changedApplication);
+        assertFalse(tester.application("app1").deploying().isPresent());
     }
 
     @Test

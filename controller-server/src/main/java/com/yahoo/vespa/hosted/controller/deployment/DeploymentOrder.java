@@ -94,6 +94,9 @@ public class DeploymentOrder {
         return job == JobType.component;
     }
 
+    /** Returns whether this is the last job before production */
+    public boolean isLastBeforeProduction(JobType jobType) { return jobType == JobType.stagingTest; }
+
     /** Returns whether the given job is last in a deployment */
     public boolean isLast(JobType job, Application application) {
         List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
@@ -105,7 +108,7 @@ public class DeploymentOrder {
         // Step may not exist for all jobs, e.g. component
         return step.map(s -> s.equals(lastStep)).orElse(false);
     }
-
+    
     /** Returns jobs for given deployment spec, in the order they are declared */
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
         return deploymentSpec.steps().stream()

@@ -29,6 +29,7 @@ public class ApplicationPackageBuilder {
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockUpgrade = new StringBuilder();
+    private String searchDefinition = "search test { }";
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
         this.upgradePolicy = upgradePolicy;
@@ -61,14 +62,15 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder blockUpgrade(String daySpec, String hourSpec, String zoneSpec) {
-        blockUpgrade.append("  <block-upgrade days=\"");
-        blockUpgrade.append(daySpec);
-        blockUpgrade.append("\" hours=\"");
-        blockUpgrade.append(hourSpec);
-        blockUpgrade.append("\" time-zone=\"");
-        blockUpgrade.append(zoneSpec);
-        blockUpgrade.append("\"/>\n");
+    public ApplicationPackageBuilder blockChange(boolean revision, boolean version, 
+                                                 String daySpec, String hourSpec, String zoneSpec) {
+        blockUpgrade.append("  <block-change");
+        blockUpgrade.append(" revision='").append(revision).append("'");
+        blockUpgrade.append(" version='").append(version).append("'");
+        blockUpgrade.append(" days='").append(daySpec).append("'");
+        blockUpgrade.append(" hours='").append(hourSpec).append("'");
+        blockUpgrade.append(" time-zone='").append(zoneSpec).append("'");
+        blockUpgrade.append("/>\n");
         return this;
     }
 
@@ -80,7 +82,13 @@ public class ApplicationPackageBuilder {
         validationOverridesBody.append("</allow>\n");
         return this;
     }
-
+    
+    /** Sets the content of the search definition test.sd */
+    public ApplicationPackageBuilder searchDefinition(String testSearchDefinition) {
+        this.searchDefinition = testSearchDefinition;
+        return this;
+    }
+    
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder("<deployment version='1.0'>\n");
         if (upgradePolicy != null) {
@@ -98,12 +106,16 @@ public class ApplicationPackageBuilder {
         xml.append(">\n</deployment>");
         return xml.toString().getBytes(StandardCharsets.UTF_8);
     }
-
+    
     private byte[] validationOverrides() {
         String xml = "<validation-overrides version='1.0'>\n" +
                 validationOverridesBody +
                 "</validation-overrides>\n";
         return xml.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] searchDefinition() { 
+        return searchDefinition.getBytes(StandardCharsets.UTF_8);
     }
 
     public ApplicationPackage build() {
@@ -115,6 +127,9 @@ public class ApplicationPackageBuilder {
             out.closeEntry();
             out.putNextEntry(new ZipEntry("validation-overrides.xml"));
             out.write(validationOverrides());
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("search-definitions/test.sd"));
+            out.write(searchDefinition());
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

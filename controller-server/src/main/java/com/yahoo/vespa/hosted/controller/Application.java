@@ -276,4 +276,16 @@ public class Application {
         return true;
     }
     
+    /** Returns true if there is no outstanding change to deploy - i.e deploying is empty or completedly deployed */
+    public boolean deployingCompleted() { 
+        if ( ! deploying.isPresent()) return true;
+        return deploymentJobs().isDeployed(deploying.get()); 
+    }
+
+    /** Returns true if there is a current change which is blocked from being deployed to production at this instant */
+    public boolean deployingBlocked(Instant instant) {
+        if ( ! deploying.isPresent()) return false;
+        return deploying.get().blockedBy(deploymentSpec, instant);
+    }
+
 }

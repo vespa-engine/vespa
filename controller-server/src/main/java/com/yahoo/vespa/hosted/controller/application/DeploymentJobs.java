@@ -118,14 +118,11 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
-    /** Returns whether change has been deployed completely */
-    public boolean isDeployed(Optional<Change> change) {
-        if (!change.isPresent()) {
-            return true;
-        }
+    /** Returns whether the given change has been deployed completely */
+    public boolean isDeployed(Change change) {
         return status.values().stream()
                 .filter(status -> status.type().isProduction())
-                .allMatch(status -> isSuccessful(change.get(), status.type()));
+                .allMatch(status -> isSuccessful(change, status.type()));
     }
 
     /** Returns whether job has completed successfully */
