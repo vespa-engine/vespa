@@ -5,8 +5,11 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.service.monitor.internal.ServiceMonitorMetrics;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,14 +23,17 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     private final Zone zone;
     private final List<String> configServerHosts;
     private final SlobrokMonitorManager slobrokMonitorManager = new SlobrokMonitorManager();
-    private final SuperModelListenerImpl superModelListener =
-            new SuperModelListenerImpl(slobrokMonitorManager);
+    private final SuperModelListenerImpl superModelListener;
 
     @Inject
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
-                              ConfigserverConfig configserverConfig) {
+                              ConfigserverConfig configserverConfig,
+                              Metric metric,
+                              Timer timer) {
         this.zone = superModelProvider.getZone();
         this.configServerHosts = toConfigServerList(configserverConfig);
+        ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
+        this.superModelListener = new SuperModelListenerImpl(slobrokMonitorManager, metrics);
         superModelListener.start(superModelProvider);
     }
 
