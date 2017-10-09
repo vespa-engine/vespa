@@ -20,16 +20,6 @@ public:
      * Check if a signal to stop has been received.
      **/
     bool receivedStopSignal();
-
-    /**
-     * Check for child process events
-     **/
-    bool receivedChildSignal();
-
-    /**
-     * Clear flag for child process events
-     **/
-    void clearChildSignalFlag();
 };
 
 } // namespace vespalib

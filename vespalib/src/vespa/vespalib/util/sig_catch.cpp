@@ -20,16 +20,4 @@ SigCatch::receivedStopSignal()
             SignalHandler::TERM.check());
 }
 
-bool
-SigCatch::receivedChildSignal()
-{
-    return SignalHandler::CHLD.check();
-}
-
-void
-SigCatch::clearChildSignalFlag()
-{
-    SignalHandler::CHLD.clear();
-}
-
 } // namespace vespalib
