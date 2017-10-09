@@ -65,6 +65,14 @@ public class ConfigValueChangeValidatorTest {
     }
 
     @Test
+    public void requireThatDocumentTypesCanBeAddedWithoutNeedForRestart() {
+        List<ConfigChangeAction> changes = getConfigChanges(
+                createVespaModel("", Arrays.asList("foo")),
+                createVespaModel("", Arrays.asList("foo", "bar")));
+        assertEquals(0, changes.size());
+    }
+
+    @Test
     public void requireThatValidatorDetectsConfigChangeFromService() {
         MockRoot oldRoot = createRootWithChildren(new SimpleConfigProducer("p", 0)
                 .withChildren(new ServiceWithAnnotation("s1", 1), new ServiceWithAnnotation("s2", 2)));
@@ -162,6 +170,10 @@ public class ConfigValueChangeValidatorTest {
     }
 
     private static VespaModel createVespaModel(String configSegment) {
+        return createVespaModel(configSegment, Arrays.asList("music"));
+    }
+
+    private static VespaModel createVespaModel(String configSegment, List<String> docTypes) {
         // Note that the configSegment is here located on root.
         return new VespaModelCreatorWithMockPkg(
                 null,
@@ -178,9 +190,7 @@ public class ConfigValueChangeValidatorTest {
                         "   </jdisc>\n" +
                         "   <content id='basicsearch' version='1.0'>\n" +
                         "       <redundancy>1</redundancy>\n" +
-                        "       <documents>\n" +
-                        "           <document type='music' mode='index'/>\n" +
-                        "       </documents>\n" +
+                        createDocumentsSegment(docTypes) + "\n" +
                         "       <group>\n" +
                         "           <node hostalias='node1' distribution-key='0'/>\n" +
                         "       </group>\n" +
@@ -191,8 +201,22 @@ public class ConfigValueChangeValidatorTest {
                         "       </engine>\n" +
                         "   </content>\n" +
                         "</services>",
-                Collections.singletonList("search music { document music { } }")
+                createSearchDefinitions(docTypes)
         ).create();
+    }
+
+    private static String createDocumentsSegment(List<String> docTypes) {
+        return "<documents>\n" +
+                docTypes.stream()
+                        .map(type -> "<document type='" + type + "' mode='index'/>")
+                        .collect(Collectors.joining("\n")) +
+                "</documents>";
+    }
+
+    private static List<String> createSearchDefinitions(List<String> docTypes) {
+        return docTypes.stream()
+                .map(type -> "search " + type + " { document " + type + " { } }")
+                .collect(Collectors.toList());
     }
 
     private static String createQrStartConfigSegment(boolean verboseGc, int heapsize) {
