@@ -52,8 +52,8 @@ public class DeploymentOrder {
             return Collections.emptyList();
         }
 
-        // Always trigger system test after component as deployment spec might not be available yet (e.g. if this is a
-        // new application with no previous deployments)
+        // Always trigger system test after component as deployment spec might not be available yet 
+        // (e.g. if this is a new application with no previous deployments)
         if (job == JobType.component) {
             return Collections.singletonList(JobType.systemTest);
         }
@@ -108,7 +108,7 @@ public class DeploymentOrder {
         // Step may not exist for all jobs, e.g. component
         return step.map(s -> s.equals(lastStep)).orElse(false);
     }
-    
+
     /** Returns jobs for given deployment spec, in the order they are declared */
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
         return deploymentSpec.steps().stream()

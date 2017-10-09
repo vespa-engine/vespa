@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public abstract class Change {
 
-    /** Returns true if this change is blocked by the given spec art the given instant */
+    /** Returns true if this change is blocked by the given spec at the given instant */
     public abstract boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant);
     
     /** A change to the application package revision of an application */

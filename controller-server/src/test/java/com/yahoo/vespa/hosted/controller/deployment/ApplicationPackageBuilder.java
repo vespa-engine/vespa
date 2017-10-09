@@ -28,7 +28,7 @@ public class ApplicationPackageBuilder {
     private Environment environment = Environment.prod;
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
-    private final StringBuilder blockUpgrade = new StringBuilder();
+    private final StringBuilder blockChange = new StringBuilder();
     private String searchDefinition = "search test { }";
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
@@ -64,13 +64,13 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder blockChange(boolean revision, boolean version, 
                                                  String daySpec, String hourSpec, String zoneSpec) {
-        blockUpgrade.append("  <block-change");
-        blockUpgrade.append(" revision='").append(revision).append("'");
-        blockUpgrade.append(" version='").append(version).append("'");
-        blockUpgrade.append(" days='").append(daySpec).append("'");
-        blockUpgrade.append(" hours='").append(hourSpec).append("'");
-        blockUpgrade.append(" time-zone='").append(zoneSpec).append("'");
-        blockUpgrade.append("/>\n");
+        blockChange.append("  <block-change");
+        blockChange.append(" revision='").append(revision).append("'");
+        blockChange.append(" version='").append(version).append("'");
+        blockChange.append(" days='").append(daySpec).append("'");
+        blockChange.append(" hours='").append(hourSpec).append("'");
+        blockChange.append(" time-zone='").append(zoneSpec).append("'");
+        blockChange.append("/>\n");
         return this;
     }
 
@@ -82,7 +82,7 @@ public class ApplicationPackageBuilder {
         validationOverridesBody.append("</allow>\n");
         return this;
     }
-    
+
     /** Sets the content of the search definition test.sd */
     public ApplicationPackageBuilder searchDefinition(String testSearchDefinition) {
         this.searchDefinition = testSearchDefinition;
@@ -96,7 +96,7 @@ public class ApplicationPackageBuilder {
             xml.append(upgradePolicy);
             xml.append("'/>\n");
         }
-        xml.append(blockUpgrade);
+        xml.append(blockChange);
         xml.append("  <");
         xml.append(environment.value());
         xml.append(">\n");

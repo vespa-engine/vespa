@@ -276,7 +276,7 @@ public class Application {
         return true;
     }
     
-    /** Returns true if there is no outstanding change to deploy - i.e deploying is empty or completedly deployed */
+    /** Returns true if there is no current change to deploy - i.e deploying is empty or completely deployed */
     public boolean deployingCompleted() { 
         if ( ! deploying.isPresent()) return true;
         return deploymentJobs().isDeployed(deploying.get()); 
