@@ -9,7 +9,6 @@
 
 namespace vespalib {
 
-class nbostream;
 class GenericHeader;
 
 }
@@ -830,9 +829,6 @@ public:
         other._cacheFree = _cacheFree;
     }
 
-    void checkPointWrite(vespalib::nbostream &out) override;
-    void checkPointRead(vespalib::nbostream &in) override;
-
     uint64_t getWriteOffset() const {
         return _fileWriteBias + (reinterpret_cast<unsigned long>(_valI) << 3) - _cacheFree;
     }
@@ -1268,9 +1264,6 @@ public:
     int getBitOffset() const {
         return (_preRead == 0) ? 0 : 64 - _preRead;
     }
-
-    void checkPointWrite(vespalib::nbostream &out) override;
-    void checkPointRead(vespalib::nbostream &in) override;
 
     static int64_t convertToSigned(uint64_t val) {
         if ((val & 1) != 0)

@@ -33,8 +33,6 @@ public:
     {
     }
 
-    void checkPointWrite(vespalib::nbostream &out) override;
-    void checkPointRead(vespalib::nbostream &in) override;
     void readCounts(PostingListCounts &counts);
     void readWordNum(uint64_t &wordNum);
 
@@ -67,8 +65,6 @@ public:
     {
     }
 
-    void checkPointWrite(vespalib::nbostream &out) override;
-    void checkPointRead(vespalib::nbostream &in) override;
     void writeCounts(const PostingListCounts &counts);
     void writeWordNum(uint64_t wordNum);
 

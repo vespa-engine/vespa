@@ -56,7 +56,6 @@ protected:
     uint64_t _oldWordNum;
     uint32_t _residue;
     uint32_t _docIdLimit;
-    bool _checkPointResume;
     vespalib::string _word;
 
     static uint64_t
@@ -129,18 +128,6 @@ public:
 
     virtual bool
     close();
-
-    /*
-     * To be called between words, not in the middle of one.
-     */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /*
-     * To be called after earlyOpen() but before afterOpen().
-     */
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
 
     virtual void
     setFeatureParams(const PostingListParams &params);

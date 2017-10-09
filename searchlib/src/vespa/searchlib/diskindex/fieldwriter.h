@@ -8,8 +8,6 @@
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 namespace diskindex {
@@ -82,15 +80,6 @@ public:
 
     bool close();
 
-    /*
-     * To be called between words, not in the middle of one.
-     */
-    void checkPointWrite(vespalib::nbostream &out);
-
-    /*
-     * To be called after earlyOpen() but before afterOpen().
-     */
-    void checkPointRead(vespalib::nbostream &in);
     void setFeatureParams(const PostingListParams &params);
     void getFeatureParams(PostingListParams &params);
     static void remove(const vespalib::string &prefix);

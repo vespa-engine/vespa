@@ -5,7 +5,6 @@
 #include "extposocc.h"
 #include "pagedict4file.h"
 #include <vespa/vespalib/util/error.h>
-#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fieldreader");
@@ -36,7 +35,6 @@ FieldReader::FieldReader()
       _oldWordNum(noWordNumHigh()),
       _residue(0u),
       _docIdLimit(0u),
-      _checkPointResume(false),
       _word()
 {
 }
@@ -154,13 +152,11 @@ FieldReader::lateOpen(const vespalib::string &prefix,
             "Could not open posocc file %s for read",
             name.c_str());
     }
-    if (!_checkPointResume) {
-        _oldWordNum = noWordNum();
-        _wordNum = _oldWordNum;
-        PostingListParams params;
-        _oldposoccfile->getParams(params);
-        params.get("docIdLimit", _docIdLimit);
-    }
+    _oldWordNum = noWordNum();
+    _wordNum = _oldWordNum;
+    PostingListParams params;
+    _oldposoccfile->getParams(params);
+    params.get("docIdLimit", _docIdLimit);
     return true;
 }
 
@@ -202,29 +198,6 @@ FieldReader::close()
     return ret;
 }
 
-
-void
-FieldReader::checkPointWrite(vespalib::nbostream &out)
-{
-    out << _wordNum << _oldWordNum;
-    out << _residue << _docIdAndFeatures;
-    out << _docIdLimit;
-    out << _word;
-    _oldposoccfile->checkPointWrite(out);
-    _dictFile->checkPointWrite(out);
-}
-
-void
-FieldReader::checkPointRead(vespalib::nbostream &in)
-{
-    in >> _wordNum >> _oldWordNum;
-    in >> _residue >> _docIdAndFeatures;
-    in >> _docIdLimit;
-    in >> _word;
-    _oldposoccfile->checkPointRead(in);
-    _dictFile->checkPointRead(in);
-    _checkPointResume = true;
-}
 
 void
 FieldReader::setFeatureParams(const PostingListParams &params)

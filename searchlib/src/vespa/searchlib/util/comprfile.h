@@ -7,8 +7,6 @@
 
 class FastOS_FileInterface;
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 class ComprFileWriteContext;
@@ -60,19 +58,6 @@ public:
      * Get size of each unit (typically 4 or 8)
      */
     virtual uint32_t getUnitByteSize() const = 0;
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt. Caller must
-     * save position.
-     */
-    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     * Caller must restore position.
-     */
-    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 };
 
 class ComprFileReadBase
@@ -110,9 +95,7 @@ private:
     int _bitOffset;
     uint64_t _stopOffset;
     bool _readAll;
-    bool _checkPointOffsetValid;    // Set only if checkpoint has been read
     FastOS_FileInterface *_file;
-    uint64_t _checkPointOffset; // bit offset saved by checkPointRead
 
 public:
     ComprFileReadContext(ComprFileDecodeContext &decodeContext);
@@ -170,19 +153,6 @@ public:
      * For unit testing only. Copy data owned by rhs.
      */
     void copyWriteContext(const ComprFileWriteContext &rhs);
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.
-     */
-    void checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    void checkPointRead(vespalib::nbostream &in);
-    bool getCheckPointOffsetValid() const { return _checkPointOffsetValid; }
-    uint64_t getCheckPointOffset() const { return _checkPointOffset; }
 };
 
 
@@ -215,19 +185,6 @@ public:
      * Get size of each unit (typically 4 or 8)
      */
     virtual uint32_t getUnitByteSize() const = 0;
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt. Caller must
-     * save position, although partial unit is saved.
-     */
-    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     * Caller must restore positon, although partial unit is restored.
-     */
-    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
     virtual uint64_t getBitPosV() const = 0;
 };
@@ -281,17 +238,6 @@ public:
      * no file is attached.
      */
     std::pair<void *, size_t> grabComprBuffer(void *&comprBufMalloc);
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.
-     */
-    void checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    void checkPointRead(vespalib::nbostream &in);
 };
 
 }

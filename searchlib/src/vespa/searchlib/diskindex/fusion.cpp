@@ -321,7 +321,6 @@ Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index,
                      index.getSchema(),
                      index.getIndex(),
                      _tuneFileIndexing._write);
-    // No checkpointing
     if (!writer.lateOpen(_tuneFileIndexing._write,
                          _fileHeaderContext)) {
         LOG(error, "Could not open output posocc + dictionary in %s",

@@ -296,8 +296,6 @@ FileHandle::open(const vespalib::stringref &dir,
                            index.getSchema(), index.getIndex(),
                            tuneFileWrite);
 
-    // No checkpointing
-
     if (!_fieldWriter->lateOpen(tuneFileWrite, fileHeaderContext)) {
         LOG(error, "Could not open term writer %s for write (%s)",
             dir.c_str(), getLastErrorString().c_str());

@@ -5,14 +5,12 @@
 #include "extposocc.h"
 #include "pagedict4file.h"
 #include <vespa/vespalib/util/error.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".diskindex.fieldwriter");
 
 namespace search::diskindex {
 
-using vespalib::nbostream;
 using vespalib::getLastErrorString;
 using common::FileHeaderContext;
 
@@ -177,36 +175,6 @@ FieldWriter::close()
 
     _bmapfile.close();
     return ret;
-}
-
-
-void
-FieldWriter::checkPointWrite(nbostream &out)
-{
-    out << _wordNum << _prevDocId;
-    out << _docIdLimit << _numWordIds;
-    out << _compactWordNum << _word;
-    _posoccfile->checkPointWrite(out);
-    _dictFile->checkPointWrite(out);
-    _bvc.checkPointWrite(out);
-    _bmapfile.checkPointWrite(out);
-}
-
-
-void
-FieldWriter::checkPointRead(nbostream &in)
-{
-    in >> _wordNum >> _prevDocId;
-    uint32_t checkDocIdLimit = 0;
-    uint64_t checkNumWordIds = 0;
-    in >> checkDocIdLimit >> checkNumWordIds;
-    assert(checkDocIdLimit == _docIdLimit);
-    assert(checkNumWordIds == _numWordIds);
-    in >> _compactWordNum >> _word;
-    _posoccfile->checkPointRead(in);
-    _dictFile->checkPointRead(in);
-    _bvc.checkPointRead(in);
-    _bmapfile.checkPointRead(in);
 }
 
 
