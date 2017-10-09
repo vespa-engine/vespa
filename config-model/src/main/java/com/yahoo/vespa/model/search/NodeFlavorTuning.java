@@ -30,6 +30,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         tuneDocumentStoreNumThreads(builder.background);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
+        tuneSummaryReadIo(builder.summary.read);
     }
 
     private void setHwInfo(ProtonConfig.Builder builder) {
@@ -70,6 +71,12 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         long tlsSizeBytes = (long) ((nodeFlavor.getMinDiskAvailableGb() * 0.07) * GB);
         tlsSizeBytes = min(tlsSizeBytes, 100 * GB);
         builder.maxtlssize(tlsSizeBytes);
+    }
+
+    private void tuneSummaryReadIo(ProtonConfig.Summary.Read.Builder builder) {
+        if (nodeFlavor.hasFastDisk()) {
+            builder.io(ProtonConfig.Summary.Read.Io.DIRECTIO);
+        }
     }
 
 }
