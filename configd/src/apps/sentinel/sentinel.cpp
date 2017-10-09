@@ -4,6 +4,7 @@
 #include <csignal>
 #include <unistd.h>
 #include <sys/time.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/defaults.h>
 #include "config-handler.h"
 
@@ -14,13 +15,11 @@ using namespace config;
 
 constexpr uint64_t CONFIG_TIMEOUT_MS = 3 * 60 * 1000;
 
-static int sigPermanent(int sig, void(*handler)(int));
-
-static void gracefulShutdown(int sig);
-static void sigchldHandler(int sig);
-
-sig_atomic_t stop = 0;
-static sig_atomic_t pendingWait = 0;
+static bool stop()
+{
+    return (vespalib::SignalHandler::INT.check() ||
+            vespalib::SignalHandler::TERM.check());
+}
 
 int
 main(int argc, char **argv)
@@ -49,10 +48,11 @@ main(int argc, char **argv)
 
     EV_STARTED("config-sentinel");
 
-    sigPermanent(SIGPIPE, SIG_IGN);
-    sigPermanent(SIGTERM, gracefulShutdown);
-    sigPermanent(SIGINT, gracefulShutdown);
-    sigPermanent(SIGCHLD, sigchldHandler);
+    vespalib::SignalHandler::PIPE.ignore();
+    vespalib::SignalHandler::TERM.hook();
+    vespalib::SignalHandler::INT.hook();
+    vespalib::SignalHandler::CHLD.hook();
+
     if (setenv("LC_ALL", "C", 1) != 0) {
         LOG(error, "Unable to set locale");
         exit(EXIT_FAILURE);
@@ -80,15 +80,15 @@ main(int argc, char **argv)
 
     struct timeval lastTv;
     gettimeofday(&lastTv, nullptr);
-    while (!stop) {
+    while (!stop()) {
         try {
-            pendingWait = 0;
+            vespalib::SignalHandler::CHLD.clear();
             handler.doWork();       // Check for child procs & commands
         } catch (InvalidConfigException& ex) {
             LOG(warning, "Configuration problem: (ignoring): %s",
                 ex.what());
         }
-        if (!pendingWait) {
+        if (!vespalib::SignalHandler::CHLD.check()) {
             int maxNum = 0;
             fd_set fds;
             FD_ZERO(&fds);
@@ -98,7 +98,7 @@ main(int argc, char **argv)
             tv.tv_sec = 1;
             tv.tv_usec = 0;
 
-            if (!pendingWait) {
+            if (!vespalib::SignalHandler::CHLD.check()) {
                 select(maxNum, &fds, nullptr, nullptr, &tv);
             }
         }
@@ -117,30 +117,4 @@ main(int argc, char **argv)
 
     EV_STOPPING("config-sentinel", "normal exit");
     return rv;
-}
-
-static void
-gracefulShutdown(int sig)
-{
-    (void)sig;
-    stop = 1;
-}
-
-static void
-sigchldHandler(int sig)
-{
-    (void)sig;
-    pendingWait = 1;
-}
-
-static int
-sigPermanent(int sig, void(*handler)(int))
-{
-    struct sigaction sa;
-
-    memset(&sa, 0, sizeof(sa));
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0; // no SA_RESTART!
-    sa.sa_handler = handler;
-    return sigaction(sig, &sa, nullptr);
 }
