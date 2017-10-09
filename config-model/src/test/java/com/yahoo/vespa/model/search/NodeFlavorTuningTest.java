@@ -87,6 +87,12 @@ public class NodeFlavorTuningTest {
         assertFlushStrategyTlsSize(100 * GB, 24000);
     }
 
+    @Test
+    public void require_that_summary_read_io_is_set_based_on_disk() {
+        assertSummaryReadIo(ProtonConfig.Summary.Read.Io.DIRECTIO, true);
+        assertSummaryReadIo(ProtonConfig.Summary.Read.Io.MMAP, false);
+    }
+
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int memoryGb) {
         assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
     }
@@ -102,6 +108,10 @@ public class NodeFlavorTuningTest {
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
         assertEquals(expTlsSizeBytes, configFromDiskSetting(diskGb).flush().memory().maxtlssize());
+    }
+
+    private static void assertSummaryReadIo(ProtonConfig.Summary.Read.Io.Enum expValue, boolean fastDisk) {
+        assertEquals(expValue, configFromDiskSetting(fastDisk).summary().read().io());
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
