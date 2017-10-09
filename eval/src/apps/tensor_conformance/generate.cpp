@@ -1,10 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generate.h"
+#include <vespa/eval/eval/test/tensor_model.hpp>
 
-using TensorSpec = vespalib::eval::TensorSpec;
-
-TensorSpec spec(double value) { return TensorSpec("double").add({}, value); }
+using namespace vespalib::eval::test;
 
 void
 Generator::generate(TestBuilder &dst)
