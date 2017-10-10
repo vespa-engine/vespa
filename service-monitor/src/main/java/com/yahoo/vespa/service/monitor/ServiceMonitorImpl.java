@@ -33,7 +33,10 @@ public class ServiceMonitorImpl implements ServiceMonitor {
         this.zone = superModelProvider.getZone();
         this.configServerHosts = toConfigServerList(configserverConfig);
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
-        this.superModelListener = new SuperModelListenerImpl(slobrokMonitorManager, metrics);
+        this.superModelListener = new SuperModelListenerImpl(
+                slobrokMonitorManager,
+                metrics,
+                new ModelGenerator());
         superModelListener.start(superModelProvider);
     }
 
