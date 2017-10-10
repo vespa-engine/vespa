@@ -184,7 +184,7 @@ public class DeploymentTrigger {
             }
 
             // Retry dead job
-            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), jobTimeout);
+            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs());
             if (firstDeadJob.isPresent()) {
                 application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job",
                                       lock);
@@ -269,13 +269,12 @@ public class DeploymentTrigger {
     }
 
     /** Returns the first job that has been running for more than the given timeout */
-    private Optional<JobStatus> firstDeadJob(DeploymentJobs jobs, Duration timeout) {
-        Instant startOfGracePeriod = controller.clock().instant().minus(timeout);
+    private Optional<JobStatus> firstDeadJob(DeploymentJobs jobs) {
         Optional<JobStatus> oldestRunningJob = jobs.jobStatus().values().stream()
-                .filter(JobStatus::inProgress)
+                .filter(job -> job.isRunning(Instant.ofEpochMilli(0)))
                 .sorted(Comparator.comparing(status -> status.lastTriggered().get().at()))
                 .findFirst();
-        return oldestRunningJob.filter(job -> job.lastTriggered().get().at().isBefore(startOfGracePeriod));
+        return oldestRunningJob.filter(job -> job.lastTriggered().get().at().isBefore(jobTimeoutLimit()));
     }
 
     /** Decide whether the job should be triggered by the periodic trigger */
