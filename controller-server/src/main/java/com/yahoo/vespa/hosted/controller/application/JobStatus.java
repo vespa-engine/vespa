@@ -111,18 +111,6 @@ public class JobStatus {
     /** The error of the last completion, or empty if the last run succeeded */
     public Optional<DeploymentJobs.JobError> jobError() { return jobError; }
 
-    /** Returns true if job is in progress */
-    // TODO: Replace with isRunning
-    public boolean inProgress() {
-        if (!lastTriggered().isPresent()) {
-            return false;
-        }
-        if (!lastCompleted().isPresent()) {
-            return true;
-        }
-        return lastTriggered().get().at().isAfter(lastCompleted().get().at());
-    }
-
     /**
      * Returns the last triggering of this job, or empty if the controller has never triggered it
      * and not seen a deployment for it
