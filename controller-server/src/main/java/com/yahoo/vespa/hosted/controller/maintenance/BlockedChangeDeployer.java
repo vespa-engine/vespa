@@ -1,0 +1,33 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.maintenance;
+
+import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Change;
+
+import java.time.Duration;
+
+/**
+ * Deploys application changes which have not made it to production because of a revision change block.
+ * 
+ * @author bratseth
+ */
+public class BlockedChangeDeployer extends Maintainer {
+    
+    public BlockedChangeDeployer(Controller controller, Duration interval, JobControl jobControl) {
+        super(controller, interval, jobControl);
+    }
+
+    @Override
+    protected void maintain() {
+        ApplicationList applications = ApplicationList.from(controller().applications().asList()).notPullRequest();
+        applications = applications.notDeploying();
+        applications = applications.hasUndeployedSuccessfulRevisionChange();
+        for (Application application : applications.asList()) {
+//            controller().applications().deploymentTrigger().triggerChange(application.id(),
+//                                                                          Change.ApplicationChange.of());
+        }
+    }
+
+}

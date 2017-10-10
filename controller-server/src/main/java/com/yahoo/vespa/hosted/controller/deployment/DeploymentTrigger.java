@@ -35,7 +35,10 @@ import java.util.logging.Logger;
  * @author mpolden
  */
 public class DeploymentTrigger {
-    
+
+    /** The max duration a job may run before we consider it dead/hanging */
+    private final static Duration jobTimeout = Duration.ofHours(12);
+
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
 
     private final Controller controller;
@@ -67,20 +70,18 @@ public class DeploymentTrigger {
             
             // Handle successful starting and ending
             if (report.success()) {
-                if (order.isFirst(report.jobType())) {
-                    // the first job tells us that a change occurred
-                    if (application.deploying().isPresent() && !application.deploymentJobs().hasFailures()) { // postpone until the current deployment is done
+                if (order.isFirst(report.jobType())) { // the first job tells us that a change occurred
+                    if (acceptNewRevisionNow(application)) {
+                        // Set this as the change we are doing, unless we are already pushing a platform change
+                        if ( ! ( application.deploying().isPresent() && 
+                                 (application.deploying().get() instanceof Change.VersionChange)))
+                            application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
+                    }
+                    else { // postpone
                         applications().store(application.withOutstandingChange(true), lock);
                         return;
-                    } else { // start a new change deployment
-                        application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                     }
                 } 
-                else if (order.isLastBeforeProduction(report.jobType()) && application.deployingBlocked(clock.instant())) {
-                    // run tests to provide feedback on errors but stop before production
-                    applications().store(application.withDeploying(Optional.empty()), lock);
-                    return;
-                }
                 else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
                     // change completed
                     application = application.withDeploying(Optional.empty());
@@ -108,10 +109,10 @@ public class DeploymentTrigger {
     /**
      * Called periodically to cause triggering of jobs in the background
      */
-    public void triggerFailing(ApplicationId applicationId, Duration timeout) {
+    public void triggerFailing(ApplicationId applicationId) {
         try (Lock lock = applications().lock(applicationId)) {
             Application application = applications().require(applicationId);
-            if (!application.deploying().isPresent()) return; // No ongoing change, no need to retry
+            if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
 
             // Retry first failing job
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
@@ -126,7 +127,7 @@ public class DeploymentTrigger {
             }
 
             // Retry dead job
-            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), timeout);
+            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), jobTimeout);
             if (firstDeadJob.isPresent()) {
                 application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job",
                                       lock);
@@ -253,12 +254,12 @@ public class DeploymentTrigger {
                 .isAfter(clock.instant().minus(Duration.ofMinutes(15)));
     }
 
-    /** Decide whether job type should be triggered according to deployment spec */
+    /** Returns whether the given job type should be triggered according to deployment spec */
     private boolean deploysTo(Application application, JobType jobType) {
         Optional<Zone> zone = jobType.zone(controller.system());
         if (zone.isPresent() && jobType.isProduction()) {
             // Skip triggering of jobs for zones where the application should not be deployed
-            if (!application.deploymentSpec().includes(jobType.environment(), Optional.of(zone.get().region()))) {
+            if ( ! application.deploymentSpec().includes(jobType.environment(), Optional.of(zone.get().region()))) {
                 return false;
             }
         }
@@ -275,28 +276,46 @@ public class DeploymentTrigger {
      * @return the application in the triggered state, which *must* be stored by the caller
      */
     private Application trigger(JobType jobType, Application application, boolean first, String cause, Lock lock) {
-        if (jobType == null) return application; // previous was last job
+        if (jobType == null) { // previous was last job
+            return application;
+        }
 
+        // Note: We could make a more fine-grained and more correct determination about whether to block 
+        //       by instead basing the decision on what is currently deployed in the zone. However,
+        //       this leads to some additional corner cases, and the possibility of blocking an application
+        //       fix to a version upgrade, so not doing it now
+        if (jobType.isProduction() && application.deployingBlocked(clock.instant())) {
+            return application;
+        }
+        
+        if (application.deploymentJobs().isRunning(jobType, clock.instant().minus(jobTimeout))) {
+            return application;
+        }
+
+        // TODO: Review code for retrying when no job is running but a change is in progress
+        //       or add more ...
+        
         // TODO: Remove when we can determine why this occurs
-        if (jobType != JobType.component && !application.deploying().isPresent()) {
+        if (jobType != JobType.component && ! application.deploying().isPresent()) {
             log.warning(String.format("Want to trigger %s for %s with reason %s, but this application is not " +
                                               "currently deploying a change",
                                       jobType, application, cause));
             return application;
         }
 
-        if (!deploysTo(application, jobType)) {
+        if  ( ! deploysTo(application, jobType)) {
             return application;
         }
 
-        if (!application.deploymentJobs().isDeployableTo(jobType.environment(), application.deploying())) {
+        // Note that this allows a new change to catch up and prevent an older one from continuing
+        if ( ! application.deploymentJobs().isDeployableTo(jobType.environment(), application.deploying())) {
             log.warning(String.format("Want to trigger %s for %s with reason %s, but change is untested", jobType,
                                       application, cause));
             return application;
         }
 
         // Ignore applications that are not associated with a project
-        if (!application.deploymentJobs().projectId().isPresent()) {
+        if ( ! application.deploymentJobs().projectId().isPresent()) {
             return application;
         }
 
@@ -309,12 +328,20 @@ public class DeploymentTrigger {
     }
 
     private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
-        for (JobType job : jobs) {
+        for (JobType job : jobs)
             application = trigger(job, application, false, cause, lock);
-        }
         return application;
     }
 
+    private boolean acceptNewRevisionNow(Application application) {
+        if ( ! application.deploying().isPresent()) return true;
+        if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
+        
+        if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
+        if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+        return false;
+    }
+    
     public BuildSystem buildSystem() { return buildSystem; }
 
     public DeploymentOrder deploymentOrder() { return order; }

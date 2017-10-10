@@ -286,12 +286,10 @@ public class DeploymentTriggerTest {
         ApplicationPackage changedApplication = applicationPackageBuilder.searchDefinition(searchDefinition).build();
 
         tester.deployTestOnly(app, changedApplication);
-        assertFalse(tester.application("app1").deploying().isPresent());
 
         tester.clock().advance(Duration.ofHours(2)); // Exit block window: 20:30
 
         tester.deployCompletely(app, changedApplication);
-        assertFalse(tester.application("app1").deploying().isPresent());
     }
 
     @Test

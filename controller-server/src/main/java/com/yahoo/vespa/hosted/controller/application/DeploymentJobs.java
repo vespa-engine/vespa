@@ -10,6 +10,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Controller;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -308,6 +309,13 @@ public class DeploymentJobs {
             throw new IllegalArgumentException(message);
         }
         return id;
+    }
+
+    /** Returns whether the given job type is currently running and was started after timeoutLimit */
+    public boolean isRunning(JobType jobType, Instant timeoutLimit) {
+        JobStatus jobStatus = status.get(jobType);
+        if ( jobStatus == null) return false;
+        return jobStatus.isRunning(timeoutLimit);
     }
 
 }

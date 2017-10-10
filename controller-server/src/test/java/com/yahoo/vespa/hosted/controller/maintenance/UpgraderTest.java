@@ -136,9 +136,6 @@ public class UpgraderTest {
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         tester.deployCompletely("default0");
-        // Complete upgrade
-        tester.upgrader().maintain();
-        tester.completeUpgrade(default0, version, "default");
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
@@ -165,16 +162,16 @@ public class UpgraderTest {
         assertEquals("No applications: Nothing to do", 0, tester.buildSystem().jobs().size());
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0",  3, "default");
-        Application default1 = tester.createAndDeploy("default1",  4, "default");
-        Application default2 = tester.createAndDeploy("default2",  5, "default");
-        Application default3 = tester.createAndDeploy("default3",  6, "default");
-        Application default4 = tester.createAndDeploy("default4",  7, "default");
-        Application default5 = tester.createAndDeploy("default5",  8, "default");
-        Application default6 = tester.createAndDeploy("default6",  9, "default");
-        Application default7 = tester.createAndDeploy("default7",  10, "default");
+        Application canary0  = tester.createAndDeploy("canary0",  1, "canary");
+        Application canary1  = tester.createAndDeploy("canary1",  2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application default3 = tester.createAndDeploy("default3", 6, "default");
+        Application default4 = tester.createAndDeploy("default4", 7, "default");
+        Application default5 = tester.createAndDeploy("default5", 8, "default");
+        Application default6 = tester.createAndDeploy("default6", 9, "default");
+        Application default7 = tester.createAndDeploy("default7", 10, "default");
         Application default8 = tester.createAndDeploy("default8", 11, "default");
         Application default9 = tester.createAndDeploy("default9", 12, "default");
 

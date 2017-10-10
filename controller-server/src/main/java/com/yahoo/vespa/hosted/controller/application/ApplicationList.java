@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -66,6 +67,15 @@ public class ApplicationList {
     /** Returns the subset of applications which is currently not deploying a new application revision */
     public ApplicationList notDeployingApplication() {
         return listOf(list.stream().filter(application -> ! isDeployingApplicationChange(application)));
+    }
+
+    public ApplicationList notDeploying() {
+        return listOf(list.stream().filter(application -> ! application.deploying().isPresent()));
+    }
+
+    /** Returns the subset of applications which has a different revision in staging tests than in any prod deployment */
+    public ApplicationList hasUndeployedSuccessfulRevisionChange() {
+        return listOf(list.stream().filter(application -> hasUndeployedSuccessfulRevisionChange(application)));
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs */
@@ -177,6 +187,21 @@ public class ApplicationList {
                 .map(status -> status.lastTriggered().get())
                 .filter(jobRun -> jobRun.at().isAfter(instant))
                 .anyMatch(jobRun -> jobRun.version().equals(change.version()));
+    }
+    
+    private static boolean hasUndeployedSuccessfulRevisionChange(Application application) {
+        JobStatus stagingStatus = application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest);
+        if (stagingStatus == null) return false;
+        if ( ! stagingStatus.lastSuccess().isPresent()) return false;
+        Optional<ApplicationRevision> lastStagingSuccessRevision = stagingStatus.lastSuccess().get().revision();
+        if ( ! lastStagingSuccessRevision.isPresent()) return false;
+
+        for (Deployment deployment : application.deployments().values()) {
+            if ( ! deployment.zone().environment().equals(Environment.prod)) continue;
+
+            if ( ! deployment.revision().equals(lastStagingSuccessRevision.get())) return true;
+        }
+        return false;
     }
     
     /** Convenience converter from a stream to an ApplicationList */

@@ -14,7 +14,9 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
@@ -287,5 +289,9 @@ public class Application {
         if ( ! deploying.isPresent()) return false;
         return deploying.get().blockedBy(deploymentSpec, instant);
     }
-
+    
+    public boolean isBlocked(Instant instant) {
+        return ! deploymentSpec.canUpgradeAt(instant) || ! deploymentSpec.canChangeRevisionAt(instant);
+    }
+    
 }
