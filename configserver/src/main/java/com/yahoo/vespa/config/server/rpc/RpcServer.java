@@ -146,7 +146,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     public void run() {
-        log.log(LogLevel.DEBUG, "Ready for requests on " + spec);
+        log.log(LogLevel.INFO, "Rpc server listening on port " + spec.port());
         try {
             Acceptor acceptor = supervisor.listen(spec);
             supervisor.transport().join();
