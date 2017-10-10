@@ -7,6 +7,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -56,9 +57,8 @@ public class VespaVersion implements Comparable<VespaVersion> {
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
-        // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
-        int brokenByThisVersion = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt).size();
-        if (brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.1)
+        // 'broken' if too many non-canary apps fail
+        if (nonCanaryApplicationsBroken(failingOnThis, productionOnThis, releasedAt, controller.curator()))
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
@@ -134,6 +134,31 @@ public class VespaVersion implements Comparable<VespaVersion> {
         /** We have overwhelming evidence that this version is working */
         high
 
+    }
+
+    private static boolean nonCanaryApplicationsBroken(ApplicationList failingOnThis,
+                                                       ApplicationList productionOnThis,
+                                                       Instant releasedAt,
+                                                       CuratorDb curator) {
+        int failing = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt).size();
+        int production = productionOnThis.without(UpgradePolicy.canary).size();
+        int all = production + failing;
+
+        if (all == 0) return false;
+
+        int applicationsGivingMinConfidence = curator.readApplicationsGivingMinConfidence();
+        int applicationsGivingMaxConfidence = curator.readApplicationsGivingMaxConfidence();
+        double failureRatioAtMaxConfidence = curator.readFailureRatioAtMaxConfidence();
+
+        double confidence = (double) (all - applicationsGivingMinConfidence) /
+                (double) (applicationsGivingMaxConfidence - applicationsGivingMinConfidence);
+        if (confidence > 1.0) confidence = 1.0;
+        if (confidence < 0.0) confidence = 0.0;
+
+        double failureToleranceRatio = 1 - confidence * (1 - failureRatioAtMaxConfidence);
+        double brokenRatio = (double) failing / (double) all;
+
+        return (brokenRatio > failureToleranceRatio);
     }
 
 }

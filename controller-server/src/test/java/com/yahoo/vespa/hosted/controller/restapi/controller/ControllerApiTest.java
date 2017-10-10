@@ -42,7 +42,7 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Get current configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader"),
-                              "{\"upgradesPerMinute\":0.5}",
+                              "{\"upgradesPerMinute\":0.5,\"applicationsGivingMinConfidence\":3,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.5}",
                               200);
 
         // Set invalid configuration
@@ -51,17 +51,36 @@ public class ControllerApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Upgrades per minute must be >= 0\"}",
                               400);
 
-        // Unrecognized fields are ignored
+        // Unrecognized field
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
                                           "{\"foo\":bar}", Request.Method.PATCH),
-                              "{\"upgradesPerMinute\":0.5}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unable to configure upgrader with data in request: '{\\\"foo\\\":bar}'\"}",
+                              400);
+
+        // Patch configuration
+        tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
+                                          "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":3,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.5}",
                               200);
 
-        // Set configuration
+        // Patch configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
-                                          "{\"upgradesPerMinute\":42}", Request.Method.PATCH),
-                              "{\"upgradesPerMinute\":42.0}",
+                                          "{\"applicationsGivingMinConfidence\":5}", Request.Method.PATCH),
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.5}",
                               200);
+
+        // Patch configuration
+        tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
+                                          "{\"applicationsGivingMaxConfidence\":50}", Request.Method.PATCH),
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":50,\"failureRatioAtMaxConfidence\":0.5}",
+                              200);
+
+        // Patch configuration
+        tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
+                                          "{\"failureRatioAtMaxConfidence\":0.2}", Request.Method.PATCH),
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":50,\"failureRatioAtMaxConfidence\":0.2}",
+                              200);
+
     }
 
 }

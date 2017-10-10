@@ -269,6 +269,8 @@ public class Controller extends AbstractComponent {
         return chefClient;
     }
 
+    public CuratorDb curator() { return curator; }
+
     private String printableVersion(Optional<VespaVersion> vespaVersion) {
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("Unknown");
     }

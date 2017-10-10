@@ -210,6 +210,58 @@ public class CuratorDb {
         transaction.commit();
     }
 
+    public int readApplicationsGivingMinConfidence() {
+        Optional<byte[]> n = curator.getData(applicationsGivingMinConfidencePath());
+        if (!n.isPresent() || n.get().length == 0) {
+            return 3; // Default if value has never been written
+        }
+        return ByteBuffer.wrap(n.get()).getInt();
+    }
+
+    public void writeApplicationsGivingMinConfidence(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("applicationsGivingMinConfidence must be >= 0");
+        }
+        NestedTransaction transaction = new NestedTransaction();
+        curator.set(applicationsGivingMinConfidencePath(), ByteBuffer.allocate(Integer.BYTES).putInt(n).array());
+        transaction.commit();
+    }
+
+    public int readApplicationsGivingMaxConfidence() {
+        Optional<byte[]> n = curator.getData(applicationsGivingMaxConfidencePath());
+        if (!n.isPresent() || n.get().length == 0) {
+            return 4; // Default if value has never been written
+        }
+        return ByteBuffer.wrap(n.get()).getInt();
+    }
+
+    public void writeApplicationsGivingMaxConfidence(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("applicationsGivingMaxConfidence must be >= 0");
+        }
+        NestedTransaction transaction = new NestedTransaction();
+        curator.set(applicationsGivingMaxConfidencePath(), ByteBuffer.allocate(Integer.BYTES).putInt(n).array());
+        transaction.commit();
+    }
+
+    public double readFailureRatioAtMaxConfidence() {
+        Optional<byte[]> n = curator.getData(failureRatioAtMaxConfidencePath());
+        if (!n.isPresent() || n.get().length == 0) {
+            return 0.5; // Default if value has never been written
+        }
+        return ByteBuffer.wrap(n.get()).getDouble();
+    }
+
+    public void writeFailureRatioAtMaxConfidence(double n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("failureRatioAtMaxConfidence must be >= 0");
+        }
+        NestedTransaction transaction = new NestedTransaction();
+        curator.set(failureRatioAtMaxConfidencePath(), ByteBuffer.allocate(Double.BYTES).putDouble(n).array());
+        transaction.commit();
+    }
+
+
     // -------------- Paths --------------------------------------------------
 
     private Path systemVersionPath() {
@@ -242,6 +294,18 @@ public class CuratorDb {
 
     private Path upgradePerMinutePath() {
         return root.append("upgrader").append("upgradesPerMinute");
+    }
+
+    private Path applicationsGivingMinConfidencePath() {
+        return root.append("upgrader").append("applicationsGivingMinConfidence");
+    }
+
+    private Path applicationsGivingMaxConfidencePath() {
+        return root.append("upgrader").append("applicationsGivingMaxConfidence");
+    }
+
+    private Path failureRatioAtMaxConfidencePath() {
+        return root.append("upgrader").append("failureRatioAtMaxConfidence");
     }
 
 }

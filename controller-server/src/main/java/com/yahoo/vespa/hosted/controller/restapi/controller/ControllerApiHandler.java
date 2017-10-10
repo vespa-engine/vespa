@@ -7,9 +7,10 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
+import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -62,7 +63,7 @@ public class ControllerApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/controller/v1/")) return root(request);
         if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(maintenance.jobControl());
-        if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader().upgradesPerMinute());
+        if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader());
         return notFound(path);
     }
 
@@ -101,18 +102,32 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private HttpResponse configureUpgrader(HttpRequest request) {
         String upgradesPerMinuteField = "upgradesPerMinute";
-        Slime slime = toSlime(request.getData());
-        Inspector inspect = slime.get();
+        String applicationsGivingMinConfidenceField = "applicationsGivingMinConfidence";
+        String applicationsGivingMaxConfidenceField = "applicationsGivingMaxConfidence";
+        String failureRatioAtMaxConfidenceField = "failureRatioAtMaxConfidence";
+
+        byte[] jsonBytes = toJsonBytes(request.getData());
+        Inspector inspect = SlimeUtils.jsonToSlime(jsonBytes).get();
+        Upgrader upgrader = maintenance.upgrader();
         if (inspect.field(upgradesPerMinuteField).valid()) {
-            maintenance.upgrader().setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
+            upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
+        } else if (inspect.field(applicationsGivingMinConfidenceField).valid()) {
+            upgrader.setApplicationsGivingMinConfidence((int) inspect.field(applicationsGivingMinConfidenceField).asLong());
+        } else if (inspect.field(applicationsGivingMaxConfidenceField).valid()) {
+            upgrader.setApplicationsGivingMaxConfidence((int) inspect.field(applicationsGivingMaxConfidenceField).asLong());
+        } else if (inspect.field(failureRatioAtMaxConfidenceField).valid()) {
+            upgrader.setFailureRatioAtMaxConfidence(inspect.field(failureRatioAtMaxConfidenceField).asDouble());
+        } else {
+            return ErrorResponse.badRequest("Unable to configure upgrader with data in request: '" +
+                                                    Utf8.toString(jsonBytes) + "'");
         }
-        return new UpgraderResponse(maintenance.upgrader().upgradesPerMinute());
+
+        return new UpgraderResponse(maintenance.upgrader());
     }
 
-    private Slime toSlime(InputStream jsonStream) {
+    private byte[] toJsonBytes(InputStream jsonStream) {
         try {
-            byte[] jsonBytes = IOUtils.readBytes(jsonStream, 1000 * 1000);
-            return SlimeUtils.jsonToSlime(jsonBytes);
+            return IOUtils.readBytes(jsonStream, 1000 * 1000);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
