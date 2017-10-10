@@ -36,6 +36,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.size((long)nodeFlavor.getMinDiskAvailableGb() * GB);
         builder.hwinfo.memory.size((long)nodeFlavor.getMinMainMemoryAvailableGb() * GB);
+        builder.hwinfo.cpu.cores((int)nodeFlavor.getMinCpuCores());
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {

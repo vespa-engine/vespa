@@ -28,6 +28,12 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_hwinfo_cpu_cores_is_set() {
+        ProtonConfig cfg = configFromNumCoresSetting(24);
+        assertEquals(24, cfg.hwinfo().cpu().cores());
+    }
+
+    @Test
     public void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
         assertEquals(200, cfg.hwinfo().disk().writespeed(), 0.001);
