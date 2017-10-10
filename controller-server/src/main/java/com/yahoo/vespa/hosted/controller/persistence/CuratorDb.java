@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -141,6 +142,10 @@ public class CuratorDb {
         return lock(root.append("locks").append("maintenanceJobLocks").append(jobName), Duration.ofSeconds(1));
     }
 
+    public Lock lockProvisionState(String provisionStateId) {
+        return lock(lockPath(provisionStateId), Duration.ofMinutes(30));
+    }
+
     // -------------- Read and write --------------------------------------------------
 
     public Version readSystemVersion() {
@@ -210,6 +215,18 @@ public class CuratorDb {
         transaction.commit();
     }
 
+    public Optional<byte[]> readProvisionState(String provisionId) {
+        return curator.getData(provisionStatePath().append(provisionId));
+    }
+
+    public void writeProvisionState(String provisionId, byte[] data) {
+        curator.set(provisionStatePath().append(provisionId), data);
+    }
+
+    public List<String> readProvisionStateIds() {
+        return curator.getChildren(provisionStatePath());
+    }
+
     // -------------- Paths --------------------------------------------------
 
     private Path systemVersionPath() {
@@ -232,6 +249,13 @@ public class CuratorDb {
         return lockPath;
     }
 
+    private Path lockPath(String provisionId) {
+        Path lockPath = root.append("locks")
+                .append(provisionStatePath());
+        curator.create(lockPath);
+        return lockPath;
+    }
+
     private Path inactiveJobsPath() {
         return root.append("inactiveJobs");
     }
@@ -244,4 +268,11 @@ public class CuratorDb {
         return root.append("upgrader").append("upgradesPerMinute");
     }
 
+    private Path provisionStatePath() {
+        return root.append("provisioning").append("states");
+    }
+
+    private Path provisionStatePath(String provisionId) {
+        return provisionStatePath().append(provisionId);
+    }
 }
