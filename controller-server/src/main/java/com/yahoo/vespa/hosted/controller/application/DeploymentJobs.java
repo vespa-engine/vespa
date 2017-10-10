@@ -10,7 +10,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Controller;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;

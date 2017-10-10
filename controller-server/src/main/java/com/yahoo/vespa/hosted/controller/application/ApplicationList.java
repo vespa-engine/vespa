@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -176,7 +175,7 @@ public class ApplicationList {
                 .filter(JobStatus::inProgress)
                 .filter(status -> status.lastTriggered().isPresent())
                 .map(status -> status.lastTriggered().get())
-                .filter(jobRun -> jobRun.at().isAfter(instant))
+                //.filter(jobRun -> jobRun.at().isAfter(instant))
                 .anyMatch(jobRun -> jobRun.version().equals(change.version()));
     }
     

@@ -109,7 +109,7 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Find jobs that can and should run but is currently not.
+     * Find jobs that can and should run but are currently not.
      */
     public void triggerReadyJobs() {
         ApplicationList applications = ApplicationList.from(applications().asList());

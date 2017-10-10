@@ -112,6 +112,7 @@ public class JobStatus {
     public Optional<DeploymentJobs.JobError> jobError() { return jobError; }
 
     /** Returns true if job is in progress */
+    // TODO: Replace with isRunning
     public boolean inProgress() {
         if (!lastTriggered().isPresent()) {
             return false;
