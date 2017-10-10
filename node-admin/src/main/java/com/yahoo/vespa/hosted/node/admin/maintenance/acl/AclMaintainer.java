@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The responsibility of this class is to configure ACLs for all running containers. The ACLs are fetched from the Node
@@ -63,15 +64,13 @@ public class AclMaintainer implements Runnable {
         }
         final Command flush = new FlushCommand(Chain.INPUT);
         final Command rollback = new PolicyCommand(Chain.INPUT, Action.ACCEPT);
-        log.info("Start modifying ACL rules for " + containerName.asString());
         try {
-            log.debug("Running ACL command '" + flush.asString() + "'");
-            dockerOperations.executeCommandInNetworkNamespace(containerName, flush.asArray(IPTABLES_COMMAND));
-            acl.toCommands().forEach(command -> {
-                log.debug("Running ACL command '" + command.asString() + "' for " + containerName.asString());
-                dockerOperations.executeCommandInNetworkNamespace(containerName,
-                                                                  command.asArray(IPTABLES_COMMAND));
-            });
+            String commands = Stream.concat(Stream.of(flush), acl.toCommands().stream())
+                    .map(command -> command.asString(IPTABLES_COMMAND))
+                    .collect(Collectors.joining("; "));
+
+            log.debug("Running ACL command '" + commands + "' in " + containerName.asString());
+            dockerOperations.executeCommandInNetworkNamespace(containerName, "/bin/sh", "-c", commands);
             containerAcls.put(containerName, acl);
         } catch (Exception e) {
             log.error("Exception occurred while configuring ACLs for " + containerName.asString() + ", attempting rollback", e);
@@ -81,7 +80,6 @@ public class AclMaintainer implements Runnable {
                 log.error("Rollback of ACLs for " + containerName.asString() + " failed, giving up", ne);
             }
         }
-        log.info("Finished modifying ACL rules for " + containerName.asString());
     }
 
     private synchronized void configureAcls() {
