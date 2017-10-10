@@ -280,7 +280,7 @@ public class DeploymentTrigger {
     /** Decide whether the job should be triggered by the periodic trigger */
     private boolean shouldRetryNow(JobStatus job) {
         if (job.isSuccess()) return false;
-        if (job.inProgress()) return false;
+        if (job.isRunning(jobTimeoutLimit())) return false;
 
         // Retry after 10% of the time since it started failing
         Duration aTenthOfFailTime = Duration.ofMillis( (clock.millis() - job.firstFailing().get().at().toEpochMilli()) / 10);
