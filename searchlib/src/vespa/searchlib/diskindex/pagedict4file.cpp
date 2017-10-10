@@ -4,7 +4,6 @@
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>
@@ -63,8 +62,7 @@ PageDict4FileSeqRead::PageDict4FileSeqRead()
       _ssCompleted(false),
       _spCompleted(false),
       _pCompleted(false),
-      _wordNum(0u),
-      _checkPointData()
+      _wordNum(0u)
 {
     _ssd.setReadContext(&_ssReadContext);
     _spd.setReadContext(&_spReadContext);
@@ -229,26 +227,13 @@ PageDict4FileSeqRead::open(const vespalib::string &name,
                                  32768u);
     _ssd.emptyBuffer(0);
 
-    if (_checkPointData) {
-        _ssReadContext.setPosition(_ssReadContext.getCheckPointOffset());
-        if (_ssd._valI >= _ssd._valE)
-            _ssReadContext.readComprBuffer();
-        _spReadContext.setPosition(_spReadContext.getCheckPointOffset());
-        if (_spd._valI >= _spd._valE)
-            _spReadContext.readComprBuffer();
-        _pReadContext.setPosition(_pReadContext.getCheckPointOffset());
-        if (_pd._valI >= _pd._valE)
-            _pReadContext.readComprBuffer();
-    } else {
-        _ssReadContext.readComprBuffer();
-        assert(_ssReadContext.getBufferEndFilePos() >= fileSize);
-        readSSHeader();
-        _spReadContext.readComprBuffer();
-        readSPHeader();
-        _pReadContext.readComprBuffer();
-        readPHeader();
-    }
-
+    _ssReadContext.readComprBuffer();
+    assert(_ssReadContext.getBufferEndFilePos() >= fileSize);
+    readSSHeader();
+    _spReadContext.readComprBuffer();
+    readSPHeader();
+    _pReadContext.readComprBuffer();
+    readPHeader();
 
     _ssReader = new SSReader(_ssReadContext,
                              _ssHeaderLen,
@@ -263,15 +248,9 @@ PageDict4FileSeqRead::open(const vespalib::string &name,
                           _spd,
                           _pd);
 
-    if (_checkPointData) {
-        _ssReader->checkPointRead(*_checkPointData);
-        _pReader->checkPointRead(*_checkPointData);
-        assert(_checkPointData->empty());
-    } else {
-        _ssReader->setup(_ssd);
-        _pReader->setup();
-        _wordNum = 0;
-    }
+    _ssReader->setup(_ssd);
+    _pReader->setup();
+    _wordNum = 0;
 
     return true;
 }
@@ -297,40 +276,6 @@ PageDict4FileSeqRead::close()
     return true;
 }
 
-
-void
-PageDict4FileSeqRead::checkPointWrite(vespalib::nbostream &out)
-{
-    _ssd.checkPointWrite(out);
-    _spReadContext.checkPointWrite(out);
-    _pReadContext.checkPointWrite(out);
-    vespalib::nbostream data;
-    _ssReader->checkPointWrite(data);
-    _pReader->checkPointWrite(data);
-    std::vector<char> checkPointData(data.size());
-    data.read(&checkPointData[0], data.size());
-    out << checkPointData;
-    out << _wordNum;
-    out << _ssCompleted << _ssFileBitSize << _ssHeaderLen;
-    out << _spCompleted << _spFileBitSize << _spHeaderLen;
-    out << _pCompleted << _pFileBitSize << _pHeaderLen;
-}
-
-void
-PageDict4FileSeqRead::checkPointRead(vespalib::nbostream &in)
-{
-    _ssd.checkPointRead(in);
-    _spReadContext.checkPointRead(in);
-    _pReadContext.checkPointRead(in);
-    std::vector<char> checkPointData;
-    in >> checkPointData;
-    _checkPointData.reset(new vespalib::nbostream(checkPointData.size()));
-    _checkPointData->write(&checkPointData[0], checkPointData.size());
-    in >> _wordNum;
-    in >> _ssCompleted >> _ssFileBitSize >> _ssHeaderLen;
-    in >> _spCompleted >> _spFileBitSize >> _spHeaderLen;
-    in >> _pCompleted >> _pFileBitSize >> _pHeaderLen;
-}
 
 void
 PageDict4FileSeqRead::getParams(PostingListParams &params)
@@ -418,11 +363,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
     assertOpenWriteOnly(ok, ssname);
     _ssWriteContext.setFile(&_ssfile);
 
-    if (!_checkPointData) {
-        _pWriteContext.allocComprBuf(65536u, 32768u);
-        _spWriteContext.allocComprBuf(65536u, 32768u);
-        _ssWriteContext.allocComprBuf(65536u, 32768u);
-    }
+    _pWriteContext.allocComprBuf(65536u, 32768u);
+    _spWriteContext.allocComprBuf(65536u, 32768u);
+    _ssWriteContext.allocComprBuf(65536u, 32768u);
 
     uint64_t pFileSize = _pfile.GetSize();
     uint64_t spFileSize = _spfile.GetSize();
@@ -445,33 +388,24 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
     assert(ssBufferStartFilePos ==
            static_cast<uint64_t>(_ssfile.GetPosition()));
 
-    if (!_checkPointData) {
-        _pe.setupWrite(_pWriteContext);
-        _spe.setupWrite(_spWriteContext);
-        _sse.setupWrite(_ssWriteContext);
-        assert(_pe.getWriteOffset() == 0);
-        assert(_spe.getWriteOffset() == 0);
-        assert(_sse.getWriteOffset() == 0);
-        _spe.copyParams(_sse);
-        _pe.copyParams(_sse);
-        // Write initial file headers
-        makePHeader(fileHeaderContext);
-        makeSPHeader(fileHeaderContext);
-        makeSSHeader(fileHeaderContext);
-    }
+    _pe.setupWrite(_pWriteContext);
+    _spe.setupWrite(_spWriteContext);
+    _sse.setupWrite(_ssWriteContext);
+    assert(_pe.getWriteOffset() == 0);
+    assert(_spe.getWriteOffset() == 0);
+    assert(_sse.getWriteOffset() == 0);
+    _spe.copyParams(_sse);
+    _pe.copyParams(_sse);
+    // Write initial file headers
+    makePHeader(fileHeaderContext);
+    makeSPHeader(fileHeaderContext);
+    makeSSHeader(fileHeaderContext);
 
     _ssWriter = new SSWriter(_sse);
     _spWriter = new SPWriter(*_ssWriter, _spe);
     _pWriter = new PWriter(*_spWriter, _pe);
-    if (_checkPointData) {
-        _ssWriter->checkPointRead(*_checkPointData);
-        _spWriter->checkPointRead(*_checkPointData);
-        _pWriter->checkPointRead(*_checkPointData);
-        assert(_checkPointData->empty());
-    } else {
-        _spWriter->setup();
-        _pWriter->setup();
-    }
+    _spWriter->setup();
+    _pWriter->setup();
 
     return true;
 }
@@ -679,43 +613,6 @@ PageDict4FileSeqWrite::updateSSHeader(uint64_t fileBitSize)
     h.rewriteFile(f);
     f.Sync();
     f.Close();
-}
-
-
-void
-PageDict4FileSeqWrite::checkPointWrite(vespalib::nbostream &out)
-{
-    _ssWriteContext.writeComprBuffer(true);
-    _spWriteContext.writeComprBuffer(true);
-    _pWriteContext.writeComprBuffer(true);
-    _ssWriteContext.checkPointWrite(out);
-    _spWriteContext.checkPointWrite(out);
-    _pWriteContext.checkPointWrite(out);
-    vespalib::nbostream data;
-    _ssWriter->checkPointWrite(data);
-    _spWriter->checkPointWrite(data);
-    _pWriter->checkPointWrite(data);
-    std::vector<char> checkPointData(data.size());
-    data.read(&checkPointData[0], data.size());
-    out << checkPointData;
-    out << _ssHeaderLen << _spHeaderLen << _pHeaderLen;
-    _ssfile.Sync();
-    _spfile.Sync();
-    _pfile.Sync();
-}
-
-
-void
-PageDict4FileSeqWrite::checkPointRead(vespalib::nbostream &in)
-{
-    _ssWriteContext.checkPointRead(in);
-    _spWriteContext.checkPointRead(in);
-    _pWriteContext.checkPointRead(in);
-    std::vector<char> checkPointData;
-    in >> checkPointData;
-    _checkPointData.reset(new vespalib::nbostream(checkPointData.size()));
-    _checkPointData->write(&checkPointData[0], checkPointData.size());
-    in >> _ssHeaderLen >> _spHeaderLen >> _pHeaderLen;
 }
 
 

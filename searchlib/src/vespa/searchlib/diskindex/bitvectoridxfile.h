@@ -8,13 +8,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "bitvectorkeyscope.h"
 
-namespace vespalib
-{
-
-class nbostream;
-
-}
-
 namespace search
 {
 
@@ -49,28 +42,12 @@ protected:
     BitVectorKeyScope _scope;
 
     uint64_t idxSize() const;
-    void checkPointWriteCommon(vespalib::nbostream &out);
     void syncCommon();
 
 public:
     BitVectorIdxFileWrite(BitVectorKeyScope scope);
 
     ~BitVectorIdxFileWrite();
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    void
-    checkPointRead(vespalib::nbostream &in);
 
     void
     open(const vespalib::string &name, uint32_t docIdLimit,

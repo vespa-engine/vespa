@@ -5,7 +5,6 @@
 
 namespace search {
 
-using vespalib::nbostream;
 using vespalib::GenerationHeldBase;
 using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;

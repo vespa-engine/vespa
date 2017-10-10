@@ -7,8 +7,6 @@
 
 class FastOS_FileInterface;
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 class FileAlign
@@ -21,7 +19,6 @@ private:
     size_t _elemSize;
     size_t _directIOMemAlign;
     bool   _directio;
-    bool   _checkPointResumed;
 
 
 public:
@@ -64,24 +61,12 @@ public:
      */
     size_t setupAlign(size_t elements, size_t elemSize, FastOS_FileInterface *file, size_t preferredFileAlignment);
     bool getDirectIO() const { return _directio; }
-    bool getCheckPointResumed() const { return _checkPointResumed; }
     size_t getDirectIOFileAlign() const { return _directIOFileAlign; }
     size_t getDirectIOMemAlign() const { return _directIOMemAlign; }
     size_t getMinDirectIOSize() const { return _minDirectIOSize; }
     size_t getMinAlignedSize() const { return _minAlignedSize; }
     size_t getPreferredFileAlign() const { return _preferredFileAlign; }
     size_t getElemSize() const { return _elemSize; }
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.
-     */
-    void checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    void checkPointRead(vespalib::nbostream &in);
 };
 
 }

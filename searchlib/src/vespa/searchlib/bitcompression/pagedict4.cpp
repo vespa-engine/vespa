@@ -5,7 +5,6 @@
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -68,60 +67,6 @@ std::ostream &
 operator<<(std::ostream &stream, const index::PostingListCounts &counts)
 {
     stream << "(d=" << counts._numDocs << ",b=" << counts._bitLength << ")";
-    return stream;
-}
-
-vespalib::nbostream &
-operator<<(vespalib::nbostream &stream,
-           const PageDict4StartOffset &startOffset)
-{
-    stream << startOffset._fileOffset << startOffset._accNumDocs;
-    return stream;
-}
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &stream, PageDict4StartOffset &startOffset)
-{
-    stream >> startOffset._fileOffset >> startOffset._accNumDocs;
-    return stream;
-}
-
-
-vespalib::nbostream &
-operator<<(vespalib::nbostream &stream,
-           const PageDict4SSReader::L7Entry &l7Entry)
-{
-    stream << l7Entry._l7Word << l7Entry._l7StartOffset << l7Entry._l7WordNum;
-    stream << l7Entry._l6Offset << l7Entry._sparsePageNum << l7Entry._pageNum;
-    stream << l7Entry._l7Ref;
-    return stream;
-}
-
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &stream,
-           PageDict4SSReader::L7Entry &l7Entry)
-{
-    stream >> l7Entry._l7Word >> l7Entry._l7StartOffset >> l7Entry._l7WordNum;
-    stream >> l7Entry._l6Offset >> l7Entry._sparsePageNum >> l7Entry._pageNum;
-    stream >> l7Entry._l7Ref;
-    return stream;
-}
-
-
-vespalib::nbostream &
-operator<<(vespalib::nbostream &stream,
-           const PageDict4SSReader::OverflowRef &oref)
-{
-    stream << oref._wordNum << oref._l7Ref;
-    return stream;
-}
-
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &stream, PageDict4SSReader::OverflowRef &oref)
-{
-    stream >> oref._wordNum >> oref._l7Ref;
     return stream;
 }
 
@@ -357,28 +302,6 @@ addOverflowCounts(const vespalib::stringref &word,
 void
 PageDict4SSWriter::flush()
 {
-}
-
-
-void
-PageDict4SSWriter::checkPointWrite(vespalib::nbostream &out)
-{
-    out << _l6Word;
-    out << _l6StartOffset;
-    out << _l6PageNum;
-    out << _l6SparsePageNum;
-    out << _l6WordNum;
-}
-
-
-void
-PageDict4SSWriter::checkPointRead(vespalib::nbostream &in)
-{
-    in >> _l6Word;
-    in >> _l6StartOffset;
-    in >> _l6PageNum;
-    in >> _l6SparsePageNum;
-    in >> _l6WordNum;
 }
 
 
@@ -722,48 +645,6 @@ PageDict4SPWriter::addL5Skip(size_t &lcp)
     _l5Size = _eL5.getWriteOffset();
     _l5Word = _l3Word;
     _l5WordOffset = _l3WordOffset + 2 + _l3Word.size() - lcp;
-}
-
-
-void
-PageDict4SPWriter::checkPointWrite(vespalib::nbostream &out)
-{
-    _wcL3.checkPointWrite(out);
-    _wcL4.checkPointWrite(out);
-    _wcL5.checkPointWrite(out);
-    out << _l3Word << _l4Word << _l5Word << _l6Word;
-    out << _l3WordOffset << _l4WordOffset << _l5WordOffset;
-    out << _l3StartOffset << _l4StartOffset << _l5StartOffset << _l6StartOffset;
-    out << _l3WordNum << _l4WordNum << _l5WordNum << _l6WordNum;
-    out << _curL3OffsetL4 << _curL3OffsetL5 << _curL4OffsetL5;
-    out << _headerSize;
-    out << _l3Entries;
-    out << _l4StrideCheck << _l5StrideCheck;
-    out << _l3Size << _l4Size << _l5Size;
-    out << _prevL3Size << _prevL4Size << _prevL5Size << _prevWordsSize;
-    out << _sparsePageNum << _l3PageNum;
-    out << _words;
-}
-
-
-void
-PageDict4SPWriter::checkPointRead(vespalib::nbostream &in)
-{
-    _wcL3.checkPointRead(in);
-    _wcL4.checkPointRead(in);
-    _wcL5.checkPointRead(in);
-    in >> _l3Word >> _l4Word >> _l5Word >> _l6Word;
-    in >> _l3WordOffset >> _l4WordOffset >> _l5WordOffset;
-    in >> _l3StartOffset >> _l4StartOffset >> _l5StartOffset >> _l6StartOffset;
-    in >> _l3WordNum >> _l4WordNum >> _l5WordNum >> _l6WordNum;
-    in >> _curL3OffsetL4 >> _curL3OffsetL5 >> _curL4OffsetL5;
-    in >> _headerSize;
-    in >> _l3Entries;
-    in >> _l4StrideCheck >> _l5StrideCheck;
-    in >> _l3Size >> _l4Size >> _l5Size;
-    in >> _prevL3Size >> _prevL4Size >> _prevL5Size >> _prevWordsSize;
-    in >> _sparsePageNum >> _l3PageNum;
-    in >> _words;
 }
 
 
@@ -1145,52 +1026,6 @@ PageDict4PWriter::addL2Skip(size_t &lcp)
     _curL1OffsetL2 = _l1Size;
     _l2Size = _eL2.getWriteOffset();
     _l2WordOffset = _countsWordOffset + 2 + _pendingCountsWord.size() - lcp;
-}
-
-
-void
-PageDict4PWriter::checkPointWrite(vespalib::nbostream &out)
-{
-    _wcCounts.checkPointWrite(out);
-    _wcL1.checkPointWrite(out);
-    _wcL2.checkPointWrite(out);
-    out << _countsWord << _l1Word << _l2Word << _l3Word;
-    out << _pendingCountsWord;
-    out << _countsWordOffset << _l1WordOffset << _l2WordOffset;
-    out << _countsStartOffset << _l1StartOffset << _l2StartOffset;
-    out << _l3StartOffset;
-    out << _curCountOffsetL1 << _curCountOffsetL2 << _curL1OffsetL2;
-    out << _headerSize;
-    out << _countsEntries;
-    out << _l1StrideCheck << _l2StrideCheck;
-    out << _countsSize << _l1Size << _l2Size;
-    out << _prevL1Size << _prevL2Size;
-    out << _pageNum;
-    out << _l3WordNum << _wordNum;
-    out << _words;
-}
-
-
-void
-PageDict4PWriter::checkPointRead(vespalib::nbostream &in)
-{
-    _wcCounts.checkPointRead(in);
-    _wcL1.checkPointRead(in);
-    _wcL2.checkPointRead(in);
-    in >> _countsWord >> _l1Word >> _l2Word >> _l3Word;
-    in >> _pendingCountsWord;
-    in >> _countsWordOffset >> _l1WordOffset >> _l2WordOffset;
-    in >> _countsStartOffset >> _l1StartOffset >> _l2StartOffset;
-    in >> _l3StartOffset;
-    in >> _curCountOffsetL1 >> _curCountOffsetL2 >> _curL1OffsetL2;
-    in >> _headerSize;
-    in >> _countsEntries;
-    in >> _l1StrideCheck >> _l2StrideCheck;
-    in >> _countsSize >> _l1Size >> _l2Size;
-    in >> _prevL1Size >> _prevL2Size;
-    in >> _pageNum;
-    in >> _l3WordNum >> _wordNum;
-    in >> _words;
 }
 
 
@@ -1657,34 +1492,6 @@ lookupOverflow(uint64_t wordNum) const
     res._lastWord = word;
     res._res = true;
     return res;
-}
-
-
-void
-PageDict4SSReader::checkPointWrite(vespalib::nbostream &out)
-{
-    out << _ssFileBitLen << _ssStartOffset;
-    out << _l7;
-    _ssd.checkPointWrite(out);
-    out << _spFileBitLen << _pFileBitLen;
-    out << _spStartOffset << _pStartOffset;
-    out << _spFirstPageNum << _spFirstPageOffset;
-    out << _pFirstPageNum << _pFirstPageOffset;
-    out << _overflows;
-}
-
-
-void
-PageDict4SSReader::checkPointRead(vespalib::nbostream &in)
-{
-    in >> _ssFileBitLen >> _ssStartOffset;
-    in >> _l7;
-    _ssd.checkPointRead(in);
-    in >> _spFileBitLen >> _pFileBitLen;
-    in >> _spStartOffset >> _pStartOffset;
-    in >> _spFirstPageNum >> _spFirstPageOffset;
-    in >> _pFirstPageNum >> _pFirstPageOffset;
-    in >> _overflows;
 }
 
 
@@ -2510,68 +2317,6 @@ PageDict4Reader::readOverflowCounts(vespalib::string &word,
 
     assert(wtsslr._startOffset == _startOffset);
     _startOffset.adjust(counts);
-}
-
-void
-PageDict4Reader::checkPointWrite(vespalib::nbostream &out)
-{
-    out << _countsResidue;
-    out << _overflowPage;
-    out << _counts;
-    size_t ccOff = _cc - _counts.begin();
-    size_t ceOff = _ce - _counts.begin();
-    assert(ceOff == _counts.size());
-    out << ccOff << ceOff;
-    out << _words;
-    size_t wcOff = _wc - _words.begin();
-    size_t weOff = _we - _words.begin();
-    assert(weOff = _words.size());
-    out << wcOff << weOff;
-    out << _lastWord;
-    out << _lastSSWord;
-    out << _l3Residue;
-    out << _spwords;
-    size_t spwcOff = _spwc - _spwords.begin();
-    size_t spweOff = _spwe - _spwords.begin();
-    assert(spweOff == _spwords.size());
-    out << spwcOff << spweOff;
-    _ssd.checkPointWrite(out);
-    out << _ssd.getReadOffset();
-    out << _wordNum;
-}
-
-void
-PageDict4Reader::checkPointRead(vespalib::nbostream &in)
-{
-    in >> _countsResidue;
-    in >> _overflowPage;
-    in >> _counts;
-    size_t ccOff;
-    size_t ceOff;
-    in >> ccOff >> ceOff;
-    _cc = _counts.begin() + ccOff;
-    _ce = _counts.begin() + ceOff;
-    in >> _words;
-    size_t wcOff;
-    size_t weOff;
-    in >> wcOff >> weOff;
-    _wc = _words.begin() + wcOff;
-    _we = _words.begin() + weOff;
-    in >> _lastWord;
-    in >> _lastSSWord;
-    in >> _l3Residue;
-    in >> _spwords;
-    size_t spwcOff;
-    size_t spweOff;
-    in >> spwcOff >> spweOff;
-    _spwc = _spwords.begin() + spwcOff;
-    _spwe = _spwords.begin() + spweOff;
-    _ssd.checkPointRead(in);
-    int64_t ssReadOffset;
-    in >> ssReadOffset;
-    const ComprBuffer &sscb  = _ssReader._cb;
-    setDecoderPosition(_ssd, sscb, ssReadOffset);
-    in >> _wordNum;
 }
 
 } // namespace bitcompression

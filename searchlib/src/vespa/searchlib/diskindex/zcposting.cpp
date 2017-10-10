@@ -6,7 +6,6 @@
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/fileheader.h>
 
 #include <vespa/log/log.h>
@@ -27,7 +26,6 @@ using index::PostingListCountFileSeqWrite;
 using common::FileHeaderContext;
 using bitcompression::FeatureDecodeContextBE;
 using bitcompression::FeatureEncodeContextBE;
-using vespalib::nbostream;
 using vespalib::getLastErrorString;
 
 
@@ -78,11 +76,7 @@ Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile)
       _rangeEndOffset(0),
       _readAheadEndOffset(0),
       _wordStart(0),
-      _checkPointPos(0),
-      _residue(0),
-      _checkPointChunkNo(0u),
-      _checkPointResidue(0u),
-      _checkPointHasMore(false)
+      _residue(0)
 {
     if (_countFile != NULL) {
         PostingListParams params;
@@ -227,32 +221,6 @@ readDocIdAndFeatures(DocIdAndFeatures &features)
     }
     _decodeContext->readFeatures(features);
     --_residue;
-}
-
-
-void
-Zc4PostingSeqRead::checkPointWrite(nbostream &out)
-{
-    out << _counts;
-    out << _wordStart;
-    uint64_t curPos = _decodeContext->getReadOffset();
-    out << curPos;
-    out << _residue;
-    out << _chunkNo;
-    out << _hasMore;
-}
-
-
-void
-Zc4PostingSeqRead::checkPointRead(nbostream &in)
-{
-    in >> _counts;
-    in >> _wordStart;
-    in >> _checkPointPos;
-    in >> _checkPointResidue;
-    in >> _checkPointChunkNo;
-    in >> _checkPointHasMore;
-    assert(_checkPointPos >= _wordStart);
 }
 
 
@@ -508,34 +476,8 @@ Zc4PostingSeqRead::open(const vespalib::string &name,
         _readContext.readComprBuffer();
 
         readHeader();
-        if (d._valI >= d._valE)
+        if (d._valI >= d._valE) {
             _readContext.readComprBuffer();
-        if (_checkPointPos != 0) {
-            if (_checkPointResidue != 0 || _checkPointHasMore) {
-                // Checkpointed in the middle of a word.  Read from
-                // start at word until at right position.
-                DocIdAndFeatures features;
-                _readContext.setPosition(_wordStart);
-                assert(_decodeContext->getReadOffset() == _wordStart);
-                _readContext.readComprBuffer();
-                readWordStart();
-                assert(_chunkNo < _checkPointChunkNo ||
-                       (_chunkNo == _checkPointChunkNo &&
-                        _residue >= _checkPointResidue));
-                while (_chunkNo < _checkPointChunkNo ||
-                       _residue > _checkPointResidue) {
-                    readDocIdAndFeatures(features);
-                }
-                assert(_chunkNo == _checkPointChunkNo);
-                assert(_residue == _checkPointResidue);
-                assert(_hasMore == _checkPointHasMore);
-                assert(_decodeContext->getReadOffset() == _checkPointPos);
-            } else {
-                // Checkpointed between words.
-                _readContext.setPosition(_checkPointPos);
-                assert(_decodeContext->getReadOffset() == _checkPointPos);
-                _readContext.readComprBuffer();
-            }
         }
     } else {
         LOG(error, "could not open %s: %s",
@@ -737,29 +679,6 @@ Zc4PostingSeqWrite::flushWord()
 
     _counts._bitLength = writePos - _writePos;
     _writePos = writePos;
-}
-
-
-void
-Zc4PostingSeqWrite::checkPointWrite(nbostream &out)
-{
-    _writeContext.writeComprBuffer(true);   // Also flush slack
-    out << _numWords;
-    _writeContext.checkPointWrite(out);
-    _featureWriteContext.checkPointWrite(out);
-    out.saveVector(_docIds) << _writePos << _counts;
-    _file.Sync();
-}
-
-
-void
-Zc4PostingSeqWrite::checkPointRead(nbostream &in)
-{
-    in >> _numWords;
-    _writeContext.checkPointRead(in);
-    _featureWriteContext.checkPointRead(in);
-    _featureOffset = _encodeFeatures->getWriteOffset();
-    in.restoreVector(_docIds) >> _writePos >> _counts;
 }
 
 
@@ -1422,10 +1341,3 @@ ZcPostingSeqWrite::flushWordNoSkip()
 }
 
 } // namespace search::diskindex
-
-#include <vespa/vespalib/objects/nbostream.hpp>
-namespace vespalib {
-    using UInt32Pair = std::pair<uint32_t, uint32_t>;
-    template nbostream &nbostream::saveVector<UInt32Pair>(const std::vector<UInt32Pair> &);
-    template nbostream &nbostream::restoreVector<UInt32Pair>(std::vector<UInt32Pair> &);
-}

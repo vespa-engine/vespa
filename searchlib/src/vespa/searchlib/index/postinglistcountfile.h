@@ -5,8 +5,6 @@
 #include "postinglistcounts.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 namespace common { class FileHeaderContext; }
@@ -34,19 +32,6 @@ public:
     virtual ~PostingListCountFileSeqRead();
 
     /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void checkPointRead(vespalib::nbostream &in) = 0;
-
-    /**
      * Open posting list count file for sequential read.
      */
     virtual bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
@@ -69,19 +54,6 @@ public:
     PostingListCountFileSeqWrite();
 
     virtual ~PostingListCountFileSeqWrite();
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
     /**
      * Open posting list count file for sequential write.

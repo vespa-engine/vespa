@@ -138,16 +138,6 @@ public:
         return *this;
     }
 
-    // For checkpointing where capacity should be restored
-    template <typename T>
-    nbostream &
-    saveVector(const std::vector<T> &val);
-
-    // For checkpointing where capacity should be restored
-    template <typename T>
-    nbostream &
-    restoreVector(std::vector<T> &val);
-
     size_t size() const { return left(); }
     size_t capacity() const { return _wbuf.size(); }
     bool empty()  const { return size() == 0; }

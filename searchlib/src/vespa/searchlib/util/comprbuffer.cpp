@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "comprbuffer.h"
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <cstring>
 
 namespace search {
-
-using vespalib::nbostream;
 
 ComprBuffer::ComprBuffer(uint32_t unitSize)
     : _comprBuf(NULL),
@@ -113,26 +111,5 @@ ComprBuffer::referenceComprBuf(const ComprBuffer &rhs)
     _comprBuf = rhs._comprBuf;
     _comprBufSize = rhs._comprBufSize;
 }
-
-
-void
-ComprBuffer::checkPointWrite(nbostream &out)
-{
-    _aligner.checkPointWrite(out);
-    out << _comprBufSize << _unitSize << _padBefore;
-}
-
-
-void
-ComprBuffer::checkPointRead(nbostream &in)
-{
-    _aligner.checkPointRead(in);
-    uint32_t unitSize;
-    in >> _comprBufSize >> unitSize >> _padBefore;
-    assert(unitSize == _unitSize);
-
-    allocComprBuf();
-}
-
 
 }

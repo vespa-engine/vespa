@@ -5,7 +5,6 @@ vespa_add_library(searchlib_diskindex OBJECT
     bitvectorfile.cpp
     bitvectoridxfile.cpp
     bitvectorkeyscope.cpp
-    checkpointfile.cpp
     dictionarywordreader.cpp
     diskindex.cpp
     disktermblueprint.cpp

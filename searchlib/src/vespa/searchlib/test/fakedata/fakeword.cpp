@@ -553,13 +553,10 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator, bool verbose) co
 
 
 bool
-FakeWord::validate(std::shared_ptr<FieldReader> &fieldReader,
+FakeWord::validate(FieldReader &fieldReader,
                    uint32_t wordNum,
                    const fef::TermFieldMatchDataArray &matchData,
-                   bool verbose,
-                   uint32_t &checkPointCheck,
-                   uint32_t checkPointInterval,
-                   CheckPointCallback *const checkPointCallback) const
+                   bool verbose) const
 {
     uint32_t docId = 0;
     uint32_t numDocs;
@@ -585,8 +582,8 @@ FakeWord::validate(std::shared_ptr<FieldReader> &fieldReader,
 #endif
     numDocs = _postings.size();
     for (residue = numDocs; residue > 0; --residue) {
-        assert(fieldReader->_wordNum == wordNum);
-        DocIdAndFeatures &features(fieldReader->_docIdAndFeatures);
+        assert(fieldReader._wordNum == wordNum);
+        DocIdAndFeatures &features(fieldReader._docIdAndFeatures);
         docId = features._docId;
         assert(d != de);
         assert(d->_docId == docId);
@@ -648,12 +645,7 @@ FakeWord::validate(std::shared_ptr<FieldReader> &fieldReader,
             assert(presidue == 0);
             ++d;
         }
-        if (++checkPointCheck >= checkPointInterval) {
-            checkPointCheck = 0;
-            if (checkPointCallback != NULL)
-                checkPointCallback->checkPoint();
-        }
-        fieldReader->read();
+        fieldReader.read();
     }
     if (matchData.valid()) {
         assert(p == pe);
@@ -707,11 +699,8 @@ FakeWord::validate(const search::BitVector &bv) const
 
 
 bool
-FakeWord::dump(std::shared_ptr<FieldWriter> &fieldWriter,
-               bool verbose,
-               uint32_t &checkPointCheck,
-               uint32_t checkPointInterval,
-               CheckPointCallback *checkPointCallback) const
+FakeWord::dump(FieldWriter &fieldWriter,
+               bool verbose) const
 {
     uint32_t numDocs;
     uint32_t residue;
@@ -732,13 +721,8 @@ FakeWord::dump(std::shared_ptr<FieldWriter> &fieldWriter,
         assert(d != de);
         setupFeatures(*d, &*p, features);
         p += d->_positions;
-        fieldWriter->add(features);
+        fieldWriter.add(features);
         ++d;
-        if (++checkPointCheck >= checkPointInterval) {
-            checkPointCheck = 0;
-            if (checkPointCallback != NULL)
-                checkPointCallback->checkPoint();
-        }
     }
     assert(p == pe);
     assert(d == de);

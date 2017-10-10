@@ -31,7 +31,6 @@ public:
     static size_t minimumPadding() { return 8; }
     uint32_t getUnitBitSize() const { return _unitSize * 8; }
     bool getPadBefore() const { return _padBefore; }
-    bool getCheckPointResumed() const { return _aligner.getCheckPointResumed(); }
 
     /*
      * When encoding to memory instead of file, the compressed buffer must
@@ -44,18 +43,6 @@ public:
      * long as rhs is live and unchanged.
      */
     void referenceComprBuf(const ComprBuffer &rhs);
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.
-     */
-    void checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     *
-     */
-    void checkPointRead(vespalib::nbostream &in);
 };
 
 }
