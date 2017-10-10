@@ -42,7 +42,7 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Get current configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader"),
-                              "{\"upgradesPerMinute\":0.5,\"applicationsGivingMinConfidence\":3,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.5}",
+                              "{\"upgradesPerMinute\":0.5,\"applicationsGivingMinConfidence\":3,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.1}",
                               200);
 
         // Set invalid configuration
@@ -59,20 +59,20 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Patch configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
-                                          "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
-                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":3,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.5}",
+                                          "{\"upgradesPerMinute\"   :42.0}", Request.Method.PATCH),
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":3,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.1}",
                               200);
 
         // Patch configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
                                           "{\"applicationsGivingMinConfidence\":5}", Request.Method.PATCH),
-                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.5}",
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":4,\"failureRatioAtMaxConfidence\":0.1}",
                               200);
 
         // Patch configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
                                           "{\"applicationsGivingMaxConfidence\":50}", Request.Method.PATCH),
-                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":50,\"failureRatioAtMaxConfidence\":0.5}",
+                              "{\"upgradesPerMinute\":42.0,\"applicationsGivingMinConfidence\":5,\"applicationsGivingMaxConfidence\":50,\"failureRatioAtMaxConfidence\":0.1}",
                               200);
 
         // Patch configuration

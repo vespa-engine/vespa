@@ -247,7 +247,7 @@ public class CuratorDb {
     public double readFailureRatioAtMaxConfidence() {
         Optional<byte[]> n = curator.getData(failureRatioAtMaxConfidencePath());
         if (!n.isPresent() || n.get().length == 0) {
-            return 0.5; // Default if value has never been written
+            return 0.1; // Default if value has never been written
         }
         return ByteBuffer.wrap(n.get()).getDouble();
     }
