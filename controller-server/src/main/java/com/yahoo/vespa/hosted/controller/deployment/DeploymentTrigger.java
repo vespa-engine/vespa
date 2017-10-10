@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
@@ -106,6 +108,58 @@ public class DeploymentTrigger {
         }
     }
 
+    /**
+     * Find jobs that can and should run but is currently not.
+     */
+    public void triggerReadyJobs() {
+        ApplicationList applications = ApplicationList.from(applications().asList());
+        applications = applications.notPullRequest();
+        for (Application application : applications.asList()) {
+            try (Lock lock = applications().lock(application.id())) {
+                triggerReadyJobs(application, lock);
+            }
+        }
+    }
+    
+    private void triggerReadyJobs(Application application, Lock lock) {
+        if ( ! application.deploying().isPresent()) return;
+        for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
+            // TODO: Do this for all jobs not just staging, and (with more work) remove triggerFailing and triggerDelayed
+            if (jobType.environment().equals(Environment.staging)) {
+                JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+                if (jobStatus.isRunning(clock.instant().minus(jobTimeout))) continue;
+
+                for (JobType nextJobType : order.nextAfter(jobType, application)) {
+                    JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
+                    
+                    // Attempt to trigger if there are changes available - is rejected if the change is in progress,
+                    // or is currently blocked
+                    if (changesAvailable(jobStatus, nextStatus))
+                        trigger(nextJobType, application, false, "Triggering previously blocked job", lock);
+                }
+                
+            }
+        }
+    }
+
+    /**
+     * Returns true if the previous job has completed successfully with a revision and/or version which is
+     * newer (different) than the one last completed successfully in next
+     */
+    private boolean changesAvailable(JobStatus previous, JobStatus next) {
+        if ( ! previous.lastSuccess().isPresent()) return false;
+        if (next == null) return true;
+        if ( ! next.lastSuccess().isPresent()) return true;
+        
+        JobStatus.JobRun previousSuccess = previous.lastSuccess().get();
+        JobStatus.JobRun nextSuccess = next.lastSuccess().get();
+        if (previousSuccess.revision().isPresent() &&  ! previousSuccess.revision().get().equals(nextSuccess.revision().get()))
+            return true;
+        if (! previousSuccess.version().equals(nextSuccess.version()))
+            return true;
+        return false;
+    }
+    
     /**
      * Called periodically to cause triggering of jobs in the background
      */
@@ -292,9 +346,6 @@ public class DeploymentTrigger {
             return application;
         }
 
-        // TODO: Review code for retrying when no job is running but a change is in progress
-        //       or add more ...
-        
         // TODO: Remove when we can determine why this occurs
         if (jobType != JobType.component && ! application.deploying().isPresent()) {
             log.warning(String.format("Want to trigger %s for %s with reason %s, but this application is not " +

@@ -13,6 +13,7 @@ import java.time.Duration;
  * 
  * @author bratseth
  */
+@SuppressWarnings("unused")
 public class BlockedChangeDeployer extends Maintainer {
     
     public BlockedChangeDeployer(Controller controller, Duration interval, JobControl jobControl) {
@@ -21,13 +22,7 @@ public class BlockedChangeDeployer extends Maintainer {
 
     @Override
     protected void maintain() {
-        ApplicationList applications = ApplicationList.from(controller().applications().asList()).notPullRequest();
-        applications = applications.notDeploying();
-        applications = applications.hasUndeployedSuccessfulRevisionChange();
-        for (Application application : applications.asList()) {
-//            controller().applications().deploymentTrigger().triggerChange(application.id(),
-//                                                                          Change.ApplicationChange.of());
-        }
+        controller().applications().deploymentTrigger().triggerReadyJobs();
     }
 
 }

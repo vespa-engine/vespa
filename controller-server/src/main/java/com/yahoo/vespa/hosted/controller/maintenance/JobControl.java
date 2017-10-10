@@ -13,14 +13,12 @@ import java.util.logging.Logger;
  * Provides status and control over running maintenance jobs.
  * This is multithread safe.
  * 
- * Job deactivation is stored in a local file.
+ * Job deactivation is stored in zookeeper.
  * 
  * @author bratseth
  */
 public class JobControl {
     
-    private static final Logger log = Logger.getLogger(JobControl.class.getName());
-
     private final CuratorDb curator;
 
     /** This is not stored in ZooKeeper as all nodes start all jobs */
