@@ -3,10 +3,10 @@ vespa_add_executable(logforwarder-start_app
     SOURCES
     main.cpp
     cf-handler.cpp
-    sig-catch.cpp
     OUTPUT_NAME vespa-logforwarder-start
     INSTALL bin
     DEPENDS
     config_cloudconfig
     configdefinitions
+    vespalib
 )
