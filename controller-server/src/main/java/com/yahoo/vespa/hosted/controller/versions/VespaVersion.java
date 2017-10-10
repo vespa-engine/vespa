@@ -56,9 +56,8 @@ public class VespaVersion implements Comparable<VespaVersion> {
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
-        // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
-        int brokenByThisVersion = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt).size();
-        if (brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.1)
+        // 'broken' if too many non-canary apps fail
+        if (nonCanaryApplicationsBroken(failingOnThis, productionOnThis, releasedAt))
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
@@ -134,6 +133,30 @@ public class VespaVersion implements Comparable<VespaVersion> {
         /** We have overwhelming evidence that this version is working */
         high
 
+    }
+
+    private static boolean nonCanaryApplicationsBroken(ApplicationList failingOnThis,
+                                                       ApplicationList productionOnThis,
+                                                       Instant releasedAt) {
+        // all below are number for non-canary applications
+        int failing = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt).size();
+        int production = productionOnThis.without(UpgradePolicy.canary).size();
+        int all = production + failing;
+
+        if (all == 0) return false;
+
+        double brokenByThisVersion = (double) failing / (double) all;
+        // limit for 'broken' depends on total number of applications on this version
+        double limit;
+        if (all <= 4) {
+            limit = 1.0;
+        } else if (all <= 10) {
+            limit = 0.75;
+        } else {
+            limit = 0.50;
+        }
+
+        return (brokenByThisVersion >= limit);
     }
 
 }
