@@ -5,6 +5,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
@@ -54,6 +55,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .build();
     private static final String athensUserDomain = "domain1";
     private static final String athensScrewdriverDomain = "screwdriver-domain";
+
 
     @Test
     public void testApplicationApi() throws Exception {
@@ -280,6 +282,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"message\":\"Successfully copied environment hosted-verified-prod to hosted-instance_tenant1_application1_placeholder_component_default\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", "", Request.Method.POST),
                 "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
+
+        controllerTester.controller().deconstruct();
     }
 
     @Test
@@ -730,18 +734,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void addMockObservedApplicationCost(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
-            for (Deployment deployment : application.deployments().values()) {
-                Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
-                List<String> hostnames = new ArrayList<>();
-                hostnames.add("host1");
-                hostnames.add("host2");
-                clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, ClusterSpec.Type.content, hostnames));
-                Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
-                clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3,0.6,0.4,0.3));
-                deployment = deployment.withClusterInfo(clusterInfo);
-                deployment = deployment.withClusterUtils(clusterUtils);
-                application = application.with(deployment);
-                controllerTester.controller().applications().store(application, controllerTester.controller().applications().lock(application.id()));
+            try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
+                for (Deployment deployment : application.deployments().values()) {
+                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
+                    List<String> hostnames = new ArrayList<>();
+                    hostnames.add("host1");
+                    hostnames.add("host2");
+                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, ClusterSpec.Type.content, hostnames));
+                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
+                    clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
+                    deployment = deployment.withClusterInfo(clusterInfo);
+                    deployment = deployment.withClusterUtils(clusterUtils);
+                    application = application.with(deployment);
+                    controllerTester.controller().applications().store(application, lock);
+                }
             }
         }
     }

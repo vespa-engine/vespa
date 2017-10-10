@@ -46,11 +46,12 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     protected void maintain() {
 
         for (Application application : controller().applications().asList()) {
-            Lock lock = controller().applications().lock(application.id());
-            for (Deployment deployment : application.deployments().values()) {
-                Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
-                Application app = application.with(deployment.withClusterUtils(clusterUtilization));
-                controller.applications().store(app, lock);
+            try (Lock lock = controller().applications().lock(application.id())) {
+                for (Deployment deployment : application.deployments().values()) {
+                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
+                    Application app = application.with(deployment.withClusterUtils(clusterUtilization));
+                    controller.applications().store(app, lock);
+                }
             }
         }
     }

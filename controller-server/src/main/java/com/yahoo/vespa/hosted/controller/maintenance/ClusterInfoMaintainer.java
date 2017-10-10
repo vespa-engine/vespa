@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * Maintain info about hardware, hostnames and cluster specifications.
- *
+ * <p>
  * This is used to calculate cost metrics for the application api.
  *
  * @author smorgrav
@@ -66,16 +66,17 @@ public class ClusterInfoMaintainer extends Maintainer {
     protected void maintain() {
 
         for (Application application : controller().applications().asList()) {
-            Lock lock = controller().applications().lock(application.id());
-            for (Deployment deployment : application.deployments().values()) {
-                DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
-                try {
-                    NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
-                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes);
-                    Application app = application.with(deployment.withClusterInfo(clusterInfo));
-                    controller.applications().store(app, lock);
-                } catch (IOException ioe) {
-                    Logger.getLogger(ClusterInfoMaintainer.class.getName()).fine(ioe.getMessage());
+            try (Lock lock = controller().applications().lock(application.id())) {
+                for (Deployment deployment : application.deployments().values()) {
+                    DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
+                    try {
+                        NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
+                        Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes);
+                        Application app = application.with(deployment.withClusterInfo(clusterInfo));
+                        controller.applications().store(app, lock);
+                    } catch (IOException ioe) {
+                        Logger.getLogger(ClusterInfoMaintainer.class.getName()).fine(ioe.getMessage());
+                    }
                 }
             }
         }
