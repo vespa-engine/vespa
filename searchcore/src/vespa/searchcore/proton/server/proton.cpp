@@ -239,13 +239,15 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const auto &hwDiskCfg = protonConfig.hwinfo.disk;
     const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
+    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
     // TODO: Forward disk size when performance impact of disk usage sampling is verified
     HwInfoSampler::Config samplerCfg(0,
                                      hwDiskCfg.writespeed,
                                      hwDiskCfg.slowwritespeedlimit,
                                      hwDiskCfg.samplewritesize,
                                      hwDiskCfg.shared,
-                                     hwMemoryCfg.size);
+                                     hwMemoryCfg.size,
+                                     hwCpuCfg.cores);
     _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir, samplerCfg);
     _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);

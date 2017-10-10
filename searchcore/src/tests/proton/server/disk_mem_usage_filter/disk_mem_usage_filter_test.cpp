@@ -18,7 +18,7 @@ struct Fixture
     using Config = DiskMemUsageFilter::Config;
 
     Fixture()
-        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(64 * 1024 * 1024)))
+        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(64 * 1024 * 1024), HwInfo::Cpu(0)))
     {
         _filter.setDiskUsedSize(0);
         _filter.setMemoryStats(vespalib::ProcessMemoryStats(10000000,
