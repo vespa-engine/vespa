@@ -17,6 +17,7 @@ public class SuperModelListenerImpl implements SuperModelListener {
     private static final Logger logger = Logger.getLogger(SuperModelListenerImpl.class.getName());
 
     private final ServiceMonitorMetrics metrics;
+    private final ModelGenerator modelGenerator;
 
     // superModel and slobrokMonitorManager are always updated together
     // and atomically using this monitor.
@@ -25,9 +26,11 @@ public class SuperModelListenerImpl implements SuperModelListener {
     private SuperModel superModel;
 
     SuperModelListenerImpl(SlobrokMonitorManager slobrokMonitorManager,
-                           ServiceMonitorMetrics metrics) {
+                           ServiceMonitorMetrics metrics,
+                           ModelGenerator modelGenerator) {
         this.slobrokMonitorManager = slobrokMonitorManager;
         this.metrics = metrics;
+        this.modelGenerator = modelGenerator;
     }
 
     void start(SuperModelProvider superModelProvider) {
@@ -38,7 +41,7 @@ public class SuperModelListenerImpl implements SuperModelListener {
             SuperModel snapshot = superModelProvider.snapshot(this);
 
             snapshot.getAllApplicationInfos().stream().forEach(application ->
-                    applicationActivated(superModel, application));
+                    applicationActivated(snapshot, application));
         }
     }
 
@@ -59,13 +62,11 @@ public class SuperModelListenerImpl implements SuperModelListener {
     }
 
     ServiceModel createServiceModelSnapshot(Zone zone, List<String> configServerHostnames) {
-        ModelGenerator modelGenerator = new ModelGenerator();
-
         try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
             // Reference 'measurement' in a dummy statement, otherwise the compiler
             // complains about "auto-closeable resource is never referenced in body of
             // corresponding try statement". Why hasn't javac fixed this!?
-            measurement.hashCode();
+            dummy(measurement);
 
             // WARNING: The slobrok monitor manager may be out-of-sync with super model (no locking)
             return modelGenerator.toServiceModel(
@@ -75,4 +76,6 @@ public class SuperModelListenerImpl implements SuperModelListener {
                     slobrokMonitorManager);
         }
     }
+
+    private void dummy(LatencyMeasurement measurement) {}
 }
