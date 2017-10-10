@@ -57,6 +57,9 @@ public class DeploymentTrigger {
         this.order = new DeploymentOrder(controller);
     }
     
+    /** Returns the time in the past before which jobs are at this moment considered unresponsive */
+    public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
+    
     //--- Start of methods which triggers deployment jobs -------------------------
 
     /** 
@@ -127,7 +130,7 @@ public class DeploymentTrigger {
             // TODO: Do this for all jobs not just staging, and (with more work) remove triggerFailing and triggerDelayed
             if (jobType.environment().equals(Environment.staging)) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-                if (jobStatus.isRunning(clock.instant().minus(jobTimeout))) continue;
+                if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
                 for (JobType nextJobType : order.nextAfter(jobType, application)) {
                     JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
@@ -342,7 +345,7 @@ public class DeploymentTrigger {
             return application;
         }
         
-        if (application.deploymentJobs().isRunning(jobType, clock.instant().minus(jobTimeout))) {
+        if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) {
             return application;
         }
 

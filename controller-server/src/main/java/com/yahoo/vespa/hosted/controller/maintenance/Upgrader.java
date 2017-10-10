@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -70,14 +71,13 @@ public class Upgrader extends Maintainer {
     
     private void upgrade(ApplicationList applications, Version version) {
         Change.VersionChange change = new Change.VersionChange(version);
-        Instant startOfUpgradePeriod = controller().clock().instant().minus(upgradeTimeout);
         cancelUpgradesOf(applications.upgradingToLowerThan(version));
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.notDeployingApplication(); // wait with applications deploying an application change
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
-        applications = applications.notCurrentlyUpgrading(change, startOfUpgradePeriod); // do not trigger again if currently upgrading
+        applications = applications.notCurrentlyUpgrading(change, controller().applications().deploymentTrigger().jobTimeoutLimit());
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
