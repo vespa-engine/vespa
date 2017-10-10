@@ -35,10 +35,11 @@ typedef std::map<vespalib::string, DomainInfo> DomainStats;
 class Domain
 {
 public:
-    typedef std::shared_ptr<Domain> SP;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir,
-           vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize,
-           DomainPart::Crc defaultCrcType, const common::FileHeaderContext &fileHeaderContext);
+    using SP = std::shared_ptr<Domain>;
+    using Executor = vespalib::ThreadExecutor;
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
+           Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
+           const common::FileHeaderContext &fileHeaderContext);
 
     virtual ~Domain();
 
@@ -89,9 +90,9 @@ private:
 
     using SessionList = std::map<int, Session::SP>;
     using DomainPartList = std::map<int64_t, DomainPart::SP>;
-    using Executor = vespalib::ThreadExecutor;
 
     DomainPart::Crc     _defaultCrcType;
+    Executor          & _commitExecutor;
     Executor          & _sessionExecutor;
     std::atomic<int>    _sessionId;
     vespalib::Monitor   _syncMonitor;

@@ -21,10 +21,11 @@ using std::runtime_error;
 
 namespace search::transactionlog {
 
-Domain::Domain(const string &domainName, const string & baseDir,
-               vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize,
-               DomainPart::Crc defaultCrcType, const FileHeaderContext &fileHeaderContext) :
+Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
+               Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
+               const FileHeaderContext &fileHeaderContext) :
     _defaultCrcType(defaultCrcType),
+    _commitExecutor(commitExecutor),
     _sessionExecutor(sessionExecutor),
     _sessionId(1),
     _syncMonitor(),
@@ -192,6 +193,7 @@ Domain::triggerSyncNow()
     MonitorGuard guard(_syncMonitor);
     if (!_pendingSync) {
         _pendingSync = true;
+        _commitExecutor.sync();
         DomainPart::SP dp(_parts.rbegin()->second);
         _sessionExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
     }
@@ -344,6 +346,7 @@ int Domain::startSession(int sessionId)
 
 int Domain::closeSession(int sessionId)
 {
+    _commitExecutor.sync();
     int retval(-1);
     {
         LockGuard guard(_sessionLock);
