@@ -198,7 +198,7 @@ public class DeploymentTrigger {
         for (Application application : applications().asList()) {
             if ( ! application.deploying().isPresent() ) continue;
             if (application.deploymentJobs().hasFailures()) continue;
-            if (application.deploymentJobs().inProgress()) continue;
+            if (application.deploymentJobs().isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit())) continue;
             if (application.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
                 continue; // Application does not have any delayed deployments
             }
