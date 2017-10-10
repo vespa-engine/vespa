@@ -24,7 +24,7 @@ public class LatencyMeasurement implements AutoCloseable {
     @Override
     public void close() {
         if (elapsedSecondsConsumer != null) {
-            double elapsedSeconds = forceNonNegative(timer.currentTimeMillis() - startMillis);
+            double elapsedSeconds = forceNonNegative(timer.currentTimeMillis() - startMillis) / 1000;
             elapsedSecondsConsumer.accept(elapsedSeconds);
             elapsedSecondsConsumer = null;
         }
