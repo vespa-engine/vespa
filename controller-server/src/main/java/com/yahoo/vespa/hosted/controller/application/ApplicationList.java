@@ -175,7 +175,7 @@ public class ApplicationList {
                 .filter(JobStatus::inProgress)
                 .filter(status -> status.lastTriggered().isPresent())
                 .map(status -> status.lastTriggered().get())
-                //.filter(jobRun -> jobRun.at().isAfter(instant))
+                .filter(jobRun -> jobRun.at().isAfter(instant))
                 .anyMatch(jobRun -> jobRun.version().equals(change.version()));
     }
     
