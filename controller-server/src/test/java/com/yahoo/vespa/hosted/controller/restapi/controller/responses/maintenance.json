@@ -4,10 +4,10 @@
       "name": "DelayedDeployer"
     },
     {
-      "name":"BlockedChangeDeployer"
+      "name": "ClusterUtilizationMaintainer"
     },
     {
-      "name": "ClusterUtilizationMaintainer"
+      "name":"BlockedChangeDeployer"
     },
     {
       "name": "Upgrader"
