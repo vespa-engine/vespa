@@ -969,7 +969,6 @@
         <module>documentapi</module>
         <module>document</module>
         <module>documentgen-test</module>
-        <module>dummy-persistence</module>
         <module>fileacquirer</module>
         <module>filedistributionmanager</module>
         <module>filedistribution</module>
@@ -996,7 +995,6 @@
         <module>node-maintainer</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
-        <module>persistence</module>
         <module>predicate-search</module>
         <module>predicate-search-core</module>
         <module>processing</module>

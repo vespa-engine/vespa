@@ -168,7 +168,6 @@
                 container-search-and-docproc-jar-with-dependencies.jar,
                 docprocs-jar-with-dependencies.jar,
                 jdisc_http_service-jar-with-dependencies.jar,
-                persistence-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 simplemetrics-jar-with-dependencies.jar,
                 defaults-jar-with-dependencies.jar,
