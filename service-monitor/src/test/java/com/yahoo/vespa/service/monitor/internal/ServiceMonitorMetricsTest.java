@@ -17,13 +17,13 @@ public class ServiceMonitorMetricsTest {
         Timer timer = mock(Timer.class);
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
 
-        when(timer.currentTimeMillis()).thenReturn(Long.valueOf(0), Long.valueOf(10));
+        when(timer.currentTimeMillis()).thenReturn(Long.valueOf(500), Long.valueOf(1000));
 
         try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
             measurement.hashCode();
         }
 
-        verify(metric).set("serviceModel.snapshot.latency", 10.0, null);
+        verify(metric).set("serviceModel.snapshot.latency", 0.5, null);
     }
 
 }
