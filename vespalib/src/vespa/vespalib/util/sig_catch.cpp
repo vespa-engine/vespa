@@ -10,7 +10,6 @@ SigCatch::SigCatch()
     SignalHandler::PIPE.ignore();
     SignalHandler::INT.hook();
     SignalHandler::TERM.hook();
-    SignalHandler::CHLD.hook();
 }
 
 bool
