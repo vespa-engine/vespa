@@ -24,7 +24,7 @@ numDelayedResponseThreads int default=1
 payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 serverId string default="localhost"
 hostedVespa bool default=false
-numParallelTenantLoaders int default=1
+numParallelTenantLoaders int default=4
 
 # Zone information
 environment string default="prod"
