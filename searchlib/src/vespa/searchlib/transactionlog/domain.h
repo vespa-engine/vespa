@@ -37,7 +37,7 @@ class Domain
 public:
     typedef std::shared_ptr<Domain> SP;
     Domain(const vespalib::string &name, const vespalib::string &baseDir,
-           vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize, bool useFsync,
+           vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize,
            DomainPart::Crc defaultCrcType, const common::FileHeaderContext &fileHeaderContext);
 
     virtual ~Domain();
@@ -94,7 +94,6 @@ private:
     DomainPart::Crc     _defaultCrcType;
     Executor          & _sessionExecutor;
     std::atomic<int>    _sessionId;
-    const bool          _useFsync;
     vespalib::Monitor   _syncMonitor;
     bool                _pendingSync;
     vespalib::string    _name;

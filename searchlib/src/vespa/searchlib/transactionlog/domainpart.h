@@ -24,13 +24,8 @@ public:
         xxh64=2
     };
     typedef std::shared_ptr<DomainPart> SP;
-    DomainPart(const vespalib::string &name,
-               const vespalib::string &baseDir,
-               SerialNum s,
-               bool useFsync,
-               Crc defaultCrc,
-               const common::FileHeaderContext &FileHeaderContext,
-               bool allowTruncate);
+    DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Crc defaultCrc,
+               const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
 
     ~DomainPart();
 
@@ -57,11 +52,7 @@ private:
     bool openAndFind(FastOS_FileInterface &file, const SerialNum &from);
     int64_t buildPacketMapping(bool allowTruncate);
 
-    static bool
-    read(FastOS_FileInterface &file,
-         Packet::Entry &entry,
-         vespalib::alloc::Alloc &buf,
-         bool allowTruncate);
+    static bool read(FastOS_FileInterface &file, Packet::Entry &entry, vespalib::alloc::Alloc &buf, bool allowTruncate);
 
     void write(FastOS_FileInterface &file, const Packet::Entry &entry);
     static int32_t calcCrc(Crc crc, const void * buf, size_t len);
@@ -70,11 +61,7 @@ private:
     class SkipInfo
     {
     public:
-        SkipInfo(SerialNum s, uint64_t p) :
-            _id(s),
-            _pos(p)
-        {
-        }
+        SkipInfo(SerialNum s, uint64_t p) : _id(s), _pos(p) {}
 
         bool operator ==(const SkipInfo &b) const { return cmp(b) == 0; }
         bool operator  <(const SkipInfo &b) const { return cmp(b) < 0; }
@@ -91,7 +78,6 @@ private:
     typedef std::vector<SkipInfo> SkipList;
     typedef std::map<SerialNum, Packet> PacketList;
     const Crc      _defaultCrc;
-    const bool     _useFsync;
     vespalib::Lock _lock;
     vespalib::Lock _fileLock;
     SerialNumRange _range;

@@ -21,13 +21,13 @@ public:
     typedef std::unique_ptr<TransLogServer> UP;
     typedef std::shared_ptr<TransLogServer> SP;
 
-    TransLogServer(const vespalib::string &name, int listenPort,
-                   const vespalib::string &baseDir,
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext,
-                   uint64_t domainPartSize=0x10000000,
-                   bool useFsync=false,
-                   size_t maxThreads=4,
-                   DomainPart::Crc defaultCrc=DomainPart::xxh64);
+                   uint64_t domainPartSize, size_t maxThreads, DomainPart::Crc defaultCrc);
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                   const common::FileHeaderContext &fileHeaderContext, uint64_t domainPartSize);
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                   const common::FileHeaderContext &fileHeaderContext);
     virtual ~TransLogServer();
     DomainStats getDomainStats() const;
 
@@ -82,7 +82,6 @@ private:
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
     const uint64_t                      _domainPartSize;
-    const bool                          _useFsync;
     const DomainPart::Crc               _defaultCrcType;
     vespalib::ThreadStackExecutor       _sessionExecutor;
     FastOS_ThreadPool                   _threadPool;

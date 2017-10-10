@@ -22,12 +22,11 @@ using std::runtime_error;
 namespace search::transactionlog {
 
 Domain::Domain(const string &domainName, const string & baseDir,
-               vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize, bool useFsync,
+               vespalib::ThreadExecutor & sessionExecutor, uint64_t domainPartSize,
                DomainPart::Crc defaultCrcType, const FileHeaderContext &fileHeaderContext) :
     _defaultCrcType(defaultCrcType),
     _sessionExecutor(sessionExecutor),
     _sessionId(1),
-    _useFsync(useFsync),
     _syncMonitor(),
     _pendingSync(false),
     _name(domainName),
@@ -56,12 +55,12 @@ Domain::Domain(const string &domainName, const string & baseDir,
     }
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _useFsync, _defaultCrcType, _fileHeaderContext, false));
+        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
     }
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _useFsync, _defaultCrcType, _fileHeaderContext, isLastPart));
+    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart));
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -277,7 +276,7 @@ void Domain::commit(const Packet & packet)
             }
         }
         dp->close();
-        dp.reset(new DomainPart(_name, dir(), entry.serial(), _useFsync, _defaultCrcType, _fileHeaderContext, false));
+        dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false));
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;

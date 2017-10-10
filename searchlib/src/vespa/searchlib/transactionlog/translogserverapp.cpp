@@ -40,7 +40,7 @@ void TransLogServerApp::start()
 {
     std::shared_ptr<searchlib::TranslogserverConfig> c = _tlsConfig.get();
     _tls.reset(new TransLogServer(c->servername, c->listenport, c->basedir, _fileHeaderContext,
-                                  c->filesizemax, c->usefsync, c->maxthreads, getCrc(c->crcmethod)));
+                                  c->filesizemax, c->maxthreads, getCrc(c->crcmethod)));
 }
 
 TransLogServerApp::~TransLogServerApp()
