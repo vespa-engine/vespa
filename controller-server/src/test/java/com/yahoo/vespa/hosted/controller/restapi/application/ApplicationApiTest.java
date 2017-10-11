@@ -3,7 +3,10 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -13,11 +16,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMoc
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.cost.MockInsightBackend;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -52,6 +55,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .build();
     private static final String athensUserDomain = "domain1";
     private static final String athensScrewdriverDomain = "screwdriver-domain";
+
 
     @Test
     public void testApplicationApi() throws Exception {
@@ -169,7 +173,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.GET),
                               new File("application.json"));
         // GET an application deployment
-        addMockObservedApplicationCost("tenant1", "application1", "default");
+        addMockObservedApplicationCost(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", "", Request.Method.GET),
                               new File("deployment.json"));
         // POST a 'restart application' command
@@ -278,6 +282,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"message\":\"Successfully copied environment hosted-verified-prod to hosted-instance_tenant1_application1_placeholder_component_default\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", "", Request.Method.POST),
                 "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
+
+        controllerTester.controller().deconstruct();
     }
 
     @Test
@@ -689,28 +695,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthensDomain(domainName));
         domain.admin(new AthensPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
     }
-    
-    private void addMockObservedApplicationCost(String tenant, String application, String instance) {
-        MockInsightBackend mock = (MockInsightBackend) container.components().getComponent("com.yahoo.vespa.hosted.controller.cost.MockInsightBackend");
-        
-        ClusterCost cost = new ClusterCost();
-        cost.setCount(2);
-        cost.setResource("cpu");
-        cost.setUtilization(1.0f);
-        cost.setTco(25);
-        cost.setFlavor("flavor1");
-        cost.setWaste(10);
-        cost.setType("content");
-        List<String> hostnames = new ArrayList<>();
-        hostnames.add("host1");
-        hostnames.add("host2");
-        cost.setHostnames(hostnames);
-        Map<String, ClusterCost> clusterCosts = new HashMap<>();
-        clusterCosts.put("cluster1", cost);
-        
-        mock.setApplicationCost(new ApplicationId.Builder().tenant(tenant).applicationName(application).instanceName(instance).build(),
-                                new ApplicationCost("prod.us-west-1", tenant, application + "." + instance, 37, 1.0f, 0.0f, clusterCosts));
-    }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
                                     HttpEntity deployData) throws IOException {
@@ -721,31 +705,50 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // system-test
         String testPath = String.format("/application/v4/tenant/%s/application/%s/environment/test/region/us-east-1/instance/default",
-                                        application.tenant().value(), application.application().value());
+                application.tenant().value(), application.application().value());
         tester.assertResponse(request(testPath,
-                                      deployData,
-                                      Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
-                              new File("deploy-result.json"));
+                deployData,
+                Request.Method.POST,
+                athensScrewdriverDomain, "screwdriveruser1"),
+                new File("deploy-result.json"));
         tester.assertResponse(request(testPath,
-                                      "",
-                                      Request.Method.DELETE),
-                              "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
+                "",
+                Request.Method.DELETE),
+                "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.systemTest);
 
         // staging
         String stagingPath = String.format("/application/v4/tenant/%s/application/%s/environment/staging/region/us-east-3/instance/default",
-                                           application.tenant().value(), application.application().value());
+                application.tenant().value(), application.application().value());
         tester.assertResponse(request(stagingPath,
-                                      deployData,
-                                      Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
-                              new File("deploy-result.json"));
+                deployData,
+                Request.Method.POST,
+                athensScrewdriverDomain, "screwdriveruser1"),
+                new File("deploy-result.json"));
         tester.assertResponse(request(stagingPath,
-                                      "",
-                                      Request.Method.DELETE),
-                              "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
+                "",
+                Request.Method.DELETE),
+                "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
-    
+
+    private void addMockObservedApplicationCost(ContainerControllerTester controllerTester) {
+        for (Application application : controllerTester.controller().applications().asList()) {
+            try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
+                for (Deployment deployment : application.deployments().values()) {
+                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
+                    List<String> hostnames = new ArrayList<>();
+                    hostnames.add("host1");
+                    hostnames.add("host2");
+                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, ClusterSpec.Type.content, hostnames));
+                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
+                    clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
+                    deployment = deployment.withClusterInfo(clusterInfo);
+                    deployment = deployment.withClusterUtils(clusterUtils);
+                    application = application.with(deployment);
+                    controllerTester.controller().applications().store(application, lock);
+                }
+            }
+        }
+    }
 }

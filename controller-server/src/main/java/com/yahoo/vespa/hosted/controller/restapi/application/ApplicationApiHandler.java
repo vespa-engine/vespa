@@ -55,17 +55,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.CostJsonModelAdapter;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.ClusterCost;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.common.NotFoundCheckedException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -427,19 +427,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentJobs().projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.revision().source(), response);
 
-        com.yahoo.config.provision.ApplicationId applicationId = com.yahoo.config.provision.ApplicationId.from(tenantName, applicationName, instanceName);
-        Zone zoneId = new Zone(Environment.from(environment), RegionName.from(region));
-
         // Cost
-        try {
-            ApplicationCost appCost = controller.getApplicationCost(applicationId, zoneId);
-            Cursor costObject = response.setObject("cost");
-            CostJsonModelAdapter.toSlime(appCost, costObject);
-        } catch (NotFoundCheckedException nfce) {
-            log.log(Level.FINE, "Application cost data not found. " + nfce.getMessage());
-        }
+        DeploymentCost appCost = deployment.calculateCost();
+        Cursor costObject = response.setObject("cost");
+        toSlime(appCost, costObject);
 
         // Metrics
+        com.yahoo.config.provision.ApplicationId applicationId = com.yahoo.config.provision.ApplicationId.from(tenantName, applicationName, instanceName);
+        Zone zoneId = new Zone(Environment.from(environment), RegionName.from(region));
         try {
             MetricsService.DeploymentMetrics metrics = controller.metricsService().getDeploymentMetrics(applicationId, zoneId);
             Cursor metricsObject = response.setObject("metrics");
@@ -1087,4 +1082,50 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return controller.systemVersion();
     }
 
+    public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
+        object.setLong("tco", (long)deploymentCost.getTco());
+        object.setDouble("utilization", deploymentCost.getUtilization());
+        object.setDouble("waste", deploymentCost.getWaste());
+        Cursor clustersObject = object.setObject("cluster");
+        for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
+            toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
+    }
+
+    private static void toSlime(ClusterCost clusterCost, Cursor object) {
+        object.setLong("count", clusterCost.getClusterInfo().getHostnames().size());
+        object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
+        object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
+        object.setLong("tco", (int)clusterCost.getTco());
+        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
+        object.setLong("waste", (int)clusterCost.getWaste());
+        object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
+        Cursor utilObject = object.setObject("util");
+        utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());
+        utilObject.setDouble("mem", clusterCost.getResultUtilization().getMemory());
+        utilObject.setDouble("disk", clusterCost.getResultUtilization().getDisk());
+        utilObject.setDouble("diskBusy", clusterCost.getResultUtilization().getDiskBusy());
+        Cursor usageObject = object.setObject("usage");
+        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu());
+        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory());
+        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk());
+        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy());
+        Cursor hostnamesArray = object.setArray("hostnames");
+        for (String hostname : clusterCost.getClusterInfo().getHostnames())
+            hostnamesArray.addString(hostname);
+    }
+
+    private static String getResourceName(ClusterUtilization utilization) {
+        String name = "cpu";
+        double max = utilization.getMaxUtilization();
+
+        if (utilization.getMemory() == max) {
+            name = "mem";
+        } else if (utilization.getDisk() == max) {
+            name = "disk";
+        } else if (utilization.getDiskBusy() == max) {
+            name = "diskbusy";
+        }
+
+        return name;
+    }
 }

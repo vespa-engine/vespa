@@ -21,11 +21,6 @@
       "wadl":"http://localhost:8080/zone/application.wadl"
     },
     {
-      "name":"cost",
-      "url":"http://localhost:8080/cost/v1/",
-      "wadl":"http://localhost:8080/cost/application.wadl"
-    },
-    {
       "name":"application",
       "url":"http://localhost:8080/application/v4/"
     },

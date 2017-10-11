@@ -66,7 +66,6 @@ public class RootHandler extends LoggingRequestHandler {
             jerseyService(services, "statuspage", "/statuspage/v1/", "/statuspage/application.wadl");
             jerseyService(services, "zone", "/zone/v1/", "/zone/application.wadl");
             jerseyService(services, "zone", "/zone/v2/", "/zone/application.wadl");
-            jerseyService(services, "cost", "/cost/v1/", "/cost/application.wadl");
             handlerService(services, "application", "/application/v4/");
             handlerService(services, "deployment", "/deployment/v1/");
             handlerService(services, "screwdriver", "/screwdriver/v1/release/vespa");
