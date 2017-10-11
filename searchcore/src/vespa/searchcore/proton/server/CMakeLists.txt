@@ -93,6 +93,7 @@ vespa_add_library(searchcore_server STATIC
     storeonlydocsubdb.cpp
     storeonlyfeedview.cpp
     summaryadapter.cpp
+    threading_service_config.cpp
     tlcproxy.cpp
     tlssyncer.cpp
     transactionlogmanager.cpp
