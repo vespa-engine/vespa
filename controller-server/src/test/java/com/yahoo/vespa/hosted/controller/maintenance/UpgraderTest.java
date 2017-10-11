@@ -418,6 +418,8 @@ public class UpgraderTest {
         Application default2 = tester.createAndDeploy("default2", 5, "default");
         Application default3 = tester.createAndDeploy("default3", 6, "default");
         Application default4 = tester.createAndDeploy("default4", 7, "default");
+        
+        assertEquals(version, default0.deployedVersion().get());
 
         // New version is released
         version = Version.fromString("5.1");
@@ -445,9 +447,9 @@ public class UpgraderTest {
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
 
-        // 5th app never reports back and has a dead locked job, but no ongoing change
+        // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
-        assertTrue("Jobs in progress", deadLocked.deploymentJobs().inProgress());
+        assertTrue("Jobs in progress", deadLocked.deploymentJobs().isRunning(tester.controller().applications().deploymentTrigger().jobTimeoutLimit()));
         assertFalse("No change present", deadLocked.deploying().isPresent());
 
         // 4/5 applications are repaired and confidence is restored
@@ -455,14 +457,31 @@ public class UpgraderTest {
         tester.deployCompletely(default1, applicationPackage);
         tester.deployCompletely(default2, applicationPackage);
         tester.deployCompletely(default3, applicationPackage);
+
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
 
+        tester.upgrader().maintain();
+        assertEquals("Upgrade scheduled for previously failing apps", 4, tester.buildSystem().jobs().size());
+        tester.completeUpgrade(default0, version, "default");
+        tester.completeUpgrade(default1, version, "default");
+        tester.completeUpgrade(default2, version, "default");
+        tester.completeUpgrade(default3, version, "default");
+
+        assertEquals(version, tester.application(default0.id()).deployedVersion().get());
+        assertEquals(version, tester.application(default1.id()).deployedVersion().get());
+        assertEquals(version, tester.application(default2.id()).deployedVersion().get());
+        assertEquals(version, tester.application(default3.id()).deployedVersion().get());
+
         // Over 12 hours pass and upgrade is rescheduled for 5th app
+        assertEquals(0, tester.buildSystem().jobs().size());
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.upgrader().maintain();
+        assertEquals(1, tester.buildSystem().jobs().size());
         assertEquals("Upgrade is rescheduled", DeploymentJobs.JobType.systemTest.id(),
                      tester.buildSystem().jobs().get(0).jobName());
+        tester.deployCompletely(default4, applicationPackage);
+        assertEquals(version, tester.application(default4.id()).deployedVersion().get());
     }
 
     @Test

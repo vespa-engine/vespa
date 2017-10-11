@@ -101,8 +101,15 @@ public class DeploymentJobs {
     }
 
     /** Returns whether any job is currently in progress */
-    public boolean inProgress() {
-        return status.values().stream().anyMatch(JobStatus::inProgress);
+    public boolean isRunning(Instant timeoutLimit) {
+        return status.values().stream().anyMatch(job -> job.isRunning(timeoutLimit));
+    }
+
+    /** Returns whether the given job type is currently running and was started after timeoutLimit */
+    public boolean isRunning(JobType jobType, Instant timeoutLimit) {
+        JobStatus jobStatus = status.get(jobType);
+        if ( jobStatus == null) return false;
+        return jobStatus.isRunning(timeoutLimit);
     }
 
     /** Returns whether change can be deployed to the given environment */
@@ -308,13 +315,6 @@ public class DeploymentJobs {
             throw new IllegalArgumentException(message);
         }
         return id;
-    }
-
-    /** Returns whether the given job type is currently running and was started after timeoutLimit */
-    public boolean isRunning(JobType jobType, Instant timeoutLimit) {
-        JobStatus jobStatus = status.get(jobType);
-        if ( jobStatus == null) return false;
-        return jobStatus.isRunning(timeoutLimit);
     }
 
 }
