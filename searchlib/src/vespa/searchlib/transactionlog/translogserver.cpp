@@ -166,8 +166,6 @@ void TransLogServer::run()
             bool immediate = true;
             if (strcmp(req->GetMethodName(), "domainSessionClose") == 0) {
                 domainSessionClose(req);
-            } else if (strcmp(req->GetMethodName(), "domainSubscribe") == 0) {
-                domainSubscribe(req);
             } else if (strcmp(req->GetMethodName(), "domainVisit") == 0) {
                 domainVisit(req);
             } else if (strcmp(req->GetMethodName(), "createDomain") == 0) {
@@ -302,13 +300,6 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ParamDesc("to", "Will erase all up and including.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
 
-    //-- Domain Subscribe -----------------------------------------------------------
-    rb.DefineMethod("domainSubscribe", "sl", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
-    rb.MethodDesc("This will create a subscription. It will live till the connection is closed.");
-    rb.ParamDesc("name", "The name of the domain.");
-    rb.ParamDesc("from", "Will return all entries following(not including) <from>.");
-    rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. Positive number is the sessionid");
-
     //-- Domain Visit -----------------------------------------------------------
     rb.DefineMethod("domainVisit", "sll", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will create a visitor that return all operations in the range.");
@@ -332,14 +323,11 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. 1 means busy -> retry. 0 is OK.");
 
     //-- Domain Sync --
-    rb.DefineMethod("domainSync", "sl", "il", true,
-                    FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSync", "sl", "il", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Sync domain to given entry");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("syncto", "Entry to sync to");
-    rb.ReturnDesc("result",
-                  "A resultcode(int) of the operation. "
-                  "Negative number indicates error.");
+    rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
     rb.ReturnDesc("syncedto", "Entry synced to");
 }
 
@@ -495,22 +483,6 @@ void TransLogServer::domainCommit(FRT_RPCRequest *req)
         ret.AddInt32(-1);
         ret.AddString(make_string("Could not find domain %s", domainName).c_str());
     }
-}
-
-void TransLogServer::domainSubscribe(FRT_RPCRequest *req)
-{
-    uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    LOG(debug, "domainSubscribe(%s)", domainName);
-    Domain::SP domain(findDomain(domainName));
-    if (domain) {
-        SerialNum from(params[1]._intval64);
-        LOG(debug, "domainSubscribe(%s, %" PRIu64 ")", domainName, from);
-        retval = domain->subscribe(domain, from, *_supervisor, req->GetConnection());
-    }
-    ret.AddInt32(retval);
 }
 
 void TransLogServer::domainVisit(FRT_RPCRequest *req)

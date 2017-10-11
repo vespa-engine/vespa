@@ -88,12 +88,8 @@ TransLogClient::Session::UP TransLogClient::open(const vespalib::string & domain
     return session;
 }
 
-TransLogClient::Subscriber::UP TransLogClient::createSubscriber(const vespalib::string & domain, TransLogClient::Session::Callback & callBack)
-{
-    return TransLogClient::Subscriber::UP(new Subscriber(domain, *this, callBack));
-}
-
-TransLogClient::Visitor::UP TransLogClient::createVisitor(const vespalib::string & domain, TransLogClient::Session::Callback & callBack)
+TransLogClient::Visitor::UP
+TransLogClient::createVisitor(const vespalib::string & domain, TransLogClient::Session::Callback & callBack)
 {
     return TransLogClient::Visitor::UP(new Visitor(domain, *this, callBack));
 }
@@ -151,13 +147,6 @@ void TransLogClient::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Non zero number indicates error.");
 
     //-- Visit Callbacks -----------------------------------------------------------
-    rb.DefineMethod("syncCallback", "si", "i", false, FRT_METHOD(TransLogClient::syncCallbackRPC), this);
-    rb.MethodDesc("Will tell you that now you are uptodate on the subscribtion.");
-    rb.ParamDesc("name", "The name of the domain.");
-    rb.ParamDesc("session", "Session handle.");
-    rb.ReturnDesc("result", "A resultcode(int) of the operation. Non zero number indicates error.");
-
-    //-- Visit Callbacks -----------------------------------------------------------
     rb.DefineMethod("eofCallback", "si", "i", false, FRT_METHOD(TransLogClient::eofCallbackRPC), this);
     rb.MethodDesc("Will tell you that you are done with the visitor.");
     rb.ParamDesc("name", "The name of the domain.");
@@ -180,24 +169,6 @@ void TransLogClient::visitCallbackRPC(FRT_RPCRequest *req)
     }
     ret.AddInt32(retval);
     LOG(debug, "visitCallback(%s, %d)=%d done", domainName, sessionId, retval);
-}
-
-void TransLogClient::syncCallbackRPC(FRT_RPCRequest *req)
-{
-    uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    int32_t sessionId(params[1]._intval32);
-    LOG(debug, "syncCallback(%s, %d)", domainName, sessionId);
-    LockGuard guard(_lock);
-    Session * session(findSession(domainName, sessionId));
-    if (session != NULL) {
-        session->inSync();
-        retval = 0;
-    }
-    ret.AddInt32(retval);
-    LOG(debug, "syncCallback(%s, %d)=%d done", domainName, sessionId, retval);
 }
 
 void TransLogClient::eofCallbackRPC(FRT_RPCRequest *req)
@@ -322,18 +293,9 @@ int TransLogClient::SessionKey::cmp(const TransLogClient::SessionKey & b) const
     return diff;
 }
 
-TransLogClient::Subscriber::Subscriber(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack) :
+TransLogClient::Visitor::Visitor(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack) :
     Session(domain, tlc),
     _callback(callBack)
-{
-}
-
-TransLogClient::Subscriber::~Subscriber()
-{
-}
-
-TransLogClient::Visitor::Visitor(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack) :
-    Subscriber(domain, tlc, callBack)
 {
 }
 
@@ -361,15 +323,6 @@ bool TransLogClient::Visitor::visit(const SerialNum & from, const SerialNum & to
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(from);
     req->GetParams()->AddInt64(to);
-    return init(req);
-}
-
-bool TransLogClient::Subscriber::subscribe(const SerialNum & from)
-{
-    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
-    req->SetMethodName("domainSubscribe");
-    req->GetParams()->AddString(_domain.c_str());
-    req->GetParams()->AddInt64(from);
     return init(req);
 }
 
@@ -402,8 +355,6 @@ bool TransLogClient::Session::close()
     return (retval == 0);
 }
 
-TransLogClient::Visitor::~Visitor()
-{
-}
+TransLogClient::Visitor::~Visitor() = default;
 
 }

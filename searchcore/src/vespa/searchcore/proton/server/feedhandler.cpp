@@ -776,14 +776,6 @@ FeedHandler::eof()
     _writeService.master().execute(makeTask(makeClosure(this, &FeedHandler::performEof)));
 }
 
-
-void
-FeedHandler::inSync()
-{
-    // Called by visit callback thread, when in sync
-}
-
-
 void
 FeedHandler::
 performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)

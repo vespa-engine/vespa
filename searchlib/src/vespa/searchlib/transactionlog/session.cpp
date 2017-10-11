@@ -19,17 +19,7 @@ namespace {
 vespalib::Executor::Task::UP
 Session::createTask(const Session::SP & session)
 {
-    if (session->continous()) {
-       return Task::UP(new SubscribeTask(session));
-    } else {
-       return Task::UP(new VisitTask(session));
-    }
-}
-
-void
-Session::SubscribeTask::run()
-{
-    _session->subscribe();
+    return Task::UP(new VisitTask(session));
 }
 
 void
@@ -110,14 +100,6 @@ Session::enQ(const SP & session, SerialNum serial, const Packet & packet)
 }
 
 void
-Session::subscribe()
-{
-    visit();
-    sendPending();
-    sendSync();
-}
-
-void
 Session::sendPending()
 {
     for (;;) {
@@ -147,7 +129,7 @@ void
 Session::finalize()
 {
     if (!ok()) {
-        LOG(error, "[%d] : Error in %s(%" PRIu64 " - %" PRIu64 "), stopping since I have no idea on what to do.", _id, (continous() ? "subscriber" : "visitor"), _range.from(), _range.to());
+        LOG(error, "[%d] : Error in %s(%" PRIu64 " - %" PRIu64 "), stopping since I have no idea on what to do.", _id, "visitor", _range.from(), _range.to());
     }
     LOG(debug, "[%d] : Stopped %" PRIu64 " - %" PRIu64, _id, _range.from(), _range.to());
     _finished = true;
@@ -206,13 +188,12 @@ Session::rpcAsync(FRT_RPCRequest * req)
 }
 
 Session::Session(int sId, const SerialNumRange & r, const Domain::SP & d,
-                 FRT_Supervisor & supervisor, FNET_Connection *conn, bool subscriber) :
+                 FRT_Supervisor & supervisor, FNET_Connection *conn) :
     _supervisor(supervisor),
     _connection(conn),
     _domain(d),
     _range(r),
     _id(sId),
-    _subscriber(subscriber),
     _inSync(false),
     _ok(true),
     _finished(false),
@@ -251,19 +232,6 @@ Session::send(FRT_RPCRequest * req, bool wait)
         retval = rpcAsync(req);
     }
     return (retval == RPC::OK);
-}
-
-bool
-Session::sendSync()
-{
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
-    req->SetMethodName("syncCallback");
-    req->GetParams()->AddString(_domain->name().c_str());
-    req->GetParams()->AddInt32(id());
-    bool retval(send(req, true));
-    LockGuard guard(_lock);
-    _inSync = true;
-    return retval;
 }
 
 bool

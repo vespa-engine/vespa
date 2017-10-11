@@ -184,22 +184,19 @@ public:
                 search::transactionlog::Writer & writer,
                 TlsWriter * tlsWriter = nullptr);
 
-    virtual
-    ~FeedHandler();
+    virtual~FeedHandler();
 
     /**
      * Init this feed handler.
      *
      * @param oldestConfigSerial The serial number of the oldest config snapshot.
      */
-    void
-    init(SerialNum oldestConfigSerial);
+    void init(SerialNum oldestConfigSerial);
 
     /**
      * Close this feed handler and its components.
      */
-    void
-    close();
+    void close();
 
     /**
      * Start replay of the transaction log.
@@ -223,8 +220,7 @@ public:
      *
      * @param flushedSerial serial number flushed for all relevant flush targets.
      */
-    void
-    flushDone(SerialNum flushedSerial);
+    void flushDone(SerialNum flushedSerial);
 
     /**
      * Used to flip between normal and recovery feed states.
@@ -235,21 +231,14 @@ public:
      * Update the active feed view.
      * Always called by the master write thread so locking is not needed.
      */
-    void
-    setActiveFeedView(IFeedView *feedView)
-    {
+    void setActiveFeedView(IFeedView *feedView) {
         _activeFeedView = feedView;
     }
 
-    void
-    setBucketDBHandler(bucketdb::IBucketDBHandler *bucketDBHandler)
-    {
+    void setBucketDBHandler(bucketdb::IBucketDBHandler *bucketDBHandler) {
         _bucketDBHandler = bucketDBHandler;
     }
 
-    /**
-     * Wait until transaction log is replayed.
-     */
     void waitForReplayDone();
 
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
@@ -270,46 +259,18 @@ public:
     void performOperation(FeedTokenUP token, FeedOperationUP op);
     void handleOperation(FeedToken token, FeedOperationUP op);
 
-    /**
-     * Implements IDocumentMoveHandler
-     */
-    virtual void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
+    void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
+    void heartBeat() override;
 
-    /**
-     * Implements IHeartBeatHandler
-     */
-    virtual void
-    heartBeat() override;
+    virtual void sync();
 
-    virtual void
-    sync();
+    RPC::Result receive(const Packet &packet) override;
 
-    /**
-     * Implements TransLogClient::Session::Callback.
-     */
-    virtual RPC::Result
-    receive(const Packet &packet) override;
-
-    virtual void
-    eof() override;
-
-    virtual void
-    inSync() override;
-
-    /**
-     * Implements IPruneRemovedDocumentsHandler
-     */
-    void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
-
-    void
-    syncTls(SerialNum syncTo);
-
-    void
-    storeRemoteOperation(const FeedOperation &op);
-
-    // Implements IOperationStorer
-    virtual void storeOperation(FeedOperation &op) override;
+    void eof() override;
+    void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
+    void syncTls(SerialNum syncTo);
+    void storeRemoteOperation(const FeedOperation &op);
+    void storeOperation(FeedOperation &op) override;
 };
 
 } // namespace proton
