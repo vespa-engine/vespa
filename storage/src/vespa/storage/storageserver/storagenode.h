@@ -26,6 +26,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config-stor-distribution.h>
+#include <mutex>
 
 namespace document { class DocumentTypeRepo; }
 
@@ -139,6 +140,7 @@ private:
 protected:
         // Lock taken while doing configuration of the server.
     vespalib::Lock _configLock;
+    std::mutex _initial_config_mutex;
         // Current running config. Kept, such that we can see what has been
         // changed in live config updates.
     std::unique_ptr<vespa::config::content::core::StorServerConfig> _serverConfig;

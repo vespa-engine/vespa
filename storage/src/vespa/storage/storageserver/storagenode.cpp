@@ -91,6 +91,8 @@ StorageNode::subscribeToConfigs()
     _configFetcher->subscribe<vespa::config::content::core::StorServerConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<vespa::config::content::core::StorPrioritymappingConfig>(_configUri.getConfigId(), this);
 
+    _configFetcher->start();
+
     vespalib::LockGuard configLockGuard(_configLock);
     _serverConfig = std::move(_newServerConfig);
     _clusterConfig = std::move(_newClusterConfig);
@@ -102,6 +104,10 @@ StorageNode::subscribeToConfigs()
 void
 StorageNode::initialize()
 {
+    // Avoid racing with concurrent reconfigurations before we've set up the entire
+    // node component stack.
+    std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
+
     _context.getComponentRegister().registerShutdownListener(*this);
 
     // Fetch configs needed first. These functions will just grab the config
@@ -193,9 +199,6 @@ StorageNode::initialize()
     }
 
     initializeStatusWebServer();
-
-    // All components are set up, so we can start async config subscription.
-    _configFetcher->start();
 
         // Write pid file as the last thing we do. If we fail initialization
         // due to an exception we won't run shutdown. Thus we won't remove the
@@ -477,7 +480,10 @@ void StorageNode::configure(std::unique_ptr<vespa::config::content::core::StorSe
         vespalib::LockGuard configLockGuard(_configLock);
         _newServerConfig.reset(config.release());
     }
-    if (_serverConfig.get() != 0) handleLiveConfigUpdate();
+    if (_serverConfig) {
+        std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate();
+    }
 }
 
 void
@@ -491,7 +497,10 @@ StorageNode::configure(std::unique_ptr<vespa::config::content::UpgradingConfig> 
         vespalib::LockGuard configLockGuard(_configLock);
         _newClusterConfig.reset(config.release());
     }
-    if (_clusterConfig.get() != 0) handleLiveConfigUpdate();
+    if (_clusterConfig) {
+        std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate();
+    }
 }
 
 void
@@ -505,7 +514,10 @@ StorageNode::configure(std::unique_ptr<vespa::config::content::StorDistributionC
         vespalib::LockGuard configLockGuard(_configLock);
         _newDistributionConfig.reset(config.release());
     }
-    if (_distributionConfig.get() != 0) handleLiveConfigUpdate();
+    if (_distributionConfig) {
+        std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate();
+    }
 }
 
 void
@@ -515,7 +527,10 @@ StorageNode::configure(std::unique_ptr<vespa::config::content::core::StorPriorit
         vespalib::LockGuard configLockGuard(_configLock);
         _newPriorityConfig.reset(config.release());
     }
-    if (_priorityConfig.get() != 0) handleLiveConfigUpdate();
+    if (_priorityConfig) {
+        std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate();
+    }
 }
 
 void StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
@@ -528,7 +543,10 @@ void StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> confi
         vespalib::LockGuard configLockGuard(_configLock);
         _newDoctypesConfig.reset(config.release());
     }
-    if (_doctypesConfig.get() != 0) handleLiveConfigUpdate();
+    if (_doctypesConfig) {
+        std::lock_guard<std::mutex> concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate();
+    }
 }
 
 bool
