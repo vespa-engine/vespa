@@ -453,7 +453,6 @@ public class UpgraderTest {
         assertFalse("No change present", deadLocked.deploying().isPresent());
 
         // 4/5 applications are repaired and confidence is restored
-        System.out.println("Deploying completely to " + tester.controller().versionStatus().systemVersion());
         tester.deployCompletely(default0, applicationPackage);
         tester.deployCompletely(default1, applicationPackage);
         tester.deployCompletely(default2, applicationPackage);
