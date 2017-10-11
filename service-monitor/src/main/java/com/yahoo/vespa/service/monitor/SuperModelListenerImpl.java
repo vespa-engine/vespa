@@ -11,13 +11,16 @@ import com.yahoo.vespa.service.monitor.internal.LatencyMeasurement;
 import com.yahoo.vespa.service.monitor.internal.ServiceMonitorMetrics;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class SuperModelListenerImpl implements SuperModelListener {
+public class SuperModelListenerImpl implements SuperModelListener, Supplier<ServiceModel> {
     private static final Logger logger = Logger.getLogger(SuperModelListenerImpl.class.getName());
 
     private final ServiceMonitorMetrics metrics;
     private final ModelGenerator modelGenerator;
+    private final Zone zone;
+    private final List<String> configServerHosts;
 
     // superModel and slobrokMonitorManager are always updated together
     // and atomically using this monitor.
@@ -27,10 +30,14 @@ public class SuperModelListenerImpl implements SuperModelListener {
 
     SuperModelListenerImpl(SlobrokMonitorManager slobrokMonitorManager,
                            ServiceMonitorMetrics metrics,
-                           ModelGenerator modelGenerator) {
+                           ModelGenerator modelGenerator,
+                           Zone zone,
+                           List<String> configServerHosts) {
         this.slobrokMonitorManager = slobrokMonitorManager;
         this.metrics = metrics;
         this.modelGenerator = modelGenerator;
+        this.zone = zone;
+        this.configServerHosts = configServerHosts;
     }
 
     void start(SuperModelProvider superModelProvider) {
@@ -61,7 +68,8 @@ public class SuperModelListenerImpl implements SuperModelListener {
         }
     }
 
-    ServiceModel createServiceModelSnapshot(Zone zone, List<String> configServerHostnames) {
+    @Override
+    public ServiceModel get() {
         try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
             // Reference 'measurement' in a dummy statement, otherwise the compiler
             // complains about "auto-closeable resource is never referenced in body of
@@ -72,7 +80,7 @@ public class SuperModelListenerImpl implements SuperModelListener {
             return modelGenerator.toServiceModel(
                     superModel,
                     zone,
-                    configServerHostnames,
+                    configServerHosts,
                     slobrokMonitorManager);
         }
     }
