@@ -550,7 +550,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isRunning()) { return; }
             if (masterElectionHandler.isMaster()) {
                 didWork |= broadcastClusterStateToEligibleNodes();
-                didWork |= systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
+                systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
             }
 
             if ( ! isRunning()) { return; }
