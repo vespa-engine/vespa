@@ -433,21 +433,6 @@ hwinfo.memory.size long default = 0
 ## If set to 0, this is sampled by using std::thread::hardware_concurrency().
 hwinfo.cpu.cores int default = 0
 
-## A number between 0.0 and 1.0 that specifies the concurrency when handling feed operations.
-## When set to 1.0 all cores on the cpu is utilized.
-##
-## 4 thread pools used for various aspect of feeding are configured based on this setting:
-##   1) Compressing and compacting documents
-##   2) Writing changes to attribute fields
-##   3) Inverting index fields
-##   4) Writing changes to index fields
-##
-## The number of threads in pool 1 is calculated as:
-##   max(ceil(hwinfo.cpu.cores * feeding.concurrency), summary.log.numthreads)
-## The number of threads in each of pools 2-4 is calculated as:
-##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
-feeding.concurrency double default = 1.0 restart
-
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##
 ## Currently used by 'lid_space_compaction' and 'move_buckets' jobs.
