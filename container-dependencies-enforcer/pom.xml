@@ -30,7 +30,7 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-dev</artifactId>
+            <artifactId>container</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
