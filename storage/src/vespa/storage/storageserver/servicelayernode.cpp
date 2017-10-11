@@ -17,12 +17,14 @@
 #include <vespa/storage/bucketmover/bucketmover.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <vespa/storage/persistence/provider_error_wrapper.h>
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");
+
+
+using StorServerConfigBuilder = vespa::config::content::core::StorServerConfigBuilder;
 
 namespace storage {
 
@@ -53,8 +55,7 @@ void ServiceLayerNode::init()
         throw spi::HandledException("Failed provider init: " + initResult.toString(), VESPA_STRLOC);
     }
 
-    spi::PartitionStateListResult result(
-            _persistenceProvider.getPartitionStates());
+    spi::PartitionStateListResult result(_persistenceProvider.getPartitionStates());
     if (result.hasError()) {
         LOG(error, "Failed to get partition list from persistence provider: %s", result.toString().c_str());
         throw spi::HandledException("Failed to get partition list: " + result.toString(), VESPA_STRLOC);
@@ -62,8 +63,7 @@ void ServiceLayerNode::init()
     _partitions = result.getList();
     if (_partitions.size() == 0) {
         LOG(error, "No partitions in persistence provider. See documentation "
-                    "for your persistence provider as to how to set up "
-                    "partitions in it.");
+                    "for your persistence provider as to how to set up partitions in it.");
         throw spi::HandledException("No partitions in provider", VESPA_STRLOC);
     }
     try{
@@ -93,7 +93,7 @@ ServiceLayerNode::subscribeToConfigs()
 {
     StorageNode::subscribeToConfigs();
     _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
-    _configFetcher->subscribe<vespa::config::storage::StorDevicesConfig>(_configUri.getConfigId(), this);
+    _configFetcher->subscribe<StorDevicesConfig>(_configUri.getConfigId(), this);
 
     vespalib::LockGuard configLockGuard(_configLock);
     _deviceConfig = std::move(_newDevicesConfig);
@@ -123,8 +123,7 @@ ServiceLayerNode::initializeNodeSpecific()
     // Give node state to mount point initialization, such that we can
     // get disk count and state of unavailable disks set in reported
     // node state.
-    NodeStateUpdater::Lock::SP lock(
-            _component->getStateUpdater().grabStateChangeLock());
+    NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
     ns.setDiskCount(_partitions.size());
 
@@ -171,7 +170,7 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     if (_newServerConfig) {
         bool updated = false;
         vespa::config::content::core::StorServerConfigBuilder oldC(*_serverConfig);
-        vespa::config::content::core::StorServerConfig& newC(*_newServerConfig);
+        StorServerConfig& newC(*_newServerConfig);
         DIFFERWARN(diskCount, "Cannot alter partition count of node live");
         {
             updated = false;
@@ -211,8 +210,7 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 }
 
 void
-ServiceLayerNode::configure(
-        std::unique_ptr<vespa::config::storage::StorDevicesConfig> config)
+ServiceLayerNode::configure(std::unique_ptr<StorDevicesConfig> config)
 {
         // When we get config, we try to grab the config lock to ensure noone
         // else is doing configuration work, and then we write the new config
@@ -231,13 +229,11 @@ ServiceLayerNode::configure(
 VisitorMessageSession::UP
 ServiceLayerNode::createSession(Visitor& visitor, VisitorThread& thread)
 {
-    MessageBusVisitorMessageSession::UP mbusSession(
-            new MessageBusVisitorMessageSession(visitor, thread));
+    auto mbusSession = std::make_unique<MessageBusVisitorMessageSession>(visitor, thread);
     mbus::SourceSessionParams srcParams;
     srcParams.setThrottlePolicy(mbus::IThrottlePolicy::SP());
     srcParams.setReplyHandler(*mbusSession);
-    mbusSession->setSourceSession(
-            _communicationManager->getMessageBus().getMessageBus().createSourceSession(srcParams));
+    mbusSession->setSourceSession(_communicationManager->getMessageBus().getMessageBus().createSourceSession(srcParams));
     return VisitorMessageSession::UP(std::move(mbusSession));
 }
 
@@ -271,17 +267,13 @@ ServiceLayerNode::createChain()
     chain->push_back(StorageLink::UP(new bucketmover::BucketMover(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new StorageBucketDBInitializer(
             _configUri, _partitions, getDoneInitializeHandler(), compReg)));
-    chain->push_back(StorageLink::UP(new BucketManager(
-            _configUri, _context.getComponentRegister())));
+    chain->push_back(StorageLink::UP(new BucketManager(_configUri, _context.getComponentRegister())));
     chain->push_back(StorageLink::UP(new VisitorManager(
-            _configUri, _context.getComponentRegister(),
-            *this, _externalVisitors)));
+            _configUri, _context.getComponentRegister(), *this, _externalVisitors)));
     chain->push_back(StorageLink::UP(new ModifiedBucketChecker(
-            _context.getComponentRegister(), _persistenceProvider,
-            _configUri)));
+            _context.getComponentRegister(), _persistenceProvider, _configUri)));
     chain->push_back(StorageLink::UP(_fileStorManager = new FileStorManager(
-            _configUri, _partitions, _persistenceProvider,
-            _context.getComponentRegister())));
+            _configUri, _partitions, _persistenceProvider, _context.getComponentRegister())));
     chain->push_back(StorageLink::UP(releaseStateManager().release()));
 
     // Lifetimes of all referenced components shall outlive the last call going
