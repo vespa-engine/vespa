@@ -13,6 +13,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <algorithm>
 #include <set>
 
 using document::BucketId;
@@ -34,6 +35,7 @@ using storage::spi::GetResult;
 using storage::spi::IterateResult;
 using storage::spi::IteratorId;
 using storage::spi::PartitionId;
+using storage::spi::PersistenceProvider;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
 using storage::spi::Selection;
@@ -355,6 +357,8 @@ struct HandlerSet {
     MyHandler              &handler2;
     HandlerSet();
     ~HandlerSet();
+    void prepareListBuckets();
+    void prepareGetModifiedBuckets();
 };
 
 HandlerSet::HandlerSet()
@@ -398,7 +402,26 @@ Timestamp tstamp2(2);
 Timestamp tstamp3(3);
 DocumentSelection doc_sel("");
 Selection selection(doc_sel);
+BucketSpace altBucketSpace(1);
 
+
+void
+HandlerSet::prepareListBuckets()
+{
+    handler1.bucketList.push_back(bckId1);
+    handler1.bucketList.push_back(bckId2);
+    handler2.bucketList.push_back(bckId2);
+    handler2.bucketList.push_back(bckId3);
+}
+
+void
+HandlerSet::prepareGetModifiedBuckets()
+{
+    handler1.modBucketList.push_back(bckId1);
+    handler1.modBucketList.push_back(bckId2);
+    handler2.modBucketList.push_back(bckId2);
+    handler2.modBucketList.push_back(bckId3);
+}
 
 class SimplePersistenceEngineOwner : public IPersistenceEngineOwner
 {
@@ -430,13 +453,17 @@ struct SimpleFixture {
     SimpleResourceWriteFilter _writeFilter;
     PersistenceEngine engine;
     HandlerSet hset;
-    SimpleFixture()
+    SimpleFixture(BucketSpace bucketSpace2)
         : _owner(),
           engine(_owner, _writeFilter, -1, false),
           hset()
     {
         engine.putHandler(makeBucketSpace(), DocTypeName(doc1->getType()), hset.phandler1);
-        engine.putHandler(makeBucketSpace(), DocTypeName(doc2->getType()), hset.phandler2);
+        engine.putHandler(bucketSpace2, DocTypeName(doc2->getType()), hset.phandler2);
+    }
+    SimpleFixture()
+        : SimpleFixture(makeBucketSpace())
+    {
     }
 };
 
@@ -450,6 +477,26 @@ assertHandler(const Bucket &expBucket, Timestamp expTimestamp,
     EXPECT_EQUAL(expDocId, handler.lastDocId);
 }
 
+void assertBucketList(const BucketIdListResult &result, const std::vector<BucketId> &expBuckets)
+{
+    const BucketIdListResult::List &bucketList = result.getList();
+    EXPECT_EQUAL(expBuckets.size(), bucketList.size());
+    for (const auto &expBucket : expBuckets) {
+        EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), expBucket) != bucketList.end());
+    }
+}
+
+void assertBucketList(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets)
+{
+    BucketIdListResult result = spi.listBuckets(bucketSpace, partId);
+    TEST_DO(assertBucketList(result, expBuckets));
+}
+
+void assertModifiedBuckets(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets)
+{
+    BucketIdListResult result = spi.getModifiedBuckets(bucketSpace);
+    TEST_DO(assertBucketList(result, expBuckets));
+}
 
 TEST_F("require that getPartitionStates() prepares all handlers", SimpleFixture)
 {
@@ -591,18 +638,9 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", Simpl
 
 TEST_F("require that listBuckets() is routed to handlers and merged", SimpleFixture)
 {
-    f.hset.handler1.bucketList.push_back(bckId1);
-    f.hset.handler1.bucketList.push_back(bckId2);
-    f.hset.handler2.bucketList.push_back(bckId2);
-    f.hset.handler2.bucketList.push_back(bckId3);
-
+    f.hset.prepareListBuckets();
     EXPECT_TRUE(f.engine.listBuckets(makeBucketSpace(), PartitionId(1)).getList().empty());
-    BucketIdListResult result = f.engine.listBuckets(makeBucketSpace(), partId);
-    const BucketIdListResult::List &bucketList = result.getList();
-    EXPECT_EQUAL(3u, bucketList.size());
-    EXPECT_EQUAL(bckId1, bucketList[0]);
-    EXPECT_EQUAL(bckId2, bucketList[1]);
-    EXPECT_EQUAL(bckId3, bucketList[2]);
+    TEST_DO(assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }));
 }
 
 
@@ -677,17 +715,8 @@ TEST_F("require that deleteBucket() is routed to handlers and merged", SimpleFix
 
 TEST_F("require that getModifiedBuckets() is routed to handlers and merged", SimpleFixture)
 {
-    f.hset.handler1.modBucketList.push_back(bckId1);
-    f.hset.handler1.modBucketList.push_back(bckId2);
-    f.hset.handler2.modBucketList.push_back(bckId2);
-    f.hset.handler2.modBucketList.push_back(bckId3);
-
-    BucketIdListResult result = f.engine.getModifiedBuckets(makeBucketSpace());
-    const BucketIdListResult::List &bucketList = result.getList();
-    EXPECT_EQUAL(3u, bucketList.size());
-    EXPECT_EQUAL(bckId1, bucketList[0]);
-    EXPECT_EQUAL(bckId2, bucketList[1]);
-    EXPECT_EQUAL(bckId3, bucketList[2]);
+    f.hset.prepareGetModifiedBuckets();
+    TEST_DO(assertModifiedBuckets(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }));
 }
 
 
@@ -841,6 +870,15 @@ TEST_F("require that buckets are frozen during iterator life", SimpleFixture) {
     f.engine.destroyIterator(create_result.getIteratorId(), context);
     EXPECT_FALSE(f.hset.handler1.isFrozen(bucket1));
     EXPECT_FALSE(f.hset.handler2.isFrozen(bucket1));
+}
+
+TEST_F("require that multiple bucket spaces works", SimpleFixture(altBucketSpace)) {
+    f.hset.prepareListBuckets();
+    TEST_DO(assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2 }));
+    TEST_DO(assertBucketList(f.engine, altBucketSpace, { bckId2, bckId3 }));
+    f.hset.prepareGetModifiedBuckets();
+    TEST_DO(assertModifiedBuckets(f.engine, makeBucketSpace(), { bckId1, bckId2 }));
+    TEST_DO(assertModifiedBuckets(f.engine, altBucketSpace, { bckId2, bckId3 }));
 }
 
 TEST_MAIN()
