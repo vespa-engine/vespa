@@ -26,10 +26,5 @@
       <artifactId>vespaclient-container-plugin</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>application</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
 </project>
