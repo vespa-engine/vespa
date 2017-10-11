@@ -4,12 +4,10 @@
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/fileheader.h>
 
 namespace search::diskindex {
 
-using vespalib::nbostream;
 using search::index::BitVectorWordSingleKey;
 using search::common::FileHeaderContext;
 
@@ -41,24 +39,6 @@ BitVectorFileWrite::~BitVectorFileWrite()
 {
     // No implicit close() call, but cleanup memory allocations.
     delete _datFile;
-}
-
-
-void
-BitVectorFileWrite::checkPointWrite(nbostream &out)
-{
-    flush();
-    Parent::checkPointWriteCommon(out);
-    out << _datHeaderLen;
-    sync();
-}
-
-
-void
-BitVectorFileWrite::checkPointRead(nbostream &in)
-{
-    Parent::checkPointRead(in);
-    in >> _datHeaderLen;
 }
 
 
@@ -196,35 +176,6 @@ BitVectorFileWrite::close()
 }
 
 BitVectorCandidate::~BitVectorCandidate() {
-}
-
-void
-BitVectorCandidate::checkPointWrite(nbostream &out)
-{
-    uint32_t docIdLimit = _bv->size();
-    out << docIdLimit << _numDocs << _bitVectorLimit;
-    out.saveVector(_array);
-    if (getCrossedBitVectorLimit())
-        out << *_bv;
-}
-
-
-void
-BitVectorCandidate::checkPointRead(nbostream &in)
-{
-    uint32_t docIdLimit = _bv->size();
-    uint32_t checkDocIdLimit;
-    uint32_t checkBitVectorLimit;
-    in >> checkDocIdLimit >> _numDocs >> checkBitVectorLimit;
-    assert(checkDocIdLimit == docIdLimit);
-    (void) docIdLimit;
-    assert(checkBitVectorLimit == _bitVectorLimit);
-    in.restoreVector(_array);
-    if (getCrossedBitVectorLimit()) {
-        in >> *_bv;
-    } else {
-        _bv->clear();
-    }
 }
 
 }

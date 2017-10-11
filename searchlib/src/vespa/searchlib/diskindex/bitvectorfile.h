@@ -37,21 +37,6 @@ public:
 
     ~BitVectorFileWrite();
 
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    void
-    checkPointRead(vespalib::nbostream &in);
-
     void
     open(const vespalib::string &name, uint32_t docIdLimit,
          const TuneFileSeqWrite &tuneFileWrite,
@@ -181,21 +166,6 @@ public:
     {
         return *_bv;
     }
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    void
-    checkPointRead(vespalib::nbostream &in);
 };
 
 

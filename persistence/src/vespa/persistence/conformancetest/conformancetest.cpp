@@ -17,6 +17,7 @@
 #include <limits>
 
 using document::BucketId;
+using document::BucketSpace;
 using storage::spi::test::makeBucket;
 using storage::spi::test::makeBucketSpace;
 
@@ -2298,6 +2299,72 @@ void ConformanceTest::testRemoveEntry()
         BucketInfo info3 = spi->getBucketInfo(bucket).getBucketInfo();
         CPPUNIT_ASSERT_EQUAL(info2, info3);
     }
+}
+
+void assertBucketInfo(PersistenceProvider &spi, const Bucket &bucket, uint32_t expDocCount)
+{
+    const BucketInfo info = spi.getBucketInfo(bucket).getBucketInfo();
+    CPPUNIT_ASSERT_EQUAL(expDocCount, info.getDocumentCount());
+    CPPUNIT_ASSERT(info.getEntryCount() >= info.getDocumentCount());
+    CPPUNIT_ASSERT(info.getChecksum() != 0);
+    CPPUNIT_ASSERT(info.getDocumentSize() > 0);
+    CPPUNIT_ASSERT(info.getUsedSize() >= info.getDocumentSize());
+}
+
+void assertBucketList(PersistenceProvider &spi,
+                      BucketSpace &bucketSpace,
+                      PartitionId partId,
+                      const std::vector<BucketId> &expBuckets)
+{
+    BucketIdListResult result = spi.listBuckets(bucketSpace, partId);
+    const BucketIdListResult::List &bucketList = result.getList();
+    CPPUNIT_ASSERT_EQUAL(expBuckets.size(), bucketList.size());
+    for (const auto &expBucket : expBuckets) {
+        CPPUNIT_ASSERT(std::find(bucketList.begin(), bucketList.end(), expBucket) != bucketList.end());
+    }
+}
+
+void ConformanceTest::testBucketSpaces()
+{
+    if (!_factory->supportsBucketSpaces()) {
+        return;
+    }
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    BucketSpace bucketSpace0(makeBucketSpace("testdoctype1"));
+    BucketSpace bucketSpace1(makeBucketSpace("testdoctype2"));
+    BucketSpace bucketSpace2(makeBucketSpace("no"));
+    PartitionId partId(0);
+
+    BucketId bucketId1(8, 0x01);
+    BucketId bucketId2(8, 0x02);
+    Bucket bucket01({ bucketSpace0, bucketId1 }, partId);
+    Bucket bucket11({ bucketSpace1, bucketId1 }, partId);
+    Bucket bucket12({ bucketSpace1, bucketId2 }, partId);
+    Document::SP doc1 = testDocMan.createDocument("content", "id:test:testdoctype1:n=1:1", "testdoctype1");
+    Document::SP doc2 = testDocMan.createDocument("content", "id:test:testdoctype1:n=1:2", "testdoctype1");
+    Document::SP doc3 = testDocMan.createDocument("content", "id:test:testdoctype2:n=1:3", "testdoctype2");
+    Document::SP doc4 = testDocMan.createDocument("content", "id:test:testdoctype2:n=2:4", "testdoctype2");
+    spi->createBucket(bucket01, context);
+    spi->createBucket(bucket11, context);
+    spi->createBucket(bucket12, context);
+    spi->put(bucket01, Timestamp(3), doc1, context);
+    spi->put(bucket01, Timestamp(4), doc2, context);
+    spi->put(bucket11, Timestamp(5), doc3, context);
+    spi->put(bucket12, Timestamp(6), doc4, context);
+    spi->flush(bucket01, context);
+    spi->flush(bucket11, context);
+    spi->flush(bucket12, context);
+    // Check bucket lists
+    assertBucketList(*spi, bucketSpace0, partId, { bucketId1 });
+    assertBucketList(*spi, bucketSpace1, partId, { bucketId1, bucketId2 });
+    assertBucketList(*spi, bucketSpace2, partId, { });
+    // Check bucket info
+    assertBucketInfo(*spi, bucket01, 2);
+    assertBucketInfo(*spi, bucket11, 1);
+    assertBucketInfo(*spi, bucket12, 1);
 }
 
 void ConformanceTest::detectAndTestOptionalBehavior() {

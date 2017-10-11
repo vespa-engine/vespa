@@ -310,4 +310,11 @@ public class DeploymentJobs {
         return id;
     }
 
+    /** Returns whether the given job type is currently running and was started after timeoutLimit */
+    public boolean isRunning(JobType jobType, Instant timeoutLimit) {
+        JobStatus jobStatus = status.get(jobType);
+        if ( jobStatus == null) return false;
+        return jobStatus.isRunning(timeoutLimit);
+    }
+
 }

@@ -58,6 +58,7 @@
     CPPUNIT_TEST(testBucketActivation); \
     CPPUNIT_TEST(testBucketActivationSplitAndJoin); \
     CPPUNIT_TEST(testRemoveEntry); \
+    CPPUNIT_TEST(testBucketSpaces); \
     CPPUNIT_TEST(detectAndTestOptionalBehavior);
 
 namespace document
@@ -100,6 +101,8 @@ struct ConformanceTest : public CppUnit::TestFixture {
         {
             return false;
         }
+        // If bucket spaces are supported then testdoctype2 is in bucket space 1
+        virtual bool supportsBucketSpaces() const { return false; }
     };
     PersistenceFactory::UP _factory;
 
@@ -260,6 +263,9 @@ public:
     void testBucketActivationSplitAndJoin();
 
     void testRemoveEntry();
+
+    /** Test multiple bucket spaces */
+    void testBucketSpaces();
 
     /**
      * Reports what optional behavior is supported by implementation and not.

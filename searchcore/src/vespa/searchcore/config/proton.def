@@ -429,6 +429,10 @@ hwinfo.disk.slowwritespeedlimit double default = 100.0
 ## The memory size is used when determining if feed should be blocked in writefilter.
 hwinfo.memory.size long default = 0
 
+## The number of cores on the cpu.
+## If set to 0, this is sampled by using std::thread::hardware_concurrency().
+hwinfo.cpu.cores int default = 0
+
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##
 ## Currently used by 'lid_space_compaction' and 'move_buckets' jobs.

@@ -3,6 +3,7 @@
 #include "service.h"
 #include "output-connection.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <csignal>
 #include <unistd.h>
@@ -13,7 +14,11 @@
 LOG_SETUP(".service");
 #include <vespa/log/llparser.h>
 
-extern sig_atomic_t stop;
+static bool stop()
+{
+    return (vespalib::SignalHandler::INT.check() ||
+            vespalib::SignalHandler::TERM.check());
+}
 
 using vespalib::make_string;
 
@@ -212,7 +217,7 @@ Service::start()
             static_cast<int>(getpid()));
         signal(SIGTERM, SIG_DFL);
         signal(SIGINT, SIG_DFL);
-        if (stop) {
+        if (stop()) {
             kill(getpid(), SIGTERM);
         }
         if (_restartPenalty > 0) {
@@ -315,7 +320,7 @@ Service::youExited(int status)
     } else if (_state == KILLING) {
         setState(KILLED);
     }
-    if (_isAutomatic && _config->autorestart && !stop) {
+    if (_isAutomatic && _config->autorestart && !stop()) {
         // ### Implement some rate limiting here maybe?
         LOG(debug, "%s: Has autorestart flag, restarting.", name().c_str());
         setState(READY);

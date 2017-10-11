@@ -201,22 +201,6 @@ TEST_F("Test serializing std::pair", Fixture)
     f.assertSerialize(exp, val);
 }
 
-TEST_F("Test saveVector", Fixture)
-{
-    std::vector<int16_t> val({ 0x0123, 0x4567 });
-    val.reserve(16);
-    ExpBuffer exp({        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
-                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-                           0x01, 0x23, 0x45, 0x67 });
-    f._stream.saveVector(val);
-    EXPECT_EQUAL(exp, f._stream);
-    std::vector<int16_t> checkVal;
-    f._stream.restoreVector(checkVal);
-    EXPECT_EQUAL(val, checkVal);
-    EXPECT_EQUAL(val.capacity(), checkVal.capacity());
-}
-
-
 TEST_F("Test write", Fixture)
 {
     f._stream.write("Hello", 5);

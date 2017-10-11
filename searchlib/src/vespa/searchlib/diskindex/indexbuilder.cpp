@@ -292,13 +292,9 @@ FileHandle::open(const vespalib::stringref &dir,
 
     _fieldWriter = new FieldWriter(docIdLimit, numWordIds);
 
-    _fieldWriter->earlyOpen(dir + "/", 64, 262144u, false,
-                           index.getSchema(), index.getIndex(),
-                           tuneFileWrite);
-
-    // No checkpointing
-
-    if (!_fieldWriter->lateOpen(tuneFileWrite, fileHeaderContext)) {
+    if (!_fieldWriter->open(dir + "/", 64, 262144u, false,
+                            index.getSchema(), index.getIndex(),
+                            tuneFileWrite, fileHeaderContext)) {
         LOG(error, "Could not open term writer %s for write (%s)",
             dir.c_str(), getLastErrorString().c_str());
         abort();

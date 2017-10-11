@@ -4,6 +4,9 @@
       "name":"DelayedDeployer"
     },
     {
+      "name":"BlockedChangeDeployer"
+    },
+    {
       "name":"Upgrader"
     },
     {

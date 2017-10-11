@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "nbostream.hpp"
+#include "nbostream.h"
 #include "hexdump.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 namespace vespalib {
 
@@ -134,14 +135,5 @@ void nbostream::swap(nbostream & os)
     _wbuf.swap(os._wbuf);
     std::swap(_rbuf, os._rbuf);
 }
-
-template nbostream& nbostream::saveVector<int16_t>(const std::vector<int16_t> &);
-template nbostream& nbostream::restoreVector<int16_t>(std::vector<int16_t> &);
-template nbostream& nbostream::saveVector<int32_t>(const std::vector<int32_t> &);
-template nbostream& nbostream::restoreVector<int32_t>(std::vector<int32_t> &);
-template nbostream& nbostream::saveVector<uint32_t>(const std::vector<uint32_t> &);
-template nbostream& nbostream::restoreVector<uint32_t>(std::vector<uint32_t> &);
-template nbostream& nbostream::saveVector<uint64_t>(const std::vector<uint64_t> &);
-template nbostream& nbostream::restoreVector<uint64_t>(std::vector<uint64_t> &);
 
 }

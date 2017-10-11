@@ -94,9 +94,6 @@ public class DeploymentOrder {
         return job == JobType.component;
     }
 
-    /** Returns whether this is the last job before production */
-    public boolean isLastBeforeProduction(JobType jobType) { return jobType == JobType.stagingTest; }
-
     /** Returns whether the given job is last in a deployment */
     public boolean isLast(JobType job, Application application) {
         List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -98,11 +99,20 @@ public class JobStatus {
 
     /** Returns true unless this job last completed with a failure */
     public boolean isSuccess() { return ! jobError.isPresent(); }
+    
+    /** Returns true if last triggered is newer than last completed and was started after timeoutLimit */
+    public boolean isRunning(Instant timeoutLimit) {
+        if ( ! lastTriggered.isPresent()) return false;
+        if (lastTriggered.get().at().isBefore(timeoutLimit)) return false;
+        if ( ! lastCompleted.isPresent()) return true;
+        return lastTriggered.get().at().isAfter(lastCompleted.get().at());
+    }
 
     /** The error of the last completion, or empty if the last run succeeded */
     public Optional<DeploymentJobs.JobError> jobError() { return jobError; }
 
     /** Returns true if job is in progress */
+    // TODO: Replace with isRunning
     public boolean inProgress() {
         if (!lastTriggered().isPresent()) {
             return false;

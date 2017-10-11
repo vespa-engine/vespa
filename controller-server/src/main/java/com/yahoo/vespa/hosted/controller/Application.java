@@ -287,5 +287,9 @@ public class Application {
         if ( ! deploying.isPresent()) return false;
         return deploying.get().blockedBy(deploymentSpec, instant);
     }
-
+    
+    public boolean isBlocked(Instant instant) {
+        return ! deploymentSpec.canUpgradeAt(instant) || ! deploymentSpec.canChangeRevisionAt(instant);
+    }
+    
 }

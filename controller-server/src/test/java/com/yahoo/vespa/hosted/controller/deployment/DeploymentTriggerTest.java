@@ -7,9 +7,12 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.maintenance.BlockedChangeDeployer;
+import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -263,6 +266,9 @@ public class DeploymentTriggerTest {
     public void testBlockRevisionChange() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:30:00.00Z")); // Tuesday, 17:30
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
+                                                                                Duration.ofHours(1),
+                                                                                new JobControl(tester.controllerTester().curator()));
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
 
@@ -274,7 +280,10 @@ public class DeploymentTriggerTest {
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
 
-        tester.clock().advance(Duration.ofHours(1)); // Enter block window: 18:30
+        tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
+        
+        blockedChangeDeployer.run();
+        assertEquals(0, tester.buildSystem().jobs().size());
         
         String searchDefinition =
                 "search test {\n" +
@@ -286,12 +295,15 @@ public class DeploymentTriggerTest {
         ApplicationPackage changedApplication = applicationPackageBuilder.searchDefinition(searchDefinition).build();
 
         tester.deployTestOnly(app, changedApplication);
-        assertFalse(tester.application("app1").deploying().isPresent());
 
-        tester.clock().advance(Duration.ofHours(2)); // Exit block window: 20:30
+        blockedChangeDeployer.run();
+        assertEquals(0, tester.buildSystem().jobs().size());
 
-        tester.deployCompletely(app, changedApplication);
-        assertFalse(tester.application("app1").deploying().isPresent());
+        tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
+        tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
+        assertEquals(1, tester.buildSystem().jobs().size());
+        BuildService.BuildJob productionJob = tester.buildSystem().takeJobsToRun().get(0);
+        assertEquals("production-us-west-1", productionJob.jobName());
     }
 
     @Test

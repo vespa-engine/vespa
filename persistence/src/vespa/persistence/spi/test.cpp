@@ -2,19 +2,35 @@
 
 #include "test.h"
 
+using document::BucketId;
+using document::BucketSpace;
+
 namespace storage::spi::test {
 
-document::BucketSpace makeBucketSpace()
+BucketSpace makeBucketSpace()
 {
-    return document::BucketSpace::placeHolder();
+    return BucketSpace::placeHolder();
 }
 
-Bucket makeBucket(document::BucketId bucketId, PartitionId partitionId)
+BucketSpace makeBucketSpace(const vespalib::string &docTypeName)
 {
-    return Bucket(document::Bucket(document::BucketSpace::placeHolder(), bucketId), partitionId);
+    // Used by persistence conformance test to map fron document type name
+    // to bucket space.  See document::TestDocRepo for known document types.
+    if (docTypeName == "no") {
+        return BucketSpace(2);
+    } else if (docTypeName == "testdoctype2") {
+        return BucketSpace(1);
+    } else {
+        return makeBucketSpace();
+    }
 }
 
-Bucket makeBucket(document::BucketId bucketId)
+Bucket makeBucket(BucketId bucketId, PartitionId partitionId)
+{
+    return Bucket(document::Bucket(BucketSpace::placeHolder(), bucketId), partitionId);
+}
+
+Bucket makeBucket(BucketId bucketId)
 {
     return makeBucket(bucketId, PartitionId(0));
 }

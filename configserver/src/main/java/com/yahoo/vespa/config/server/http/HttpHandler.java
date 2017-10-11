@@ -13,7 +13,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.Duration;
 import java.util.concurrent.Executor;
 
 /**
@@ -68,13 +67,6 @@ public class HttpHandler extends LoggingRequestHandler {
             log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         }
-    }
-
-    // Override default, since we need a higher timeout for some calls
-    // TODO: Review and see if overriding only in SessionPrepareHandler is enough
-    @Override
-    public Duration getTimeout() {
-        return Duration.ofSeconds(910);
     }
 
     private String getMessage(Exception e, HttpRequest request) {

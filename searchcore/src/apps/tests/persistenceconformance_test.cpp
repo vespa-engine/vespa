@@ -40,6 +40,7 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 
 using std::shared_ptr;
+using document::BucketSpace;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumenttypesConfig;
@@ -160,7 +161,8 @@ private:
 public:
     DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort);
     ~DocumentDBFactory();
-    DocumentDB::SP create(const DocTypeName &docType,
+    DocumentDB::SP create(BucketSpace bucketSpace,
+                          const DocTypeName &docType,
                           const ConfigFactory &factory) {
         DocumentDBConfig::SP snapshot = factory.create(docType);
         vespalib::mkdir(_baseDir, false);
@@ -188,7 +190,7 @@ public:
                                _queryLimiter,
                                _clock,
                                docType,
-                               makeBucketSpace(),
+                               bucketSpace,
                                *b->getProtonConfigSP(),
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
@@ -227,7 +229,9 @@ public:
     {
         DocTypeVector types = cfgFactory.getDocTypes();
         for (size_t i = 0; i < types.size(); ++i) {
-            DocumentDB::SP docDb = docDbFactory.create(types[i],
+            BucketSpace bucketSpace(makeBucketSpace(types[i].getName()));
+            DocumentDB::SP docDb = docDbFactory.create(bucketSpace,
+                                                       types[i],
                                                        cfgFactory);
             docDb->start();
             docDb->waitForOnlineState();
@@ -384,6 +388,7 @@ public:
 
     virtual bool hasPersistence() const override { return true; }
     virtual bool supportsActiveState() const override { return true; }
+    virtual bool supportsBucketSpaces() const override { return true; }
 };
 
 
@@ -583,6 +588,11 @@ TEST_F("require thant testJoinSameSourceBucketsTargetExists() works",
        TestFixture)
 {
     f.test.testJoinSameSourceBucketsTargetExists();
+}
+
+TEST_F("require that multiple bucket spaces works", TestFixture)
+{
+    f.test.testBucketSpaces();
 }
 
 // *** Run all conformance tests, but ignore the results BEGIN ***

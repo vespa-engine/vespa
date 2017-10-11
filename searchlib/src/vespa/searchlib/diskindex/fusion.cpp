@@ -314,16 +314,14 @@ Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index,
 {
     vespalib::string dir = _outDir + "/" + index.getName();
 
-    writer.earlyOpen(dir + "/",
+    if (!writer.open(dir + "/",
                      64,
                      262144,
                      _dynamicKPosIndexFormat,
                      index.getSchema(),
                      index.getIndex(),
-                     _tuneFileIndexing._write);
-    // No checkpointing
-    if (!writer.lateOpen(_tuneFileIndexing._write,
-                         _fileHeaderContext)) {
+                     _tuneFileIndexing._write,
+                     _fileHeaderContext)) {
         LOG(error, "Could not open output posocc + dictionary in %s",
             dir.c_str());
         abort();

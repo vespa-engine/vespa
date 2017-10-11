@@ -5,8 +5,6 @@
 #include <vector>
 #include <cstdint>
 
-namespace vespalib { class nbostream; }
-
 namespace search::index {
 
 /*
@@ -195,24 +193,4 @@ public:
     void append(const DocIdAndFeatures &rhs, uint32_t localFieldId);
 };
 
-
-vespalib::nbostream &
-operator<<(vespalib::nbostream &out, const WordDocElementFeatures &features);
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &in, WordDocElementFeatures &features);
-
-vespalib::nbostream &
-operator<<(vespalib::nbostream &out, const WordDocElementWordPosFeatures &features);
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &in, WordDocElementWordPosFeatures &features);
-
-vespalib::nbostream &
-operator<<(vespalib::nbostream &out, const DocIdAndFeatures &features);
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &in, DocIdAndFeatures &features);
-
 }
-

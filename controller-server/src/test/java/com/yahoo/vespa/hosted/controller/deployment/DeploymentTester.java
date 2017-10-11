@@ -156,8 +156,11 @@ public class DeploymentTester {
         if (failOnJob.isPresent()) {
             assertTrue(applications().require(application.id()).deploying().isPresent());
             assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
-        } else {
+        } else if (includingProductionZones) {
             assertFalse(applications().require(application.id()).deploying().isPresent());
+        }
+        else {
+            assertTrue(applications().require(application.id()).deploying().isPresent());
         }
     }
 

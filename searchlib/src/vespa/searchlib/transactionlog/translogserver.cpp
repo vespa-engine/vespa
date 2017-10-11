@@ -75,23 +75,25 @@ SyncHandler::PerformTask()
 
 }
 
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                               const FileHeaderContext &fileHeaderContext)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, 0x10000000)
+{}
 
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, DomainPart::Crc::xxh64)
+{}
 
-TransLogServer::TransLogServer(const vespalib::string &name,
-                               int listenPort,
-                               const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext,
-                               uint64_t domainPartSize,
-                               bool useFsync,
-                               size_t maxThreads,
-                               DomainPart::Crc defaultCrcType)
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize,
+                               size_t maxThreads, DomainPart::Crc defaultCrcType)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
       _domainPartSize(domainPartSize),
-      _useFsync(useFsync),
       _defaultCrcType(defaultCrcType),
-      _executor(maxThreads, 128*1024),
+      _sessionExecutor(maxThreads, 128*1024),
       _threadPool(8192, 1),
       _supervisor(std::make_unique<FRT_Supervisor>()),
       _domains(),
@@ -107,13 +109,8 @@ TransLogServer::TransLogServer(const vespalib::string &name,
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        Domain::SP domain(new Domain(domainName,
-                                dir(),
-                                _executor,
-                                _domainPartSize,
-                                _useFsync,
-                                _defaultCrcType,
-                                _fileHeaderContext));
+                        auto domain = std::make_shared<Domain>(domainName, dir(), _sessionExecutor, _sessionExecutor,
+                                                               _domainPartSize, _defaultCrcType,_fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -359,13 +356,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain.reset(new Domain(domainName,
-                                dir(),
-                                _executor,
-                                _domainPartSize,
-                                _useFsync,
-                                _defaultCrcType,
-                                _fileHeaderContext));
+            domain = std::make_shared<Domain>(domainName, dir(), _sessionExecutor, _sessionExecutor,
+                                              _domainPartSize, _defaultCrcType, _fileHeaderContext);
             {
                 Guard domainGuard(_lock);
                 _domains[domain->name()] = domain;

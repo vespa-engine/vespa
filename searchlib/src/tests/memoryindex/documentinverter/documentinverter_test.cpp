@@ -5,7 +5,6 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/documentinverter.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/test/memoryindex/ordereddocumentinserter.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
