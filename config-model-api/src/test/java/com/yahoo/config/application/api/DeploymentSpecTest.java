@@ -309,6 +309,34 @@ public class DeploymentSpecTest {
         assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void deploymentSpecWithIllegallyOrderedDeploymentSpec1() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                "  <block-change days='sat' hours='10' time-zone='CET'/>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "  <block-change days='mon,tue' hours='15-16'/>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deploymentSpecWithIllegallyOrderedDeploymentSpec2() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                "  <block-change days='sat' hours='10' time-zone='CET'/>\n" +
+                "  <test/>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
+
     @Test
     public void deploymentSpecWithChangeBlocker() {
         StringReader r = new StringReader(

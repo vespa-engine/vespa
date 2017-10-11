@@ -9,26 +9,45 @@ import com.yahoo.config.application.api.DeploymentSpec.ChangeBlocker;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author bratseth
  */
 public class DeploymentSpecXmlReader {
+
+    private static final String testTag = "test";
+    private static final String stagingTag = "staging";
+    private static final String blockChangeTag = "block-change";
+    private static final String prodTag = "prod";
     
+    public DeploymentSpec read(Reader reader) {
+        try {
+            return read(IOUtils.readAll(reader));
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Could not read deployment spec", e);
+        }
+    }
+
     /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
         List<Step> steps = new ArrayList<>();
         Optional<String> globalServiceId = Optional.empty();
         Element root = XML.getDocument(xmlForm).getDocumentElement();
+        validateTagOrder(root);
         for (Element environmentTag : XML.getChildren(root)) {
             if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
 
@@ -62,6 +81,27 @@ public class DeploymentSpecXmlReader {
         return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readChangeBlockers(root), steps, xmlForm);
     }
 
+    /** Imposes some constraints on tag order which are not expressible in the schema */
+    private void validateTagOrder(Element root) {
+        List<String> tags = XML.getChildren(root).stream().map(Element::getTagName).collect(Collectors.toList());
+        for (int i = 0; i < tags.size(); i++) {
+            if (tags.get(i).equals(blockChangeTag)) {
+                String constraint = "<block-change> must be placed after <test> and <staging> and before <prod>";
+                if (containsAfter(i, testTag, tags)) throw new IllegalArgumentException(constraint);
+                if (containsAfter(i, stagingTag, tags)) throw new IllegalArgumentException(constraint);
+                if (containsBefore(i, prodTag, tags)) throw new IllegalArgumentException(constraint);
+            }
+        }
+    }
+    
+    private boolean containsAfter(int i, String item, List<String> items) {
+        return items.subList(i+1, items.size()).contains(item);
+    }
+
+    private boolean containsBefore(int i, String item, List<String> items) {
+        return items.subList(0, i).contains(item);
+    }
+
     /** Returns the given attribute as an integer, or 0 if it is not present */
     private long longAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
@@ -76,7 +116,7 @@ public class DeploymentSpecXmlReader {
     }
 
     private boolean isEnvironmentName(String tagName) {
-        return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
+        return tagName.equals(testTag) || tagName.equals(stagingTag) || tagName.equals(prodTag);
     }
 
     private DeclaredZone readDeclaredZone(Environment environment, Element regionTag) {
@@ -98,7 +138,7 @@ public class DeploymentSpecXmlReader {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = new ArrayList<>();
         for (Element tag : XML.getChildren(root)) {
             // TODO: Remove block-upgrade on Vespa 7
-            if ( ! "block-change".equals(tag.getTagName()) && !"block-upgrade".equals(tag.getTagName())) continue;
+            if ( ! blockChangeTag.equals(tag.getTagName()) && !"block-upgrade".equals(tag.getTagName())) continue;
 
             boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
             boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"))

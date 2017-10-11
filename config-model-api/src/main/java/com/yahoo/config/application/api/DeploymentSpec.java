@@ -5,18 +5,13 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.io.IOUtils;
-import com.yahoo.text.XML;
-import org.w3c.dom.Element;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -183,12 +178,7 @@ public class DeploymentSpec {
      * @throws IllegalArgumentException if the XML is invalid
      */
     public static DeploymentSpec fromXml(Reader reader) {
-        try {
-            return fromXml(IOUtils.readAll(reader));
-        }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not read deployment spec", e);
-        }
+        return new DeploymentSpecXmlReader().read(reader);
     }
 
     /**
