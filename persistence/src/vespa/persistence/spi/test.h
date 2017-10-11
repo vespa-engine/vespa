@@ -9,6 +9,7 @@ namespace storage::spi::test {
 // Helper functions used by unit tests
 
 document::BucketSpace makeBucketSpace();
+document::BucketSpace makeBucketSpace(const vespalib::string &docTypeName);
 Bucket makeBucket(document::BucketId bucketId, PartitionId partitionId);
 Bucket makeBucket(document::BucketId bucketId);
 
