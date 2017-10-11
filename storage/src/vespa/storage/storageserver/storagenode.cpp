@@ -90,7 +90,6 @@ StorageNode::subscribeToConfigs()
     _configFetcher->subscribe<vespa::config::content::UpgradingConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<vespa::config::content::core::StorServerConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<vespa::config::content::core::StorPrioritymappingConfig>(_configUri.getConfigId(), this);
-    _configFetcher->start();
 
     vespalib::LockGuard configLockGuard(_configLock);
     _serverConfig = std::move(_newServerConfig);
@@ -195,6 +194,9 @@ StorageNode::initialize()
 
     initializeStatusWebServer();
 
+    // All components are set up, so we can start async config subscription.
+    _configFetcher->start();
+
         // Write pid file as the last thing we do. If we fail initialization
         // due to an exception we won't run shutdown. Thus we won't remove the
         // pid file if something throws after writing it in initialization.
@@ -247,11 +249,10 @@ StorageNode::updateUpgradeFlag(const vespa::config::content::UpgradingConfig& co
 void
 StorageNode::handleLiveConfigUpdate()
 {
-        // Make sure we don't conflict with initialize or shutdown threads.
+    // Make sure we don't conflict with initialize or shutdown threads.
     vespalib::LockGuard configLockGuard(_configLock);
-        // If storage haven't initialized, ignore. Initialize code will handle
-        // this config.
-    if (_chain.get() == 0) return;
+
+    assert(_chain.get() != nullptr);
     // If we get here, initialize is done running. We have to handle changes
     // we want to handle.
 
