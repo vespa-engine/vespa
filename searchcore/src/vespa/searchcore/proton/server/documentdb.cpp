@@ -61,7 +61,16 @@ using searchcorespi::IFlushTarget;
 namespace proton {
 
 namespace {
+
 constexpr uint32_t indexing_thread_stack_size = 128 * 1024;
+
+uint32_t semiUnboundTaskLimit(uint32_t semiUnboundExecutorTaskLimit,
+                              uint32_t indexingThreads)
+{
+    uint32_t taskLimit = semiUnboundExecutorTaskLimit / indexingThreads;
+    return taskLimit;
+}
+
 }
 
 template <typename FunctionType>
@@ -97,10 +106,12 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _bucketSpace(bucketSpace),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
-      _writeServiceConfig(ThreadingServiceConfig::make(protonCfg, hwInfo.cpu())),
-      _writeService(_writeServiceConfig.indexingThreads(),
+      _defaultExecutorTaskLimit(protonCfg.indexing.tasklimit),
+      _semiUnboundExecutorTaskLimit(protonCfg.indexing.semiunboundtasklimit),
+      _indexingThreads(protonCfg.indexing.threads),
+      _writeService(std::max(1, protonCfg.indexing.threads),
                     indexing_thread_stack_size,
-                    _writeServiceConfig.defaultTaskLimit()),
+                    _defaultExecutorTaskLimit),
       _initializeThreads(initializeThreads),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
@@ -170,7 +181,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     fastos::TimeStamp visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
     _visibility.setVisibilityDelay(visibilityDelay);
     if (_visibility.getVisibilityDelay() > 0) {
-        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit());
+        _writeService.setTaskLimit(semiUnboundTaskLimit(_semiUnboundExecutorTaskLimit, _indexingThreads));
     }
 }
 
@@ -414,9 +425,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_visibility.getVisibilityDelay() > 0) {
-        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit());
+        _writeService.setTaskLimit(semiUnboundTaskLimit(_semiUnboundExecutorTaskLimit, _indexingThreads));
     } else {
-        _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit());
+        _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
         applySubDBConfig(*configSnapshot, serialNum, params);
