@@ -55,7 +55,8 @@ public class DelayedResponseHandler implements Runnable {
                     rpcServer.returnOkResponse(request, config);
                     i++;
                 } else {
-                    log.log(LogLevel.WARNING, "No config found for " + request.getConfigKey() + " within timeout, will retry");
+                    log.log(LogLevel.WARNING, "Timed out (timeout " + request.getTimeout() + ") getting config " +
+                            request.getConfigKey() + ", will retry");
                 }
             }
             if (log.isLoggable(LogLevel.SPAM)) {
