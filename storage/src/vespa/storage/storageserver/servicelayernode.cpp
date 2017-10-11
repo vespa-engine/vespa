@@ -166,7 +166,7 @@ ServiceLayerNode::initializeNodeSpecific()
     if (DIFFER(a)) { LOG(warning, "Live config failure: %s.", b); }
 
 void
-ServiceLayerNode::handleLiveConfigUpdate()
+ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 {
     if (_newServerConfig) {
         bool updated = false;
@@ -207,7 +207,7 @@ ServiceLayerNode::handleLiveConfigUpdate()
             }
         }
     }
-    StorageNode::handleLiveConfigUpdate();
+    StorageNode::handleLiveConfigUpdate(initGuard);
 }
 
 void
@@ -223,7 +223,8 @@ ServiceLayerNode::configure(
         _newDevicesConfig = std::move(config);
     }
     if (_distributionConfig) {
-        handleLiveConfigUpdate();
+        InitialGuard concurrent_config_guard(_initial_config_mutex);
+        handleLiveConfigUpdate(concurrent_config_guard);
     }
 }
 

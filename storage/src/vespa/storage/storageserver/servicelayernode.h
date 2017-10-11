@@ -63,7 +63,7 @@ public:
 private:
     void subscribeToConfigs() override;
     void initializeNodeSpecific() override;
-    void handleLiveConfigUpdate() override;
+    void handleLiveConfigUpdate(const InitialGuard & initGuard) override;
     void configure(std::unique_ptr<vespa::config::storage::StorDevicesConfig> config) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
