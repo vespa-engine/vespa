@@ -7,8 +7,7 @@
 #include <vespa/vespalib/util/syncable.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Interface for the thread model used for write tasks.
@@ -62,5 +61,4 @@ struct IThreadingService : public vespalib::Syncable
     virtual search::ISequencedTaskExecutor &attributeFieldWriter() = 0;
 };
 
-} // namespace index
-} // namespace searchcorespi
+}

@@ -35,12 +35,7 @@ class RemoveOperation;
 class SplitBucketOperation;
 class UpdateOperation;
 
-namespace bucketdb
-{
-
-class IBucketDBHandler;
-
-}
+namespace bucketdb { class IBucketDBHandler; }
 
 /**
  * Class handling all aspects of feeding for a document database.
@@ -122,18 +117,12 @@ private:
     void createNonExistingDocument(FeedTokenUP, const UpdateOperation &op);
 
     void performRemove(FeedTokenUP token, RemoveOperation &op);
-private:
     void performGarbageCollect(FeedTokenUP token);
     void performCreateBucket(FeedTokenUP token, CreateBucketOperation &op);
     void performDeleteBucket(FeedTokenUP token, DeleteBucketOperation &op);
     void performSplit(FeedTokenUP token, SplitBucketOperation &op);
     void performJoin(FeedTokenUP token, JoinBucketsOperation &op);
     void performSync();
-
-    /**
-     * Used during callback from transaction log.
-     */
-    void handleTransactionLogEntry(const Packet::Entry &entry);
     void performEof();
 
     /**
@@ -142,22 +131,9 @@ private:
     void performFlushDone(SerialNum flushedSerial);
     void performPrune(SerialNum flushedSerial);
 
-public:
-    void considerDelayedPrune();
-
-private:
-    /**
-     * Returns the current feed state of this feed handler.
-     */
     FeedStateSP getFeedState() const;
-
-    /**
-     * Used to handle feed state transitions.
-     */
     void changeFeedState(FeedStateSP newState);
-
     void changeFeedState(FeedStateSP newState, const vespalib::LockGuard &feedGuard);
-
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;
@@ -184,7 +160,7 @@ public:
                 search::transactionlog::Writer & writer,
                 TlsWriter * tlsWriter = nullptr);
 
-    virtual~FeedHandler();
+    virtual ~FeedHandler();
 
     /**
      * Init this feed handler.
@@ -239,18 +215,14 @@ public:
         _bucketDBHandler = bucketDBHandler;
     }
 
-    void waitForReplayDone();
-
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
     SerialNum incSerialNum() { return ++_serialNum; }
     SerialNum getSerialNum() const override { return _serialNum; }
     SerialNum getPrunedSerialNum() const { return _prunedSerialNum; }
 
-    void setReplayDone();
-    bool getReplayDone() const;
     bool isDoingReplay() const;
     float getReplayProgress() const {
-        return _tlsReplayProgress.get() != nullptr ? _tlsReplayProgress->getProgress() : 0;
+        return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0;
     }
     bool getTransactionLogReplayDone() const;
     vespalib::string getDocTypeName() const { return _docTypeName.getName(); }
@@ -263,14 +235,13 @@ public:
     void heartBeat() override;
 
     virtual void sync();
-
     RPC::Result receive(const Packet &packet) override;
 
     void eof() override;
     void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
     void syncTls(SerialNum syncTo);
-    void storeRemoteOperation(const FeedOperation &op);
     void storeOperation(FeedOperation &op) override;
+    void considerDelayedPrune();
 };
 
 } // namespace proton
