@@ -263,6 +263,18 @@ void Domain::cleanSessions()
     }
 }
 
+namespace {
+
+void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
+{
+    MonitorGuard guard(syncMonitor);
+    while (pendingSync) {
+        guard.wait();
+    }
+}
+
+}
+
 void Domain::commit(const Packet & packet)
 {
     DomainPart::SP dp(_parts.rbegin()->second);
@@ -270,13 +282,9 @@ void Domain::commit(const Packet & packet)
     Packet::Entry entry;
     entry.deserialize(is);
     if (dp->byteSize() > _domainPartSize) {
+        waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
-        {
-            MonitorGuard guard(_syncMonitor);
-            while (_pendingSync) {
-                guard.wait();
-            }
-        }
+        waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
         dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false));
         {
