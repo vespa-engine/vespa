@@ -26,6 +26,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config-stor-distribution.h>
+#include <mutex>
 
 namespace document { class DocumentTypeRepo; }
 
@@ -95,7 +96,11 @@ public:
     // For testing
     StorageLink* getChain() { return _chain.get(); }
     virtual void initializeStatusWebServer();
-
+protected:
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
+    using UpgradingConfig = vespa::config::content::UpgradingConfig;
+    using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
+    using StorPrioritymappingConfig = vespa::config::content::core::StorPrioritymappingConfig;
 private:
     bool _singleThreadedDebugMode;
         // Subscriptions to config
@@ -128,29 +133,31 @@ private:
     std::unique_ptr<StorageLink>               _chain;
 
     /** Implementation of config callbacks. */
-    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> config) override;
-    void configure(std::unique_ptr<vespa::config::content::UpgradingConfig> config) override;
-    void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config) override;
-    void configure(std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig>) override;
+    void configure(std::unique_ptr<StorServerConfig> config) override;
+    void configure(std::unique_ptr<UpgradingConfig> config) override;
+    void configure(std::unique_ptr<StorDistributionConfig> config) override;
+    void configure(std::unique_ptr<StorPrioritymappingConfig>) override;
     virtual void configure(std::unique_ptr<document::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
-    void updateUpgradeFlag(const vespa::config::content::UpgradingConfig&);
+    void updateUpgradeFlag(const UpgradingConfig&);
 
 protected:
         // Lock taken while doing configuration of the server.
     vespalib::Lock _configLock;
+    std::mutex _initial_config_mutex;
+    using InitialGuard = std::lock_guard<std::mutex>;
         // Current running config. Kept, such that we can see what has been
         // changed in live config updates.
-    std::unique_ptr<vespa::config::content::core::StorServerConfig> _serverConfig;
-    std::unique_ptr<vespa::config::content::UpgradingConfig> _clusterConfig;
-    std::unique_ptr<vespa::config::content::StorDistributionConfig> _distributionConfig;
-    std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig> _priorityConfig;
+    std::unique_ptr<StorServerConfig> _serverConfig;
+    std::unique_ptr<UpgradingConfig> _clusterConfig;
+    std::unique_ptr<StorDistributionConfig> _distributionConfig;
+    std::unique_ptr<StorPrioritymappingConfig> _priorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _doctypesConfig;
         // New configs gotten that has yet to have been handled
-    std::unique_ptr<vespa::config::content::core::StorServerConfig> _newServerConfig;
-    std::unique_ptr<vespa::config::content::UpgradingConfig> _newClusterConfig;
-    std::unique_ptr<vespa::config::content::StorDistributionConfig> _newDistributionConfig;
-    std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig> _newPriorityConfig;
+    std::unique_ptr<StorServerConfig> _newServerConfig;
+    std::unique_ptr<UpgradingConfig> _newClusterConfig;
+    std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
+    std::unique_ptr<StorPrioritymappingConfig> _newPriorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _newDoctypesConfig;
     std::unique_ptr<StorageComponent> _component;
     config::ConfigUri _configUri;
@@ -169,7 +176,7 @@ protected:
     virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
     virtual std::unique_ptr<StorageLink> createChain() = 0;
-    virtual void handleLiveConfigUpdate();
+    virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
     void shutdown();
     virtual void removeConfigSubscriptions();
 };
