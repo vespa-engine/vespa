@@ -6,9 +6,9 @@ start = element deployment {
    attribute version { "1.0" } &
    Upgrade? &
    BlockChange* &
-   BlockUpgrade* &
    Test? &
    Staging? &
+   BlockUpgrade* &
    Prod*
 }
 
