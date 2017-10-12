@@ -70,8 +70,8 @@ public class Mirror implements IMirror {
     }
 
     /**
-     * Shut down the Mirror. This will close any open connections and
-     * stop the regular mirror updates.
+     * Shut down the Mirror. This will close any open connections,
+     * stop the regular mirror updates, and discard all entries.
      */
     public void shutdown() {
         updateTask.kill();
@@ -293,6 +293,7 @@ public class Mirror implements IMirror {
             target.close();
             target = null;
         }
+        specs = new Entry[0];
     }
 
     /**
