@@ -20,7 +20,7 @@ TransportLatch::send(ResultUP result, bool documentWasFound)
 {
     {
         vespalib::LockGuard guard(_lock);
-        if (!_result.get()) {
+        if (!_result) {
             _result = std::move(result);
         } else if (result->hasError()) {
             _result.reset(new Result(mergeErrorResults(*_result, *result)));
@@ -35,9 +35,7 @@ Result
 TransportLatch::mergeErrorResults(const Result &lhs, const Result &rhs)
 {
     Result::ErrorType error = (lhs.getErrorCode() > rhs.getErrorCode() ? lhs : rhs).getErrorCode();
-    return Result(error, vespalib::make_string("%s, %s",
-                                               lhs.getErrorMessage().c_str(),
-                                               rhs.getErrorMessage().c_str()));
+    return Result(error, vespalib::make_string("%s, %s", lhs.getErrorMessage().c_str(), rhs.getErrorMessage().c_str()));
 }
 
 } // proton

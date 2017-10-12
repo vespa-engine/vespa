@@ -473,7 +473,7 @@ void feedOperationRejected(FeedToken *token, const vespalib::string &opType, con
         auto message = make_string("%s operation rejected for document '%s' of type '%s': '%s'",
                                    opType.c_str(), docId.c_str(), docTypeName.toString().c_str(), rejectMessage.c_str());
         token->setResult(ResultUP(new ResultType(Result::RESOURCE_EXHAUSTED, message)), false);
-        token->fail(documentapi::DocumentProtocol::ERROR_REJECTED, message);
+        token->fail();
     }
 }
 

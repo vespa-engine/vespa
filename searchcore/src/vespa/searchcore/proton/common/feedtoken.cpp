@@ -13,8 +13,7 @@ FeedToken::State::State(ITransport & transport, uint32_t numAcksRequired) :
     _transport(transport),
     _result(new storage::spi::Result()),
     _documentWasFound(false),
-    _unAckedCount(numAcksRequired),
-    _lock()
+    _unAckedCount(numAcksRequired)
 {
     assert(_unAckedCount > 0);
 }
@@ -43,11 +42,12 @@ FeedToken::State::incNeededAcks()
 }
 
 void
-FeedToken::State::fail(uint32_t, const vespalib::string &)
+FeedToken::State::fail()
 {
-    _unAckedCount = 0;
-    vespalib::LockGuard guard(_lock);
-    _transport.send(std::move(_result), _documentWasFound);
+    uint32_t prev = _unAckedCount.exchange(0);
+    if (prev > 0) {
+        _transport.send(std::move(_result), _documentWasFound);
+    }
 }
 
 } // namespace proton

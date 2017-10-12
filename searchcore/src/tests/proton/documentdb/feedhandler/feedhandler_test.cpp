@@ -580,8 +580,7 @@ TEST_F("require that remove of unknown document with known data type stores remo
     EXPECT_EQUAL(1, f.tls_writer.store_count);
 }
 
-TEST_F("require that partial update for non-existing document is tagged as such",
-       FeedHandlerFixture)
+TEST_F("require that partial update for non-existing document is tagged as such", FeedHandlerFixture)
 {
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
@@ -596,8 +595,7 @@ TEST_F("require that partial update for non-existing document is tagged as such"
     EXPECT_EQUAL(0, f.tls_writer.store_count);
 }
 
-TEST_F("require that partial update for non-existing document is created if specified",
-       FeedHandlerFixture)
+TEST_F("require that partial update for non-existing document is created if specified", FeedHandlerFixture)
 {
     f.handler.setSerialNum(15);
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);

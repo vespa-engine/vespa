@@ -32,7 +32,7 @@ private:
         ~State();
         void incNeededAcks();
         void ack();
-        void fail(uint32_t errNum, const vespalib::string &errMsg);
+        void fail();
         void setResult(ResultUP result, bool documentWasFound) {
             _documentWasFound = documentWasFound;
             _result = std::move(result);
@@ -43,7 +43,6 @@ private:
         ResultUP              _result;
         bool                  _documentWasFound;
         std::atomic<uint32_t> _unAckedCount;
-        vespalib::Lock        _lock;
     };
     std::shared_ptr<State> _state;
 
@@ -86,7 +85,7 @@ public:
      * @param errNum A numerical representation of the error.
      * @param errMsg A readable string detailing the error.
      */
-    void fail(uint32_t errNum, const vespalib::string &errMsg) const { _state->fail(errNum, errMsg); }
+    void fail() const { _state->fail(); }
 
     /**
      * Gives you access to the underlying result.

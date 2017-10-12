@@ -55,7 +55,7 @@ Test::testFail()
 {
     LocalTransport transport;
     FeedToken token(transport);
-    token.fail(69, "6699");
+    token.fail();
     EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
