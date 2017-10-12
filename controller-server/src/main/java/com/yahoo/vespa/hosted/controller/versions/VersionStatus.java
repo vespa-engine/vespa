@@ -8,6 +8,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -132,7 +133,7 @@ public class VersionStatus {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        for (Application application : applications) {
+        for (Application application : ApplicationList.from(applications).notPullRequest().asList()) {
             DeploymentJobs jobs = application.deploymentJobs();
 
             // Note that each version deployed on this application exists
