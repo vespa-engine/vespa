@@ -49,8 +49,8 @@ public class VespaVersion implements Comparable<VespaVersion> {
                                                           .notFailing();
         ApplicationList failingOnThis = ApplicationList.from(statistics.failing(), controller.applications());
         ApplicationList all = ApplicationList.from(controller.applications().asList())
-                .hasDeployment()
-                .notPullRequest();
+                                             .hasDeployment()
+                                             .notPullRequest();
 
         // 'broken' if any Canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
