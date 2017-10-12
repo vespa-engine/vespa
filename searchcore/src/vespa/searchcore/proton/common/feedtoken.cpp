@@ -19,19 +19,19 @@ FeedToken::State::State(ITransport & transport, mbus::Reply::UP reply, uint32_t 
     _lock(),
     _startTime()
 {
-    assert(_reply.get() != NULL);
+    assert(_reply);
     _startTime.SetNow();
 }
 
 FeedToken::State::~State()
 {
-    assert(_reply.get() == NULL);
+    assert(!_reply);
 }
 
 void
 FeedToken::State::ack()
 {
-    assert(_reply.get() != NULL);
+    assert(_reply);
     uint32_t prev(_unAckedCount--);
     if (prev == 1) {
         _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
@@ -44,7 +44,7 @@ void
 FeedToken::State::ack(const FeedOperation::Type opType,
                       PerDocTypeFeedMetrics &metrics)
 {
-    assert(_reply.get() != NULL);
+    assert(_reply);
     uint32_t prev(_unAckedCount--);
     if (prev == 1) {
         _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
@@ -74,7 +74,7 @@ FeedToken::State::ack(const FeedOperation::Type opType,
 void
 FeedToken::State::incNeededAcks()
 {
-    assert(_reply.get() != NULL);
+    assert(_reply);
     uint32_t prev(_unAckedCount++);
     assert(prev >= 1);
     (void) prev;
@@ -84,7 +84,7 @@ FeedToken::State::incNeededAcks()
 void
 FeedToken::State::fail(uint32_t errNum, const vespalib::string &errMsg)
 {
-    assert(_reply.get() != NULL);
+    assert(_reply);
     vespalib::LockGuard guard(_lock);
     _reply->addError(mbus::Error(errNum, errMsg));
     _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
@@ -93,7 +93,7 @@ FeedToken::State::fail(uint32_t errNum, const vespalib::string &errMsg)
 void
 FeedToken::State::trace(uint32_t traceLevel, const vespalib::string &traceMsg)
 {
-    assert(_reply.get() != NULL);
+    assert(_reply);
     vespalib::LockGuard guard(_lock);
     _reply->getTrace().trace(traceLevel, traceMsg);
 }
