@@ -220,6 +220,7 @@ public final class ContainerCluster
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
         addSimpleComponent(SIMPLE_LINGUISTICS_PROVIDER);
+        addSimpleComponent("com.yahoo.container.jdisc.SslKeyStoreFactoryProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
