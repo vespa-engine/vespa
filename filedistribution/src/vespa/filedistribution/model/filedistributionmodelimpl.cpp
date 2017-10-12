@@ -111,7 +111,7 @@ FileDistributionModelImpl::getPeers(const std::string& fileReference, size_t max
         LOG(debug, "Found %zu peers for path '%s'", result.size(), path.string().c_str());
         return result;
     } catch(ZKNodeDoesNotExistsException&) {
-        LOG(debug, ("No peer entries available for " + fileReference).c_str());
+        LOG(debug, "%s", ("No peer entries available for " + fileReference).c_str());
         return PeerEntries();
     }
 }
@@ -119,8 +119,7 @@ FileDistributionModelImpl::getPeers(const std::string& fileReference, size_t max
 fs::path
 FileDistributionModelImpl::getPeerEntryPath(const std::string& fileReference) {
     std::ostringstream entry;
-    entry <<_hostName
-          <<ZKFileDBModel::_peerEntrySeparator <<_port;
+    entry <<_hostName << ZKFileDBModel::_peerEntrySeparator <<_port;
 
     return _fileDBModel.getPeersPath(fileReference) / entry.str();
 }

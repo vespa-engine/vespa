@@ -71,12 +71,11 @@ void spamLog2(uint64_t& time, int diff) {
         time += diff;
         std::ostringstream ost;
         ost << "Message " << i;
-        LOGBT(info, ost.str(), ost.str().c_str());
+        LOGBT(info, ost.str(), "%s", ost.str().c_str());
     }
 }
 
-void testThatEntriesWithHighCountIsKept(const std::string& file,
-                                        uint64_t& timer)
+void testThatEntriesWithHighCountIsKept(const std::string& file, uint64_t& timer)
 {
     std::cerr << "testThatEntriesWithHighCountIsKept ...\n";
     timer = 10 * 1000000 + 4;
