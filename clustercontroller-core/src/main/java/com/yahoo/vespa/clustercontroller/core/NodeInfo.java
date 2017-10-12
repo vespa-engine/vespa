@@ -258,7 +258,11 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     /** Returns the wanted state of this node - which can either be set by a user or configured */
     public NodeState getWantedState() {
-        if (configuredRetired) return new NodeState(node.getType(), State.RETIRED);
+        NodeState retiredState = new NodeState(node.getType(), State.RETIRED);
+        // Don't let configure retired state override explicitly set Down and Maintenance.
+        if (configuredRetired && wantedState.above(retiredState)) {
+            return retiredState;
+        }
         return wantedState;
     }
 
