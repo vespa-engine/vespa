@@ -710,7 +710,7 @@ public:
     /**
      * Empty. Needs to be virtual to reduce compiler warnings.
      **/
-    virtual ~CountDownLatch() {}
+    virtual ~CountDownLatch() = default;
 };
 
 
