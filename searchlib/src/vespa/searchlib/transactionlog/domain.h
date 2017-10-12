@@ -49,7 +49,6 @@ public:
 
     void commit(const Packet & packet);
     int visit(const Domain::SP & self, SerialNum from, SerialNum to, FRT_Supervisor & supervisor, FNET_Connection *conn);
-    int subscribe(const Domain::SP & self, SerialNum from, FRT_Supervisor & supervisor, FNET_Connection *conn);
 
     SerialNum begin() const;
     SerialNum end() const;

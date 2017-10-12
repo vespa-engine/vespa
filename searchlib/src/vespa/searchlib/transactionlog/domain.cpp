@@ -253,7 +253,7 @@ void Domain::cleanSessions()
     LockGuard guard(_sessionLock);
     for (SessionList::iterator it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
         Session * session(it->second.get());
-        if ((!session->continous() && session->inSync())) {
+        if (session->inSync()) {
             _sessions.erase(it++);
         } else if (session->finished()) {
             _sessions.erase(it++);
@@ -295,16 +295,6 @@ void Domain::commit(const Packet & packet)
     }
     dp->commit(entry.serial(), packet);
     cleanSessions();
-
-    LockGuard guard(_sessionLock);
-    for (auto & it : _sessions) {
-        const Session::SP & session(it.second);
-        if (session->continous()) {
-            if (session->ok()) {
-                Session::enQ(session, entry.serial(), packet);
-            }
-        }
-    }
 }
 
 bool Domain::erase(SerialNum to)
@@ -377,18 +367,6 @@ int Domain::closeSession(int sessionId)
     }
     return retval;
 }
-
-int Domain::subscribe(const Domain::SP & domain, SerialNum from, FRT_Supervisor & supervisor, FNET_Connection *conn)
-{
-    assert(this == domain.get());
-    cleanSessions();
-    SerialNumRange range(from, end());
-    Session * session = new Session(_sessionId++, range, domain, supervisor, conn, true);
-    LockGuard guard(_sessionLock);
-    _sessions[session->id()] = Session::SP(session);
-    return session->id();
-}
-
 
 Domain::SerialNumList
 Domain::scanDir()

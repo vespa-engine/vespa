@@ -61,7 +61,6 @@ private:
     void domainSessionRun(FRT_RPCRequest *req);
     void domainPrune(FRT_RPCRequest *req);
     void domainVisit(FRT_RPCRequest *req);
-    void domainSubscribe(FRT_RPCRequest *req);
     void domainSessionClose(FRT_RPCRequest *req);
     void domainSync(FRT_RPCRequest *req);
 

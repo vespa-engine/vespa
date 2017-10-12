@@ -8,9 +8,7 @@
 #include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 #include <atomic>
 
-namespace proton
-{
-
+namespace proton {
 
 class PerDocTypeFeedMetrics;
 typedef std::unique_ptr<storage::spi::Result> ResultUP;
@@ -38,7 +36,6 @@ private:
         State & operator = (const State &) = delete;
         State(ITransport & transport, mbus::Reply::UP reply, uint32_t numAcksRequired);
         ~State();
-        void setNumAcksRequired(uint32_t numAcksRequired) { _unAckedCount = numAcksRequired; }
         void ack();
 
         void ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics);
@@ -81,6 +78,12 @@ public:
      */
     FeedToken(ITransport &transport, mbus::Reply::UP reply);
 
+    FeedToken(FeedToken &&) = default;
+    FeedToken & operator =(FeedToken &&) = default;
+    FeedToken(const FeedToken &) = default;
+    FeedToken & operator =(const FeedToken &) = default;
+    ~FeedToken() = default;
+
     /**
      * Passes a receipt back to the originating FeedEngine, declaring that this
      * operation succeeded. If an error occured while processing the operation,
@@ -88,15 +91,11 @@ public:
      */
     void ack() const { _state->ack(); }
 
-    void
-    ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics) const
-    {
+    void ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics) const {
         _state->ack(opType, metrics);
     }
 
-    void
-    incNeededAcks() const
-    {
+    void incNeededAcks() const {
         _state->incNeededAcks();
     }
 
@@ -147,14 +146,6 @@ public:
     void setResult(ResultUP result, bool documentWasFound) {
         _state->setResult(std::move(result), documentWasFound);
     }
-
-    /**
-     * This controls how many acks are required before it is acked back to the sender.
-     * Default is 1, and so far only adjusted by multioperation handling.
-     *
-     * @param numAcksRequired How many acks must be received before it is considered acked.
-     */
-    void setNumAcksRequired(uint32_t numAcksRequired) const { _state->setNumAcksRequired(numAcksRequired); }
 
     FastOS_Time getStartTime() const { return _state->getStartTime(); }
 };

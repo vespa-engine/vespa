@@ -23,10 +23,7 @@ TransactionLogManagerBase::TransactionLogManagerBase(
 {
 }
 
-TransactionLogManagerBase::~TransactionLogManagerBase()
-{
-}
-
+TransactionLogManagerBase::~TransactionLogManagerBase() = default;
 
 TransactionLogManagerBase::StatusResult
 TransactionLogManagerBase::init()
@@ -65,7 +62,6 @@ TransactionLogManagerBase::init()
     return res;
 }
 
-
 void
 TransactionLogManagerBase::internalStartReplay()
 {
@@ -77,7 +73,6 @@ TransactionLogManagerBase::internalStartReplay()
     _replayStartTime = timer.MilliSecs();
 }
 
-
 void
 TransactionLogManagerBase::markReplayStarted()
 {
@@ -85,14 +80,12 @@ TransactionLogManagerBase::markReplayStarted()
     _replayStarted = true;
 }
 
-
 void TransactionLogManagerBase::changeReplayDone()
 {
     vespalib::MonitorGuard guard(_replayMonitor);
     _replayDone = true;
     guard.broadcast();
 }
-
 
 void
 TransactionLogManagerBase::waitForReplayDone() const
@@ -102,7 +95,6 @@ TransactionLogManagerBase::waitForReplayDone() const
         guard.wait();
     }
 }
-
 
 void
 TransactionLogManagerBase::close()
@@ -115,11 +107,6 @@ TransactionLogManagerBase::close()
     if (_tlcSession.get() != NULL) {
         _tlcSession->clear();
     }
-}
-
-TransLogClient::Subscriber::UP TransactionLogManagerBase::createTlcSubscriber(
-        TransLogClient::Session::Callback &callback) {
-    return _tlc.createSubscriber(_domainName, callback);
 }
 
 TransLogClient::Visitor::UP TransactionLogManagerBase::createTlcVisitor(

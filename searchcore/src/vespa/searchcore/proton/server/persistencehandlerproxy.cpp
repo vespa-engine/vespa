@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/persistence/spi/result.h>
 
 using storage::spi::Bucket;
 using storage::spi::Timestamp;

@@ -35,12 +35,7 @@ class RemoveOperation;
 class SplitBucketOperation;
 class UpdateOperation;
 
-namespace bucketdb
-{
-
-class IBucketDBHandler;
-
-}
+namespace bucketdb { class IBucketDBHandler; }
 
 /**
  * Class handling all aspects of feeding for a document database.
@@ -122,18 +117,12 @@ private:
     void createNonExistingDocument(FeedTokenUP, const UpdateOperation &op);
 
     void performRemove(FeedTokenUP token, RemoveOperation &op);
-private:
     void performGarbageCollect(FeedTokenUP token);
     void performCreateBucket(FeedTokenUP token, CreateBucketOperation &op);
     void performDeleteBucket(FeedTokenUP token, DeleteBucketOperation &op);
     void performSplit(FeedTokenUP token, SplitBucketOperation &op);
     void performJoin(FeedTokenUP token, JoinBucketsOperation &op);
     void performSync();
-
-    /**
-     * Used during callback from transaction log.
-     */
-    void handleTransactionLogEntry(const Packet::Entry &entry);
     void performEof();
 
     /**
@@ -142,22 +131,9 @@ private:
     void performFlushDone(SerialNum flushedSerial);
     void performPrune(SerialNum flushedSerial);
 
-public:
-    void considerDelayedPrune();
-
-private:
-    /**
-     * Returns the current feed state of this feed handler.
-     */
     FeedStateSP getFeedState() const;
-
-    /**
-     * Used to handle feed state transitions.
-     */
     void changeFeedState(FeedStateSP newState);
-
     void changeFeedState(FeedStateSP newState, const vespalib::LockGuard &feedGuard);
-
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;
@@ -184,22 +160,19 @@ public:
                 search::transactionlog::Writer & writer,
                 TlsWriter * tlsWriter = nullptr);
 
-    virtual
-    ~FeedHandler();
+    virtual ~FeedHandler();
 
     /**
      * Init this feed handler.
      *
      * @param oldestConfigSerial The serial number of the oldest config snapshot.
      */
-    void
-    init(SerialNum oldestConfigSerial);
+    void init(SerialNum oldestConfigSerial);
 
     /**
      * Close this feed handler and its components.
      */
-    void
-    close();
+    void close();
 
     /**
      * Start replay of the transaction log.
@@ -223,8 +196,7 @@ public:
      *
      * @param flushedSerial serial number flushed for all relevant flush targets.
      */
-    void
-    flushDone(SerialNum flushedSerial);
+    void flushDone(SerialNum flushedSerial);
 
     /**
      * Used to flip between normal and recovery feed states.
@@ -235,33 +207,22 @@ public:
      * Update the active feed view.
      * Always called by the master write thread so locking is not needed.
      */
-    void
-    setActiveFeedView(IFeedView *feedView)
-    {
+    void setActiveFeedView(IFeedView *feedView) {
         _activeFeedView = feedView;
     }
 
-    void
-    setBucketDBHandler(bucketdb::IBucketDBHandler *bucketDBHandler)
-    {
+    void setBucketDBHandler(bucketdb::IBucketDBHandler *bucketDBHandler) {
         _bucketDBHandler = bucketDBHandler;
     }
-
-    /**
-     * Wait until transaction log is replayed.
-     */
-    void waitForReplayDone();
 
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
     SerialNum incSerialNum() { return ++_serialNum; }
     SerialNum getSerialNum() const override { return _serialNum; }
     SerialNum getPrunedSerialNum() const { return _prunedSerialNum; }
 
-    void setReplayDone();
-    bool getReplayDone() const;
     bool isDoingReplay() const;
     float getReplayProgress() const {
-        return _tlsReplayProgress.get() != nullptr ? _tlsReplayProgress->getProgress() : 0;
+        return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0;
     }
     bool getTransactionLogReplayDone() const;
     vespalib::string getDocTypeName() const { return _docTypeName.getName(); }
@@ -270,46 +231,17 @@ public:
     void performOperation(FeedTokenUP token, FeedOperationUP op);
     void handleOperation(FeedToken token, FeedOperationUP op);
 
-    /**
-     * Implements IDocumentMoveHandler
-     */
-    virtual void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
+    void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
+    void heartBeat() override;
 
-    /**
-     * Implements IHeartBeatHandler
-     */
-    virtual void
-    heartBeat() override;
+    virtual void sync();
+    RPC::Result receive(const Packet &packet) override;
 
-    virtual void
-    sync();
-
-    /**
-     * Implements TransLogClient::Session::Callback.
-     */
-    virtual RPC::Result
-    receive(const Packet &packet) override;
-
-    virtual void
-    eof() override;
-
-    virtual void
-    inSync() override;
-
-    /**
-     * Implements IPruneRemovedDocumentsHandler
-     */
-    void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
-
-    void
-    syncTls(SerialNum syncTo);
-
-    void
-    storeRemoteOperation(const FeedOperation &op);
-
-    // Implements IOperationStorer
-    virtual void storeOperation(FeedOperation &op) override;
+    void eof() override;
+    void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
+    void syncTls(SerialNum syncTo);
+    void storeOperation(FeedOperation &op) override;
+    void considerDelayedPrune();
 };
 
 } // namespace proton
