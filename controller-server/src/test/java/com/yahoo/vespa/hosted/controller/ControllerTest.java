@@ -24,9 +24,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -36,6 +33,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -381,7 +380,7 @@ public class ControllerTest {
         assertFalse(mockDomain.isVespaTenant);
 
         // Migrate tenant to Athens
-        NToken nToken = new NTokenMock("token");
+        NToken nToken = TestIdentities.userNToken;
         tester.controller().tenants().migrateTenantToAthens(
                 tenantId, athensDomain, new PropertyId("1567"), new Property("vespa_dev.no"), nToken);
 
