@@ -43,8 +43,6 @@ private:
         void incNeededAcks();
 
         void fail(uint32_t errNum, const vespalib::string &errMsg);
-        void trace(uint32_t traceLevel, const vespalib::string &traceMsg);
-        bool shouldTrace(uint32_t traceLevel) const { return _reply->getTrace().shouldTrace(traceLevel); }
         mbus::Reply & getReply() { return *_reply; }
         void setResult(ResultUP result, bool documentWasFound) {
             _documentWasFound = documentWasFound;
@@ -108,23 +106,6 @@ public:
      * @param errMsg A readable string detailing the error.
      */
     void fail(uint32_t errNum, const vespalib::string &errMsg) const { _state->fail(errNum, errMsg); }
-
-    /**
-     * Writes a trace message to the receipt of this operation that will later
-     * be passed back to the FeedEngine through ack() or fail().
-     *
-     * @param traceLevel The level of the message to write.
-     * @param traceMsg   The message to write.
-     */
-    void trace(uint32_t traceLevel, const vespalib::string &traceMsg) const { _state->trace(traceLevel, traceMsg); }
-
-    /**
-     * Tell you if tracing at this level is enabled
-     *
-     * @param traceLevel The level you want to trace at.
-     * @return if you should trace or not.
-     */
-    bool shouldTrace(uint32_t traceLevel) const { return _state->shouldTrace(traceLevel); }
 
     /**
      * Gives you access to the underlying reply message.

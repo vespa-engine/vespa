@@ -126,13 +126,6 @@ void FeedHandler::performPut(FeedToken::UP token, PutOperation &op) {
     storeOperation(op);
     if (token) {
         token->setResult(ResultUP(new Result), false);
-        if (token->shouldTrace(1)) {
-            const document::DocumentId &docId = op.getDocument()->getId();
-            const document::GlobalId &gid = docId.getGlobalId();
-            token->trace(1, make_string("Indexing document '%s' (gid = '%s',lid = '%u,%u' prevlid = '%u,%u').",
-                                        docId.toString().c_str(), gid.toString().c_str(), op.getSubDbId(),
-                                        op.getLid(), op.getPrevSubDbId(), op.getPrevLid()));
-        }
     }
     _activeFeedView->handlePut(token.get(), op);
 }
@@ -149,11 +142,6 @@ FeedHandler::performUpdate(FeedToken::UP token, UpdateOperation &op)
     } else {
         if (token) {
             token->setResult(ResultUP(new UpdateResult(Timestamp(0))), false);
-            if (token->shouldTrace(1)) {
-                const document::DocumentId &docId = op.getUpdate()->getId();
-                 token->trace(1, make_string("Document '%s' not found. Update operation ignored",
-                                             docId.toString().c_str()));
-            }
             setUpdateWasFound(token->getReply(), false);
             token->ack(op.getType(), _metrics);
         }
@@ -167,13 +155,6 @@ FeedHandler::performInternalUpdate(FeedToken::UP token, UpdateOperation &op)
     storeOperation(op);
     if (token) {
         token->setResult(ResultUP(new UpdateResult(op.getPrevTimestamp())), true);
-        if (token->shouldTrace(1)) {
-            const document::DocumentId &docId = op.getUpdate()->getId();
-            const document::GlobalId &gid = docId.getGlobalId();
-            token->trace(1, make_string("Updating document '%s' (gid = '%s', lid = '%u,%u' prevlid = '%u,%u').",
-                                        docId.toString().c_str(), gid.toString().c_str(), op.getSubDbId(),
-                                        op.getLid(), op.getPrevSubDbId(), op.getPrevLid()));
-        }
         setUpdateWasFound(token->getReply(), true);
     }
     _activeFeedView->handleUpdate(token.get(), op);
@@ -191,18 +172,6 @@ FeedHandler::createNonExistingDocument(FeedToken::UP token, const UpdateOperatio
     storeOperation(putOp);
     if (token) {
         token->setResult(ResultUP(new UpdateResult(putOp.getTimestamp())), true);
-        if (token->shouldTrace(1)) {
-            const document::DocumentId &docId = putOp.getDocument()->getId();
-            const document::GlobalId &gid = docId.getGlobalId();
-            token->trace(1, make_string("Creating non-existing document '%s' for update (gid='%s',"
-                                     " lid= %u,%u' prevlid='%u,%u').",
-                                     docId.toString().c_str(),
-                                     gid.toString().c_str(),
-                                     putOp.getSubDbId(),
-                                     putOp.getLid(),
-                                     putOp.getPrevSubDbId(),
-                                     putOp.getPrevLid()));
-        }
         setUpdateWasFound(token->getReply(), true);
     }
     TransportLatch latch(1);
@@ -233,13 +202,6 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
         if (token) {
             bool documentWasFound = !op.getPrevMarkedAsRemoved();
             token->setResult(ResultUP(new RemoveResult(documentWasFound)), documentWasFound);
-            if (token->shouldTrace(1)) {
-                const document::DocumentId &docId = op.getDocumentId();
-                const document::GlobalId &gid = docId.getGlobalId();
-                token->trace(1, make_string("Removing document '%s' (gid = '%s', lid = '%u,%u' prevlid = '%u,%u').",
-                                            docId.toString().c_str(), gid.toString().c_str(), op.getSubDbId(),
-                                            op.getLid(), op.getPrevSubDbId(), op.getPrevLid()));
-            }
             setRemoveWasFound(token->getReply(), documentWasFound);
         }
         _activeFeedView->handleRemove(token.get(), op);
@@ -248,20 +210,12 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
         storeOperation(op);
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            if (token->shouldTrace(1)) {
-                token->trace(1, make_string("Document '%s' not found. Remove operation stored.",
-                                            op.getDocumentId().toString().c_str()));
-            }
             setRemoveWasFound(token->getReply(), false);
         }
         _activeFeedView->handleRemove(token.get(), op);
     } else {
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            if (token->shouldTrace(1)) {
-                token->trace(1, make_string("Document '%s' not found. Remove operation ignored",
-                                            op.getDocumentId().toString().c_str()));
-            }
             setRemoveWasFound(token->getReply(), false);
             token->ack(op.getType(), _metrics);
         }

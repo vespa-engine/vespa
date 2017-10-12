@@ -38,15 +38,11 @@ namespace proton {
 
 namespace {
 
-bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone, uint32_t traceLevel) {
-    return onWriteDone && onWriteDone->shouldTrace(traceLevel);
-}
-
 FeedToken::UP dupFeedToken(FeedToken *token)
 {
-    // If token is not NULL then a new feed token is created, referencing
+    // If token is not nullptr then a new feed token is created, referencing
     // same shared state as old token.
-    if (token != NULL) {
+    if (token != nullptr) {
         return std::make_unique<FeedToken>(*token);
     } else {
         return FeedToken::UP();
@@ -207,7 +203,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _summaryAdapter(ctx._summaryAdapter),
       _documentMetaStoreContext(ctx._documentMetaStoreContext),
       _repo(ctx._repo),
-      _docType(NULL),
+      _docType(nullptr),
       _lidReuseDelayer(ctx._lidReuseDelayer),
       _commitTimeTracker(ctx._commitTimeTracker),
       _pendingLidTracker(),
@@ -311,7 +307,7 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token, const PutOperation &putOp)
         assert(!putOp.getValidDbdId(_params._subDbId));
         internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone), putOp.getPrevLid(), putOp.getType(), IDestructorCallback::SP());
     }
-    if (token.get() != NULL) {
+    if (token) {
         token->ack(putOp.getType(), _params._metrics);
     }
 }
@@ -410,7 +406,7 @@ void StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
 
 void
 StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &updOp) {
-    if (updOp.getUpdate().get() == NULL) {
+    if ( ! updOp.getUpdate()) {
         LOG(warning, "database(%s): ignoring invalid update operation",
             _params._docTypeName.toString().c_str());
         return;
@@ -469,11 +465,6 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
                          });
 #pragma GCC diagnostic pop
     }
-    if (!updateScope._indexedFields && onWriteDone) {
-        if (onWriteDone->shouldTrace(1)) {
-            token->trace(1, "Partial update applied.");
-        }
-    }
 }
 
 void
@@ -485,38 +476,28 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpd
     const DocumentUpdate & upd = *update;
     Document::UP newDoc;
     vespalib::nbostream newStream(12345);
-    assert(onWriteDone->getToken() == NULL || useDocumentStore(serialNum));
+    assert(onWriteDone->getToken() == nullptr || useDocumentStore(serialNum));
     if (useDocumentStore(serialNum)) {
-        assert(prevDoc.get() != NULL);
+        assert(prevDoc);
     }
-    if (prevDoc.get() == NULL) {
+    if (!prevDoc) {
         // Replaying, document removed later before summary was flushed.
-        assert(onWriteDone->getToken() == NULL);
+        assert(onWriteDone->getToken() == nullptr);
         // If we've passed serial number for flushed index then we could
         // also check that this operation is marked for ignore by index
         // proxy.
     } else {
         if (upd.getId() == prevDoc->getId()) {
-            if (shouldTrace(onWriteDone, 1)) {
-                FeedToken *token = onWriteDone->getToken();
-                token->trace(1, "The update looks like : " + upd.toString(token->shouldTrace(2)));
-            }
+
             newDoc = std::move(prevDoc);
             if (useDocumentStore(serialNum)) {
-                LOG(spam, "Original document :\n%s", newDoc->toXml("  ").c_str());
-                LOG(spam, "Update\n%s", upd.toXml().c_str());
                 upd.applyTo(*newDoc);
-                LOG(spam, "Updated document :\n%s", newDoc->toXml("  ").c_str());
                 newDoc->serialize(newStream);
-                LOG(spam, "Serialized new document to a buffer of %zd bytes", newStream.size());
-                if (shouldTrace(onWriteDone, 1)) {
-                    onWriteDone->getToken()->trace(1, "Then we update summary.");
-                }
             }
         } else {
             // Replaying, document removed and lid reused before summary
             // was flushed.
-            assert(onWriteDone->getToken() == NULL && !useDocumentStore(serialNum));
+            assert(onWriteDone->getToken() == nullptr && !useDocumentStore(serialNum));
         }
     }
     promisedDoc.set_value(std::move(newDoc));
@@ -588,7 +569,7 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rm
             internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone), rmOp.getPrevLid(), rmOp.getType(), IDestructorCallback::SP());
         }
     }
-    if (token.get() != NULL) {
+    if (token) {
         token->ack(rmOp.getType(), _params._metrics);
     }
 }
@@ -644,7 +625,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
 {
     const SerialNum serialNum = op.getSerialNum();
     const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
-    if (!ctx.get()) {
+    if (!ctx) {
         if (useDocumentMetaStore(serialNum)) {
             _metaStore.commit(serialNum, serialNum);
         }
