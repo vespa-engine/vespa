@@ -18,10 +18,18 @@ public class HttpException extends RuntimeException {
             throw new HttpException(statusCode, message);
         }
 
-        if (status == Response.Status.NOT_FOUND) {
-            throw new NotFoundException(message);
-        } else if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-            throw new HttpException(status, message);
+        if (status.getFamily() == Response.Status.Family.SUCCESSFUL) {
+            return;
+        }
+
+        switch (status) {
+            case NOT_FOUND: throw new NotFoundException(message);
+            case CONFLICT:
+                // A response body is assumed to be present, and
+                // will later be interpreted as an error.
+                return;
+            default:
+                throw new HttpException(status, message);
         }
     }
 
