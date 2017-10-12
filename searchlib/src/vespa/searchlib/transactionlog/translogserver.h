@@ -82,6 +82,7 @@ private:
     vespalib::string                    _baseDir;
     const uint64_t                      _domainPartSize;
     const DomainPart::Crc               _defaultCrcType;
+    vespalib::ThreadStackExecutor       _commitExecutor;
     vespalib::ThreadStackExecutor       _sessionExecutor;
     FastOS_ThreadPool                   _threadPool;
     std::unique_ptr<FRT_Supervisor>     _supervisor;

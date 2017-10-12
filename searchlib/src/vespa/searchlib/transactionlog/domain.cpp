@@ -193,7 +193,6 @@ Domain::triggerSyncNow()
     MonitorGuard guard(_syncMonitor);
     if (!_pendingSync) {
         _pendingSync = true;
-        _commitExecutor.sync();
         DomainPart::SP dp(_parts.rbegin()->second);
         _sessionExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
     }

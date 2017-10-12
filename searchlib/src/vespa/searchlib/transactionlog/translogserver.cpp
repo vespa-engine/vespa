@@ -93,6 +93,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
       _baseDir(baseDir),
       _domainPartSize(domainPartSize),
       _defaultCrcType(defaultCrcType),
+      _commitExecutor(maxThreads, 128*1024),
       _sessionExecutor(maxThreads, 128*1024),
       _threadPool(8192, 1),
       _supervisor(std::make_unique<FRT_Supervisor>()),
@@ -109,7 +110,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        auto domain = std::make_shared<Domain>(domainName, dir(), _sessionExecutor, _sessionExecutor,
+                        auto domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
                                                                _domainPartSize, _defaultCrcType,_fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
@@ -344,7 +345,7 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain = std::make_shared<Domain>(domainName, dir(), _sessionExecutor, _sessionExecutor,
+            domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
                                               _domainPartSize, _defaultCrcType, _fileHeaderContext);
             {
                 Guard domainGuard(_lock);
