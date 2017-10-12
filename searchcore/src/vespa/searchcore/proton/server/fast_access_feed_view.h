@@ -39,39 +39,28 @@ private:
     const IAttributeWriter::SP _attributeWriter;
     DocIdLimit                 &_docIdLimit;
 
-    virtual UpdateScope getUpdateScope(const document::DocumentUpdate &upd) override;
+    UpdateScope getUpdateScope(const document::DocumentUpdate &upd) override;
 
-    virtual void putAttributes(SerialNum serialNum,
-                               search::DocumentIdT lid,
-                               const document::Document &doc,
-                               bool immediateCommit,
-                               OnPutDoneType onWriteDone) override;
+    void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
+                       bool immediateCommit, OnPutDoneType onWriteDone) override;
 
-    virtual void updateAttributes(SerialNum serialNum,
-                                  search::DocumentIdT lid,
-                                  const document::DocumentUpdate &upd,
-                                  bool immediateCommit,
-                                  OnOperationDoneType onWriteDone) override;
+    void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
+                          bool immediateCommit, OnOperationDoneType onWriteDone) override;
 
-    virtual void removeAttributes(SerialNum serialNum,
-                                  search::DocumentIdT lid,
-                                  bool immediateCommit,
-                                  OnRemoveDoneType onWriteDone) override;
+    void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
+                          bool immediateCommit, OnRemoveDoneType onWriteDone) override;
 
-    virtual void removeAttributes(SerialNum serialNum,
-                                  const LidVector &lidsToRemove,
-                                  bool immediateCommit,
-                                  OnWriteDoneType onWriteDone) override;
+    void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove,
+                          bool immediateCommit, OnWriteDoneType onWriteDone) override;
 
-    virtual void heartBeatAttributes(SerialNum serialNum) override;
+    void heartBeatAttributes(SerialNum serialNum) override;
 
 protected:
-    virtual void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
+    void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
 public:
     FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
-                       const PersistentParams &params,
-                       const Context &ctx);
+                       const PersistentParams &params, const Context &ctx);
     ~FastAccessFeedView();
 
     virtual const IAttributeWriter::SP &getAttributeWriter() const {
@@ -82,24 +71,10 @@ public:
         return _docIdLimit;
     }
 
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void sync() override;
 
-    virtual void sync() override;
-
-    bool fastPartialUpdateAttribute(const vespalib::string &fieldName) {
-        search::AttributeVector *attribute =
-            _attributeWriter->getWritableAttribute(fieldName);
-        if (attribute == nullptr) {
-            // Partial update to non-attribute field must update document
-            return false;
-        }
-        search::attribute::BasicType::Type attrType = attribute->getBasicType();
-        // Partial update to tensor, predicate or reference attribute
-        // must update document
-        return ((attrType != search::attribute::BasicType::Type::PREDICATE) &&
-                (attrType != search::attribute::BasicType::Type::TENSOR) &&
-                (attrType != search::attribute::BasicType::Type::REFERENCE));
-    }
+    bool fastPartialUpdateAttribute(const vespalib::string &fieldName) const;
 };
 
 } // namespace proton
