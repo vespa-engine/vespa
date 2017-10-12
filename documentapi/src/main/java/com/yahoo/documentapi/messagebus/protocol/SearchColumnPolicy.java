@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * to all recipients receives more than "maxbadparts" out-of-service replies,
  * according to (2.a) above.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class SearchColumnPolicy implements DocumentProtocolRoutingPolicy {
 
