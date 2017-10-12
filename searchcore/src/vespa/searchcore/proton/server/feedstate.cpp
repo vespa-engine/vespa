@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feedstate.h"
+#include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using document::BucketId;
@@ -26,8 +27,7 @@ void FeedState::throwExceptionInReceive(const vespalib::string &docType,
 }
 
 void
-FeedState::throwExceptionInHandleOperation(const vespalib::string &docType,
-                                           const FeedOperation &op)
+FeedState::throwExceptionInHandleOperation(const vespalib::string &docType, const FeedOperation &op)
 {
     throw IllegalStateException
         (make_string("We should not receive any feed operations"

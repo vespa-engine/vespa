@@ -305,7 +305,7 @@ struct MyTransport : public FeedToken::ITransport {
     bool documentWasFound;
     MyTransport();
     ~MyTransport();
-    virtual void send(Reply::UP, ResultUP res, bool documentWasFound_, double) override {
+    void send(ResultUP res, bool documentWasFound_) override {
         result = std::move(res);
         documentWasFound = documentWasFound_;
         gate.countDown();
@@ -315,21 +315,12 @@ struct MyTransport : public FeedToken::ITransport {
 MyTransport::MyTransport() : gate(), result(), documentWasFound(false) {}
 MyTransport::~MyTransport() {}
 
-Reply::UP getReply(uint32_t type) {
-    if (type == DocumentProtocol::REPLY_REMOVEDOCUMENT) {
-        return Reply::UP(new RemoveDocumentReply);
-    } else if (type == DocumentProtocol::REPLY_UPDATEDOCUMENT) {
-        return Reply::UP(new UpdateDocumentReply);
-    }
-    return Reply::UP(new DocumentReply(type));
-}
-
 struct FeedTokenContext {
     MyTransport transport;
     FeedToken::UP token_ap;
     FeedToken &token;
 
-    FeedTokenContext(uint32_t type = 0);
+    FeedTokenContext();
     ~FeedTokenContext();
     bool await(uint32_t timeout = 80000) { return transport.gate.await(timeout); }
     const Result *getResult() {
@@ -340,24 +331,23 @@ struct FeedTokenContext {
     }
 };
 
-FeedTokenContext::FeedTokenContext(uint32_t type)
+FeedTokenContext::FeedTokenContext()
     : transport(),
-      token_ap(new FeedToken(transport, getReply(type))),
+      token_ap(new FeedToken(transport)),
       token(*token_ap)
 {
-    token.getReply().getTrace().setLevel(9);
 }
-FeedTokenContext::~FeedTokenContext() {}
+
+FeedTokenContext::~FeedTokenContext() = default;
 
 struct PutContext {
     FeedTokenContext tokenCtx;
     DocumentContext  docCtx;
     typedef std::shared_ptr<PutContext> SP;
     PutContext(const vespalib::string &docId, DocBuilder &builder) :
-        tokenCtx(DocumentProtocol::REPLY_PUTDOCUMENT),
+        tokenCtx(),
         docCtx(docId, builder)
-    {
-    }
+    {}
 };
 
 
@@ -371,12 +361,10 @@ struct PutHandler {
         builder(db),
         timestamp(0),
         puts()
-    {
-    }
+    {}
     void put(const vespalib::string &docId) {
         PutContext::SP pc(new PutContext(docId, builder));
-        FeedOperation::UP op(new PutOperation(pc->docCtx.bucketId,
-                                              timestamp, pc->docCtx.doc));
+        FeedOperation::UP op(new PutOperation(pc->docCtx.bucketId, timestamp, pc->docCtx.doc));
         handler.handleOperation(pc->tokenCtx.token, std::move(op));
         timestamp = Timestamp(timestamp + 1);
         puts.push_back(pc);
@@ -492,12 +480,10 @@ TEST_F("require that heartBeat calls FeedView's heartBeat",
 TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
 {
     DocumentContext doc_context("doc:test:foo", *f.schema.builder);
-    FeedOperation::UP op(new RemoveOperation(doc_context.bucketId,
-                                             Timestamp(10),
-                                             doc_context.doc->getId()));
+    FeedOperation::UP op(new RemoveOperation(doc_context.bucketId, Timestamp(10), doc_context.doc->getId()));
     static_cast<DocumentOperation &>(*op).setPrevDbDocumentId(DbDocumentId(4));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
-    FeedTokenContext token_context(DocumentProtocol::REPLY_REMOVEDOCUMENT);
+    FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
     EXPECT_EQUAL(0, f.feedView.remove_count);
     EXPECT_EQUAL(0, f.tls_writer.store_count);
@@ -584,15 +570,11 @@ TEST_F("require that flush cannot unprune", FeedHandlerFixture)
     EXPECT_EQUAL(10u, f.handler.getPrunedSerialNum());
 }
 
-TEST_F("require that remove of unknown document with known data type "
-       "stores remove", FeedHandlerFixture)
+TEST_F("require that remove of unknown document with known data type stores remove", FeedHandlerFixture)
 {
-    DocumentContext doc_context("id:test:searchdocument::foo",
-                                *f.schema.builder);
-    FeedOperation::UP op(new RemoveOperation(doc_context.bucketId,
-                                             Timestamp(10),
-                                             doc_context.doc->getId()));
-    FeedTokenContext token_context(DocumentProtocol::REPLY_REMOVEDOCUMENT);
+    DocumentContext doc_context("id:test:searchdocument::foo", *f.schema.builder);
+    FeedOperation::UP op(new RemoveOperation(doc_context.bucketId, Timestamp(10), doc_context.doc->getId()));
+    FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
     EXPECT_EQUAL(1, f.tls_writer.store_count);
@@ -602,10 +584,8 @@ TEST_F("require that partial update for non-existing document is tagged as such"
        FeedHandlerFixture)
 {
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op(new UpdateOperation(upCtx.bucketId,
-                                             Timestamp(10),
-                                             upCtx.update));
-    FeedTokenContext token_context(DocumentProtocol::REPLY_UPDATEDOCUMENT);
+    FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
+    FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
     const UpdateResult *result = static_cast<const UpdateResult *>(token_context.getResult());
 
@@ -622,12 +602,9 @@ TEST_F("require that partial update for non-existing document is created if spec
     f.handler.setSerialNum(15);
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);
     upCtx.update->setCreateIfNonExistent(true);
-    f.feedView.metaStore.insert(upCtx.update->getId().getGlobalId(),
-                                MyDocumentMetaStore::Entry(5, 5, Timestamp(10)));
-    FeedOperation::UP op(new UpdateOperation(upCtx.bucketId,
-                                             Timestamp(10),
-                                             upCtx.update));
-    FeedTokenContext token_context(DocumentProtocol::REPLY_UPDATEDOCUMENT);
+    f.feedView.metaStore.insert(upCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(10)));
+    FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
+    FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
     const UpdateResult *result = static_cast<const UpdateResult *>(token_context.getResult());
 
@@ -663,7 +640,7 @@ TEST_F("require that update is rejected if resource limit is reached", FeedHandl
 
     UpdateContext updCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
-    FeedTokenContext token(DocumentProtocol::REPLY_UPDATEDOCUMENT);
+    FeedTokenContext token;
     f.handler.performOperation(std::move(token.token_ap), std::move(op));
     EXPECT_EQUAL(0, f.feedView.update_count);
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
@@ -679,7 +656,7 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
 
     DocumentContext docCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op = std::make_unique<RemoveOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc->getId());
-    FeedTokenContext token(DocumentProtocol::REPLY_REMOVEDOCUMENT);
+    FeedTokenContext token;
     f.handler.performOperation(std::move(token.token_ap), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
     EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());

@@ -16,13 +16,8 @@ TransportLatch::TransportLatch(uint32_t cnt)
 TransportLatch::~TransportLatch() {}
 
 void
-TransportLatch::send(mbus::Reply::UP reply,
-                     ResultUP result,
-                     bool documentWasFound,
-                     double latency_ms)
+TransportLatch::send(ResultUP result, bool documentWasFound)
 {
-    (void) reply;
-    (void) latency_ms;
     {
         vespalib::LockGuard guard(_lock);
         if (!_result.get()) {

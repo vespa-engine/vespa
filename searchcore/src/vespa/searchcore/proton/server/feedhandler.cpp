@@ -49,27 +49,9 @@ namespace proton {
 
 namespace {
 
-void
-setUpdateWasFound(mbus::Reply &reply, bool was_found)
-{
-    assert(static_cast<DocumentReply&>(reply).getType() == DocumentProtocol::REPLY_UPDATEDOCUMENT);
-    UpdateDocumentReply &update_rep = static_cast<UpdateDocumentReply&>(reply);
-    update_rep.setWasFound(was_found);
-}
-
-void
-setRemoveWasFound(mbus::Reply &reply, bool was_found)
-{
-    assert(static_cast<DocumentReply&>(reply).getType() == DocumentProtocol::REPLY_REMOVEDOCUMENT);
-    RemoveDocumentReply &remove_rep = static_cast<RemoveDocumentReply&>(reply);
-    remove_rep.setWasFound(was_found);
-}
-
 bool
-ignoreOperation(const DocumentOperation &op)
-{
-    return (op.getPrevTimestamp() != 0)
-           && (op.getTimestamp() < op.getPrevTimestamp());
+ignoreOperation(const DocumentOperation &op) {
+    return (op.getPrevTimestamp() != 0) && (op.getTimestamp() < op.getPrevTimestamp());
 }
 
 }  // namespace
@@ -142,7 +124,6 @@ FeedHandler::performUpdate(FeedToken::UP token, UpdateOperation &op)
     } else {
         if (token) {
             token->setResult(ResultUP(new UpdateResult(Timestamp(0))), false);
-            setUpdateWasFound(token->getReply(), false);
             token->ack();
         }
     }
@@ -155,7 +136,6 @@ FeedHandler::performInternalUpdate(FeedToken::UP token, UpdateOperation &op)
     storeOperation(op);
     if (token) {
         token->setResult(ResultUP(new UpdateResult(op.getPrevTimestamp())), true);
-        setUpdateWasFound(token->getReply(), true);
     }
     _activeFeedView->handleUpdate(token.get(), op);
 }
@@ -172,10 +152,9 @@ FeedHandler::createNonExistingDocument(FeedToken::UP token, const UpdateOperatio
     storeOperation(putOp);
     if (token) {
         token->setResult(ResultUP(new UpdateResult(putOp.getTimestamp())), true);
-        setUpdateWasFound(token->getReply(), true);
     }
     TransportLatch latch(1);
-    FeedToken putToken(latch, mbus::Reply::UP(new FeedReply(DocumentProtocol::REPLY_PUTDOCUMENT)));
+    FeedToken putToken(latch);
     _activeFeedView->handlePut(&putToken, putOp);
     latch.await();
     if (token) {
@@ -202,7 +181,6 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
         if (token) {
             bool documentWasFound = !op.getPrevMarkedAsRemoved();
             token->setResult(ResultUP(new RemoveResult(documentWasFound)), documentWasFound);
-            setRemoveWasFound(token->getReply(), documentWasFound);
         }
         _activeFeedView->handleRemove(token.get(), op);
     } else if (op.hasDocType()) {
@@ -210,13 +188,11 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
         storeOperation(op);
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            setRemoveWasFound(token->getReply(), false);
         }
         _activeFeedView->handleRemove(token.get(), op);
     } else {
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            setRemoveWasFound(token->getReply(), false);
             token->ack();
         }
     }

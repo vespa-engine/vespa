@@ -4,36 +4,32 @@
 
 namespace proton {
 
-FeedToken::FeedToken(ITransport &transport, mbus::Reply::UP reply) :
-    _state(new State(transport, std::move(reply), 1))
+FeedToken::FeedToken(ITransport &transport) :
+    _state(new State(transport, 1))
 {
 }
 
-FeedToken::State::State(ITransport & transport, mbus::Reply::UP reply, uint32_t numAcksRequired) :
+FeedToken::State::State(ITransport & transport, uint32_t numAcksRequired) :
     _transport(transport),
-    _reply(std::move(reply)),
     _result(new storage::spi::Result()),
     _documentWasFound(false),
     _unAckedCount(numAcksRequired),
-    _lock(),
-    _startTime()
+    _lock()
 {
-    assert(_reply);
-    _startTime.SetNow();
+    assert(_unAckedCount > 0);
 }
 
 FeedToken::State::~State()
 {
-    assert(!_reply);
+    assert(_unAckedCount == 0);
 }
 
 void
 FeedToken::State::ack()
 {
-    assert(_reply);
     uint32_t prev(_unAckedCount--);
     if (prev == 1) {
-        _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
+        _transport.send(std::move(_result), _documentWasFound);
     }
     assert(prev >= 1);
 }
@@ -41,20 +37,17 @@ FeedToken::State::ack()
 void
 FeedToken::State::incNeededAcks()
 {
-    assert(_reply);
     uint32_t prev(_unAckedCount++);
     assert(prev >= 1);
     (void) prev;
 }
 
-
 void
-FeedToken::State::fail(uint32_t errNum, const vespalib::string &errMsg)
+FeedToken::State::fail(uint32_t, const vespalib::string &)
 {
-    assert(_reply);
+    _unAckedCount = 0;
     vespalib::LockGuard guard(_lock);
-    _reply->addError(mbus::Error(errNum, errMsg));
-    _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
+    _transport.send(std::move(_result), _documentWasFound);
 }
 
 } // namespace proton
