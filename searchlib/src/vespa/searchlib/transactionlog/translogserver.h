@@ -31,7 +31,7 @@ public:
     virtual ~TransLogServer();
     DomainStats getDomainStats() const;
 
-    void commit(const vespalib::string & domainName, const Packet & packet) override;
+    void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) override;
 
 
     class Session

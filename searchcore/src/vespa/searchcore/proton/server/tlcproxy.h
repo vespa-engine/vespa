@@ -8,18 +8,20 @@ namespace proton {
 class FeedOperation;
 
 class TlcProxy {
-    vespalib::string                 _domain;
-    search::transactionlog::Writer & _tlsDirectWriter;
+    using DoneCallback = search::transactionlog::Writer::DoneCallback;
+    using Writer = search::transactionlog::Writer;
+    vespalib::string    _domain;
+    Writer            & _tlsDirectWriter;
 
-    void commit(search::SerialNum serialNum, search::transactionlog::Type type, const vespalib::nbostream &buf);
+    void commit(search::SerialNum serialNum, search::transactionlog::Type type,
+                const vespalib::nbostream &buf, DoneCallback onDone);
 public:
     typedef std::unique_ptr<TlcProxy> UP;
 
-    TlcProxy(const vespalib::string & domain, search::transactionlog::Writer & writer)
+    TlcProxy(const vespalib::string & domain, Writer & writer)
         : _domain(domain), _tlsDirectWriter(writer) {}
 
-    void storeOperation(const FeedOperation &op);
+    void storeOperation(const FeedOperation &op, DoneCallback onDone);
 };
 
 } // namespace proton
-
