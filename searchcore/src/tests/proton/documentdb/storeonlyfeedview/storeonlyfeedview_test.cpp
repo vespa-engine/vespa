@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/base/globalid.h>
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
@@ -15,8 +12,6 @@
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -225,8 +220,7 @@ struct FixtureBase {
           commitTimeTracker(fastos::TimeStamp()),
           feedview()
     {
-        PerDocTypeFeedMetrics metrics(0);
-        StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), metrics, subdb_id, subDbType);
+        StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
         feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayer,

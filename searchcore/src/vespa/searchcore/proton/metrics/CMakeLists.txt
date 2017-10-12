@@ -7,7 +7,6 @@ vespa_add_library(searchcore_proton_metrics STATIC
     documentdb_metrics_collection.cpp
     documentdb_tagged_metrics.cpp
     executor_metrics.cpp
-    feed_metrics.cpp
     job_load_sampler.cpp
     job_tracker.cpp
     job_tracked_flush_target.cpp

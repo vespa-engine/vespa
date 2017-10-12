@@ -10,7 +10,6 @@
 
 namespace proton {
 
-class PerDocTypeFeedMetrics;
 typedef std::unique_ptr<storage::spi::Result> ResultUP;
 
 /**
@@ -23,10 +22,7 @@ public:
     class ITransport {
     public:
         virtual ~ITransport() { }
-        virtual void send(mbus::Reply::UP reply,
-                          ResultUP result,
-                          bool documentWasFound,
-                          double latency_ms) = 0;
+        virtual void send(mbus::Reply::UP reply, ResultUP result, bool documentWasFound, double latency_ms) = 0;
     };
 
 private:
@@ -36,12 +32,8 @@ private:
         State & operator = (const State &) = delete;
         State(ITransport & transport, mbus::Reply::UP reply, uint32_t numAcksRequired);
         ~State();
-        void ack();
-
-        void ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics);
-
         void incNeededAcks();
-
+        void ack();
         void fail(uint32_t errNum, const vespalib::string &errMsg);
         mbus::Reply & getReply() { return *_reply; }
         void setResult(ResultUP result, bool documentWasFound) {
@@ -51,13 +43,13 @@ private:
         const storage::spi::Result &getResult() { return *_result; }
         FastOS_Time getStartTime() const { return _startTime; }
     private:
-        ITransport       &_transport;
-        mbus::Reply::UP   _reply;
-        ResultUP          _result;
-        bool              _documentWasFound;
+        ITransport           &_transport;
+        mbus::Reply::UP       _reply;
+        ResultUP              _result;
+        bool                  _documentWasFound;
         std::atomic<uint32_t> _unAckedCount;
-        vespalib::Lock    _lock;
-        FastOS_Time       _startTime;
+        vespalib::Lock        _lock;
+        FastOS_Time           _startTime;
     };
     std::shared_ptr<State> _state;
 
@@ -88,10 +80,6 @@ public:
      * use fail() instead. Invoking this and/or fail() more than once is void.
      */
     void ack() const { _state->ack(); }
-
-    void ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics) const {
-        _state->ack(opType, metrics);
-    }
 
     void incNeededAcks() const {
         _state->incNeededAcks();

@@ -8,13 +8,11 @@
 namespace proton {
 
 RemoveDoneContext::RemoveDoneContext(std::unique_ptr<FeedToken> token,
-                                     const FeedOperation::Type opType,
-                                     PerDocTypeFeedMetrics &metrics,
                                      vespalib::Executor &executor,
                                      IDocumentMetaStore &documentMetaStore,
                                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
                                      uint32_t lid)
-    : OperationDoneContext(std::move(token), opType, metrics),
+    : OperationDoneContext(std::move(token)),
       _executor(executor),
       _task(),
       _pendingNotifyRemoveDone(std::move(pendingNotifyRemoveDone))

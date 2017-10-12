@@ -27,7 +27,6 @@ namespace document { class GLobalId; }
 namespace proton {
 
 class IReplayConfig;
-class PerDocTypeFeedMetrics;
 class ForceCommitContext;
 class OperationDoneContext;
 class PutDoneContext;
@@ -104,20 +103,17 @@ public:
         const SerialNum        _flushedDocumentMetaStoreSerialNum;
         const SerialNum        _flushedDocumentStoreSerialNum;
         const DocTypeName      _docTypeName;
-        PerDocTypeFeedMetrics &_metrics;
         const uint32_t         _subDbId;
         const SubDbType        _subDbType;
 
         PersistentParams(SerialNum flushedDocumentMetaStoreSerialNum,
                          SerialNum flushedDocumentStoreSerialNum,
                          const DocTypeName &docTypeName,
-                         PerDocTypeFeedMetrics &metrics,
                          uint32_t subDbId,
                          SubDbType subDbType)
             : _flushedDocumentMetaStoreSerialNum(flushedDocumentMetaStoreSerialNum),
               _flushedDocumentStoreSerialNum(flushedDocumentStoreSerialNum),
               _docTypeName(docTypeName),
-              _metrics(metrics),
               _subDbId(subDbId),
               _subDbType(subDbType)
         {}
@@ -183,14 +179,14 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone, Lid lid,
-                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
+                        Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
-    void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
+    void considerEarlyAck(FeedTokenUP &token);
 
-    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdateSP upd,
-            OnOperationDoneType onWriteDone,PromisedDoc promisedDoc, PromisedStream promisedStream);
+    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdateSP upd, OnOperationDoneType onWriteDone,
+                             PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
@@ -225,7 +221,7 @@ protected:
 public:
     StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
 
-    virtual ~StoreOnlyFeedView() {}
+    ~StoreOnlyFeedView() override;
 
     const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
     const search::index::Schema::SP &getSchema() const { return _schema; }

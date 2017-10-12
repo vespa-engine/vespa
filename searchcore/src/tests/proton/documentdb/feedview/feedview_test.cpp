@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
@@ -30,9 +29,6 @@
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <mutex>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");
@@ -132,8 +128,6 @@ struct MyTracer
 struct ParamsContext
 {
     DocTypeName                          _docTypeName;
-    FeedMetrics                          _feedMetrics;
-    PerDocTypeFeedMetrics                _metrics;
     SearchableFeedView::PersistentParams _params;
 
     ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir);
@@ -143,9 +137,7 @@ struct ParamsContext
 
 ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir)
     : _docTypeName(docType),
-      _feedMetrics(),
-      _metrics(&_feedMetrics),
-      _params(0, 0, _docTypeName, _metrics, subdb_id, SubDbType::READY)
+      _params(0, 0, _docTypeName, subdb_id, SubDbType::READY)
 {
     (void) baseDir;
 }
@@ -636,7 +628,7 @@ struct FixtureBase
             getFeedView().handleRemove(token, op);
         } else {
             if (token != NULL) {
-                token->ack(op.getType(), pc._metrics);
+                token->ack();
             }
         }
     }

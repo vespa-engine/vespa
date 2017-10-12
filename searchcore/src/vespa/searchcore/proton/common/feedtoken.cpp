@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feedtoken.h"
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 
 namespace proton {
 
@@ -38,38 +37,6 @@ FeedToken::State::ack()
     }
     assert(prev >= 1);
 }
-
-
-void
-FeedToken::State::ack(const FeedOperation::Type opType,
-                      PerDocTypeFeedMetrics &metrics)
-{
-    assert(_reply);
-    uint32_t prev(_unAckedCount--);
-    if (prev == 1) {
-        _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
-        switch (opType) {
-        case FeedOperation::PUT:
-            metrics.RegisterPut(_startTime);
-            break;
-        case FeedOperation::REMOVE:
-        case FeedOperation::REMOVE_BATCH:
-            metrics.RegisterRemove(_startTime);
-            break;
-        case FeedOperation::UPDATE_42:
-        case FeedOperation::UPDATE:
-            metrics.RegisterUpdate(_startTime);
-            break;
-        case FeedOperation::MOVE:
-            metrics.RegisterMove(_startTime);
-            break;
-        default:
-            ;
-        }
-    }
-    assert(prev >= 1);
-}
-
 
 void
 FeedToken::State::incNeededAcks()

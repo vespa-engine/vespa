@@ -29,7 +29,6 @@ class IFeedView;
 class IResourceWriteFilter;
 class IReplayConfig;
 class JoinBucketsOperation;
-class PerDocTypeFeedMetrics;
 class PutOperation;
 class RemoveOperation;
 class SplitBucketOperation;
@@ -92,8 +91,6 @@ private:
     // used by master write thread tasks
     IFeedView                             *_activeFeedView;
     bucketdb::IBucketDBHandler            *_bucketDBHandler;
-    PerDocTypeFeedMetrics                 &_metrics;
-
     vespalib::Lock                         _syncLock;
     SerialNum                              _syncedSerialNum; 
     bool                                   _allowSync; // Sanity check
@@ -143,16 +140,14 @@ public:
      * @param writeService  The thread service used for all write tasks.
      * @param tlsSpec       The spec to connect to the transaction log server.
      * @param docTypeName   The name and version of the document type we are feed handler for.
-     * @param metrics       Feeding metrics.
      * @param state         Document db state
      * @param owner         Reference to the owner of this feed handler.
      * @param replayConfig  Reference to interface used for replaying config changes.
-     * @param writer        Inject writer for tls, or NULL to use internal.
+     * @param writer        Inject writer for tls, or nullptr to use internal.
      */
     FeedHandler(IThreadingService &writeService,
                 const vespalib::string &tlsSpec,
                 const DocTypeName &docTypeName,
-                PerDocTypeFeedMetrics &metrics,
                 DDBState &state,
                 IFeedHandlerOwner &owner,
                 const IResourceWriteFilter &writerFilter,
@@ -160,7 +155,7 @@ public:
                 search::transactionlog::Writer & writer,
                 TlsWriter * tlsWriter = nullptr);
 
-    virtual ~FeedHandler();
+    ~FeedHandler() override;
 
     /**
      * Init this feed handler.

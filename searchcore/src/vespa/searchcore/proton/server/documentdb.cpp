@@ -125,9 +125,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _state(),
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
-      _feedHandler(_writeService, tlsSpec, docTypeName,
-                   getMetricsCollection().getLegacyMetrics().feed,
-                   _state, *this, _writeFilter, *this, tlsDirectWriter),
+      _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor,
               summaryExecutor, fileHeaderContext, metricsWireService, getMetricsCollection(),
               queryLimiter, clock, _configMutex, _baseDir, protonCfg, hwInfo),
@@ -138,7 +136,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _lastDocStoreCacheStats(),
       _calc()
 {
-    assert(configSnapshot.get() != NULL);
+    assert(configSnapshot);
 
     LOG(debug, "DocumentDB(%s): Creating database in directory '%s'",
         _docTypeName.toString().c_str(), _baseDir.c_str());
@@ -277,7 +275,7 @@ DocumentDB::newConfigSnapshot(DocumentDBConfig::SP snapshot)
     _pendingConfigSnapshot.set(snapshot);
     {
         lock_guard guard(_configMutex);
-        if (_activeConfigSnapshot.get() == NULL) {
+        if ( ! _activeConfigSnapshot) {
             LOG(debug,
                 "DocumentDB(%s): Ignoring new available config snapshot. "
                 "The document database does not have"

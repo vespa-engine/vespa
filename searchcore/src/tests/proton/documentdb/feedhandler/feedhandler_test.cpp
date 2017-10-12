@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
@@ -393,18 +392,6 @@ struct PutHandler {
 };
 
 
-struct MyFeedMetrics : public metrics::MetricSet
-{
-    PerDocTypeFeedMetrics       _feed;
-
-    MyFeedMetrics()
-        : metrics::MetricSet("myfeedmetrics", "", "My feed metrics", NULL),
-          _feed(this)
-    {
-    }
-};
-
-
 struct MyTlsWriter : TlsWriter {
     int store_count;
     int erase_count;
@@ -419,7 +406,6 @@ struct MyTlsWriter : TlsWriter {
     } 
 };
 
-
 struct FeedHandlerFixture
 {
     DummyFileHeaderContext       _fileHeaderContext;
@@ -432,7 +418,6 @@ struct FeedHandlerFixture
     DDBState                     _state;
     MyReplayConfig               replayConfig;
     MyFeedView                   feedView;
-    MyFeedMetrics                feedMetrics;
     MyTlsWriter                  tls_writer;
     BucketDBOwner                _bucketDB;
     bucketdb::BucketDBHandler    _bucketDBHandler;
@@ -449,8 +434,8 @@ struct FeedHandlerFixture
           feedView(schema.getRepo()),
           _bucketDB(),
           _bucketDBHandler(_bucketDB),
-          handler(writeService, tlsSpec, schema.getDocType(),
-                  feedMetrics._feed, _state, owner, writeFilter, replayConfig, tls, &tls_writer)
+          handler(writeService, tlsSpec, schema.getDocType(), _state, owner,
+                  writeFilter, replayConfig, tls, &tls_writer)
     {
         _state.enterLoadState();
         _state.enterReplayTransactionLogState();

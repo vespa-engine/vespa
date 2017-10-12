@@ -119,7 +119,7 @@ void FeedHandler::performPut(FeedToken::UP token, PutOperation &op) {
             op.getDocument()->getId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
             token->setResult(ResultUP(new Result), false);
-            token->ack(op.getType(), _metrics);
+            token->ack();
         }
         return;
     }
@@ -143,7 +143,7 @@ FeedHandler::performUpdate(FeedToken::UP token, UpdateOperation &op)
         if (token) {
             token->setResult(ResultUP(new UpdateResult(Timestamp(0))), false);
             setUpdateWasFound(token->getReply(), false);
-            token->ack(op.getType(), _metrics);
+            token->ack();
         }
     }
 }
@@ -191,7 +191,7 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
             op.getDocumentId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            token->ack(op.getType(), _metrics);
+            token->ack();
         }
         return;
     }
@@ -217,7 +217,7 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
             setRemoveWasFound(token->getReply(), false);
-            token->ack(op.getType(), _metrics);
+            token->ack();
         }
     }
 }
@@ -367,7 +367,6 @@ FeedHandler::changeFeedState(FeedState::SP newState, const LockGuard &)
 FeedHandler::FeedHandler(IThreadingService &writeService,
                          const vespalib::string &tlsSpec,
                          const DocTypeName &docTypeName,
-                         PerDocTypeFeedMetrics &metrics,
                          DDBState &state,
                          IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
@@ -395,9 +394,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _delayedPrune(false),
       _feedLock(),
       _feedState(std::make_shared<InitState>(getDocTypeName())),
-      _activeFeedView(NULL),
+      _activeFeedView(nullptr),
       _bucketDBHandler(nullptr),
-      _metrics(metrics),
       _syncLock(),
       _syncedSerialNum(0),
       _allowSync(false)

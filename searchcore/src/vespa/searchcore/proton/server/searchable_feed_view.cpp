@@ -5,7 +5,6 @@
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>

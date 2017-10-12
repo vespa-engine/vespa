@@ -7,7 +7,6 @@
 
 namespace proton {
 
-class PerDocTypeFeedMetrics;
 class FeedToken;
 
 /**
@@ -20,18 +19,13 @@ class FeedToken;
 class OperationDoneContext : public search::IDestructorCallback
 {
     std::unique_ptr<FeedToken> _token;
-    const FeedOperation::Type _opType;
-    PerDocTypeFeedMetrics &_metrics;
-
 protected:
     void ack();
 
 public:
-    OperationDoneContext(std::unique_ptr<FeedToken> token,
-                         const FeedOperation::Type opType,
-                         PerDocTypeFeedMetrics &metrics);
+    OperationDoneContext(std::unique_ptr<FeedToken> token);
 
-    virtual ~OperationDoneContext();
+    ~OperationDoneContext() override;
     FeedToken *getToken() { return _token.get(); }
 };
 

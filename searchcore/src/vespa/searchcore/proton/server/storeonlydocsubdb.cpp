@@ -160,7 +160,7 @@ StoreOnlyDocSubDB::clearViews() {
 size_t
 StoreOnlyDocSubDB::getNumDocs() const
 {
-    if (_metaStoreCtx.get() != NULL) {
+    if (_metaStoreCtx) {
         return _metaStoreCtx->get().getNumUsedLids();
     } else {
         return 0u;
@@ -378,8 +378,7 @@ StoreOnlyDocSubDB::getFeedViewPersistentParams()
 {
     SerialNum flushedDMSSN(_flushedDocumentMetaStoreSerialNum);
     SerialNum flushedDSSN(_flushedDocumentStoreSerialNum);
-    return StoreOnlyFeedView::PersistentParams(flushedDMSSN, flushedDSSN, _docTypeName,
-                                               _metrics.feed, _subDbId, _subDbType);
+    return StoreOnlyFeedView::PersistentParams(flushedDMSSN, flushedDSSN, _docTypeName, _subDbId, _subDbType);
 }
 
 void
