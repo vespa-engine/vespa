@@ -572,19 +572,61 @@ Distributor::workWasDone()
     return !_tickResult.waitWanted();
 }
 
-void
-Distributor::startExternalOperations()
-{
-    for (uint32_t i=0; i<_fetchedMessages.size(); ++i) {
-        MBUS_TRACE(_fetchedMessages[i]->getTrace(), 9,
-                   "Distributor: Grabbed from queue to be processed.");
-        if (!handleMessage(_fetchedMessages[i])) {
-            MBUS_TRACE(_fetchedMessages[i]->getTrace(), 9,
-                       "Distributor: Not handling it. Sending further down.");
-            sendDown(_fetchedMessages[i]);
+namespace {
+
+bool is_client_request(const api::StorageMessage& msg) noexcept {
+    // Despite having been converted to StorageAPI messages, the following
+    // set of messages are never sent to the distributor by other processes
+    // than clients.
+    switch (msg.getType().getId()) {
+    case api::MessageType::GET_ID:
+    case api::MessageType::PUT_ID:
+    case api::MessageType::REMOVE_ID:
+    case api::MessageType::VISITOR_CREATE_ID:
+    case api::MessageType::VISITOR_DESTROY_ID:
+    case api::MessageType::MULTIOPERATION_ID: // Deprecated
+    case api::MessageType::GETBUCKETLIST_ID:
+    case api::MessageType::STATBUCKET_ID:
+    case api::MessageType::UPDATE_ID:
+    case api::MessageType::REMOVELOCATION_ID:
+    case api::MessageType::BATCHPUTREMOVE_ID: // Deprecated
+    case api::MessageType::BATCHDOCUMENTUPDATE_ID: // Deprecated
+        return true;
+    default:
+        return false;
+    }
+}
+
+}
+
+void Distributor::handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg) {
+    if (!handleMessage(msg)) {
+        MBUS_TRACE(msg->getTrace(), 9, "Distributor: Not handling it. Sending further down.");
+        sendDown(msg);
+    }
+}
+
+void Distributor::startExternalOperations() {
+    for (auto& msg : _fetchedMessages) {
+        if (is_client_request(*msg)) {
+            MBUS_TRACE(msg->getTrace(), 9, "Distributor: adding to client request priority queue");
+            _client_request_priority_queue.emplace(std::move(msg));
+        } else {
+            MBUS_TRACE(msg->getTrace(), 9, "Distributor: Grabbed from queue to be processed.");
+            handle_or_propagate_message(msg);
         }
     }
-    if (!_fetchedMessages.empty()) {
+
+    const bool start_single_client_request = !_client_request_priority_queue.empty();
+    if (start_single_client_request) {
+        auto& msg = _client_request_priority_queue.top();
+        MBUS_TRACE(msg->getTrace(), 9, "Distributor: Grabbed from "
+                   "client request priority queue to be processed.");
+        handle_or_propagate_message(msg); // TODO move() once we've move-enabled our message chains
+        _client_request_priority_queue.pop();
+    }
+
+    if (!_fetchedMessages.empty() || start_single_client_request) {
         signalWorkWasDone();
     }
     _fetchedMessages.clear();
