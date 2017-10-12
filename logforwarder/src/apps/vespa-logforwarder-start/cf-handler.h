@@ -8,6 +8,8 @@ using cloud::config::LogforwarderConfig;
 
 class CfHandler {
 private:
+    bool _childRunning;
+    void startChild(const vespalib::string &prefix);
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<LogforwarderConfig>::UP _handle;
     void subscribe(const std::string & configId, uint64_t timeoutMS);
