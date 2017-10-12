@@ -134,7 +134,7 @@ public class ApplicationSerializer {
 
     private void toSlime(ClusterInfo info, Cursor object) {
         object.setString(clusterInfoFlavorField, info.getFlavor());
-        object.setLong(clusterInfoCostField, info.getCost());
+        object.setLong(clusterInfoCostField, info.getFlavorCost());
         object.setString(clusterInfoTypeField, info.getClusterType().name());
         Cursor array = object.setArray(clusterInfoHostnamesField);
         for (String host : info.getHostnames()) {
