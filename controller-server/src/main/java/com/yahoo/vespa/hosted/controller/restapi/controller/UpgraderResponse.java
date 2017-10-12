@@ -26,9 +26,7 @@ public class UpgraderResponse extends HttpResponse {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setDouble("upgradesPerMinute", upgrader.upgradesPerMinute());
-        root.setLong("applicationsGivingMinConfidence", upgrader.applicationsGivingMinConfidence());
-        root.setLong("applicationsGivingMaxConfidence", upgrader.applicationsGivingMaxConfidence());
-        root.setDouble("failureRatioAtMaxConfidence", upgrader.failureRatioAtMaxConfidence());
+        root.setBool("ignoreConfidence", upgrader.ignoreConfidence());
         new JsonFormat(true).encode(outputStream, slime);
     }
 

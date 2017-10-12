@@ -534,4 +534,48 @@ public class UpgraderTest {
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
 
+    @Test
+    public void testIgnoreConfidence() {
+        DeploymentTester tester = new DeploymentTester();
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        // Setup our own upgrader as we need to control the interval
+        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10),
+                                         new JobControl(tester.controllerTester().curator()),
+                                         tester.controllerTester().curator());
+
+        // Setup applications
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application default3 = tester.createAndDeploy("default3", 6, "default");
+
+        // New version is released and canaries upgrade
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        upgrader.maintain();
+
+        assertEquals(2, tester.buildSystem().jobs().size());
+        tester.completeUpgrade(canary0, version, "canary");
+        tester.completeUpgrade(canary1, version, "canary");
+        tester.updateVersionStatus(version);
+
+        // Next run upgrades a subset
+        upgrader.maintain();
+        assertEquals(2, tester.buildSystem().jobs().size());
+        tester.completeUpgrade(default0, version, "default");
+        tester.completeUpgrade(default2, version, "default");
+
+        // Remaining applications upgraded
+        upgrader.maintain();
+        assertEquals(2, tester.buildSystem().jobs().size());
+        tester.completeUpgrade(default1, version, "default");
+        tester.completeUpgrade(default3, version, "default");
+        upgrader.maintain();
+        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+    }
 }

@@ -111,34 +111,14 @@ public class Upgrader extends Maintainer {
         curator.writeUpgradesPerMinute(n);
     }
 
-    /** Returns number of applications giving minimum confidence */
-    public int applicationsGivingMinConfidence() {
-        return curator.readApplicationsGivingMinConfidence();
+    /** Returns whether to ignore confidence calculations when upgrading */
+    public boolean ignoreConfidence() {
+        return curator.readIgnoreConfidence();
     }
 
     /** Sets applications giving minimum confidence */
-    public void setApplicationsGivingMinConfidence(int n) {
-        curator.writeApplicationsGivingMinConfidence(n);
-    }
-
-    /** Returns number of applications giving maximum confidence */
-    public int applicationsGivingMaxConfidence() {
-        return curator.readApplicationsGivingMaxConfidence();
-    }
-
-    /** Sets applications giving maximum confidence */
-    public void setApplicationsGivingMaxConfidence(int n) {
-        curator.writeApplicationsGivingMaxConfidence(n);
-    }
-
-    /** Returns failure ratio at maximum confidence */
-    public double failureRatioAtMaxConfidence() {
-        return curator.readFailureRatioAtMaxConfidence();
-    }
-
-    /** Sets failure ratio at maximum confidence */
-    public void setFailureRatioAtMaxConfidence(double n) {
-        curator.writeFailureRatioAtMaxConfidence(n);
+    public void setIgnoreConfidence(boolean value) {
+        curator.writeIgnoreConfidence(value);
     }
 
 }

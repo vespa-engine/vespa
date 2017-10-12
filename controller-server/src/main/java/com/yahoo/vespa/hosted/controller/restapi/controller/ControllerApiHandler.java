@@ -102,21 +102,15 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private HttpResponse configureUpgrader(HttpRequest request) {
         String upgradesPerMinuteField = "upgradesPerMinute";
-        String applicationsGivingMinConfidenceField = "applicationsGivingMinConfidence";
-        String applicationsGivingMaxConfidenceField = "applicationsGivingMaxConfidence";
-        String failureRatioAtMaxConfidenceField = "failureRatioAtMaxConfidence";
+        String ignoreConfidenceField = "ignoreConfidence";
 
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector inspect = SlimeUtils.jsonToSlime(jsonBytes).get();
         Upgrader upgrader = maintenance.upgrader();
         if (inspect.field(upgradesPerMinuteField).valid()) {
             upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
-        } else if (inspect.field(applicationsGivingMinConfidenceField).valid()) {
-            upgrader.setApplicationsGivingMinConfidence((int) inspect.field(applicationsGivingMinConfidenceField).asLong());
-        } else if (inspect.field(applicationsGivingMaxConfidenceField).valid()) {
-            upgrader.setApplicationsGivingMaxConfidence((int) inspect.field(applicationsGivingMaxConfidenceField).asLong());
-        } else if (inspect.field(failureRatioAtMaxConfidenceField).valid()) {
-            upgrader.setFailureRatioAtMaxConfidence(inspect.field(failureRatioAtMaxConfidenceField).asDouble());
+        } else if (inspect.field(ignoreConfidenceField).valid()) {
+            upgrader.setIgnoreConfidence(inspect.field(ignoreConfidenceField).asBool());
         } else {
             return ErrorResponse.badRequest("Unable to configure upgrader with data in request: '" +
                                                     Utf8.toString(jsonBytes) + "'");

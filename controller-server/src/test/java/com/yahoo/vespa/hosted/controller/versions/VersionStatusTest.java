@@ -235,6 +235,18 @@ public class VersionStatusTest {
                      VespaVersion.Confidence.broken, confidence(versions, version3));
         assertEquals("Current version of this - no deployments: Low",
                      VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
+
+        // Same as above, but ignore confidence calculations, will force normal confidence
+        tester.controllerTester().curator().writeIgnoreConfidence(true);
+        versionStatus = VersionStatus.compute(tester.controller());
+        versions = versionStatus.versions();
+
+        assertEquals("No deployments: Low",
+                     VespaVersion.Confidence.low, confidence(versions, version0));
+        assertEquals("40% of defaults failed, but confidence is ignored: N  ormal",
+                     VespaVersion.Confidence.normal, confidence(versions, version3));
+        assertEquals("Current version of this - no deployments: Low",
+                     VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
     }
 
     @Test

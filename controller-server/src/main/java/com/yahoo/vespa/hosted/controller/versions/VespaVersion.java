@@ -144,11 +144,11 @@ public class VespaVersion implements Comparable<VespaVersion> {
         int production = productionOnThis.without(UpgradePolicy.canary).size();
         int all = production + failing;
 
-        if (all == 0) return false;
+        if (all == 0 || curator.readIgnoreConfidence()) return false;
 
-        int applicationsGivingMinConfidence = curator.readApplicationsGivingMinConfidence();
-        int applicationsGivingMaxConfidence = curator.readApplicationsGivingMaxConfidence();
-        double failureRatioAtMaxConfidence = curator.readFailureRatioAtMaxConfidence();
+        int applicationsGivingMinConfidence = 3;
+        int applicationsGivingMaxConfidence = 4;
+        double failureRatioAtMaxConfidence = 0.1;
 
         double confidence = (double) (all - applicationsGivingMinConfidence) /
                 (double) (applicationsGivingMaxConfidence - applicationsGivingMinConfidence);
