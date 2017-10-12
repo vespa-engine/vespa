@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.service.monitor.internal.ServiceModelCache;
 import com.yahoo.vespa.service.monitor.internal.ServiceMonitorMetrics;
 
 import java.util.Collections;
@@ -23,7 +24,7 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     private final Zone zone;
     private final List<String> configServerHosts;
     private final SlobrokMonitorManager slobrokMonitorManager = new SlobrokMonitorManager();
-    private final SuperModelListenerImpl superModelListener;
+    private final ServiceModelCache serviceModelCache;
 
     @Inject
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
@@ -33,11 +34,17 @@ public class ServiceMonitorImpl implements ServiceMonitor {
         this.zone = superModelProvider.getZone();
         this.configServerHosts = toConfigServerList(configserverConfig);
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
-        this.superModelListener = new SuperModelListenerImpl(
+
+        SuperModelListenerImpl superModelListener = new SuperModelListenerImpl(
                 slobrokMonitorManager,
                 metrics,
-                new ModelGenerator());
+                new ModelGenerator(),
+                zone,
+                configServerHosts);
         superModelListener.start(superModelProvider);
+        serviceModelCache = new ServiceModelCache(
+                () -> superModelListener.get(),
+                timer);
     }
 
     private List<String> toConfigServerList(ConfigserverConfig configserverConfig) {
@@ -53,10 +60,6 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     @Override
     public Map<ApplicationInstanceReference,
             ApplicationInstance<ServiceMonitorStatus>> queryStatusOfAllApplicationInstances() {
-        // If we ever need to optimize this method, then consider reusing ServiceModel snapshots
-        // for up to X ms.
-        ServiceModel serviceModel =
-                superModelListener.createServiceModelSnapshot(zone, configServerHosts);
-        return serviceModel.getAllApplicationInstances();
+        return serviceModelCache.get().getAllApplicationInstances();
     }
 }

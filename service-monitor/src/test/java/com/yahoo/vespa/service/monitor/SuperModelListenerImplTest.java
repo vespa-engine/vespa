@@ -23,10 +23,14 @@ public class SuperModelListenerImplTest {
         SlobrokMonitorManager slobrokMonitorManager = mock(SlobrokMonitorManager.class);
         ServiceMonitorMetrics metrics = mock(ServiceMonitorMetrics.class);
         ModelGenerator modelGenerator = mock(ModelGenerator.class);
+        Zone zone = mock(Zone.class);
+        List<String> configServers = new ArrayList<>();
         SuperModelListenerImpl listener = new SuperModelListenerImpl(
                 slobrokMonitorManager,
                 metrics,
-                modelGenerator);
+                modelGenerator,
+                zone,
+                configServers);
 
         SuperModelProvider superModelProvider = mock(SuperModelProvider.class);
         SuperModel superModel = mock(SuperModel.class);
@@ -42,9 +46,7 @@ public class SuperModelListenerImplTest {
         verify(slobrokMonitorManager).applicationActivated(superModel, application1);
         verify(slobrokMonitorManager).applicationActivated(superModel, application2);
 
-        Zone zone = mock(Zone.class);
-        List<String> configServers = new ArrayList<>();
-        ServiceModel serviceModel = listener.createServiceModelSnapshot(zone, configServers);
+        ServiceModel serviceModel = listener.get();
         verify(modelGenerator).toServiceModel(superModel, zone, configServers, slobrokMonitorManager);
     }
 }
