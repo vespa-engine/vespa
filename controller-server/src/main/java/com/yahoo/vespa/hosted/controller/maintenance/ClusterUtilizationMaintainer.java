@@ -35,7 +35,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
         Map<ClusterSpec.Id, ClusterUtilization> utilizationMap = new HashMap<>();
         for (Map.Entry<String, MetricsService.SystemMetrics> metrics : systemMetrics.entrySet()) {
             MetricsService.SystemMetrics systemMetric = metrics.getValue();
-            ClusterUtilization utilization = new ClusterUtilization(systemMetric.memUtil() / 100, systemMetric.cpuUtil() / 100, systemMetric.diskUtil(), 0);
+            ClusterUtilization utilization = new ClusterUtilization(systemMetric.memUtil() / 100, systemMetric.cpuUtil() / 100, systemMetric.diskUtil() / 100, 0);
             utilizationMap.put(new ClusterSpec.Id(metrics.getKey()), utilization);
         }
 
