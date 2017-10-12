@@ -76,11 +76,15 @@ public class GenerateSourcesMojo extends AbstractMojo {
             return configGenVersion;
         }
 
-        Dependency containerDev = getVespaDependency("container-dev"); // TODO: change to "container"
+        Dependency container = getVespaDependency("container");
+        if (container != null)
+            return container.getVersion();
+
+        Dependency containerDev = getVespaDependency("container-dev");
         if (containerDev != null)
             return containerDev.getVersion();
 
-        Dependency  docproc = getVespaDependency("docproc");
+        Dependency docproc = getVespaDependency("docproc");
         if (docproc != null)
             return docproc.getVersion();
 
@@ -89,9 +93,10 @@ public class GenerateSourcesMojo extends AbstractMojo {
             return parent.getVersion();
 
         String defaultConfigGenVersion = loadDefaultConfigGenVersion();
-        getLog().warn(
-                String.format("Did not find container-dev, guessing that version '%s' of config_gen should be used.",
-                        defaultConfigGenVersion));
+        getLog().warn(String.format(
+                "Did not find either container or container-dev artifact in project dependencies, "
+                + "using default version '%s' of the config class plugin.",
+                defaultConfigGenVersion));
 
         return defaultConfigGenVersion;
     }

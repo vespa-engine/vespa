@@ -9,6 +9,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -211,4 +213,28 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
                 : result;
     }
 
+    @Override
+    public NodeList getNodeList(DeploymentId deployment) throws IOException {
+        NodeList list = new NodeList();
+        list.nodes = new ArrayList<>();
+        NodeList.Node hostA = new NodeList.Node();
+        hostA.hostname = "hostA";
+        hostA.cost = 10;
+        hostA.flavor = "C-2B/24/500";
+        hostA.membership = new NodeList.Node.Membership();
+        hostA.membership.clusterId = "clusterA";
+        hostA.membership.clusterType = "container";
+        list.nodes.add(hostA);
+
+        NodeList.Node hostB = new NodeList.Node();
+        hostB.hostname = "hostB";
+        hostB.cost = 20;
+        hostB.flavor = "C-2C/24/500";
+        hostB.membership = new NodeList.Node.Membership();
+        hostB.membership.clusterId = "clusterB";
+        hostB.membership.clusterType = "content";
+        list.nodes.add(hostB);
+
+        return list;
+    }
 }

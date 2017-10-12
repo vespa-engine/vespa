@@ -57,6 +57,9 @@ public class DeploymentTrigger {
         this.order = new DeploymentOrder(controller);
     }
     
+    /** Returns the time in the past before which jobs are at this moment considered unresponsive */
+    public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
+    
     //--- Start of methods which triggers deployment jobs -------------------------
 
     /** 
@@ -127,7 +130,7 @@ public class DeploymentTrigger {
             // TODO: Do this for all jobs not just staging, and (with more work) remove triggerFailing and triggerDelayed
             if (jobType.environment().equals(Environment.staging)) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-                if (jobStatus.isRunning(clock.instant().minus(jobTimeout))) continue;
+                if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
                 for (JobType nextJobType : order.nextAfter(jobType, application)) {
                     JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
@@ -181,7 +184,7 @@ public class DeploymentTrigger {
             }
 
             // Retry dead job
-            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs(), jobTimeout);
+            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs());
             if (firstDeadJob.isPresent()) {
                 application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job",
                                       lock);
@@ -195,7 +198,7 @@ public class DeploymentTrigger {
         for (Application application : applications().asList()) {
             if ( ! application.deploying().isPresent() ) continue;
             if (application.deploymentJobs().hasFailures()) continue;
-            if (application.deploymentJobs().inProgress()) continue;
+            if (application.deploymentJobs().isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit())) continue;
             if (application.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
                 continue; // Application does not have any delayed deployments
             }
@@ -266,19 +269,18 @@ public class DeploymentTrigger {
     }
 
     /** Returns the first job that has been running for more than the given timeout */
-    private Optional<JobStatus> firstDeadJob(DeploymentJobs jobs, Duration timeout) {
-        Instant startOfGracePeriod = controller.clock().instant().minus(timeout);
+    private Optional<JobStatus> firstDeadJob(DeploymentJobs jobs) {
         Optional<JobStatus> oldestRunningJob = jobs.jobStatus().values().stream()
-                .filter(JobStatus::inProgress)
+                .filter(job -> job.isRunning(Instant.ofEpochMilli(0)))
                 .sorted(Comparator.comparing(status -> status.lastTriggered().get().at()))
                 .findFirst();
-        return oldestRunningJob.filter(job -> job.lastTriggered().get().at().isBefore(startOfGracePeriod));
+        return oldestRunningJob.filter(job -> job.lastTriggered().get().at().isBefore(jobTimeoutLimit()));
     }
 
     /** Decide whether the job should be triggered by the periodic trigger */
     private boolean shouldRetryNow(JobStatus job) {
         if (job.isSuccess()) return false;
-        if (job.inProgress()) return false;
+        if (job.isRunning(jobTimeoutLimit())) return false;
 
         // Retry after 10% of the time since it started failing
         Duration aTenthOfFailTime = Duration.ofMillis( (clock.millis() - job.firstFailing().get().at().toEpochMilli()) / 10);
@@ -342,7 +344,7 @@ public class DeploymentTrigger {
             return application;
         }
         
-        if (application.deploymentJobs().isRunning(jobType, clock.instant().minus(jobTimeout))) {
+        if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) {
             return application;
         }
 

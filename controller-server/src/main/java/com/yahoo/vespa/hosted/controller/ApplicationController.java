@@ -332,7 +332,16 @@ public class ApplicationController {
                     configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), 
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
-            application = application.with(new Deployment(zone, revision, version, clock.instant()));
+
+            Deployment previousDeployment = application.deployments().get(zone);
+            Deployment newDeployment = previousDeployment;
+            if (previousDeployment == null) {
+                newDeployment = new Deployment(zone, revision, version, clock.instant(), new HashMap<>(), new HashMap<>());
+            } else {
+                newDeployment = new Deployment(zone, revision, version, clock.instant(), previousDeployment.clusterUtils(), previousDeployment.clusterInfo());
+            }
+
+            application = application.with(newDeployment);
             store(application, lock);
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());

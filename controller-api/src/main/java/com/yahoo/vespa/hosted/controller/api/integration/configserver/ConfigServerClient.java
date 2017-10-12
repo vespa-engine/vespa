@@ -66,4 +66,13 @@ public interface ConfigServerClient {
      * @throws IOException If trouble contacting the server
      */
     EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) throws IOException;
+
+    /**
+     * The nodes allocated to the deployment
+     *
+     * @param deployment The application/zone pair
+     * @return The nodes for this deployment
+     * @throws IOException If unable to retrieve the node list
+     */
+    NodeList getNodeList(DeploymentId deployment) throws IOException;
 }

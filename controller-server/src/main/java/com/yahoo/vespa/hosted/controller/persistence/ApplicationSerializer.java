@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
@@ -16,6 +17,8 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
@@ -25,7 +28,9 @@ import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -75,6 +80,21 @@ public class ApplicationSerializer {
     private final String revisionField = "revision";
     private final String atField = "at";
     private final String upgradeField = "upgrade";
+
+    // ClusterInfo fields
+    private final String clusterInfoField = "clusterInfo";
+    private final String clusterInfoFlavorField = "flavor";
+    private final String clusterInfoCostField = "cost";
+    private final String clusterInfoTypeField = "clusterType";
+    private final String clusterInfoHostnamesField = "hostnames";
+
+    // ClusterUtils fields
+    private final String clusterUtilsField = "clusterUtils";
+    private final String clusterUtilsCpuField = "cpu";
+    private final String clusterUtilsMemField = "mem";
+    private final String clusterUtilsDiskField = "disk";
+    private final String clusterUtilsDiskBusyField = "diskbusy";
+
     
     // ------------------ Serialization
     
@@ -101,8 +121,41 @@ public class ApplicationSerializer {
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
+        clusterInfoToSlime(deployment.clusterInfo(), object);
+        clusterUtilsToSlime(deployment.clusterUtils(), object);
     }
-    
+
+    private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
+        Cursor root = object.setObject(clusterInfoField);
+        for (Map.Entry<ClusterSpec.Id, ClusterInfo> entry : clusters.entrySet()) {
+            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
+        }
+    }
+
+    private void toSlime(ClusterInfo info, Cursor object) {
+        object.setString(clusterInfoFlavorField, info.getFlavor());
+        object.setLong(clusterInfoCostField, info.getCost());
+        object.setString(clusterInfoTypeField, info.getClusterType().name());
+        Cursor array = object.setArray(clusterInfoHostnamesField);
+        for (String host : info.getHostnames()) {
+            array.addString(host);
+        }
+    }
+
+    private void clusterUtilsToSlime(Map<ClusterSpec.Id, ClusterUtilization> clusters, Cursor object) {
+        Cursor root = object.setObject(clusterUtilsField);
+        for (Map.Entry<ClusterSpec.Id, ClusterUtilization> entry : clusters.entrySet()) {
+            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
+        }
+    }
+
+    private void toSlime(ClusterUtilization utils, Cursor object) {
+        object.setDouble(clusterUtilsCpuField, utils.getCpu());
+        object.setDouble(clusterUtilsMemField, utils.getMemory());
+        object.setDouble(clusterUtilsDiskField, utils.getDisk());
+        object.setDouble(clusterUtilsDiskBusyField, utils.getDiskBusy());
+    }
+
     private void zoneToSlime(Zone zone, Cursor object) {
         object.setString(environmentField, zone.environment().value());
         object.setString(regionField, zone.region().value());
@@ -191,9 +244,42 @@ public class ApplicationSerializer {
         return new Deployment(zoneFromSlime(deploymentObject.field(zoneField)),
                               applicationRevisionFromSlime(deploymentObject.field(applicationPackageRevisionField)).get(),
                               Version.fromString(deploymentObject.field(versionField).asString()),
-                              Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()));
+                              Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
+                clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
+                clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)));
     }
-    
+
+    private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime(Inspector object) {
+        Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
+        object.traverse((String name, Inspector obect) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(obect)));
+        return map;
+    }
+
+    private Map<ClusterSpec.Id, ClusterUtilization> clusterUtilsMapFromSlime(Inspector object) {
+        Map<ClusterSpec.Id, ClusterUtilization> map = new HashMap<>();
+        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterUtililzationFromSlime(value)));
+        return map;
+    }
+
+    private ClusterUtilization clusterUtililzationFromSlime(Inspector object) {
+        double cpu = object.field(clusterUtilsCpuField).asDouble();
+        double mem = object.field(clusterUtilsMemField).asDouble();
+        double disk = object.field(clusterUtilsDiskField).asDouble();
+        double diskBusy = object.field(clusterUtilsDiskBusyField).asDouble();
+
+        return new ClusterUtilization(mem, cpu, disk, diskBusy);
+    }
+
+    private ClusterInfo clusterInfoFromSlime(Inspector inspector) {
+        String flavor = inspector.field(clusterInfoFlavorField).asString();
+        int cost = (int)inspector.field(clusterInfoCostField).asLong();
+        String type = inspector.field(clusterInfoTypeField).asString();
+
+        List<String> hostnames = new ArrayList<>();
+        inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
+        return new ClusterInfo(flavor, cost, ClusterSpec.Type.from(type), hostnames);
+    }
+
     private Zone zoneFromSlime(Inspector object) {
         return new Zone(Environment.from(object.field(environmentField).asString()),
                         RegionName.from(object.field(regionField).asString()));

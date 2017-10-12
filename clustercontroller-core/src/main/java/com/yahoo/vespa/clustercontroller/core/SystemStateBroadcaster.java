@@ -109,15 +109,12 @@ public class SystemStateBroadcaster {
      * Checks if all distributor nodes have ACKed the most recent cluster state. Iff this
      * is the case, triggers handleAllDistributorsInSync() on the provided FleetController
      * object and updates the broadcaster's last known in-sync cluster state version.
-     *
-     * Returns true if distributor nodes were checked, false if cluster is already in sync
-     * or no state has been published yet.
      */
-    boolean checkIfClusterStateIsAckedByAllDistributors(DatabaseHandler database,
+    void checkIfClusterStateIsAckedByAllDistributors(DatabaseHandler database,
                                                         DatabaseHandler.Context dbContext,
                                                         FleetController fleetController) throws InterruptedException {
         if ((systemState == null) || (lastClusterStateInSync == systemState.getVersion())) {
-            return false; // Nothing to do for the current state
+            return; // Nothing to do for the current state
         }
         boolean anyOutdatedDistributorNodes = dbContext.getCluster().getNodeInfo().stream()
                 .filter(NodeInfo::isDistributor)
@@ -128,7 +125,6 @@ public class SystemStateBroadcaster {
             lastClusterStateInSync = systemState.getVersion();
             fleetController.handleAllDistributorsInSync(database, dbContext);
         }
-        return true;
     }
 
     public boolean broadcastNewState(DatabaseHandler database,

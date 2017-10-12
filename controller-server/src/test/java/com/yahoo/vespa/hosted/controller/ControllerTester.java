@@ -30,8 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.jira.JiraMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.cost.CostMock;
-import com.yahoo.vespa.hosted.controller.cost.MockInsightBackend;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -117,7 +115,7 @@ public final class ControllerTester {
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, 
+    public Application createAndDeploy(String tenantName, String domainName, String applicationName,
                                        String instanceName, Zone zone, long projectId, Long propertyId) {
         TenantId tenant = createTenant(tenantName, domainName, propertyId);
         Application application = createApplication(tenant, applicationName, instanceName, projectId);
@@ -140,7 +138,7 @@ public final class ControllerTester {
     public Application createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
         return createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
-    
+
     public Zone toZone(Environment environment) {
         switch (environment) {
             case dev: case test: return new Zone(environment, RegionName.from("us-east-1"));
@@ -154,7 +152,7 @@ public final class ControllerTester {
         athensDb.addDomain(new AthensDbMock.Domain(domain));
         return domain;
     }
-    
+
     public TenantId createTenant(String tenantName, String domainName, Long propertyId) {
         TenantId id = new TenantId(tenantName);
         Optional<Tenant> existing = controller().tenants().tenant(id);
@@ -166,7 +164,7 @@ public final class ControllerTester {
         assertNotNull(controller().tenants().tenant(id));
         return id;
     }
-    
+
     public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = applicationId(tenant.id(), applicationName, instanceName);
         Application application = controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken))
@@ -210,7 +208,6 @@ public final class ControllerTester {
                                                new MemoryEntityService(),
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
-                                               new CostMock(new MockInsightBackend()),
                                                configServerClientMock,
                                                new MockMetricsService(),
                                                nameService,

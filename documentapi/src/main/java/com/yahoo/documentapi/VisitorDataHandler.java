@@ -20,9 +20,10 @@ import java.util.List;
  * <p>
  * Use a data handler that fits your needs to be able to use visiting easily.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
-public abstract class VisitorDataHandler {
+public abstract class VisitorDataHandler { 
+    
     protected VisitorControlSession session;
 
     /** Creates a new visitor data handler. */
