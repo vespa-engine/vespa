@@ -1,20 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filedistributorrpc.h"
-#include <mutex>
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/frtstream/frtserverstream.h>
-#include <map>
-
-#include "fileprovider.h"
 #include <vespa/filedistribution/model/filedbmodel.h>
+#include <vespa/filedistribution/model/zkfacade.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".filedistributorrpc");
 
 using filedistribution::FileDistributorRPC;
 using filedistribution::FileProvider;
-
+using namespace std::literals;
 namespace fs = boost::filesystem;
 
 namespace {
@@ -233,10 +232,18 @@ FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
         request->SetError(RPCErrorCodes::baseFileProviderErrorCode + FileProvider::FileReferenceDoesNotExist,
                           "No such file reference");
         request->Return();
-    } catch (const std::exception& e) {
-        LOG(error, "An exception occurred while calling the rpc method waitFor:%s", e.what());
+    } catch (const ZKConnectionLossException & e) {
+        LOG(warning, "ZKConnectionLossException during rpc method waitFor:%s. Will restart quickly", e.what());
         request->SetError(RPCErrorCodes::unknownError, e.what());
         request->Return(); //the request might be detached.
+        std::this_thread::sleep_for(100ms);
+        std::quick_exit(61);
+    } catch (const std::exception& e) {
+        LOG(error, "An exception occurred while calling the rpc method waitFor:%s. Will restart quickly", e.what());
+        request->SetError(RPCErrorCodes::unknownError, e.what());
+        request->Return(); //the request might be detached.
+        std::this_thread::sleep_for(100ms);
+        std::quick_exit(62);
     }
 }
 

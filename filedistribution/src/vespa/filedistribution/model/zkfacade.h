@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <mutex>
-
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
 #include <vespa/vespalib/util/exception.h>
+#include <mutex>
+#include <map>
 
 struct _zhandle;
 typedef _zhandle zhandle_t;
@@ -47,12 +44,15 @@ class ZKFacade : public std::enable_shared_from_this<ZKFacade> {
     volatile bool _retriesEnabled;
     volatile bool _watchersEnabled;
 
-    zhandle_t* _zhandle;
-    const static int _zkSessionTimeOut = 30 * 1000;
-    const static size_t _maxDataSize = 1024 * 1024;
+    std::string _serverHostNames;
+    std::string _lastKnownServerAddresses;
+    zhandle_t*  _zhandle;
+    static constexpr int _zkSessionTimeOut = 30 * 1000;
+    static constexpr size_t _maxDataSize = 1024 * 1024;
 
     class ZKWatcher;
     static void stateWatchingFun(zhandle_t*, int type, int state, const char* path, void* context);
+    static std::string resolveZKServers(const std::string &input);
 public:
     typedef std::shared_ptr<ZKFacade> SP;
 
@@ -73,9 +73,10 @@ public:
 
     ZKFacade(const ZKFacade &) = delete;
     ZKFacade & operator = (const ZKFacade &) = delete;
-    ZKFacade(const std::string& zkservers, bool allowDNSFailure);
+    ZKFacade(const std::string& zkservers);
     ~ZKFacade();
 
+    bool hasServersChanged() const;
     bool hasNode(const Path&);
     bool hasNode(const Path&, const NodeChangedWatcherSP&);
 
@@ -105,8 +106,6 @@ public:
         return _retriesEnabled;
     }
 
-    static std::string getValidZKServers(const std::string &input, bool ignoreDNSFailure);
-
 private:
     class RegistrationGuard {
     public:
@@ -128,8 +127,8 @@ private:
     std::shared_ptr<ZKWatcher> unregisterWatcher(void* watcherContext);
     void invokeWatcher(void* watcherContext);
 
-    std::mutex _watchersMutex;
-    typedef std::map<void*, std::shared_ptr<ZKWatcher> > WatchersMap;
+    using WatchersMap = std::map<void*, std::shared_ptr<ZKWatcher> >;
+    std::mutex  _watchersMutex;
     WatchersMap _watchers;
 };
 
