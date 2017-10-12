@@ -21,13 +21,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -97,14 +95,12 @@ public class ContainerControllerTester {
     }
 
     public AthensDomain addTenantAthensDomain(String domainName, String userName) {
-        Athens athens = (AthensMock) containerTester.container().components().getComponent(
-                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
-        );
-        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
         AthensDomain athensDomain = new AthensDomain(domainName);
         AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(new AthensPrincipal(new AthensDomain("domain"), new UserId(userName)));
+        domain.admin(new AthenzPrincipal(new AthensDomain("domain"), new UserId(userName)));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
