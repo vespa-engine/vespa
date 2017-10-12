@@ -28,20 +28,12 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-namespace {
-
-bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone, uint32_t traceLevel) {
-    return onWriteDone && onWriteDone->shouldTrace(traceLevel);
-}
-
-}
-
 SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter)
     : _indexWriter(indexWriter)
 {}
 
 
-SearchableFeedView::Context::~Context() {}
+SearchableFeedView::Context::~Context() = default;
 
 SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
                                        const PersistentParams &params,
@@ -52,7 +44,7 @@ SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOn
       _hasIndexedFields(_schema->getNumIndexFields() > 0)
 { }
 
-SearchableFeedView::~SearchableFeedView() {}
+SearchableFeedView::~SearchableFeedView() = default;
 
 void
 SearchableFeedView::performSync()
@@ -97,10 +89,6 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
     _indexWriter->put(serialNum, doc, lid);
     if (immediateCommit) {
         _indexWriter->commit(serialNum, onWriteDone);
-    }
-    if (shouldTrace(onWriteDone, 1)) {
-        FeedToken *token = onWriteDone->getToken();
-        token->trace(1, "Document indexed = . New Value : " + doc.toString(token->shouldTrace(2)));
     }
 }
 
@@ -160,9 +148,6 @@ void
 SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc,
                                         bool immediateCommit, OnOperationDoneType onWriteDone)
 {
-    if (shouldTrace(onWriteDone, 1)) {
-        onWriteDone->getToken()->trace(1, "Then we can update the index.");
-    }
     _writeService.index().execute(
             makeLambdaTask([serialNum, lid, futureDoc = std::move(futureDoc),
                             immediateCommit, onWriteDone = std::move(onWriteDone), this]() mutable {
@@ -189,17 +174,13 @@ SearchableFeedView::performIndexRemove(SerialNum serialNum, search::DocumentIdT 
                                        bool immediateCommit, OnRemoveDoneType onWriteDone)
 {
     assert(_writeService.index().isCurrentThread());
-    VLOG(getDebugLevel(lid, NULL),
+    VLOG(getDebugLevel(lid, nullptr),
         "database(%s): performIndexRemove: serialNum(%" PRIu64 "), lid(%d)",
          _params._docTypeName.toString().c_str(), serialNum, lid);
 
     _indexWriter->remove(serialNum, lid);
     if (immediateCommit) {
         _indexWriter->commit(serialNum, onWriteDone);
-    }
-    FeedToken *token = onWriteDone ? onWriteDone->getToken() : nullptr;
-    if (token != nullptr && token->shouldTrace(1)) {
-        token->trace(1, make_string("Document with lid %d removed.", lid));
     }
 }
 
@@ -209,7 +190,7 @@ SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector &lid
 {
     assert(_writeService.index().isCurrentThread());
     for (const auto lid : lidsToRemove) {
-        VLOG(getDebugLevel(lid, NULL),
+        VLOG(getDebugLevel(lid, nullptr),
              "database(%s): performIndexRemove: serialNum(%" PRIu64 "), "
              "lid(%d)",
              _params._docTypeName.toString().c_str(),

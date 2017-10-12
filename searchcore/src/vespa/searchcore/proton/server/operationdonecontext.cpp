@@ -28,10 +28,4 @@ OperationDoneContext::ack()
     }
 }
 
-bool
-OperationDoneContext::shouldTrace(uint32_t traceLevel)
-{
-    return _token ? _token->shouldTrace(traceLevel) : false;
-}
-
 }  // namespace proton

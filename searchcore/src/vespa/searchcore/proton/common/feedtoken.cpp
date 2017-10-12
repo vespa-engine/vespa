@@ -90,12 +90,4 @@ FeedToken::State::fail(uint32_t errNum, const vespalib::string &errMsg)
     _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
 }
 
-void
-FeedToken::State::trace(uint32_t traceLevel, const vespalib::string &traceMsg)
-{
-    assert(_reply);
-    vespalib::LockGuard guard(_lock);
-    _reply->getTrace().trace(traceLevel, traceMsg);
-}
-
 } // namespace proton

@@ -5,8 +5,7 @@
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 
-namespace proton
-{
+namespace proton {
 
 class PerDocTypeFeedMetrics;
 class FeedToken;
@@ -33,10 +32,7 @@ public:
                          PerDocTypeFeedMetrics &metrics);
 
     virtual ~OperationDoneContext();
-
     FeedToken *getToken() { return _token.get(); }
-
-    bool shouldTrace(uint32_t traceLevel);
 };
 
 

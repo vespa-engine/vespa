@@ -42,7 +42,6 @@ private:
     void testFail();
     void testHandover();
     void testIntegrity();
-    void testTrace();
 
 public:
     int Main() override {
@@ -53,7 +52,6 @@ public:
         testFail();      TEST_FLUSH();
         testHandover();  TEST_FLUSH();
 //        testIntegrity(); TEST_FLUSH();
-        testTrace();     TEST_FLUSH();
 
         TEST_DONE();
     }
@@ -134,19 +132,3 @@ Test::testIntegrity()
     }
 }
 
-void
-Test::testTrace()
-{
-    LocalTransport transport;
-    mbus::Reply::UP reply(new documentapi::RemoveDocumentReply());
-
-    FeedToken token(transport, std::move(reply));
-    token.trace(0, "foo");
-    token.ack();
-    reply = transport.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
-    EXPECT_TRUE(!reply->hasErrors());
-    std::string trace = reply->getTrace().toString();
-    fprintf(stderr, "%s", trace.c_str());
-    EXPECT_TRUE(trace.find("foo") != std::string::npos);
-}
