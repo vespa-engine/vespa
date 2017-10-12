@@ -10,6 +10,8 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 
+import java.time.Duration;
+
 /**
  * When the cluster controller is reconfigured, a new instance of this is created, which will propagate configured
  * options to receivers such as the fleet controller.
@@ -70,6 +72,7 @@ public class ClusterControllerClusterConfigurer {
         options.maxSlobrokDisconnectGracePeriod = (int) (config.max_slobrok_disconnect_grace_period() * 1000);
         options.distributionBits = config.ideal_distribution_bits();
         options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
+        options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
     }
 
     private void configure(SlobroksConfig config) {

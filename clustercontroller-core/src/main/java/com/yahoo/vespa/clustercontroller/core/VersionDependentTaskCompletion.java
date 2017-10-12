@@ -8,15 +8,18 @@ import java.util.Objects;
  * completion depends on side effects by the task becoming visible in
  * the cluster before a response can be sent. Each such task is associated
  * with a particular cluster state version number representing a lower bound
- * on the published state containing the side effect.
+ * on the published state containing the side effect. Each task is also
+ * associated with a completion deadline.
  */
 class VersionDependentTaskCompletion {
     private final long minimumVersion;
     private final RemoteClusterControllerTask task;
+    private final long deadlineTimePointMs;
 
-    VersionDependentTaskCompletion(long minimumVersion, RemoteClusterControllerTask task) {
+    VersionDependentTaskCompletion(long minimumVersion, RemoteClusterControllerTask task, long deadlineTimePointMs) {
         this.minimumVersion = minimumVersion;
         this.task = task;
+        this.deadlineTimePointMs = deadlineTimePointMs;
     }
 
     long getMinimumVersion() {
@@ -26,6 +29,8 @@ class VersionDependentTaskCompletion {
     RemoteClusterControllerTask getTask() {
         return task;
     }
+
+    long getDeadlineTimePointMs() { return deadlineTimePointMs; }
 
     @Override
     public boolean equals(Object o) {

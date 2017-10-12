@@ -107,7 +107,7 @@ min_distributor_up_ratio double default=0.01
 min_storage_up_ratio double default=0.01
 
 ## Seconds to sleep after doing a work cycle where we did no work. Some
-## events do not interrupt the sleeping, such as slobrok changes, so shouldnt
+## events do not interrupt the sleeping, such as slobrok changes, so shouldn't
 ## set this too high
 cycle_wait_time double default=0.1
 
@@ -122,7 +122,7 @@ min_time_before_first_system_state_broadcast double default=5.0
 ## always have a pending operation with very low cost. Keeping a low timeout is
 ## good to detect issues like packet loss. The default tries to balance the two
 ## by not resending too often, but detecting packet loss within a minute at
-## least. If we can guarantuee RPC layer to fail on packet loss within
+## least. If we can guarantee RPC layer to fail on packet loss within
 ## reasonable time we should increase this default.
 get_node_state_request_timeout double default=120.0
 
@@ -146,3 +146,11 @@ ideal_distribution_bits int default=16
 ## availability has been restored above the given threshold.
 ## Default is 0, i.e. functionality is for all intents and purposes disabled.
 min_node_ratio_per_group double default=0.0
+
+## If a cluster controller task has a dependency on a given cluster state
+## version being published and ACKed by the cluster, it will be put on a wait
+## queue while holding up the container thread associated with the task.
+## This config specifies the maximum time a task can be held in this queue
+## before being automatically failed out, if a version has not been ACKed
+## within this duration.
+max_deferred_task_version_wait_time_sec double default=30.0

@@ -526,4 +526,17 @@ public class StateRestAPITest {
         } catch (IllegalArgumentException e) {
         }
     }
+
+    @Test
+    public void deadline_exceeded_exception_returns_http_504_error() throws Exception {
+        setupDummyStateApi();
+        stateApi.induceException(new DeadlineExceededException("argh!"));
+        HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
+
+        assertEquals(result.toString(true), 504, result.getHttpReturnCode());
+        assertEquals(result.toString(true), "Gateway Timeout", result.getHttpReturnCodeDescription());
+        assertEquals(result.toString(true), "application/json", result.getHeader("Content-Type"));
+        String expected = "{\"message\":\"argh!\"}";
+        assertEquals(expected, result.getContent().toString());
+    }
 }
