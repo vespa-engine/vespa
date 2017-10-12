@@ -153,7 +153,7 @@ public class ApplicationSerializerTest {
             }
 
             result.put(ClusterSpec.Id.from("id" + cluster), new ClusterInfo("flavor" + cluster, 10,
-                    ClusterSpec.Type.content, hostnames));
+                2, 4, 50, ClusterSpec.Type.content, hostnames));
         }
         return result;
     }

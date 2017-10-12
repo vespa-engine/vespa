@@ -740,7 +740,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     List<String> hostnames = new ArrayList<>();
                     hostnames.add("host1");
                     hostnames.add("host2");
-                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, ClusterSpec.Type.content, hostnames));
+                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, 2, 4, 50, ClusterSpec.Type.content, hostnames));
                     Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
                     clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                     deployment = deployment.withClusterInfo(clusterInfo);

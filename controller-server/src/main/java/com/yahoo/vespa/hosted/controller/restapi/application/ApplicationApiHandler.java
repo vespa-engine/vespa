@@ -1084,8 +1084,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
         object.setLong("tco", (long)deploymentCost.getTco());
+        object.setLong("waste", (long)deploymentCost.getWaste());
         object.setDouble("utilization", deploymentCost.getUtilization());
-        object.setDouble("waste", deploymentCost.getWaste());
         Cursor clustersObject = object.setObject("cluster");
         for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
             toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));

@@ -43,7 +43,7 @@ public class ClusterCost {
 
         this.tco = clusterInfo.getHostnames().size() * clusterInfo.getFlavorCost();
 
-        double unusedUtilization = 1 - Math.max(1, systemUtilization.getMaxUtilization());
+        double unusedUtilization = 1 - Math.min(1, resultUtilization.getMaxUtilization());
         this.waste  = tco * unusedUtilization;
     }
 
