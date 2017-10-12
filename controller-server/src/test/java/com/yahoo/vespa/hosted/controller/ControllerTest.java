@@ -518,7 +518,8 @@ public class ControllerTest {
     @Test
     public void testDeployUntestedChangeFails() {
         ControllerTester tester = new ControllerTester();
-        ApplicationController applications = tester.controller().applications();TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
+        ApplicationController applications = tester.controller().applications();
+        TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
         app = app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
@@ -527,7 +528,7 @@ public class ControllerTest {
             tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as pending version change to 6.3 is untested", e.getMessage());
+            assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
         }
     }
 

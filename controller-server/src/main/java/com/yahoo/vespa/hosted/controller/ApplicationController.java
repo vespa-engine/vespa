@@ -274,7 +274,6 @@ public class ApplicationController {
             // Determine what we are doing
             Application application = get(applicationId).orElse(new Application(applicationId));
 
-            // Decide version to deploy, if applicable.
             Version version;
             if (options.deployCurrentVersion)
                 version = application.currentVersion(controller, zone);
@@ -284,13 +283,6 @@ public class ApplicationController {
                 return unexpectedDeployment(applicationId, zone, applicationPackage);
             else
                 version = application.currentDeployVersion(controller, zone);
-
-            // Ensure that the deploying change is tested
-            if (! canDeployDirectlyTo(zone, options) &&
-                ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
-                throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                   " as pending " + application.deploying().get() +
-                                                   " is untested");
 
             DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
@@ -322,6 +314,12 @@ public class ApplicationController {
 
                 store(application, lock); // store missing information even if we fail deployment below
             }
+
+            // Ensure that the deploying change is tested
+            if (! canDeployDirectlyTo(zone, options) &&
+                ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
+                throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
+                                                   " as " + application.deploying().get() + " is not tested");
 
             // Carry out deployment
             DeploymentId deploymentId = new DeploymentId(applicationId, zone);
