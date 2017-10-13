@@ -39,13 +39,13 @@ do {                                                                          \
     if (logger.wants(ns_log::Logger::level)) {                                \
         logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__); \
     }                                                                         \
-} while (0)
+} while (false)
 #define VLOG(level, ...)                                      \
 do {                                                          \
     if (logger.wants(level)) {                                \
         logger.doLog(level, __FILE__, __LINE__, __VA_ARGS__); \
     }                                                         \
-} while (0)
+} while (false)
 #endif
 
 // Must use placement new in the following definition, since the variable
@@ -64,7 +64,7 @@ do {                                                                            
     if (logger->wants(ns_log::Logger::level)) {                                 \
         logger->doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);  \
     }                                                                           \
-} while (0)
+} while (false)
 
 #define LOG_WOULD_LOG(level) logger.wants(ns_log::Logger::level)
 #define LOG_WOULD_VLOG(level) logger.wants(level)
@@ -74,84 +74,77 @@ do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventStarting(name);           \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_STOPPING(name,why)                   \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventStopping(name, why);      \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_STARTED(name)                        \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventStarted(name);            \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_STOPPED(name,pid,exitcode)                   \
 do {                                                    \
     if (logger.wants(ns_log::Logger::event)) {          \
         logger.doEventStopped(name, pid, exitcode);     \
     }                                                   \
-} while (0)
+} while (false)
 
 #define EV_RELOADING(name)                      \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventReloading(name);          \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_RELOADED(name)                       \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventReloaded(name);           \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_CRASH(name,pid,signal)               \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventCrash(name, pid, signal); \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_PROGRESS(name, ...)                          \
 do {                                                    \
     if (logger.wants(ns_log::Logger::event)) {          \
         logger.doEventProgress(name, __VA_ARGS__);      \
     }                                                   \
-} while (0)
+} while (false)
 
 #define EV_COUNT(name,value)                    \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventCount(name, value);       \
     }                                           \
-} while (0)
+} while (false)
 
 #define EV_VALUE(name,value)                    \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventValue(name, value);       \
     }                                           \
-} while (0)
-
-#define EV_COLLECTION(collectionId,name,params)             \
-do {                                                           \
-    if (logger.wants(ns_log::Logger::event)) {                 \
-      logger.doEventCollection(collectionId, name, params);   \
-    }                                                          \
-} while (0)
+} while (false)
 
 #define EV_STATE(name,value)                   \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
         logger.doEventState(name, value);      \
     }                                           \
-} while (0)
+} while (false)
 
 namespace ns_log {
 
@@ -161,7 +154,7 @@ class ControlFile;
 // XXX this is way too complicated, must be some simpler way to do this
 /** Timer class used to retrieve timestamp, such that we can override in test */
 struct Timer {
-    virtual ~Timer() {}
+    virtual ~Timer() = default;
     virtual uint64_t getTimestamp() const;
 };
 
@@ -187,7 +180,6 @@ public:
     static bool fakePid;
 
 private:
-    Logger();
     Logger(const Logger &);
     Logger& operator =(const Logger &);
 
@@ -205,7 +197,6 @@ private:
     static ControlFile *_controlFile;
 
     static void setTarget();
-    void makeLockFile();
 
     char _appendix[256];
 
@@ -220,8 +211,7 @@ private:
                const char *fmt, va_list args);
 public:
     ~Logger();
-    explicit Logger(const char *name, const char *rcsId = 0);
-    static Logger& getLogger(const char *name);
+    explicit Logger(const char *name, const char *rcsId = nullptr);
     int setRcsId(const char *rcsId);
     static const char *levelName(LogLevel level);
 
@@ -247,8 +237,6 @@ public:
     void doEventProgress(const char *name, double value, double total = 0);
     void doEventCount(const char *name, uint64_t value);
     void doEventValue(const char *name, double value);
-    void doEventCollection(uint64_t collectionId, const char *name,
-                           const char *params);
     void doEventState(const char *name, const char *value);
 
     // Only for unit testing

@@ -14,10 +14,10 @@ using filedistribution::Path;
 namespace {
 void logStartDownload(const std::set<std::string> & filesToDownload) {
     std::ostringstream msg;
-    msg <<"StartDownloads:" <<std::endl;
+    msg << "StartDownloads:" << std::endl;
     std::copy(filesToDownload.begin(), filesToDownload.end(),
               std::ostream_iterator<std::string>(msg, "\n"));
-    LOG(debug, msg.str().c_str());
+    LOG(debug, "%s", msg.str().c_str());
 }
 } //anonymous namespace
 

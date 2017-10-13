@@ -36,16 +36,11 @@ public:
     ~BucketDBUpdater();
 
     void flush();
-
     BucketOwnership checkOwnershipInPendingState(const document::BucketId&) const;
-
     void recheckBucketInfo(uint32_t nodeIdx, const document::BucketId& bid);
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
-
-    bool onRequestBucketInfoReply(
-            const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
-
+    bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
     void resendDelayedMessages();
@@ -72,8 +67,7 @@ private:
     ManagedBucketSpaceComponent _bucketSpaceComponent;
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(BucketDBUpdater& updater,
-                        const std::shared_ptr<api::MergeBucketReply>& reply)
+        MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply)
             : _updater(updater), _reply(reply) {}
 
         ~MergeReplyGuard();
@@ -90,9 +84,7 @@ private:
         BucketRequest()
             : targetNode(0), bucket(0), timestamp(0) {};
 
-        BucketRequest(uint16_t t,
-                      uint64_t currentTime,
-                      const document::BucketId& b,
+        BucketRequest(uint16_t t, uint64_t currentTime, const document::BucketId& b,
                       const std::shared_ptr<MergeReplyGuard>& guard)
             : targetNode(t),
               bucket(b),
@@ -112,8 +104,7 @@ private:
 
         EnqueuedBucketRecheck() : node(0), bucket() {}
 
-        EnqueuedBucketRecheck(uint16_t _node,
-                              const document::BucketId& _bucket)
+        EnqueuedBucketRecheck(uint16_t _node, const document::BucketId& _bucket)
           : node(_node),
             bucket(_bucket)
         {}
@@ -130,35 +121,21 @@ private:
     };
 
     bool hasPendingClusterState() const;
-
-    void clearPending(uint16_t node);
-
-    bool pendingClusterStateAccepted(
-            const std::shared_ptr<api::RequestBucketInfoReply>& repl);
-    bool bucketOwnedAccordingToPendingState(
-            const document::BucketId& bucketId) const;
-    bool processSingleBucketInfoReply(
-            const std::shared_ptr<api::RequestBucketInfoReply>& repl);
-    void handleSingleBucketInfoFailure(
-            const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-            const BucketRequest& req);
+    bool pendingClusterStateAccepted(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
+    bool bucketOwnedAccordingToPendingState(const document::BucketId& bucketId) const;
+    bool processSingleBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
+    void handleSingleBucketInfoFailure(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
+                                       const BucketRequest& req);
     bool isPendingClusterStateCompleted() const;
     void processCompletedPendingClusterState();
-    void mergeBucketInfoWithDatabase(
-            const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-            const BucketRequest& req);
-    void convertBucketInfoToBucketList(
-            const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-            uint16_t targetNode,
-            BucketListMerger::BucketList& newList);
-    void sendRequestBucketInfo(
-            uint16_t node,
-            const document::BucketId& bucket,
-            const std::shared_ptr<MergeReplyGuard>& mergeReply);
-    void addBucketInfoForNode(
-            const BucketDatabase::Entry& e,
-            uint16_t node,
-            BucketListMerger::BucketList& existing) const;
+    void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
+                                     const BucketRequest& req);
+    void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
+                                       uint16_t targetNode, BucketListMerger::BucketList& newList);
+    void sendRequestBucketInfo(uint16_t node, const document::BucketId& bucket,
+                               const std::shared_ptr<MergeReplyGuard>& mergeReply);
+    void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
+                              BucketListMerger::BucketList& existing) const;
     void ensureTransitionTimerStarted();
     void completeTransitionTimer();
     /**
@@ -167,10 +144,8 @@ private:
      * in bucketId, or that bucketId is contained in, that have copies
      * on the given node.
      */
-    void findRelatedBucketsInDatabase(
-            uint16_t node,
-            const document::BucketId& bucketId,
-            BucketListMerger::BucketList& existing);
+    void findRelatedBucketsInDatabase(uint16_t node, const document::BucketId& bucketId,
+                                      BucketListMerger::BucketList& existing);
 
     /**
        Updates the bucket database from the information generated by the given
@@ -178,18 +153,15 @@ private:
     */
     void updateDatabase(uint16_t node, BucketListMerger& merger);
 
-    void updateState(const lib::ClusterState& oldState,
-                     const lib::ClusterState& newState);
+    void updateState(const lib::ClusterState& oldState, const lib::ClusterState& newState);
 
-    void removeSuperfluousBuckets(const lib::Distribution& newDistribution,
-                                  const lib::ClusterState& newState);
+    void removeSuperfluousBuckets(const lib::Distribution& newDistribution, const lib::ClusterState& newState);
 
     void replyToPreviousPendingClusterStateIfAny();
 
     void enableCurrentClusterStateInDistributor();
     void addCurrentStateToClusterStateHistory();
-    void enqueueRecheckUntilPendingStateEnabled(uint16_t node,
-                                                const document::BucketId&);
+    void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::BucketId&);
     void sendAllQueuedBucketRechecks();
 
     friend class BucketDBUpdater_Test;
@@ -198,8 +170,7 @@ private:
     class BucketListGenerator
     {
     public:
-        BucketListGenerator(uint16_t node,
-                            BucketListMerger::BucketList& entries)
+        BucketListGenerator(uint16_t node, BucketListMerger::BucketList& entries)
             : _node(node), _entries(entries) {};
 
         bool process(BucketDatabase::Entry&);
@@ -237,8 +208,7 @@ private:
             return _removedBuckets;
         }
     private:
-        void setCopiesInEntry(BucketDatabase::Entry& e,
-                              const std::vector<BucketCopy>& copies) const;
+        void setCopiesInEntry(BucketDatabase::Entry& e, const std::vector<BucketCopy>& copies) const;
         void removeEmptyBucket(const document::BucketId& bucketId);
 
         const lib::ClusterState _oldState;

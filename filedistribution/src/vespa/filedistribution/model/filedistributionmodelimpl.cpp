@@ -13,10 +13,10 @@ LOG_SETUP(".filedistributionmodel");
 namespace fs = boost::filesystem;
 
 using filedistribution::ZKFileDBModel;
+using std::make_shared;
 
 namespace {
 //peer format:  hostName:port
-
 
 void
 addPeerEntry(const std::string& peer,
@@ -73,8 +73,7 @@ struct FileDistributionModelImpl::DeployedFilesChangedCallback :
 
     std::weak_ptr<FileDistributionModelImpl> _parent;
 
-    DeployedFilesChangedCallback(
-            const std::shared_ptr<FileDistributionModelImpl> & parent)
+    DeployedFilesChangedCallback(const std::shared_ptr<FileDistributionModelImpl> & parent)
         :_parent(parent)
     {}
 
@@ -111,7 +110,7 @@ FileDistributionModelImpl::getPeers(const std::string& fileReference, size_t max
         LOG(debug, "Found %zu peers for path '%s'", result.size(), path.string().c_str());
         return result;
     } catch(ZKNodeDoesNotExistsException&) {
-        LOG(debug, ("No peer entries available for " + fileReference).c_str());
+        LOG(debug, "No peer entries available for '%s'", fileReference.c_str());
         return PeerEntries();
     }
 }
@@ -119,8 +118,7 @@ FileDistributionModelImpl::getPeers(const std::string& fileReference, size_t max
 fs::path
 FileDistributionModelImpl::getPeerEntryPath(const std::string& fileReference) {
     std::ostringstream entry;
-    entry <<_hostName
-          <<ZKFileDBModel::_peerEntrySeparator <<_port;
+    entry <<_hostName << ZKFileDBModel::_peerEntrySeparator <<_port;
 
     return _fileDBModel.getPeersPath(fileReference) / entry.str();
 }
@@ -167,8 +165,7 @@ std::set<std::string>
 FileDistributionModelImpl::getFilesToDownload() {
     DeployedFilesToDownload d(_zk.get());
     std::vector<std::string> deployed = d.getDeployedFilesToDownload(_hostName,
-            DeployedFilesChangedCallback::SP(
-                    new DeployedFilesChangedCallback(shared_from_this())));
+            make_shared<DeployedFilesChangedCallback>(shared_from_this()));
 
     std::set<std::string> result(deployed.begin(), deployed.end());
 
@@ -187,8 +184,7 @@ FileDistributionModelImpl::updateActiveFileReferences(
     std::sort(sortedFileReferences.begin(), sortedFileReferences.end());
 
     LockGuard guard(_activeFileReferencesMutex);
-    bool changed =
-        sortedFileReferences != _activeFileReferences;
+    bool changed = sortedFileReferences != _activeFileReferences;
 
     sortedFileReferences.swap(_activeFileReferences);
     return changed;

@@ -102,7 +102,7 @@
                         "", __VA_ARGS__);                          \
             }                                                      \
         }                                                          \
-    } while (0)
+    } while (false)
 #endif
 
 // Define LOGBM macro for logging buffered, using the message itself as a
@@ -121,7 +121,7 @@
                         "", __VA_ARGS__);                          \
             }                                                      \
         }                                                          \
-    } while (0)
+    } while (false)
 
 // Define LOGBP macro for logging buffered, using the call point as token.
 // (File/line of macro caller)
@@ -140,7 +140,7 @@
                         __FILE__, __LINE__, ost123.str(), ##ARGS); \
             }                                                      \
         }                                                          \
-    } while (0)
+    } while (false)
 
 // Define LOGT calls for using the buffer specifically stating token
 #define LOGBT(level, token, ...)                                 \
@@ -156,7 +156,7 @@
                         __FILE__, __LINE__, token, __VA_ARGS__); \
             }                                                    \
         }                                                        \
-    } while (0)
+    } while (false)
 
 #define LOGB_FLUSH() \
     ns_log::BufferedLogger::logger.flush()
