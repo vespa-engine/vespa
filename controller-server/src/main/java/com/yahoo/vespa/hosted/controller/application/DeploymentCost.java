@@ -49,12 +49,12 @@ public class DeploymentCost {
         return tco;
     }
 
-    /** @return The utilization of clusters that waists most money in this deployment */
+    /** @return The utilization of clusters that wastes most money in this deployment */
     public double getUtilization() {
         return utilization;
     }
 
-    /** @return The amount of dollars spend and not utilized */
+    /** @return The amount of dollars spent and not utilized */
     public double getWaste() {
         return waste;
     }
