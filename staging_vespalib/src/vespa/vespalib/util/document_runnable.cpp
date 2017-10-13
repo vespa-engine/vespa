@@ -2,7 +2,6 @@
 
 #include "document_runnable.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
 
 namespace document {
 
@@ -13,13 +12,18 @@ Runnable::Runnable(FastOS_ThreadPool* pool)
     if (pool) start(*pool);
 }
 
+Runnable::~Runnable() {
+    vespalib::MonitorGuard monitorGuard(_stateLock);
+    assert(_state == NOT_RUNNING);
+}
+
 bool Runnable::start(FastOS_ThreadPool& pool)
 {
     vespalib::MonitorGuard monitor(_stateLock);
     while (_state == STOPPING) monitor.wait();
     if (_state != NOT_RUNNING) return false;
     _state = STARTING;
-    if (pool.NewThread(this) == NULL) {
+    if (pool.NewThread(this) == nullptr) {
         throw vespalib::IllegalStateException("Faled starting a new thread", VESPA_STRLOC);
     }
     return true;
@@ -29,7 +33,6 @@ bool Runnable::stop()
 {
     vespalib::MonitorGuard monitor(_stateLock);
     if (_state == STOPPING || _state == NOT_RUNNING) return false;
-    while (_state == STARTING) monitor.wait();
     GetThread()->SetBreakFlag();
     _state = STOPPING;
     return onStop();
@@ -43,7 +46,7 @@ bool Runnable::onStop()
 bool Runnable::join() const
 {
     vespalib::MonitorGuard monitor(_stateLock);
-    if (_state == STARTING || _state == RUNNING) return false;
+    assert ((_state != STARTING) && (_state != RUNNING));
     while (_state != NOT_RUNNING) monitor.wait();
     return true;
 }
@@ -56,7 +59,6 @@ void Runnable::Run(FastOS_ThreadInterface*, void*)
         // called even though about to stop for consistency)
         if (_state == STARTING) {
             _state = RUNNING;
-            monitor.broadcast();
         }
     }
 
