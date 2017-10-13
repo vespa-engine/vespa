@@ -17,17 +17,21 @@
   "gitBranch": "master",
   "gitCommit": "commit1",
   "cost": {
-    "tco": 37,
-    "utilization": 5.999999999999999,
-    "waste": 0.0,
+    "tco": 74,
+    "waste": 0,
+    "utilization": 2.999999999999999,
     "cluster": {
       "cluster1": {
         "count": 2,
         "resource": "cpu",
         "utilization": 2.999999999999999,
-        "tco": 37,
-        "flavor": "flavor1",
+        "tco": 74,
         "waste": 0,
+        "flavor": "flavor1",
+        "flavorCost":37.0,
+        "flavorCpu":2.0,
+        "flavorMem":4.0,
+        "flavorDisk":50.0,
         "type": "content",
         "util": {
           "cpu": 2.999999999999999,

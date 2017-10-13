@@ -85,6 +85,9 @@ public class ApplicationSerializer {
     private final String clusterInfoField = "clusterInfo";
     private final String clusterInfoFlavorField = "flavor";
     private final String clusterInfoCostField = "cost";
+    private final String clusterInfoCpuField = "flavorCpu";
+    private final String clusterInfoMemField = "flavorMem";
+    private final String clusterInfoDiskField = "flavorDisk";
     private final String clusterInfoTypeField = "clusterType";
     private final String clusterInfoHostnamesField = "hostnames";
 
@@ -134,7 +137,10 @@ public class ApplicationSerializer {
 
     private void toSlime(ClusterInfo info, Cursor object) {
         object.setString(clusterInfoFlavorField, info.getFlavor());
-        object.setLong(clusterInfoCostField, info.getCost());
+        object.setLong(clusterInfoCostField, info.getFlavorCost());
+        object.setDouble(clusterInfoCpuField, info.getFlavorCPU());
+        object.setDouble(clusterInfoMemField, info.getFlavorMem());
+        object.setDouble(clusterInfoDiskField, info.getFlavorDisk());
         object.setString(clusterInfoTypeField, info.getClusterType().name());
         Cursor array = object.setArray(clusterInfoHostnamesField);
         for (String host : info.getHostnames()) {
@@ -274,10 +280,13 @@ public class ApplicationSerializer {
         String flavor = inspector.field(clusterInfoFlavorField).asString();
         int cost = (int)inspector.field(clusterInfoCostField).asLong();
         String type = inspector.field(clusterInfoTypeField).asString();
+        double flavorCpu = inspector.field(clusterInfoCpuField).asDouble();
+        double flavorMem = inspector.field(clusterInfoMemField).asDouble();
+        double flavorDisk = inspector.field(clusterInfoDiskField).asDouble();
 
         List<String> hostnames = new ArrayList<>();
         inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
-        return new ClusterInfo(flavor, cost, ClusterSpec.Type.from(type), hostnames);
+        return new ClusterInfo(flavor, cost, flavorCpu, flavorMem, flavorDisk, ClusterSpec.Type.from(type), hostnames);
     }
 
     private Zone zoneFromSlime(Inspector object) {

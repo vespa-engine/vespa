@@ -118,10 +118,13 @@ public class ApplicationSerializerTest {
 
         // Test cluster info
         assertEquals(3, serialized.deployments().get(zone2).clusterInfo().size());
-        assertEquals(10, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getCost());
+        assertEquals(10, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCost());
         assertEquals(ClusterSpec.Type.content, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getClusterType());
         assertEquals("flavor2", serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavor());
         assertEquals(4, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getHostnames().size());
+        assertEquals(2, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCPU(), Double.MIN_VALUE);
+        assertEquals(4, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorMem(), Double.MIN_VALUE);
+        assertEquals(50, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorDisk(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
             Application original2 = original.withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1"))));
@@ -153,7 +156,7 @@ public class ApplicationSerializerTest {
             }
 
             result.put(ClusterSpec.Id.from("id" + cluster), new ClusterInfo("flavor" + cluster, 10,
-                    ClusterSpec.Type.content, hostnames));
+                2, 4, 50, ClusterSpec.Type.content, hostnames));
         }
         return result;
     }

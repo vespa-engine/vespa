@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -15,6 +17,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -38,7 +41,7 @@ public class ClusterInfoMaintainer extends Maintainer {
         return node.membership.clusterId;
     }
 
-    private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes) {
+    private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes, Zone zone) {
         Map<ClusterSpec.Id, ClusterInfo> infoMap = new HashMap<>();
 
         // Group nodes by clusterid
@@ -53,9 +56,24 @@ public class ClusterInfoMaintainer extends Maintainer {
             //Assume they are all equal and use first node as a representatitve for the cluster
             NodeList.Node node = clusterNodes.get(0);
 
+            // Extract flavor info
+            double cpu = 0;
+            double mem = 0;
+            double disk = 0;
+            if (zone.nodeFlavors().isPresent()) {
+                Optional<Flavor> flavorOptional = zone.nodeFlavors().get().getFlavor(node.flavor);
+                if ((flavorOptional.isPresent())) {
+                    Flavor flavor = flavorOptional.get();
+                    cpu = flavor.getMinCpuCores();
+                    mem = flavor.getMinMainMemoryAvailableGb();
+                    disk = flavor.getMinMainMemoryAvailableGb();
+                }
+            }
+
             // Add to map
             List<String> hostnames = clusterNodes.stream().map(node1 -> node1.hostname).collect(Collectors.toList());
-            ClusterInfo inf = new ClusterInfo(node.flavor, node.cost, ClusterSpec.Type.from(node.membership.clusterType), hostnames);
+            ClusterInfo inf = new ClusterInfo(node.flavor, node.cost, cpu, mem, disk,
+                    ClusterSpec.Type.from(node.membership.clusterType), hostnames);
             infoMap.put(new ClusterSpec.Id(id), inf);
         }
 
@@ -71,7 +89,7 @@ public class ClusterInfoMaintainer extends Maintainer {
                     DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                     try {
                         NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
-                        Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes);
+                        Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
                         Application app = application.with(deployment.withClusterInfo(clusterInfo));
                         controller.applications().store(app, lock);
                     } catch (IOException ioe) {

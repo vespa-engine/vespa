@@ -1084,8 +1084,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
         object.setLong("tco", (long)deploymentCost.getTco());
+        object.setLong("waste", (long)deploymentCost.getWaste());
         object.setDouble("utilization", deploymentCost.getUtilization());
-        object.setDouble("waste", deploymentCost.getWaste());
         Cursor clustersObject = object.setObject("cluster");
         for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
             toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
@@ -1096,8 +1096,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
         object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
         object.setLong("tco", (int)clusterCost.getTco());
-        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
         object.setLong("waste", (int)clusterCost.getWaste());
+        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
+        object.setDouble("flavorCost", clusterCost.getClusterInfo().getFlavorCost());
+        object.setDouble("flavorCpu", clusterCost.getClusterInfo().getFlavorCPU());
+        object.setDouble("flavorMem", clusterCost.getClusterInfo().getFlavorMem());
+        object.setDouble("flavorDisk", clusterCost.getClusterInfo().getFlavorDisk());
         object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
         Cursor utilObject = object.setObject("util");
         utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());
