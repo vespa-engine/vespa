@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -173,7 +174,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.GET),
                               new File("application.json"));
         // GET an application deployment
-        addMockObservedApplicationCost(controllerTester);
+        setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", "", Request.Method.GET),
                               new File("deployment.json"));
         // POST a 'restart application' command
@@ -732,7 +733,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
 
-    private void addMockObservedApplicationCost(ContainerControllerTester controllerTester) {
+    /**
+     * Cluster info, utilization and deployment metrics are maintained async by maintainers.
+     *
+     * This sets these values as if the maintainers has been ran.
+     *
+     * @param controllerTester
+     */
+    private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
             try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
                 for (Deployment deployment : application.deployments().values()) {
@@ -745,6 +753,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                     deployment = deployment.withClusterInfo(clusterInfo);
                     deployment = deployment.withClusterUtils(clusterUtils);
+                    deployment = deployment.withMetrics(new DeploymentMetrics(1,2,3,4,5));
                     application = application.with(deployment);
                     controllerTester.controller().applications().store(application, lock);
                 }

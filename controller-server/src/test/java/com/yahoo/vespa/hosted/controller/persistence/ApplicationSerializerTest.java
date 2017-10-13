@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import org.junit.Test;
@@ -61,7 +62,7 @@ public class ApplicationSerializerTest {
         ApplicationRevision revision2 = ApplicationRevision.from("appHash2", new SourceRevision("repo1", "branch1", "commit1"));
         deployments.add(new Deployment(zone1, revision1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, revision2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                createClusterUtils(3, 0.2), createClusterInfo(3, 4)));
+                createClusterUtils(3, 0.2), createClusterInfo(3, 4),new DeploymentMetrics(2,3,4,5,6)));
 
         Optional<Long> projectId = Optional.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
@@ -122,6 +123,13 @@ public class ApplicationSerializerTest {
         assertEquals(ClusterSpec.Type.content, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getClusterType());
         assertEquals("flavor2", serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavor());
         assertEquals(4, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getHostnames().size());
+
+        // Test metrics
+        assertEquals(2, serialized.deployments().get(zone2).metrics().queriesPerSecond(), Double.MIN_VALUE);
+        assertEquals(3, serialized.deployments().get(zone2).metrics().writesPerSecond(), Double.MIN_VALUE);
+        assertEquals(4, serialized.deployments().get(zone2).metrics().documentCount(), Double.MIN_VALUE);
+        assertEquals(5, serialized.deployments().get(zone2).metrics().queryLatencyMillis(), Double.MIN_VALUE);
+        assertEquals(6, serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
             Application original2 = original.withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1"))));

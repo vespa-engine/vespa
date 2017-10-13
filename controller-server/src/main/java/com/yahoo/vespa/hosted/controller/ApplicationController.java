@@ -334,9 +334,10 @@ public class ApplicationController {
             Deployment previousDeployment = application.deployments().get(zone);
             Deployment newDeployment = previousDeployment;
             if (previousDeployment == null) {
-                newDeployment = new Deployment(zone, revision, version, clock.instant(), new HashMap<>(), new HashMap<>());
+                newDeployment = new Deployment(zone, revision, version, clock.instant());
             } else {
-                newDeployment = new Deployment(zone, revision, version, clock.instant(), previousDeployment.clusterUtils(), previousDeployment.clusterInfo());
+                newDeployment = new Deployment(zone, revision, version, clock.instant(),
+                        previousDeployment.clusterUtils(), previousDeployment.clusterInfo(), previousDeployment.metrics());
             }
 
             application = application.with(newDeployment);
