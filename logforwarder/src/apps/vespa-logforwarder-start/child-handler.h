@@ -8,5 +8,6 @@ private:
     bool _childRunning;
 public:
     void startChild(const vespalib::string &prefix);
+    void stopChild(const vespalib::string &prefix);
     ChildHandler();
 };

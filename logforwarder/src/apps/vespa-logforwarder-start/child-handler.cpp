@@ -78,3 +78,10 @@ ChildHandler::startChild(const vespalib::string &prefix)
     }
     runSplunk(prefix, "restart");
 }
+
+void
+ChildHandler::stopChild(const vespalib::string &prefix)
+{
+    runSplunk(prefix, "stop");
+    _childRunning = false;
+}

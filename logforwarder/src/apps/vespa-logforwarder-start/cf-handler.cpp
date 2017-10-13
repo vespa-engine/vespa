@@ -76,7 +76,13 @@ CfHandler::doConfigure()
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
 
-    childHandler.startChild(config.splunkHome);
+    if (config.clientName.size() == 0 ||
+        config.deploymentServer.size() == 0)
+    {
+        childHandler.stopChild(config.splunkHome);
+    } else {
+        childHandler.startChild(config.splunkHome);
+    }
 }
 
 void
