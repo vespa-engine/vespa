@@ -16,7 +16,7 @@ namespace storage {
 class BucketOwnershipNotifier;
 class TestAndSetHelper;
 
-class PersistenceThread : public DiskThread, public Types
+class PersistenceThread final : public DiskThread, public Types
 {
 public:
     PersistenceThread(ServiceLayerComponentRegister&,

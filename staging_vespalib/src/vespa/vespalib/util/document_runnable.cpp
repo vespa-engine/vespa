@@ -5,11 +5,11 @@
 
 namespace document {
 
-Runnable::Runnable(FastOS_ThreadPool* pool)
+Runnable::Runnable()
     : _stateLock(),
       _state(NOT_RUNNING)
 {
-    if (pool) start(*pool);
+    // if (pool) start(*pool);
 }
 
 Runnable::~Runnable() {
