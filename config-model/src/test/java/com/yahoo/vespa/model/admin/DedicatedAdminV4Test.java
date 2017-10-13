@@ -176,6 +176,7 @@ public class DedicatedAdminV4Test {
 
             assertEquals("foo:123", config.deploymentServer());
             assertEquals("foocli", config.clientName());
+            assertEquals("/opt/splunkforwarder", config.splunkHome());
         }
 
         // Other host's forwarder
