@@ -16,33 +16,19 @@ public:
     void unpack(uint32_t docid, MultiSearch & search) {
         const MultiSearch::Children & children(search.getChildren());
         size_t sz(children.size());
-        for (size_t i(0); i < sz; ) {
+        for (size_t i(0); i < sz; ++i) {
             if (__builtin_expect(children[i]->getDocId() < docid, false)) {
                 children[i]->doSeek(docid);
-                if (children[i]->getDocId() == search::endDocId) {
-                    sz = deactivate(search, i);
-                    continue;
-                }
             }
             if (__builtin_expect(children[i]->getDocId() == docid, false)) {
                 children[i]->doUnpack(docid);
             }
-            i++;
         }
     }
     void onRemove(size_t index) { (void) index; }
     void onInsert(size_t index) { (void) index; }
     bool needUnpack(size_t index) const { (void) index; return true; }
-private:
-    static size_t deactivate(MultiSearch &children, size_t idx);
 };
-
-size_t
-FullUnpack::deactivate(MultiSearch & search, size_t idx)
-{
-    search.remove(idx);
-    return search.getChildren().size();
-}
 
 class SelectiveUnpack
 {
