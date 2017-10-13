@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
@@ -30,9 +29,6 @@
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <mutex>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");
@@ -132,8 +128,6 @@ struct MyTracer
 struct ParamsContext
 {
     DocTypeName                          _docTypeName;
-    FeedMetrics                          _feedMetrics;
-    PerDocTypeFeedMetrics                _metrics;
     SearchableFeedView::PersistentParams _params;
 
     ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir);
@@ -143,9 +137,7 @@ struct ParamsContext
 
 ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir)
     : _docTypeName(docType),
-      _feedMetrics(),
-      _metrics(&_feedMetrics),
-      _params(0, 0, _docTypeName, _metrics, subdb_id, SubDbType::READY)
+      _params(0, 0, _docTypeName, subdb_id, SubDbType::READY)
 {
     (void) baseDir;
 }
@@ -420,11 +412,7 @@ struct MyTransport : public FeedToken::ITransport
     MyTracer &_tracer;
     MyTransport(MyTracer &tracer);
     ~MyTransport();
-    virtual void send(mbus::Reply::UP reply,
-                      ResultUP result,
-                      bool documentWasFound,
-                      double latency_ms) override {
-        (void) reply; (void) documentWasFound, (void) latency_ms;
+    void send(ResultUP result, bool ) override {
         lastResult = std::move(result);
         _tracer.traceAck(lastResult);
         _gate.countDown();
@@ -492,36 +480,20 @@ DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timesta
 {}
 DocumentContext::~DocumentContext() {}
 
-namespace {
-
-mbus::Reply::UP
-createReply(MessageType mtype)
-{
-    if (mtype == DocumentProtocol::REPLY_UPDATEDOCUMENT) {
-        return mbus::Reply::UP(new documentapi::UpdateDocumentReply);
-    } else if (mtype == DocumentProtocol::REPLY_REMOVEDOCUMENT) {
-        return mbus::Reply::UP(new documentapi::RemoveDocumentReply);
-    } else {
-        return mbus::Reply::UP(new documentapi::DocumentReply(mtype));
-    }
-}
-
-}  // namespace
-
 struct FeedTokenContext
 {
     MyTransport mt;
     FeedToken   ft;
     typedef std::shared_ptr<FeedTokenContext> SP;
     typedef std::vector<SP> List;
-    FeedTokenContext(MyTracer &tracer, MessageType mtype);
+    FeedTokenContext(MyTracer &tracer);
     ~FeedTokenContext();
 };
 
-FeedTokenContext::FeedTokenContext(MyTracer &tracer, MessageType mtype)
-    : mt(tracer), ft(mt, createReply(mtype))
+FeedTokenContext::FeedTokenContext(MyTracer &tracer)
+    : mt(tracer), ft(mt)
 {}
-FeedTokenContext::~FeedTokenContext() {}
+FeedTokenContext::~FeedTokenContext() = default;
 
 struct FixtureBase
 {
@@ -612,7 +584,7 @@ struct FixtureBase
     }
 
     void putAndWait(const DocumentContext &docCtx) {
-        FeedTokenContext token(_tracer, DocumentProtocol::REPLY_PUTDOCUMENT);
+        FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
         runInMaster([&] () { performPut(&token.ft, op); });
     }
@@ -624,7 +596,7 @@ struct FixtureBase
     }
 
     void updateAndWait(const DocumentContext &docCtx) {
-        FeedTokenContext token(_tracer, DocumentProtocol::REPLY_UPDATEDOCUMENT);
+        FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
         runInMaster([&] () { performUpdate(&token.ft, op); });
     }
@@ -636,13 +608,13 @@ struct FixtureBase
             getFeedView().handleRemove(token, op);
         } else {
             if (token != NULL) {
-                token->ack(op.getType(), pc._metrics);
+                token->ack();
             }
         }
     }
 
     void removeAndWait(const DocumentContext &docCtx) {
-        FeedTokenContext token(_tracer, DocumentProtocol::REPLY_REMOVEDOCUMENT);
+        FeedTokenContext token(_tracer);
         RemoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
         runInMaster([&] () { performRemove(&token.ft, op); });
     }

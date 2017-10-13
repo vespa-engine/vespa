@@ -182,17 +182,14 @@ PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace) const
 }
 
 PersistenceEngine::HandlerSnapshot::UP
-PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace,
-                                      const DocumentId &id) const
+PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace, const DocumentId &id) const
 {
     LockGuard guard(_lock);
     return _handlers.getHandlerSnapshot(bucketSpace, id);
 }
 
-PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner,
-                                     const IResourceWriteFilter &writeFilter,
-                                     ssize_t defaultSerializedSize,
-                                     bool ignoreMaxBytes)
+PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
+                                     ssize_t defaultSerializedSize, bool ignoreMaxBytes)
     : AbstractPersistenceProvider(),
       _defaultSerializedSize(defaultSerializedSize),
       _ignoreMaxBytes(ignoreMaxBytes),
@@ -216,8 +213,7 @@ PersistenceEngine::~PersistenceEngine()
 
 
 IPersistenceHandler::SP
-PersistenceEngine::putHandler(document::BucketSpace bucketSpace,
-                              const DocTypeName &docType,
+PersistenceEngine::putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
                               const IPersistenceHandler::SP &handler)
 {
     LockGuard guard(_lock);
@@ -226,8 +222,7 @@ PersistenceEngine::putHandler(document::BucketSpace bucketSpace,
 
 
 IPersistenceHandler::SP
-PersistenceEngine::getHandler(document::BucketSpace bucketSpace,
-                              const DocTypeName &docType) const
+PersistenceEngine::getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const
 {
     LockGuard guard(_lock);
     return _handlers.getHandler(bucketSpace, docType);
@@ -235,8 +230,7 @@ PersistenceEngine::getHandler(document::BucketSpace bucketSpace,
 
 
 IPersistenceHandler::SP
-PersistenceEngine::removeHandler(document::BucketSpace bucketSpace,
-                                 const DocTypeName &docType)
+PersistenceEngine::removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType)
 {
     // TODO: Grab bucket list and treat them as modified
     LockGuard guard(_lock);
@@ -367,8 +361,7 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
                                   docType.toString().c_str()));
     }
     TransportLatch latch(1);
-    FeedToken token(latch, mbus::Reply::UP(new documentapi::FeedReply(
-                           documentapi::DocumentProtocol::REPLY_PUTDOCUMENT)));
+    FeedToken token(latch);
     handler->handlePut(token, b, t, doc);
     latch.await();
     return latch.getResult();
@@ -390,7 +383,7 @@ PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, C
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch, Reply::UP(new RemoveDocumentReply));
+        FeedToken token(latch);
         handler->handleRemove(token, b, t, did);
     }
     latch.await();
@@ -421,7 +414,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     TransportLatch latch(1);
     if (handler.get() != NULL) {
-        FeedToken token(latch, mbus::Reply::UP(new documentapi::UpdateDocumentReply()));
+        FeedToken token(latch);
         LOG(debug, "update = %s", upd->toXml().c_str());
         handler->handleUpdate(token, b, t, upd);
         latch.await();
@@ -433,10 +426,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
 
 
 PersistenceEngine::GetResult
-PersistenceEngine::get(const Bucket& b,
-                       const document::FieldSet& fields,
-                       const DocumentId& did,
-                       Context& context) const
+PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const DocumentId& did, Context& context) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     HandlerSnapshot::UP snapshot = getHandlerSnapshot(b.getBucketSpace());
@@ -465,11 +455,8 @@ PersistenceEngine::get(const Bucket& b,
 
 
 PersistenceEngine::CreateIteratorResult
-PersistenceEngine::createIterator(const Bucket &bucket,
-                                  const document::FieldSet& fields,
-                                  const Selection &selection,
-                                  IncludedVersions versions,
-                                  Context & context)
+PersistenceEngine::createIterator(const Bucket &bucket, const document::FieldSet& fields, const Selection &selection,
+                                  IncludedVersions versions, Context & context)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     HandlerSnapshot::UP snapshot = getHandlerSnapshot(bucket.getBucketSpace());
@@ -552,7 +539,7 @@ PersistenceEngine::createBucket(const Bucket &b, Context &)
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch, Reply::UP(new DocumentReply(0)));
+        FeedToken token(latch);
         handler->handleCreateBucket(token, b);
     }
     latch.await();
@@ -569,7 +556,7 @@ PersistenceEngine::deleteBucket(const Bucket& b, Context&)
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch, Reply::UP(new DocumentReply(0)));
+        FeedToken token(latch);
         handler->handleDeleteBucket(token, b);
     }
     latch.await();
@@ -612,7 +599,7 @@ PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Buck
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch, Reply::UP(new DocumentReply(0)));
+        FeedToken token(latch);
         handler->handleSplit(token, source, target1, target2);
     }
     latch.await();
@@ -631,7 +618,7 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch, Reply::UP(new DocumentReply(0)));
+        FeedToken token(latch);
         handler->handleJoin(token, source1, source2, target);
     }
     latch.await();

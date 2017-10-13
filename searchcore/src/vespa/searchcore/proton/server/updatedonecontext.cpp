@@ -3,23 +3,14 @@
 #include "updatedonecontext.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
 
-namespace proton
-{
+namespace proton {
 
-
-UpdateDoneContext::UpdateDoneContext(std::unique_ptr<FeedToken> token,
-                                     const FeedOperation::Type opType,
-                                     PerDocTypeFeedMetrics &metrics,
-                                     const document::DocumentUpdate::SP &upd)
-    : OperationDoneContext(std::move(token), opType, metrics),
+UpdateDoneContext::UpdateDoneContext(std::unique_ptr<FeedToken> token, const document::DocumentUpdate::SP &upd)
+    : OperationDoneContext(std::move(token)),
       _upd(upd)
 {
 }
 
-
-UpdateDoneContext::~UpdateDoneContext()
-{
-}
-
+UpdateDoneContext::~UpdateDoneContext() = default;
 
 }  // namespace proton

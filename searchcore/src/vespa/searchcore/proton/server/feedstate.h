@@ -12,27 +12,22 @@
 
 namespace proton {
 
+class FeedOperation;
 
 /**
  * Class representing the current state of a feed handler.
  */
 class FeedState {
 public:
-    enum Type { NORMAL,
-                REPLAY_TRANSACTION_LOG,
-                INIT };
+    enum Type { NORMAL, REPLAY_TRANSACTION_LOG, INIT };
 
 private:
     Type _type;
 
 protected:
-    void throwExceptionInReceive(const vespalib::string &docType,
-                                 uint64_t serialRangeFrom,
-                                 uint64_t serialRangeTo,
-                                 size_t packetSize);
-
-    void throwExceptionInHandleOperation(const vespalib::string &docType,
-                                         const FeedOperation &op);
+    void throwExceptionInReceive(const vespalib::string &docType, uint64_t serialRangeFrom,
+                                 uint64_t serialRangeTo, size_t packetSize);
+    void throwExceptionInHandleOperation(const vespalib::string &docType, const FeedOperation &op);
 
 public:
     typedef std::shared_ptr<FeedState> SP;
@@ -43,11 +38,8 @@ public:
     Type getType() const { return _type; }
     vespalib::string getName() const;
 
-    virtual void handleOperation(FeedToken token, FeedOperation::UP op) = 0;
-
-    virtual void receive(const PacketWrapper::SP &wrap,
-                         vespalib::Executor &executor) = 0;
+    virtual void handleOperation(FeedToken token, std::unique_ptr<FeedOperation> op) = 0;
+    virtual void receive(const PacketWrapper::SP &wrap, vespalib::Executor &executor) = 0;
 };
 
 }  // namespace proton
-

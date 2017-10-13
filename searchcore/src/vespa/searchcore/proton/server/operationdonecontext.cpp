@@ -5,12 +5,8 @@
 
 namespace proton {
 
-OperationDoneContext::OperationDoneContext(std::unique_ptr<FeedToken> token,
-                                           const FeedOperation::Type opType,
-                                           PerDocTypeFeedMetrics &metrics)
-    : _token(std::move(token)),
-      _opType(opType),
-      _metrics(metrics)
+OperationDoneContext::OperationDoneContext(std::unique_ptr<FeedToken> token)
+    : _token(std::move(token))
 {
 }
 
@@ -24,7 +20,7 @@ OperationDoneContext::ack()
 {
     if (_token) {
         std::unique_ptr<FeedToken> token(std::move(_token));
-        token->ack(_opType, _metrics);
+        token->ack();
     }
 }
 

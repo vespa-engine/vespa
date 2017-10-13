@@ -1,57 +1,39 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace proton;
 
 class LocalTransport : public FeedToken::ITransport {
 private:
-    mbus::Receptor _receptor;
-    double         _latency_ms;
+    size_t _receivedCount;
 
 public:
     LocalTransport()
-        : _receptor(),
-          _latency_ms(0.0)
-    {
-        // empty
+        : _receivedCount(0)
+    { }
+
+    void send(ResultUP, bool) override {
+        _receivedCount++;
     }
 
-    void send(mbus::Reply::UP reply, ResultUP, bool, double latency_ms) override {
-        _receptor.handleReply(std::move(reply));
-        _latency_ms = latency_ms;
-    }
-
-    mbus::Reply::UP getReply() {
-        return _receptor.getReply();
-    }
-
-    double getLatencyMs() const {
-        return _latency_ms;
-    }
+    size_t getReceivedCount() const { return _receivedCount; }
 };
 
 class Test : public vespalib::TestApp {
 private:
     void testAck();
-    void testAutoReply();
     void testFail();
     void testHandover();
-    void testIntegrity();
 
 public:
     int Main() override {
         TEST_INIT("feedtoken_test");
 
         testAck();       TEST_FLUSH();
-//        testAutoReply(); TEST_FLUSH();
         testFail();      TEST_FLUSH();
         testHandover();  TEST_FLUSH();
-//        testIntegrity(); TEST_FLUSH();
 
         TEST_DONE();
     }
@@ -63,41 +45,18 @@ void
 Test::testAck()
 {
     LocalTransport transport;
-    mbus::Reply::UP msg(new documentapi::RemoveDocumentReply());
-    FeedToken token(transport, std::move(msg));
+    FeedToken token(transport);
     token.ack();
-    mbus::Reply::UP reply = transport.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
-    EXPECT_TRUE(!reply->hasErrors());
-}
-
-void
-Test::testAutoReply()
-{
-    mbus::Receptor receptor;
-    mbus::Reply::UP reply(new documentapi::RemoveDocumentReply());
-    reply->pushHandler(receptor);
-    {
-        LocalTransport transport;
-        FeedToken token(transport, std::move(reply));
-    }
-    reply = receptor.getReply(0);
-    ASSERT_TRUE(reply.get() != NULL);
-    EXPECT_TRUE(reply->hasErrors());
+    EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
 void
 Test::testFail()
 {
     LocalTransport transport;
-    mbus::Reply::UP reply(new documentapi::RemoveDocumentReply());
-    FeedToken token(transport, std::move(reply));
-    token.fail(69, "6699");
-    reply = transport.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL(69u, reply->getError(0).getCode());
-    EXPECT_EQUAL("6699", reply->getError(0).getMessage());
+    FeedToken token(transport);
+    token.fail();
+    EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
 void
@@ -110,25 +69,11 @@ Test::testHandover()
     };
 
     LocalTransport transport;
-    mbus::Reply::UP reply(new documentapi::RemoveDocumentReply());
 
-    FeedToken token(transport, std::move(reply));
+    FeedToken token(transport);
     token = MyHandover::handover(token);
     token.ack();
-    reply = transport.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
-void
-Test::testIntegrity()
-{
-    LocalTransport transport;
-    try {
-        FeedToken token(transport, mbus::Reply::UP());
-        EXPECT_TRUE(false); // should throw an exception
-    } catch (vespalib::IllegalArgumentException &e) {
-        (void)e; // expected
-    }
-}
 

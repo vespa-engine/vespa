@@ -9,11 +9,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 
-namespace search {
-
-class IDestructorCallback;
-
-}
+namespace search { class IDestructorCallback; }
 
 namespace proton {
 
