@@ -33,9 +33,7 @@ Component::Component(ComponentRegister& cr, vespalib::stringref name)
     cr.registerComponent(*this);
 }
 
-Component::~Component()
-{
-}
+Component::~Component() = default;
 
 void
 Component::registerComponentStateListener(ComponentStateListener& l)
@@ -67,8 +65,7 @@ Component::registerMetricUpdateHook(MetricUpdateHook& hook, SecondTime period)
     assert(_metricUpdateHook.first == 0);
     _metricUpdateHook = std::make_pair(&hook, period);
     if (_metricReg != 0) {
-        _metricReg->registerUpdateHook(
-                _name, *_metricUpdateHook.first, _metricUpdateHook.second);
+        _metricReg->registerUpdateHook(_name, *_metricUpdateHook.first, _metricUpdateHook.second);
     }
 }
 
@@ -86,8 +83,7 @@ void
 Component::setMetricRegistrator(MetricRegistrator& mr) {
     _metricReg = &mr;
     if (_metricUpdateHook.first != 0) {
-        _metricReg->registerUpdateHook(
-                _name, *_metricUpdateHook.first, _metricUpdateHook.second);
+        _metricReg->registerUpdateHook(_name, *_metricUpdateHook.first, _metricUpdateHook.second);
     }
     if (_metric != 0) {
         _metricReg->registerMetric(*_metric);
@@ -117,16 +113,10 @@ Component::getClock() const
 
     // Helper functions for components wanting to start a single thread.
 Thread::UP
-Component::startThread(Runnable& runnable,
-                       MilliSecTime waitTime,
-                       MilliSecTime maxProcessTime,
-                       int ticksBeforeWait)
+Component::startThread(Runnable& runnable, MilliSecTime waitTime, MilliSecTime maxProcessTime, int ticksBeforeWait)
 {
-    return getThreadPool().startThread(runnable,
-                                       getName(),
-                                       waitTime.getTime(),
-                                       maxProcessTime.getTime(),
-                                       ticksBeforeWait);
+    return getThreadPool().startThread(runnable, getName(), waitTime.getTime(),
+                                       maxProcessTime.getTime(), ticksBeforeWait);
 }
 
 void

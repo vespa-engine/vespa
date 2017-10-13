@@ -19,9 +19,8 @@
 #include "process.h"
 #include <vespa/storage/storageserver/servicelayernodecontext.h>
 #include <vespa/storage/common/visitorfactory.h>
-#include <vespa/config/config.h>
-#include <vespa/config/helper/configfetcher.h>
-#include <vespa/config-persistence.h>
+
+namespace config { class ConfigUri; }
 
 namespace storage {
 

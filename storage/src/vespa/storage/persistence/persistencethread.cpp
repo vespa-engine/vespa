@@ -5,7 +5,6 @@
 #include "bucketownershipnotifier.h"
 #include "testandsethelper.h"
 #include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
@@ -24,15 +23,8 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
                                      FileStorHandler& filestorHandler,
                                      FileStorThreadMetrics& metrics,
                                      uint16_t deviceIndex,
-                                     uint8_t lowestPriority,
-                                     bool startThread)
-    : _env(configUri,
-           compReg,
-           filestorHandler,
-           metrics,
-           deviceIndex,
-           lowestPriority,
-           provider),
+                                     uint8_t lowestPriority)
+    : _env(configUri, compReg, filestorHandler, metrics, deviceIndex, lowestPriority, provider),
       _warnOnSlowOperations(5000),
       _spi(provider),
       _processAllHandler(_env, provider),
@@ -43,13 +35,10 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
       _flushMonitor(),
       _closed(false)
 {
-    (void) startThread;
     std::ostringstream threadName;
-    threadName << "Disk " << _env._partition << " thread "
-               << (void*) this;
+    threadName << "Disk " << _env._partition << " thread " << (void*) this;
     _component.reset(new ServiceLayerComponent(compReg, threadName.str()));
-    _bucketOwnershipNotifier.reset(
-            new BucketOwnershipNotifier(*_component, filestorHandler));
+    _bucketOwnershipNotifier.reset(new BucketOwnershipNotifier(*_component, filestorHandler));
     framework::MilliSecTime maxProcessingTime(60 * 1000);
     framework::MilliSecTime waitTime(1000);
     _thread = _component->startThread(*this, maxProcessingTime, waitTime);
@@ -57,8 +46,7 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
 
 PersistenceThread::~PersistenceThread()
 {
-    LOG(debug, "Shutting down persistence thread. Waiting for current "
-               "operation to finish.");
+    LOG(debug, "Shutting down persistence thread. Waiting for current operation to finish.");
     _thread->interrupt();
     LOG(debug, "Waiting for thread to terminate.");
     _thread->join();
@@ -66,8 +54,7 @@ PersistenceThread::~PersistenceThread()
 }
 
 spi::Bucket
-PersistenceThread::getBucket(const DocumentId& id,
-                             const BucketId& bucket) const
+PersistenceThread::getBucket(const DocumentId& id, const BucketId& bucket) const
 {
     BucketId docBucket(_env._bucketFactory.getBucketId(id));
     docBucket.setUsedBits(bucket.getUsedBits());
@@ -82,8 +69,7 @@ PersistenceThread::getBucket(const DocumentId& id,
 }
 
 bool
-PersistenceThread::checkForError(const spi::Result& response,
-                             MessageTracker& tracker)
+PersistenceThread::checkForError(const spi::Result& response, MessageTracker& tracker)
 {
     uint32_t code = _env.convertErrorCode(response);
 

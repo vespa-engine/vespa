@@ -42,7 +42,8 @@ public:
      * Create a runnable.
      * @param pool If set, runnable will be started in constructor.
      */
-    Runnable(FastOS_ThreadPool* pool = 0);
+    Runnable();
+    ~Runnable();
 
     /**
      * Start this runnable.

@@ -49,12 +49,8 @@ class ThreadImpl : public Thread
     void run();
 
 public:
-    ThreadImpl(ThreadPoolImpl&,
-               Runnable&,
-               vespalib::stringref id,
-               uint64_t waitTimeMs,
-	       uint64_t maxProcessTimeMs,
-	       int ticksBeforeWait);
+    ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, uint64_t waitTimeMs,
+               uint64_t maxProcessTimeMs, int ticksBeforeWait);
     ~ThreadImpl();
 
     bool interrupted() const override;

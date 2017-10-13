@@ -28,13 +28,11 @@ using StorServerConfigBuilder = vespa::config::content::core::StorServerConfigBu
 
 namespace storage {
 
-ServiceLayerNode::ServiceLayerNode(
-        const config::ConfigUri & configUri,
-        ServiceLayerNodeContext& context,
-        ApplicationGenerationFetcher& generationFetcher,
-        spi::PersistenceProvider& persistenceProvider,
-        const VisitorFactory::Map& externalVisitors)
-    : StorageNode(configUri, context, generationFetcher, std::unique_ptr<HostInfo>(new HostInfo)),
+ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceLayerNodeContext& context,
+                                   ApplicationGenerationFetcher& generationFetcher,
+                                   spi::PersistenceProvider& persistenceProvider,
+                                   const VisitorFactory::Map& externalVisitors)
+    : StorageNode(configUri, context, generationFetcher, std::make_unique<HostInfo>()),
       _context(context),
       _persistenceProvider(persistenceProvider),
       _partitions(0),
