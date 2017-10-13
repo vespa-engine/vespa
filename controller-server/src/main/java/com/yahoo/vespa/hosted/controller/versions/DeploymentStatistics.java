@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Statistics about deployments on a platform version. This is immutable.
@@ -18,8 +19,9 @@ public class DeploymentStatistics {
     private final ImmutableList<ApplicationId> failing;
     private final ImmutableList<ApplicationId> production;
 
-    private DeploymentStatistics(Version version,
-                                 List<ApplicationId> failingApplications, List<ApplicationId> production) {
+    /** DO NOT USE. Public for serialization purposes */
+    public DeploymentStatistics(Version version, List<ApplicationId> failingApplications,
+                                List<ApplicationId> production) {
         this.version = version;
         this.failing = ImmutableList.copyOf(failingApplications);
         this.production = ImmutableList.copyOf(production);
@@ -59,4 +61,18 @@ public class DeploymentStatistics {
         return b.build();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DeploymentStatistics)) return false;
+        DeploymentStatistics that = (DeploymentStatistics) o;
+        return Objects.equals(version, that.version) &&
+               Objects.equals(failing, that.failing) &&
+               Objects.equals(production, that.production);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, failing, production);
+    }
 }

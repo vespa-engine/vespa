@@ -46,7 +46,7 @@ public class VersionStatus {
 
     private final ImmutableList<VespaVersion> versions;
     
-    /** Create a version status. DO NOT USE: Public for testing only */
+    /** Create a version status. DO NOT USE: Public for testing and serialization only */
     public VersionStatus(List<VespaVersion> versions) {
         this.versions = ImmutableList.copyOf(versions);
     }
@@ -175,11 +175,13 @@ public class VersionStatus {
                                               Collection<String> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
+        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
         return new VespaVersion(statistics,
-                                gitSha.sha, Instant.ofEpochMilli(gitSha.commit.author.date.getTime()),
+                                gitSha.sha, releasedAt,
                                 isSystemVersion,
                                 configServerHostnames,
-                                controller);
+                                VespaVersion.confidenceFrom(statistics, controller, releasedAt)
+        );
     }
 
 }

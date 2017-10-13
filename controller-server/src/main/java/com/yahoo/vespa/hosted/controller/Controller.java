@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -40,7 +41,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -64,15 +64,7 @@ public class Controller extends AbstractComponent {
     private final CuratorDb curator;
     private final ApplicationController applicationController;
     private final TenantController tenantController;
-    
-    /** 
-     * Status of Vespa versions across the system. 
-     * This is expensive to maintain so that is done periodically by a maintenance job 
-     */
-    private final AtomicReference<VersionStatus> versionStatus;
-    
     private final Clock clock;
-
     private final RotationRepository rotationRepository;
     private final GitHub gitHub;
     private final EntityService entityService;
@@ -141,7 +133,6 @@ public class Controller extends AbstractComponent {
         applicationController = new ApplicationController(this, db, curator, rotationRepository, athens.zmsClientFactory(),
                                                           nameService, configServerClient, routingGenerator, clock);
         tenantController = new TenantController(this, db, curator, entityService);
-        versionStatus = new AtomicReference<>(VersionStatus.empty());
     }
     
     /** Returns the instance controlling tenants */
@@ -191,11 +182,7 @@ public class Controller extends AbstractComponent {
                              "sort:!('@timestamp',desc))";
 
         URI kibanaPath = URI.create(kibanaQuery);
-        if (kibanaHost.isPresent()) {
-            return kibanaHost.get().resolve(kibanaPath);
-        } else {
-            return null;
-        }
+        return kibanaHost.map(uri -> uri.resolve(kibanaPath)).orElse(null);
     }
 
     public Set<URI> getRotationUris(ApplicationId id) {
@@ -235,17 +222,19 @@ public class Controller extends AbstractComponent {
             ! newStatus.systemVersion().equals(currentStatus.systemVersion())) {
             log.info("Changing system version from " + printableVersion(currentStatus.systemVersion()) +
                      " to " + printableVersion(newStatus.systemVersion()));
-            curator.writeSystemVersion(newStatus.systemVersion().get().versionNumber());
         }
-
-        this.versionStatus.set(newStatus); 
+        curator.writeVersionStatus(newStatus);
     }
     
     /** Returns the latest known version status. Calling this is free but the status may be slightly out of date. */
-    public VersionStatus versionStatus() { return versionStatus.get(); }
+    public VersionStatus versionStatus() { return curator.readVersionStatus(); }
     
     /** Returns the current system version: The controller should drive towards running all applications on this version */
-    public Version systemVersion() { return curator.readSystemVersion(); }
+    public Version systemVersion() {
+        return versionStatus().systemVersion()
+                .map(VespaVersion::versionNumber)
+                .orElse(Vtag.currentVersion);
+    }
 
     public MetricsService metricsService() { return metricsService; }
 

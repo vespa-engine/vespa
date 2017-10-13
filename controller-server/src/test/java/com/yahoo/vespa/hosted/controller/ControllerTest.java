@@ -260,16 +260,19 @@ public class ControllerTest {
         Version systemVersion = controller.versionStatus().systemVersion().get().versionNumber();
         Version newSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor()+1, 0);
         VespaVersion newSystemVespaVersion = new VespaVersion(DeploymentStatistics.empty(newSystemVersion),
-                                                              "commit1", 
+                                                              "commit1",
                                                               Instant.now(),
                                                               true,
                                                               Collections.emptyList(),
-                                                              controller);
+                                                              VespaVersion.Confidence.low
+        );
         List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
         for (int i = 0; i < versions.size(); i++) {
             VespaVersion c = versions.get(i);
             if (c.isCurrentSystemVersion())
-                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.releasedAt(), false, c.configServerHostnames(), controller));
+                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.releasedAt(),
+                                                 false, c.configServerHostnames(),
+                                                 c.confidence()));
         }
         versions.add(newSystemVespaVersion);
         controller.updateVersionStatus(new VersionStatus(versions));
