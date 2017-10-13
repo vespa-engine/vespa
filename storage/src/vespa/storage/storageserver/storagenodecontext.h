@@ -53,8 +53,7 @@ struct StorageNodeContext {
 protected:
         // Initialization has been split in two as subclass needs to initialize
         // component register before sending it on.
-    StorageNodeContext(ComponentRegister::UP,
-                              framework::Clock::UP);
+    StorageNodeContext(ComponentRegister::UP, framework::Clock::UP);
 
 private:
     ComponentRegister::UP _componentRegister;

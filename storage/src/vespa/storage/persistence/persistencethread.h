@@ -25,8 +25,7 @@ public:
                       FileStorHandler& filestorHandler,
                       FileStorThreadMetrics& metrics,
                       uint16_t deviceIndex,
-                      uint8_t lowestPriority,
-                      bool startThread = false);
+                      uint8_t lowestPriority);
     ~PersistenceThread();
 
     /** Waits for current operation to be finished. */
@@ -72,22 +71,18 @@ private:
     vespalib::Monitor _flushMonitor;
     bool              _closed;
 
-    void setBucketInfo(MessageTracker& tracker,
-                       const document::BucketId& bucketId);
+    void setBucketInfo(MessageTracker& tracker, const document::BucketId& bucketId);
 
-    bool checkProviderBucketInfoMatches(const spi::Bucket&,
-                                        const api::BucketInfo&) const;
+    bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
 
-    void updateBucketDatabase(const document::BucketId& id,
-                              const api::BucketInfo& info);
+    void updateBucketDatabase(const document::BucketId& id, const api::BucketInfo& info);
 
     /**
      * Sanity-checking of join command parameters. Invokes tracker.fail() with
      * an appropriate error and returns false iff the command does not validate
      * OK. Returns true and does not touch the tracker otherwise.
      */
-    bool validateJoinCommand(const api::JoinBucketsCommand& cmd,
-                             MessageTracker& tracker) const;
+    bool validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker) const;
 
     // Message handling functions
     MessageTracker::UP handleCommand(api::StorageCommand&);
@@ -102,8 +97,7 @@ private:
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
     spi::Bucket getBucket(const DocumentId& id, const BucketId& bucket) const;
 
-    void flushAllReplies(const document::BucketId& bucketId,
-                         std::vector<MessageTracker::UP>& trackers);
+    void flushAllReplies(const document::BucketId& bucketId, std::vector<MessageTracker::UP>& trackers);
 
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);
