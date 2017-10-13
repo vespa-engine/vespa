@@ -287,6 +287,10 @@ private:
     virtual void doSeek(uint32_t docid) override { (void) docid; }
 };
 
+struct MultiSearchRemoveTest {
+    static SearchIterator::UP remove(MultiSearch &ms, size_t idx) { return ms.remove(idx); }
+};
+
 TEST("testMultiSearch") {
     MultiSearch::Children children;
     children.push_back(new EmptySearch());
@@ -300,7 +304,7 @@ TEST("testMultiSearch") {
     EXPECT_EQUAL(0u, ms._accumInsert);
     EXPECT_EQUAL(0u, ms._accumRemove);
 
-    EXPECT_EQUAL(children[1], ms.remove(1).get());
+    EXPECT_EQUAL(children[1], MultiSearchRemoveTest::remove(ms, 1).get());
     EXPECT_EQUAL(2u, ms.getChildren().size());
     EXPECT_EQUAL(children[0], ms.getChildren()[0]);
     EXPECT_EQUAL(children[2], ms.getChildren()[1]);
