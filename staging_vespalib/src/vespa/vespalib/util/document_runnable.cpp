@@ -9,7 +9,6 @@ Runnable::Runnable()
     : _stateLock(),
       _state(NOT_RUNNING)
 {
-    // if (pool) start(*pool);
 }
 
 Runnable::~Runnable() {
