@@ -3,13 +3,13 @@
 
 #include <vespa/config/config.h>
 #include <vespa/config-logforwarder.h>
+#include "child-handler.h"
 
 using cloud::config::LogforwarderConfig;
 
 class CfHandler {
 private:
-    bool _childRunning;
-    void startChild(const vespalib::string &prefix);
+    ChildHandler childHandler;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<LogforwarderConfig>::UP _handle;
     void subscribe(const std::string & configId, uint64_t timeoutMS);

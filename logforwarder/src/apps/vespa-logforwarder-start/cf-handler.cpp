@@ -13,7 +13,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".cf-handler");
 
-CfHandler::CfHandler() : _childRunning(false), _subscriber() {}
+CfHandler::CfHandler() : _subscriber() {}
 
 CfHandler::~CfHandler()
 {
@@ -54,26 +54,6 @@ cfFilePath(const vespalib::string &parent) {
     return path;
 }
 
-void
-runSplunk(const vespalib::string &prefix, const char *a1, const char *a2 = 0)
-{
-    const char *argv[] = { 0, a1, a2, 0 };
-    vespalib::string path = prefix + "/bin/splunk";
-    argv[0] = path.c_str();
-    fprintf(stdout, "starting splunk forwarder with command: '%s' '%s'\n",
-            argv[0], argv[1]);
-    if (fork() == 0) {
-        vespalib::string env = "SPLUNK_HOME=" + prefix;
-        char *cenv = const_cast<char *>(env.c_str());
-        putenv(cenv);
-        char **cargv = const_cast<char **>(argv);
-        execv(argv[0], cargv);
-        // if execv fails:
-        perror(argv[0]);
-        exit(1);
-    }
-}
-
 } // namespace <unnamed>
 
 void
@@ -96,18 +76,7 @@ CfHandler::doConfigure()
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
 
-    startChild(config.splunkPath);
-}
-
-void
-CfHandler::startChild(const vespalib::string &prefix)
-{
-    if (_childRunning) {
-        runSplunk(prefix, "restart");
-    } else {
-        runSplunk(prefix, "start", "--accept-license");
-        _childRunning = true;
-    }
+    childHandler.startChild(config.splunkPath);
 }
 
 void
