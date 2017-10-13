@@ -62,7 +62,7 @@ CfHandler::doConfigure()
     std::unique_ptr<LogforwarderConfig> cfg(_handle->getConfig());
     const LogforwarderConfig& config(*cfg);
 
-    vespalib::string path = cfFilePath(config.splunkPath);
+    vespalib::string path = cfFilePath(config.splunkHome);
     vespalib::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
     if (fp == NULL) return;
@@ -76,7 +76,7 @@ CfHandler::doConfigure()
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
 
-    childHandler.startChild(config.splunkPath);
+    childHandler.startChild(config.splunkHome);
 }
 
 void

@@ -4,4 +4,4 @@ namespace=cloud.config
 
 deploymentServer string default=""
 clientName string default=""
-splunkPath string default="/opt/splunkforwarder"
+splunkHome string default="/opt/splunkforwarder"
