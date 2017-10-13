@@ -114,13 +114,14 @@ struct Domain {
     vespalib::string dimension;
     size_t size; // indexed
     std::vector<vespalib::string> keys; // mapped
+    Domain(const Domain &);
     Domain(const vespalib::string &dimension_in, size_t size_in)
         : dimension(dimension_in), size(size_in), keys() {}
     Domain(const vespalib::string &dimension_in, const std::vector<vespalib::string> &keys_in)
         : dimension(dimension_in), size(0), keys(keys_in) {}
     ~Domain();
 };
-
+Domain::Domain(const Domain &) = default;
 Domain::~Domain() {}
 
 using Layout = std::vector<Domain>;
