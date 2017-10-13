@@ -7,6 +7,7 @@
     </config>
 
     <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="access.log" />
+    <accesslog type="json" fileNamePattern="logs/vespa/configserver/json_access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="json_access.log" />
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
     <component id="com.yahoo.vespa.zookeeper.ZooKeeperServer" bundle="zkfacade" />
