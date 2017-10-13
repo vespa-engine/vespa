@@ -24,7 +24,7 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>application</artifactId>
+            <artifactId>container-test</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
