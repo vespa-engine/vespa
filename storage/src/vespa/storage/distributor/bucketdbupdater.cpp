@@ -51,7 +51,7 @@ BucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& inden
 bool
 BucketDBUpdater::hasPendingClusterState() const
 {
-    return (bool)_pendingClusterState;
+    return static_cast<bool>(_pendingClusterState);
 }
 
 BucketOwnership
