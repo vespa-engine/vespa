@@ -117,19 +117,16 @@ CombiningFeedView::preparePut(PutOperation &putOp)
 }
 
 void
-CombiningFeedView::handlePut(FeedToken *token,
-                             const PutOperation &putOp)
+CombiningFeedView::handlePut(FeedToken token, const PutOperation &putOp)
 {
     assert(putOp.getValidDbdId());
     uint32_t subDbId = putOp.getSubDbId();
     uint32_t prevSubDbId = putOp.getPrevSubDbId();
     if (putOp.getValidPrevDbdId() && prevSubDbId != subDbId) {
-        if (token != NULL)
-            token->incNeededAcks();
         _views[subDbId]->handlePut(token, putOp);
-        _views[prevSubDbId]->handlePut(token, putOp);
+        _views[prevSubDbId]->handlePut(std::move(token), putOp);
     } else {
-        _views[subDbId]->handlePut(token, putOp);
+        _views[subDbId]->handlePut(std::move(token), putOp);
     }
 }
 
@@ -143,14 +140,13 @@ CombiningFeedView::prepareUpdate(UpdateOperation &updOp)
 }
 
 void
-CombiningFeedView::handleUpdate(FeedToken *token,
-                                const UpdateOperation &updOp)
+CombiningFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 {
     assert(updOp.getValidDbdId());
     assert(updOp.getValidPrevDbdId());
     assert(!updOp.changedDbdId());
     uint32_t subDbId(updOp.getSubDbId());
-    _views[subDbId]->handleUpdate(token, updOp);
+    _views[subDbId]->handleUpdate(std::move(token), updOp);
 }
 
 void
@@ -165,19 +161,16 @@ CombiningFeedView::prepareRemove(RemoveOperation &rmOp)
 }
 
 void
-CombiningFeedView::handleRemove(FeedToken *token,
-                                const RemoveOperation &rmOp)
+CombiningFeedView::handleRemove(FeedToken token, const RemoveOperation &rmOp)
 {
     if (rmOp.getValidDbdId()) {
         uint32_t subDbId = rmOp.getSubDbId();
         uint32_t prevSubDbId = rmOp.getPrevSubDbId();
         if (rmOp.getValidPrevDbdId() && prevSubDbId != subDbId) {
-            if (token != NULL)
-                token->incNeededAcks();
             _views[subDbId]->handleRemove(token, rmOp);
-            _views[prevSubDbId]->handleRemove(token, rmOp);
+            _views[prevSubDbId]->handleRemove(std::move(token), rmOp);
         } else {
-            _views[subDbId]->handleRemove(token, rmOp);
+            _views[subDbId]->handleRemove(std::move(token), rmOp);
         }
     } else {
         assert(rmOp.getValidPrevDbdId());

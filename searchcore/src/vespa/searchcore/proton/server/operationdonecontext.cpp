@@ -5,7 +5,7 @@
 
 namespace proton {
 
-OperationDoneContext::OperationDoneContext(std::unique_ptr<FeedToken> token)
+OperationDoneContext::OperationDoneContext(FeedToken token)
     : _token(std::move(token))
 {
 }
@@ -18,10 +18,7 @@ OperationDoneContext::~OperationDoneContext()
 void
 OperationDoneContext::ack()
 {
-    if (_token) {
-        std::unique_ptr<FeedToken> token(std::move(_token));
-        token->ack();
-    }
+    _token.reset();
 }
 
 }  // namespace proton

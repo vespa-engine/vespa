@@ -28,10 +28,8 @@ class RemoveDoneContext : public OperationDoneContext
     PendingNotifyRemoveDone _pendingNotifyRemoveDone;
 
 public:
-    RemoveDoneContext(std::unique_ptr<FeedToken> token, vespalib::Executor &executor,
-                      IDocumentMetaStore &documentMetaStore, PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
-                      uint32_t lid);
-
+    RemoveDoneContext(FeedToken token, vespalib::Executor &executor, IDocumentMetaStore &documentMetaStore,
+                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone, uint32_t lid);
     ~RemoveDoneContext() override;
 };
 

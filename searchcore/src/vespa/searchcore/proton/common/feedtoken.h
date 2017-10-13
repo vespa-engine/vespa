@@ -23,15 +23,12 @@ public:
         virtual void send(ResultUP result, bool documentWasFound) = 0;
     };
 
-private:
     class State {
     public:
         State(const State &) = delete;
         State & operator = (const State &) = delete;
-        State(ITransport & transport, uint32_t numAcksRequired);
+        State(ITransport & transport);
         ~State();
-        void incNeededAcks();
-        void ack();
         void fail();
         void setResult(ResultUP result, bool documentWasFound) {
             _documentWasFound = documentWasFound;
@@ -39,10 +36,11 @@ private:
         }
         const storage::spi::Result &getResult() { return *_result; }
     private:
+        void ack();
         ITransport           &_transport;
         ResultUP              _result;
         bool                  _documentWasFound;
-        std::atomic<uint32_t> _unAckedCount;
+        std::atomic<bool>     _alreadySent;
     };
     std::shared_ptr<State> _state;
 
@@ -59,6 +57,7 @@ public:
      * @param transport The transport to pass the reply to.
      */
     FeedToken(ITransport &transport);
+    FeedToken();
 
     FeedToken(FeedToken &&) = default;
     FeedToken & operator =(FeedToken &&) = default;
@@ -66,16 +65,10 @@ public:
     FeedToken & operator =(const FeedToken &) = default;
     ~FeedToken() = default;
 
-    /**
-     * Passes a receipt back to the originating FeedEngine, declaring that this
-     * operation succeeded. If an error occured while processing the operation,
-     * use fail() instead. Invoking this and/or fail() more than once is void.
-     */
-    void ack() const { _state->ack(); }
-
-    void incNeededAcks() const {
-        _state->incNeededAcks();
-    }
+    explicit operator bool() const { return static_cast<bool>(_state); }
+    State * operator ->() { return _state.get(); }
+    const State * operator -> () const { return _state.get(); }
+    void reset() { _state.reset(); }
 
     /**
      * Passes a receipt back to the originating FeedEngine, declaring that this

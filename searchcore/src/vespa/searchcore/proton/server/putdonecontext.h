@@ -28,7 +28,7 @@ class PutDoneContext : public OperationDoneContext
     bool _enableNotifyPut;
 
 public:
-    PutDoneContext(std::unique_ptr<FeedToken> token, IGidToLidChangeHandler &gidToLidChangeHandler,
+    PutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
                    const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum, bool enableNotifyPut);
     ~PutDoneContext() override;
 

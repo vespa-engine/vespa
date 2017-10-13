@@ -11,6 +11,7 @@
 #include "transactionlogmanager.h"
 #include <persistence/spi/types.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 
 namespace searchcorespi { namespace index { class IThreadingService; } }
@@ -101,24 +102,24 @@ private:
      */
     void doHandleOperation(FeedToken token, FeedOperationUP op);
 
-    bool considerWriteOperationForRejection(FeedToken *token, const FeedOperation &op);
+    bool considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op);
 
     /**
      * Delayed execution of feed operations against feed view, in
      * master write thread.
      */
-    void performPut(FeedTokenUP token, PutOperation &op);
+    void performPut(FeedToken token, PutOperation &op);
 
-    void performUpdate(FeedTokenUP token, UpdateOperation &op);
-    void performInternalUpdate(FeedTokenUP token, UpdateOperation &op);
-    void createNonExistingDocument(FeedTokenUP, const UpdateOperation &op);
+    void performUpdate(FeedToken token, UpdateOperation &op);
+    void performInternalUpdate(FeedToken token, UpdateOperation &op);
+    void createNonExistingDocument(FeedToken, const UpdateOperation &op);
 
-    void performRemove(FeedTokenUP token, RemoveOperation &op);
-    void performGarbageCollect(FeedTokenUP token);
-    void performCreateBucket(FeedTokenUP token, CreateBucketOperation &op);
-    void performDeleteBucket(FeedTokenUP token, DeleteBucketOperation &op);
-    void performSplit(FeedTokenUP token, SplitBucketOperation &op);
-    void performJoin(FeedTokenUP token, JoinBucketsOperation &op);
+    void performRemove(FeedToken token, RemoveOperation &op);
+    void performGarbageCollect(FeedToken token);
+    void performCreateBucket(FeedToken token, CreateBucketOperation &op);
+    void performDeleteBucket(FeedToken token, DeleteBucketOperation &op);
+    void performSplit(FeedToken token, SplitBucketOperation &op);
+    void performJoin(FeedToken token, JoinBucketsOperation &op);
     void performSync();
     void performEof();
 
@@ -223,7 +224,7 @@ public:
     vespalib::string getDocTypeName() const { return _docTypeName.getName(); }
     void tlsPrune(SerialNum oldest_to_keep);
 
-    void performOperation(FeedTokenUP token, FeedOperationUP op);
+    void performOperation(FeedToken token, FeedOperationUP op);
     void handleOperation(FeedToken token, FeedOperationUP op);
 
     void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
@@ -240,4 +241,3 @@ public:
 };
 
 } // namespace proton
-

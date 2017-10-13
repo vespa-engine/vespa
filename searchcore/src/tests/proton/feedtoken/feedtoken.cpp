@@ -45,8 +45,9 @@ void
 Test::testAck()
 {
     LocalTransport transport;
-    FeedToken token(transport);
-    token.ack();
+    {
+        FeedToken token(transport);
+    }
     EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
@@ -70,9 +71,10 @@ Test::testHandover()
 
     LocalTransport transport;
 
-    FeedToken token(transport);
-    token = MyHandover::handover(token);
-    token.ack();
+    {
+        FeedToken token(transport);
+        token = MyHandover::handover(token);
+    }
     EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 

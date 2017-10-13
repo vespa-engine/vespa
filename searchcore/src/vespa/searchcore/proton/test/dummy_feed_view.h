@@ -4,9 +4,7 @@
 #include <vespa/searchcore/proton/server/ifeedview.h>
 #include <vespa/document/repo/documenttyperepo.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 struct DummyFeedView : public IFeedView
 {
@@ -18,33 +16,27 @@ struct DummyFeedView : public IFeedView
     DummyFeedView(const document::DocumentTypeRepo::SP &docTypeRepo)
         : _docTypeRepo(docTypeRepo)
     {}
-    virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override {
+    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override {
         return _docTypeRepo;
     }
-    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
+    const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return std::nullptr_t();
     }
-    virtual void preparePut(PutOperation &) override {}
-    virtual void handlePut(FeedToken *,
-                           const PutOperation &) override {}
-    virtual void prepareUpdate(UpdateOperation &) override {}
-    virtual void handleUpdate(FeedToken *,
-                              const UpdateOperation &) override {}
-    virtual void prepareRemove(RemoveOperation &) override {}
-    virtual void handleRemove(FeedToken *,
-                              const RemoveOperation &) override {}
-    virtual void prepareDeleteBucket(DeleteBucketOperation &) override {}
-    virtual void handleDeleteBucket(const DeleteBucketOperation &) override {}
-    virtual void prepareMove(MoveOperation &) override {}
-    virtual void handleMove(const MoveOperation &, std::shared_ptr<search::IDestructorCallback>) override {}
-    virtual void heartBeat(search::SerialNum) override {}
-    virtual void sync() override {}
-    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
+    void preparePut(PutOperation &) override {}
+    void handlePut(FeedToken, const PutOperation &) override {}
+    void prepareUpdate(UpdateOperation &) override {}
+    void handleUpdate(FeedToken, const UpdateOperation &) override {}
+    void prepareRemove(RemoveOperation &) override {}
+    void handleRemove(FeedToken, const RemoveOperation &) override {}
+    void prepareDeleteBucket(DeleteBucketOperation &) override {}
+    void handleDeleteBucket(const DeleteBucketOperation &) override {}
+    void prepareMove(MoveOperation &) override {}
+    void handleMove(const MoveOperation &, std::shared_ptr<search::IDestructorCallback>) override {}
+    void heartBeat(search::SerialNum) override {}
+    void sync() override {}
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
+    void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
     void forceCommit(search::SerialNum) override { }
 };
 
-} // namespace test
-
-} // namespace proton
-
+}

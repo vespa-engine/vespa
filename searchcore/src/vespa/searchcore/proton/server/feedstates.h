@@ -79,13 +79,11 @@ public:
           _handler(handler) {
     }
 
-    virtual void handleOperation(FeedToken token, FeedOperation::UP op) override {
-        _handler.performOperation(FeedToken::UP(new FeedToken(token)), std::move(op));
+    void handleOperation(FeedToken token, FeedOperation::UP op) override {
+        _handler.performOperation(std::move(token), std::move(op));
     }
 
-    virtual void
-    receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override
-    {
+    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
         throwExceptionInReceive(_handler.getDocTypeName().c_str(),
                                 wrap->packet.range().from(),
                                 wrap->packet.range().to(),

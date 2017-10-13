@@ -571,7 +571,7 @@ struct FixtureBase
         return doc("doc:test:1", timestamp);
     }
 
-    void performPut(FeedToken *token, PutOperation &op) {
+    void performPut(FeedToken token, PutOperation &op) {
         getFeedView().preparePut(op);
         op.setSerialNum(++serial);
         getFeedView().handlePut(token, op);
@@ -586,10 +586,10 @@ struct FixtureBase
     void putAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([&] () { performPut(&token.ft, op); });
+        runInMaster([&] () { performPut(token.ft, op); });
     }
 
-    void performUpdate(FeedToken *token, UpdateOperation &op) {
+    void performUpdate(FeedToken token, UpdateOperation &op) {
         getFeedView().prepareUpdate(op);
         op.setSerialNum(++serial);
         getFeedView().handleUpdate(token, op);
@@ -598,25 +598,21 @@ struct FixtureBase
     void updateAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([&] () { performUpdate(&token.ft, op); });
+        runInMaster([&] () { performUpdate(token.ft, op); });
     }
 
-    void performRemove(FeedToken *token, RemoveOperation &op) {
+    void performRemove(FeedToken token, RemoveOperation &op) {
         getFeedView().prepareRemove(op);
         if (op.getValidNewOrPrevDbdId()) {
             op.setSerialNum(++serial);
-            getFeedView().handleRemove(token, op);
-        } else {
-            if (token != NULL) {
-                token->ack();
-            }
+            getFeedView().handleRemove(std::move(token), op);
         }
     }
 
     void removeAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         RemoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([&] () { performRemove(&token.ft, op); });
+        runInMaster([&] () { performRemove(token.ft, op); });
     }
 
     void removeAndWait(const DocumentContext::List &docs) {
