@@ -50,6 +50,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker);
     CPPUNIT_TEST(external_client_requests_are_handled_individually_in_priority_order);
     CPPUNIT_TEST(internal_messages_are_started_in_fifo_order_batch);
+    CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -81,6 +82,7 @@ protected:
     void merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker();
     void external_client_requests_are_handled_individually_in_priority_order();
     void internal_messages_are_started_in_fifo_order_batch();
+    void closing_aborts_priority_queued_client_requests();
 
 public:
     void setUp() override {
@@ -925,6 +927,27 @@ void Distributor_Test::internal_messages_are_started_in_fifo_order_batch() {
     // of lowest priority 255.
     BucketDatabase::Entry e(getBucket(bucket));
     CPPUNIT_ASSERT_EQUAL(api::BucketInfo(1, 1, 1), e.getBucketInfo().getNode(0)->getBucketInfo());
+}
+
+void Distributor_Test::closing_aborts_priority_queued_client_requests() {
+    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    document::BucketId bucket(16, 1);
+    addNodesToBucketDB(bucket, "0=1/1/1/t");
+
+    document::DocumentId id("id:foo:testdoctype1:n=1:foo");
+    vespalib::stringref field_set = "";
+    for (int i = 0; i < 10; ++i) {
+        auto cmd = std::make_shared<api::GetCommand>(document::BucketId(), id, field_set);
+        _distributor->onDown(cmd);
+    }
+    tickDistributorNTimes(1);
+    // Closing should trigger 1 abort via startet GetOperation and 9 aborts from pri queue
+    _distributor->close();
+    CPPUNIT_ASSERT_EQUAL(size_t(10), _sender.replies.size());
+    for (auto& msg : _sender.replies) {
+        CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
+                             dynamic_cast<api::StorageReply&>(*msg).getResult().getResult());
+    }
 }
 
 }
