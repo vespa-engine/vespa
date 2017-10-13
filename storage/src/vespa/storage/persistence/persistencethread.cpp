@@ -231,7 +231,7 @@ PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd)
         (cmd.verifyBody() ? "Verifying body" : "Not verifying body"));
     api::BucketInfo before = _env.getBucketInfo(cmd.getBucketId());
     spi::Result result =
-        _spi.maintain(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
+        _spi.maintain(spi::Bucket(cmd.getBucket(),
                                   spi::PartitionId(_env._partition)),
                       cmd.verifyBody() ?
                       spi::HIGH : spi::LOW);

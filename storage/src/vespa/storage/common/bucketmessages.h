@@ -3,7 +3,7 @@
 
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/internal.h>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vector>
 #include <set>
@@ -78,7 +78,7 @@ public:
     ReadBucketInfo(const document::BucketId& bucketId);
     ~ReadBucketInfo();
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
     bool hasSingleBucketId() const override { return true; }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
@@ -102,7 +102,7 @@ public:
     ReadBucketInfoReply(const ReadBucketInfo& cmd);
     ~ReadBucketInfoReply();
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
     bool hasSingleBucketId() const override { return true; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -133,7 +133,7 @@ public:
     ~RepairBucketCommand();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucket); }
 
     uint16_t getDisk() const { return _disk; }
     bool verifyBody() const { return _verifyBody; }
@@ -166,7 +166,7 @@ public:
 
     RepairBucketReply(const RepairBucketCommand& cmd, const api::BucketInfo& bucketInfo = api::BucketInfo());
     ~RepairBucketReply();
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucket); }
     bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
@@ -199,7 +199,7 @@ public:
     BucketDiskMoveCommand(const document::BucketId& bucket, uint16_t srcDisk, uint16_t dstDisk);
     ~BucketDiskMoveCommand();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucket); }
     bool hasSingleBucketId() const override { return true; }
 
     uint16_t getSrcDisk() const { return _srcDisk; }
@@ -234,7 +234,7 @@ public:
                         uint32_t destinationFileSize = 0);
     ~BucketDiskMoveReply();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucket); }
     bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
@@ -270,7 +270,7 @@ public:
     InternalBucketJoinCommand(const document::BucketId& bucket, uint16_t keepOnDisk, uint16_t joinFromDisk);
     ~InternalBucketJoinCommand();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucket); }
     bool hasSingleBucketId() const override { return true; }
 
     uint16_t getDiskOfInstanceToKeep() const { return _keepOnDisk; }
@@ -296,7 +296,7 @@ public:
                             const api::BucketInfo& info = api::BucketInfo());
     ~InternalBucketJoinReply();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucket); }
     bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }

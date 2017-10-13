@@ -32,7 +32,7 @@ public:
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
     bool hasSingleBucketId() const override { return true; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
@@ -64,9 +64,7 @@ public:
     ~GetIterReply();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
 
     const std::vector<spi::DocEntry::UP>& getEntries() const {
         return _entries;
@@ -101,7 +99,7 @@ public:
                           spi::IncludedVersions includedVersions);
     ~CreateIteratorCommand();
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
     const spi::Selection& getSelection() const { return _selection; }
     spi::IncludedVersions getIncludedVersions() const { return _includedVersions; }
     const std::string& getFields() const { return _fieldSet; }
@@ -131,7 +129,7 @@ public:
     ~CreateIteratorReply();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
 
@@ -181,9 +179,7 @@ public:
     RecheckBucketInfoCommand(const document::BucketId& bucketId);
     ~RecheckBucketInfoCommand();
 
-    document::BucketId getBucketId() const override {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
@@ -201,9 +197,7 @@ public:
     RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd);
     ~RecheckBucketInfoReply();
 
-    document::BucketId getBucketId() const override {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };

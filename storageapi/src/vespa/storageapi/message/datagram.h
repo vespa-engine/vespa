@@ -34,7 +34,7 @@ public:
         { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
     void setDocumentBlock(vdslib::DocumentList& block) { _docBlock = block; }
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
     bool hasSingleBucketId() const override { return true; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool keepTimeStamps() const { return _keepTimeStamps; }
@@ -119,7 +119,7 @@ private:
     std::vector<Entry> _documents;
 public:
     DocumentListCommand(const document::BucketId& bid);
-    const document::BucketId& getBucketId() { return _bucketId; }
+    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
     std::vector<Entry>& getDocuments() { return _documents; }
     const std::vector<Entry>& getDocuments() const { return _documents; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
