@@ -187,11 +187,11 @@ private:
     };
 
     void setNodeStateUp();
-
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
     bool isMaintenanceReply(const api::StorageReply& reply) const;
 
     void handleStatusRequests();
+    void send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>&);
     void handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg);
     void startExternalOperations();
 

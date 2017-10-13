@@ -203,23 +203,26 @@ Distributor::onOpen()
     }
 }
 
-void
-Distributor::onClose()
-{
-    for (uint32_t i=0; i<_messageQueue.size(); ++i) {
-        std::shared_ptr<api::StorageMessage> msg = _messageQueue[i];
+void Distributor::send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>& msg) {
+    api::StorageReply::UP reply(
+            std::dynamic_pointer_cast<api::StorageCommand>(msg)->makeReply());
+    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Distributor is shutting down"));
+    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+}
+
+void Distributor::onClose() {
+    for (auto& msg : _messageQueue) {
         if (!msg->getType().isReply()) {
-            api::StorageReply::UP reply(
-                    std::dynamic_pointer_cast<api::StorageCommand>(msg)
-                        ->makeReply());
-            reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED,
-                                             "Distributor is shutting down"));
-            sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+            send_shutdown_abort_reply(msg);
         }
     }
     _messageQueue.clear();
+    while (!_client_request_priority_queue.empty()) {
+        send_shutdown_abort_reply(_client_request_priority_queue.top());
+        _client_request_priority_queue.pop();
+    }
 
-    LOG(debug, "Distributor::onFlush invoked");
+    LOG(debug, "Distributor::onClose invoked");
     _bucketDBUpdater.flush();
     _operationOwner.onClose();
     _maintenanceOperationOwner.onClose();
@@ -619,10 +622,10 @@ void Distributor::startExternalOperations() {
 
     const bool start_single_client_request = !_client_request_priority_queue.empty();
     if (start_single_client_request) {
-        auto& msg = _client_request_priority_queue.top();
+        const auto& msg = _client_request_priority_queue.top();
         MBUS_TRACE(msg->getTrace(), 9, "Distributor: Grabbed from "
                    "client request priority queue to be processed.");
-        handle_or_propagate_message(msg); // TODO move() once we've move-enabled our message chains
+        handle_or_propagate_message(msg);
         _client_request_priority_queue.pop();
     }
 
