@@ -280,9 +280,9 @@ public class ApplicationSerializer {
         String flavor = inspector.field(clusterInfoFlavorField).asString();
         int cost = (int)inspector.field(clusterInfoCostField).asLong();
         String type = inspector.field(clusterInfoTypeField).asString();
-        double flavorCpu = inspector.field(clusterInfoTypeField).asDouble();
-        double flavorMem = inspector.field(clusterInfoTypeField).asDouble();
-        double flavorDisk = inspector.field(clusterInfoTypeField).asDouble();
+        double flavorCpu = inspector.field(clusterInfoCpuField).asDouble();
+        double flavorMem = inspector.field(clusterInfoMemField).asDouble();
+        double flavorDisk = inspector.field(clusterInfoDiskField).asDouble();
 
         List<String> hostnames = new ArrayList<>();
         inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
