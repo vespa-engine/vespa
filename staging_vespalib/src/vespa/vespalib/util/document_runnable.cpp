@@ -29,6 +29,7 @@ bool Runnable::stop()
 {
     vespalib::MonitorGuard monitor(_stateLock);
     if (_state == STOPPING || _state == NOT_RUNNING) return false;
+    while (_state == STARTING) monitor.wait();
     GetThread()->SetBreakFlag();
     _state = STOPPING;
     return onStop();
@@ -55,6 +56,7 @@ void Runnable::Run(FastOS_ThreadInterface*, void*)
         // called even though about to stop for consistency)
         if (_state == STARTING) {
             _state = RUNNING;
+            monitor.broadcast();
         }
     }
 
