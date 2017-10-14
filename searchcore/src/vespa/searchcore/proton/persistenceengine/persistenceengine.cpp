@@ -355,14 +355,14 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
                         doc->getId().toString().c_str()));
     }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
-    if (handler.get() == NULL) {
+    if (!handler) {
         return Result(Result::PERMANENT_ERROR,
                       make_string("No handler for document type '%s'",
                                   docType.toString().c_str()));
     }
     TransportLatch latch(1);
     FeedToken token(latch);
-    handler->handlePut(token, b, t, doc);
+    handler->handlePut(std::move(token), b, t, doc);
     latch.await();
     return latch.getResult();
 }
@@ -377,14 +377,14 @@ PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, C
         static_cast<uint64_t>(t.getValue()),
         did.toString().c_str());
     HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace(), did);
-    if (!snap.get()) {
+    if (!snap) {
         return RemoveResult(false);
     }
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
         FeedToken token(latch);
-        handler->handleRemove(token, b, t, did);
+        handler->handleRemove(std::move(token), b, t, did);
     }
     latch.await();
     return latch.getRemoveResult();
@@ -413,10 +413,10 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         (upd->getCreateIfNonExistent() ? "true" : "false"));
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     TransportLatch latch(1);
-    if (handler.get() != NULL) {
+    if (handler) {
         FeedToken token(latch);
         LOG(debug, "update = %s", upd->toXml().c_str());
-        handler->handleUpdate(token, b, t, upd);
+        handler->handleUpdate(std::move(token), b, t, upd);
         latch.await();
     } else {
         return UpdateResult(Result::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str()));
@@ -540,7 +540,7 @@ PersistenceEngine::createBucket(const Bucket &b, Context &)
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
         FeedToken token(latch);
-        handler->handleCreateBucket(token, b);
+        handler->handleCreateBucket(std::move(token), b);
     }
     latch.await();
     return latch.getResult();
@@ -557,7 +557,7 @@ PersistenceEngine::deleteBucket(const Bucket& b, Context&)
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
         FeedToken token(latch);
-        handler->handleDeleteBucket(token, b);
+        handler->handleDeleteBucket(std::move(token), b);
     }
     latch.await();
     return latch.getResult();
@@ -600,7 +600,7 @@ PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Buck
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
         FeedToken token(latch);
-        handler->handleSplit(token, source, target1, target2);
+        handler->handleSplit(std::move(token), source, target1, target2);
     }
     latch.await();
     return latch.getResult();
@@ -619,7 +619,7 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
         FeedToken token(latch);
-        handler->handleJoin(token, source1, source2, target);
+        handler->handleJoin(std::move(token), source1, source2, target);
     }
     latch.await();
     return latch.getResult();
@@ -676,7 +676,7 @@ void
 PersistenceEngine::propagateSavedClusterState(IPersistenceHandler &handler)
 {
     ClusterState::SP clusterState(savedClusterState());
-    if (clusterState.get() == NULL)
+    if (!clusterState)
         return;
     // Propagate saved cluster state.
     // TODO: Fix race with new cluster state setting.
