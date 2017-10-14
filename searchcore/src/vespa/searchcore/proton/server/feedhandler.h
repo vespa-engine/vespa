@@ -23,7 +23,6 @@ class DDBState;
 class DeleteBucketOperation;
 class FeedConfigStore;
 class FeedState;
-class FeedToken;
 class IDocumentDBOwner;
 class IFeedHandlerOwner;
 class IFeedView;
@@ -55,7 +54,6 @@ private:
     typedef storage::spi::Timestamp         Timestamp;
     typedef document::BucketId              BucketId;
     using FeedStateSP = std::shared_ptr<FeedState>;
-    using FeedTokenUP = std::unique_ptr<FeedToken>;
     using FeedOperationUP = std::unique_ptr<FeedOperation>;
 
     class TlsMgrWriter : public TlsWriter {

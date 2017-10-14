@@ -295,7 +295,7 @@ struct UpdateContext {
 };
 
 
-struct MyTransport : public FeedToken::ITransport {
+struct MyTransport : public feedtoken::ITransport {
     vespalib::Gate gate;
     ResultUP result;
     bool documentWasFound;
@@ -309,7 +309,7 @@ struct MyTransport : public FeedToken::ITransport {
 };
 
 MyTransport::MyTransport() : gate(), result(), documentWasFound(false) {}
-MyTransport::~MyTransport() {}
+MyTransport::~MyTransport() = default;
 
 struct FeedTokenContext {
     MyTransport transport;
@@ -322,13 +322,13 @@ struct FeedTokenContext {
         if (transport.result.get()) {
             return transport.result.get();
         }
-        return &token.getResult();
+        return &token->getResult();
     }
 };
 
 FeedTokenContext::FeedTokenContext()
     : transport(),
-      token(transport)
+      token(feedtoken::make(transport))
 {}
 
 FeedTokenContext::~FeedTokenContext() = default;

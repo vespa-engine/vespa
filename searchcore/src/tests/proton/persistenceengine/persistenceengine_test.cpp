@@ -214,13 +214,13 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     void handlePut(FeedToken token, const Bucket& bucket,
                    Timestamp timestamp, const document::Document::SP& doc) override {
-        token.setResult(ResultUP(new storage::spi::Result()), false);
+        token->setResult(ResultUP(new storage::spi::Result()), false);
         handle(token, bucket, timestamp, doc->getId());
     }
 
     void handleUpdate(FeedToken token, const Bucket& bucket,
                       Timestamp timestamp, const document::DocumentUpdate::SP& upd) override {
-        token.setResult(ResultUP(new storage::spi::UpdateResult(existingTimestamp)),
+        token->setResult(ResultUP(new storage::spi::UpdateResult(existingTimestamp)),
                         existingTimestamp > 0);
         handle(token, bucket, timestamp, upd->getId());
     }
@@ -228,7 +228,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     void handleRemove(FeedToken token, const Bucket& bucket,
                       Timestamp timestamp, const DocumentId& id) override {
         bool wasFound = existingTimestamp > 0;
-        token.setResult(ResultUP(new storage::spi::RemoveResult(wasFound)), wasFound);
+        token->setResult(ResultUP(new storage::spi::RemoveResult(wasFound)), wasFound);
         handle(token, bucket, timestamp, id);
     }
 
@@ -253,33 +253,27 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     void handleCreateBucket(FeedToken token, const storage::spi::Bucket &) override {
-        token.setResult(ResultUP(new Result(_createBucketResult)), true);
+        token->setResult(ResultUP(new Result(_createBucketResult)), true);
     }
 
     void handleDeleteBucket(FeedToken token, const storage::spi::Bucket &) override {
-        token.setResult(ResultUP(new Result(deleteBucketResult)), true);
+        token->setResult(ResultUP(new Result(deleteBucketResult)), true);
     }
 
     void handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler) override {
         resultHandler.handle(BucketIdListResult(modBucketList));
     }
 
-    void handleSplit(FeedToken token, const storage::spi::Bucket &source, const storage::spi::Bucket &target1,
-                     const storage::spi::Bucket &target2) override
+    void handleSplit(FeedToken token, const storage::spi::Bucket &, const storage::spi::Bucket &,
+                     const storage::spi::Bucket &) override
     {
-        (void) source;
-        (void) target1;
-        (void) target2;
-        token.setResult(ResultUP(new Result(_splitResult)), true);
+        token->setResult(ResultUP(new Result(_splitResult)), true);
     }
 
-    void handleJoin(FeedToken token, const storage::spi::Bucket &source1, const storage::spi::Bucket &source2,
-               const storage::spi::Bucket &target) override
+    void handleJoin(FeedToken token, const storage::spi::Bucket &, const storage::spi::Bucket &,
+               const storage::spi::Bucket &) override
     {
-        (void) source1;
-        (void) source2;
-        (void) target;
-        token.setResult(ResultUP(new Result(_joinResult)), true);
+        token->setResult(ResultUP(new Result(_joinResult)), true);
     }
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {

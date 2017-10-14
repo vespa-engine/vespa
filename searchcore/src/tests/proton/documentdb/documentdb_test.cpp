@@ -46,7 +46,7 @@ using vespalib::Slime;
 
 namespace {
 
-class LocalTransport : public FeedToken::ITransport {
+class LocalTransport : public feedtoken::ITransport {
     mbus::Receptor _receptor;
 
 public:

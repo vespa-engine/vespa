@@ -405,7 +405,7 @@ MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)
 }
 MyAttributeWriter::~MyAttributeWriter() {}
 
-struct MyTransport : public FeedToken::ITransport
+struct MyTransport : public feedtoken::ITransport
 {
     ResultUP lastResult;
     vespalib::Gate _gate;
@@ -421,7 +421,7 @@ struct MyTransport : public FeedToken::ITransport
 };
 
 MyTransport::MyTransport(MyTracer &tracer) : lastResult(), _gate(), _tracer(tracer) {}
-MyTransport::~MyTransport() {}
+MyTransport::~MyTransport() = default;
 
 struct MyResultHandler : public IGenericResultHandler
 {
@@ -491,7 +491,7 @@ struct FeedTokenContext
 };
 
 FeedTokenContext::FeedTokenContext(MyTracer &tracer)
-    : mt(tracer), ft(mt)
+    : mt(tracer), ft(feedtoken::make(mt))
 {}
 FeedTokenContext::~FeedTokenContext() = default;
 

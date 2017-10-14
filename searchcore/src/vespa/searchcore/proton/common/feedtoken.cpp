@@ -2,16 +2,9 @@
 
 #include "feedtoken.h"
 
-namespace proton {
+namespace proton::feedtoken {
 
-FeedToken::FeedToken() = default;
-
-FeedToken::FeedToken(ITransport &transport) :
-    _state(new State(transport))
-{
-}
-
-FeedToken::State::State(ITransport & transport) :
+State::State(ITransport & transport) :
     _transport(transport),
     _result(new storage::spi::Result()),
     _documentWasFound(false),
@@ -19,13 +12,13 @@ FeedToken::State::State(ITransport & transport) :
 {
 }
 
-FeedToken::State::~State()
+State::~State()
 {
     ack();
 }
 
 void
-FeedToken::State::ack()
+State::ack()
 {
     bool alreadySent = _alreadySent.exchange(true);
     if ( !alreadySent ) {
@@ -34,7 +27,7 @@ FeedToken::State::ack()
 }
 
 void
-FeedToken::State::fail()
+State::fail()
 {
     bool alreadySent = _alreadySent.exchange(true);
     if ( !alreadySent ) {

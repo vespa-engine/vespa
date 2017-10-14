@@ -152,8 +152,7 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
         token->setResult(ResultUP(new UpdateResult(putOp.getTimestamp())), true);
     }
     TransportLatch latch(1);
-    FeedToken putToken(latch);
-    _activeFeedView->handlePut(std::move(putToken), putOp);
+    _activeFeedView->handlePut(feedtoken::make(latch), putOp);
     latch.await();
 }
 
