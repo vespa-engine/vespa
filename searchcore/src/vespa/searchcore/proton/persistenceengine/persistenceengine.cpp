@@ -343,22 +343,16 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(doc->getType());
-    LOG(spam,
-        "put(%s, %" PRIu64 ", (\"%s\", \"%s\"))",
-        b.toString().c_str(),
-        static_cast<uint64_t>(t.getValue()),
-        docType.toString().c_str(),
-        doc->getId().toString().c_str());
+    LOG(spam, "put(%s, %" PRIu64 ", (\"%s\", \"%s\"))", b.toString().c_str(), static_cast<uint64_t>(t.getValue()),
+        docType.toString().c_str(), doc->getId().toString().c_str());
     if (!doc->getId().hasDocType()) {
-        return Result(Result::PERMANENT_ERROR, make_string(
-                        "Old id scheme not supported in elastic mode (%s)",
-                        doc->getId().toString().c_str()));
+        return Result(Result::PERMANENT_ERROR,
+                      make_string("Old id scheme not supported in elastic mode (%s)", doc->getId().toString().c_str()));
     }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     if (!handler) {
         return Result(Result::PERMANENT_ERROR,
-                      make_string("No handler for document type '%s'",
-                                  docType.toString().c_str()));
+                      make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
     TransportLatch latch(1);
     FeedToken token(latch);
@@ -371,11 +365,8 @@ PersistenceEngine::RemoveResult
 PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    LOG(spam,
-        "remove(%s, %" PRIu64 ", \"%s\")",
-        b.toString().c_str(),
-        static_cast<uint64_t>(t.getValue()),
-        did.toString().c_str());
+    LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(),
+        static_cast<uint64_t>(t.getValue()), did.toString().c_str());
     HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace(), did);
     if (!snap) {
         return RemoveResult(false);
@@ -705,7 +696,7 @@ private:
 public:
     ActiveBucketIdListResultHandler() : _bucketMap() { }
 
-    virtual void handle(const BucketIdListResult &result) override {
+    void handle(const BucketIdListResult &result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             IR ir(_bucketMap.insert(std::make_pair(buckets[i], 1u)));
