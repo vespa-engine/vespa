@@ -90,12 +90,17 @@ public class DeploymentTester {
                 .filter(c -> c instanceof Change.VersionChange)
                 .map(Change.VersionChange.class::cast);
     }
+
+    public void updateVersionStatus() {
+        controller().updateVersionStatus(VersionStatus.compute(controller(), tester.controller().systemVersion()));
+    }
     
     public void updateVersionStatus(Version currentVersion) {
         controller().updateVersionStatus(VersionStatus.compute(controller(), currentVersion));
     }
 
     public void upgradeSystem(Version version) {
+        controllerTester().configServer().setDefaultVersion(version);
         updateVersionStatus(version);
         upgrader().maintain();
     }
