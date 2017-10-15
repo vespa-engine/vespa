@@ -49,4 +49,4 @@ A basic, single-node install is found in the
 For multi-node and using Node Admin, read [node-admin/README.md](node-admin/README.md).
 
 ## Write documentation
-Update user documentation at https://github.com/vespa-engine/documentation
+Update user documentation at https://github.com/vespa-engine/documentation.
