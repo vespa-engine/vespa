@@ -19,7 +19,7 @@ public class AthensDomain extends Identifier {
         return new AthensDomain(id().substring(0, lastDot()));
     }
 
-    public String getName() {
+    public String getNameSuffix() {
         return id().substring(lastDot() + 1);
     }
 
