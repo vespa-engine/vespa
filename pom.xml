@@ -31,6 +31,18 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <!-- Required for Athenz libraries -->
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-yahoo-maven</id>
+            <name>bintray</name>
+            <url>http://yahoo.bintray.com/maven</url>
+        </repository>
+    </repositories>
+
     <scm>
         <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
         <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
@@ -897,6 +909,16 @@
                 <groupId>com.ibm.icu</groupId>
                 <artifactId>icu4j</artifactId>
                 <version>57.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-zms-java-client</artifactId>
+                <version>${athenz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-zts-java-client</artifactId>
+                <version>${athenz.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
