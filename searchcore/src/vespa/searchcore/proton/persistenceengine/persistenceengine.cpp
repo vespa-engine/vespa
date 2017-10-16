@@ -3,10 +3,6 @@
 #include "persistenceengine.h"
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/feedreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/fastos/thread.h>
 
@@ -15,9 +11,6 @@ LOG_SETUP(".proton.persistenceengine.persistenceengine");
 
 using document::Document;
 using document::DocumentId;
-using documentapi::DocumentReply;
-using documentapi::RemoveDocumentReply;
-using mbus::Reply;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
@@ -49,7 +42,7 @@ ResultHandlerBase::ResultHandlerBase(uint32_t waitCnt)
     : _lock(),
       _latch(waitCnt)
 {}
-ResultHandlerBase::~ResultHandlerBase() { }
+ResultHandlerBase::~ResultHandlerBase() = default;
 
 class GenericResultHandler : public ResultHandlerBase, public IGenericResultHandler {
 private:
@@ -74,7 +67,7 @@ public:
     const Result &getResult() const { return _result; }
 };
 
-GenericResultHandler::~GenericResultHandler() {}
+GenericResultHandler::~GenericResultHandler() = default;
 
 class BucketIdListResultHandler : public IBucketIdListResultHandler
 {
@@ -85,8 +78,8 @@ public:
     BucketIdListResultHandler()
         : _bucketSet()
     { }
-    ~BucketIdListResultHandler();
-    virtual void handle(const BucketIdListResult &result) override {
+    ~BucketIdListResultHandler() override;
+    void handle(const BucketIdListResult &result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             _bucketSet.insert(buckets[i]);
@@ -103,7 +96,7 @@ public:
 };
 
 
-BucketIdListResultHandler::~BucketIdListResultHandler() {}
+BucketIdListResultHandler::~BucketIdListResultHandler() = default;
 
 class SynchronizedBucketIdListResultHandler : public ResultHandlerBase,
                                               public BucketIdListResultHandler
@@ -113,8 +106,8 @@ public:
         : ResultHandlerBase(waitCnt),
           BucketIdListResultHandler()
     { }
-    ~SynchronizedBucketIdListResultHandler();
-    virtual void handle(const BucketIdListResult &result) override {
+    ~SynchronizedBucketIdListResultHandler() override;
+    void handle(const BucketIdListResult &result) override {
         {
             vespalib::LockGuard guard(_lock);
             BucketIdListResultHandler::handle(result);
@@ -123,7 +116,7 @@ public:
     }
 };
 
-SynchronizedBucketIdListResultHandler::~SynchronizedBucketIdListResultHandler() {}
+SynchronizedBucketIdListResultHandler::~SynchronizedBucketIdListResultHandler() = default;
 
 class BucketInfoResultHandler : public IBucketInfoResultHandler {
 private:
@@ -135,8 +128,8 @@ public:
         _first(true)
     {
     }
-    ~BucketInfoResultHandler();
-    virtual void handle(const BucketInfoResult &result) override {
+    ~BucketInfoResultHandler() override;
+    void handle(const BucketInfoResult &result) override {
         if (_first) {
             _result = result;
             _first = false;
@@ -161,11 +154,9 @@ public:
     const BucketInfoResult &getResult() const { return _result; }
 };
 
-BucketInfoResultHandler::~BucketInfoResultHandler() {}
+BucketInfoResultHandler::~BucketInfoResultHandler() = default;
 
 }
-
-#define NOT_YET throw vespalib::IllegalArgumentException("Not implemented yet")
 
 PersistenceEngine::HandlerSnapshot::UP
 PersistenceEngine::getHandlerSnapshot() const
@@ -343,26 +334,19 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(doc->getType());
-    LOG(spam,
-        "put(%s, %" PRIu64 ", (\"%s\", \"%s\"))",
-        b.toString().c_str(),
-        static_cast<uint64_t>(t.getValue()),
-        docType.toString().c_str(),
-        doc->getId().toString().c_str());
+    LOG(spam, "put(%s, %" PRIu64 ", (\"%s\", \"%s\"))", b.toString().c_str(), static_cast<uint64_t>(t.getValue()),
+        docType.toString().c_str(), doc->getId().toString().c_str());
     if (!doc->getId().hasDocType()) {
-        return Result(Result::PERMANENT_ERROR, make_string(
-                        "Old id scheme not supported in elastic mode (%s)",
-                        doc->getId().toString().c_str()));
+        return Result(Result::PERMANENT_ERROR,
+                      make_string("Old id scheme not supported in elastic mode (%s)", doc->getId().toString().c_str()));
     }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
-    if (handler.get() == NULL) {
+    if (!handler) {
         return Result(Result::PERMANENT_ERROR,
-                      make_string("No handler for document type '%s'",
-                                  docType.toString().c_str()));
+                      make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
     TransportLatch latch(1);
-    FeedToken token(latch);
-    handler->handlePut(token, b, t, doc);
+    handler->handlePut(feedtoken::make(latch), b, t, doc);
     latch.await();
     return latch.getResult();
 }
@@ -371,20 +355,16 @@ PersistenceEngine::RemoveResult
 PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    LOG(spam,
-        "remove(%s, %" PRIu64 ", \"%s\")",
-        b.toString().c_str(),
-        static_cast<uint64_t>(t.getValue()),
-        did.toString().c_str());
+    LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(),
+        static_cast<uint64_t>(t.getValue()), did.toString().c_str());
     HandlerSnapshot::UP snap = getHandlerSnapshot(b.getBucketSpace(), did);
-    if (!snap.get()) {
+    if (!snap) {
         return RemoveResult(false);
     }
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch);
-        handler->handleRemove(token, b, t, did);
+        handler->handleRemove(feedtoken::make(latch), b, t, did);
     }
     latch.await();
     return latch.getRemoveResult();
@@ -404,24 +384,20 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
     }
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     DocTypeName docType(upd->getType());
-    LOG(spam,
-        "update(%s, %" PRIu64 ", (\"%s\", \"%s\"), createIfNonExistent='%s')",
-        b.toString().c_str(),
-        static_cast<uint64_t>(t.getValue()),
-        docType.toString().c_str(),
-        upd->getId().toString().c_str(),
-        (upd->getCreateIfNonExistent() ? "true" : "false"));
+    LOG(spam, "update(%s, %" PRIu64 ", (\"%s\", \"%s\"), createIfNonExistent='%s')",
+        b.toString().c_str(), static_cast<uint64_t>(t.getValue()), docType.toString().c_str(),
+        upd->getId().toString().c_str(), (upd->getCreateIfNonExistent() ? "true" : "false"));
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
-    TransportLatch latch(1);
-    if (handler.get() != NULL) {
-        FeedToken token(latch);
+
+    if (handler) {
+        TransportLatch latch(1);
         LOG(debug, "update = %s", upd->toXml().c_str());
-        handler->handleUpdate(token, b, t, upd);
+        handler->handleUpdate(feedtoken::make(latch), b, t, upd);
         latch.await();
+        return latch.getUpdateResult();
     } else {
         return UpdateResult(Result::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
-    return latch.getUpdateResult();
 }
 
 
@@ -486,7 +462,7 @@ PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LockGuard guard(_iterators_lock);
-    Iterators::const_iterator it = _iterators.find(id);
+    auto it = _iterators.find(id);
     if (it == _iterators.end()) {
         return IterateResult(Result::PERMANENT_ERROR, make_string("Unknown iterator with id %" PRIu64, id.getValue()));
     }
@@ -517,7 +493,7 @@ PersistenceEngine::destroyIterator(IteratorId id, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     LockGuard guard(_iterators_lock);
-    Iterators::iterator it = _iterators.find(id);
+    auto it = _iterators.find(id);
     if (it == _iterators.end()) {
         return Result();
     }
@@ -539,8 +515,7 @@ PersistenceEngine::createBucket(const Bucket &b, Context &)
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch);
-        handler->handleCreateBucket(token, b);
+        handler->handleCreateBucket(feedtoken::make(latch), b);
     }
     latch.await();
     return latch.getResult();
@@ -556,8 +531,7 @@ PersistenceEngine::deleteBucket(const Bucket& b, Context&)
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch);
-        handler->handleDeleteBucket(token, b);
+        handler->handleDeleteBucket(feedtoken::make(latch), b);
     }
     latch.await();
     return latch.getResult();
@@ -599,8 +573,7 @@ PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Buck
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch);
-        handler->handleSplit(token, source, target1, target2);
+        handler->handleSplit(feedtoken::make(latch), source, target1, target2);
     }
     latch.await();
     return latch.getResult();
@@ -618,8 +591,7 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
     TransportLatch latch(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
-        FeedToken token(latch);
-        handler->handleJoin(token, source1, source2, target);
+        handler->handleJoin(feedtoken::make(latch), source1, source2, target);
     }
     latch.await();
     return latch.getResult();
@@ -676,7 +648,7 @@ void
 PersistenceEngine::propagateSavedClusterState(IPersistenceHandler &handler)
 {
     ClusterState::SP clusterState(savedClusterState());
-    if (clusterState.get() == NULL)
+    if (!clusterState)
         return;
     // Propagate saved cluster state.
     // TODO: Fix race with new cluster state setting.
@@ -699,13 +671,13 @@ PersistenceEngine::grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenc
 class ActiveBucketIdListResultHandler : public IBucketIdListResultHandler
 {
 private:
-    typedef std::map<document::BucketId, size_t> BucketIdMap;
-    typedef  std::pair<BucketIdMap::iterator, bool> IR;
+    using BucketIdMap = std::map<document::BucketId, size_t>;
+    using IR = std::pair<BucketIdMap::iterator, bool>;
     BucketIdMap _bucketMap;
 public:
     ActiveBucketIdListResultHandler() : _bucketMap() { }
 
-    virtual void handle(const BucketIdListResult &result) override {
+    void handle(const BucketIdListResult &result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             IR ir(_bucketMap.insert(std::make_pair(buckets[i], 1u)));

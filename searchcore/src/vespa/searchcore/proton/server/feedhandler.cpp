@@ -8,11 +8,6 @@
 #include "tlcproxy.h"
 #include "configstore.h"
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/feedreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
@@ -27,11 +22,6 @@ LOG_SETUP(".proton.server.feedhandler");
 using document::BucketId;
 using document::Document;
 using document::DocumentTypeRepo;
-using documentapi::DocumentProtocol;
-using documentapi::DocumentReply;
-using documentapi::FeedReply;
-using documentapi::RemoveDocumentReply;
-using documentapi::UpdateDocumentReply;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
@@ -90,31 +80,30 @@ FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
 {
     assert(_writeService.master().isCurrentThread());
     LockGuard guard(_feedLock);
-    _feedState->handleOperation(token, std::move(op));
+    _feedState->handleOperation(std::move(token), std::move(op));
 }
 
-void FeedHandler::performPut(FeedToken::UP token, PutOperation &op) {
+void FeedHandler::performPut(FeedToken token, PutOperation &op) {
     op.assertValid();
     _activeFeedView->preparePut(op);
     if (ignoreOperation(op)) {
         LOG(debug, "performPut(): ignoreOperation: docId(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
             op.getDocument()->getId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
-            token->setResult(ResultUP(new Result), false);
-            token->ack();
+            token->setResult(std::make_unique<Result>(), false);
         }
         return;
     }
     storeOperation(op);
     if (token) {
-        token->setResult(ResultUP(new Result), false);
+        token->setResult(std::make_unique<Result>(), false);
     }
-    _activeFeedView->handlePut(token.get(), op);
+    _activeFeedView->handlePut(std::move(token), op);
 }
 
 
 void
-FeedHandler::performUpdate(FeedToken::UP token, UpdateOperation &op)
+FeedHandler::performUpdate(FeedToken token, UpdateOperation &op)
 {
     _activeFeedView->prepareUpdate(op);
     if (op.getPrevDbDocumentId().valid() && !op.getPrevMarkedAsRemoved()) {
@@ -123,26 +112,25 @@ FeedHandler::performUpdate(FeedToken::UP token, UpdateOperation &op)
         createNonExistingDocument(std::move(token), op);
     } else {
         if (token) {
-            token->setResult(ResultUP(new UpdateResult(Timestamp(0))), false);
-            token->ack();
+            token->setResult(std::make_unique<UpdateResult>(Timestamp(0)), false);
         }
     }
 }
 
 
 void
-FeedHandler::performInternalUpdate(FeedToken::UP token, UpdateOperation &op)
+FeedHandler::performInternalUpdate(FeedToken token, UpdateOperation &op)
 {
     storeOperation(op);
     if (token) {
         token->setResult(ResultUP(new UpdateResult(op.getPrevTimestamp())), true);
     }
-    _activeFeedView->handleUpdate(token.get(), op);
+    _activeFeedView->handleUpdate(std::move(token), op);
 }
 
 
 void
-FeedHandler::createNonExistingDocument(FeedToken::UP token, const UpdateOperation &op)
+FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &op)
 {
     Document::SP doc(new Document(op.getUpdate()->getType(), op.getUpdate()->getId()));
     doc->setRepo(*_activeFeedView->getDocumentTypeRepo());
@@ -154,23 +142,18 @@ FeedHandler::createNonExistingDocument(FeedToken::UP token, const UpdateOperatio
         token->setResult(ResultUP(new UpdateResult(putOp.getTimestamp())), true);
     }
     TransportLatch latch(1);
-    FeedToken putToken(latch);
-    _activeFeedView->handlePut(&putToken, putOp);
+    _activeFeedView->handlePut(feedtoken::make(latch), putOp);
     latch.await();
-    if (token) {
-        token->ack();
-    }
 }
 
 
-void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
+void FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
     _activeFeedView->prepareRemove(op);
     if (ignoreOperation(op)) {
         LOG(debug, "performRemove(): ignoreOperation: docId(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
             op.getDocumentId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            token->ack();
         }
         return;
     }
@@ -182,70 +165,60 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
             bool documentWasFound = !op.getPrevMarkedAsRemoved();
             token->setResult(ResultUP(new RemoveResult(documentWasFound)), documentWasFound);
         }
-        _activeFeedView->handleRemove(token.get(), op);
+        _activeFeedView->handleRemove(std::move(token), op);
     } else if (op.hasDocType()) {
         assert(op.getDocType() == _docTypeName.getName());
         storeOperation(op);
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
         }
-        _activeFeedView->handleRemove(token.get(), op);
+        _activeFeedView->handleRemove(std::move(token), op);
     } else {
         if (token) {
             token->setResult(ResultUP(new RemoveResult(false)), false);
-            token->ack();
         }
     }
 }
 
 void
-FeedHandler::performGarbageCollect(FeedToken::UP token)
+FeedHandler::performGarbageCollect(FeedToken token)
 {
-    if (token) {
-        token->ack();
-    }
+    (void) token;
 }
 
 
 void
-FeedHandler::performCreateBucket(FeedToken::UP token, CreateBucketOperation &op)
+FeedHandler::performCreateBucket(FeedToken token, CreateBucketOperation &op)
 {
+    (void) token;
     storeOperation(op);
     _bucketDBHandler->handleCreateBucket(op.getBucketId());
-    if (token) {
-        token->ack();
-    }
 }
 
 
-void FeedHandler::performDeleteBucket(FeedToken::UP token, DeleteBucketOperation &op) {
+void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
+    (void) token;
     _activeFeedView->prepareDeleteBucket(op);
     storeOperation(op);
     // Delete documents in bucket
     _activeFeedView->handleDeleteBucket(op);
     // Delete bucket itself, should no longer have documents.
     _bucketDBHandler->handleDeleteBucket(op.getBucketId());
-    if (token) {
-        token->ack();
-    }
+
 }
 
 
-void FeedHandler::performSplit(FeedToken::UP token, SplitBucketOperation &op) {
+void FeedHandler::performSplit(FeedToken token, SplitBucketOperation &op) {
+    (void) token;
     storeOperation(op);
     _bucketDBHandler->handleSplit(op.getSerialNum(), op.getSource(), op.getTarget1(), op.getTarget2());
-    if (token) {
-        token->ack();
-    }
 }
 
 
-void FeedHandler::performJoin(FeedToken::UP token, JoinBucketsOperation &op) {
+void FeedHandler::performJoin(FeedToken token, JoinBucketsOperation &op) {
+    (void) token;
     storeOperation(op);
     _bucketDBHandler->handleJoin(op.getSerialNum(), op.getSource1(), op.getSource2(), op.getTarget());
-    if (token) {
-        token->ack();
-    }
 }
 
 
@@ -328,7 +301,7 @@ void
 FeedHandler::changeFeedState(FeedState::SP newState)
 {
     LockGuard guard(_feedLock);
-    changeFeedState(newState, guard);
+    changeFeedState(std::move(newState), guard);
 }
 
 
@@ -466,8 +439,8 @@ isRejectableFeedOperation(FeedOperation::Type type)
 }
 
 template <typename ResultType>
-void feedOperationRejected(FeedToken *token, const vespalib::string &opType, const vespalib::string &docId,
-                           DocTypeName docTypeName, const vespalib::string &rejectMessage)
+void feedOperationRejected(FeedToken & token, const vespalib::string &opType, const vespalib::string &docId,
+                           const DocTypeName & docTypeName, const vespalib::string &rejectMessage)
 {
     if (token) {
         auto message = make_string("%s operation rejected for document '%s' of type '%s': '%s'",
@@ -478,8 +451,8 @@ void feedOperationRejected(FeedToken *token, const vespalib::string &opType, con
 }
 
 void
-notifyFeedOperationRejected(FeedToken *token, const FeedOperation &op,
-                            DocTypeName docTypeName, const vespalib::string &rejectMessage)
+notifyFeedOperationRejected(FeedToken & token, const FeedOperation &op,
+                            const DocTypeName & docTypeName, const vespalib::string &rejectMessage)
 {
     if ((op.getType() == FeedOperation::UPDATE_42) || (op.getType() == FeedOperation::UPDATE)) {
         vespalib::string docId = (static_cast<const UpdateOperation &>(op)).getUpdate()->getId().toString();
@@ -495,7 +468,7 @@ notifyFeedOperationRejected(FeedToken *token, const FeedOperation &op,
 }
 
 bool
-FeedHandler::considerWriteOperationForRejection(FeedToken *token, const FeedOperation &op)
+FeedHandler::considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op)
 {
     if (!_writeFilter.acceptWriteOperation() && isRejectableFeedOperation(op.getType())) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
@@ -508,9 +481,9 @@ FeedHandler::considerWriteOperationForRejection(FeedToken *token, const FeedOper
 }
 
 void
-FeedHandler::performOperation(FeedToken::UP token, FeedOperation::UP op)
+FeedHandler::performOperation(FeedToken token, FeedOperation::UP op)
 {
-    if (considerWriteOperationForRejection(token.get(), *op)) {
+    if (considerWriteOperationForRejection(token, *op)) {
         return;
     }
     switch(op->getType()) {

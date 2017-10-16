@@ -18,7 +18,7 @@ class UpdateDoneContext : public OperationDoneContext
 {
     document::DocumentUpdate::SP _upd;
 public:
-    UpdateDoneContext(std::unique_ptr<FeedToken> token, const document::DocumentUpdate::SP &upd);
+    UpdateDoneContext(FeedToken token, const document::DocumentUpdate::SP &upd);
     ~UpdateDoneContext() override;
 
     const document::DocumentUpdate &getUpdate() { return *_upd; }

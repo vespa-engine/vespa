@@ -2,16 +2,13 @@
 
 #include "removedonecontext.h"
 #include "removedonetask.h"
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 
 namespace proton {
 
-RemoveDoneContext::RemoveDoneContext(std::unique_ptr<FeedToken> token,
-                                     vespalib::Executor &executor,
+RemoveDoneContext::RemoveDoneContext(FeedToken token, vespalib::Executor &executor,
                                      IDocumentMetaStore &documentMetaStore,
-                                     PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
-                                     uint32_t lid)
+                                     PendingNotifyRemoveDone &&pendingNotifyRemoveDone, uint32_t lid)
     : OperationDoneContext(std::move(token)),
       _executor(executor),
       _task(),

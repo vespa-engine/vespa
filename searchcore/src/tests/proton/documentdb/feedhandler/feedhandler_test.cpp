@@ -1,9 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
@@ -40,11 +36,6 @@ using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
-using documentapi::DocumentProtocol;
-using documentapi::DocumentReply;
-using documentapi::RemoveDocumentReply;
-using documentapi::UpdateDocumentReply;
-using mbus::Reply;
 using search::IDestructorCallback;
 using search::SerialNum;
 using search::index::schema::CollectionType;
@@ -140,12 +131,6 @@ struct MyReplayConfig : public IReplayConfig {
     virtual void replayConfig(SerialNum) override {}
 };
 
-void ackToken(FeedToken *token) {
-    if (token != NULL) {
-        token->ack();
-    }
-}
-
 struct MyDocumentMetaStore {
     struct Entry {
         DbDocumentId _id;
@@ -195,9 +180,9 @@ struct MyFeedView : public test::DummyFeedView {
     int update_count;
     SerialNum update_serial;
     MyFeedView(const DocumentTypeRepo::SP &dtr);
-    ~MyFeedView();
+    ~MyFeedView() override;
     void resetPutLatch(uint32_t count) { putLatch.reset(new vespalib::CountDownLatch(count)); }
-    virtual void preparePut(PutOperation &op) override {
+    void preparePut(PutOperation &op) override {
         prepareDocumentOperation(op, op.getDocument()->getId().getGlobalId());
     }
     void prepareDocumentOperation(DocumentOperation &op, const GlobalId &gid) {
@@ -208,7 +193,8 @@ struct MyFeedView : public test::DummyFeedView {
             op.setPrevTimestamp(entry->_prevTimestamp);
         }
     }
-    virtual void handlePut(FeedToken *token, const PutOperation &putOp) override {
+    void handlePut(FeedToken token, const PutOperation &putOp) override {
+        (void) token;
         LOG(info, "MyFeedView::handlePut(): docId(%s), putCount(%u), putLatchCount(%u)",
             putOp.getDocument()->getId().toString().c_str(), put_count,
             (putLatch.get() != NULL ? putLatch->getCount() : 0u));
@@ -221,23 +207,24 @@ struct MyFeedView : public test::DummyFeedView {
         if (putLatch.get() != NULL) {
             putLatch->countDown();
         }
-        ackToken(token);
     }
-    virtual void prepareUpdate(UpdateOperation &op) override {
+    void prepareUpdate(UpdateOperation &op) override {
         prepareDocumentOperation(op, op.getUpdate()->getId().getGlobalId());
     }
-    virtual void handleUpdate(FeedToken *token, const UpdateOperation &op) override {
+    void handleUpdate(FeedToken token, const UpdateOperation &op) override {
+        (void) token;
+
         ++update_count;
         update_serial = op.getSerialNum();
-        ackToken(token);
     }
-    virtual void handleRemove(FeedToken *token, const RemoveOperation &) override
-    { ++remove_count; ackToken(token); }
-    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++move_count; }
-    virtual void heartBeat(SerialNum) override { ++heartbeat_count; }
-    virtual void handlePruneRemovedDocuments(
-            const PruneRemovedDocumentsOperation &) override { ++prune_removed_count; }
-    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
+    void handleRemove(FeedToken token, const RemoveOperation &) override {
+        (void) token;
+        ++remove_count;
+    }
+    void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++move_count; }
+    void heartBeat(SerialNum) override { ++heartbeat_count; }
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++prune_removed_count; }
+    const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return NULL;
     }
 };
@@ -299,7 +286,7 @@ struct UpdateContext {
 };
 
 
-struct MyTransport : public FeedToken::ITransport {
+struct MyTransport : public feedtoken::ITransport {
     vespalib::Gate gate;
     ResultUP result;
     bool documentWasFound;
@@ -313,12 +300,11 @@ struct MyTransport : public FeedToken::ITransport {
 };
 
 MyTransport::MyTransport() : gate(), result(), documentWasFound(false) {}
-MyTransport::~MyTransport() {}
+MyTransport::~MyTransport() = default;
 
 struct FeedTokenContext {
     MyTransport transport;
-    FeedToken::UP token_ap;
-    FeedToken &token;
+    FeedToken token;
 
     FeedTokenContext();
     ~FeedTokenContext();
@@ -327,16 +313,14 @@ struct FeedTokenContext {
         if (transport.result.get()) {
             return transport.result.get();
         }
-        return &token.getResult();
+        return &token->getResult();
     }
 };
 
 FeedTokenContext::FeedTokenContext()
     : transport(),
-      token_ap(new FeedToken(transport)),
-      token(*token_ap)
-{
-}
+      token(feedtoken::make(transport))
+{}
 
 FeedTokenContext::~FeedTokenContext() = default;
 
@@ -432,8 +416,7 @@ struct FeedHandlerFixture
         handler.init(1);
     }
 
-    ~FeedHandlerFixture()
-    {
+    ~FeedHandlerFixture() {
         writeService.sync();
     }
     template <class FunctionType>
@@ -484,7 +467,7 @@ TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
     static_cast<DocumentOperation &>(*op).setPrevDbDocumentId(DbDocumentId(4));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
-    f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.remove_count);
     EXPECT_EQUAL(0, f.tls_writer.store_count);
 }
@@ -496,7 +479,7 @@ TEST_F("require that outdated put is ignored", FeedHandlerFixture)
                                           Timestamp(10), doc_context.doc));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
-    f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.put_count);
     EXPECT_EQUAL(0, f.tls_writer.store_count);
 }
@@ -575,7 +558,7 @@ TEST_F("require that remove of unknown document with known data type stores remo
     DocumentContext doc_context("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op(new RemoveOperation(doc_context.bucketId, Timestamp(10), doc_context.doc->getId()));
     FeedTokenContext token_context;
-    f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
     EXPECT_EQUAL(1, f.tls_writer.store_count);
 }
@@ -585,7 +568,7 @@ TEST_F("require that partial update for non-existing document is tagged as such"
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
     FeedTokenContext token_context;
-    f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
     const UpdateResult *result = static_cast<const UpdateResult *>(token_context.getResult());
 
     EXPECT_FALSE(token_context.transport.documentWasFound);
@@ -603,7 +586,7 @@ TEST_F("require that partial update for non-existing document is created if spec
     f.feedView.metaStore.insert(upCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(10)));
     FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
     FeedTokenContext token_context;
-    f.handler.performOperation(std::move(token_context.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
     const UpdateResult *result = static_cast<const UpdateResult *>(token_context.getResult());
 
     EXPECT_TRUE(token_context.transport.documentWasFound);
@@ -624,7 +607,7 @@ TEST_F("require that put is rejected if resource limit is reached", FeedHandlerF
     DocumentContext docCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc);
     FeedTokenContext token;
-    f.handler.performOperation(std::move(token.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.put_count);
     EXPECT_EQUAL(Result::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
     EXPECT_EQUAL("Put operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
@@ -639,7 +622,7 @@ TEST_F("require that update is rejected if resource limit is reached", FeedHandl
     UpdateContext updCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
     FeedTokenContext token;
-    f.handler.performOperation(std::move(token.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.update_count);
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
     EXPECT_EQUAL(Result::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
@@ -655,7 +638,7 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
     DocumentContext docCtx("id:test:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op = std::make_unique<RemoveOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc->getId());
     FeedTokenContext token;
-    f.handler.performOperation(std::move(token.token_ap), std::move(op));
+    f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
     EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());
     EXPECT_EQUAL("", token.getResult()->getErrorMessage());

@@ -5,7 +5,7 @@
 
 using namespace proton;
 
-class LocalTransport : public FeedToken::ITransport {
+class LocalTransport : public feedtoken::ITransport {
 private:
     size_t _receivedCount;
 
@@ -45,8 +45,9 @@ void
 Test::testAck()
 {
     LocalTransport transport;
-    FeedToken token(transport);
-    token.ack();
+    {
+        FeedToken token = feedtoken::make(transport);
+    }
     EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
@@ -54,8 +55,8 @@ void
 Test::testFail()
 {
     LocalTransport transport;
-    FeedToken token(transport);
-    token.fail();
+    FeedToken token = feedtoken::make(transport);
+    token->fail();
     EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 
@@ -70,9 +71,10 @@ Test::testHandover()
 
     LocalTransport transport;
 
-    FeedToken token(transport);
-    token = MyHandover::handover(token);
-    token.ack();
+    {
+        FeedToken token = feedtoken::make(transport);
+        token = MyHandover::handover(token);
+    }
     EXPECT_EQUAL(1u, transport.getReceivedCount());
 }
 

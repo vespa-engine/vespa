@@ -2,50 +2,35 @@
 
 #include "feedtoken.h"
 
-namespace proton {
+namespace proton::feedtoken {
 
-FeedToken::FeedToken(ITransport &transport) :
-    _state(new State(transport, 1))
-{
-}
-
-FeedToken::State::State(ITransport & transport, uint32_t numAcksRequired) :
+State::State(ITransport & transport) :
     _transport(transport),
     _result(new storage::spi::Result()),
     _documentWasFound(false),
-    _unAckedCount(numAcksRequired)
+    _alreadySent(false)
 {
-    assert(_unAckedCount > 0);
 }
 
-FeedToken::State::~State()
+State::~State()
 {
-    assert(_unAckedCount == 0);
+    ack();
 }
 
 void
-FeedToken::State::ack()
+State::ack()
 {
-    uint32_t prev(_unAckedCount--);
-    if (prev == 1) {
+    bool alreadySent = _alreadySent.exchange(true);
+    if ( !alreadySent ) {
         _transport.send(std::move(_result), _documentWasFound);
     }
-    assert(prev >= 1);
 }
 
 void
-FeedToken::State::incNeededAcks()
+State::fail()
 {
-    uint32_t prev(_unAckedCount++);
-    assert(prev >= 1);
-    (void) prev;
-}
-
-void
-FeedToken::State::fail()
-{
-    uint32_t prev = _unAckedCount.exchange(0);
-    if (prev > 0) {
+    bool alreadySent = _alreadySent.exchange(true);
+    if ( !alreadySent ) {
         _transport.send(std::move(_result), _documentWasFound);
     }
 }

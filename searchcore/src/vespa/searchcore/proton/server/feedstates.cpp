@@ -82,13 +82,13 @@ public:
     }
 
     virtual void replay(const PutOperation &op) override {
-        _feed_view_ptr->handlePut(NULL, op);
+        _feed_view_ptr->handlePut(FeedToken(), op);
     }
     virtual void replay(const RemoveOperation &op) override {
-        _feed_view_ptr->handleRemove(NULL, op);
+        _feed_view_ptr->handleRemove(FeedToken(), op);
     }
     virtual void replay(const UpdateOperation &op) override {
-        _feed_view_ptr->handleUpdate(NULL, op);
+        _feed_view_ptr->handleUpdate(FeedToken(), op);
     }
     virtual void replay(const NoopOperation &) override {} // ignored
     virtual void replay(const NewConfigOperation &op) override {
@@ -100,16 +100,12 @@ public:
         _feed_view_ptr->handleDeleteBucket(op);
     }
     virtual void replay(const SplitBucketOperation &op) override {
-        _bucketDBHandler.handleSplit(op.getSerialNum(),
-                                     op.getSource(),
-                                     op.getTarget1(),
-                                     op.getTarget2());
+        _bucketDBHandler.handleSplit(op.getSerialNum(), op.getSource(),
+                                     op.getTarget1(), op.getTarget2());
     }
     virtual void replay(const JoinBucketsOperation &op) override {
-        _bucketDBHandler.handleJoin(op.getSerialNum(),
-                                    op.getSource1(),
-                                    op.getSource2(),
-                                    op.getTarget());
+        _bucketDBHandler.handleJoin(op.getSerialNum(), op.getSource1(),
+                                    op.getSource2(), op.getTarget());
     }
     virtual void replay(const PruneRemovedDocumentsOperation &op) override {
         _feed_view_ptr->handlePruneRemovedDocuments(op);

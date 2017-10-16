@@ -2,22 +2,14 @@
 
 #pragma once
 
-namespace proton
-{
-
-class FeedToken;
+namespace proton {
 
 class IHeartBeatHandler
 {
 public:
-    virtual void
-    heartBeat() = 0;
+    virtual void heartBeat() = 0;
 
-    virtual
-    ~IHeartBeatHandler()
-    {
-    }
+    virtual ~IHeartBeatHandler() = default;
 };
 
 } // namespace proton
-
