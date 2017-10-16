@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
+import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
@@ -27,7 +28,8 @@ public class ZmsKeystoreImpl implements ZmsKeystore {
     private final Map<FullKeyId, PublicKey> cachedKeys = new ConcurrentHashMap<>();
     private final AthenzClientFactory athenzClientFactory;
 
-    ZmsKeystoreImpl(AthenzClientFactory factory) {
+    @Inject
+    public ZmsKeystoreImpl(AthenzClientFactory factory) {
         this.athenzClientFactory = factory;
     }
 
