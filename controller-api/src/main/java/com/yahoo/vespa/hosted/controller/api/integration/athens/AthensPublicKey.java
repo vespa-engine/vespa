@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.athenz;
+package com.yahoo.vespa.hosted.controller.api.integration.athens;
 
 import java.security.PublicKey;
 import java.util.Objects;
@@ -7,12 +7,11 @@ import java.util.Objects;
 /**
  * @author bjorncs
  */
-public class AthenzPublicKey {
-
+public class AthensPublicKey {
     private final PublicKey publicKey;
     private final String keyId;
 
-    public AthenzPublicKey(PublicKey publicKey, String keyId) {
+    public AthensPublicKey(PublicKey publicKey, String keyId) {
         this.publicKey = publicKey;
         this.keyId = keyId;
     }
@@ -29,7 +28,7 @@ public class AthenzPublicKey {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AthenzPublicKey that = (AthenzPublicKey) o;
+        AthensPublicKey that = (AthensPublicKey) o;
         return Objects.equals(publicKey, that.publicKey) &&
                 Objects.equals(keyId, that.keyId);
     }
@@ -41,7 +40,7 @@ public class AthenzPublicKey {
 
     @Override
     public String toString() {
-        return "AthenzPublicKey{" +
+        return "AthensPublicKey{" +
                 "publicKey=" + publicKey +
                 ", keyId='" + keyId + '\'' +
                 '}';

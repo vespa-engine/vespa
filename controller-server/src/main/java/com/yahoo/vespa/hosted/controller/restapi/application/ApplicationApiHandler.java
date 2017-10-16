@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.google.common.base.Joiner;
-import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -51,6 +50,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
@@ -65,10 +67,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -108,15 +106,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final Authorizer authorizer;
-    private final AthenzClientFactory athenzClientFactory;
 
-    @Inject
-    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer,
-                                 AthenzClientFactory athenzClientFactory) {
+    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer) {
         super(executor, accessLog);
         this.controller = controller;
         this.authorizer = authorizer;
-        this.athenzClientFactory = athenzClientFactory;
     }
 
     @Override
@@ -760,10 +754,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
-        DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
+        DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.athens(), controller.zoneRegistry());
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         Principal principal = authorizer.getPrincipal(request);
-        if (principal instanceof AthenzPrincipal) {
+        if (principal instanceof AthensPrincipal) {
             deployAuthorizer.throwIfUnauthorizedForDeploy(principal,
                                                           Environment.from(environment),
                                                           tenant,

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.athenz.mock;
+package com.yahoo.vespa.hosted.controller.api.integration.athens.mock;
 
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,8 +26,8 @@ public class AthensDbMock {
     public static class Domain {
 
         public final AthensDomain name;
-        public final Set<AthenzPrincipal> admins = new HashSet<>();
-        public final Set<AthenzPrincipal> tenantAdmins = new HashSet<>();
+        public final Set<AthensPrincipal> admins = new HashSet<>();
+        public final Set<AthensPrincipal> tenantAdmins = new HashSet<>();
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public boolean isVespaTenant = false;
 
@@ -35,12 +35,12 @@ public class AthensDbMock {
             this.name = name;
         }
 
-        public Domain admin(AthenzPrincipal user) {
+        public Domain admin(AthensPrincipal user) {
             admins.add(user);
             return this;
         }
 
-        public Domain tenantAdmin(AthenzPrincipal user) {
+        public Domain tenantAdmin(AthensPrincipal user) {
             tenantAdmins.add(user);
             return this;
         }
@@ -56,7 +56,7 @@ public class AthensDbMock {
 
     public static class Application {
 
-        public final Map<ApplicationAction, Set<AthenzPrincipal>> acl = new HashMap<>();
+        public final Map<ApplicationAction, Set<AthensPrincipal>> acl = new HashMap<>();
 
         public Application() {
             acl.put(ApplicationAction.deploy, new HashSet<>());
@@ -64,7 +64,7 @@ public class AthensDbMock {
             acl.put(ApplicationAction.write, new HashSet<>());
         }
 
-        public Application addRoleMember(ApplicationAction action, AthenzPrincipal user) {
+        public Application addRoleMember(ApplicationAction action, AthensPrincipal user) {
             acl.get(action).add(user);
             return this;
         }
