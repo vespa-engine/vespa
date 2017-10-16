@@ -8,11 +8,6 @@
 #include "tlcproxy.h"
 #include "configstore.h"
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/feedreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
@@ -27,11 +22,6 @@ LOG_SETUP(".proton.server.feedhandler");
 using document::BucketId;
 using document::Document;
 using document::DocumentTypeRepo;
-using documentapi::DocumentProtocol;
-using documentapi::DocumentReply;
-using documentapi::FeedReply;
-using documentapi::RemoveDocumentReply;
-using documentapi::UpdateDocumentReply;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
