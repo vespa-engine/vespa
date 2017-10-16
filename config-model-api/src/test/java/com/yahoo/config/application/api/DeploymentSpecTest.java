@@ -283,7 +283,8 @@ public class DeploymentSpecTest {
         StringReader r = new StringReader(
                 "<deployment>\n" +
                 "  <block-upgrade days='mon,tue' hours='15-16'/>\n" +
-                "  <block-upgrade days='sat' hours='10' time-zone='CET'/>\n" +
+                // version=false is ignored for block-upgrade
+                "  <block-upgrade version='false' days='sat' hours='10' time-zone='CET'/>\n" +
                 "  <prod>\n" +
                 "    <region active='true'>us-west-1</region>\n" +
                 "  </prod>\n" +
