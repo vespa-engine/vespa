@@ -49,8 +49,7 @@ private:
 private:
     bool trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string> &expected);
     bool tryDistribution(TestFrame &frame, const string &id, const string &expected);
-    void tryWasFound(TestFrame &frame, uint32_t expectedRecipients,
-                     uint32_t foundMask, bool expectedFound);
+    void tryWasFound(TestFrame &frame, uint32_t expectedRecipients, uint32_t foundMask, bool expectedFound);
     void setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern,
                            int32_t numEntries = -1);
     StoragePolicy &setupStoragePolicy(TestFrame &frame, const string &param,
