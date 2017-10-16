@@ -147,6 +147,14 @@ public class CuratorDb {
         return lock(lockPath(provisionStateId), Duration.ofMinutes(30));
     }
 
+    public Lock lockVespaServerPool() {
+        return lock(root.append("locks").append("vespaServerPoolLock"), defaultLockTimeout);
+    }
+
+    public Lock lockOpenStackServerPool() {
+        return lock(root.append("locks").append("openStackServerPoolLock"), defaultLockTimeout);
+    }
+
     // -------------- Read and write --------------------------------------------------
 
     public Set<String> readInactiveJobs() {
@@ -229,15 +237,31 @@ public class CuratorDb {
     }
 
     public Optional<byte[]> readProvisionState(String provisionId) {
-        return curator.getData(provisionStatePath().append(provisionId));
+        return curator.getData(provisionStatePath(provisionId));
     }
 
     public void writeProvisionState(String provisionId, byte[] data) {
-        curator.set(provisionStatePath().append(provisionId), data);
+        curator.set(provisionStatePath(provisionId), data);
     }
 
     public List<String> readProvisionStateIds() {
         return curator.getChildren(provisionStatePath());
+    }
+
+    public Optional<byte[]> readVespaServerPool() {
+        return curator.getData(vespaServerPoolPath());
+    }
+
+    public void writeVespaServerPool(byte[] data) {
+        curator.set(vespaServerPoolPath(), data);
+    }
+
+    public Optional<byte[]> readOpenStackServerPool() {
+        return curator.getData(openStackServerPoolPath());
+    }
+
+    public void writeOpenStackServerPool(byte[] data) {
+        curator.set(openStackServerPoolPath(), data);
     }
 
     // -------------- Paths --------------------------------------------------
@@ -289,5 +313,13 @@ public class CuratorDb {
 
     private Path provisionStatePath(String provisionId) {
         return provisionStatePath().append(provisionId);
+    }
+
+    private Path vespaServerPoolPath() {
+        return root.append("vespaServerPool");
+    }
+
+    private Path openStackServerPoolPath() {
+        return root.append("openStackServerPool");
     }
 }
