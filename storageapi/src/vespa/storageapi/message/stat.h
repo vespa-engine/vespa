@@ -27,7 +27,6 @@ public:
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
     DECLARE_STORAGECOMMAND(StatBucketCommand, onStatBucket);
 };
 

@@ -113,8 +113,6 @@ public:
     uint32_t getMaxBucketsPerVisitor() const { return _maxBucketsPerVisitor; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
-
     DECLARE_STORAGECOMMAND(CreateVisitorCommand, onCreateVisitor)
 };
 

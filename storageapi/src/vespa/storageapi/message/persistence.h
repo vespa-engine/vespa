@@ -69,7 +69,6 @@ public:
     }
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(PutCommand, onPut);
 };
@@ -137,7 +136,6 @@ public:
     vespalib::string getSummary() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(UpdateCommand, onUpdate);
 };
@@ -208,8 +206,6 @@ public:
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
-
     DECLARE_STORAGECOMMAND(GetCommand, onGet)
 };
 
@@ -266,7 +262,6 @@ public:
     Timestamp getTimestamp() const { return _timestamp; }
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
     DECLARE_STORAGECOMMAND(RemoveCommand, onRemove)
 };
 

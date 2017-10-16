@@ -65,16 +65,6 @@ CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
 
 CreateVisitorCommand::~CreateVisitorCommand() {}
 
-StorageCommand::UP
-CreateVisitorCommand::createCopyToForward(
-            const document::BucketId& bucket, uint64_t) const
-{
-    CreateVisitorCommand::UP cmd(new CreateVisitorCommand(*this));
-    cmd->_buckets.clear();
-    cmd->_buckets.push_back(bucket);
-    return std::move(cmd);
-}
-
 void
 CreateVisitorCommand::print(std::ostream& out, bool verbose,
                             const std::string& indent) const

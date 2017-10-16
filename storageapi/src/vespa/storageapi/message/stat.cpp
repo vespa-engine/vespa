@@ -32,14 +32,6 @@ StatBucketCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-StorageCommand::UP
-StatBucketCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t) const
-{
-    StatBucketCommand::UP cmd(new StatBucketCommand(bucket, _docSelection));
-    return std::move(cmd);
-}
-
 StatBucketReply::StatBucketReply(const StatBucketCommand& cmd,
                                  const vespalib::stringref & results)
     : BucketReply(cmd),

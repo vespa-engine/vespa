@@ -39,15 +39,6 @@ PutCommand::PutCommand(const document::BucketId& id,
 
 PutCommand::~PutCommand() {}
 
-StorageCommand::UP
-PutCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    StorageCommand::UP cmd(new PutCommand(bucket, _doc, timestamp));
-    static_cast<PutCommand&>(*cmd).setUpdateTimestamp(_updateTimestamp);
-    return cmd;
-}
-
 vespalib::string
 PutCommand::getSummary() const
 {
@@ -154,15 +145,6 @@ UpdateCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-StorageCommand::UP
-UpdateCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    StorageCommand::UP cmd(new UpdateCommand(bucket, _update, timestamp));
-    static_cast<UpdateCommand&>(*cmd).setOldTimestamp(_oldTimestamp);
-    return cmd;
-}
-
 UpdateReply::UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp)
     : BucketInfoReply(cmd),
       _docId(cmd.getDocumentId()),
@@ -205,16 +187,6 @@ GetCommand::GetCommand(const document::BucketId& bid,
 }
 
 GetCommand::~GetCommand() {}
-
-StorageCommand::UP
-GetCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    (void) timestamp;
-    StorageCommand::UP cmd(new GetCommand(
-            bucket, _docId, _fieldSet, _beforeTimestamp));
-    return cmd;
-}
 
 vespalib::string
 GetCommand::getSummary() const
@@ -276,14 +248,6 @@ RemoveCommand::RemoveCommand(const document::BucketId& bid,
 }
 
 RemoveCommand::~RemoveCommand() {}
-
-StorageCommand::UP
-RemoveCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    StorageCommand::UP cmd(new RemoveCommand(bucket, _docId, timestamp));
-    return cmd;
-}
 
 vespalib::string
 RemoveCommand::getSummary() const {
