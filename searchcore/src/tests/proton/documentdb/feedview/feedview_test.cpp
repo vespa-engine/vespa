@@ -1,9 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
@@ -11,7 +7,6 @@
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
-#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 #include <vespa/searchcore/proton/server/matchview.h>
 #include <vespa/searchcore/proton/server/searchable_feed_view.h>
@@ -25,9 +20,7 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/docstore/cachestats.h>
-#include <vespa/searchlib/docstore/idocumentstore.h>
+
 #include <vespa/searchlib/index/docbuilder.h>
 
 #include <vespa/log/log.h>
@@ -37,8 +30,6 @@ using document::BucketId;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
-using documentapi::DocumentProtocol;
-using documentapi::RemoveDocumentReply;
 using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
@@ -62,7 +53,6 @@ using namespace search::index;
 
 typedef SearchableFeedView::SerialNum SerialNum;
 typedef search::DocumentIdT DocumentIdT;
-typedef DocumentProtocol::MessageType MessageType;
 
 struct MyLidVector : public std::vector<DocumentIdT>
 {
@@ -235,7 +225,8 @@ struct MyDocumentStore : public test::DummyDocumentStore
           _lastSyncToken(0),
           _compactLidSpaceLidLimit(0)
     {}
-    virtual Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const override {
+    ~MyDocumentStore() override;
+    Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const override {
         DocMap::const_iterator itr = _docs.find(lid);
         if (itr != _docs.end()) {
             Document::UP retval(itr->second->clone());
@@ -243,26 +234,28 @@ struct MyDocumentStore : public test::DummyDocumentStore
         }
         return Document::UP();
     }
-    virtual void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) override {
+    void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) override {
         _lastSyncToken = syncToken;
         _docs[lid] = Document::SP(doc.clone());
     }
-    virtual void write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & os) override {
+    void write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & os) override {
         _lastSyncToken = syncToken;
         _docs[lid] = std::make_shared<Document>(_repo, const_cast<vespalib::nbostream &>(os));
     }
-    virtual void remove(uint64_t syncToken, DocumentIdT lid) override {
+    void remove(uint64_t syncToken, DocumentIdT lid) override {
         _lastSyncToken = syncToken;
         _docs.erase(lid);
     }
-    virtual uint64_t initFlush(uint64_t syncToken) override {
+    uint64_t initFlush(uint64_t syncToken) override {
         return syncToken;
     }
-    virtual uint64_t lastSyncToken() const override { return _lastSyncToken; }
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override {
+    uint64_t lastSyncToken() const override { return _lastSyncToken; }
+    void compactLidSpace(uint32_t wantedDocLidLimit) override {
         _compactLidSpaceLidLimit = wantedDocLidLimit;
     }
 };
+
+MyDocumentStore::~MyDocumentStore() = default;
 
 struct MySummaryManager : public test::DummySummaryManager
 {
@@ -1207,12 +1200,12 @@ TEST_F("require that commit is not called when inside a commit interval",
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
                   "ack(Result(0, )),"
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0)");
+                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
+                  "ack(Result(0, ))");
 }
 
 TEST_F("require that commit is called when crossing a commit interval",
@@ -1228,19 +1221,18 @@ TEST_F("require that commit is called when crossing a commit interval",
     f.removeAndWait(dc);
     EXPECT_EQUAL(2u, f.miw._commitCount);
     EXPECT_EQUAL(2u, f.maw._commitCount);
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=1),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=1),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
                   "commit(adapter=index,serialNum=1),"
                   "ack(Result(0, )),"
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=1),"
                   "remove(adapter=index,serialNum=2,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=2)");
+                  "commit(adapter=index,serialNum=2),"
+                  "ack(Result(0, ))");
 }
 
 
-TEST_F("require that commit is not implicitly called after "
-       "handover to maintenance job",
+TEST_F("require that commit is not implicitly called after handover to maintenance job",
        SearchableFeedViewFixture(SHORT_DELAY))
 {
     f._commitTimeTracker.setReplayDone();
@@ -1255,12 +1247,12 @@ TEST_F("require that commit is not implicitly called after "
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
                   "ack(Result(0, )),"
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0)");
+                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
+                  "ack(Result(0, ))");
 }
 
 TEST_F("require that forceCommit updates docid limit",
@@ -1276,15 +1268,14 @@ TEST_F("require that forceCommit updates docid limit",
     EXPECT_EQUAL(1u, f.miw._commitCount);
     EXPECT_EQUAL(1u, f.maw._commitCount);
     EXPECT_EQUAL(2u, f._docIdLimit.get());
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
+                  "ack(Result(0, )),"
                   "commit(adapter=attribute,serialNum=1),"
                   "commit(adapter=index,serialNum=1)");
 }
 
-TEST_F("require that forceCommit updates docid limit during shrink",
-       SearchableFeedViewFixture(LONG_DELAY))
+TEST_F("require that forceCommit updates docid limit during shrink", SearchableFeedViewFixture(LONG_DELAY))
 {
     f._commitTimeTracker.setReplayDone();
     f.putAndWait(f.makeDummyDocs(0, 3, 1000));
