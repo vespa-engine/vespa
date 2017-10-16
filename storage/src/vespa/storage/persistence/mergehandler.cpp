@@ -955,8 +955,8 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
                                        _env._metrics.mergeBuckets,
                                        _env._component.getClock()));
 
-    const document::BucketId& id(cmd.getBucketId());
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), id), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    const document::BucketId id(bucket.getBucketId());
     LOG(debug, "MergeBucket(%s) with max timestamp %" PRIu64 ".",
         bucket.toString().c_str(), cmd.getMaxTimestamp());
 
@@ -1181,8 +1181,8 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
     MessageTracker::UP tracker(new MessageTracker(
                                        _env._metrics.getBucketDiff,
                                        _env._component.getClock()));
-    const document::BucketId& id(cmd.getBucketId());
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), id), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    const document::BucketId id(bucket.getBucketId());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
     checkResult(_spi.createBucket(bucket, context), bucket, "create bucket");
 
@@ -1304,8 +1304,8 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
                                        MessageSender& sender)
 {
     ++_env._metrics.getBucketDiffReply;
-    document::BucketId id(reply.getBucketId());
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), id), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
+    document::BucketId id(bucket.getBucketId());
     LOG(debug, "GetBucketDiffReply(%s)", bucket.toString().c_str());
 
     if (!_env._fileStorHandler.isMerging(id)) {
@@ -1388,8 +1388,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
                                        _env._metrics.applyBucketDiff,
                                        _env._component.getClock()));
 
-    const document::BucketId& id(cmd.getBucketId());
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), id), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    const document::BucketId id(bucket.getBucketId());
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(id)) {
@@ -1484,8 +1484,8 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                                          MessageSender& sender)
 {
     ++_env._metrics.applyBucketDiffReply;
-    document::BucketId id(reply.getBucketId());
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), id), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
+    document::BucketId id(bucket.getBucketId());
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 
