@@ -75,7 +75,7 @@ public class ZmsClientImpl implements ZmsClient {
                     .setResourceGroup(applicationName.id())
                     .setRoles(tenantRoleActions);
             zmsClient.putProviderResourceGroupRoles(
-                    tenantDomain.id(), service.getDomain(), service.getServiceName(),
+                    tenantDomain.id(), service.getDomain().id(), service.getServiceName(),
                     applicationName.id(), /*auditref*/null, resourceGroupRoles);
         });
     }
