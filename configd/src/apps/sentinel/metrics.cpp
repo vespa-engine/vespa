@@ -8,7 +8,7 @@ namespace config {
 namespace sentinel {
 
 StartMetrics::StartMetrics()
-    : currentlyRunningServices(0), totalRestartsCounter(0), totalRestartsLastPeriod(0),
+    : currentlyRunningServices(0), totalRestartsCounter(0), totalRestartsLastPeriod(1),
       lastLoggedTime(0),
       totalRestartsLastSnapshot(0),
       snapshotStart(0),
