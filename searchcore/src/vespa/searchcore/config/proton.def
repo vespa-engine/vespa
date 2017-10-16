@@ -256,7 +256,7 @@ summary.log.maxbucketspread double default=2.5
 summary.log.minfilesizefactor double default=0.2
 
 ## Number of threads used for compressing incomming documents/compacting.
-## Deprecated. Use background.threads instead.
+## Deprecated. Use feeding.concurrency instead.
 ## TODO Remove
 summary.log.numthreads int default=8 restart
 
@@ -377,11 +377,6 @@ visit.ignoremaxbytes bool default=true
 ## The threads are shared between document databases when value is larger than 0.
 ## When set to 0 (default) we use 1 separate thread per document database.
 initialize.threads int default = 0
-
-## Number of worker threads doing background compaction/compression tasks.
-## They all live i a shared thread pool.
-## When set to 0 (default), it will have enough threads to saturate half of the cores.
-background.threads int default=0
 
 ## Portion of enumstore address space that can be used before put and update
 ## portion of feed is blocked.
