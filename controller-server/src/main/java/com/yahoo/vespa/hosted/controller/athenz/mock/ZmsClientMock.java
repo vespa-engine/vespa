@@ -1,22 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.athens.mock;
+package com.yahoo.vespa.hosted.controller.athenz.mock;
 
+import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPublicKey;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensService;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -62,7 +61,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public boolean hasApplicationAccess(AthensPrincipal principal, ApplicationAction action, AthensDomain tenantDomain, ApplicationId applicationName) {
+    public boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthensDomain tenantDomain, ApplicationId applicationName) {
         log("hasApplicationAccess(principal='%s', action='%s', tenantDomain='%s', applicationName='%s')",
                  principal, action, tenantDomain, applicationName);
         AthensDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
@@ -74,14 +73,14 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public boolean hasTenantAdminAccess(AthensPrincipal principal, AthensDomain tenantDomain) {
+    public boolean hasTenantAdminAccess(AthenzPrincipal principal, AthensDomain tenantDomain) {
         log("hasTenantAdminAccess(principal='%s', tenantDomain='%s')", principal, tenantDomain);
         return isDomainAdmin(principal, tenantDomain) ||
                 getDomainOrThrow(tenantDomain, true).tenantAdmins.contains(principal);
     }
 
     @Override
-    public boolean isDomainAdmin(AthensPrincipal principal, AthensDomain domain) {
+    public boolean isDomainAdmin(AthenzPrincipal principal, AthensDomain domain) {
         log("isDomainAdmin(principal='%s', domain='%s')", principal, domain);
         return getDomainOrThrow(domain, false).admins.contains(principal);
     }
@@ -93,21 +92,12 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public List<AthensDomain> getTenantDomainsForUser(AthensPrincipal principal) {
-        log("getTenantDomainsForUser(principal='%s')", principal);
-        return athens.domains.values().stream()
-                .filter(domain -> domain.tenantAdmins.contains(principal) || domain.admins.contains(principal))
-                .map(domain -> domain.name)
-                .collect(toList());
-    }
-
-    @Override
-    public AthensPublicKey getPublicKey(AthensService service, String keyId) {
+    public AthenzPublicKey getPublicKey(AthenzService service, String keyId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<AthensPublicKey> getPublicKeys(AthensService service) {
+    public List<AthenzPublicKey> getPublicKeys(AthenzService service) {
         throw new UnsupportedOperationException();
     }
 
@@ -121,7 +111,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     private static ZmsException zmsException(int code, String message, Object... args) {
-        return new ZmsException(new RuntimeException(String.format(message, args)), code);
+        return new ZmsException(new ZMSClientException(code, String.format(message, args)));
     }
 
     private static void log(String format, Object... args) {

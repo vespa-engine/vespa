@@ -15,8 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -27,6 +25,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -73,7 +73,6 @@ public class Controller extends AbstractComponent {
     private final ConfigServerClient configServerClient;
     private final MetricsService metricsService;
     private final Chef chefClient;
-    private final Athens athens;
     private final ZmsClient zmsClient;
 
     /**
@@ -88,11 +87,11 @@ public class Controller extends AbstractComponent {
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
-                      RoutingGenerator routingGenerator, Chef chefClient, Athens athens) {
+                      RoutingGenerator routingGenerator, Chef chefClient, AthenzClientFactory athenzClientFactory) {
         this(db, curator, rotationRepository,
              gitHub, jiraClient, entityService, globalRoutingService, zoneRegistry,
              configServerClient, metricsService, nameService, routingGenerator, chefClient,
-             Clock.systemUTC(), athens);
+             Clock.systemUTC(), athenzClientFactory);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
@@ -100,7 +99,8 @@ public class Controller extends AbstractComponent {
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
-                      RoutingGenerator routingGenerator, Chef chefClient, Clock clock, Athens athens) {
+                      RoutingGenerator routingGenerator, Chef chefClient, Clock clock,
+                      AthenzClientFactory athenzClientFactory) {
         Objects.requireNonNull(db, "Controller db cannot be null");
         Objects.requireNonNull(curator, "Curator cannot be null");
         Objects.requireNonNull(rotationRepository, "Rotation repository cannot be null");
@@ -115,7 +115,7 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null");
         Objects.requireNonNull(chefClient, "ChefClient cannot be null");
         Objects.requireNonNull(clock, "Clock cannot be null");
-        Objects.requireNonNull(athens, "Athens cannot be null");
+        Objects.requireNonNull(athenzClientFactory, "Athens cannot be null");
 
         this.rotationRepository = rotationRepository;
         this.curator = curator;
@@ -127,12 +127,11 @@ public class Controller extends AbstractComponent {
         this.metricsService = metricsService;
         this.chefClient = chefClient;
         this.clock = clock;
-        this.athens = athens;
-        this.zmsClient = athens.zmsClientFactory().createClientWithServicePrincipal();
+        this.zmsClient = athenzClientFactory.createZmsClientWithServicePrincipal();
 
-        applicationController = new ApplicationController(this, db, curator, rotationRepository, athens.zmsClientFactory(),
+        applicationController = new ApplicationController(this, db, curator, rotationRepository, athenzClientFactory,
                                                           nameService, configServerClient, routingGenerator, clock);
-        tenantController = new TenantController(this, db, curator, entityService);
+        tenantController = new TenantController(this, db, curator, entityService, athenzClientFactory);
     }
     
     /** Returns the instance controlling tenants */
@@ -145,10 +144,6 @@ public class Controller extends AbstractComponent {
         return zmsClient.getDomainList(prefix);
     }
 
-    public Athens athens() {
-        return athens;
-    }
-    
     /**
      * Fetch list of all active OpsDB properties.
      *
