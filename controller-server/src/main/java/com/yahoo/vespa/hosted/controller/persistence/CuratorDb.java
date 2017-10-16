@@ -144,15 +144,15 @@ public class CuratorDb {
     }
 
     public Lock lockProvisionState(String provisionStateId) {
-        return lock(lockPath(provisionStateId), Duration.ofMinutes(30));
+        return lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
     public Lock lockVespaServerPool() {
-        return lock(root.append("locks").append("vespaServerPoolLock"), defaultLockTimeout);
+        return lock(root.append("locks").append("vespaServerPoolLock"), Duration.ofSeconds(1));
     }
 
     public Lock lockOpenStackServerPool() {
-        return lock(root.append("locks").append("openStackServerPoolLock"), defaultLockTimeout);
+        return lock(root.append("locks").append("openStackServerPoolLock"), Duration.ofSeconds(1));
     }
 
     // -------------- Read and write --------------------------------------------------
