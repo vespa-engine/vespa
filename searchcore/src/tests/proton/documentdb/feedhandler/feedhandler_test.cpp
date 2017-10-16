@@ -1,9 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
@@ -40,11 +36,6 @@ using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
-using documentapi::DocumentProtocol;
-using documentapi::DocumentReply;
-using documentapi::RemoveDocumentReply;
-using documentapi::UpdateDocumentReply;
-using mbus::Reply;
 using search::IDestructorCallback;
 using search::SerialNum;
 using search::index::schema::CollectionType;
