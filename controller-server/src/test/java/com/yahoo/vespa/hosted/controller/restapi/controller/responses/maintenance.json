@@ -4,16 +4,28 @@
       "name": "DelayedDeployer"
     },
     {
-      "name": "ClusterUtilizationMaintainer"
-    },
-    {
-      "name":"BlockedChangeDeployer"
+      "name": "BlockedChangeDeployer"
     },
     {
       "name": "Upgrader"
     },
     {
       "name": "FailureRedeployer"
+    },
+    {
+      "name": "VersionStatusUpdater"
+    },
+    {
+      "name": "DeploymentIssueReporter"
+    },
+    {
+      "name": "DeploymentMetricsMaintainer"
+    },
+    {
+      "name": "OutstandingChangeDeployer"
+    },
+    {
+      "name": "ClusterUtilizationMaintainer"
     },
     {
       "name": "ClusterInfoMaintainer"
@@ -23,15 +35,6 @@
     },
     {
       "name": "MetricsReporter"
-    },
-    {
-      "name": "VersionStatusUpdater"
-    },
-    {
-      "name": "DeploymentIssueReporter"
-    },
-    {
-      "name": "OutstandingChangeDeployer"
     }
   ],
   "inactive": [

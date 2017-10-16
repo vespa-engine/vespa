@@ -14,6 +14,7 @@ import java.util.Objects;
  * A deployment of an application in a particular zone.
  * 
  * @author bratseth
+ * @author smorgrav
  */
 public class Deployment {
 
@@ -23,24 +24,28 @@ public class Deployment {
     private final Instant deployTime;
     private final Map<Id, ClusterUtilization> clusterUtils;
     private final Map<Id, ClusterInfo> clusterInfo;
+    private final DeploymentMetrics metrics;
 
     public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime) {
-        this(zone, revision, version, deployTime, new HashMap<>(), new HashMap<>());
+        this(zone, revision, version, deployTime, new HashMap<>(), new HashMap<>(), new DeploymentMetrics());
     }
 
-    public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime, Map<Id, ClusterUtilization> clusterUtils, Map<Id, ClusterInfo> clusterInfo) {
+    public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime,
+                      Map<Id, ClusterUtilization> clusterUtils, Map<Id, ClusterInfo> clusterInfo, DeploymentMetrics metrics) {
         Objects.requireNonNull(zone, "zone cannot be null");
         Objects.requireNonNull(revision, "revision cannot be null");
         Objects.requireNonNull(version, "version cannot be null");
         Objects.requireNonNull(deployTime, "deployTime cannot be null");
         Objects.requireNonNull(clusterUtils, "clusterUtils cannot be null");
         Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
+        Objects.requireNonNull(clusterInfo, "deployment metrics cannot be null");
         this.zone = zone;
         this.revision = revision;
         this.version = version;
         this.deployTime = deployTime;
         this.clusterUtils = clusterUtils;
         this.clusterInfo = clusterInfo;
+        this.metrics = metrics;
     }
 
     /** Returns the zone this was deployed to */
@@ -64,11 +69,20 @@ public class Deployment {
     }
 
     public Deployment withClusterUtils(Map<Id, ClusterUtilization> clusterUtilization) {
-        return new Deployment(zone, revision, version, deployTime, clusterUtilization, clusterInfo);
+        return new Deployment(zone, revision, version, deployTime, clusterUtilization, clusterInfo, metrics);
     }
 
     public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
-        return new Deployment(zone, revision, version, deployTime, clusterUtils, newClusterInfo);
+        return new Deployment(zone, revision, version, deployTime, clusterUtils, newClusterInfo, metrics);
+    }
+
+    public Deployment withMetrics(DeploymentMetrics metrics) {
+        return new Deployment(zone, revision, version, deployTime, clusterUtils, clusterInfo, metrics);
+    }
+
+    /** @return Key metrics for the deployment (application level) like QPS and document count */
+    public DeploymentMetrics metrics() {
+        return metrics;
     }
 
     /**

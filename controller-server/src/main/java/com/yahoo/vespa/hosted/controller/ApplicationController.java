@@ -331,13 +331,10 @@ public class ApplicationController {
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
 
-            Deployment previousDeployment = application.deployments().get(zone);
-            Deployment newDeployment = previousDeployment;
-            if (previousDeployment == null) {
-                newDeployment = new Deployment(zone, revision, version, clock.instant(), new HashMap<>(), new HashMap<>());
-            } else {
-                newDeployment = new Deployment(zone, revision, version, clock.instant(), previousDeployment.clusterUtils(), previousDeployment.clusterInfo());
-            }
+            // Use info from previous deployments is available
+            Deployment previousDeployment = application.deployments().getOrDefault(zone, new Deployment(zone, revision, version, clock.instant()));
+            Deployment newDeployment = new Deployment(zone, revision, version, clock.instant(),
+                        previousDeployment.clusterUtils(), previousDeployment.clusterInfo(), previousDeployment.metrics());
 
             application = application.with(newDeployment);
             store(application, lock);

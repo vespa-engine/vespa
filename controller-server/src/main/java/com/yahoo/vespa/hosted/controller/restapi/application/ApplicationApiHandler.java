@@ -62,8 +62,9 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -433,20 +434,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         toSlime(appCost, costObject);
 
         // Metrics
-        com.yahoo.config.provision.ApplicationId applicationId = com.yahoo.config.provision.ApplicationId.from(tenantName, applicationName, instanceName);
-        Zone zoneId = new Zone(Environment.from(environment), RegionName.from(region));
-        try {
-            MetricsService.DeploymentMetrics metrics = controller.metricsService().getDeploymentMetrics(applicationId, zoneId);
-            Cursor metricsObject = response.setObject("metrics");
-            metricsObject.setDouble("queriesPerSecond", metrics.queriesPerSecond());
-            metricsObject.setDouble("writesPerSecond", metrics.writesPerSecond());
-            metricsObject.setDouble("documentCount", metrics.documentCount());
-            metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
-            metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed getting Yamas metrics", Exceptions.toMessageString(e));
-        }
+        DeploymentMetrics metrics = deployment.metrics();
+        Cursor metricsObject = response.setObject("metrics");
+        metricsObject.setDouble("queriesPerSecond", metrics.queriesPerSecond());
+        metricsObject.setDouble("writesPerSecond", metrics.writesPerSecond());
+        metricsObject.setDouble("documentCount", metrics.documentCount());
+        metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
+        metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
 
         return new SlimeJsonResponse(slime);
     }

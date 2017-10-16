@@ -35,6 +35,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final BlockedChangeDeployer blockedChangeDeployer;
     private final ClusterInfoMaintainer clusterInfoMaintainer;
     private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
+    private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
@@ -54,6 +55,7 @@ public class ControllerMaintenance extends AbstractComponent {
         blockedChangeDeployer = new BlockedChangeDeployer(controller, maintenanceInterval, jobControl);
         clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
+        deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -74,6 +76,7 @@ public class ControllerMaintenance extends AbstractComponent {
         blockedChangeDeployer.deconstruct();
         clusterUtilizationMaintainer.deconstruct();
         clusterInfoMaintainer.deconstruct();
+        deploymentMetricsMaintainer.deconstruct();
     }
 
 }

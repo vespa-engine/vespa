@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 
@@ -98,6 +99,14 @@ public class ApplicationSerializer {
     private final String clusterUtilsDiskField = "disk";
     private final String clusterUtilsDiskBusyField = "diskbusy";
 
+    // Deployment metrics fields
+    private final String deploymentMetricsField = "metrics";
+    private final String deploymentMetricsQPSField = "queriesPerSecond";
+    private final String deploymentMetricsWPSField = "writesPerSecond";
+    private final String deploymentMetricsDocsField = "documentCount";
+    private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
+    private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
+
     
     // ------------------ Serialization
     
@@ -126,6 +135,16 @@ public class ApplicationSerializer {
         toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
         clusterInfoToSlime(deployment.clusterInfo(), object);
         clusterUtilsToSlime(deployment.clusterUtils(), object);
+        metricsToSlime(deployment.metrics(), object);
+    }
+
+    private void metricsToSlime(DeploymentMetrics metrics, Cursor object) {
+        Cursor root = object.setObject(deploymentMetricsField);
+        root.setDouble(deploymentMetricsQPSField, metrics.queriesPerSecond());
+        root.setDouble(deploymentMetricsWPSField, metrics.writesPerSecond());
+        root.setDouble(deploymentMetricsDocsField, metrics.documentCount());
+        root.setDouble(deploymentMetricsQueryLatencyField, metrics.queryLatencyMillis());
+        root.setDouble(deploymentMetricsWriteLatencyField, metrics.writeLatencyMillis());
     }
 
     private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
@@ -252,7 +271,20 @@ public class ApplicationSerializer {
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
                 clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
-                clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)));
+                clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
+                deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)));
+    }
+
+    private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
+
+        double queriesPerSecond = object.field(deploymentMetricsQPSField).asDouble();
+        double writesPerSecond = object.field(deploymentMetricsWPSField).asDouble();
+        double documentCount = object.field(deploymentMetricsDocsField).asDouble();
+        double queryLatencyMillis = object.field(deploymentMetricsQueryLatencyField).asDouble();
+        double writeLatencyMills = object.field(deploymentMetricsWriteLatencyField).asDouble();
+
+        return new DeploymentMetrics(queriesPerSecond, writesPerSecond,
+                documentCount, queryLatencyMillis, writeLatencyMills);
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime(Inspector object) {
