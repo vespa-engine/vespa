@@ -354,9 +354,6 @@ Tuning = element tuning {
       element initialize {
          element threads { xsd:nonNegativeInteger }?
       }? &
-      element background {
-         element threads { xsd:nonNegativeInteger }?
-      }? &
       element feeding {
          element concurrency { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
       }?
