@@ -3,8 +3,6 @@
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/fastos/file.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -46,25 +44,11 @@ using vespalib::Slime;
 
 namespace {
 
-class LocalTransport : public feedtoken::ITransport {
-    mbus::Receptor _receptor;
-
-public:
-    void send(mbus::Reply::UP reply) {
-        fprintf(stderr, "in local transport.");
-        _receptor.handleReply(std::move(reply));
-    }
-
-    mbus::Reply::UP getReply() {
-        return _receptor.getReply(10000);
-    }
-};
-
 struct MyDBOwner : public DummyDBOwner
 {
     std::shared_ptr<DocumentDBReferenceRegistry> _registry;
     MyDBOwner();
-    ~MyDBOwner();
+    ~MyDBOwner() override;
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override {
         return _registry;
     }
@@ -74,7 +58,7 @@ MyDBOwner::MyDBOwner()
     : DummyDBOwner(),
       _registry(std::make_shared<DocumentDBReferenceRegistry>())
 {}
-MyDBOwner::~MyDBOwner() {}
+MyDBOwner::~MyDBOwner() = default;
 
 struct Fixture {
     DummyWireService _dummy;
@@ -124,16 +108,14 @@ Fixture::Fixture()
     _db->waitForOnlineState();
 }
 
-Fixture::~Fixture() {}
+Fixture::~Fixture() = default;
 
 const IFlushTarget *
 extractRealFlushTarget(const IFlushTarget *target)
 {
-    const JobTrackedFlushTarget *tracked =
-            dynamic_cast<const JobTrackedFlushTarget*>(target);
+    const auto tracked = dynamic_cast<const JobTrackedFlushTarget*>(target);
     if (tracked != nullptr) {
-        const ThreadedFlushTarget *threaded =
-                dynamic_cast<const ThreadedFlushTarget*>(&tracked->getTarget());
+        const auto threaded = dynamic_cast<const ThreadedFlushTarget*>(&tracked->getTarget());
         if (threaded != nullptr) {
             return threaded->getFlushTarget().get();
         }
@@ -144,10 +126,10 @@ extractRealFlushTarget(const IFlushTarget *target)
 TEST_F("requireThatIndexFlushTargetIsUsed", Fixture) {
     auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
-    const IndexFlushTarget *index = 0;
+    const IndexFlushTarget *index = nullptr;
     for (size_t i = 0; i < targets.size(); ++i) {
         const IFlushTarget *target = extractRealFlushTarget(targets[i].get());
-        if (target != NULL) {
+        if (target != nullptr) {
             index = dynamic_cast<const IndexFlushTarget *>(target);
         }
         if (index) {
@@ -161,9 +143,9 @@ template <typename Target>
 size_t getNumTargets(const std::vector<IFlushTarget::SP> & targets)
 {
     size_t retval = 0;
-    for (size_t i = 0; i < targets.size(); ++i) {
-        const IFlushTarget *target = extractRealFlushTarget(targets[i].get());
-        if (dynamic_cast<const Target*>(target) == NULL) {
+    for (const auto & candidate : targets) {
+        const IFlushTarget *target = extractRealFlushTarget(candidate.get());
+        if (dynamic_cast<const Target*>(target) == nullptr) {
             continue;
         }
         retval++;
@@ -244,16 +226,16 @@ TEST_F("requireThatStateIsReported", Fixture)
 
 TEST_F("require that session manager can be explored", Fixture)
 {
-    EXPECT_TRUE(DocumentDBExplorer(f._db).get_child("session").get() != nullptr);    
+    EXPECT_TRUE(DocumentDBExplorer(f._db).get_child("session"));
 }
 
 TEST_F("require that document db registers reference", Fixture)
 {
     auto &registry = f._myDBOwner._registry;
     auto reference = registry->get("typea");
-    EXPECT_TRUE(reference.get() != nullptr);
+    EXPECT_TRUE(reference);
     auto attr = reference->getAttribute("attr1");
-    EXPECT_TRUE(attr.get() != nullptr);
+    EXPECT_TRUE(attr);
     EXPECT_EQUAL(search::attribute::BasicType::INT32, attr->getBasicType());
 }
 
