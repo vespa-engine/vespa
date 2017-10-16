@@ -161,7 +161,7 @@ public class InputCheckingSearcher extends Searcher {
         }
         asOctets.flip();
         CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT);
+                                                                    .onUnmappableCharacter(CodingErrorAction.REPORT);
         // OK, unmappable character is sort of theoretical, but added to be explicit
         try {
             decoder.decode(asOctets);
@@ -170,7 +170,7 @@ public class InputCheckingSearcher extends Searcher {
         }
         utfRejections.add();
         throw new IllegalArgumentException("The user input has been determined to be double encoded UTF-8."
-                + " Please investigate whether this is a false positive.");
+                                           + " Please investigate whether this is a false positive.");
     }
 
     private int countSingleCharacterUserTerms(Item queryItem) {
@@ -188,4 +188,5 @@ public class InputCheckingSearcher extends Searcher {
             return 0;
         }
     }
+
 }
