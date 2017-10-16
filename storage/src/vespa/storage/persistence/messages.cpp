@@ -2,6 +2,8 @@
 
 #include "messages.h"
 
+using document::BucketSpace;
+
 namespace storage {
 
 GetIterCommand::GetIterCommand(framework::MemoryToken::UP token,
@@ -10,7 +12,7 @@ GetIterCommand::GetIterCommand(framework::MemoryToken::UP token,
                                uint32_t maxByteSize)
     : api::InternalCommand(ID),
       _token(std::move(token)),
-      _bucketId(bucketId),
+      _bucket(BucketSpace::placeHolder(), bucketId),
       _iteratorId(iteratorId),
       _maxByteSize(maxByteSize)
 {
@@ -37,7 +39,7 @@ GetIterCommand::makeReply() {
 GetIterReply::GetIterReply(GetIterCommand& cmd)
     : api::InternalReply(ID, cmd),
       _token(cmd.releaseMemoryToken()),
-      _bucketId(cmd.getBucketId()),
+      _bucket(cmd.getBucket()),
       _completed(false)
 { }
 
@@ -58,7 +60,7 @@ CreateIteratorCommand::CreateIteratorCommand(const document::BucketId& bucketId,
                                              const std::string& fields,
                                              spi::IncludedVersions includedVersions)
     : api::InternalCommand(ID),
-      _bucketId(bucketId),
+      _bucket(BucketSpace::placeHolder(), bucketId),
       _selection(selection),
       _fieldSet(fields),
       _includedVersions(includedVersions),
@@ -69,7 +71,7 @@ CreateIteratorCommand::~CreateIteratorCommand() { }
 
 void
 CreateIteratorCommand::print(std::ostream& out, bool, const std::string &) const {
-    out << "CreateIteratorCommand(" << _bucketId << ")";
+    out << "CreateIteratorCommand(" << _bucket.getBucketId() << ")";
 }
 
 std::unique_ptr<api::StorageReply>
@@ -80,7 +82,7 @@ CreateIteratorCommand::makeReply() {
 
 CreateIteratorReply::CreateIteratorReply(const CreateIteratorCommand& cmd, spi::IteratorId iteratorId)
     : api::InternalReply(ID, cmd),
-      _bucketId(cmd.getBucketId()),
+      _bucket(cmd.getBucket()),
       _iteratorId(iteratorId)
 { }
 
@@ -88,7 +90,7 @@ CreateIteratorReply::~CreateIteratorReply() { }
 
 void
 CreateIteratorReply::print(std::ostream& out, bool, const std::string &) const {
-    out << "CreateIteratorReply(" << _bucketId << ")";
+    out << "CreateIteratorReply(" << _bucket.getBucketId() << ")";
 }
 
 DestroyIteratorCommand::DestroyIteratorCommand(spi::IteratorId iteratorId)
@@ -122,26 +124,26 @@ DestroyIteratorCommand::makeReply() {
 
 RecheckBucketInfoCommand::RecheckBucketInfoCommand(const document::BucketId& bucketId)
     : api::InternalCommand(ID),
-      _bucketId(bucketId)
+      _bucket(BucketSpace::placeHolder(), bucketId)
 { }
 
 RecheckBucketInfoCommand::~RecheckBucketInfoCommand() { }
 
 void
 RecheckBucketInfoCommand::print(std::ostream& out, bool, const std::string &) const {
-    out << "RecheckBucketInfoCommand(" << _bucketId << ")";
+    out << "RecheckBucketInfoCommand(" << _bucket.getBucketId() << ")";
 }
 
 RecheckBucketInfoReply::RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd)
     : api::InternalReply(ID, cmd),
-      _bucketId(cmd.getBucketId())
+      _bucket(cmd.getBucket())
 { }
 
 RecheckBucketInfoReply::~RecheckBucketInfoReply() { }
 
 void
 RecheckBucketInfoReply::print(std::ostream& out, bool, const std::string &) const {
-    out << "RecheckBucketInfoReply(" << _bucketId << ")";
+    out << "RecheckBucketInfoReply(" << _bucket.getBucketId() << ")";
 }
 
 std::unique_ptr<api::StorageReply>

@@ -350,8 +350,7 @@ protected:
     StorageMessage(const MessageType& code, Id id);
     StorageMessage(const StorageMessage&, Id id);
 
-    static document::Bucket getPlaceHolderBucket(document::BucketId bucketId)  { return document::Bucket(document::BucketSpace::placeHolder(), bucketId); }
-    static document::Bucket getDummyBucket() { return getPlaceHolderBucket(document::BucketId()); }
+    static document::Bucket getDummyBucket() { return document::Bucket(document::BucketSpace::placeHolder(), document::BucketId()); }
 public:
     virtual ~StorageMessage();
 

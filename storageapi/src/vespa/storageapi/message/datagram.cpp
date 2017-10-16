@@ -2,6 +2,8 @@
 
 #include "datagram.h"
 
+using document::BucketSpace;
+
 namespace storage {
 namespace api {
 
@@ -18,7 +20,7 @@ DocBlockCommand::DocBlockCommand(const document::BucketId& bucketId,
                                  const vdslib::DocumentList& block,
                                  const std::shared_ptr<void>& buffer)
     : StorageCommand(MessageType::DOCBLOCK),
-      _bucketId(bucketId),
+      _bucket(BucketSpace::placeHolder(), bucketId),
       _docBlock(block),
       _buffer(buffer),
       _keepTimeStamps(false)
@@ -99,7 +101,7 @@ MapVisitorReply::print(std::ostream& out, bool verbose,
 
 DocumentListCommand::DocumentListCommand(const document::BucketId& bid)
     : StorageCommand(MessageType::DOCUMENTLIST),
-      _bucketId(bid),
+      _bucket(BucketSpace::placeHolder(), bid),
       _documents()
 {
 }
@@ -108,7 +110,7 @@ void
 DocumentListCommand::print(std::ostream& out, bool verbose,
                            const std::string& indent) const
 {
-    out << "DocumentList(" << _bucketId;
+    out << "DocumentList(" << _bucket.getBucketId();
     if (_documents.empty()) {
         out << ", empty";
     } else if (verbose) {

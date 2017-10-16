@@ -161,14 +161,14 @@ public:
     /**
        Returns a bucket suitable for routing this message.
     */
-    document::Bucket getBucket() const override { return getPlaceHolderBucket(_bucketId); }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     DECLARE_STORAGECOMMAND(BatchDocumentUpdateCommand, onBatchDocumentUpdate)
 
 private:
     UpdateList _updates;
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
 };
 
 /**
