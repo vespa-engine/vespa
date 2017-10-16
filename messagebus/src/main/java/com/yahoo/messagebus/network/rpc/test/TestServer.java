@@ -38,15 +38,13 @@ public class TestServer {
      * @param name             The service name prefix for this server.
      * @param table            The routing table spec to be used, may be null for no routing.
      * @param slobrok          The slobrok to register with (local).
-     * @param oosServerPattern the string pattern for oos servers, may be null for deactivate.
      * @param protocol         The protocol that this server should support in addition to SimpleProtocol.
      */
-    public TestServer(String name, RoutingTableSpec table, Slobrok slobrok, String oosServerPattern, Protocol protocol) {
+    public TestServer(String name, RoutingTableSpec table, Slobrok slobrok, Protocol protocol) {
         this(new MessageBusParams().addProtocol(new SimpleProtocol()),
              new RPCNetworkParams()
                      .setIdentity(new Identity(name))
-                     .setSlobrokConfigId(getSlobrokConfig(slobrok))
-                     .setOOSServerPattern(oosServerPattern));
+                     .setSlobrokConfigId(getSlobrokConfig(slobrok)));
         if (protocol != null) {
             mb.putProtocol(protocol);
         }
@@ -137,43 +135,6 @@ public class TestServer {
             for (String pattern : slobrokState.getPatterns()) {
                 Mirror.Entry[] res = net.getMirror().lookup(pattern);
                 if (res.length != slobrokState.getCount(pattern)) {
-                    done = false;
-                }
-            }
-            if (done) {
-                return true;
-            }
-            try {
-                Thread.sleep(10);
-            }
-            catch (InterruptedException e) {
-                // ignore
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Wait for some service to go out-of-service.
-     *
-     * @param service The service to wait for.
-     * @return Whether or not the service went out-of-service.
-     */
-    public boolean waitOOS(String service) {
-        return waitState(new OOSState().add(service, true));
-    }
-
-    /**
-     * Wait for a required OOS state.
-     *
-     * @param oosState The state to wait for.
-     * @return Whether or not the required state was reached.
-     */
-    public boolean waitState(OOSState oosState) {
-        for (int i = 0; i < 1000 && !Thread.currentThread().isInterrupted(); ++i) {
-            boolean done = true;
-            for (String service : oosState.getServices()) {
-                if (net.getOOSManager().isOOS(service) != oosState.isOOS(service)) {
                     done = false;
                 }
             }

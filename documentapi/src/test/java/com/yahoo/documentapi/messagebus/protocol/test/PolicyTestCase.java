@@ -120,7 +120,7 @@ public class PolicyTestCase {
         Slobrok slobrok = new Slobrok();
         List<TestServer> servers = new ArrayList<>();
         for (int i = 0; i < 10; ++i) {
-            TestServer server = new TestServer("docproc/cluster.default/" + i, null, slobrok, null,
+            TestServer server = new TestServer("docproc/cluster.default/" + i, null, slobrok,
                                                new DocumentProtocol(manager));
             server.net.registerSession("chain.default");
             servers.add(server);
@@ -146,7 +146,7 @@ public class PolicyTestCase {
     public void requireThatExternPolicyMergesOneReplyAsProtocol() throws Exception {
         PolicyTestFrame frame = newPutDocumentFrame("doc:scheme:");
         Slobrok slobrok = new Slobrok();
-        TestServer server = new TestServer("docproc/cluster.default/0", null, slobrok, null,
+        TestServer server = new TestServer("docproc/cluster.default/0", null, slobrok,
                                            new DocumentProtocol(manager));
         server.net.registerSession("chain.default");
         setupExternPolicy(frame, slobrok, "docproc/cluster.default/*/chain.default", 1);
@@ -159,7 +159,7 @@ public class PolicyTestCase {
     public void testExternSend() throws Exception {
         // Setup local source node.
         Slobrok local = new Slobrok();
-        TestServer src = new TestServer("src", null, local, null, new DocumentProtocol(manager));
+        TestServer src = new TestServer("src", null, local, new DocumentProtocol(manager));
         SourceSession ss = src.mb.createSourceSession(new Receptor(), new SourceSessionParams().setTimeout(TIMEOUT));
 
         // Setup remote cluster with routing config.
@@ -168,9 +168,9 @@ public class PolicyTestCase {
                                         new RoutingTableSpec(DocumentProtocol.NAME)
                                                 .addRoute(new RouteSpec("default").addHop("dst"))
                                                 .addHop(new HopSpec("dst", "dst/session")),
-                                        slobrok, null, new DocumentProtocol(manager));
+                                        slobrok, new DocumentProtocol(manager));
         IntermediateSession is = itr.mb.createIntermediateSession("session", true, new Receptor(), new Receptor());
-        TestServer dst = new TestServer("dst", null, slobrok, null, new DocumentProtocol(manager));
+        TestServer dst = new TestServer("dst", null, slobrok, new DocumentProtocol(manager));
         DestinationSession ds = dst.mb.createDestinationSession("session", true, new Receptor());
 
         // Send message from local node to remote cluster and resolve route there.
@@ -201,14 +201,14 @@ public class PolicyTestCase {
     @Test
     public void testExternMultipleSlobroks() throws ListenFailedException {
         Slobrok local = new Slobrok();
-        TestServer srcServer = new TestServer("src", null, local, null, new DocumentProtocol(manager));
+        TestServer srcServer = new TestServer("src", null, local, new DocumentProtocol(manager));
         SourceSession srcSession =
                 srcServer.mb.createSourceSession(new Receptor(), new SourceSessionParams().setTimeout(TIMEOUT));
 
         Slobrok extern = new Slobrok();
         String spec = "tcp/localhost:" + extern.port();
 
-        TestServer dstServer = new TestServer("dst", null, extern, null, new DocumentProtocol(manager));
+        TestServer dstServer = new TestServer("dst", null, extern, new DocumentProtocol(manager));
         Receptor dstHandler = new Receptor();
         DestinationSession dstSession = dstServer.mb.createDestinationSession("session", true, dstHandler);
 
@@ -229,7 +229,7 @@ public class PolicyTestCase {
         extern = new Slobrok();
         spec += ",tcp/localhost:" + extern.port();
 
-        dstServer = new TestServer("dst", null, extern, null, new DocumentProtocol(manager));
+        dstServer = new TestServer("dst", null, extern, new DocumentProtocol(manager));
         dstHandler = new Receptor();
         dstSession = dstServer.mb.createDestinationSession("session", true, dstHandler);
 

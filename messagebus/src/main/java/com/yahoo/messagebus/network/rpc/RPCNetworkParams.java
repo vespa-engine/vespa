@@ -105,26 +105,6 @@ public class RPCNetworkParams {
     }
 
     /**
-     * Returns the config id pattern used to lookup OOS servers.
-     *
-     * @return The config id.
-     */
-    public String getOOSServerPattern() {
-        return oosServerPattern;
-    }
-
-    /**
-     * Sets the config id pattern used to lookup OOS servers.
-     *
-     * @param oosServerPattern The server pattern.
-     * @return This, to allow chaining.
-     */
-    public RPCNetworkParams setOOSServerPattern(String oosServerPattern) {
-        this.oosServerPattern = oosServerPattern;
-        return this;
-    }
-
-    /**
      * Returns the port to listen to.
      *
      * @return The port.
