@@ -2,8 +2,6 @@
 vespa_add_library(messagebus_messagebus-test
     SOURCES
     custompolicy.cpp
-    oosserver.cpp
-    oosstate.cpp
     receptor.cpp
     simplemessage.cpp
     simpleprotocol.cpp
