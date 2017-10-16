@@ -117,6 +117,7 @@ ClusterControllers = element cluster-controllers {
 
 LogForwarding = element logforwarding {
     element splunk {
+        attribute splunk-home { xsd:string }? &
         attribute deployment-server { xsd:string } &
         attribute client-name { xsd:string }
     }
