@@ -181,7 +181,7 @@ public class FailureRedeployerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");
-        tester.configServer().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
@@ -200,7 +200,7 @@ public class FailureRedeployerTest {
 
         // New version is released
         version = Version.fromString("6.142.1");
-        tester.configServer().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
@@ -237,7 +237,7 @@ public class FailureRedeployerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.42.1");
-        tester.configServer().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
@@ -262,7 +262,7 @@ public class FailureRedeployerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.42.1");
-        tester.configServer().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 

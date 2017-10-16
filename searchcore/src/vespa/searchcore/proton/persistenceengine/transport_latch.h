@@ -20,10 +20,7 @@ private:
 public:
     TransportLatch(uint32_t cnt);
     ~TransportLatch();
-    virtual void send(mbus::Reply::UP reply,
-                      ResultUP result,
-                      bool documentWasFound,
-                      double latency_ms) override;
+    void send(ResultUP result, bool documentWasFound) override;
     void await() {
         _latch.await();
     }

@@ -79,7 +79,7 @@ namespace storage::framework {
 class ComponentRegister;
 
 struct ComponentStateListener {
-    virtual ~ComponentStateListener() {}
+    virtual ~ComponentStateListener() = default;
 
     virtual void onOpen() {}
     virtual void onClose() {}

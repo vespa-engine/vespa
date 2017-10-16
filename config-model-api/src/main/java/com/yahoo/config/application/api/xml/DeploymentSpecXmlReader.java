@@ -33,6 +33,22 @@ public class DeploymentSpecXmlReader {
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
     
+    private final boolean validate;
+    
+    /** Creates a validating reader */
+    public DeploymentSpecXmlReader() {
+        this(true);
+    }
+
+    /** 
+     * Creates a reader 
+     * 
+     * @param validate true to validate the input, false to accept any input which can be unabiguously parsed
+     */
+    public DeploymentSpecXmlReader(boolean validate) {
+        this.validate = validate;
+    }
+
     public DeploymentSpec read(Reader reader) {
         try {
             return read(IOUtils.readAll(reader));
@@ -47,7 +63,8 @@ public class DeploymentSpecXmlReader {
         List<Step> steps = new ArrayList<>();
         Optional<String> globalServiceId = Optional.empty();
         Element root = XML.getDocument(xmlForm).getDocumentElement();
-        validateTagOrder(root);
+        if (validate)
+            validateTagOrder(root);
         for (Element environmentTag : XML.getChildren(root)) {
             if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
 

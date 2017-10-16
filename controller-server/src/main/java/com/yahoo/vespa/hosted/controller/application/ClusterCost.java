@@ -6,13 +6,14 @@ package com.yahoo.vespa.hosted.controller.application;
  * tco and waste for one cluster of one deployment.
  *
  * The target utilization is defined the following assumptions:
- * 1. CPU contention starts to cause problems on 0.8
- * 2. Memory management starts to casue problems on 0.7
+ * 1. CPU contention starts to cause problems at 0.8
+ * 2. Memory management starts to cause problems at 0.7
  * 3. Load is evenly divided between two deployments - each deployments can handle the other.
  * 4. Memory and disk are agnostic to query load.
  * 5. Peak utilization (daily variations) are twice the size of the average.
  *
  * With this in mind we get:
+ *
  * CPU: 0.8/2/2 = 0.2
  * Mem: 0.7
  * Disk: 0.7
@@ -40,16 +41,18 @@ public class ClusterCost {
         this.targetUtilization = new ClusterUtilization(0.7,0.2, 0.7, 0.3);
         this.resultUtilization = calculateResultUtilization(systemUtilization, targetUtilization);
 
-        this.tco = clusterInfo.getCost() * Math.min(1, this.resultUtilization.getMaxUtilization());
-        this.waste  = clusterInfo.getCost() - tco;
+        this.tco = clusterInfo.getHostnames().size() * clusterInfo.getFlavorCost();
+
+        double unusedUtilization = 1 - Math.min(1, resultUtilization.getMaxUtilization());
+        this.waste  = tco * unusedUtilization;
     }
 
-    /** @return TCO in dollars */
+    /** @return The TCO in dollars for this cluster (node tco * nodes) */
     public double getTco() {
         return tco;
     }
 
-    /** @return Waste in dollars */
+    /** @return The amount of dollars spent for unused resources in this cluster */
     public double getWaste() {
         return waste;
     }

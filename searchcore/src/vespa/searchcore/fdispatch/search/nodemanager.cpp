@@ -239,10 +239,11 @@ FastS_NodeManager::SetCollDesc(FastS_DataSetCollDesc *configDesc,
                 break;
             FastOS_Thread::Sleep(100);
         };
-        if (allup)
+        if (allup) {
             LOG(debug, "All new engines up after %d ms", rwait);
-        else
+        } else {
             LOG(debug, "Some new engines still down after %d ms", rwait);
+        }
     }
 
     gencnt = SetDataSetCollection(newCollection);

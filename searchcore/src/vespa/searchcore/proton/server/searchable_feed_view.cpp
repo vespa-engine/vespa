@@ -5,7 +5,6 @@
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -35,10 +34,8 @@ SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter)
 
 SearchableFeedView::Context::~Context() = default;
 
-SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
-                                       const PersistentParams &params,
-                                       const FastAccessFeedView::Context &fastUpdateCtx,
-                                       Context ctx)
+SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
+                                       const FastAccessFeedView::Context &fastUpdateCtx, Context ctx)
     : Parent(storeOnlyCtx, params, fastUpdateCtx),
       _indexWriter(ctx._indexWriter),
       _hasIndexedFields(_schema->getNumIndexFields() > 0)
@@ -191,11 +188,8 @@ SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector &lid
     assert(_writeService.index().isCurrentThread());
     for (const auto lid : lidsToRemove) {
         VLOG(getDebugLevel(lid, nullptr),
-             "database(%s): performIndexRemove: serialNum(%" PRIu64 "), "
-             "lid(%d)",
-             _params._docTypeName.toString().c_str(),
-             serialNum,
-             lid);
+             "database(%s): performIndexRemove: serialNum(%" PRIu64 "), lid(%d)",
+             _params._docTypeName.toString().c_str(), serialNum, lid);
 
         _indexWriter->remove(serialNum, lid);
     }

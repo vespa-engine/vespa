@@ -27,7 +27,7 @@
       </consumer>
     </metrics>
     <logforwarding>
-      <splunk deployment-server="foo:8989" client-name="foobar"/>
+      <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk"/>
     </logforwarding>
   </admin>
 

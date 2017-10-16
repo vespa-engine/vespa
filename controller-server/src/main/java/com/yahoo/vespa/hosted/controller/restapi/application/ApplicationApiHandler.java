@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.google.common.base.Joiner;
+import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -50,9 +51,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
@@ -62,10 +60,15 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -105,11 +108,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final Authorizer authorizer;
+    private final AthenzClientFactory athenzClientFactory;
 
-    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer) {
+    @Inject
+    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer,
+                                 AthenzClientFactory athenzClientFactory) {
         super(executor, accessLog);
         this.controller = controller;
         this.authorizer = authorizer;
+        this.athenzClientFactory = athenzClientFactory;
     }
 
     @Override
@@ -433,20 +440,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         toSlime(appCost, costObject);
 
         // Metrics
-        com.yahoo.config.provision.ApplicationId applicationId = com.yahoo.config.provision.ApplicationId.from(tenantName, applicationName, instanceName);
-        Zone zoneId = new Zone(Environment.from(environment), RegionName.from(region));
-        try {
-            MetricsService.DeploymentMetrics metrics = controller.metricsService().getDeploymentMetrics(applicationId, zoneId);
-            Cursor metricsObject = response.setObject("metrics");
-            metricsObject.setDouble("queriesPerSecond", metrics.queriesPerSecond());
-            metricsObject.setDouble("writesPerSecond", metrics.writesPerSecond());
-            metricsObject.setDouble("documentCount", metrics.documentCount());
-            metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
-            metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed getting Yamas metrics", Exceptions.toMessageString(e));
-        }
+        DeploymentMetrics metrics = deployment.metrics();
+        Cursor metricsObject = response.setObject("metrics");
+        metricsObject.setDouble("queriesPerSecond", metrics.queriesPerSecond());
+        metricsObject.setDouble("writesPerSecond", metrics.writesPerSecond());
+        metricsObject.setDouble("documentCount", metrics.documentCount());
+        metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
+        metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
 
         return new SlimeJsonResponse(slime);
     }
@@ -760,10 +760,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
-        DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.athens(), controller.zoneRegistry());
+        DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         Principal principal = authorizer.getPrincipal(request);
-        if (principal instanceof AthensPrincipal) {
+        if (principal instanceof AthenzPrincipal) {
             deployAuthorizer.throwIfUnauthorizedForDeploy(principal,
                                                           Environment.from(environment),
                                                           tenant,
@@ -1084,8 +1084,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
         object.setLong("tco", (long)deploymentCost.getTco());
+        object.setLong("waste", (long)deploymentCost.getWaste());
         object.setDouble("utilization", deploymentCost.getUtilization());
-        object.setDouble("waste", deploymentCost.getWaste());
         Cursor clustersObject = object.setObject("cluster");
         for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
             toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
@@ -1096,8 +1096,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
         object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
         object.setLong("tco", (int)clusterCost.getTco());
-        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
         object.setLong("waste", (int)clusterCost.getWaste());
+        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
+        object.setDouble("flavorCost", clusterCost.getClusterInfo().getFlavorCost());
+        object.setDouble("flavorCpu", clusterCost.getClusterInfo().getFlavorCPU());
+        object.setDouble("flavorMem", clusterCost.getClusterInfo().getFlavorMem());
+        object.setDouble("flavorDisk", clusterCost.getClusterInfo().getFlavorDisk());
         object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
         Cursor utilObject = object.setObject("util");
         utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());

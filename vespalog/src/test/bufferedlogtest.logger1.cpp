@@ -5,7 +5,7 @@
 
 LOG_SETUP(".logger1");
 
-void logWithLogger1(const std::string& token, const std::string message)
+void logWithLogger1(const std::string& token, const std::string & message)
 {
-    LOGBT(info, token, message.c_str());
+    LOGBT(info, token, "%s", message.c_str());
 }

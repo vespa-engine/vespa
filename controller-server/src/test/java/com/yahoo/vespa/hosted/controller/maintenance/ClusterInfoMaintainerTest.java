@@ -31,7 +31,7 @@ public class ClusterInfoMaintainerTest {
 
         deployment = tester.controller().applications().get(app).get().deployments().values().stream().findAny().get();
         Assert.assertEquals(2, deployment.clusterInfo().size());
-        Assert.assertEquals(10, deployment.clusterInfo().get(ClusterSpec.Id.from("clusterA")).getCost());
+        Assert.assertEquals(10, deployment.clusterInfo().get(ClusterSpec.Id.from("clusterA")).getFlavorCost());
 
     }
 

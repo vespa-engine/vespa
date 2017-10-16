@@ -22,10 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -44,6 +40,10 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
@@ -84,7 +84,7 @@ public class ApplicationController {
     private final CuratorDb curator;
 
     private final RotationRepository rotationRepository;
-    private final ZmsClientFactory zmsClientFactory;
+    private final AthenzClientFactory zmsClientFactory;
     private final NameService nameService;
     private final ConfigServerClient configserverClient;
     private final RoutingGenerator routingGenerator;
@@ -94,7 +94,7 @@ public class ApplicationController {
     
     ApplicationController(Controller controller, ControllerDb db, CuratorDb curator,
                           RotationRepository rotationRepository,
-                          ZmsClientFactory zmsClientFactory,
+                          AthenzClientFactory zmsClientFactory,
                           NameService nameService, ConfigServerClient configserverClient,
                           RoutingGenerator routingGenerator, Clock clock) {
         this.controller = controller;
@@ -249,7 +249,7 @@ public class ApplicationController {
             if (tenant.get().isAthensTenant() && ! token.isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
             if (tenant.get().isAthensTenant()) {
-                ZmsClient zmsClient = zmsClientFactory.createClientWithAuthorizedServiceToken(token.get());
+                ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
                 try {
                     zmsClient.deleteApplication(tenant.get().getAthensDomain().get(), 
                                                 new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
@@ -331,13 +331,10 @@ public class ApplicationController {
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
 
-            Deployment previousDeployment = application.deployments().get(zone);
-            Deployment newDeployment = previousDeployment;
-            if (previousDeployment == null) {
-                newDeployment = new Deployment(zone, revision, version, clock.instant(), new HashMap<>(), new HashMap<>());
-            } else {
-                newDeployment = new Deployment(zone, revision, version, clock.instant(), previousDeployment.clusterUtils(), previousDeployment.clusterInfo());
-            }
+            // Use info from previous deployments is available
+            Deployment previousDeployment = application.deployments().getOrDefault(zone, new Deployment(zone, revision, version, clock.instant()));
+            Deployment newDeployment = new Deployment(zone, revision, version, clock.instant(),
+                        previousDeployment.clusterUtils(), previousDeployment.clusterInfo(), previousDeployment.metrics());
 
             application = application.with(newDeployment);
             store(application, lock);
@@ -493,7 +490,7 @@ public class ApplicationController {
 
             // NB: Next 2 lines should have been one transaction
             if (tenant.isAthensTenant())
-                zmsClientFactory.createClientWithAuthorizedServiceToken(token.get())
+                zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get())
                         .deleteApplication(tenant.getAthensDomain().get(), new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             db.deleteApplication(id);
 

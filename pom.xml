@@ -37,6 +37,18 @@
         <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
 
+    <repositories>
+        <!-- Required for Athenz libraries -->
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-yahoo-maven</id>
+            <name>bintray</name>
+            <url>http://yahoo.bintray.com/maven</url>
+        </repository>
+    </repositories>
+
     <build>
         <finalName>${project.artifactId}</finalName>
         <extensions>
@@ -898,6 +910,16 @@
                 <artifactId>icu4j</artifactId>
                 <version>57.1</version>
             </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-zms-java-client</artifactId>
+                <version>${athenz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-zts-java-client</artifactId>
+                <version>${athenz.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -908,6 +930,8 @@
         <aries.spifly.version>1.0.8</aries.spifly.version>
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
+        <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
+        <athenz.version>1.7.28</athenz.version>
         <bouncycastle.version>1.49</bouncycastle.version>
         <commons-lang.version>2.6</commons-lang.version>
         <!-- WARNING: If you change curator version, you also need to update

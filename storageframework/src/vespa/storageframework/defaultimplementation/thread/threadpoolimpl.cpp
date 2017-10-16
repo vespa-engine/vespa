@@ -3,12 +3,12 @@
 #include "threadpoolimpl.h"
 #include "threadimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <thread>
 
+using namespace std::chrono_literals;
 using vespalib::IllegalStateException;
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 ThreadPoolImpl::ThreadPoolImpl(Clock& clock)
     : _backendThreadPool(512 * 1024),
@@ -21,11 +21,11 @@ ThreadPoolImpl::~ThreadPoolImpl()
     {
         vespalib::LockGuard lock(_threadVectorLock);
         _stopping = true;
-        for (uint32_t i=0, n=_threads.size(); i<n; ++i) {
-            _threads[i]->interrupt();
+        for (ThreadImpl * thread : _threads) {
+            thread->interrupt();
         }
-        for (uint32_t i=0, n=_threads.size(); i<n; ++i) {
-            _threads[i]->join();
+        for (ThreadImpl * thread : _threads) {
+            thread->join();
         }
     }
     for (uint32_t i=0; true; i+=10) {
@@ -34,30 +34,25 @@ ThreadPoolImpl::~ThreadPoolImpl()
             if (_threads.empty()) break;
         }
         if (i > 1000) {
-            fprintf(stderr, "Failed to kill thread pool. Threads won't die. (And "
-                            "if allowing thread pool object to be deleted this "
-                            "will create a segfault later)\n");
+            fprintf(stderr, "Failed to kill thread pool. Threads won't die. (And if allowing thread pool object"
+                            " to be deleted this will create a segfault later)\n");
             abort();
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     _backendThreadPool.Close();
 }
 
 Thread::UP
-ThreadPoolImpl::startThread(Runnable& runnable,
-                            vespalib::stringref id,
-                            uint64_t waitTimeMs,
-                            uint64_t maxProcessTime,
-                            int ticksBeforeWait)
+ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, uint64_t waitTimeMs,
+                            uint64_t maxProcessTime, int ticksBeforeWait)
 {
     vespalib::LockGuard lock(_threadVectorLock);
     if (_stopping) {
-        throw vespalib::IllegalStateException("Threadpool is stopping", VESPA_STRLOC);
+        throw IllegalStateException("Threadpool is stopping", VESPA_STRLOC);
     }
     ThreadImpl* ti;
-    Thread::UP t(ti = new ThreadImpl(
-        *this, runnable, id, waitTimeMs, maxProcessTime, ticksBeforeWait));
+    Thread::UP t(ti = new ThreadImpl(*this, runnable, id, waitTimeMs, maxProcessTime, ticksBeforeWait));
     _threads.push_back(ti);
     return t;
 }
@@ -66,9 +61,8 @@ void
 ThreadPoolImpl::visitThreads(ThreadVisitor& visitor) const
 {
     vespalib::LockGuard lock(_threadVectorLock);
-    for (uint32_t i=0, n=_threads.size(); i<n; ++i) {
-        visitor.visitThread(_threads[i]->getId(), _threads[i]->getProperties(),
-                            _threads[i]->getTickData());
+    for (const ThreadImpl * thread : _threads) {
+        visitor.visitThread(thread->getId(), thread->getProperties(), thread->getTickData());
     }
 }
 
@@ -78,14 +72,12 @@ ThreadPoolImpl::unregisterThread(ThreadImpl& t)
     vespalib::LockGuard lock(_threadVectorLock);
     std::vector<ThreadImpl*> threads;
     threads.reserve(_threads.size());
-    for (uint32_t i=0, n=_threads.size(); i<n; ++i) {
-        if (_threads[i] != &t) {
-            threads.push_back(_threads[i]);
+    for (ThreadImpl * thread : _threads) {
+        if (thread != &t) {
+            threads.push_back(thread);
         }
     }
     _threads.swap(threads);
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

@@ -89,8 +89,7 @@ FileStorManager::~FileStorManager()
 }
 
 void
-FileStorManager::print(std::ostream& out, bool verbose,
-              const std::string& indent) const
+FileStorManager::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "FileStorManager";
@@ -128,20 +127,14 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
                     LOG(spam, "Setting up disk %u", i);
                     for (uint32_t j = 0; j < 4; j++) {
                         _disks[i].push_back(DiskThread::SP(
-                                new PersistenceThread(
-                                    _compReg, _configUri, *_provider,
-                                    *_filestorHandler,
-                                    *_metrics->disks[i]->threads[j],
-                                    i, 255, false)));
+                                new PersistenceThread(_compReg, _configUri, *_provider, *_filestorHandler,
+                                                      *_metrics->disks[i]->threads[j], i, 255)));
 
                     }
                     for (uint32_t j = 4; j < 6; j++) {
                         _disks[i].push_back(DiskThread::SP(
-                                new PersistenceThread(
-                                    _compReg, _configUri, *_provider,
-                                    *_filestorHandler,
-                                    *_metrics->disks[i]->threads[j],
-                                    i, 100)));
+                                new PersistenceThread(_compReg, _configUri, *_provider, *_filestorHandler,
+                                                      *_metrics->disks[i]->threads[j], i, 100)));
                     }
                 }
 
@@ -149,12 +142,8 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
                     LOG(spam, "Setting up disk %u, thread %u with priority %d",
                         i, j, _config->threads[j].lowestpri);
                     _disks[i].push_back(DiskThread::SP(
-                            new PersistenceThread(
-                                _compReg, _configUri, *_provider,
-                                *_filestorHandler,
-                                *_metrics->disks[i]->threads[j],
-                                i, _config->threads[j].lowestpri,
-                                false)));
+                            new PersistenceThread(_compReg, _configUri, *_provider, *_filestorHandler,
+                                                  *_metrics->disks[i]->threads[j], i, _config->threads[j].lowestpri)));
 
                 }
             } else {
@@ -389,11 +378,9 @@ FileStorManager::onRevert(const shared_ptr<api::RevertCommand>& cmd)
 }
 
 bool
-FileStorManager::onMultiOperation(
-        const std::shared_ptr<api::MultiOperationCommand>& cmd)
+FileStorManager::onMultiOperation(const std::shared_ptr<api::MultiOperationCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(
-                *cmd, 0));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -401,11 +388,9 @@ FileStorManager::onMultiOperation(
 }
 
 bool
-FileStorManager::onBatchPutRemove(
-        const std::shared_ptr<api::BatchPutRemoveCommand>& cmd)
+FileStorManager::onBatchPutRemove(const std::shared_ptr<api::BatchPutRemoveCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(
-                *cmd, 0));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -413,11 +398,9 @@ FileStorManager::onBatchPutRemove(
 }
 
 bool
-FileStorManager::onRemoveLocation(
-        const std::shared_ptr<api::RemoveLocationCommand>& cmd)
+FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -425,11 +408,9 @@ FileStorManager::onRemoveLocation(
 }
 
 bool
-FileStorManager::onStatBucket(
-        const std::shared_ptr<api::StatBucketCommand>& cmd)
+FileStorManager::onStatBucket(const std::shared_ptr<api::StatBucketCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -478,8 +459,7 @@ FileStorManager::onCreateBucket(
             }
         }
     }
-    std::shared_ptr<api::CreateBucketReply> reply(
-            (api::CreateBucketReply*)cmd->makeReply().release());
+    std::shared_ptr<api::CreateBucketReply> reply((api::CreateBucketReply*)cmd->makeReply().release());
     reply->setBucketInfo(api::BucketInfo(0, 0, 0, 0, 0, true, cmd->getActive()));
     reply->setResult(code);
     sendUp(reply);
@@ -491,12 +471,10 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
 {
     uint16_t disk;
     {
-        StorBucketDatabase::WrappedEntry entry(
-                _component.getBucketDatabase().get(
-                    cmd->getBucketId(), "FileStorManager::onDeleteBucket"));
+        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(cmd->getBucketId(),
+                                                                                  "FileStorManager::onDeleteBucket"));
         if (!entry.exist()) {
-            LOG(debug, "%s was already deleted",
-                cmd->getBucketId().toString().c_str());
+            LOG(debug, "%s was already deleted", cmd->getBucketId().toString().c_str());
             std::shared_ptr<api::StorageReply> reply(cmd->makeReply().release());
             sendUp(reply);
             return true;
@@ -520,10 +498,8 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
 
             LOG(debug, "Rejecting bucket delete: %s", ost.str().c_str());
             std::shared_ptr<api::StorageReply> reply(cmd->makeReply().release());
-            static_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(
-                    entry->getBucketInfo());
-            reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED,
-                                             ost.str()));
+            static_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(entry->getBucketInfo());
+            reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, ost.str()));
             entry.unlock();
             sendUp(reply);
             return true;
@@ -538,13 +514,10 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
         disk = entry->disk;
         entry.remove();
     }
-    _filestorHandler->failOperations(
-            cmd->getBucketId(),
-            disk,
-            api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                            vespalib::make_string(
-                                "Bucket %s about to be deleted anyway",
-                                cmd->getBucketId().toString().c_str())));
+    _filestorHandler->failOperations(cmd->getBucketId(), disk,
+                                     api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
+                                                     vespalib::make_string("Bucket %s about to be deleted anyway",
+                                                                           cmd->getBucketId().toString().c_str())));
     return true;
 }
 
@@ -564,10 +537,7 @@ FileStorManager::ensureConsistentBucket(
             // Don't create empty bucket if merge isn't allowed to continue.
             entry.remove();
         }
-        replyDroppedOperation(msg,
-                              bucket,
-                              api::ReturnCode::ABORTED,
-                              "bucket is inconsistently split");
+        replyDroppedOperation(msg, bucket, api::ReturnCode::ABORTED, "bucket is inconsistently split");
         return StorBucketDatabase::WrappedEntry();
     }
 
@@ -577,10 +547,8 @@ FileStorManager::ensureConsistentBucket(
 bool
 FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(
-            ensureConsistentBucket(cmd->getBucketId(),
-                                   *cmd,
-                                   "FileStorManager::onMergeBucket"));
+    StorBucketDatabase::WrappedEntry entry(ensureConsistentBucket(cmd->getBucketId(), *cmd,
+                                                                  "FileStorManager::onMergeBucket"));
     if (!entry.exist()) {
         return true;
     }
@@ -589,26 +557,20 @@ FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
         entry->disk = _component.getIdealPartition(cmd->getBucketId());
         if (_partitions[entry->disk].isUp()) {
             entry->info = api::BucketInfo(0, 0, 0, 0, 0, true, false);
-            LOG(debug, "Created bucket %s on disk %d (node index is %d) due "
-                       "to merge being received.",
-                cmd->getBucketId().toString().c_str(),
-                entry->disk, _component.getIndex());
+            LOG(debug, "Created bucket %s on disk %d (node index is %d) due to merge being received.",
+                cmd->getBucketId().toString().c_str(), entry->disk, _component.getIndex());
                 // Call before writing bucket entry as we need to have bucket
                 // lock while calling
             handlePersistenceMessage(cmd, entry->disk);
             entry.write();
         } else {
             entry.remove();
-            api::ReturnCode code(
-                    api::ReturnCode::IO_FAILURE,
+            api::ReturnCode code(api::ReturnCode::IO_FAILURE,
                     vespalib::make_string(
                             "Trying to perform merge %s whose bucket belongs on target disk %d, which is down. Cluster state version of command is %d, our system state version is %d",
-                            cmd->toString().c_str(),
-                            entry->disk,
-                            cmd->getClusterStateVersion(),
+                            cmd->toString().c_str(), entry->disk, cmd->getClusterStateVersion(),
                             _component.getStateUpdater().getSystemState()->getVersion()));
-            LOGBT(debug, cmd->getBucketId().toString(),
-                  "%s", code.getMessage().c_str());
+            LOGBT(debug, cmd->getBucketId().toString(), "%s", code.getMessage().c_str());
             api::MergeBucketReply::SP reply(new api::MergeBucketReply(*cmd));
             reply->setResult(code);
             sendUp(reply);
@@ -668,17 +630,13 @@ FileStorManager::onGetBucketDiff(
 }
 
 bool
-FileStorManager::validateApplyDiffCommandBucket(
-        api::StorageMessage& msg,
-        const StorBucketDatabase::WrappedEntry& entry)
+FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage& msg, const StorBucketDatabase::WrappedEntry& entry)
 {
     if (!entry.exist()) {
         return false;
     }
     if (!_component.getBucketDatabase().isConsistent(entry)) {
-        replyDroppedOperation(msg,
-                              entry.getBucketId(),
-                              api::ReturnCode::ABORTED,
+        replyDroppedOperation(msg, entry.getBucketId(), api::ReturnCode::ABORTED,
                               "bucket became inconsistent during merging");
         return false;
     }
@@ -686,31 +644,26 @@ FileStorManager::validateApplyDiffCommandBucket(
 }
 
 bool
-FileStorManager::validateDiffReplyBucket(
-        const StorBucketDatabase::WrappedEntry& entry,
-        const document::BucketId& bucket)
+FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry& entry,
+                                         const document::BucketId& bucket)
 {
     if (!entry.exist()) {
         _filestorHandler->clearMergeStatus(bucket,
-                api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND,
-                                "Bucket removed during merge"));
+                api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND, "Bucket removed during merge"));
         return false;
     }
     if (!_component.getBucketDatabase().isConsistent(entry)) {
         _filestorHandler->clearMergeStatus(bucket,
-                api::ReturnCode(api::ReturnCode::ABORTED,
-                                "Bucket became inconsistent during merging"));
+                api::ReturnCode(api::ReturnCode::ABORTED, "Bucket became inconsistent during merging"));
         return false;
     }
     return true;
 }
 
 bool
-FileStorManager::onGetBucketDiffReply(
-        const shared_ptr<api::GetBucketDiffReply>& reply)
+FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>& reply)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *reply, reply->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*reply, reply->getBucketId()));
     if (validateDiffReplyBucket(entry, reply->getBucketId())) {
         handlePersistenceMessage(reply, entry->disk);
     }
@@ -718,11 +671,9 @@ FileStorManager::onGetBucketDiffReply(
 }
 
 bool
-FileStorManager::onApplyBucketDiff(
-        const shared_ptr<api::ApplyBucketDiffCommand>& cmd)
+FileStorManager::onApplyBucketDiff(const shared_ptr<api::ApplyBucketDiffCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
     if (validateApplyDiffCommandBucket(*cmd, entry)) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -730,8 +681,7 @@ FileStorManager::onApplyBucketDiff(
 }
 
 bool
-FileStorManager::onApplyBucketDiffReply(
-        const shared_ptr<api::ApplyBucketDiffReply>& reply)
+FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffReply>& reply)
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
                 *reply, reply->getBucketId()));
@@ -742,8 +692,7 @@ FileStorManager::onApplyBucketDiffReply(
 }
 
 bool
-FileStorManager::onJoinBuckets(
-        const std::shared_ptr<api::JoinBucketsCommand>& cmd)
+FileStorManager::onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>& cmd)
 {
     StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(
                 cmd->getBucketId(), "FileStorManager::onJoinBuckets"));
@@ -757,11 +706,9 @@ FileStorManager::onJoinBuckets(
 }
 
 bool
-FileStorManager::onSplitBucket(
-        const std::shared_ptr<api::SplitBucketCommand>& cmd)
+FileStorManager::onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -772,8 +719,7 @@ bool
 FileStorManager::onSetBucketState(
         const std::shared_ptr<api::SetBucketStateCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -786,10 +732,8 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     switch (msg->getType()) {
     case GetIterCommand::ID:
     {
-        shared_ptr<GetIterCommand> cmd(
-                std::static_pointer_cast<GetIterCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<GetIterCommand> cmd(std::static_pointer_cast<GetIterCommand>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -797,10 +741,8 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case CreateIteratorCommand::ID:
     {
-        shared_ptr<CreateIteratorCommand> cmd(
-                std::static_pointer_cast<CreateIteratorCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<CreateIteratorCommand> cmd(std::static_pointer_cast<CreateIteratorCommand>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -808,28 +750,22 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case DestroyIteratorCommand::ID:
     {
-        spi::Context context(msg->getLoadType(), msg->getPriority(),
-                             msg->getTrace().getLevel());
-        shared_ptr<DestroyIteratorCommand> cmd(
-                std::static_pointer_cast<DestroyIteratorCommand>(msg));
+        spi::Context context(msg->getLoadType(), msg->getPriority(), msg->getTrace().getLevel());
+        shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
         _provider->destroyIterator(cmd->getIteratorId(), context);
         msg->getTrace().getRoot().addChild(context.getTrace().getRoot());
         return true;
     }
     case ReadBucketList::ID:
     {
-        shared_ptr<ReadBucketList> cmd(
-                std::static_pointer_cast<ReadBucketList>(msg));
-
+        shared_ptr<ReadBucketList> cmd(std::static_pointer_cast<ReadBucketList>(msg));
         handlePersistenceMessage(cmd, cmd->getPartition());
         return true;
     }
     case ReadBucketInfo::ID:
     {
-        shared_ptr<ReadBucketInfo> cmd(
-                std::static_pointer_cast<ReadBucketInfo>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<ReadBucketInfo> cmd(std::static_pointer_cast<ReadBucketInfo>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -837,10 +773,8 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case InternalBucketJoinCommand::ID:
     {
-        shared_ptr<InternalBucketJoinCommand> cmd(
-                std::static_pointer_cast<InternalBucketJoinCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<InternalBucketJoinCommand> cmd(std::static_pointer_cast<InternalBucketJoinCommand>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -848,10 +782,8 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case RepairBucketCommand::ID:
     {
-        shared_ptr<RepairBucketCommand> cmd(
-                std::static_pointer_cast<RepairBucketCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<RepairBucketCommand> cmd(std::static_pointer_cast<RepairBucketCommand>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -859,10 +791,8 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case BucketDiskMoveCommand::ID:
     {
-        shared_ptr<BucketDiskMoveCommand> cmd(
-                std::static_pointer_cast<BucketDiskMoveCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<BucketDiskMoveCommand> cmd(std::static_pointer_cast<BucketDiskMoveCommand>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -870,10 +800,8 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case RecheckBucketInfoCommand::ID:
     {
-        shared_ptr<RecheckBucketInfoCommand> cmd(
-                std::static_pointer_cast<RecheckBucketInfoCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                    *cmd, cmd->getBucketId()));
+        shared_ptr<RecheckBucketInfoCommand> cmd(std::static_pointer_cast<RecheckBucketInfoCommand>(msg));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -881,8 +809,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case AbortBucketOperationsCommand::ID:
     {
-        shared_ptr<AbortBucketOperationsCommand> cmd(
-                std::static_pointer_cast<AbortBucketOperationsCommand>(msg));
+        shared_ptr<AbortBucketOperationsCommand> cmd(std::static_pointer_cast<AbortBucketOperationsCommand>(msg));
         handleAbortBucketOperations(cmd);
         return true;
     }
@@ -892,8 +819,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
 }
 
 void
-FileStorManager::handleAbortBucketOperations(
-        const shared_ptr<AbortBucketOperationsCommand>& cmd)
+FileStorManager::handleAbortBucketOperations(const shared_ptr<AbortBucketOperationsCommand>& cmd)
 {
     _filestorHandler->abortQueuedOperations(*cmd);
     sendReply(api::StorageReply::SP(cmd->makeReply().release()));
@@ -925,8 +851,7 @@ FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
     LOG(spam, "Sending reply %s", reply->toString().c_str());
 
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
-        std::shared_ptr<api::InternalReply> rep(
-                std::dynamic_pointer_cast<api::InternalReply>(reply));
+        std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep.get());
         if (onInternalReply(rep)) return;
     }
@@ -1021,8 +946,7 @@ FileStorManager::isMerging(const document::BucketId& bucket) const
 
 namespace {
     struct Deactivator {
-        StorBucketDatabase::Decision operator()(
-                document::BucketId::Type, StorBucketDatabase::Entry& data)
+        StorBucketDatabase::Decision operator()(document::BucketId::Type, StorBucketDatabase::Entry& data)
         {
             data.info.setActive(false);
             return StorBucketDatabase::UPDATE;
@@ -1034,21 +958,16 @@ void
 FileStorManager::updateState()
 {
     lib::ClusterState::CSP state(_component.getStateUpdater().getSystemState());
-    spi::ClusterState spiState(
-            *state, _component.getIndex(), *_component.getDistribution());
+    spi::ClusterState spiState(*state, _component.getIndex(), *_component.getDistribution());
     lib::Node node(_component.getNodeType(), _component.getIndex());
     bool nodeUp = state->getNodeState(node).getState().oneOf("uir");
 
-    LOG(debug, "FileStorManager received cluster state '%s'",
-        state->toString().c_str());
+    LOG(debug, "FileStorManager received cluster state '%s'", state->toString().c_str());
         // If edge where we go down
     if (_nodeUpInLastNodeStateSeenByProvider && !nodeUp) {
-        LOG(debug,
-            "Received cluster state where this node is down; "
-            "de-activating all buckets in database");
+        LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database");
         Deactivator deactivator;
-        _component.getBucketDatabase().all(
-                deactivator, "FileStorManager::updateState");
+        _component.getBucketDatabase().all(deactivator, "FileStorManager::updateState");
     }
     _provider->setClusterState(spiState);
     _nodeUpInLastNodeStateSeenByProvider = nodeUp;

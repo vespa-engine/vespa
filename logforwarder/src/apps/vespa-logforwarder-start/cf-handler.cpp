@@ -3,6 +3,7 @@
 #include "cf-handler.h"
 #include <dirent.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <vespa/defaults.h>
@@ -25,21 +26,35 @@ CfHandler::subscribe(const std::string & configId, uint64_t timeoutMS)
 }
 
 namespace {
-std::string
-cfFilePath() {
-    std::string path = vespa::Defaults::underVespaHome("var/db/vespa/splunk");
+
+bool fixDir(const vespalib::string &path) {
+    if (path.size() == 0) return true;
+    size_t lastSlash = path.rfind('/');
+    if (lastSlash != vespalib::string::npos) {
+        vespalib::string parent = path.substr(0, lastSlash);
+        if (!fixDir(parent)) return false;
+    }
     DIR *dp = opendir(path.c_str());
     if (dp == NULL) {
         if (errno != ENOENT || mkdir(path.c_str(), 0755) != 0) {
             perror(path.c_str());
+            return false;
         }
     } else {
         closedir(dp);
     }
+    return true;
+}
+
+vespalib::string
+cfFilePath(const vespalib::string &parent) {
+    vespalib::string path = parent + "/etc/system/local";
+    fixDir(path);
     path += "/deploymentclient.conf";
     return path;
 }
-}
+
+} // namespace <unnamed>
 
 void
 CfHandler::doConfigure()
@@ -47,8 +62,8 @@ CfHandler::doConfigure()
     std::unique_ptr<LogforwarderConfig> cfg(_handle->getConfig());
     const LogforwarderConfig& config(*cfg);
 
-    std::string path = cfFilePath();
-    std::string tmpPath = path + ".new";
+    vespalib::string path = cfFilePath(config.splunkHome);
+    vespalib::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
     if (fp == NULL) return;
 
@@ -60,6 +75,14 @@ CfHandler::doConfigure()
 
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
+
+    if (config.clientName.size() == 0 ||
+        config.deploymentServer.size() == 0)
+    {
+        childHandler.stopChild(config.splunkHome);
+    } else {
+        childHandler.startChild(config.splunkHome);
+    }
 }
 
 void

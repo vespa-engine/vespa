@@ -85,7 +85,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.releasedAt(), 
                                            version.isCurrentSystemVersion(), 
                                            ImmutableSet.of("config1.test", "config2.test"),
-                                           controller);
+                                           VespaVersion.confidenceFrom(version.statistics(), controller, version.releasedAt())
+                );
             censored.add(version);
         }
         return new VersionStatus(censored);

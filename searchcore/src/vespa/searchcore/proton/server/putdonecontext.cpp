@@ -8,14 +8,13 @@
 namespace proton {
 
 PutDoneContext::PutDoneContext(std::unique_ptr<FeedToken> token,
-                               const FeedOperation::Type opType,
-                               PerDocTypeFeedMetrics &metrics,
+
                                IGidToLidChangeHandler &gidToLidChangeHandler,
                                const document::GlobalId &gid,
                                uint32_t lid,
                                search::SerialNum serialNum,
                                bool enableNotifyPut)
-    : OperationDoneContext(std::move(token), opType, metrics),
+    : OperationDoneContext(std::move(token)),
       _lid(lid),
       _docIdLimit(nullptr),
       _gidToLidChangeHandler(gidToLidChangeHandler),

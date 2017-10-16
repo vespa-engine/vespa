@@ -23,12 +23,16 @@ public class DeploymentCost {
         double tco = 0;
         double util = 0;
         double waste = 0;
+        double maxWaste = -1;
 
         for (ClusterCost costCluster : clusterCosts.values()) {
             tco += costCluster.getTco();
             waste += costCluster.getWaste();
-            int nodesInCluster = costCluster.getClusterInfo().getHostnames().size();
-            util = Math.max(util, nodesInCluster*costCluster.getResultUtilization().getMaxUtilization());
+
+            if (costCluster.getWaste() > maxWaste) {
+                util = costCluster.getResultUtilization().getMaxUtilization();
+                maxWaste = costCluster.getWaste();
+            }
         }
 
         this.utilization = util;
@@ -40,14 +44,17 @@ public class DeploymentCost {
         return clusters;
     }
 
+    /** @return Total cost of ownership for the deployment (sum of all clusters) */
     public double getTco() {
         return tco;
     }
 
+    /** @return The utilization of clusters that wastes most money in this deployment */
     public double getUtilization() {
         return utilization;
     }
 
+    /** @return The amount of dollars spent and not utilized */
     public double getWaste() {
         return waste;
     }
