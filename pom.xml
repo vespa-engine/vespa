@@ -49,6 +49,18 @@
         <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
 
+    <repositories>
+        <!-- Required for Athenz libraries -->
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-yahoo-maven</id>
+            <name>bintray</name>
+            <url>http://yahoo.bintray.com/maven</url>
+        </repository>
+    </repositories>
+
     <build>
         <finalName>${project.artifactId}</finalName>
         <extensions>

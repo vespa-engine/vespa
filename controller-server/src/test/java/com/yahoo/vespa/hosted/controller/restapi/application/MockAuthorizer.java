@@ -6,9 +6,10 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
 
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -23,15 +24,15 @@ import java.util.Optional;
 @SuppressWarnings("unused") // injected
 public class MockAuthorizer extends Authorizer {
 
-    public MockAuthorizer(Controller controller, EntityService entityService) {
-        super(controller, entityService);
+    public MockAuthorizer(Controller controller, EntityService entityService, AthenzClientFactory athenzClientFactory) {
+        super(controller, entityService, athenzClientFactory);
     }
 
     /** Returns a principal given by the request parameters 'domain' and 'user' */
     @Override
     public Optional<Principal> getPrincipalIfAny(HttpRequest request) {
         if (request.getProperty("user") == null) return Optional.empty();
-        return Optional.of(new AthensPrincipal(new AthensDomain(request.getProperty("domain")),
+        return Optional.of(new AthenzPrincipal(new AthensDomain(request.getProperty("domain")),
                                                new UserId(request.getProperty("user"))));
     }
 
