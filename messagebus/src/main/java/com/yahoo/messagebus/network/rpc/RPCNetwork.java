@@ -56,7 +56,6 @@ public class RPCNetwork implements Network, MethodHandler {
     private static final Logger log = Logger.getLogger(RPCNetwork.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final Identity identity;
-    private final OOSManager oosManager;
     private final Supervisor orb;
     private final RPCTargetPool targetPool;
     private final RPCServicePool servicePool;
@@ -105,7 +104,6 @@ public class RPCNetwork implements Network, MethodHandler {
         task.jrtTask.scheduleNow();
         register = new Register(orb, slobrokConfig.getSlobroks(), identity.getHostname(), listener.port());
         mirror = new Mirror(orb, slobrokConfig.getSlobroks());
-        oosManager = new OOSManager(orb, mirror, params.getOOSServerPattern());
     }
 
     /**
@@ -141,7 +139,7 @@ public class RPCNetwork implements Network, MethodHandler {
     @Override
     public boolean waitUntilReady(double seconds) {
         for (int i = 0; i < seconds * 100; ++i) {
-            if (mirror.ready() && oosManager.isReady()) {
+            if (mirror.ready()) {
                 return true;
             }
             try {
@@ -305,10 +303,6 @@ public class RPCNetwork implements Network, MethodHandler {
      * @return Any error encountered, or null.
      */
     public Error resolveServiceAddress(RoutingNode recipient, String serviceName) {
-        if (oosManager.isOOS(serviceName)) {
-            return new Error(ErrorCode.SERVICE_OOS,
-                             "The service '" + serviceName + "' has been marked as out of service.");
-        }
         RPCServiceAddress ret = servicePool.resolve(serviceName);
         if (ret == null) {
             return new Error(ErrorCode.NO_ADDRESS_FOR_SERVICE,
@@ -400,15 +394,6 @@ public class RPCNetwork implements Network, MethodHandler {
      */
     Supervisor getSupervisor() {
         return orb;
-    }
-
-    /**
-     * Returns the oos manager object so that it can be manually queried about out-of-service services.
-     *
-     * @return The oos manager.
-     */
-    public OOSManager getOOSManager() {
-        return oosManager;
     }
 
     ExecutorService getExecutor() {
