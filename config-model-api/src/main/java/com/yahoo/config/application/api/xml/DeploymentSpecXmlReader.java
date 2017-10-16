@@ -1,11 +1,10 @@
 package com.yahoo.config.application.api.xml;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.application.api.DeploymentSpec.Step;
-import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
+import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
-import com.yahoo.config.application.api.DeploymentSpec.ChangeBlocker;
+import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -157,7 +156,8 @@ public class DeploymentSpecXmlReader {
             // TODO: Remove block-upgrade on Vespa 7
             if ( ! blockChangeTag.equals(tag.getTagName()) && !"block-upgrade".equals(tag.getTagName())) continue;
 
-            boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
+            boolean blockVersions = tag.getTagName().equals("block-upgrade") || //  TODO: Remove condition on Vespa 7
+                                    trueOrMissing(tag.getAttribute("version"));
             boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"))
                                      && !tag.getTagName().equals("block-upgrade"); //  TODO: Remove condition on Vespa 7
 
