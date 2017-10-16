@@ -2,16 +2,11 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set -e
 
-SOURCE_DIR=/source
+source /source/travis/prelude.sh
+source ${SOURCE_DIR}/travis/cpp-prelude.sh
+
 BUILD_DIR=~/build
-
 mkdir "${BUILD_DIR}"
-
-export CCACHE_MAXSIZE="1250M"
-export CCACHE_COMPRESS=1
-NUM_THREADS=4
-ccache --print-config
-source /etc/profile.d/devtoolset-6.sh || true
 
 cd ${BUILD_DIR}
 bash ${SOURCE_DIR}/bootstrap-cpp.sh ${SOURCE_DIR} ${BUILD_DIR}

@@ -3,8 +3,13 @@
 set -e
 
 source /source/travis/prelude.sh
+source ${SOURCE_DIR}/travis/cpp-prelude.sh
 
-cd "${SOURCE_DIR}"
-export MAVEN_OPTS="-Xms128m -Xmx1g"
+cd ${SOURCE_DIR}
 sh ./bootstrap.sh java
 mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
+bash ${SOURCE_DIR}/bootstrap-cmake.sh ${SOURCE_DIR}
+make -j ${NUM_THREADS}
+ctest3 --output-on-failure -j ${NUM_THREADS}
+ccache --show-stats
+make install
