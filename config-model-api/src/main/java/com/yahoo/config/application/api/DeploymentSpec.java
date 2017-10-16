@@ -187,9 +187,18 @@ public class DeploymentSpec {
      * @throws IllegalArgumentException if the XML is invalid
      */
     public static DeploymentSpec fromXml(String xmlForm) {
-        return new DeploymentSpecXmlReader().read(xmlForm);
+        return fromXml(xmlForm, true);
     }
-    
+
+    /**
+     * Creates a deployment spec from XML.
+     *
+     * @throws IllegalArgumentException if the XML is invalid
+     */
+    public static DeploymentSpec fromXml(String xmlForm, boolean validate) {
+        return new DeploymentSpecXmlReader(validate).read(xmlForm);
+    }
+
     public static String toMessageString(Throwable t) {
         StringBuilder b = new StringBuilder();
         String lastMessage = null;

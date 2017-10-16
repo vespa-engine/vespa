@@ -66,6 +66,16 @@ public class TensorTestCase {
         assertTrue(dimensions3.contains("d3"));
     }
 
+    @Test
+    public void testExpressions() {
+        Tensor y =  Tensor.from("{{y:1}:3}");
+        Tensor x =  Tensor.from("{{x:0}:5,{x:1}:7}");
+        Tensor xy = Tensor.from("{{x:0,y:1}:11, {x:1,y:1}:13}");
+        double nest = y.multiply(x.multiply(xy).sum("x")).sum("y").asDouble();
+        double flat = y.multiply(x).multiply(xy).sum(ImmutableList.of("x","y")).asDouble();
+        assertEquals(nest, flat, 0.000000001);
+    }
+
     /** All functions are more throughly tested in searchlib EvaluationTestCase */
     @Test
     public void testTensorComputation() {

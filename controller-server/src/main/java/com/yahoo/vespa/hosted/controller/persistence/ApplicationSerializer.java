@@ -248,7 +248,7 @@ public class ApplicationSerializer {
         Inspector root = slime.get();
         
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
-        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString());
+        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
