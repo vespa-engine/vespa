@@ -1,3 +1,0 @@
-# container-dev-builder
-
-TODO

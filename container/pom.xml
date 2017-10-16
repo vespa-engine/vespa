@@ -14,7 +14,7 @@
   </parent>
   <artifactId>container</artifactId>
   <version>6-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
