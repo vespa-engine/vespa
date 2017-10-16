@@ -11,12 +11,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.PersistenceException;
@@ -48,15 +47,14 @@ public class TenantController {
     /** For working memory storage and sharing between controllers */
     private final CuratorDb curator;
 
-    private final AthenzClientFactory athenzClientFactory;
+    private final ZmsClientFactory zmsClientFactory;
     private final EntityService entityService;
 
-    public TenantController(Controller controller, ControllerDb db, CuratorDb curator, EntityService entityService,
-                            AthenzClientFactory athenzClientFactory) {
+    public TenantController(Controller controller, ControllerDb db, CuratorDb curator, EntityService entityService) {
         this.controller = controller;
         this.db = db;
         this.curator = curator;
-        this.athenzClientFactory = athenzClientFactory;
+        this.zmsClientFactory = controller.athens().zmsClientFactory();
         this.entityService = entityService;
     }
 
@@ -66,8 +64,8 @@ public class TenantController {
 
     public List<Tenant> asList(UserId user) {
         Set<UserGroup> userGroups = entityService.getUserGroups(user);
-        Set<AthensDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
-                                                              .getTenantDomainsForUser(AthenzUtils.createPrincipal(user)));
+        Set<AthensDomain> userDomains = new HashSet<>(zmsClientFactory.createClientWithServicePrincipal()
+                                                              .getTenantDomainsForUser(controller.athens().principalFrom(user)));
 
         Predicate<Tenant> hasUsersGroup = (tenant) -> tenant.getUserGroup().isPresent() && userGroups.contains(tenant.getUserGroup().get());
         Predicate<Tenant> hasUsersDomain = (tenant) -> tenant.getAthensDomain().isPresent() && userDomains.contains(tenant.getAthensDomain().get());
@@ -110,7 +108,7 @@ public class TenantController {
             if (existingTenantWithDomain.isPresent())
                 throw new IllegalArgumentException("Could not create " + tenant + ": The Athens domain '" + domain +
                                                    "' is already connected to " + existingTenantWithDomain.get());
-            ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
+            ZmsClient zmsClient = zmsClientFactory.createClientWithAuthorizedServiceToken(token.get());
             try { zmsClient.deleteTenant(domain); } catch (ZmsException ignored) { }
             zmsClient.createTenant(domain);
         }
@@ -160,7 +158,7 @@ public class TenantController {
             throw new IllegalArgumentException("Could not set domain of " + updatedTenant + " to '" + newDomain +
                                                "':" + existingTenantWithNewDomain.get() + " already has this domain");
 
-        ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
+        ZmsClient zmsClient = zmsClientFactory.createClientWithAuthorizedServiceToken(token.get());
         zmsClient.createTenant(newDomain);
         List<Application> applications = controller.applications().asList(TenantName.from(existingTenant.getId().id()));
         applications.forEach(a -> zmsClient.addApplication(newDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value())));
@@ -186,8 +184,7 @@ public class TenantController {
                 throw new RuntimeException(e);
             }
             if (tenant.isAthensTenant())
-                athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token.get())
-                        .deleteTenant(tenant.getAthensDomain().get());
+                zmsClientFactory.createClientWithAuthorizedServiceToken(token.get()).deleteTenant(tenant.getAthensDomain().get());
             log.info("Deleted " + tenant);
         }
     }
@@ -207,7 +204,7 @@ public class TenantController {
                 throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
                                                    "Tenant is not currently an OpsDb tenant");
 
-            ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(nToken);
+            ZmsClient zmsClient = zmsClientFactory.createClientWithAuthorizedServiceToken(nToken);
             zmsClient.createTenant(tenantDomain);
             List<Application> applications = controller.applications().asList(TenantName.from(existing.getId().id()));
             applications.forEach(a -> {

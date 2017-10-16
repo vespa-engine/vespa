@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.EnvironmentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
@@ -9,9 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.filter.AthenzTestUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 
 /**
  * @author Tony Vaagenes
@@ -34,8 +33,6 @@ public class TestIdentities {
 
     public static Tenant tenant = Tenant.createOpsDbTenant(tenantId, userGroup1, property);
 
-    public static NToken userNToken = new NToken.Builder(
-            "U1", AthenzUtils.createPrincipal(userId), AthenzTestUtils.generateRsaKeypair().getPrivate(), "0")
-            .build();
+    public static NToken userNToken = new NTokenMock("token");
 
 }

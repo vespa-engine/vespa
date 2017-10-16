@@ -10,6 +10,11 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -17,10 +22,6 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -54,7 +55,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .region("corp-us-east-1")
             .build();
     private static final String athensUserDomain = "domain1";
-    private static final String athensScrewdriverDomain = AthenzUtils.SCREWDRIVER_DOMAIN.id();
+    private static final String athensScrewdriverDomain = "screwdriver-domain";
 
 
     @Test
@@ -671,12 +672,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * mock setup to replicate the action.
      */
     private AthensDomain addTenantAthensDomain(String domainName, String userName) {
-        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
-                .getComponent(AthenzClientFactoryMock.class.getName());
+        Athens athens = (AthensMock) container.components().getComponent(
+                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
+        );
+        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
         AthensDomain athensDomain = new AthensDomain(domainName);
         AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
+        domain.admin(new AthensPrincipal(new AthensDomain(athensUserDomain), new UserId(userName)));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
@@ -686,10 +689,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * mock setup to replicate the action.
      */
     private void addScrewdriverUserToDomain(String screwdriverUserId, String domainName) {
-        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
-                .getComponent(AthenzClientFactoryMock.class.getName());
+        Athens athens = (AthensMock) container.components().getComponent(
+                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
+        );
+        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
         AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthensDomain(domainName));
-        domain.admin(new AthenzPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
+        domain.admin(new AthensPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
     }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
