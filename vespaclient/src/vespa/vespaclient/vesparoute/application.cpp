@@ -142,12 +142,6 @@ Application::parseArgs()
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'listenport'.");
             }
-        } else if (strcasecmp(_argv[arg], "--oosserverpattern") == 0) {
-            if (++arg < _argc) {
-                _params.getRPCNetworkParams().setOOSServerPattern(_argv[arg]);
-            } else {
-                throw config::InvalidConfigException("Missing value for parameter 'oosserverpattern'.");
-            }
         } else if (strcasecmp(_argv[arg], "--protocol") == 0) {
             if (++arg < _argc) {
                 _params.setProtocol(_argv[arg]);
@@ -197,7 +191,6 @@ Application::printHelp() const
            "  --hops                          Prints a list of all available hops.\n"
            "  --identity <id>                 Sets the identity of message bus.\n"
            "  --listenport <num>              Sets the port message bus will listen to.\n"
-           "  --oosserverpattern <id>         Sets the out-of-service server pattern for message bus.\n"
            "  --protocol <name>               Sets the name of the protocol whose routing to inspect.\n"
            "  --route <name>                  Prints detailed information about route <name>.\n"
            "  --routes                        Prints a list of all available routes.\n"
@@ -214,14 +207,11 @@ Application::verifyRoute(const mbus::Route &route, std::set<std::string> &errors
         std::string str = route.getHop(i).toString();
         mbus::HopBlueprint hop = getHop(str);
         std::set<std::string> hopErrors;
-        std::vector<std::string> services, oos;
-        if (!verifyHop(hop, services, oos, hopErrors)) {
+        if (!verifyHop(hop, hopErrors)) {
             for (std::set<std::string>::iterator err = hopErrors.begin();
                  err != hopErrors.end(); ++err)
             {
-                errors.insert(vespalib::make_string("for hop '%s', %s",
-                                                    str.c_str(),
-                                                    err->c_str()));
+                errors.insert(vespalib::make_string("for hop '%s', %s", str.c_str(), err->c_str()));
             }
         }
     }
@@ -229,8 +219,7 @@ Application::verifyRoute(const mbus::Route &route, std::set<std::string> &errors
 }
 
 bool
-Application::verifyHop(const mbus::HopBlueprint &hop, std::vector<std::string> &services,
-                       std::vector<std::string> &oos, std::set<std::string> &errors) const
+Application::verifyHop(const mbus::HopBlueprint &hop, std::set<std::string> &errors) const
 {
     // _P_A_R_A_N_O_I_A_
     if (!hop.hasDirectives()) {
@@ -252,9 +241,8 @@ Application::verifyHop(const mbus::HopBlueprint &hop, std::vector<std::string> &
     const mbus::RoutingTable &table = *_mbus->getRoutingTable(_params.getProtocol());
     if (hop.getDirective(0)->getType() == mbus::IHopDirective::TYPE_ROUTE) {
         const mbus::RouteDirective &dir = static_cast<const mbus::RouteDirective &>(*hop.getDirective(0));
-        if (table.getRoute(dir.getName()) == NULL) {
-            errors.insert(vespalib::make_string("route '%s' not found",
-                                                dir.getName().c_str()));
+        if (table.getRoute(dir.getName()) == nullptr) {
+            errors.insert(vespalib::make_string("route '%s' not found", dir.getName().c_str()));
             return false;
         } else {
             return true;
@@ -262,9 +250,9 @@ Application::verifyHop(const mbus::HopBlueprint &hop, std::vector<std::string> &
     }
 
     std::string selector = hop.create()->toString();
-    if (table.getHop(selector) != NULL) {
+    if (table.getHop(selector) != nullptr) {
         return true;
-    } else if (table.getRoute(selector) != NULL) {
+    } else if (table.getRoute(selector) != nullptr) {
         return true;
     }
 
@@ -275,18 +263,6 @@ Application::verifyHop(const mbus::HopBlueprint &hop, std::vector<std::string> &
         return false;
     }
 
-    // Check OOS status of all matches.
-    for (slobrok::api::IMirrorAPI::SpecList::iterator it = lst.begin();
-         it != lst.end(); ++it)
-    {
-        services.push_back(it->first);
-        if (_net->verifyOOS(it->first)) {
-            oos.push_back(it->first);
-        }
-    }
-    if (oos.size() == lst.size()) {
-        errors.insert("matching service(s) out of service");
-    }
     return errors.empty();
 }
 
@@ -299,8 +275,7 @@ Application::printDump() const
          it.isValid(); it.next())
     {
         std::set<std::string> errors;
-        std::vector<std::string> services, oos;
-        bool ok = verifyHop(it.getHop(), services, oos, errors);
+        bool ok = verifyHop(it.getHop(), errors);
 
         printf("    <hop name='%s' selector='%s'", it.getName().c_str(), it.getHop().create()->toString().c_str());
         if (it.getHop().getIgnoreResult()) {
@@ -346,9 +321,7 @@ Application::printDump() const
     for (slobrok::api::IMirrorAPI::SpecList::iterator it = services.begin();
          it != services.end(); ++it)
     {
-        printf("    <service name='%s' spec='%s' %s/>\n",
-               it->first.c_str(), it->second.c_str(),
-               _net->verifyOOS(it->first) ? "state='oos' " : "");
+        printf("    <service name='%s' spec='%s'/>\n", it->first.c_str(), it->second.c_str());
     }
     printf("</services>\n");
 }
@@ -383,8 +356,7 @@ Application::printHops() const
                hops[i].c_str(), hop.create()->toString().c_str());
 
         std::set<std::string> errors;
-        std::vector<std::string> services, oos;
-        if (_params.getVerify() && verifyHop(hop, services, oos, errors)) {
+        if (_params.getVerify() && verifyHop(hop, errors)) {
             printf(" (verified)\n");
         } else {
             printf("\n");

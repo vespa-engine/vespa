@@ -60,8 +60,7 @@ private:
     bool verifyRoute(const mbus::Route &route, std::set<std::string> &errors) const;
 
     /** Verifies the content of the given hop. */
-    bool verifyHop(const mbus::HopBlueprint &hop, std::vector<std::string> &services,
-                   std::vector<std::string> &oos, std::set<std::string> &errors) const;
+    bool verifyHop(const mbus::HopBlueprint &hop, std::set<std::string> &errors) const;
 
 public:
     Application();

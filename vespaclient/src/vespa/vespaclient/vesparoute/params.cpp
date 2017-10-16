@@ -16,14 +16,9 @@ Params::Params() :
     _lstServices(false),
     _dump(false),
     _verify(false)
-{
-    _rpcParams.setOOSServerPattern("search/*/rtx/*/clustercontroller"); // magic
-}
+{}
 
-Params::~Params()
-{
-    // empty
-}
+Params::~Params() = default;
 
 }
 
