@@ -345,6 +345,17 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             }
         }
 
+        public static class Feeding implements ProtonConfig.Producer {
+            public Double concurrency = null;
+
+            @Override
+            public void getConfig(ProtonConfig.Builder builder) {
+                if (concurrency != null) {
+                    builder.feeding.concurrency(concurrency);
+                }
+            }
+        }
+
         public RequestThreads threads = null;
         public FlushStrategy strategy = null;
         public Resizing resizing = null;
@@ -353,6 +364,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
         public Summary summary = null;
         public Initialize initialize = null;
         public Background background = null;
+        public Feeding feeding = null;
 
         @Override
         public void getConfig(ProtonConfig.Builder builder) {
@@ -364,6 +376,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             if (summary != null) summary.getConfig(builder);
             if (initialize != null) initialize.getConfig(builder);
             if (background != null) background.getConfig(builder);
+            if (feeding != null) feeding.getConfig(builder);
         }
     }
 

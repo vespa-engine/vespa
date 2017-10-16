@@ -243,4 +243,13 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("background.threads 7"));
     }
 
+    @Test
+    public void requireThatWeCanParseFeedingTag() {
+        Tuning t = createTuning(parseXml("<feeding>",
+                "<concurrency>0.7</concurrency>",
+                "</feeding>"));
+        assertEquals(0.7, t.searchNode.feeding.concurrency.doubleValue(), DELTA);
+        assertThat(getProtonCfg(t), containsString("feeding.concurrency 0.7"));
+    }
+
 }
