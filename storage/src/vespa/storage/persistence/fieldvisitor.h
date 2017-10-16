@@ -42,7 +42,6 @@ public:
     void visitArithmeticValueNode(const document::select::ArithmeticValueNode &) override {}
     void visitFunctionValueNode(const document::select::FunctionValueNode &) override {}
     void visitIdValueNode(const document::select::IdValueNode &) override {}
-    void visitSearchColumnValueNode(const document::select::SearchColumnValueNode &) override {}
     void visitFloatValueNode(const document::select::FloatValueNode &) override {}
     void visitVariableValueNode(const document::select::VariableValueNode &) override {}
     void visitIntegerValueNode(const document::select::IntegerValueNode &) override {}

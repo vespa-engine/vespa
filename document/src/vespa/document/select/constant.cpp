@@ -7,28 +7,10 @@
 
 namespace document::select {
 
-Constant::Constant(const vespalib::stringref & value)
-    : Node(value),
-      _value(false)
+Constant::Constant(bool value)
+    : Node(value ? "true" : "false"), // TODO remove required name from Node
+      _value(value)
 {
-    if (value.size() == 4 &&
-        (value[0] & 0xdf) == 'T' &&
-        (value[1] & 0xdf) == 'R' &&
-        (value[2] & 0xdf) == 'U' &&
-        (value[3] & 0xdf) == 'E')
-    {
-        _value = true;
-    } else if (value.size() == 5 &&
-        (value[0] & 0xdf) == 'F' &&
-        (value[1] & 0xdf) == 'A' &&
-        (value[2] & 0xdf) == 'L' &&
-        (value[3] & 0xdf) == 'S' &&
-        (value[4] & 0xdf) == 'E')
-    {
-        _value = false;
-    } else {
-        assert(false);
-    }
 }
 
 ResultList

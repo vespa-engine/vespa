@@ -68,6 +68,8 @@ BuildRequires: make
 BuildRequires: vespa-cppunit-devel >= 1.12.1-6
 BuildRequires: vespa-libtorrent-devel >= 1.0.11-6
 BuildRequires: systemd
+BuildRequires: flex >= 2.5.0
+BuildRequires: bison >= 3.0.0
 %if 0%{?centos}
 Requires: epel-release
 %endif

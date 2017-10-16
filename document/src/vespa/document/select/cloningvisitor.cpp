@@ -162,7 +162,7 @@ CloningVisitor::visitConstant(const Constant &expr)
     _priority = ConstPriority;
     bool val = expr.getConstantValue();
     _resultSet.add(val ? Result::True : Result::False);
-    _node.reset(new Constant(val ? "true" : "false"));
+    _node.reset(new Constant(val));
 }
 
 
@@ -195,16 +195,6 @@ CloningVisitor::visitIdValueNode(const IdValueNode &expr)
     ++_fieldNodes; // needs document id, thus needs document
     _valueNode = expr.clone();
     _priority = IdPriority;
-}
-
-
-void
-CloningVisitor::visitSearchColumnValueNode(const SearchColumnValueNode &expr)
-{
-    _constVal = false;
-    ++_fieldNodes; // needs document id, thus needs document
-    _valueNode = expr.clone();
-    _priority = SearchColPriority;
 }
 
 

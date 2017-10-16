@@ -137,27 +137,6 @@ using namespace document::select;
             }
         }
 
-        void compare(const select::SearchColumnValueNode& node,
-                     const select::ValueNode& valnode,
-                     const select::Operator& op) {
-            if (op == FunctionOperator::EQ || op == document::select::GlobOperator::GLOB) {
-                int bucketCount = 1 << 16;
-                const IntegerValueNode* val(
-                        dynamic_cast<const IntegerValueNode*>(&valnode));
-
-                int64_t rval = val->getValue();
-
-                for (int i = 0; i < bucketCount; i++) {
-                    int64_t column = node.getValue(BucketId(16, i));
-                    if (column == rval) {
-                        _buckets.push_back(BucketId(16, i));
-                    }
-                }
-
-                _unknown = false;
-            }
-        }
-
         void visitComparison(const document::select::Compare& node) override {
             if (node.getOperator() != document::select::FunctionOperator::EQ &&
                 node.getOperator() != document::select::GlobOperator::GLOB)
@@ -166,12 +145,8 @@ using namespace document::select;
             }
             const IdValueNode* lid(dynamic_cast<const IdValueNode*>(
                         &node.getLeft()));
-            const SearchColumnValueNode* sc(dynamic_cast<const SearchColumnValueNode*>(
-                                                    &node.getLeft()));
             if (lid) {
                 compare(*lid, node.getRight(), node.getOperator());
-            } else if (sc) {
-                compare(*sc, node.getRight(), node.getOperator());
             } else {
                 const IdValueNode* rid(dynamic_cast<const IdValueNode*>(
                             &node.getRight()));
@@ -187,7 +162,6 @@ using namespace document::select;
         void visitArithmeticValueNode(const ArithmeticValueNode &) override {}
         void visitFunctionValueNode(const FunctionValueNode &) override {}
         void visitIdValueNode(const IdValueNode &) override {}
-        void visitSearchColumnValueNode(const SearchColumnValueNode &) override {}
         void visitFieldValueNode(const FieldValueNode &) override {}
         void visitFloatValueNode(const FloatValueNode &) override {}
         void visitVariableValueNode(const VariableValueNode &) override {}

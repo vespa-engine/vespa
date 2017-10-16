@@ -15,7 +15,6 @@
 #include <iomanip>
 #include <sys/time.h>
 
-
 #include <vespa/log/log.h>
 LOG_SETUP(".document.select.valuenode");
 
@@ -61,10 +60,7 @@ InvalidValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-NullValueNode::NullValueNode(const vespalib::stringref & name)
-    : _name(name)
-{ }
-
+NullValueNode::NullValueNode() {}
 
 void
 NullValueNode::visit(Visitor &visitor) const
@@ -79,7 +75,7 @@ NullValueNode::print(std::ostream& out, bool verbose,
 {
     (void) verbose; (void) indent;
     if (hadParentheses()) out << '(';
-    out << _name;
+    out << "null";
     if (hadParentheses()) out << ')';
 }
 
@@ -678,88 +674,6 @@ IdValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-SearchColumnValueNode::SearchColumnValueNode(
-        const BucketIdFactory& bucketIdFactory,
-        const vespalib::stringref & name, int numColumns)
-    : _bucketIdFactory(bucketIdFactory),
-      _id(name),
-      _numColumns(numColumns),
-      _distribution(std::make_unique<BucketDistribution>(_numColumns, 16))
-{
-}
-
-int64_t
-SearchColumnValueNode::getValue(const BucketId& id) const
-{
-    return _distribution->getColumn(id);
-}
-
-
-std::unique_ptr<Value>
-SearchColumnValueNode::getValue(const Context& context) const
-{
-    if (context._doc != NULL) {
-        return getValue(context._doc->getId());
-    } else if (context._docId != NULL) {
-        return getValue(*context._docId);
-    } else {
-        return getValue(context._docUpdate->getId());
-    }
-}
-
-
-std::unique_ptr<Value>
-SearchColumnValueNode::getValue(const DocumentId& id) const
-{
-    return std::unique_ptr<Value>(new IntegerValue(
-                getValue(_bucketIdFactory.getBucketId(id)), false));
-}
-
-
-std::unique_ptr<Value>
-SearchColumnValueNode::traceValue(const Context& context,
-                                  std::ostream &out) const
-{
-    if (context._doc != NULL) {
-        return traceValue(context._doc->getId(), out);
-    } else if (context._docId != NULL) {
-        return traceValue(*context._docId, out);
-    } else {
-        return traceValue(context._docUpdate->getId(), out);
-    }
-}
-
-
-std::unique_ptr<Value>
-SearchColumnValueNode::traceValue(const DocumentId& id,
-                                  std::ostream& out) const
-{
-    std::unique_ptr<Value> result(new IntegerValue(
-                getValue(_bucketIdFactory.getBucketId(id)), false));
-    out << "Resolved search column of doc \"" << id << "\" to " << *result
-        << "\n";
-    return result;
-}
-
-
-void
-SearchColumnValueNode::visit(Visitor &visitor) const
-{
-    visitor.visitSearchColumnValueNode(*this);
-}
-
-
-void
-SearchColumnValueNode::print(std::ostream& out, bool verbose,
-                   const std::string& indent) const
-{
-    (void) verbose; (void) indent;
-    if (hadParentheses()) out << '(';
-    out << _id;
-    out << '.' << _numColumns;
-    if (hadParentheses()) out << ')';
-}
-
 namespace {
     union HashUnion {
         unsigned char _key[16];
@@ -1174,6 +1088,44 @@ ArithmeticValueNode::print(std::ostream& out, bool verbose,
     }
     _right->print(out, verbose, indent);
     if (hadParentheses()) out << ')';
+}
+
+std::unique_ptr<FieldValueNode> FieldExprNode::convert_to_field_value() const {
+    const auto& doctype = resolve_doctype();
+    // FIXME deprecate manual post-parsing of field expressions in favor of
+    // actually using the structural parser in the way nature intended.
+    vespalib::string mangled_expression;
+    build_mangled_expression(mangled_expression);
+    return std::make_unique<FieldValueNode>(doctype, mangled_expression);
+}
+
+std::unique_ptr<FunctionValueNode> FieldExprNode::convert_to_function_call() const {
+    // Right hand expr string contains function call, lhs contains field spec on which
+    // the function is to be invoked.
+    if ((_left_expr == nullptr) || (_left_expr->_left_expr == nullptr)) {
+        throw vespalib::IllegalArgumentException(
+                vespalib::make_string("Cannot call function '%s' directly on document type", _right_expr.c_str()));
+    }
+    auto lhs = _left_expr->convert_to_field_value();
+    const auto& function_name = _right_expr;
+    return std::make_unique<FunctionValueNode>(function_name, std::move(lhs));
+}
+
+void FieldExprNode::build_mangled_expression(vespalib::string& dest) const {
+    // Leftmost node is doctype, which should not be emitted as part of mangled expression.
+    if (_left_expr && _left_expr->_left_expr) {
+        _left_expr->build_mangled_expression(dest);
+        dest.push_back('.');
+    }
+    dest.append(_right_expr);
+}
+
+const vespalib::string& FieldExprNode::resolve_doctype() const {
+    const auto* leftmost = this;
+    while (leftmost->_left_expr) {
+        leftmost = leftmost->_left_expr.get();
+    }
+    return leftmost->_right_expr;
 }
 
 }

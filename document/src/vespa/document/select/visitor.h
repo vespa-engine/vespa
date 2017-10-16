@@ -70,9 +70,6 @@ public:
     visitIdValueNode(const IdValueNode &) = 0;
 
     virtual void
-    visitSearchColumnValueNode(const SearchColumnValueNode &) = 0;
-
-    virtual void
     visitFieldValueNode(const FieldValueNode &) = 0;
 
     virtual void
