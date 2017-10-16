@@ -22,6 +22,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.api.mbusprot.serialization.4_2");
 
+using document::BucketSpace;
+
 namespace storage {
 namespace mbusprot {
 
@@ -50,7 +52,8 @@ ProtocolSerialization4_2::onDecodeMultiOperationCommand(BBuf& buf) const
     std::vector<char> buffer(length);
     buf.getBytes(&buffer[0], length);
     bool keepTimestamps = SH::getBoolean(buf);
-    document::BucketId bucket(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     api::MultiOperationCommand::UP msg(
             new api::MultiOperationCommand(getTypeRepoSp(),
                                            bucket, buffer, keepTimestamps));
@@ -98,7 +101,9 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeBatchPutRemoveCommand(BBuf& buf) const
 {
     SH::getByte(buf);
-    std::unique_ptr<api::BatchPutRemoveCommand> cmd(new api::BatchPutRemoveCommand(document::BucketId(SH::getLong(buf))));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    std::unique_ptr<api::BatchPutRemoveCommand> cmd(new api::BatchPutRemoveCommand(bucket));
     int length = SH::getInt(buf);
 
     for (int i = 0; i < length; i++) {
@@ -169,7 +174,8 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeGetCommand(BBuf& buf) const
 {
     document::DocumentId did(SH::getString(buf));
-    document::BucketId bucket(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
     bool headerOnly(SH::getBoolean(buf));
     api::GetCommand::UP msg(
@@ -191,7 +197,8 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeRemoveCommand(BBuf& buf) const
 {
     document::DocumentId did(SH::getString(buf));
-    document::BucketId bucket(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     api::Timestamp timestamp(SH::getLong(buf));
     api::RemoveCommand::UP msg(new api::RemoveCommand(bucket, did, timestamp));
     onDecodeBucketInfoCommand(buf, *msg);
@@ -212,12 +219,13 @@ void ProtocolSerialization4_2::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeRevertCommand(BBuf& buf) const
 {
-    document::BucketId bid(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     std::vector<api::Timestamp> tokens(SH::getInt(buf));
     for (uint32_t i=0, n=tokens.size(); i<n; ++i) {
         tokens[i] = SH::getLong(buf);
     }
-    api::RevertCommand::UP msg(new api::RevertCommand(bid, tokens));
+    api::RevertCommand::UP msg(new api::RevertCommand(bucket, tokens));
     onDecodeBucketInfoCommand(buf, *msg);
     return api::StorageCommand::UP(msg.release());
 }
@@ -232,8 +240,9 @@ void ProtocolSerialization4_2::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeCreateBucketCommand(BBuf& buf) const
 {
-    document::BucketId bid(SH::getLong(buf));
-    api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bid));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bucket));
     onDecodeBucketInfoCommand(buf, *msg);
     return api::StorageCommand::UP(msg.release());
 }
@@ -256,7 +265,8 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeMergeBucketCommand(BBuf& buf) const
 {
     typedef api::MergeBucketCommand::Node Node;
-    document::BucketId bid(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     uint16_t nodeCount = SH::getShort(buf);
     std::vector<Node> nodes;
     nodes.reserve(nodeCount);
@@ -267,7 +277,7 @@ ProtocolSerialization4_2::onDecodeMergeBucketCommand(BBuf& buf) const
     }
     api::Timestamp timestamp(SH::getLong(buf));
     api::MergeBucketCommand::UP msg(
-            new api::MergeBucketCommand(bid, nodes, timestamp));
+            new api::MergeBucketCommand(bucket, nodes, timestamp));
     onDecodeCommand(buf, *msg);
     return api::StorageCommand::UP(msg.release());
 }
@@ -295,7 +305,8 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeGetBucketDiffCommand(BBuf& buf) const
 {
     typedef api::MergeBucketCommand::Node Node;
-    document::BucketId bid(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     uint16_t nodeCount = SH::getShort(buf);
     std::vector<Node> nodes;
     nodes.reserve(nodeCount);
@@ -306,7 +317,7 @@ ProtocolSerialization4_2::onDecodeGetBucketDiffCommand(BBuf& buf) const
     }
     api::Timestamp timestamp = SH::getLong(buf);
     api::GetBucketDiffCommand::UP msg(
-            new api::GetBucketDiffCommand(bid, nodes, timestamp));
+            new api::GetBucketDiffCommand(bucket, nodes, timestamp));
     std::vector<api::GetBucketDiffCommand::Entry>& entries(msg->getDiff());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
@@ -352,7 +363,8 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeApplyBucketDiffCommand(BBuf& buf) const
 {
     typedef api::MergeBucketCommand::Node Node;
-    document::BucketId bid(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     uint16_t nodeCount = SH::getShort(buf);
     std::vector<Node> nodes;
     nodes.reserve(nodeCount);
@@ -363,7 +375,7 @@ ProtocolSerialization4_2::onDecodeApplyBucketDiffCommand(BBuf& buf) const
     }
     uint32_t maxBufferSize(SH::getInt(buf));
     api::ApplyBucketDiffCommand::UP msg(
-            new api::ApplyBucketDiffCommand(bid, nodes, maxBufferSize));
+            new api::ApplyBucketDiffCommand(bucket, nodes, maxBufferSize));
     std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg->getDiff());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
@@ -436,7 +448,8 @@ void ProtocolSerialization4_2::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeNotifyBucketChangeCommand(BBuf& buf) const
 {
-    document::BucketId bucket(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     api::BucketInfo info(getBucketInfo(buf));
     api::NotifyBucketChangeCommand::UP msg(
             new api::NotifyBucketChangeCommand(bucket, info));
@@ -474,8 +487,9 @@ void ProtocolSerialization4_2::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeSplitBucketCommand(BBuf& buf) const
 {
-    document::BucketId id(SH::getLong(buf));
-    api::SplitBucketCommand::UP msg(new api::SplitBucketCommand(id));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    api::SplitBucketCommand::UP msg(new api::SplitBucketCommand(bucket));
     msg->setMinSplitBits(SH::getByte(buf));
     msg->setMaxSplitBits(SH::getByte(buf));
     msg->setMinByteSize(SH::getInt(buf));
@@ -631,10 +645,11 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeRemoveLocationCommand(BBuf& buf) const
 {
     vespalib::stringref documentSelection = SH::getString(buf);
-    uint64_t bucketId = SH::getLong(buf);
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
 
     api::RemoveLocationCommand::UP msg;
-    msg.reset(new api::RemoveLocationCommand(documentSelection, document::BucketId(bucketId)));
+    msg.reset(new api::RemoveLocationCommand(documentSelection, bucket));
     onDecodeCommand(buf, *msg);
     return api::StorageCommand::UP(msg.release());
 }

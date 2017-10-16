@@ -10,6 +10,8 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.bucketownershipnotifier");
 
+using document::BucketSpace;
+
 namespace storage {
 
 uint16_t
@@ -59,7 +61,7 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
         return;
     }
     api::NotifyBucketChangeCommand::SP notifyCmd(
-                new api::NotifyBucketChangeCommand(bucket, infoToSend));
+                new api::NotifyBucketChangeCommand(document::Bucket(BucketSpace::placeHolder(), bucket), infoToSend));
 
     notifyCmd->setAddress(api::StorageMessageAddress(
                                   _component.getClusterName(),

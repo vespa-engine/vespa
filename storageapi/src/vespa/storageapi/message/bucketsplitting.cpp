@@ -11,8 +11,8 @@ IMPLEMENT_REPLY(SplitBucketReply)
 IMPLEMENT_COMMAND(JoinBucketsCommand, JoinBucketsReply)
 IMPLEMENT_REPLY(JoinBucketsReply)
 
-SplitBucketCommand::SplitBucketCommand(const document::BucketId& id)
-    : MaintenanceCommand(MessageType::SPLITBUCKET, id),
+SplitBucketCommand::SplitBucketCommand(const document::Bucket &bucket)
+    : MaintenanceCommand(MessageType::SPLITBUCKET, bucket),
       _minSplitBits(0),
       _maxSplitBits(58),
       _minByteSize(std::numeric_limits<uint32_t>::max()),
@@ -70,7 +70,7 @@ SplitBucketReply::print(std::ostream& out, bool verbose,
     }
 }
 
-JoinBucketsCommand::JoinBucketsCommand(const document::BucketId& target)
+JoinBucketsCommand::JoinBucketsCommand(const document::Bucket &target)
     : MaintenanceCommand(MessageType::JOINBUCKETS, target),
       _minJoinBits(0)
 {

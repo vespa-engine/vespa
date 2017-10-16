@@ -35,7 +35,7 @@ public:
         virtual const document::DocumentId& getDocumentId() const = 0;
     };
 
-    explicit BatchPutRemoveCommand(const document::BucketId& id);
+    explicit BatchPutRemoveCommand(const document::Bucket &bucket);
 
     class PutOperation : public Operation {
     public:

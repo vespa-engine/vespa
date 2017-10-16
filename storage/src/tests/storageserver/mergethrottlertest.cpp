@@ -6,6 +6,7 @@
 #include <tests/common/storagelinktest.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -21,6 +22,7 @@
 
 using namespace document;
 using namespace storage::api;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -99,7 +101,7 @@ struct MergeBuilder {
             n.emplace_back(node, source_only);
         }
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(_bucket, n, _maxTimestamp,
+                new MergeBucketCommand(makeDocumentBucket(_bucket), n, _maxTimestamp,
                                        _clusterStateVersion, _chain));
         StorageMessageAddress address("storage", lib::NodeType::STORAGE, _nodes[0]);
         cmd->setAddress(address);
@@ -327,7 +329,7 @@ MergeThrottlerTest::testChain()
         }
         //std::cout << "\n";
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(bid, nodes, UINT_MAX, 123));
+                new MergeBucketCommand(makeDocumentBucket(bid), nodes, UINT_MAX, 123));
         cmd->setPriority(7);
         cmd->setTimeout(54321);
         StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
@@ -486,7 +488,7 @@ MergeThrottlerTest::testWithSourceOnlyNode()
     nodes.push_back(2);
     nodes.push_back(MergeBucketCommand::Node(1, true));
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(bid, nodes, UINT_MAX, 123));
+            new MergeBucketCommand(makeDocumentBucket(bid), nodes, UINT_MAX, 123));
 
     cmd->setAddress(address);
     _topLinks[0]->sendDown(cmd);
@@ -536,7 +538,7 @@ MergeThrottlerTest::test42DistributorBehavior()
     nodes.push_back(1);
     nodes.push_back(2);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(bid, nodes, 1234));
+            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234));
 
     // Send to node 1, which is not the lowest index
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
@@ -579,7 +581,7 @@ MergeThrottlerTest::test42DistributorBehaviorDoesNotTakeOwnership()
     nodes.push_back(1);
     nodes.push_back(2);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(bid, nodes, 1234));
+            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234));
 
     // Send to node 1, which is not the lowest index
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
@@ -637,7 +639,7 @@ MergeThrottlerTest::testEndOfChainExecutionDoesNotTakeOwnership()
     chain.push_back(0);
     chain.push_back(1);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(bid, nodes, 1234, 1, chain));
+            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234, 1, chain));
 
     // Send to last node, which is not the lowest index
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
@@ -692,7 +694,7 @@ MergeThrottlerTest::testResendHandling()
     nodes.push_back(1);
     nodes.push_back(2);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(bid, nodes, 1234));
+            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234));
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
 
@@ -753,7 +755,7 @@ MergeThrottlerTest::testPriorityQueuing()
     CPPUNIT_ASSERT(maxPending >= 4u);
     for (std::size_t i = 0; i < maxPending; ++i) {
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
         cmd->setPriority(100);
         _topLinks[0]->sendDown(cmd);
     }
@@ -767,7 +769,7 @@ MergeThrottlerTest::testPriorityQueuing()
     int sortedPris[4] = { 120, 150, 200, 240 };
     for (int i = 0; i < 4; ++i) {
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, i), nodes, 1234));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, i)), nodes, 1234));
         cmd->setPriority(priorities[i]);
         _topLinks[0]->sendDown(cmd);
     }
@@ -815,7 +817,7 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
         nodes.push_back(2 + i);
         nodes.push_back(5 + i);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
         cmd->setPriority(100 - i);
         _topLinks[0]->sendDown(cmd);
     }
@@ -831,7 +833,7 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
         nodes.push_back(12);
         nodes.push_back(123);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf000feee), nodes, 1234));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf000feee)), nodes, 1234));
         _topLinks[0]->sendDown(cmd);
     }
     {
@@ -840,7 +842,7 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
         nodes.push_back(124); // Different node set doesn't matter
         nodes.push_back(14);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf000feee), nodes, 1234));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf000feee)), nodes, 1234));
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -901,7 +903,7 @@ MergeThrottlerTest::testInvalidReceiverNode()
     nodes.push_back(5);
     nodes.push_back(9);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(BucketId(32, 0xf00baaaa), nodes, 1234));
+            new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baaaa)), nodes, 1234));
 
     // Send to node with index 0
     _topLinks[0]->sendDown(cmd);
@@ -930,7 +932,7 @@ MergeThrottlerTest::testForwardQueuedMerge()
         nodes.push_back(2 + i);
         nodes.push_back(5 + i);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
         cmd->setPriority(100 - i);
         _topLinks[0]->sendDown(cmd);
     }
@@ -1003,7 +1005,7 @@ MergeThrottlerTest::testExecuteQueuedMerge()
         nodes.push_back(5 + i);
         nodes.push_back(7 + i);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234, 1));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
         cmd->setPriority(250 - i + 5);
         topLink.sendDown(cmd);
     }
@@ -1021,7 +1023,7 @@ MergeThrottlerTest::testExecuteQueuedMerge()
         std::vector<uint16_t> chain;
         chain.push_back(0);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0x1337), nodes, 1234, 1, chain));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0x1337)), nodes, 1234, 1, chain));
         cmd->setPriority(0);
         topLink.sendDown(cmd);
     }
@@ -1092,7 +1094,7 @@ MergeThrottlerTest::testFlush()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234, 1));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1138,7 +1140,7 @@ MergeThrottlerTest::testUnseenMergeWithNodeInChain()
     chain.push_back(5);
     chain.push_back(9);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(BucketId(32, 0xdeadbeef), nodes, 1234, 1, chain));
+            new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xdeadbeef)), nodes, 1234, 1, chain));
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 9);
 
@@ -1162,7 +1164,7 @@ MergeThrottlerTest::testUnseenMergeWithNodeInChain()
                 _throttlers[0]->getThrottlePolicy().getMaxPendingCount());
         for (std::size_t i = 0; i < maxPending; ++i) {
             std::shared_ptr<MergeBucketCommand> fillCmd(
-                    new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234));
+                    new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
             _topLinks[0]->sendDown(fillCmd);
         }
     }
@@ -1190,7 +1192,7 @@ MergeThrottlerTest::testMergeWithNewerClusterStateFlushesOutdatedQueued()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234, 1));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
         ids.push_back(cmd->getMsgId());
         _topLinks[0]->sendDown(cmd);
     }
@@ -1206,7 +1208,7 @@ MergeThrottlerTest::testMergeWithNewerClusterStateFlushesOutdatedQueued()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0x12345678), nodes, 1234, 2));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0x12345678)), nodes, 1234, 2));
         ids.push_back(cmd->getMsgId());
         _topLinks[0]->sendDown(cmd);
     }
@@ -1241,7 +1243,7 @@ MergeThrottlerTest::testUpdatedClusterStateFlushesOutdatedQueued()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234, 2));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 2));
         ids.push_back(cmd->getMsgId());
         _topLinks[0]->sendDown(cmd);
     }
@@ -1284,7 +1286,7 @@ MergeThrottlerTest::test42MergesDoNotTriggerFlush()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00baa00 + i), nodes, 1234, 1));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1307,7 +1309,7 @@ MergeThrottlerTest::test42MergesDoNotTriggerFlush()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xbaaadbed), nodes, 1234, 0));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xbaaadbed)), nodes, 1234, 0));
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1334,7 +1336,7 @@ MergeThrottlerTest::testOutdatedClusterStateMergesAreRejectedOnArrival()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xfeef00), nodes, 1234, 9));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 9));
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1364,7 +1366,7 @@ MergeThrottlerTest::testUnknownMergeWithSelfInChain()
     std::vector<uint16_t> chain;
     chain.push_back(0);
     std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(bid, nodes, 1234, 1, chain));
+            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234, 1, chain));
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
 
@@ -1391,7 +1393,7 @@ MergeThrottlerTest::testBusyReturnedOnFullQueue()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf00000 + i), nodes, 1234, 1));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00000 + i)), nodes, 1234, 1));
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1408,7 +1410,7 @@ MergeThrottlerTest::testBusyReturnedOnFullQueue()
         nodes.push_back(1);
         nodes.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xf000baaa), nodes, 1234, 1));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf000baaa)), nodes, 1234, 1));
         _topLinks[0]->sendDown(cmd);
     }
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
@@ -1441,7 +1443,7 @@ MergeThrottlerTest::testBrokenCycle()
         std::vector<uint16_t> chain;
         chain.push_back(0);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xfeef00), nodes, 1234, 1, chain));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain));
         _topLinks[1]->sendDown(cmd);
     }
 
@@ -1456,7 +1458,7 @@ MergeThrottlerTest::testBrokenCycle()
         chain.push_back(1);
         chain.push_back(2);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xfeef00), nodes, 1234, 1, chain));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain));
         _topLinks[1]->sendDown(cmd);
     }
 
@@ -1491,7 +1493,7 @@ MergeThrottlerTest::testBrokenCycle()
         std::vector<uint16_t> chain;
         chain.push_back(0);
         std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(BucketId(32, 0xfeef00), nodes, 1234, 1, chain));
+                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain));
         _topLinks[1]->sendDown(cmd);
     }
 
@@ -1521,7 +1523,7 @@ MergeThrottlerTest::testGetBucketDiffCommandNotInActiveSetIsRejected()
     document::BucketId bucket(16, 1234);
     std::vector<api::GetBucketDiffCommand::Node> nodes;
     std::shared_ptr<api::GetBucketDiffCommand> getDiffCmd(
-            new api::GetBucketDiffCommand(bucket, nodes, api::Timestamp(1234)));
+            new api::GetBucketDiffCommand(makeDocumentBucket(bucket), nodes, api::Timestamp(1234)));
 
     sendAndExpectReply(getDiffCmd,
                        api::MessageType::GETBUCKETDIFF_REPLY,
@@ -1535,7 +1537,7 @@ MergeThrottlerTest::testApplyBucketDiffCommandNotInActiveSetIsRejected()
     document::BucketId bucket(16, 1234);
     std::vector<api::GetBucketDiffCommand::Node> nodes;
     std::shared_ptr<api::ApplyBucketDiffCommand> applyDiffCmd(
-            new api::ApplyBucketDiffCommand(bucket, nodes, api::Timestamp(1234)));
+            new api::ApplyBucketDiffCommand(makeDocumentBucket(bucket), nodes, api::Timestamp(1234)));
 
     sendAndExpectReply(applyDiffCmd,
                        api::MessageType::APPLYBUCKETDIFF_REPLY,
@@ -1571,7 +1573,7 @@ MergeThrottlerTest::testNewClusterStateAbortsAllOutdatedActiveMerges()
     // Trying to diff the bucket should now fail
     {
         std::shared_ptr<api::GetBucketDiffCommand> getDiffCmd(
-                new api::GetBucketDiffCommand(bucket, {}, api::Timestamp(123)));
+                new api::GetBucketDiffCommand(makeDocumentBucket(bucket), {}, api::Timestamp(123)));
 
         sendAndExpectReply(getDiffCmd,
                            api::MessageType::GETBUCKETDIFF_REPLY,

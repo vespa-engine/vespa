@@ -18,6 +18,7 @@ LOG_SETUP(".distributor.callback.doc.put");
 
 using namespace storage::distributor;
 using namespace storage;
+using document::BucketSpace;
 
 PutOperation::PutOperation(DistributorComponent& manager,
                            const std::shared_ptr<api::PutCommand> & msg,
@@ -115,8 +116,9 @@ PutOperation::checkCreateBucket(const lib::Distribution& dist,
     // Send create buckets for all nodes in ideal state where we don't
     // currently have copies.
     for (uint32_t i = 0; i < createNodes.size(); i++) {
+        document::Bucket bucket(BucketSpace::placeHolder(), entry.getBucketId());
         std::shared_ptr<api::CreateBucketCommand> cbc(
-                new api::CreateBucketCommand(entry.getBucketId()));
+                new api::CreateBucketCommand(bucket));
         if (active.contains(createNodes[i])) {
             BucketCopy copy(*entry->getNode(createNodes[i]));
             copy.setActive(true);
@@ -205,8 +207,9 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
     }
     for (uint32_t i=0, n=copies.size(); i<n; ++i) {
         if (!copies[i].isNewCopy()) continue;
+        document::Bucket bucket(BucketSpace::placeHolder(), copies[i].getBucketId());
         std::shared_ptr<api::CreateBucketCommand> cbc(
-                new api::CreateBucketCommand(copies[i].getBucketId()));
+                new api::CreateBucketCommand(bucket));
         if (setOneActive && active.contains(copies[i].getNode().getIndex())) {
             cbc->setActive(true);
         }
@@ -225,9 +228,10 @@ PutOperation::sendPutToBucketOnNode(
         const uint16_t node,
         std::vector<PersistenceMessageTracker::ToSend>& putBatch)
 {
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     std::shared_ptr<api::PutCommand> command(
             new api::PutCommand(
-                    bucketId,
+                    bucket,
                     _msg->getDocument(),
                     _msg->getTimestamp()));
     LOG(debug,

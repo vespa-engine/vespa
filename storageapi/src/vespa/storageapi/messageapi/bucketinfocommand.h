@@ -19,8 +19,8 @@ namespace api {
 
 class BucketInfoCommand : public BucketCommand {
 protected:
-    BucketInfoCommand(const MessageType& type, const document::BucketId& id)
-        : BucketCommand(type, id) {}
+    BucketInfoCommand(const MessageType& type, const document::Bucket &bucket)
+        : BucketCommand(type, bucket) {}
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketInfoCommand);

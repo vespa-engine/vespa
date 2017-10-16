@@ -21,7 +21,7 @@ class StatBucketCommand : public BucketCommand {
 private:
     vespalib::string _docSelection;
 public:
-    StatBucketCommand(const document::BucketId& bucket,
+    StatBucketCommand(const document::Bucket &bucket,
                       const vespalib::stringref & documentSelection);
     ~StatBucketCommand();
 
@@ -51,7 +51,7 @@ public:
  */
 class GetBucketListCommand : public BucketCommand {
 public:
-    GetBucketListCommand(const document::BucketId& bucket);
+    GetBucketListCommand(const document::Bucket &bucket);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(GetBucketListCommand, onGetBucketList);
 };

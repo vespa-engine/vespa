@@ -4,10 +4,13 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 
 LOG_SETUP(".deletebuckettest");
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -38,7 +41,7 @@ DeleteBucketTest::testDeleteAbortsOperationsForBucket()
     // Put will be queued since thread now must know it's paused.
     c.sendPut(bucket, DocumentIndex(1), PutTimestamp(1000));
 
-    auto deleteMsg = std::make_shared<api::DeleteBucketCommand>(bucket);
+    auto deleteMsg = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket));
     c.top.sendDown(deleteMsg);
     // We should now have two put replies. The first one will either be OK
     // or BUCKET_DELETED depending on whether it raced. The second (which is

@@ -6,6 +6,9 @@
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <tests/common/make_document_bucket.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -82,7 +85,7 @@ getNodesWithForwarding() {
 std::shared_ptr<api::MergeBucketCommand>
 createMerge(const document::BucketId& bucket) {
     std::shared_ptr<api::MergeBucketCommand> cmd(
-            new api::MergeBucketCommand(bucket, getNodes(), api::Timestamp(1000)));
+            new api::MergeBucketCommand(makeDocumentBucket(bucket), getNodes(), api::Timestamp(1000)));
     assignCommandMeta(*cmd);
     return cmd;
 }
@@ -92,7 +95,7 @@ createGetDiff(const document::BucketId& bucket,
               const std::vector<api::MergeBucketCommand::Node>& nodes)
 {
     std::shared_ptr<api::GetBucketDiffCommand> cmd(
-            new api::GetBucketDiffCommand(bucket, nodes, api::Timestamp(1000)));
+            new api::GetBucketDiffCommand(makeDocumentBucket(bucket), nodes, api::Timestamp(1000)));
     assignCommandMeta(*cmd);
     return cmd;
 }
@@ -101,7 +104,7 @@ std::shared_ptr<api::ApplyBucketDiffCommand>
 createApplyDiff(const document::BucketId& bucket,
                 const std::vector<api::MergeBucketCommand::Node>& nodes) {
     std::shared_ptr<api::ApplyBucketDiffCommand> cmd(
-            new api::ApplyBucketDiffCommand(bucket, nodes, 1024*1024));
+            new api::ApplyBucketDiffCommand(makeDocumentBucket(bucket), nodes, 1024*1024));
     assignCommandMeta(*cmd);
     return cmd;
 }

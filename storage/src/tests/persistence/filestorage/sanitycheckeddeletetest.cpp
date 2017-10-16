@@ -4,10 +4,12 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 
 using storage::spi::test::makeBucket;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -47,7 +49,7 @@ void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
         entry.write();
     }
 
-    auto cmd = std::make_shared<api::DeleteBucketCommand>(bucket);
+    auto cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket));
     cmd->setBucketInfo(serviceLayerInfo);
 
     c.top.sendDown(cmd);
@@ -90,7 +92,7 @@ void SanityCheckedDeleteTest::differing_document_sizes_not_considered_out_of_syn
     // Expect 1 byte of reported size, which will mismatch with the actually put document.
     api::BucketInfo info_with_size_diff(info_before.getChecksum(), info_before.getDocumentCount(), 1u);
 
-    auto delete_cmd = std::make_shared<api::DeleteBucketCommand>(bucket);
+    auto delete_cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket));
     delete_cmd->setBucketInfo(info_with_size_diff);
 
     c.top.sendDown(delete_cmd);

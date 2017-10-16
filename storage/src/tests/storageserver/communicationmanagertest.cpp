@@ -10,7 +10,10 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -28,7 +31,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     std::shared_ptr<api::StorageCommand> createDummyCommand(
             api::StorageMessage::Priority priority)
     {
-        auto cmd = std::make_shared<api::GetCommand>(document::BucketId(0),
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
                                                      document::DocumentId("doc::mydoc"),
                                                      "[all]");
         cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
@@ -78,7 +81,7 @@ void CommunicationManagerTest::testSimple()
     // Send a message through from distributor to storage
     std::shared_ptr<api::StorageCommand> cmd(
             new api::GetCommand(
-                document::BucketId(0), document::DocumentId("doc::mydoc"), "[all]"));
+                makeDocumentBucket(document::BucketId(0)), document::DocumentId("doc::mydoc"), "[all]"));
     cmd->setAddress(api::StorageMessageAddress(
                 "storage", lib::NodeType::STORAGE, 1));
     distributorLink->sendUp(cmd);

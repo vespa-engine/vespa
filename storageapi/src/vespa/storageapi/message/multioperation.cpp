@@ -11,10 +11,10 @@ IMPLEMENT_COMMAND(MultiOperationCommand, MultiOperationReply)
 IMPLEMENT_REPLY(MultiOperationReply)
 
 MultiOperationCommand::MultiOperationCommand(const DocumentTypeRepo::SP &repo,
-                                             const document::BucketId& id,
+                                             const document::Bucket &bucket,
                                              int bufferSize,
                                              bool keepTimeStamps_)
-    : BucketInfoCommand(MessageType::MULTIOPERATION, id),
+    : BucketInfoCommand(MessageType::MULTIOPERATION, bucket),
       _buffer(),
       _operations(repo, 0, 0),
       _keepTimeStamps(keepTimeStamps_)
@@ -27,10 +27,10 @@ MultiOperationCommand::MultiOperationCommand(const DocumentTypeRepo::SP &repo,
 }
 
 MultiOperationCommand::MultiOperationCommand(const DocumentTypeRepo::SP &repo,
-                                             const document::BucketId& id,
+                                             const document::Bucket &bucket,
                                              const std::vector<char>& buffer,
                                              bool keepTimeStamps_)
-    : BucketInfoCommand(MessageType::MULTIOPERATION, id),
+    : BucketInfoCommand(MessageType::MULTIOPERATION, bucket),
       _buffer(buffer),
       _operations(repo, 0, 0),
       _keepTimeStamps(keepTimeStamps_)
@@ -42,7 +42,7 @@ MultiOperationCommand::MultiOperationCommand(const DocumentTypeRepo::SP &repo,
 }
 
 MultiOperationCommand::MultiOperationCommand(const MultiOperationCommand& o)
-    : BucketInfoCommand(MessageType::MULTIOPERATION, o.getBucketId()),
+    : BucketInfoCommand(MessageType::MULTIOPERATION, o.getBucket()),
       _buffer(o._buffer),
       _operations(o._operations.getTypeRepo(),0, 0),
       _keepTimeStamps(o._keepTimeStamps)

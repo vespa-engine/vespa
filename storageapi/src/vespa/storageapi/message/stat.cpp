@@ -11,9 +11,9 @@ IMPLEMENT_REPLY(StatBucketReply)
 IMPLEMENT_COMMAND(GetBucketListCommand, GetBucketListReply)
 IMPLEMENT_REPLY(GetBucketListReply)
 
-StatBucketCommand::StatBucketCommand(const document::BucketId& id,
+StatBucketCommand::StatBucketCommand(const document::Bucket& bucket,
                                      const vespalib::stringref & documentSelection)
-    : BucketCommand(MessageType::STATBUCKET, id),
+    : BucketCommand(MessageType::STATBUCKET, bucket),
       _docSelection(documentSelection)
 {
 }
@@ -59,8 +59,8 @@ StatBucketReply::print(std::ostream& out, bool verbose,
     }
 }
 
-GetBucketListCommand::GetBucketListCommand(const document::BucketId& id)
-    : BucketCommand(MessageType::GETBUCKETLIST, id)
+GetBucketListCommand::GetBucketListCommand(const document::Bucket &bucket)
+    : BucketCommand(MessageType::GETBUCKETLIST, bucket)
 {
 }
 

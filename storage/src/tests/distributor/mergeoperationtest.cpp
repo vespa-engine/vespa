@@ -8,10 +8,12 @@
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 using std::shared_ptr;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -320,7 +322,7 @@ MergeOperationTest::doNotRemoveCopiesWithPendingMessages() {
     // Removes are blocked by all and any operation types, so can just choose
     // at will.
     api::StorageMessage::SP msg(
-            new api::SetBucketStateCommand(bucket, api::SetBucketStateCommand::ACTIVE));
+            new api::SetBucketStateCommand(makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE));
     msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
     _pendingTracker->insert(msg);
 

@@ -10,9 +10,9 @@ using document::BucketSpace;
 namespace storage {
 namespace api {
 
-BucketCommand::BucketCommand(const MessageType& type, const BucketId& id)
+BucketCommand::BucketCommand(const MessageType& type, const Bucket &bucket)
     : StorageCommand(type),
-      _bucket(BucketSpace::placeHolder(), id),
+      _bucket(bucket),
       _originalBucket()
 {
 }

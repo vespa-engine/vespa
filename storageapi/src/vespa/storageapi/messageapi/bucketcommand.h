@@ -18,7 +18,7 @@ class BucketCommand : public StorageCommand {
     document::BucketId _originalBucket;
 
 protected:
-    BucketCommand(const MessageType& type, const document::BucketId& id);
+    BucketCommand(const MessageType& type, const document::Bucket &bucket);
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketCommand);

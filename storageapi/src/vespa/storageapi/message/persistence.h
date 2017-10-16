@@ -22,7 +22,7 @@ class TestAndSetCommand : public BucketInfoCommand {
     TestAndSetCondition _condition;
 
 public:
-    TestAndSetCommand(const MessageType & messageType, const document::BucketId & id);
+    TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket);
     ~TestAndSetCommand();
 
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
@@ -47,7 +47,7 @@ class PutCommand : public TestAndSetCommand {
     Timestamp _updateTimestamp;
 
 public:
-    PutCommand(const document::BucketId&, const document::Document::SP&, Timestamp);
+    PutCommand(const document::Bucket &bucket, const document::Document::SP&, Timestamp);
     ~PutCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
@@ -116,7 +116,7 @@ class UpdateCommand : public TestAndSetCommand {
     Timestamp _oldTimestamp;
 
 public:
-    UpdateCommand(const document::BucketId&,
+    UpdateCommand(const document::Bucket &bucket,
                   const document::DocumentUpdate::SP&, Timestamp);
     ~UpdateCommand();
 
@@ -194,7 +194,7 @@ class GetCommand : public BucketInfoCommand {
     vespalib::string _fieldSet;
 
 public:
-    GetCommand(const document::BucketId&, const document::DocumentId&,
+    GetCommand(const document::Bucket &bucket, const document::DocumentId&,
                const vespalib::stringref & fieldSet, Timestamp before = MAX_TIMESTAMP);
     ~GetCommand();
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
@@ -254,7 +254,7 @@ class RemoveCommand : public TestAndSetCommand {
     Timestamp _timestamp;
 
 public:
-    RemoveCommand(const document::BucketId&, const document::DocumentId& docId, Timestamp timestamp);
+    RemoveCommand(const document::Bucket &bucket, const document::DocumentId& docId, Timestamp timestamp);
     ~RemoveCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
@@ -297,7 +297,7 @@ public:
 class RevertCommand : public BucketInfoCommand {
     std::vector<Timestamp> _tokens;
 public:
-    RevertCommand(const document::BucketId& bucket,
+    RevertCommand(const document::Bucket &bucket,
                   const std::vector<Timestamp>& revertTokens);
     ~RevertCommand();
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }

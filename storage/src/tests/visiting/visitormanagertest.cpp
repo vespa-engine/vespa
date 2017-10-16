@@ -12,12 +12,15 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/make_document_bucket.h>
 #include <tests/storageserver/testvisitormessagesession.h>
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace {
@@ -182,7 +185,7 @@ VisitorManagerTest::initializeTest()
         document::BucketId bid(16, i);
 
         std::shared_ptr<api::CreateBucketCommand> cmd(
-                new api::CreateBucketCommand(bid));
+                new api::CreateBucketCommand(makeDocumentBucket(bid)));
         cmd->setAddress(address);
         cmd->setSourceIndex(0);
         _top->sendDown(cmd);
@@ -199,7 +202,7 @@ VisitorManagerTest::initializeTest()
         document::BucketId bid(16, i);
 
         std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(bid, _documents[i], i+1));
+                new api::PutCommand(makeDocumentBucket(bid), _documents[i], i+1));
         cmd->setAddress(address);
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
@@ -224,7 +227,7 @@ VisitorManagerTest::addSomeRemoves(bool removeAll)
         document::BucketId bid(16, i % 10);
         std::shared_ptr<api::RemoveCommand> cmd(
                 new api::RemoveCommand(
-                        bid, _documents[i]->getId(), clock.getTimeInMicros().getTime() + docCount + i + 1));
+                        makeDocumentBucket(bid), _documents[i]->getId(), clock.getTimeInMicros().getTime() + docCount + i + 1));
         cmd->setAddress(address);
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
