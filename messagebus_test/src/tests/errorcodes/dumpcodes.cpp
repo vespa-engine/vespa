@@ -36,7 +36,6 @@ App::Main()
     dump("SEND_QUEUE_CLOSED", ErrorCode::SEND_QUEUE_CLOSED);
     dump("ILLEGAL_ROUTE", ErrorCode::ILLEGAL_ROUTE);
     dump("NO_SERVICES_FOR_ROUTE", ErrorCode::NO_SERVICES_FOR_ROUTE);
-    dump("SERVICE_OOS", ErrorCode::SERVICE_OOS);
     dump("ENCODE_ERROR", ErrorCode::ENCODE_ERROR);
     dump("NETWORK_ERROR", ErrorCode::NETWORK_ERROR);
     dump("UNKNOWN_PROTOCOL", ErrorCode::UNKNOWN_PROTOCOL);

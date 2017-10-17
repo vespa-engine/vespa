@@ -52,14 +52,6 @@ public:
     public:
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
     };
-    class SearchColumnPolicyFactory : public IRoutingPolicyFactory {
-    public:
-        mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
-    };
-    class SearchRowPolicyFactory : public IRoutingPolicyFactory {
-    public:
-        mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
-    };
     class SubsetServicePolicyFactory : public IRoutingPolicyFactory {
     public:
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;

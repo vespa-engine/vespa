@@ -41,8 +41,6 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutingPolicyFactory("Extern", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::ExternPolicyFactory()));
     putRoutingPolicyFactory("LocalService", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::LocalServicePolicyFactory()));
     putRoutingPolicyFactory("RoundRobin", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::RoundRobinPolicyFactory()));
-    putRoutingPolicyFactory("SearchColumn", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::SearchColumnPolicyFactory()));
-    putRoutingPolicyFactory("SearchRow", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::SearchRowPolicyFactory()));
     putRoutingPolicyFactory("Storage", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::StoragePolicyFactory()));
     putRoutingPolicyFactory("SubsetService", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::SubsetServicePolicyFactory()));
     putRoutingPolicyFactory("LoadBalancer", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::LoadBalancerPolicyFactory()));
@@ -134,8 +132,7 @@ DocumentProtocol::encode(const vespalib::Version &version, const mbus::Routable 
         std::ostringstream message;
         document::StringUtil::printAsHex(
                 message, blob.data(), blob.size());
-        LOG(spam, "Encoded message of protocol %s type %u using version "
-                  "%s serialization:\n%s",
+        LOG(spam, "Encoded message of protocol %s type %u using version %s serialization:\n%s",
             routable.getProtocol().c_str(), routable.getType(),
             version.toString().c_str(), message.str().c_str());
     }
