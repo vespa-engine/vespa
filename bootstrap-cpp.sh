@@ -19,7 +19,7 @@ fi
 
 mkdir -p "${BUILD_DIR}"
 
-source /etc/profile.d/devtoolset-6.sh || true
+source /opt/rh/devtoolset-6/enable || true
 cd "${SOURCE_DIR}"
 sh ./bootstrap.sh full
 cd "${BUILD_DIR}"
