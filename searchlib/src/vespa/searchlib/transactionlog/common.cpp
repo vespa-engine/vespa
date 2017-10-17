@@ -83,8 +83,7 @@ Packet::Entry::Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d) :
     _type(t),
     _valid(true),
     _data(d)
-{
-}
+{ }
 
 
 bool Packet::add(const Packet::Entry & e)

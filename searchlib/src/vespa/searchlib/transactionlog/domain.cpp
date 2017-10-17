@@ -20,28 +20,35 @@ using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
 using std::runtime_error;
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 namespace search::transactionlog {
 
-Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
-               Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
-               const FileHeaderContext &fileHeaderContext) :
+Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
+               Executor & commitExecutor, Executor & sessionExecutor, uint64_t domainPartSize,
+               DomainPart::Crc defaultCrcType, const FileHeaderContext &fileHeaderContext) :
+    _currentChunk(std::make_unique<Chunk>()),
     _defaultCrcType(defaultCrcType),
+    _threadPool(threadPool),
     _commitExecutor(commitExecutor),
     _sessionExecutor(sessionExecutor),
     _sessionId(1),
     _syncMonitor(),
     _pendingSync(false),
     _name(domainName),
-    _domainPartSize(domainPartSize),
+    _domainPartSizeLimit(domainPartSize),
+    _chunkSizeLimit(0x40000),
+    _chunkAgeLimit(10ms),
     _parts(),
     _lock(),
+    _currentChunkMonitor(),
     _sessionLock(),
     _sessions(),
     _maxSessionRunTime(),
     _baseDir(baseDir),
     _fileHeaderContext(fileHeaderContext),
-    _markedDeleted(false)
+    _markedDeleted(false),
+    _self(nullptr)
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
@@ -61,8 +68,19 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
     }
+    _self = _threadPool.NewThread(this);
+    assert(_self);
 }
 
+void
+Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
+
+    while (!thisThread->GetBreakFlag()) {
+        vespalib::MonitorGuard guard(_currentChunkMonitor);
+        guard.wait(duration_cast<milliseconds>(_chunkAgeLimit).count());
+        commitIfStale(guard);
+    }
+}
 void Domain::addPart(int64_t partId, bool isLastPart) {
     DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart));
     if (dp->size() == 0) {
@@ -102,7 +120,16 @@ private:
     bool              & _pendingSync;
 };
 
-Domain::~Domain() { }
+Domain::~Domain() {
+    if (_self) {
+        _self->SetBreakFlag();
+        {
+            MonitorGuard guard(_currentChunkMonitor);
+            guard.broadcast();
+        }
+        _self->Join();
+    }
+}
 
 DomainInfo
 Domain::getDomainInfo() const
@@ -267,7 +294,8 @@ void Domain::cleanSessions()
 
 namespace {
 
-void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
+void
+waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 {
     MonitorGuard guard(syncMonitor);
     while (pendingSync) {
@@ -277,13 +305,66 @@ void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
-void Domain::commit(const Packet & packet)
+void
+Domain::Chunk::add(const Packet &packet, Writer::DoneCallback onDone) {
+    if (_callBacks.empty()) {
+        _firstArrivalTime = steady_clock::now();
+    }
+    if ( ! _data.merge(packet) ) {
+        throw runtime_error(make_string("Failed merging of packet %zu into packet %zu",
+                                        packet.range().from(), _data.range().from()));
+    }
+    _callBacks.emplace_back(std::move(onDone));
+}
+
+microseconds
+Domain::Chunk::age() const {
+    if (_callBacks.empty()) {
+        return 0ms;
+    }
+    return duration_cast<microseconds>(steady_clock::now() - _firstArrivalTime);
+}
+
+void
+Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
+
+    std::unique_ptr<Chunk> completed;
+    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    _currentChunk->add(packet, std::move(onDone));
+    if (_currentChunk->sizeBytes() > _chunkSizeLimit) {
+        completed = grabCurrentChunk(guard);
+    }
+    if (completed) {
+        commitChunk(std::move(_currentChunk), guard);
+    }
+}
+
+std::unique_ptr<Domain::Chunk>
+Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    auto chunk = std::move(_currentChunk);
+    _currentChunk = std::make_unique<Chunk>();
+    return chunk;
+}
+
+void
+Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    if (_currentChunk->age() > _chunkAgeLimit) {
+        commitChunk(grabCurrentChunk(guard), guard);
+    }
+}
+
+void
+Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard)
 {
+    assert(chunkOrderGuard.monitors(_currentChunkMonitor));
+    const Packet & packet = chunk->getPacket();
     DomainPart::SP dp(_parts.rbegin()->second);
     vespalib::nbostream_longlivedbuf is(packet.getHandle().c_str(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
-    if (dp->byteSize() > _domainPartSize) {
+    if (dp->byteSize() > _domainPartSizeLimit) {
         waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);

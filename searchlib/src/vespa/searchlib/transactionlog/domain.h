@@ -35,22 +35,22 @@ struct DomainInfo {
 
 typedef std::map<vespalib::string, DomainInfo> DomainStats;
 
-class Domain
+class Domain final : public FastOS_Runnable
 {
 public:
     using SP = std::shared_ptr<Domain>;
     using Executor = vespalib::ThreadExecutor;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
-           Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
-           const common::FileHeaderContext &fileHeaderContext);
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, FastOS_ThreadPool & threadPool,
+           Executor & commitExecutor, Executor & sessionExecutor, uint64_t domainPartSize,
+           DomainPart::Crc defaultCrcType, const common::FileHeaderContext &fileHeaderContext);
 
-    virtual ~Domain();
+    ~Domain() override;
 
     DomainInfo getDomainInfo() const;
     const vespalib::string & name() const { return _name; }
     bool erase(SerialNum to);
 
-    void commit(const Packet & packet);
+    void commit(const Packet & packet, Writer::DoneCallback onDone);
     int visit(const Domain::SP & self, SerialNum from, SerialNum to, FRT_Supervisor & supervisor, FNET_Connection *conn);
 
     SerialNum begin() const;
@@ -79,6 +79,22 @@ public:
     uint64_t size() const;
 
 private:
+    void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
+    void commitIfStale(const vespalib::MonitorGuard & guard);
+    class Chunk {
+    public:
+        void add(const Packet & packet, Writer::DoneCallback onDone);
+        size_t sizeBytes() const { return _data.sizeBytes(); }
+        const Packet & getPacket() const { return _data; }
+        std::chrono::microseconds age() const;
+    private:
+        Packet _data;
+        std::vector<Writer::DoneCallback>     _callBacks;
+        std::chrono::steady_clock::time_point _firstArrivalTime;
+    };
+
+    std::unique_ptr<Chunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
+    void commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
     size_t byteSize(const vespalib::LockGuard & guard) const;
@@ -95,22 +111,28 @@ private:
     using DomainPartList = std::map<int64_t, DomainPart::SP>;
     using DurationSeconds = std::chrono::duration<double>;
 
+    std::unique_ptr<Chunk> _currentChunk;
     DomainPart::Crc     _defaultCrcType;
+    FastOS_ThreadPool & _threadPool;
     Executor          & _commitExecutor;
     Executor          & _sessionExecutor;
     std::atomic<int>    _sessionId;
     vespalib::Monitor   _syncMonitor;
     bool                _pendingSync;
     vespalib::string    _name;
-    uint64_t            _domainPartSize;
+    const uint64_t      _domainPartSizeLimit;
+    const uint64_t      _chunkSizeLimit;
+    const std::chrono::microseconds _chunkAgeLimit;
     DomainPartList      _parts;
     vespalib::Lock      _lock;
+    vespalib::Monitor   _currentChunkMonitor;
     vespalib::Lock      _sessionLock;
     SessionList         _sessions;
     DurationSeconds     _maxSessionRunTime;
     vespalib::string    _baseDir;
     const common::FileHeaderContext &_fileHeaderContext;
     bool                _markedDeleted;
+    FastOS_ThreadInterface  * _self;
 };
 
 }

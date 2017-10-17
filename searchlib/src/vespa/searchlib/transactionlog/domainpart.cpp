@@ -31,23 +31,15 @@ void
 handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
 
 string
-handleWriteError(const char *text,
-                 FastOS_FileInterface &file,
-                 int64_t lastKnownGoodPos,
-                 const Packet::Entry &entry,
-                 int bufLen) __attribute__ ((noinline));
+handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
+                 const Packet::Entry &entry, int bufLen) __attribute__ ((noinline));
 
 bool
-handleReadError(const char *text,
-                FastOS_FileInterface &file,
-                ssize_t len,
-                ssize_t rlen,
-                int64_t lastKnownGoodPos,
-                bool allowTruncate) __attribute__ ((noinline));
+handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize_t rlen,
+                int64_t lastKnownGoodPos, bool allowTruncate) __attribute__ ((noinline));
 
 bool
-addPacket(Packet &packet,
-          const Packet::Entry &e) __attribute__ ((noinline));
+addPacket(Packet &packet, const Packet::Entry &e) __attribute__ ((noinline));
 
 bool
 tailOfFileIsZero(FastOS_FileInterface &file, int64_t lastKnownGoodPos) __attribute__ ((noinline));
@@ -599,10 +591,7 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
 }
 
 bool
-DomainPart::read(FastOS_FileInterface &file,
-                 Packet::Entry &entry,
-                 Alloc & buf,
-                 bool allowTruncate)
+DomainPart::read(FastOS_FileInterface &file, Packet::Entry &entry, Alloc & buf, bool allowTruncate)
 {
     bool retval(true);
     char tmp[5];
@@ -615,8 +604,8 @@ DomainPart::read(FastOS_FileInterface &file,
     if ((retval = (rlen == sizeof(tmp)))) {
         if ( ! (retval = (version == ccitt_crc32) || version == xxh64)) {
             string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
-                                             " got %d from '%s' at position %ld",
-                                             version, file.GetFileName(), lastKnownGoodPos));
+                                   " got %d from '%s' at position %ld",
+                                   version, file.GetFileName(), lastKnownGoodPos));
             if ((version == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
                 LOG(warning, "%s", msg.c_str());
                 return handleReadError("packet version", file, sizeof(tmp), rlen, lastKnownGoodPos, allowTruncate);
