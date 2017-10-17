@@ -1,5 +1,6 @@
 package com.yahoo.searchdefinition.processing;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -39,12 +40,12 @@ public class ReservedMacroNames extends Processor {
         }
     }
 
-    private static Set<String> getReservedNames() {
-        Set<String> names = new HashSet<>();
+    private static ImmutableSet<String> getReservedNames() {
+        ImmutableSet.Builder<String> names = ImmutableSet.builder();
         for (String token : RankingExpressionParserConstants.tokenImage) {
             String tokenWithoutQuotes = token.substring(1, token.length()-1);
             names.add(tokenWithoutQuotes);
         }
-        return names;
+        return names.build();
     }
 }
