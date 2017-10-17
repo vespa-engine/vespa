@@ -5,15 +5,15 @@ usage() {
     echo "Usage: $0 <source-dir> [<extra-cmake-args>]" >&2
 }
 
-if [[ $# -eq 1 ]]; then
+if [[ $# -eq 1 && ( "$1" = "-h" || "$1" = "--help" )]]; then
+    usage
+    exit 0
+elif [[ $# -eq 1 ]]; then
     SOURCE_DIR=$1
     EXTRA_CMAKE_ARGS=""
 elif [ $# -eq 2 ]; then
     SOURCE_DIR=$1
     EXTRA_CMAKE_ARGS=$2
-elif [[ $# -eq 1 && ( "$1" = "-h" || "$1" = "--help" )]]; then
-    usage
-    exit 0
 else
     echo "Wrong number of arguments: expected 1 or 2, was $#" >&2
     usage
