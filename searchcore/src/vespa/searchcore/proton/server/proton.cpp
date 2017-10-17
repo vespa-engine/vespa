@@ -435,7 +435,7 @@ Proton::~Proton()
         _summaryExecutor->sync();
     }
     LOG(debug, "Shutting down fs4 interface");
-    if (_metricsEngine) {
+    if (_metricsEngine && _fs4Server) {
         _metricsEngine->removeExternalMetrics(_fs4Server->getMetrics());
     }
     if (_fs4Server) {

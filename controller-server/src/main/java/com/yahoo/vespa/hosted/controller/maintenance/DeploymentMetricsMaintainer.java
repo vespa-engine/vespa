@@ -7,7 +7,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 
+import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.logging.Logger;
 
 /**
  * Retrieve deployment metrics like qps and document count from the metric service and
@@ -17,6 +19,8 @@ import java.time.Duration;
  */
 public class DeploymentMetricsMaintainer extends Maintainer {
 
+    private static final Logger log = Logger.getLogger(DeploymentMetricsMaintainer.class.getName());
+
     DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
         super(controller, duration, jobControl);
     }
@@ -24,22 +28,32 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
-            try (Lock lock = controller().applications().lock(application.id())) {
-                for (Deployment deployment : application.deployments().values()) {
+            for (Deployment deployment : application.deployments().values()) {
+                try {
+                    MetricsService.DeploymentMetrics metrics = controller().metricsService()
+                            .getDeploymentMetrics(application.id(), deployment.zone());
+                    DeploymentMetrics appMetrics = new DeploymentMetrics(metrics.queriesPerSecond(), metrics.writesPerSecond(),
+                                                                         metrics.documentCount(), metrics.queryLatencyMillis(), metrics.writeLatencyMillis());
 
-                    MetricsService.DeploymentMetrics returnedMetrics = 
-                            controller().metricsService().getDeploymentMetrics(application.id(), deployment.zone());
-
-                    DeploymentMetrics metrics = new DeploymentMetrics(returnedMetrics.queriesPerSecond(),
-                                                                      returnedMetrics.writesPerSecond(),
-                                                                      returnedMetrics.documentCount(),
-                                                                      returnedMetrics.queryLatencyMillis(),
-                                                                      returnedMetrics.writeLatencyMillis());
-
-                    controller().applications().store(application.with(deployment.withMetrics(metrics)), lock);
+                    // Avoid locking for a long time, due to slow YAMAS.
+                    try (Lock lock = controller().applications().lock(application.id())) {
+                        // Deployment (or application) may have changed (or be gone) now:
+                        controller().applications().get(application.id()).ifPresent(freshApplication -> {
+                            Deployment freshDeployment = freshApplication.deployments().get(deployment.zone());
+                            if (freshDeployment != null)
+                                controller().applications().store(freshApplication.with(freshDeployment.withMetrics(appMetrics)), lock);
+                        });
+                    }
                 }
+                catch (UncheckedIOException e) {
+                    log.warning("Timed out talking to YAMAS; retrying in " + maintenanceInterval() + ":\n" + e);
+                }
+
             }
+
         }
+
     }
 
 }
+

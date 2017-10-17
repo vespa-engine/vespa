@@ -16,7 +16,6 @@ private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     Identity          _identity;
     config::ConfigUri _slobrokConfig;
-    string            _oosServerPattern;
     int               _listenPort;
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
@@ -74,26 +73,6 @@ public:
      */
     RPCNetworkParams &setSlobrokConfig(const config::ConfigUri & slobrokConfig) {
         _slobrokConfig = slobrokConfig;
-        return *this;
-    }
-
-    /**
-     * Returns the config id pattern used to lookup OOS servers.
-     *
-     * @return The config id.
-     */
-    const string &getOOSServerPattern() const {
-        return _oosServerPattern;
-    }
-
-    /**
-     * Sets the config id pattern used to lookup OOS servers.
-     *
-     * @param oosServerPattern The server pattern.
-     * @return This, to allow chaining.
-     */
-    RPCNetworkParams &setOOSServerPattern(const string &oosServerPattern) {
-        _oosServerPattern = oosServerPattern;
         return *this;
     }
 

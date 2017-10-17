@@ -15,8 +15,8 @@ public class RoutableTestCase extends junit.framework.TestCase {
 
     public void testMessageContext() throws ListenFailedException, UnknownHostException {
         Slobrok slobrok = new Slobrok();
-        TestServer srcServer = new TestServer("src", null, slobrok, null, null);
-        TestServer dstServer = new TestServer("dst", null, slobrok, null, null);
+        TestServer srcServer = new TestServer("src", null, slobrok, null);
+        TestServer dstServer = new TestServer("dst", null, slobrok, null);
         SourceSession srcSession = srcServer.mb.createSourceSession(
                 new Receptor(),
                 new SourceSessionParams().setTimeout(600.0));
