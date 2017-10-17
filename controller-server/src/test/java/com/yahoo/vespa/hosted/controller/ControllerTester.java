@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
@@ -147,8 +147,8 @@ public final class ControllerTester {
         }
     }
 
-    public AthensDomain createDomain(String domainName) {
-        AthensDomain domain = new AthensDomain(domainName);
+    public AthenzDomain createDomain(String domainName) {
+        AthenzDomain domain = new AthenzDomain(domainName);
         athensDb.addDomain(new AthensDbMock.Domain(domain));
         return domain;
     }

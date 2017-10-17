@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -670,10 +670,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the
      * mock setup to replicate the action.
      */
-    private AthensDomain addTenantAthensDomain(String domainName, String userName) {
+    private AthenzDomain addTenantAthensDomain(String domainName, String userName) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthensDomain athensDomain = new AthensDomain(domainName);
+        AthenzDomain athensDomain = new AthenzDomain(domainName);
         AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
         domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
@@ -688,8 +688,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void addScrewdriverUserToDomain(String screwdriverUserId, String domainName) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthensDomain(domainName));
-        domain.admin(new AthenzPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
+        AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthenzDomain(domainName));
+        domain.admin(new AthenzPrincipal(new AthenzDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
     }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,

@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.controller.api.identifiers;
 
 /**
+ * @author bjorncs
  * @author smorgrav
  */
-// TODO Rename to AthenzDomain
-public class AthensDomain extends Identifier {
+public class AthenzDomain extends Identifier {
 
-    public AthensDomain(String id) {
+    public AthenzDomain(String id) {
         super(id);
     }
 
@@ -15,8 +15,8 @@ public class AthensDomain extends Identifier {
         return !id().contains(".");
     }
 
-    public AthensDomain getParent() {
-        return new AthensDomain(id().substring(0, lastDot()));
+    public AthenzDomain getParent() {
+        return new AthenzDomain(id().substring(0, lastDot()));
     }
 
     public String getNameSuffix() {

@@ -17,7 +17,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -361,7 +361,7 @@ public class ControllerTest {
         ControllerTester tester = new ControllerTester();
 
         // Create Athens domain mock
-        AthensDomain athensDomain = new AthensDomain("vespa.john");
+        AthenzDomain athensDomain = new AthenzDomain("vespa.john");
         AthensDbMock.Domain mockDomain = new AthensDbMock.Domain(athensDomain);
         tester.athensDb().addDomain(mockDomain);
 

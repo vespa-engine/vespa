@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api;
 
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -19,15 +19,15 @@ public class Tenant {
     private final TenantId id;
     private final Optional<UserGroup> userGroup;
     private final Optional<Property> property;
-    private final Optional<AthensDomain> athensDomain;
+    private final Optional<AthenzDomain> athensDomain;
     private final Optional<PropertyId> propertyId;
 
     // TODO: Use factory methods. They're down at the bottom!
-    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthensDomain> athensDomain) {
+    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthenzDomain> athensDomain) {
         this(id, userGroup, property, athensDomain, Optional.empty());
     }
 
-    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthensDomain> athensDomain, Optional<PropertyId> propertyId) {
+    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthenzDomain> athensDomain, Optional<PropertyId> propertyId) {
         if (id.isUser()) {
             require(!userGroup.isPresent(), "User tenant '%s' cannot have a user group.", id);
             require(!property.isPresent(), "User tenant '%s' cannot have a property.", id);
@@ -80,7 +80,7 @@ public class Tenant {
         return propertyId;
     }
 
-    public Optional<AthensDomain> getAthensDomain() {
+    public Optional<AthenzDomain> getAthensDomain() {
         return athensDomain;
     }
 
@@ -88,7 +88,7 @@ public class Tenant {
         if (!statement) throw new IllegalArgumentException(String.format(message, id));
     }
 
-    public static Tenant createAthensTenant(TenantId id, AthensDomain athensDomain, Property property, Optional<PropertyId> propertyId) {
+    public static Tenant createAthensTenant(TenantId id, AthenzDomain athensDomain, Property property, Optional<PropertyId> propertyId) {
         if (id.isUser()) {
             throw new IllegalArgumentException("Invalid id for non-user tenant: " + id);
         }

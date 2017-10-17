@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 
@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class AthensDbMock {
 
-    public final Map<AthensDomain, Domain> domains = new HashMap<>();
+    public final Map<AthenzDomain, Domain> domains = new HashMap<>();
 
     public AthensDbMock addDomain(Domain domain) {
         domains.put(domain.name, domain);
@@ -25,13 +25,13 @@ public class AthensDbMock {
 
     public static class Domain {
 
-        public final AthensDomain name;
+        public final AthenzDomain name;
         public final Set<AthenzPrincipal> admins = new HashSet<>();
         public final Set<AthenzPrincipal> tenantAdmins = new HashSet<>();
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public boolean isVespaTenant = false;
 
-        public Domain(AthensDomain name) {
+        public Domain(AthenzDomain name) {
             this.name = name;
         }
 

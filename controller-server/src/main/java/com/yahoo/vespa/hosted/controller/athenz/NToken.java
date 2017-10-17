@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.athenz;
 
 import com.yahoo.athenz.auth.token.PrincipalToken;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 
 import java.security.PrivateKey;
@@ -45,8 +45,8 @@ public class NToken {
         return new UserId(token.getName());
     }
 
-    public AthensDomain getDomain() {
-        return new AthensDomain(token.getDomain());
+    public AthenzDomain getDomain() {
+        return new AthenzDomain(token.getDomain());
     }
 
     public String getToken() {

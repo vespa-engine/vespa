@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 
 import java.util.List;
 
@@ -10,8 +10,8 @@ import java.util.List;
  * @author gv
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AthensDomainsResponse extends JsonResponse<List<AthensDomain>> {
-    public AthensDomainsResponse(List<AthensDomain> athensDomainList) {
+public class AthensDomainsResponse extends JsonResponse<List<AthenzDomain>> {
+    public AthensDomainsResponse(List<AthenzDomain> athensDomainList) {
         super(athensDomainList);
     }
 }

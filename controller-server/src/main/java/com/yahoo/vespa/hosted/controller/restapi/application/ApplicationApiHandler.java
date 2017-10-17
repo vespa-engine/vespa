@@ -38,7 +38,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBui
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
@@ -273,7 +273,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor array = response.setArray("data");
-        for (AthensDomain athensDomain : controller.getDomainList(request.getProperty("prefix"))) {
+        for (AthenzDomain athensDomain : controller.getDomainList(request.getProperty("prefix"))) {
             array.addString(athensDomain.id());
         }
         return new SlimeJsonResponse(slime);
@@ -611,7 +611,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 if (requestData.field("userGroup").valid())
                     throw new BadRequestException("Cannot set OpsDB user group to Athens tenant");
                 updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName), 
-                                                          new AthensDomain(mandatory("athensDomain", requestData).asString()),
+                                                          new AthenzDomain(mandatory("athensDomain", requestData).asString()),
                                                           new Property(mandatory("property", requestData).asString()),
                                                           optional("propertyId", requestData).map(PropertyId::new));
                 controller.tenants().updateTenant(updatedTenant, authorizer.getNToken(request));
@@ -633,12 +633,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Tenant tenant = new Tenant(new TenantId(tenantName),
                                    optional("userGroup", requestData).map(UserGroup::new),
                                    optional("property", requestData).map(Property::new),
-                                   optional("athensDomain", requestData).map(AthensDomain::new),
+                                   optional("athensDomain", requestData).map(AthenzDomain::new),
                                    optional("propertyId", requestData).map(PropertyId::new));
         if (tenant.isOpsDbTenant())
             throwIfNotSuperUserOrPartOfOpsDbGroup(new UserGroup(mandatory("userGroup", requestData).asString()), request);
         if (tenant.isAthensTenant())
-            throwIfNotAthensDomainAdmin(new AthensDomain(mandatory("athensDomain", requestData).asString()), request);
+            throwIfNotAthensDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
  
         controller.tenants().addTenant(tenant, authorizer.getNToken(request));
         return new SlimeJsonResponse(toSlime(tenant, request, true));
@@ -647,7 +647,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse migrateTenant(String tenantName, HttpRequest request) {
         TenantId tenantid = new TenantId(tenantName);
         Inspector requestData = toSlime(request.getData()).get();
-        AthensDomain tenantDomain = new AthensDomain(mandatory("athensDomain", requestData).asString());
+        AthenzDomain tenantDomain = new AthenzDomain(mandatory("athensDomain", requestData).asString());
         Property property = new Property(mandatory("property", requestData).asString());
         PropertyId propertyId = new PropertyId(mandatory("propertyId", requestData).asString());
 
@@ -959,7 +959,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void throwIfNotAthensDomainAdmin(AthensDomain tenantDomain, HttpRequest request) {
+    private void throwIfNotAthensDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
         UserId userId = authorizer.getUserId(request);
         if ( ! authorizer.isAthensDomainAdmin(userId, tenantDomain)) {
             throw new ForbiddenException(
