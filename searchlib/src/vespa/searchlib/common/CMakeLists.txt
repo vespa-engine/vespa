@@ -13,7 +13,6 @@ vespa_add_library(searchlib_common OBJECT
     featureset.cpp
     fileheadercontext.cpp
     foregroundtaskexecutor.cpp
-    gatecallback.cpp
     growablebitvector.cpp
     indexmetainfo.cpp
     location.cpp

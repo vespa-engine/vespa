@@ -3,7 +3,8 @@
 
 #include <memory>
 
-namespace search {
+namespace search
+{
 
 /**
  * Interface for class that performs a callback when instance is
@@ -16,7 +17,7 @@ class IDestructorCallback
 {
 public:
     using SP = std::shared_ptr<IDestructorCallback>;
-    virtual ~IDestructorCallback() = default;
+    virtual ~IDestructorCallback() { }
 };
 
 } // namespace search

@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/buffer.h>
 
@@ -91,9 +90,8 @@ int makeDirectory(const char * dir);
 
 class Writer {
 public:
-    using DoneCallback = std::shared_ptr<IDestructorCallback>;
     virtual ~Writer() { }
-    virtual void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) = 0;
+    virtual void commit(const vespalib::string & domainName, const Packet & packet) = 0;
 };
 
 }
