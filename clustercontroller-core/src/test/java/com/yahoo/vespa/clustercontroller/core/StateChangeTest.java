@@ -16,6 +16,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -1248,16 +1249,25 @@ public class StateChangeTest extends FleetControllerTest {
     private static abstract class MockTask extends RemoteClusterControllerTask {
         boolean invoked = false;
         boolean leadershipLost = false;
+        boolean deadlineExceeded = false;
 
         boolean isInvoked() { return invoked; }
 
         boolean isLeadershipLost() { return leadershipLost; }
 
+        boolean isDeadlineExceeded() { return deadlineExceeded; }
+
         @Override
         public boolean hasVersionAckDependency() { return true; }
 
         @Override
-        public void handleLeadershipLost() { this.leadershipLost = true; }
+        public void handleFailure(FailureCondition condition) {
+            if (condition == FailureCondition.LEADERSHIP_LOST) {
+                this.leadershipLost = true;
+            } else if (condition == FailureCondition.DEADLINE_EXCEEDED) {
+                this.deadlineExceeded = true;
+            }
+        }
     }
 
     // We create an explicit mock task class instead of using mock() simply because of
@@ -1273,6 +1283,11 @@ public class StateChangeTest extends FleetControllerTest {
             ctx.nodeStateOrHostInfoChangeHandler.handleNewWantedNodeState(nodeInfo, newNodeState);
             invoked = true;
         }
+    }
+
+    private static class FailingMockSynchronousTaskWithSideEffects extends MockSynchronousTaskWithSideEffects {
+        @Override
+        public boolean isFailed() { return true; }
     }
 
     private static class MockNoOpSynchronousTask extends MockTask {
@@ -1308,6 +1323,10 @@ public class StateChangeTest extends FleetControllerTest {
 
         MockTask scheduleNoOpVersionDependentTask() throws Exception {
             return scheduleTask(new MockNoOpSynchronousTask());
+        }
+
+        MockTask scheduleFailingVersionDependentTaskWithSideEffects() throws Exception {
+            return scheduleTask(new FailingMockSynchronousTaskWithSideEffects());
         }
 
         void markStorageNodeDown(int index) throws Exception {
@@ -1393,6 +1412,15 @@ public class StateChangeTest extends FleetControllerTest {
 
         fixture.sendAllDeferredDistributorClusterStateAcks();
         assertTrue(task.isCompleted()); // Now finally acked by all nodes
+    }
+
+    @Test
+    public void failing_task_is_immediately_completed() throws Exception {
+        RemoteTaskFixture fixture = createDefaultFixture();
+        MockTask task = fixture.scheduleFailingVersionDependentTaskWithSideEffects();
+
+        assertTrue(task.isInvoked());
+        assertTrue(task.isCompleted());
     }
 
     @Test
@@ -1521,6 +1549,31 @@ public class StateChangeTest extends FleetControllerTest {
 
         assertTrue(task.isInvoked());
         assertTrue(task.isCompleted());
+    }
+
+    @Test
+    public void task_not_completed_within_deadline_is_failed_with_deadline_exceeded_error() throws Exception {
+        FleetControllerOptions options = defaultOptions();
+        options.setMaxDeferredTaskVersionWaitTime(Duration.ofSeconds(60));
+        RemoteTaskFixture fixture = createFixtureWith(options);
+
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+        fixture.processScheduledTask();
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+        assertFalse(task.isDeadlineExceeded());
+
+        timer.advanceTime(59_000);
+        ctrl.tick();
+        assertFalse(task.isCompleted());
+        assertFalse(task.isDeadlineExceeded());
+
+        timer.advanceTime(1_001);
+        ctrl.tick();
+        assertTrue(task.isCompleted());
+        assertTrue(task.isDeadlineExceeded());
     }
 
 }

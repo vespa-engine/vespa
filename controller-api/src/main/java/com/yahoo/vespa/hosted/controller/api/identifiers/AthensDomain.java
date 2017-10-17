@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.identifiers;
 /**
  * @author smorgrav
  */
+// TODO Rename to AthenzDomain
 public class AthensDomain extends Identifier {
 
     public AthensDomain(String id) {
@@ -18,7 +19,7 @@ public class AthensDomain extends Identifier {
         return new AthensDomain(id().substring(0, lastDot()));
     }
 
-    public String getName() {
+    public String getNameSuffix() {
         return id().substring(lastDot() + 1);
     }
 

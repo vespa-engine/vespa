@@ -2,7 +2,7 @@
   "versions": [
     {
       "version": "(ignore)",
-      "confidence": "normal",
+      "confidence": "high",
       "commit": "(ignore)",
       "date": 0,
       "controllerVersion": false,

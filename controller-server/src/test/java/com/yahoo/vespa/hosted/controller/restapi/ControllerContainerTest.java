@@ -36,7 +36,7 @@ public class ControllerContainerTest {
             "    <system>main</system>" +
             "  </config>" +
             "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock'/>" +
+            "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>" +

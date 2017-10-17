@@ -1,101 +1,38 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feedtoken.h"
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 
-namespace proton {
+namespace proton::feedtoken {
 
-FeedToken::FeedToken(ITransport &transport, mbus::Reply::UP reply) :
-    _state(new State(transport, std::move(reply), 1))
-{
-}
-
-FeedToken::State::State(ITransport & transport, mbus::Reply::UP reply, uint32_t numAcksRequired) :
+State::State(ITransport & transport) :
     _transport(transport),
-    _reply(std::move(reply)),
     _result(new storage::spi::Result()),
     _documentWasFound(false),
-    _unAckedCount(numAcksRequired),
-    _lock(),
-    _startTime()
+    _alreadySent(false)
 {
-    assert(_reply.get() != NULL);
-    _startTime.SetNow();
 }
 
-FeedToken::State::~State()
+State::~State()
 {
-    assert(_reply.get() == NULL);
+    ack();
 }
 
 void
-FeedToken::State::ack()
+State::ack()
 {
-    assert(_reply.get() != NULL);
-    uint32_t prev(_unAckedCount--);
-    if (prev == 1) {
-        _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
+    bool alreadySent = _alreadySent.exchange(true);
+    if ( !alreadySent ) {
+        _transport.send(std::move(_result), _documentWasFound);
     }
-    assert(prev >= 1);
 }
 
-
 void
-FeedToken::State::ack(const FeedOperation::Type opType,
-                      PerDocTypeFeedMetrics &metrics)
+State::fail()
 {
-    assert(_reply.get() != NULL);
-    uint32_t prev(_unAckedCount--);
-    if (prev == 1) {
-        _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
-        switch (opType) {
-        case FeedOperation::PUT:
-            metrics.RegisterPut(_startTime);
-            break;
-        case FeedOperation::REMOVE:
-        case FeedOperation::REMOVE_BATCH:
-            metrics.RegisterRemove(_startTime);
-            break;
-        case FeedOperation::UPDATE_42:
-        case FeedOperation::UPDATE:
-            metrics.RegisterUpdate(_startTime);
-            break;
-        case FeedOperation::MOVE:
-            metrics.RegisterMove(_startTime);
-            break;
-        default:
-            ;
-        }
+    bool alreadySent = _alreadySent.exchange(true);
+    if ( !alreadySent ) {
+        _transport.send(std::move(_result), _documentWasFound);
     }
-    assert(prev >= 1);
-}
-
-
-void
-FeedToken::State::incNeededAcks()
-{
-    assert(_reply.get() != NULL);
-    uint32_t prev(_unAckedCount++);
-    assert(prev >= 1);
-    (void) prev;
-}
-
-
-void
-FeedToken::State::fail(uint32_t errNum, const vespalib::string &errMsg)
-{
-    assert(_reply.get() != NULL);
-    vespalib::LockGuard guard(_lock);
-    _reply->addError(mbus::Error(errNum, errMsg));
-    _transport.send(std::move(_reply), std::move(_result), _documentWasFound, _startTime.MilliSecsToNow());
-}
-
-void
-FeedToken::State::trace(uint32_t traceLevel, const vespalib::string &traceMsg)
-{
-    assert(_reply.get() != NULL);
-    vespalib::LockGuard guard(_lock);
-    _reply->getTrace().trace(traceLevel, traceMsg);
 }
 
 } // namespace proton

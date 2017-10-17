@@ -6,6 +6,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -75,6 +76,34 @@ public class NodeInfoTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
         nodeInfo.setPrematureCrashCount(1);
         assertFalse(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
+
+    @Test
+    public void down_wanted_state_overrides_config_retired_state() {
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .markNodeAsConfigRetired(1)
+                .proposeStorageNodeWantedState(1, State.DOWN);
+
+        NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        assertEquals(State.DOWN, nodeInfo.getWantedState().getState());
+    }
+
+    @Test
+    public void maintenance_wanted_state_overrides_config_retired_state() {
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .markNodeAsConfigRetired(1)
+                .proposeStorageNodeWantedState(1, State.MAINTENANCE);
+
+        NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        assertEquals(State.MAINTENANCE, nodeInfo.getWantedState().getState());
+    }
+
+    @Test
+    public void retired_state_overrides_default_up_wanted_state() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3).markNodeAsConfigRetired(1);
+
+        NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        assertEquals(State.RETIRED, nodeInfo.getWantedState().getState());
     }
 
 }

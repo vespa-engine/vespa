@@ -12,8 +12,10 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChang
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static org.mockito.Mockito.mock;
@@ -160,6 +162,14 @@ class ClusterFixture {
 
     void enableTransientMaintenanceModeOnDown(final int transitionTimeMs) {
         this.params.transitionTimes(transitionTimeMs);
+    }
+
+    ClusterFixture markNodeAsConfigRetired(int nodeIndex) {
+        Set<ConfiguredNode> configuredNodes = new HashSet<>(cluster.getConfiguredNodes().values());
+        configuredNodes.remove(new ConfiguredNode(nodeIndex, false));
+        configuredNodes.add(new ConfiguredNode(nodeIndex, true));
+        cluster.setNodes(configuredNodes);
+        return this;
     }
 
     AnnotatedClusterState annotatedGeneratedClusterState() {

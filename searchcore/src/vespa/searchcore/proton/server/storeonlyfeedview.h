@@ -27,7 +27,6 @@ namespace document { class GLobalId; }
 namespace proton {
 
 class IReplayConfig;
-class PerDocTypeFeedMetrics;
 class ForceCommitContext;
 class OperationDoneContext;
 class PutDoneContext;
@@ -104,20 +103,17 @@ public:
         const SerialNum        _flushedDocumentMetaStoreSerialNum;
         const SerialNum        _flushedDocumentStoreSerialNum;
         const DocTypeName      _docTypeName;
-        PerDocTypeFeedMetrics &_metrics;
         const uint32_t         _subDbId;
         const SubDbType        _subDbType;
 
         PersistentParams(SerialNum flushedDocumentMetaStoreSerialNum,
                          SerialNum flushedDocumentStoreSerialNum,
                          const DocTypeName &docTypeName,
-                         PerDocTypeFeedMetrics &metrics,
                          uint32_t subDbId,
                          SubDbType subDbType)
             : _flushedDocumentMetaStoreSerialNum(flushedDocumentMetaStoreSerialNum),
               _flushedDocumentStoreSerialNum(flushedDocumentStoreSerialNum),
               _docTypeName(docTypeName),
-              _metrics(metrics),
               _subDbId(subDbId),
               _subDbType(subDbType)
         {}
@@ -172,25 +168,25 @@ private:
     }
 
     PendingNotifyRemoveDone adjustMetaStore(const DocumentOperation &op, const document::DocumentId &docId);
-    void internalPut(FeedTokenUP token, const PutOperation &putOp);
-    void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
+    void internalPut(FeedToken token, const PutOperation &putOp);
+    void internalUpdate(FeedToken token, const UpdateOperation &updOp);
 
     bool lookupDocId(const document::DocumentId &docId, Lid & lid) const;
-    void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
+    void internalRemove(FeedToken token, const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone, Lid lid,
-                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+    void internalRemove(FeedToken token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
+                        Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
-    void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
+    void considerEarlyAck(FeedToken &token);
 
-    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdateSP upd,
-            OnOperationDoneType onWriteDone,PromisedDoc promisedDoc, PromisedStream promisedStream);
+    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdateSP upd, OnOperationDoneType onWriteDone,
+                             PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
@@ -224,8 +220,7 @@ protected:
 
 public:
     StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
-
-    virtual ~StoreOnlyFeedView() {}
+    ~StoreOnlyFeedView() override;
 
     const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
     const search::index::Schema::SP &getSchema() const { return _schema; }
@@ -237,31 +232,22 @@ public:
     CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
     IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
 
-    /**
-     * Implements IFeedView.
-     */
-    virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override { return _repo; }
-    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;
+    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override { return _repo; }
+    const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;
 
-    /**
-     * Similar to IPersistenceHandler functions.
-     * Takes pointer to feed token instead of instance because
-     * when replaying the spooler we don't have a feed token.
-     */
-
-    virtual void preparePut(PutOperation &putOp) override;
-    virtual void handlePut(FeedToken *token, const PutOperation &putOp) override;
-    virtual void prepareUpdate(UpdateOperation &updOp) override;
-    virtual void handleUpdate(FeedToken *token, const UpdateOperation &updOp) override;
-    virtual void prepareRemove(RemoveOperation &rmOp) override;
-    virtual void handleRemove(FeedToken *token, const RemoveOperation &rmOp) override;
-    virtual void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
-    virtual void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
-    virtual void prepareMove(MoveOperation &putOp) override;
-    virtual void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
-    virtual void heartBeat(search::SerialNum serialNum) override;
-    virtual void sync() override;
-    virtual void forceCommit(SerialNum serialNum) override;
+    void preparePut(PutOperation &putOp) override;
+    void handlePut(FeedToken token, const PutOperation &putOp) override;
+    void prepareUpdate(UpdateOperation &updOp) override;
+    void handleUpdate(FeedToken token, const UpdateOperation &updOp) override;
+    void prepareRemove(RemoveOperation &rmOp) override;
+    void handleRemove(FeedToken token, const RemoveOperation &rmOp) override;
+    void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
+    void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
+    void prepareMove(MoveOperation &putOp) override;
+    void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
+    void heartBeat(search::SerialNum serialNum) override;
+    void sync() override;
+    void forceCommit(SerialNum serialNum) override;
     virtual void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
 
     /**
@@ -270,8 +256,8 @@ public:
      *
      * Called by writer thread.
      */
-    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
 };
 
 }

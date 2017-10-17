@@ -13,7 +13,7 @@ namespace search::transactionlog {
 
 class Domain;
 class DomainPart;
-typedef std::shared_ptr<Domain> DomainSP;
+using DomainSP = std::shared_ptr<Domain>;
 
 class Session : public FRT_IRequestWait
 {
@@ -24,12 +24,11 @@ public:
     typedef std::shared_ptr<Session> SP;
     Session(const Session &) = delete;
     Session & operator = (const Session &) = delete;
-    Session(int sId, const SerialNumRange & r, const DomainSP & d, FRT_Supervisor & supervisor, FNET_Connection *conn, bool subscriber=false);
-    virtual ~Session();
+    Session(int sId, const SerialNumRange & r, const DomainSP & d, FRT_Supervisor & supervisor, FNET_Connection *conn);
+    ~Session();
     const SerialNumRange & range() const { return _range; }
     int                       id() const { return _id; }
     bool inSync()    const;
-    bool continous() const { return _subscriber; }
     bool ok()        const { return _ok; }
     bool finished()  const;
     static void enQ(const SP & session, SerialNum serial, const Packet & packet);
@@ -51,13 +50,7 @@ private:
         void run() override;
         Session::SP _session;
     };
-    class SubscribeTask : public Task {
-    public:
-        SubscribeTask(const Session::SP & session) : _session(session) { }
-    private:
-        void run() override;
-        Session::SP _session;
-    };
+
     class SendTask : public Task {
     public:
         SendTask(const Session::SP & session) : _session(session) { }
@@ -70,11 +63,9 @@ private:
     bool send(const Packet & packet);
     void sendPacket(SerialNum serial, const Packet & packet);
     bool sendDone();
-    bool sendSync();
     void sendPending();
     void visit();
     void visitOnly();
-    void subscribe();
     void finalize();
     bool visit(FastOS_FileInterface & file, DomainPart & dp) __attribute__((noinline));
     int32_t rpc(FRT_RPCRequest * req);
@@ -84,7 +75,6 @@ private:
     DomainSP                  _domain;
     SerialNumRange            _range;
     int                       _id;
-    bool                      _subscriber;
     bool                      _inSync;
     bool                      _ok;
     bool                      _finished;

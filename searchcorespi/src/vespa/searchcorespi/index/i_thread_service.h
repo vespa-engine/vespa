@@ -4,8 +4,7 @@
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Interface for a single thread used for write tasks.
@@ -29,7 +28,4 @@ struct IThreadService : public vespalib::ThreadExecutor
 
 };
 
-} // namespace index
-} // namespace searchcorespi
-
-
+}

@@ -21,7 +21,7 @@ set(C_WARN_OPTS "-Winline -Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wc
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
-set(CXX_SPECIFIC_WARN_OPTS "-Wsuggest-override -Wnon-virtual-dtor")
+set(CXX_SPECIFIC_WARN_OPTS "-Wsuggest-override -Wnon-virtual-dtor -Wformat-security")
 
 # C and C++ compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} -mtune=intel ${EXTRA_C_FLAGS}")

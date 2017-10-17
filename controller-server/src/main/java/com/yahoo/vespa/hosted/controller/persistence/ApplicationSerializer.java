@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 
@@ -85,6 +86,9 @@ public class ApplicationSerializer {
     private final String clusterInfoField = "clusterInfo";
     private final String clusterInfoFlavorField = "flavor";
     private final String clusterInfoCostField = "cost";
+    private final String clusterInfoCpuField = "flavorCpu";
+    private final String clusterInfoMemField = "flavorMem";
+    private final String clusterInfoDiskField = "flavorDisk";
     private final String clusterInfoTypeField = "clusterType";
     private final String clusterInfoHostnamesField = "hostnames";
 
@@ -94,6 +98,14 @@ public class ApplicationSerializer {
     private final String clusterUtilsMemField = "mem";
     private final String clusterUtilsDiskField = "disk";
     private final String clusterUtilsDiskBusyField = "diskbusy";
+
+    // Deployment metrics fields
+    private final String deploymentMetricsField = "metrics";
+    private final String deploymentMetricsQPSField = "queriesPerSecond";
+    private final String deploymentMetricsWPSField = "writesPerSecond";
+    private final String deploymentMetricsDocsField = "documentCount";
+    private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
+    private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
 
     
     // ------------------ Serialization
@@ -123,6 +135,16 @@ public class ApplicationSerializer {
         toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
         clusterInfoToSlime(deployment.clusterInfo(), object);
         clusterUtilsToSlime(deployment.clusterUtils(), object);
+        metricsToSlime(deployment.metrics(), object);
+    }
+
+    private void metricsToSlime(DeploymentMetrics metrics, Cursor object) {
+        Cursor root = object.setObject(deploymentMetricsField);
+        root.setDouble(deploymentMetricsQPSField, metrics.queriesPerSecond());
+        root.setDouble(deploymentMetricsWPSField, metrics.writesPerSecond());
+        root.setDouble(deploymentMetricsDocsField, metrics.documentCount());
+        root.setDouble(deploymentMetricsQueryLatencyField, metrics.queryLatencyMillis());
+        root.setDouble(deploymentMetricsWriteLatencyField, metrics.writeLatencyMillis());
     }
 
     private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
@@ -134,7 +156,10 @@ public class ApplicationSerializer {
 
     private void toSlime(ClusterInfo info, Cursor object) {
         object.setString(clusterInfoFlavorField, info.getFlavor());
-        object.setLong(clusterInfoCostField, info.getCost());
+        object.setLong(clusterInfoCostField, info.getFlavorCost());
+        object.setDouble(clusterInfoCpuField, info.getFlavorCPU());
+        object.setDouble(clusterInfoMemField, info.getFlavorMem());
+        object.setDouble(clusterInfoDiskField, info.getFlavorDisk());
         object.setString(clusterInfoTypeField, info.getClusterType().name());
         Cursor array = object.setArray(clusterInfoHostnamesField);
         for (String host : info.getHostnames()) {
@@ -223,7 +248,7 @@ public class ApplicationSerializer {
         Inspector root = slime.get();
         
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
-        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString());
+        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
@@ -246,7 +271,20 @@ public class ApplicationSerializer {
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
                 clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
-                clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)));
+                clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
+                deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)));
+    }
+
+    private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
+
+        double queriesPerSecond = object.field(deploymentMetricsQPSField).asDouble();
+        double writesPerSecond = object.field(deploymentMetricsWPSField).asDouble();
+        double documentCount = object.field(deploymentMetricsDocsField).asDouble();
+        double queryLatencyMillis = object.field(deploymentMetricsQueryLatencyField).asDouble();
+        double writeLatencyMills = object.field(deploymentMetricsWriteLatencyField).asDouble();
+
+        return new DeploymentMetrics(queriesPerSecond, writesPerSecond,
+                documentCount, queryLatencyMillis, writeLatencyMills);
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime(Inspector object) {
@@ -274,10 +312,13 @@ public class ApplicationSerializer {
         String flavor = inspector.field(clusterInfoFlavorField).asString();
         int cost = (int)inspector.field(clusterInfoCostField).asLong();
         String type = inspector.field(clusterInfoTypeField).asString();
+        double flavorCpu = inspector.field(clusterInfoCpuField).asDouble();
+        double flavorMem = inspector.field(clusterInfoMemField).asDouble();
+        double flavorDisk = inspector.field(clusterInfoDiskField).asDouble();
 
         List<String> hostnames = new ArrayList<>();
         inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
-        return new ClusterInfo(flavor, cost, ClusterSpec.Type.from(type), hostnames);
+        return new ClusterInfo(flavor, cost, flavorCpu, flavorMem, flavorDisk, ClusterSpec.Type.from(type), hostnames);
     }
 
     private Zone zoneFromSlime(Inspector object) {

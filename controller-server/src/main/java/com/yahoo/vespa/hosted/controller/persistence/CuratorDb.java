@@ -4,20 +4,21 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Collections;
@@ -148,18 +149,6 @@ public class CuratorDb {
 
     // -------------- Read and write --------------------------------------------------
 
-    public Version readSystemVersion() {
-        Optional<byte[]> data = curator.getData(systemVersionPath());
-        if (! data.isPresent() || data.get().length == 0) return Vtag.currentVersion;
-        return Version.fromString(new String(data.get(), StandardCharsets.UTF_8));
-    }
-
-    public void writeSystemVersion(Version version) {
-        NestedTransaction transaction = new NestedTransaction();
-        curator.set(systemVersionPath(), version.toString().getBytes(StandardCharsets.UTF_8));
-        transaction.commit();
-    }
-
     public Set<String> readInactiveJobs() {
         try {
             Optional<byte[]> data = curator.getData(inactiveJobsPath());
@@ -199,7 +188,7 @@ public class CuratorDb {
     }
 
     public double readUpgradesPerMinute() {
-        Optional<byte[]> n = curator.getData(upgradePerMinutePath());
+        Optional<byte[]> n = curator.getData(upgradesPerMinutePath());
         if (!n.isPresent() || n.get().length == 0) {
             return 0.5; // Default if value has never been written
         }
@@ -211,7 +200,22 @@ public class CuratorDb {
             throw new IllegalArgumentException("Upgrades per minute must be >= 0");
         }
         NestedTransaction transaction = new NestedTransaction();
-        curator.set(upgradePerMinutePath(), ByteBuffer.allocate(Double.BYTES).putDouble(n).array());
+        curator.set(upgradesPerMinutePath(), ByteBuffer.allocate(Double.BYTES).putDouble(n).array());
+        transaction.commit();
+    }
+
+    public void writeVersionStatus(VersionStatus status) {
+        VersionStatusSerializer serializer = new VersionStatusSerializer();
+        NestedTransaction transaction = new NestedTransaction();
+        try {
+            // TODO: Removes unused data. Remove after October 2017
+            if (curator.getData(systemVersionPath()).isPresent()) {
+                curator.delete(systemVersionPath());
+            }
+            curator.set(versionStatusPath(), SlimeUtils.toJsonBytes(serializer.toSlime(status)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to serialize version status", e);
+        }
         transaction.commit();
     }
 
@@ -227,6 +231,15 @@ public class CuratorDb {
         NestedTransaction transaction = new NestedTransaction();
         curator.set(ignoreConfidencePath(), ByteBuffer.allocate(Integer.BYTES).putInt(value ? 1 : 0).array());
         transaction.commit();
+    }
+
+    public VersionStatus readVersionStatus() {
+        Optional<byte[]> data = curator.getData(versionStatusPath());
+        if (!data.isPresent() || data.get().length == 0) {
+            return VersionStatus.empty(); // Default if status has never been written
+        }
+        VersionStatusSerializer serializer = new VersionStatusSerializer();
+        return serializer.fromSlime(SlimeUtils.jsonToSlime(data.get()));
     }
 
     public Optional<byte[]> readProvisionState(String provisionId) {
@@ -278,13 +291,15 @@ public class CuratorDb {
         return root.append("jobQueues").append(jobType.name());
     }
 
-    private Path upgradePerMinutePath() {
+    private Path upgradesPerMinutePath() {
         return root.append("upgrader").append("upgradesPerMinute");
     }
 
     private Path ignoreConfidencePath() {
         return root.append("upgrader").append("ignoreConfidence");
     }
+
+    private Path versionStatusPath() { return root.append("versionStatus"); }
 
     private Path provisionStatePath() {
         return root.append("provisioning").append("states");

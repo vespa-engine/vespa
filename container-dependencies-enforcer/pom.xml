@@ -17,10 +17,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.11</version>
-            <scope>test</scope>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -29,10 +29,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <profiles>

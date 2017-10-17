@@ -16,7 +16,7 @@ namespace storage::api {
  * @brief Sends a docblock to a visitor or subscriber.
  */
 class DocBlockCommand : public StorageCommand {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     vdslib::DocumentList _docBlock;
     std::shared_ptr<void> _buffer; // Owns data in docblock
     bool _keepTimeStamps; // Used for recovery/synchronization where we want to
@@ -34,7 +34,7 @@ public:
         { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
     void setDocumentBlock(vdslib::DocumentList& block) { _docBlock = block; }
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool keepTimeStamps() const { return _keepTimeStamps; }
@@ -115,11 +115,11 @@ public:
     };
 
 private:
-    document::BucketId _bucketId;
+    document::Bucket   _bucket;
     std::vector<Entry> _documents;
 public:
     DocumentListCommand(const document::BucketId& bid);
-    const document::BucketId& getBucketId() { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     std::vector<Entry>& getDocuments() { return _documents; }
     const std::vector<Entry>& getDocuments() const { return _documents; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

@@ -61,7 +61,6 @@ private:
     void domainSessionRun(FRT_RPCRequest *req);
     void domainPrune(FRT_RPCRequest *req);
     void domainVisit(FRT_RPCRequest *req);
-    void domainSubscribe(FRT_RPCRequest *req);
     void domainSessionClose(FRT_RPCRequest *req);
     void domainSync(FRT_RPCRequest *req);
 
@@ -83,6 +82,7 @@ private:
     vespalib::string                    _baseDir;
     const uint64_t                      _domainPartSize;
     const DomainPart::Crc               _defaultCrcType;
+    vespalib::ThreadStackExecutor       _commitExecutor;
     vespalib::ThreadStackExecutor       _sessionExecutor;
     FastOS_ThreadPool                   _threadPool;
     std::unique_ptr<FRT_Supervisor>     _supervisor;

@@ -4,5 +4,5 @@
 
 #include <string>
 
-void logWithLogger2(const std::string& token, const std::string message);
+void logWithLogger2(const std::string& token, const std::string & message);
 

@@ -16,7 +16,7 @@ namespace api {
 class BucketCommand;
 
 class BucketReply : public StorageReply {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     document::BucketId _originalBucket;
 
 protected:
@@ -26,7 +26,7 @@ protected:
 public:
     DECLARE_POINTER_TYPEDEFS(BucketReply);
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
     virtual bool hasSingleBucketId() const override { return true; }
 
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
@@ -34,10 +34,7 @@ public:
         { return _originalBucket; }
 
     /** The deserialization code need access to set the remapping. */
-    void remapBucketId(const document::BucketId& bucket) {
-        if (_originalBucket.getRawId() == 0) _originalBucket = _bucket;
-        _bucket = bucket;
-    }
+    void remapBucketId(const document::BucketId& bucket);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 

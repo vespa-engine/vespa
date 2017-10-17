@@ -5,20 +5,23 @@
 #include "clusterstatehandler.h"
 #include "configstore.h"
 #include "ddbstate.h"
+#include "disk_mem_usage_forwarder.h"
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
+#include "executorthreadingservice.h"
 #include "feedhandler.h"
+#include "i_document_db_config_owner.h"
+#include "i_document_subdb_owner.h"
 #include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
 #include "maintenancecontroller.h"
-#include "i_document_db_config_owner.h"
-#include "executorthreadingservice.h"
+#include "threading_service_config.h"
 #include "visibilityhandler.h"
-#include "i_document_subdb_owner.h"
-#include "disk_mem_usage_forwarder.h"
 
+#include <vespa/metrics/updatehook.h>
+#include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
@@ -28,8 +31,6 @@
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/varholder.h>
-#include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
-#include <vespa/metrics/updatehook.h>
 #include <mutex>
 #include <condition_variable>
 
@@ -80,9 +81,7 @@ private:
     DocTypeName                   _docTypeName;
     document::BucketSpace         _bucketSpace;
     vespalib::string              _baseDir;
-    uint32_t                      _defaultExecutorTaskLimit;
-    uint32_t                      _semiUnboundExecutorTaskLimit;
-    uint32_t                      _indexingThreads;
+    ThreadingServiceConfig        _writeServiceConfig;
     // Only one thread per executor, or dropFeedView() will fail.
     ExecutorThreadingService      _writeService;
     // threads for initializer tasks during proton startup

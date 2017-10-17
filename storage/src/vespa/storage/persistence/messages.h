@@ -15,7 +15,7 @@ namespace storage {
 class GetIterCommand : public api::InternalCommand {
 private:
     mutable framework::MemoryToken::UP _token;
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     spi::IteratorId _iteratorId;
     uint32_t _maxByteSize;
 
@@ -32,7 +32,7 @@ public:
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
@@ -51,7 +51,7 @@ private:
 class GetIterReply : public api::InternalReply {
 private:
     framework::MemoryToken::UP _token;
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     std::vector<spi::DocEntry::UP> _entries;
     bool _completed;
 
@@ -64,9 +64,7 @@ public:
     ~GetIterReply();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const override { return _bucket; }
 
     const std::vector<spi::DocEntry::UP>& getEntries() const {
         return _entries;
@@ -84,7 +82,7 @@ public:
 
 class CreateIteratorCommand : public api::InternalCommand
 {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     spi::Selection _selection;
     std::string _fieldSet;
     spi::IncludedVersions _includedVersions;
@@ -101,7 +99,7 @@ public:
                           spi::IncludedVersions includedVersions);
     ~CreateIteratorCommand();
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     const spi::Selection& getSelection() const { return _selection; }
     spi::IncludedVersions getIncludedVersions() const { return _includedVersions; }
     const std::string& getFields() const { return _fieldSet; }
@@ -120,7 +118,7 @@ public:
 
 class CreateIteratorReply : public api::InternalReply
 {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     spi::IteratorId _iteratorId;
 public:
     static const uint32_t ID = 1004;
@@ -131,7 +129,7 @@ public:
     ~CreateIteratorReply();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
 
@@ -172,7 +170,7 @@ public:
 
 class RecheckBucketInfoCommand : public api::InternalCommand
 {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
 public:
     static const uint32_t ID = 1007;
     typedef std::shared_ptr<RecheckBucketInfoCommand> SP;
@@ -181,9 +179,7 @@ public:
     RecheckBucketInfoCommand(const document::BucketId& bucketId);
     ~RecheckBucketInfoCommand();
 
-    document::BucketId getBucketId() const override {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const override { return _bucket; }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
@@ -192,7 +188,7 @@ public:
 
 class RecheckBucketInfoReply : public api::InternalReply
 {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
 public:
     static const uint32_t ID = 1008;
     typedef std::shared_ptr<RecheckBucketInfoReply> SP;
@@ -201,9 +197,7 @@ public:
     RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd);
     ~RecheckBucketInfoReply();
 
-    document::BucketId getBucketId() const override {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const override { return _bucket; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };

@@ -4,16 +4,16 @@
 
 #include <vespa/storageframework/defaultimplementation/memory/prioritymemorylogic.h>
 
-using storage::framework::defaultimplementation::AllocationLogic;
-
 namespace storage {
+
+using framework::defaultimplementation::AllocationLogic;
+using framework::defaultimplementation::PriorityMemoryLogic;
 
 StorageNodeContext::StorageNodeContext(ComponentRegister::UP compReg, framework::Clock::UP clock)
     : _componentRegister(std::move(compReg)),
       _clock(std::move(clock)),
       _threadPool(*_clock),
-      _memoryLogic(new framework::defaultimplementation::PriorityMemoryLogic(
-                *_clock, 1024 * 1024 * 1024)),
+      _memoryLogic(new PriorityMemoryLogic(*_clock, 1024 * 1024 * 1024)),
       _memoryManager(AllocationLogic::UP(_memoryLogic))
 {
     _componentRegister->setClock(*_clock);

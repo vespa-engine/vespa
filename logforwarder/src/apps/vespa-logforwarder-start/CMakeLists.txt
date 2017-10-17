@@ -3,6 +3,7 @@ vespa_add_executable(logforwarder-start_app
     SOURCES
     main.cpp
     cf-handler.cpp
+    child-handler.cpp
     OUTPUT_NAME vespa-logforwarder-start
     INSTALL bin
     DEPENDS

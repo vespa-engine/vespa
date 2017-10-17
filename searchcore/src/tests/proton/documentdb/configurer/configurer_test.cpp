@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/matching/error_constant_value.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -47,7 +46,7 @@ using proton::matching::SessionManager;
 using searchcorespi::IndexSearchable;
 using searchcorespi::index::IThreadingService;
 using proton::test::MockGidToLidChangeHandler;
-
+using std::make_shared;
 
 using CCR = DocumentDBConfig::ComparisonResult;
 using Configurer = SearchableDocSubDBConfigurer;
@@ -178,14 +177,8 @@ Fixture::Fixture()
     vespalib::rmdir(BASE_DIR, true);
     vespalib::mkdir(BASE_DIR);
     initViewSet(_views);
-    _configurer.reset(new Configurer(_views._summaryMgr,
-                                     _views.searchView,
-                                     _views.feedView,
-                                     _queryLimiter,
-                                     _constantValueRepo,
-                                     _clock,
-                                     "test",
-                                     0));
+    _configurer.reset(new Configurer(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
+                                     _constantValueRepo, _clock, "test", 0));
 }
 Fixture::~Fixture() {}
 
@@ -193,53 +186,33 @@ void
 Fixture::initViewSet(ViewSet &views)
 {
     Matchers::SP matchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
-    IndexManager::SP indexMgr(new IndexManager(BASE_DIR, searchcorespi::index::WarmupConfig(),
-                                      2, 0, Schema(), 1, views._reconfigurer,
-                                      views._writeService, _summaryExecutor, TuneFileIndexManager(),
-                                      TuneFileAttributes(), views._fileHeaderContext));
-    AttributeManager::SP attrMgr(new AttributeManager(BASE_DIR,
-                                                      "test.subdb",
-                                                      TuneFileAttributes(),
-                                                      views._fileHeaderContext,
-                                                      views._writeService.
-                                                      attributeFieldWriter(),
-                                                      views._hwInfo));
+    auto indexMgr = make_shared<IndexManager>(BASE_DIR, searchcorespi::index::WarmupConfig(), 2, 0, Schema(), 1,
+                                              views._reconfigurer, views._writeService, _summaryExecutor,
+                                              TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
+    auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), views._fileHeaderContext,
+                                                 views._writeService.attributeFieldWriter(),views._hwInfo);
     ProtonConfig protonCfg;
-    SummaryManager::SP summaryMgr(
-            new SummaryManager(_summaryExecutor, search::LogDocumentStore::Config(),
-                               GrowStrategy(), BASE_DIR, views._docTypeName,
-                               TuneFileSummary(), views._fileHeaderContext,
-                               views._noTlSyncer, search::IBucketizer::SP()));
-    SessionManager::SP sesMgr(
-            new SessionManager(protonCfg.grouping.sessionmanager.maxentries));
-    DocumentMetaStoreContext::SP metaStore(
-            new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>()));
+    auto summaryMgr = make_shared<SummaryManager>
+            (_summaryExecutor, search::LogDocumentStore::Config(), GrowStrategy(), BASE_DIR, views._docTypeName,
+             TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
+    auto sesMgr = make_shared<SessionManager>(protonCfg.grouping.sessionmanager.maxentries);
+    auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<BucketDBOwner>());
     IIndexWriter::SP indexWriter(new IndexWriter(indexMgr));
     AttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
     ISummaryAdapter::SP summaryAdapter(new SummaryAdapter(summaryMgr));
-    views._gidToLidChangeHandler = std::make_shared<MockGidToLidChangeHandler>();
+    views._gidToLidChangeHandler = make_shared<MockGidToLidChangeHandler>();
     Schema::SP schema(new Schema());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
-    views._lidReuseDelayer.reset(
-            new documentmetastore::LidReuseDelayer(views._writeService,
-                                                   metaStore->get()));
+    views._lidReuseDelayer.reset(new documentmetastore::LidReuseDelayer(views._writeService, metaStore->get()));
     IndexSearchable::SP indexSearchable;
-    MatchView::SP matchView(new MatchView(matchers, indexSearchable, attrMgr,
-                                          sesMgr, metaStore, views._docIdLimit));
-    views.searchView.set(
-            SearchView::SP(
-                    new SearchView(
-                            summaryMgr->createSummarySetup(SummaryConfig(),
-                                    SummarymapConfig(),
-                                    JuniperrcConfig(),
-                                    views.repo,
-                                    attrMgr),
-                            matchView)));
-    PerDocTypeFeedMetrics metrics(0);
+    MatchView::SP matchView(new MatchView(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit));
+    views.searchView.set(make_shared<SearchView>
+                                 (summaryMgr->createSummarySetup(SummaryConfig(), SummarymapConfig(),
+                                                                 JuniperrcConfig(), views.repo, attrMgr),
+                                  matchView));
     views.feedView.set(
-            SearchableFeedView::SP(
-                    new SearchableFeedView(StoreOnlyFeedView::Context(summaryAdapter,
+            make_shared<SearchableFeedView>(StoreOnlyFeedView::Context(summaryAdapter,
                             schema,
                             views.searchView.get()->getDocumentMetaStore(),
                             *views._gidToLidChangeHandler,
@@ -251,11 +224,10 @@ Fixture::initViewSet(ViewSet &views)
                                     views.serialNum,
                                     views.serialNum,
                                     views._docTypeName,
-                                    metrics,
                                     0u /* subDbId */,
                                     SubDbType::READY),
                             FastAccessFeedView::Context(attrWriter, views._docIdLimit),
-                            SearchableFeedView::Context(indexWriter))));
+                            SearchableFeedView::Context(indexWriter)));
 }
 
 
@@ -263,7 +235,6 @@ using MySummaryAdapter = test::MockSummaryAdapter;
 
 struct MyFastAccessFeedView
 {
-    PerDocTypeFeedMetrics _metrics;
     DummyFileHeaderContext _fileHeaderContext;
     DocIdLimit _docIdLimit;
     IThreadingService &_writeService;
@@ -276,13 +247,12 @@ struct MyFastAccessFeedView
     VarHolder<FastAccessFeedView::SP> _feedView;
 
     MyFastAccessFeedView(IThreadingService &writeService)
-        : _metrics(0),
-          _fileHeaderContext(),
+        : _fileHeaderContext(),
           _docIdLimit(0),
           _writeService(writeService),
           _hwInfo(),
           _dmsc(),
-          _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>()),
+          _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
           _lidReuseDelayer(),
           _commitTimeTracker(TimeStamp()),
           _feedView()
@@ -295,30 +265,21 @@ struct MyFastAccessFeedView
     void init() {
         ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
         Schema::SP schema(new Schema());
-        DocumentMetaStoreContext::SP docMetaCtx(
-                new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>()));
-        _dmsc = docMetaCtx;
-        _lidReuseDelayer.reset(
-                new documentmetastore::LidReuseDelayer(_writeService,
-                                                       docMetaCtx->get()));
+        _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
+        _lidReuseDelayer.reset(new documentmetastore::LidReuseDelayer(_writeService, _dmsc->get()));
         DocumentTypeRepo::SP repo = createRepo();
-        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, docMetaCtx, *_gidToLidChangeHandler, repo, _writeService, *_lidReuseDelayer, _commitTimeTracker);
-        StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), _metrics, 0, SubDbType::NOTREADY);
-        AttributeManager::SP mgr(new AttributeManager(BASE_DIR, "test.subdb",
-                                                      TuneFileAttributes(),
-                                                      _fileHeaderContext,
-                                                      _writeService.
-                                                      attributeFieldWriter(),
-                                                      _hwInfo));
+        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
+                                                _writeService, *_lidReuseDelayer, _commitTimeTracker);
+        StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
+        auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+                                                 _writeService.attributeFieldWriter(), _hwInfo);
         IAttributeWriter::SP writer(new AttributeWriter(mgr));
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
-        _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(storeOnlyCtx,
-                params, fastUpdateCtx)));;
+        _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(storeOnlyCtx, params, fastUpdateCtx)));;
     }
 };
 
-MyFastAccessFeedView::~MyFastAccessFeedView() {
-}
+MyFastAccessFeedView::~MyFastAccessFeedView() = default;
 
 struct FastAccessFixture
 {
@@ -328,8 +289,7 @@ struct FastAccessFixture
     FastAccessFixture()
         : _writeService(),
           _view(_writeService),
-          _configurer(_view._feedView,
-                  IAttributeWriterFactory::UP(new AttributeWriterFactory), "test")
+          _configurer(_view._feedView, IAttributeWriterFactory::UP(new AttributeWriterFactory), "test")
     {
         vespalib::rmdir(BASE_DIR, true);
         vespalib::mkdir(BASE_DIR);
@@ -339,11 +299,10 @@ struct FastAccessFixture
     }
 };
 
-
 DocumentDBConfig::SP
 createConfig()
 {
-    return test::DocumentDBConfigBuilder(0, std::make_shared<Schema>(), "client", DOC_TYPE).
+    return test::DocumentDBConfigBuilder(0, make_shared<Schema>(), "client", DOC_TYPE).
             repo(createRepo()).build();
 }
 

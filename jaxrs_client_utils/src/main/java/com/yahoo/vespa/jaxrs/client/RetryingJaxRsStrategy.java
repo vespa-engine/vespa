@@ -5,6 +5,9 @@ import com.yahoo.vespa.applicationmodel.HostName;
 
 import javax.ws.rs.ProcessingException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -20,7 +23,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private static final Logger logger = Logger.getLogger(RetryingJaxRsStrategy.class.getName());
     private static final int NUM_LOOP_ATTEMPTS = 2;
 
-    private final Set<HostName> hostNames;
+    private final List<HostName> hostNames;
     private final int port;
     private final JaxRsClientFactory jaxRsClientFactory;
     private final Class<T> apiClass;
@@ -38,7 +41,8 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
         Objects.requireNonNull(jaxRsClientFactory, "jaxRsClientFactory argument may not be null");
         Objects.requireNonNull(apiClass, "apiClass argument may not be null");
         Objects.requireNonNull(pathPrefix, "pathPrefix argument may not be null");
-        this.hostNames = hostNames;
+        this.hostNames = new ArrayList<>(hostNames);
+        Collections.shuffle(this.hostNames);
         this.port = port;
         this.jaxRsClientFactory = jaxRsClientFactory;
         this.apiClass = apiClass;

@@ -10,17 +10,17 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -54,7 +54,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .region("corp-us-east-1")
             .build();
     private static final String athensUserDomain = "domain1";
-    private static final String athensScrewdriverDomain = "screwdriver-domain";
+    private static final String athensScrewdriverDomain = AthenzUtils.SCREWDRIVER_DOMAIN.id();
 
 
     @Test
@@ -173,7 +173,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.GET),
                               new File("application.json"));
         // GET an application deployment
-        addMockObservedApplicationCost(controllerTester);
+        setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", "", Request.Method.GET),
                               new File("deployment.json"));
         // POST a 'restart application' command
@@ -671,14 +671,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * mock setup to replicate the action.
      */
     private AthensDomain addTenantAthensDomain(String domainName, String userName) {
-        Athens athens = (AthensMock) container.components().getComponent(
-                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
-        );
-        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
         AthensDomain athensDomain = new AthensDomain(domainName);
         AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(new AthensPrincipal(new AthensDomain(athensUserDomain), new UserId(userName)));
+        domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
@@ -688,12 +686,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * mock setup to replicate the action.
      */
     private void addScrewdriverUserToDomain(String screwdriverUserId, String domainName) {
-        Athens athens = (AthensMock) container.components().getComponent(
-                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
-        );
-        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
         AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthensDomain(domainName));
-        domain.admin(new AthensPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
+        domain.admin(new AthenzPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
     }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
@@ -732,7 +728,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
 
-    private void addMockObservedApplicationCost(ContainerControllerTester controllerTester) {
+    /**
+     * Cluster info, utilization and deployment metrics are maintained async by maintainers.
+     *
+     * This sets these values as if the maintainers has been ran.
+     *
+     * @param controllerTester
+     */
+    private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
             try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
                 for (Deployment deployment : application.deployments().values()) {
@@ -740,11 +743,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     List<String> hostnames = new ArrayList<>();
                     hostnames.add("host1");
                     hostnames.add("host2");
-                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, ClusterSpec.Type.content, hostnames));
+                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, 2, 4, 50, ClusterSpec.Type.content, hostnames));
                     Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
                     clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                     deployment = deployment.withClusterInfo(clusterInfo);
                     deployment = deployment.withClusterUtils(clusterUtils);
+                    deployment = deployment.withMetrics(new DeploymentMetrics(1,2,3,4,5));
                     application = application.with(deployment);
                     controllerTester.controller().applications().store(application, lock);
                 }

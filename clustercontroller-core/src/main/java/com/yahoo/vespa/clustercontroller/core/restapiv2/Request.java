@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.DeadlineExceededException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
@@ -61,8 +62,17 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
     }
 
     @Override
-    public void handleLeadershipLost() {
-        failure = new UnknownMasterException("Leadership lost before request could complete");
+    public void handleFailure(FailureCondition condition) {
+        if (condition == FailureCondition.LEADERSHIP_LOST) {
+            failure = new UnknownMasterException("Leadership lost before request could complete");
+        } else if (condition == FailureCondition.DEADLINE_EXCEEDED) {
+            failure = new DeadlineExceededException("Task exceeded its version wait deadline");
+        }
+    }
+
+    @Override
+    public boolean isFailed() {
+        return (failure != null);
     }
 
     public abstract Result calculateResult(Context context) throws StateRestApiException, OtherMasterIndexException;

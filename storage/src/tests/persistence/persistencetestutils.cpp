@@ -98,8 +98,7 @@ PersistenceTestUtils::createPersistenceThread(uint32_t disk)
                               getEnv()._fileStorHandler,
                               getEnv()._metrics,
                               disk,
-                              255,
-                              false));
+                              255));
 }
 
 document::Document::SP

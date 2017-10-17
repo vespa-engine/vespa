@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 public class DeploymentTrigger {
 
     /** The max duration a job may run before we consider it dead/hanging */
-    private final static Duration jobTimeout = Duration.ofHours(12);
+    private final Duration jobTimeout;
 
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
 
@@ -50,11 +51,13 @@ public class DeploymentTrigger {
 
     public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock) {
         Objects.requireNonNull(controller,"controller cannot be null");
+        Objects.requireNonNull(curator,"curator cannot be null");
         Objects.requireNonNull(clock,"clock cannot be null");
         this.controller = controller;
         this.clock = clock;
         this.buildSystem = new PolledBuildSystem(controller, curator);
         this.order = new DeploymentOrder(controller);
+        this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
     
     /** Returns the time in the past before which jobs are at this moment considered unresponsive */

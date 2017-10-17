@@ -124,7 +124,7 @@ public class IdentifierTest {
 
     @Test
     public void athens_domain_name_is_last_suffix() {
-        assertEquals("myapp", new AthensDomain("yby.john.myapp").getName());
+        assertEquals("myapp", new AthensDomain("yby.john.myapp").getNameSuffix());
     }
 
     @Test

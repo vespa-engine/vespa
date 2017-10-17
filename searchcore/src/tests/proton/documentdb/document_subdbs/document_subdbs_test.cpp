@@ -745,18 +745,15 @@ struct DocumentHandler
         op.setSerialNum(serialNum);
         return op;
     }
-    MoveOperation createMove(Document::UP doc, Timestamp timestamp,
-                             DbDocumentId sourceDbdId,
-                             uint32_t targetSubDbId,
-                             SerialNum serialNum)
+    MoveOperation createMove(Document::UP doc, Timestamp timestamp, DbDocumentId sourceDbdId,
+                             uint32_t targetSubDbId, SerialNum serialNum)
     {
         proton::test::Document testDoc(Document::SP(doc.release()), 0, timestamp);
         MoveOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc(), sourceDbdId, targetSubDbId);
         op.setSerialNum(serialNum);
         return op;
     }
-    RemoveOperation createRemove(const DocumentId &docId, Timestamp timestamp,
-                                 SerialNum serialNum)
+    RemoveOperation createRemove(const DocumentId &docId, Timestamp timestamp, SerialNum serialNum)
     {
         const document::GlobalId &gid = docId.getGlobalId();
         BucketId bucket = gid.convertToBucketId();
@@ -769,7 +766,7 @@ struct DocumentHandler
     void putDoc(PutOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         _f.runInMaster([&]() {    feedView->preparePut(op);
-                                  feedView->handlePut(NULL, op); } );
+                                  feedView->handlePut(FeedToken(), op); } );
     }
     void moveDoc(MoveOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
@@ -779,11 +776,10 @@ struct DocumentHandler
     {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         _f.runInMaster([&]() {    feedView->prepareRemove(op);
-                                  feedView->handleRemove(NULL, op); } );
+                                  feedView->handleRemove(FeedToken(), op); } );
     }
     void putDocs() {
-        PutOperation putOp = createPut(std::move(createDoc(1, 22, 33)),
-                                       Timestamp(10), 10);
+        PutOperation putOp = createPut(std::move(createDoc(1, 22, 33)), Timestamp(10), 10);
         putDoc(putOp);
         putOp = createPut(std::move(createDoc(2, 44, 55)), Timestamp(20), 20);
         putDoc(putOp);
@@ -791,13 +787,8 @@ struct DocumentHandler
 };
 
 void
-assertAttribute(const AttributeGuard &attr,
-                const vespalib::string &name,
-                uint32_t numDocs,
-                int64_t doc1Value,
-                int64_t doc2Value,
-                SerialNum createSerialNum,
-                SerialNum lastSerialNum)
+assertAttribute(const AttributeGuard &attr, const vespalib::string &name, uint32_t numDocs,
+                int64_t doc1Value, int64_t doc2Value, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
     EXPECT_EQUAL(name, attr->getName());
     EXPECT_EQUAL(numDocs, attr->getNumDocs());
@@ -808,17 +799,13 @@ assertAttribute(const AttributeGuard &attr,
 }
 
 void
-assertAttribute1(const AttributeGuard &attr,
-                           SerialNum createSerialNum,
-                           SerialNum lastSerialNum)
+assertAttribute1(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
     assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum);
 }
 
 void
-assertAttribute2(const AttributeGuard &attr,
-                           SerialNum createSerialNum,
-                           SerialNum lastSerialNum)
+assertAttribute2(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
     assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum);
 }
@@ -877,12 +864,10 @@ TEST_F("require that regular attributes are populated during reprocessing",
     requireThatAttributesArePopulatedDuringReprocessing<SearchableFixtureTwoField, ConfigDir2>(f);
 }
 
-namespace
-{
+namespace {
 
 bool
-assertOperation(DocumentOperation &op,
-                uint32_t expPrevSubDbId, uint32_t expPrevLid,
+assertOperation(DocumentOperation &op, uint32_t expPrevSubDbId, uint32_t expPrevLid,
                 uint32_t expSubDbId, uint32_t expLid)
 {
     if (!EXPECT_EQUAL(expPrevSubDbId, op.getPrevSubDbId())) {

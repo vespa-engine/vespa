@@ -1,0 +1,26 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.hosted.controller.athenz.config
+
+# Principal header name
+principalHeaderName             string  default="Athenz-Principal-Auth"
+
+# URL to ZMS API endpoint
+zmsUrl                          string
+
+# URL to ZTS API endpoint
+ztsUrl                          string
+
+# Athenz domain for controller identity. The domain is also used for Athenz tenancy integration.
+domain                          string
+
+# Athenz service name for controller identity
+service.name                    string
+
+# Athenz service public key id
+service.publicKeyId             string
+
+# Version of Athenz service private key
+service.privateKeyVersion       int
+
+# Name of Athenz service private key secret
+service.privateKeySecretName    string

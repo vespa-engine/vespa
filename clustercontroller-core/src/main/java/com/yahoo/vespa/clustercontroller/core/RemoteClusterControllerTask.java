@@ -32,15 +32,37 @@ public abstract class RemoteClusterControllerTask {
     public boolean hasVersionAckDependency() { return false; }
 
     /**
-     *  If the task response has been deferred due to hasVersionAckDependency(),
-     *  handleLeadershipLost() will be invoked on the task if the cluster controller
+     * If true, signals that a task has failed and can be immediately marked as
+     * complete without waiting for a version ACK. The task implementation has
+     * the responsibility of communicating any failure to the caller, and ensuring
+     * that the lack of version waiting does not violate any invariants.
+     */
+    public boolean isFailed() { return false; }
+
+    public enum FailureCondition {
+        LEADERSHIP_LOST,
+        DEADLINE_EXCEEDED
+    }
+
+    /**
+     *  If the task completion has been deferred due to hasVersionAckDependency(),
+     *  this method will be invoked if a failure occurs before the version has
+     *  been successfully ACKed.
+     *
+     *  LEADERSHIP_LOST will be the failure condition if the cluster controller
      *  discovers it has lost leadership in the time between task execution and
-     *  deferred response send time.
+     *  deferred completion time.
+     *
+     *  DEADLINE_EXCEEDED will be the failure condition if the completion has been
+     *  deferred for more than a configurable amount of time.
      *
      *  This method will also be invoked if the controller is signalled to shut down
      *  before the dependent cluster version has been published.
+     *
+     *  The task implementation is responsible for communicating the appropriate
+     *  error semantics to the caller who initially scheduled the task.
      */
-    public void handleLeadershipLost() {}
+    public void handleFailure(FailureCondition condition) {}
 
     public boolean isCompleted() {
         synchronized (monitor) {

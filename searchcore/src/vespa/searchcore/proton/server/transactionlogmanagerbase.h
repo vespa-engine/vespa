@@ -51,10 +51,7 @@ public:
 
     void changeReplayDone();
     void close();
-    TransLogClient::Subscriber::UP createTlcSubscriber(
-            TransLogClient::Session::Callback &callback);
-    TransLogClient::Visitor::UP createTlcVisitor(
-            TransLogClient::Session::Callback &callback);
+    TransLogClient::Visitor::UP createTlcVisitor(TransLogClient::Session::Callback &callback);
 
     void waitForReplayDone() const;
 
@@ -64,8 +61,7 @@ public:
     bool getReplayDone() const;
     bool isDoingReplay() const;
     void logReplayComplete() const;
-    const vespalib::string &getRpcTarget() const
-    { return _tlc.getRPCTarget(); }
+    const vespalib::string &getRpcTarget() const { return _tlc.getRPCTarget(); }
 
     void
     markReplayStarted();

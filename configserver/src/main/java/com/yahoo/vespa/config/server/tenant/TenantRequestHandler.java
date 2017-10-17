@@ -30,7 +30,6 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
  * a set of applications belonging to a tenant.
  *
  * @author Harald Musum
- * @since 5.1
  */
 public class TenantRequestHandler implements RequestHandler, ReloadHandler, HostValidator<ApplicationId> {
 

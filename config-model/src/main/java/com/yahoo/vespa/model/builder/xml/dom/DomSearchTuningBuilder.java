@@ -74,8 +74,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 handleSummary(parent, e, t.searchNode);
             } else if (equals("initialize", e)) {
                 handleInitialize(e, t.searchNode);
-            } else if (equals("background", e)) {
-                handleBackground(e, t.searchNode);
+            } else if (equals("feeding", e)) {
+                handleFeeding(e, t.searchNode);
             }
         }
     }
@@ -254,8 +254,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 s.logStore.minFileSizeFactor = asDouble(e);
             } else if (equals("numthreads", e)) {
                 parent.deployLogger().log(Level.WARNING,
-                        "Element 'numthreads is deprecated. Use background.threads instead." +
-                                " For now it will take max of the two.");
+                        "Element 'numthreads is deprecated. Use feeding.concurrency instead.");
                 s.logStore.numThreads = asInt(e);
             } else if (equals("chunk", e)) {
                 s.logStore.chunk = new Tuning.SearchNode.Summary.Store.Component(true);
@@ -273,11 +272,11 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleBackground(Element spec, Tuning.SearchNode sn) {
-        sn.background = new Tuning.SearchNode.Background();
+    private void handleFeeding(Element spec, Tuning.SearchNode sn) {
+        sn.feeding = new Tuning.SearchNode.Feeding();
         for (Element e : XML.getChildren(spec)) {
-            if (equals("threads", e)) {
-                sn.background.threads = asInt(e);
+            if (equals("concurrency", e)) {
+                sn.feeding.concurrency = asDouble(e);
             }
         }
     }

@@ -159,16 +159,16 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
-       Returns a bucket id suitable for routing this message.
+       Returns a bucket suitable for routing this message.
     */
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     DECLARE_STORAGECOMMAND(BatchDocumentUpdateCommand, onBatchDocumentUpdate)
 
 private:
     UpdateList _updates;
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
 };
 
 /**

@@ -143,6 +143,19 @@ public class ConfigServerHttpRequestExecutorTest {
         assertLogStringContainsGETForAHost();
     }
 
+    @Test
+    public void testConflict() throws Exception {
+        Set<String> configServers = new ArraySet<>(2);
+        configServers.add("host1");
+        configServers.add("host2");
+        // Server is returning 409, no exception is thrown.
+        mockReturnCode = 409;
+        ConfigServerHttpRequestExecutor executor =
+                new ConfigServerHttpRequestExecutor(configServers, createClientMock());
+        executor.get("/path", 666, TestPojo.class);
+        assertLogStringContainsGETForAHost();
+    }
+
     private void assertLogStringContainsGETForAHost() {
         String logString = mockLog.toString();
         //assertThat(logString, startsWith("GET http://host"));

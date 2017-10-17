@@ -5,8 +5,7 @@
 #include "operationdonecontext.h"
 #include <vespa/document/update/documentupdate.h>
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Context class for document update operations that acks operation when
@@ -19,12 +18,8 @@ class UpdateDoneContext : public OperationDoneContext
 {
     document::DocumentUpdate::SP _upd;
 public:
-    UpdateDoneContext(std::unique_ptr<FeedToken> token,
-                      const FeedOperation::Type opType,
-                      PerDocTypeFeedMetrics &metrics,
-                      const document::DocumentUpdate::SP &upd);
-
-    virtual ~UpdateDoneContext();
+    UpdateDoneContext(FeedToken token, const document::DocumentUpdate::SP &upd);
+    ~UpdateDoneContext() override;
 
     const document::DocumentUpdate &getUpdate() { return *_upd; }
 };

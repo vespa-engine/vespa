@@ -28,6 +28,12 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_hwinfo_cpu_cores_is_set() {
+        ProtonConfig cfg = configFromNumCoresSetting(24);
+        assertEquals(24, cfg.hwinfo().cpu().cores());
+    }
+
+    @Test
     public void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
         assertEquals(200, cfg.hwinfo().disk().writespeed(), 0.001);
@@ -55,19 +61,6 @@ public class NodeFlavorTuningTest {
         assertDocumentStoreMaxFileSize(4 * GB, 128);
         assertDocumentStoreMaxFileSize(4 * GB, 256);
         assertDocumentStoreMaxFileSize(4 * GB, 512);
-    }
-
-    @Test
-    public void require_that_documentstore_numthreads_is_based_on_num_cores() {
-        assertDocumentStoreNumThreads(8, 0);
-        assertDocumentStoreNumThreads(8, 1.0);
-        assertDocumentStoreNumThreads(8, 3.0);
-        assertDocumentStoreNumThreads(8, 4.0);
-        assertDocumentStoreNumThreads(8, 8.0);
-        assertDocumentStoreNumThreads(12, 24.0);
-        assertDocumentStoreNumThreads(16, 32.0);
-        assertDocumentStoreNumThreads(24, 48.0);
-        assertDocumentStoreNumThreads(32, 64.0);
     }
 
     @Test
@@ -100,10 +93,6 @@ public class NodeFlavorTuningTest {
     private static void assertFlushStrategyMemory(long expMemoryBytes, int memoryGb) {
         assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().maxmemory());
         assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().each().maxmemory());
-    }
-
-    private static void assertDocumentStoreNumThreads(int numThreads, double numCores) {
-        assertEquals(numThreads, configFromNumCoresSetting(numCores).background().threads());
     }
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {

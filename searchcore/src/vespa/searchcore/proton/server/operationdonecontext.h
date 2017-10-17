@@ -3,13 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchcore/proton/feedoperation/feedoperation.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 
-namespace proton
-{
-
-class PerDocTypeFeedMetrics;
-class FeedToken;
+namespace proton {
 
 /**
  * Context class for document operations that acks operation when
@@ -20,23 +16,15 @@ class FeedToken;
  */
 class OperationDoneContext : public search::IDestructorCallback
 {
-    std::unique_ptr<FeedToken> _token;
-    const FeedOperation::Type _opType;
-    PerDocTypeFeedMetrics &_metrics;
-
+    FeedToken _token;
 protected:
     void ack();
 
 public:
-    OperationDoneContext(std::unique_ptr<FeedToken> token,
-                         const FeedOperation::Type opType,
-                         PerDocTypeFeedMetrics &metrics);
+    OperationDoneContext(FeedToken token);
 
-    virtual ~OperationDoneContext();
-
-    FeedToken *getToken() { return _token.get(); }
-
-    bool shouldTrace(uint32_t traceLevel);
+    ~OperationDoneContext() override;
+    bool hasToken() const { return static_cast<bool>(_token); }
 };
 
 

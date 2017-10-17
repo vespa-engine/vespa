@@ -272,14 +272,27 @@ public class ClusterStateGeneratorTest {
 
     @Test
     public void config_retired_mode_is_reflected_in_generated_state() {
-        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
-        List<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(5);
-        nodes.set(2, new ConfiguredNode(2, true));
-        fixture.cluster.setNodes(nodes);
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .markNodeAsConfigRetired(2)
+                .bringEntireClusterUp();
 
-        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:r"));
+    }
+
+    @Test
+    public void config_retired_mode_is_overridden_by_worse_wanted_state() {
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .markNodeAsConfigRetired(2)
+                .markNodeAsConfigRetired(3)
+                .bringEntireClusterUp()
+                .proposeStorageNodeWantedState(2, State.DOWN)
+                .proposeStorageNodeWantedState(3, State.MAINTENANCE);
+
+        AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:d .3.s:m"));
     }
 
     private void do_test_change_within_node_transition_time_window_generates_maintenance(State reportedState) {

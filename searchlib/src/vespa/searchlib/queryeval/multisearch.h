@@ -5,7 +5,11 @@
 #include "searchiterator.h"
 #include <vector>
 
+class MultiSearchRemoveTest;
+
 namespace search::queryeval {
+
+class MultiBitVectorIteratorBase;
 
 /**
  * A virtual intermediate class that serves as the basis for combining searches
@@ -13,6 +17,8 @@ namespace search::queryeval {
  **/
 class MultiSearch : public SearchIterator
 {
+    friend class ::MultiSearchRemoveTest;
+    friend class ::search::queryeval::MultiBitVectorIteratorBase;
 public:
     /**
      * Defines how to represent the children iterators. vespalib::Array usage
@@ -32,13 +38,13 @@ public:
     virtual bool isAndNot() const { return false; }
     virtual bool isOr() const { return false; }
     void insert(size_t index, SearchIterator::UP search);
-    SearchIterator::UP remove(size_t index);
     virtual bool needUnpack(size_t index) const { (void) index; return true; }
     void initRange(uint32_t beginId, uint32_t endId) override;
 protected:
     void doUnpack(uint32_t docid) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:
+    SearchIterator::UP remove(size_t index); // friends only
     /**
      * Call back when children are removed / inserted after the Iterator has been constructed.
      * This is to support code that make assumptions that iterators do not move around or disappear.
