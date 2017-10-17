@@ -10,8 +10,8 @@ import java.util.List;
  * @author gv
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AthensDomainsResponse extends JsonResponse<List<AthenzDomain>> {
-    public AthensDomainsResponse(List<AthenzDomain> athensDomainList) {
+public class AthenzDomainsResponse extends JsonResponse<List<AthenzDomain>> {
+    public AthenzDomainsResponse(List<AthenzDomain> athensDomainList) {
         super(athensDomainList);
     }
 }

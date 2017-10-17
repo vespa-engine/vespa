@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4;
 
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.AthensDomainsResponse;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.AthenzDomainsResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantPipelinesInfo;
@@ -34,7 +34,7 @@ public interface ApplicationApi {
 
     @GET
     @Path("athensDomain")
-    AthensDomainsResponse listAthensDomains(@DefaultValue("") @QueryParam("prefix") String prefix);
+    AthenzDomainsResponse listAthensDomains(@DefaultValue("") @QueryParam("prefix") String prefix);
 
     @GET
     @Path("tenant-pipeline")
