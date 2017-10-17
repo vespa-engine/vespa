@@ -7,13 +7,11 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -109,6 +107,20 @@ public class Upgrader extends Maintainer {
     /** Sets the number upgrades per minute */
     public void setUpgradesPerMinute(double n) {
         curator.writeUpgradesPerMinute(n);
+    }
+
+    /**
+     * Returns whether to ignore confidence calculations when upgrading
+     */
+    public boolean ignoreConfidence() {
+        return curator.readIgnoreConfidence();
+    }
+
+    /**
+     * Controls whether to ignore confidence calculations or not
+     */
+    public void ignoreConfidence(boolean value) {
+        curator.writeIgnoreConfidence(value);
     }
 
 }
