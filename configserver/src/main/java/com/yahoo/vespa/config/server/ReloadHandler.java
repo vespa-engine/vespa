@@ -4,6 +4,8 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 
+import java.util.Set;
+
 /**
  * Interface representing a reload handler.
  *
@@ -25,5 +27,12 @@ public interface ReloadHandler {
      * @param applicationId to be removed
      */
     void removeApplication(ApplicationId applicationId);
+
+    /**
+     * Remove all applications except those specified in argument.
+     *
+     * @param applicationIds to be kept
+     */
+    void removeApplicationsExcept(Set<ApplicationId> applicationIds);
 
 }

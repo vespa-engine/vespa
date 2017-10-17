@@ -20,10 +20,7 @@ import java.util.*;
  */
 public class MockRequestHandler implements RequestHandler, ReloadHandler, TenantHandlerProvider {
 
-    volatile String serverStats = "";
-    volatile boolean reloadResponse = false;
     volatile boolean throwException = false;
-    public long appGeneration = 0;
     private Set<ConfigKey<?>> allConfigs = new HashSet<>();
     public volatile ConfigResponse responseConfig = null; // for some v1 mocking
     public Map<ApplicationId, ConfigResponse> responses = new LinkedHashMap<>(); // for v2 mocking
@@ -52,8 +49,10 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
     }
 
     @Override
-    public void removeApplication(ApplicationId applicationId) {
-    }
+    public void removeApplication(ApplicationId applicationId) { }
+
+    @Override
+    public void removeApplicationsExcept(Set<ApplicationId> applicationIds) { }
 
     @Override
     public void reloadConfig(ApplicationSet application) {
