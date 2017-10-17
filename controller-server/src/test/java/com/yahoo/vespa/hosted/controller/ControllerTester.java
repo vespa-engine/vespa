@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 public final class ControllerTester {
 
     private final ControllerDb db;
-    private final AthenzDbMock athensDb;
+    private final AthenzDbMock athenzDb;
     private final ManualClock clock;
     private final ConfigServerClientMock configServer;
     private final ZoneRegistryMock zoneRegistry;
@@ -73,11 +73,11 @@ public final class ControllerTester {
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
     }
 
-    private ControllerTester(ControllerDb db, AthenzDbMock athensDb, ManualClock clock,
+    private ControllerTester(ControllerDb db, AthenzDbMock athenzDb, ManualClock clock,
                              ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, MemoryNameService nameService) {
         this.db = db;
-        this.athensDb = athensDb;
+        this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
         this.zoneRegistry = zoneRegistry;
@@ -85,7 +85,7 @@ public final class ControllerTester {
         this.curator = curator;
         this.nameService = nameService;
         this.controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry,
-                                           athensDb, nameService);
+                                           athenzDb, nameService);
     }
 
     public Controller controller() { return controller; }
@@ -94,7 +94,7 @@ public final class ControllerTester {
 
     public ManualClock clock() { return clock; }
 
-    public AthenzDbMock athensDb() { return athensDb; }
+    public AthenzDbMock athenzDb() { return athenzDb; }
 
     public MemoryNameService nameService() { return nameService; }
 
@@ -106,7 +106,7 @@ public final class ControllerTester {
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry, athensDb, nameService);
+        controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry, athenzDb, nameService);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -149,7 +149,7 @@ public final class ControllerTester {
 
     public AthenzDomain createDomain(String domainName) {
         AthenzDomain domain = new AthenzDomain(domainName);
-        athensDb.addDomain(new AthenzDbMock.Domain(domain));
+        athenzDb.addDomain(new AthenzDbMock.Domain(domain));
         return domain;
     }
 

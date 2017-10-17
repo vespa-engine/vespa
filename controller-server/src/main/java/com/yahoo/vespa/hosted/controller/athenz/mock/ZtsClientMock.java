@@ -17,16 +17,16 @@ import static java.util.stream.Collectors.toList;
 public class ZtsClientMock implements ZtsClient {
     private static final Logger log = Logger.getLogger(ZtsClientMock.class.getName());
 
-    private final AthenzDbMock athens;
+    private final AthenzDbMock athenz;
 
-    public ZtsClientMock(AthenzDbMock athens) {
-        this.athens = athens;
+    public ZtsClientMock(AthenzDbMock athenz) {
+        this.athenz = athenz;
     }
 
     @Override
     public List<AthenzDomain> getTenantDomainsForUser(AthenzPrincipal principal) {
         log.log(Level.INFO, "getTenantDomainsForUser(principal='%s')", principal);
-        return athens.domains.values().stream()
+        return athenz.domains.values().stream()
                 .filter(domain -> domain.tenantAdmins.contains(principal) || domain.admins.contains(principal))
                 .map(domain -> domain.name)
                 .collect(toList());

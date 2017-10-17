@@ -24,10 +24,10 @@ public class ZmsClientMock implements ZmsClient {
 
     private static final Logger log = Logger.getLogger(ZmsClientMock.class.getName());
 
-    private final AthenzDbMock athens;
+    private final AthenzDbMock athenz;
 
-    public ZmsClientMock(AthenzDbMock athens) {
-        this.athens = athens;
+    public ZmsClientMock(AthenzDbMock athenz) {
+        this.athenz = athenz;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class ZmsClientMock implements ZmsClient {
     @Override
     public List<AthenzDomain> getDomainList(String prefix) {
         log("getDomainList()");
-        return new ArrayList<>(athens.domains.keySet());
+        return new ArrayList<>(athenz.domains.keySet());
     }
 
     @Override
@@ -102,7 +102,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     private AthenzDbMock.Domain getDomainOrThrow(AthenzDomain domainName, boolean verifyVespaTenant) {
-        AthenzDbMock.Domain domain = Optional.ofNullable(athens.domains.get(domainName))
+        AthenzDbMock.Domain domain = Optional.ofNullable(athenz.domains.get(domainName))
                 .orElseThrow(() -> zmsException(400, "Domain '%s' not found", domainName));
         if (verifyVespaTenant && !domain.isVespaTenant) {
             throw zmsException(400, "Domain not a Vespa tenant: '%s'", domainName);

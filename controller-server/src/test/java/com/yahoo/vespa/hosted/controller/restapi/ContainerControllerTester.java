@@ -68,7 +68,7 @@ public class ContainerControllerTester {
     }
 
     public Application createApplication(String athensDomain, String tenant, String application) {
-        AthenzDomain domain1 = addTenantAthensDomain(athensDomain, "mytenant");
+        AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
         controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
                                                                  new Property("property1"),
                                                                  Optional.of(new PropertyId("1234"))),
@@ -94,7 +94,7 @@ public class ContainerControllerTester {
         ));
     }
 
-    public AthenzDomain addTenantAthensDomain(String domainName, String userName) {
+    public AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
         AthenzDomain athensDomain = new AthenzDomain(domainName);

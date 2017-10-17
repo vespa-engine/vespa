@@ -118,12 +118,12 @@ public class IdentifierTest {
     }
 
     @Test
-    public void athens_parent_domain_is_without_name_suffix() {
+    public void athenz_parent_domain_is_without_name_suffix() {
         assertEquals(new AthenzDomain("yby.john"), new AthenzDomain("yby.john.myapp").getParent());
     }
 
     @Test
-    public void athens_domain_name_is_last_suffix() {
+    public void athenz_domain_name_is_last_suffix() {
         assertEquals("myapp", new AthenzDomain("yby.john.myapp").getNameSuffix());
     }
 

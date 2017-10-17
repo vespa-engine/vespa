@@ -357,13 +357,13 @@ public class ControllerTest {
     }
     
     @Test
-    public void testMigratingTenantToAthensWillModifyAthensDomainsCorrectly() {
+    public void testMigratingTenantToAthenzWillModifyAthenzDomainsCorrectly() {
         ControllerTester tester = new ControllerTester();
 
         // Create Athens domain mock
         AthenzDomain athensDomain = new AthenzDomain("vespa.john");
         AthenzDbMock.Domain mockDomain = new AthenzDbMock.Domain(athensDomain);
-        tester.athensDb().addDomain(mockDomain);
+        tester.athenzDb().addDomain(mockDomain);
 
         // Create OpsDb tenant
         TenantId tenantId = new TenantId("mytenant");
