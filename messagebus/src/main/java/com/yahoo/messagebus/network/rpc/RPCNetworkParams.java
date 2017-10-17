@@ -15,7 +15,6 @@ public class RPCNetworkParams {
     private Identity identity = new Identity("");
     private String slobrokConfigId = "admin/slobrok.0";
     private SlobroksConfig slobroksConfig = null;
-    private String oosServerPattern = "";
     private int listenPort = 0;
     private int maxInputBufferSize = 256 * 1024;
     private int maxOutputBufferSize = 256 * 1024;
@@ -37,7 +36,6 @@ public class RPCNetworkParams {
         identity = new Identity(params.identity);
         slobrokConfigId = params.slobrokConfigId;
         slobroksConfig = params.slobroksConfig;
-        oosServerPattern = params.oosServerPattern;
         listenPort = params.listenPort;
         connectionExpireSecs = params.connectionExpireSecs;
         maxInputBufferSize = params.maxInputBufferSize;
