@@ -197,7 +197,6 @@ public class TenantController {
                                         PropertyId propertyId,
                                         Property property,
                                         NToken nToken) {
-        if (1==1) throw new RuntimeException("hei");
         try (Lock lock = lock(tenantId)) {
             Tenant existing = tenant(tenantId).orElseThrow(() -> new NotExistsException(tenantId));
             if (existing.isAthensTenant()) return existing; // nothing to do
