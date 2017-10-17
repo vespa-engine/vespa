@@ -5,8 +5,7 @@
 #include "imaintenancejobrunner.h"
 #include "lid_space_compaction_job.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/gatecallback.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -56,9 +55,8 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
                 return true;
             } else {
                 MoveOperation::UP op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
-                search::IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
-                _opStorer.storeOperation(*op, context);
-                _handler.handleMove(*op, std::move(context));
+                _opStorer.storeOperation(*op);
+                _handler.handleMove(*op, _moveOpsLimiter->beginOperation());
                 if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                     return true;
                 }
@@ -81,9 +79,7 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
 {
     uint32_t wantedLidLimit = stats.getHighestUsedLid() + 1;
     CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
-    vespalib::Gate gate;
-    _opStorer.storeOperation(op, std::make_shared<search::GateCallback>(gate));
-    gate.await();
+    _opStorer.storeOperation(op);
     _handler.handleCompactLidSpace(op);
     EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
     _shouldCompactLidSpace = false;

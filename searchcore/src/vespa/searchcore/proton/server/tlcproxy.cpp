@@ -11,24 +11,24 @@ using search::transactionlog::Packet;
 
 namespace proton {
 
-void TlcProxy::commit(search::SerialNum serialNum, search::transactionlog::Type type,
-                      const vespalib::nbostream &buf, DoneCallback onDone)
+void TlcProxy::commit(search::SerialNum serialNum, search::transactionlog::Type type, const vespalib::nbostream &buf)
 {
     Packet::Entry entry(serialNum, type, vespalib::ConstBufferRef(buf.c_str(), buf.size()));
     Packet packet;
     packet.add(entry);
     packet.close();
-    _tlsDirectWriter.commit(_domain, packet, std::move(onDone));
+    _tlsDirectWriter.commit(_domain, packet);
+
 }
 
 void
-TlcProxy::storeOperation(const FeedOperation &op, DoneCallback onDone)
+TlcProxy::storeOperation(const FeedOperation &op)
 {
     nbostream stream;
     op.serialize(stream);
     LOG(debug, "storeOperation(): serialNum(%" PRIu64 "), type(%u), size(%zu)",
         op.getSerialNum(), (uint32_t)op.getType(), stream.size());
-    commit(op.getSerialNum(), (uint32_t)op.getType(), stream, std::move(onDone));
+    commit(op.getSerialNum(), (uint32_t)op.getType(), stream);
 }
 
 }  // namespace proton

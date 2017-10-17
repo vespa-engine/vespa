@@ -370,7 +370,7 @@ struct MyTlsWriter : TlsWriter {
     bool erase_return;
 
     MyTlsWriter() : store_count(0), erase_count(0), erase_return(true) {}
-    void storeOperation(const FeedOperation &, DoneCallback) override { ++store_count; }
+    void storeOperation(const FeedOperation &) override { ++store_count; }
     bool erase(SerialNum) override { ++erase_count; return erase_return; }
 
     SerialNum sync(SerialNum syncTo) override {
