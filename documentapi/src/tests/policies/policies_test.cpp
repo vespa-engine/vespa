@@ -758,7 +758,7 @@ Test::requireThatStoragePolicyIsRandomWithoutState()
         mbus::TestServer *srv = new mbus::TestServer(
                 mbus::Identity(vespalib::make_string("storage/cluster.mycluster/distributor/%d", i)),
                 mbus::RoutingSpec(), slobrok,
-                make_shared<DocumentProtocol>(_loadTypes, _repo));
+                mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
         servers.push_back(srv);
         srv->net.registerSession("default");
     }
