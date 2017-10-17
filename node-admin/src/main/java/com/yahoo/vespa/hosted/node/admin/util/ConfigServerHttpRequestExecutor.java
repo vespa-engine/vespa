@@ -91,9 +91,13 @@ public class ConfigServerHttpRequestExecutor {
                 }
 
                 try {
-                    HttpException.throwOnFailure(
+                    Optional<HttpException> retryableException = HttpException.handleStatusCode(
                             response.getStatusLine().getStatusCode(),
                             "Config server " + configServer);
+                    if (retryableException.isPresent()) {
+                        lastException = retryableException.get();
+                        continue;
+                    }
 
                     try {
                         return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
