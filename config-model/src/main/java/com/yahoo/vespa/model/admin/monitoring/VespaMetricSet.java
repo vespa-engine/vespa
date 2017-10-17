@@ -40,6 +40,7 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("sentinel.restarts.count"));
+        metrics.add(new Metric("sentinel.uptime.last", "sentinel.uptime"));
 
         metrics.add(new Metric("sentinel.running.count"));
         metrics.add(new Metric("sentinel.running.last"));
