@@ -17,18 +17,24 @@ import static org.junit.Assert.assertTrue;
 public class QueryRewriteTestCase {
 
     @Test
-    public void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecall() {
+    public void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecallAndDontImpactRank() {
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "foo", "sddocname:foo");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "bar", "sddocname:bar");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "baz", "sddocname:baz");
 
-        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "foo", "sddocname:foo");
-        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "bar", "sddocname:bar");
-        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "baz", "sddocname:baz");
+        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "foo", "OR lhs sddocname:foo");
+        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "bar", "OR lhs sddocname:bar");
+        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "baz", "OR lhs sddocname:baz");
 
         assertRewritten("lhs AND (sddocname:foo OR sddocname:bar OR sddocname:baz)", "foo", "lhs");
         assertRewritten("lhs AND (sddocname:foo OR sddocname:bar OR sddocname:baz)", "bar", "lhs");
         assertRewritten("lhs AND (sddocname:foo OR sddocname:bar OR sddocname:baz)", "baz", "lhs");
+    }
+
+    @Test
+    public void testRestrictRewriteDoesNotRemoveRankContributingTerms() {
+        assertRewritten("sddocname:per OR foo OR bar", "per", "OR sddocname:per foo bar");
+        assertRewritten("sddocname:per OR foo OR (bar AND fuz)", "per", "OR sddocname:per foo (AND bar fuz)");
     }
 
     @Test
@@ -59,7 +65,7 @@ public class QueryRewriteTestCase {
         assertRewritten("sddocname:perder ANDNOT b", "per", "NULL");
         assertRewritten("a ANDNOT sddocname:per a b", "per", "NULL");
     }
-
+    
     @Test
     public void testRestrictRank() {
         assertRewritten("sddocname:per&filter=abc", "espen", "|abc");

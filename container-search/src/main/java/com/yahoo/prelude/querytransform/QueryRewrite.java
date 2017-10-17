@@ -41,8 +41,6 @@ public class QueryRewrite {
 
     /**
      * Optimizes the given query tree based on its {@link Model#getRestrict()} parameter, if any.
-     *
-     * @param query to optimize.
      */
     public static void optimizeByRestrict(Query query) {
         if (query.getModel().getRestrict().size() != 1) {
@@ -56,8 +54,6 @@ public class QueryRewrite {
 
     /**
      * Collapses all single-child {@link CompositeItem}s into their parent item.
-     *
-     * @param query The query whose composites to collapse.
      */
     public static void collapseSingleComposites(Query query) {
         Item oldRoot = query.getModel().getQueryTree().getRoot();
@@ -70,8 +66,6 @@ public class QueryRewrite {
     /**
      * Replaces and {@link SimpleIndexedItem} searching in the {@link Hit#SDDOCNAME_FIELD} with an item
      * appropriate for the search node.
-     *
-     * @param query the query to rewrite.
      */
     public static void rewriteSddocname(Query query) {
         Item oldRoot = query.getModel().getQueryTree().getRoot();
@@ -156,53 +150,45 @@ public class QueryRewrite {
         for (int i = item.getItemCount(); --i >= 1; ) {
             Item child = item.getItem(i);
             switch (optimizeByRestrict(child, restrictParam)) {
-            case RECALLS_EVERYTHING:
-                return Recall.RECALLS_NOTHING;
-            case RECALLS_NOTHING:
-                item.removeItem(i);
-                break;
+                case RECALLS_EVERYTHING:
+                    return Recall.RECALLS_NOTHING;
+                case RECALLS_NOTHING:
+                    item.removeItem(i);
+                    break;
             }
         }
         return Recall.UNKNOWN_RECALL;
     }
 
     private static Recall optimizeCompositeItemByRestrict(CompositeItem item, String restrictParam) {
+        Recall recall = Recall.UNKNOWN_RECALL;
         for (int i = item.getItemCount(); --i >= 0; ) {
             switch (optimizeByRestrict(item.getItem(i), restrictParam)) {
-            case RECALLS_EVERYTHING:
-                if ((item instanceof OrItem) || (item instanceof EquivItem)) {
-                    retainChild(item, i);
-                    return Recall.RECALLS_EVERYTHING;
-                } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
-                    item.removeItem(i);
-                } else if (item instanceof RankItem) {
-                    // empty
-                } else {
-                    throw new UnsupportedOperationException(item.getClass().getName());
-                }
-                break;
-            case RECALLS_NOTHING:
-                if ((item instanceof OrItem) || (item instanceof EquivItem)) {
-                    item.removeItem(i);
-                } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
-                    return Recall.RECALLS_NOTHING;
-                } else if (item instanceof RankItem) {
-                    item.removeItem(i);
-                } else {
-                    throw new UnsupportedOperationException(item.getClass().getName());
-                }
-                break;
+                case RECALLS_EVERYTHING:
+                    if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                        recall = Recall.RECALLS_EVERYTHING;
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
+                        item.removeItem(i);
+                    } else if (item instanceof RankItem) {
+                        // empty
+                    } else {
+                        throw new UnsupportedOperationException(item.getClass().getName());
+                    }
+                    break;
+                case RECALLS_NOTHING:
+                    if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                        item.removeItem(i);
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
+                        return Recall.RECALLS_NOTHING;
+                    } else if (item instanceof RankItem) {
+                        item.removeItem(i);
+                    } else {
+                        throw new UnsupportedOperationException(item.getClass().getName());
+                    }
+                    break;
             }
         }
-        return Recall.UNKNOWN_RECALL;
-    }
-
-    private static void retainChild(CompositeItem item, int childIdx) {
-        Item child = item.removeItem(childIdx);
-        for (int i = item.getItemCount(); --i >= 0; ) {
-            item.removeItem(i);
-        }
-        item.addItem(child);
+        return recall;
     }
 
     private static Item collapseSingleComposites(Item item) {

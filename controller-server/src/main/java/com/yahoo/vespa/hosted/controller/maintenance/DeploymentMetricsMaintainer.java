@@ -23,21 +23,23 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-
         for (Application application : controller().applications().asList()) {
             try (Lock lock = controller().applications().lock(application.id())) {
                 for (Deployment deployment : application.deployments().values()) {
 
-                    MetricsService.DeploymentMetrics metrics = controller().metricsService()
-                            .getDeploymentMetrics(application.id(), deployment.zone());
+                    MetricsService.DeploymentMetrics returnedMetrics = 
+                            controller().metricsService().getDeploymentMetrics(application.id(), deployment.zone());
 
-                    DeploymentMetrics appMetrics = new DeploymentMetrics(metrics.queriesPerSecond(), metrics.writesPerSecond(),
-                            metrics.documentCount(), metrics.queryLatencyMillis(), metrics.writeLatencyMillis());
+                    DeploymentMetrics metrics = new DeploymentMetrics(returnedMetrics.queriesPerSecond(),
+                                                                      returnedMetrics.writesPerSecond(),
+                                                                      returnedMetrics.documentCount(),
+                                                                      returnedMetrics.queryLatencyMillis(),
+                                                                      returnedMetrics.writeLatencyMillis());
 
-                    Application app = application.with(deployment.withMetrics(appMetrics));
-                    controller().applications().store(app, lock);
+                    controller().applications().store(application.with(deployment.withMetrics(metrics)), lock);
                 }
             }
         }
     }
+
 }
