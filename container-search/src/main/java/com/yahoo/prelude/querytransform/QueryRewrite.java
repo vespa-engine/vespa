@@ -80,6 +80,7 @@ public class QueryRewrite {
         }
         return (theOnlyNot != null) ? theOnlyNot : parent;
     }
+
     /**
      * Optimizes the given query tree based on its {@link Model#getRestrict()} parameter, if any.
      *
@@ -209,7 +210,7 @@ public class QueryRewrite {
      * Replaces and {@link SimpleIndexedItem} searching in the {@link Hit#SDDOCNAME_FIELD} with an item
      * appropriate for the search node.
      *
-     * @param query The query to rewrite.
+     * @param query the query to rewrite.
      */
     public static void rewriteSddocname(Query query) {
         Item oldRoot = query.getModel().getQueryTree().getRoot();
@@ -239,4 +240,5 @@ public class QueryRewrite {
         }
         return item;
     }
+
 }

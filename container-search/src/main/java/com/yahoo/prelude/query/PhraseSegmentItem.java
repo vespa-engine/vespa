@@ -91,8 +91,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         if (item instanceof WordItem) {
             addWordItem((WordItem) item);
         } else {
-            throw new IllegalArgumentException(
-                    "Can not add " + item + " to a segment phrase");
+            throw new IllegalArgumentException("Can not add " + item + " to a segment phrase");
         }
     }
 
@@ -117,6 +116,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         super.encodeThis(buffer); // takes care of index bytes
     }
 
+    @Override
     public int encode(ByteBuffer buffer) {
         encodeThis(buffer);
         return encodeContent(buffer, 1);
@@ -199,4 +199,5 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         super.disclose(discloser);
         discloser.addProperty("explicit", explicit);
     }
+
 }

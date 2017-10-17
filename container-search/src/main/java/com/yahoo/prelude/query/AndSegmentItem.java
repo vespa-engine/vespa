@@ -9,7 +9,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * An immutable and'ing of a collection of sub-expressions. It does not extend
  * AndItem to avoid code using instanceof handling it as an AndItem.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class AndSegmentItem extends SegmentItem implements BlockItem {
 
