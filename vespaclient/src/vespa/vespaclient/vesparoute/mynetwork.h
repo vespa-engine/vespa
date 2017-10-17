@@ -25,14 +25,6 @@ public:
     void send(const mbus::Message &msg, const std::vector<mbus::RoutingNode*> &recipients) override;
 
     /**
-     * Returns whether or not the given address is actually out of service.
-     *
-     * @param address The address to check.
-     * @return True if the address is out of service.
-     */
-    bool verifyOOS(const std::string &address);
-
-    /**
      * Removes and returns the list of recipients that was most recently sent to.
      *
      * @param contexts The list to move the contexts to.

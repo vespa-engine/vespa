@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpcnetwork.h"
 #include "rpcservicepool.h"
-#include "oosmanager.h"
 #include "rpcsendv1.h"
 #include "rpcsendv2.h"
 #include "rpctargetpool.h"
@@ -19,11 +18,13 @@
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcnetwork");
 
 using vespalib::make_string;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -44,7 +45,7 @@ public:
         _gate() {
         ScheduleNow();
     }
-    ~SyncTask() {}
+    ~SyncTask() = default;
 
     void await() {
         _gate.await();
@@ -106,7 +107,7 @@ RPCNetwork::TargetPoolTask::PerformTask()
 }
 
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
-    _owner(0),
+    _owner(nullptr),
     _ident(params.getIdentity()),
     _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
     _transport(std::make_unique<FNET_Transport>()),
@@ -118,7 +119,6 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
-    _oosManager(std::make_unique<OOSManager>(*_orb, *_mirror, params.getOOSServerPattern())),
     _requestedPort(params.getListenPort()),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(4,65536)),
     _sendV1(std::make_unique<RPCSendV1>()),
@@ -177,7 +177,7 @@ RPCNetwork::getVersion() const
 void
 RPCNetwork::attach(INetworkOwner &owner)
 {
-    LOG_ASSERT(_owner == 0);
+    LOG_ASSERT(_owner == nullptr);
     _owner = &owner;
 
     _sendV1->attach(*this);
@@ -239,19 +239,16 @@ RPCNetwork::waitUntilReady(double seconds) const
         if (configurator->poll()) {
             hasConfig = true;
         }
-        if (_mirror->ready() && _oosManager->isReady()) {
+        if (_mirror->ready()) {
             return true;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     if (! hasConfig) {
         LOG(error, "failed to get config for slobroks in %d seconds", (int)seconds);
     } else if (! _mirror->ready()) {
-        std::string brokers = brokerList.logString();
-        LOG(error, "mirror (of %s) failed to become ready in %d seconds",
-            brokers.c_str(), (int)seconds);
-    } else if (! _oosManager->isReady()) {
-        LOG(error, "OOS manager failed to become ready in %d seconds", (int)seconds);
+        auto brokers = brokerList.logString();
+        LOG(error, "mirror (of %s) failed to become ready in %d seconds", brokers.c_str(), (int)seconds);
     }
     return false;
 }
@@ -259,9 +256,8 @@ RPCNetwork::waitUntilReady(double seconds) const
 void
 RPCNetwork::registerSession(const string &session)
 {
-    if (_ident.getServicePrefix().size() == 0) {
-        LOG(warning, "The session (%s) will not be registered"
-            "in the Slobrok since this network has no identity.",
+    if (_ident.getServicePrefix().empty()) {
+        LOG(warning, "The session (%s) will not be registered in the Slobrok since this network has no identity.",
             session.c_str());
         return;
     }
@@ -274,7 +270,7 @@ RPCNetwork::registerSession(const string &session)
 void
 RPCNetwork::unregisterSession(const string &session)
 {
-    if (_ident.getServicePrefix().size() == 0) {
+    if (_ident.getServicePrefix().empty()) {
         return;
     }
     string name = _ident.getServicePrefix();
@@ -299,13 +295,8 @@ RPCNetwork::allocServiceAddress(RoutingNode &recipient)
 Error
 RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceName)
 {
-    if (_oosManager->isOOS(serviceName)) {
-        return Error(ErrorCode::SERVICE_OOS,
-                     make_string("The service '%s' has been marked as out of service.",
-                                           serviceName.c_str()));
-    }
     RPCServiceAddress::UP ret = _servicePool->resolve(serviceName);
-    if (ret.get() == nullptr) {
+    if ( ! ret) {
         return Error(ErrorCode::NO_ADDRESS_FOR_SERVICE,
                      make_string("The address of service '%s' could not be resolved. It is not currently "
                                  "registered with the Vespa name server. "
@@ -313,7 +304,7 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                                  serviceName.c_str()));
     }
     RPCTarget::SP target = _targetPool->getTarget(*_orb, *ret);
-    if (target.get() == nullptr) {
+    if ( ! target) {
         return Error(ErrorCode::CONNECTION_ERROR,
                      make_string("Failed to connect to service '%s'.", serviceName.c_str()));
     }

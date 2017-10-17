@@ -38,9 +38,9 @@ public class ErrorTestCase {
         table.addRoute("test", Arrays.asList("itr", "dst"));
 
         Slobrok slobrok = new Slobrok();
-        TestServer src = new TestServer("test/src", table, slobrok, null, null);
-        TestServer itr = new TestServer("test/itr", table, slobrok, null, null);
-        TestServer dst = new TestServer("test/dst", table, slobrok, null, null);
+        TestServer src = new TestServer("test/src", table, slobrok, null);
+        TestServer itr = new TestServer("test/itr", table, slobrok, null);
+        TestServer dst = new TestServer("test/dst", table, slobrok, null);
 
         Receptor ss_rr = new Receptor();
         SourceSession ss = src.mb.createSourceSession(ss_rr);

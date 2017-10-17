@@ -7,7 +7,6 @@ namespace mbus {
 RPCNetworkParams::RPCNetworkParams() :
     _identity(Identity("")),
     _slobrokConfig("admin/slobrok.0"),
-    _oosServerPattern(""),
     _listenPort(0),
     _maxInputBufferSize(256*1024),
     _maxOutputBufferSize(256*1024),
