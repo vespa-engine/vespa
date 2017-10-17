@@ -92,13 +92,7 @@ void Test::testProtocol() {
     DocumentProtocol protocol(set, _repo);
     EXPECT_TRUE(protocol.getName() == "document");
 
-    IRoutingPolicy::UP policy = protocol.createPolicy(string("SearchRow"),string(""));
-    EXPECT_TRUE(policy.get() != NULL);
-
-    policy = protocol.createPolicy(string("SearchColumn"),string(""));
-    EXPECT_TRUE(policy.get() != NULL);
-
-    policy = protocol.createPolicy(string("DocumentRouteSelector"), string("file:documentrouteselectorpolicy.cfg"));
+    IRoutingPolicy::UP policy = protocol.createPolicy(string("DocumentRouteSelector"), string("file:documentrouteselectorpolicy.cfg"));
     EXPECT_TRUE(policy.get() != NULL);
 
     policy = protocol.createPolicy(string(""),string(""));
