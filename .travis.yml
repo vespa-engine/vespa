@@ -32,7 +32,5 @@ matrix:
       if: type = pull_request
     - env: BUILD_TYPE="cpp"
       if: type = pull_request
-    - env: BUILD_TYPE="install"
-      if: type = pull_request
     - env: BUILD_TYPE="full"
       if: NOT type = pull_request
