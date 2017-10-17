@@ -9,8 +9,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/common/packets.h>
 
-#include "ooscli.h"
-
 namespace proton {
 
 class Proton;
@@ -65,7 +63,6 @@ private:
     slobrok::api::RegisterAPI        _regAPI;
     vespalib::Monitor                _stateMonitor;
     vespalib::ThreadStackExecutor    _executor;
-    OosCli                           _ooscli;
 
     void initRPC();
     void letProtonDo(vespalib::Closure::UP closure);
@@ -82,18 +79,14 @@ private:
     static const Session::SP & getSession(FRT_RPCRequest *req);
 public:
     typedef std::unique_ptr<RPCHooksBase> UP;
-    struct Params : public OosCli::OosParams {
-        vespalib::string identity;
-        uint32_t rtcPort;
+    struct Params {
+        Proton           &proton;
+        config::ConfigUri slobrok_config;
+        vespalib::string  identity;
+        uint32_t          rtcPort;
 
-        Params(Proton &parent, uint32_t port, const vespalib::string &ident)
-            : OosParams(parent),
-              identity(ident),
-              rtcPort(port)
-        {
-            my_oos_name = identity;
-            my_oos_name.append("/feed-destination");
-        }
+        Params(Proton &parent, uint32_t port, const vespalib::string &ident);
+        ~Params();
     };
     RPCHooksBase(const RPCHooksBase &) = delete;
     RPCHooksBase & operator = (const RPCHooksBase &) = delete;
