@@ -18,6 +18,7 @@ import java.util.logging.Level;
  * @author lesters
  */
 public class ReservedMacroNames extends Processor {
+    private static Set<String> reservedNames = getReservedNames();
 
     public ReservedMacroNames(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
@@ -25,7 +26,6 @@ public class ReservedMacroNames extends Processor {
 
     @Override
     public void process() {
-        Set<String> reservedNames = getReservedNames();
         for (RankProfile rp : rankProfileRegistry.allRankProfiles()) {
             for (String macroName : rp.getMacros().keySet()) {
                 if (reservedNames.contains(macroName)) {
@@ -39,7 +39,7 @@ public class ReservedMacroNames extends Processor {
         }
     }
 
-    private Set<String> getReservedNames() {
+    private static Set<String> getReservedNames() {
         Set<String> names = new HashSet<>();
         for (String token : RankingExpressionParserConstants.tokenImage) {
             String tokenWithoutQuotes = token.substring(1, token.length()-1);
