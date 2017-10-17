@@ -17,9 +17,9 @@ import static java.util.stream.Collectors.toList;
 public class ZtsClientMock implements ZtsClient {
     private static final Logger log = Logger.getLogger(ZtsClientMock.class.getName());
 
-    private final AthensDbMock athens;
+    private final AthenzDbMock athens;
 
-    public ZtsClientMock(AthensDbMock athens) {
+    public ZtsClientMock(AthenzDbMock athens) {
         this.athens = athens;
     }
 

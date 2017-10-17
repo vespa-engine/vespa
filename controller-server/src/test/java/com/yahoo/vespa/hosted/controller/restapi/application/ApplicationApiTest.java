@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
@@ -674,7 +674,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
         AthenzDomain athensDomain = new AthenzDomain(domainName);
-        AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
+        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
         domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
         mock.getSetup().addDomain(domain);
@@ -688,7 +688,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void addScrewdriverUserToDomain(String screwdriverUserId, String domainName) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthenzDomain(domainName));
+        AthenzDbMock.Domain domain = mock.getSetup().domains.get(new AthenzDomain(domainName));
         domain.admin(new AthenzPrincipal(new AthenzDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
     }
 

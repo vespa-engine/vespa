@@ -14,11 +14,11 @@ import java.util.Set;
 /**
  * @author bjorncs
  */
-public class AthensDbMock {
+public class AthenzDbMock {
 
     public final Map<AthenzDomain, Domain> domains = new HashMap<>();
 
-    public AthensDbMock addDomain(Domain domain) {
+    public AthenzDbMock addDomain(Domain domain) {
         domains.put(domain.name, domain);
         return this;
     }

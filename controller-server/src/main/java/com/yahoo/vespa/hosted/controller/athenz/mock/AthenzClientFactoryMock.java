@@ -17,17 +17,17 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
 
     private static final Logger log = Logger.getLogger(AthenzClientFactoryMock.class.getName());
 
-    private final AthensDbMock athens;
+    private final AthenzDbMock athens;
 
     public AthenzClientFactoryMock() {
-        this(new AthensDbMock());
+        this(new AthenzDbMock());
     }
 
-    public AthenzClientFactoryMock(AthensDbMock athens) {
+    public AthenzClientFactoryMock(AthenzDbMock athens) {
         this.athens = athens;
     }
 
-    public AthensDbMock getSetup() {
+    public AthenzDbMock getSetup() {
         return athens;
     }
 

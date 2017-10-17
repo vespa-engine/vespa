@@ -34,7 +34,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -362,7 +362,7 @@ public class ControllerTest {
 
         // Create Athens domain mock
         AthenzDomain athensDomain = new AthenzDomain("vespa.john");
-        AthensDbMock.Domain mockDomain = new AthensDbMock.Domain(athensDomain);
+        AthenzDbMock.Domain mockDomain = new AthenzDbMock.Domain(athensDomain);
         tester.athensDb().addDomain(mockDomain);
 
         // Create OpsDb tenant

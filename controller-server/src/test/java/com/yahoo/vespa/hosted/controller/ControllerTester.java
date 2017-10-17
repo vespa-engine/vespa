@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.jira.JiraMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 public final class ControllerTester {
 
     private final ControllerDb db;
-    private final AthensDbMock athensDb;
+    private final AthenzDbMock athensDb;
     private final ManualClock clock;
     private final ConfigServerClientMock configServer;
     private final ZoneRegistryMock zoneRegistry;
@@ -64,16 +64,16 @@ public final class ControllerTester {
     private Controller controller;
 
     public ControllerTester() {
-        this(new MemoryControllerDb(), new AthensDbMock(), new ManualClock(), new ConfigServerClientMock(),
+        this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
     }
 
     public ControllerTester(ManualClock clock) {
-        this(new MemoryControllerDb(), new AthensDbMock(), clock, new ConfigServerClientMock(),
+        this(new MemoryControllerDb(), new AthenzDbMock(), clock, new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
     }
 
-    private ControllerTester(ControllerDb db, AthensDbMock athensDb, ManualClock clock,
+    private ControllerTester(ControllerDb db, AthenzDbMock athensDb, ManualClock clock,
                              ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, MemoryNameService nameService) {
         this.db = db;
@@ -94,7 +94,7 @@ public final class ControllerTester {
 
     public ManualClock clock() { return clock; }
 
-    public AthensDbMock athensDb() { return athensDb; }
+    public AthenzDbMock athensDb() { return athensDb; }
 
     public MemoryNameService nameService() { return nameService; }
 
@@ -149,7 +149,7 @@ public final class ControllerTester {
 
     public AthenzDomain createDomain(String domainName) {
         AthenzDomain domain = new AthenzDomain(domainName);
-        athensDb.addDomain(new AthensDbMock.Domain(domain));
+        athensDb.addDomain(new AthenzDbMock.Domain(domain));
         return domain;
     }
 
@@ -199,7 +199,7 @@ public final class ControllerTester {
     private static Controller createController(ControllerDb db, CuratorDb curator,
                                                ConfigServerClientMock configServerClientMock, ManualClock clock,
                                                GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
-                                               AthensDbMock athensDb, MemoryNameService nameService) {
+                                               AthenzDbMock athensDb, MemoryNameService nameService) {
         Controller controller = new Controller(db,
                                                curator,
                                                new MemoryRotationRepository(),
