@@ -12,8 +12,6 @@ import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.*;
 import com.yahoo.messagebus.test.Receptor;
-import com.yahoo.vdslib.DocumentList;
-import com.yahoo.vdslib.Entry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,12 +57,6 @@ public class PolicyTestCase {
 
         policy = new DocumentProtocol(manager).createPolicy("RoundRobin", null);
         assertTrue(policy instanceof RoundRobinPolicy);
-
-        policy = new DocumentProtocol(manager).createPolicy("SearchRow", null);
-        assertTrue(policy instanceof SearchRowPolicy);
-
-        policy = new DocumentProtocol(manager).createPolicy("SearchColumn", null);
-        assertTrue(policy instanceof SearchColumnPolicy);
 
         policy = new DocumentProtocol(manager).createPolicy("SubsetService", null);
         assertTrue(policy instanceof SubsetServicePolicy);
@@ -330,125 +322,6 @@ public class PolicyTestCase {
     }
 
     @Test
-    public void testSearchRow() {
-        PolicyTestFrame frame = new PolicyTestFrame(manager);
-        frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:")))));
-        frame.setHop(new HopSpec("test", "[SearchRow]").addRecipient("foo"));
-        frame.assertMergeOneReply("foo");
-        frame.setHop(new HopSpec("test", "[SearchRow]").addRecipient("foo").addRecipient("bar"));
-        frame.assertMergeTwoReplies("foo", "bar");
-
-        frame.setHop(new HopSpec("test", "[SearchRow:1]").addRecipient("foo"));
-        Map<String, Integer> replies = new HashMap<>();
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        frame.assertMergeError(replies, Arrays.asList(ErrorCode.SERVICE_OOS));
-
-        frame.setHop(new HopSpec("test", "[SearchRow:1]").addRecipient("foo").addRecipient("bar"));
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.NONE);
-        frame.assertMergeOk(replies, Arrays.asList("bar"));
-
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.SERVICE_OOS);
-        frame.assertMergeError(replies, Arrays.asList(ErrorCode.SERVICE_OOS, ErrorCode.SERVICE_OOS));
-
-        frame.setHop(new HopSpec("test", "[SearchRow:1]").addRecipient("foo").addRecipient("bar").addRecipient("baz"));
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.NONE);
-        replies.put("baz", ErrorCode.NONE);
-        frame.assertMergeOk(replies, Arrays.asList("bar", "baz"));
-
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.SERVICE_OOS);
-        replies.put("baz", ErrorCode.NONE);
-        frame.assertMergeOk(replies, Arrays.asList("baz"));
-
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.SERVICE_OOS);
-        replies.put("baz", ErrorCode.SERVICE_OOS);
-        frame.assertMergeError(replies,
-                               Arrays.asList(ErrorCode.SERVICE_OOS, ErrorCode.SERVICE_OOS, ErrorCode.SERVICE_OOS));
-
-        frame.setHop(new HopSpec("test", "[SearchRow:2]").addRecipient("foo").addRecipient("bar").addRecipient("baz"));
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.NONE);
-        replies.put("baz", ErrorCode.NONE);
-        frame.assertMergeOk(replies, Arrays.asList("bar", "baz"));
-
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.SERVICE_OOS);
-        replies.put("baz", ErrorCode.NONE);
-        frame.assertMergeError(replies, Arrays.asList(ErrorCode.SERVICE_OOS, ErrorCode.SERVICE_OOS));
-
-        replies.put("foo", ErrorCode.SERVICE_OOS);
-        replies.put("bar", ErrorCode.SERVICE_OOS);
-        replies.put("baz", ErrorCode.SERVICE_OOS);
-        frame.assertMergeError(replies,
-                               Arrays.asList(ErrorCode.SERVICE_OOS, ErrorCode.SERVICE_OOS, ErrorCode.SERVICE_OOS));
-
-        frame.destroy();
-    }
-
-    @Test
-    public void testSearchRowMerge() {
-        PolicyTestFrame frame = new PolicyTestFrame(manager);
-        frame.setHop(new HopSpec("test", "[SearchRow]").addRecipient("foo"));
-        tryWasFound(frame, 1, 0x0, false);
-        tryWasFound(frame, 1, 0x1, true);
-
-        frame.setHop(new HopSpec("test", "[SearchRow]").addRecipient("foo").addRecipient("bar"));
-        tryWasFound(frame, 2, 0x0, false);
-        tryWasFound(frame, 2, 0x1, true);
-        tryWasFound(frame, 2, 0x2, true);
-        tryWasFound(frame, 2, 0x3, true);
-
-        frame.setHop(new HopSpec("test", "[SearchRow]").addRecipient("foo").addRecipient("bar").addRecipient("baz"));
-        tryWasFound(frame, 3, 0x0, false);
-        tryWasFound(frame, 3, 0x1, true);
-        tryWasFound(frame, 3, 0x2, true);
-        tryWasFound(frame, 3, 0x3, true);
-        tryWasFound(frame, 3, 0x4, true);
-        tryWasFound(frame, 3, 0x5, true);
-        tryWasFound(frame, 3, 0x6, true);
-        tryWasFound(frame, 3, 0x7, true);
-        frame.destroy();
-    }
-
-    private void tryWasFound(PolicyTestFrame frame, int expectedRecipients,
-                             int foundMask, boolean expectedFound)
-    {
-        {
-            frame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:69")));
-            List<RoutingNode> selected = frame.select(expectedRecipients);
-            for (int i = 0, len = selected.size(); i < len; ++i) {
-                RemoveDocumentReply reply = new RemoveDocumentReply();
-                reply.setWasFound(((1 << i) & foundMask) != 0);
-                selected.get(i).handleReply(reply);
-            }
-            Reply reply = frame.getReceptor().getReply(TIMEOUT);
-            assertNotNull(reply);
-            assertEquals(DocumentProtocol.REPLY_REMOVEDOCUMENT, reply.getType());
-            assertEquals(expectedFound, ((RemoveDocumentReply)reply).wasFound());
-        }
-        {
-            DocumentUpdate  upd = new DocumentUpdate(manager.getDocumentType("testdoc"),
-                                                     new DocumentId("doc:scheme:"));
-            frame.setMessage(new UpdateDocumentMessage(upd));
-            List<RoutingNode> selected = frame.select(expectedRecipients);
-            for (int i = 0, len = selected.size(); i < len; ++i) {
-                UpdateDocumentReply reply = new UpdateDocumentReply();
-                reply.setWasFound(((1 << i) & foundMask) != 0);
-                selected.get(i).handleReply(reply);
-            }
-            Reply reply = frame.getReceptor().getReply(TIMEOUT);
-            assertNotNull(reply);
-            assertEquals(DocumentProtocol.REPLY_UPDATEDOCUMENT, reply.getType());
-            assertEquals(expectedFound, ((UpdateDocumentReply)reply).wasFound());
-        }
-    }
-
-    @Test
     public void multipleGetRepliesAreMergedToFoundDocument() {
         PolicyTestFrame frame = new PolicyTestFrame(manager);
         frame.setHop(new HopSpec("test", getDocumentRouteSelectorRawConfig())
@@ -481,74 +354,6 @@ public class PolicyTestCase {
                 "route[1].name \"bar\"\n" +
                 "route[1].selector \"other\"\n" +
                 "route[1].feed \"myfeed\"\n]";
-    }
-
-    @Test
-    public void testSearchColumn() {
-        PolicyTestFrame frame = new PolicyTestFrame(manager);
-        frame.setHop(new HopSpec("test", "[SearchColumn]")
-                .addRecipient("c0").addRecipient("c1")
-                .addRecipient("c2").addRecipient("c3"));
-
-        // Test hash distribution.
-        assertDistribution(frame, "doc:ns:3", "c0");
-        assertDistribution(frame, "doc:ns:18", "c1");
-        assertDistribution(frame, "doc:ns:0", "c2");
-        assertDistribution(frame, "doc:ns:4", "c3");
-
-        assertDistribution(frame, "userdoc:ns:49152:0", "c0");
-        assertDistribution(frame, "userdoc:ns:49152:1", "c0");
-        assertDistribution(frame, "userdoc:ns:16384:2", "c1");
-        assertDistribution(frame, "userdoc:ns:16384:3", "c1");
-        assertDistribution(frame, "userdoc:ns:5461:4", "c2");
-        assertDistribution(frame, "userdoc:ns:5461:5", "c2");
-        assertDistribution(frame, "userdoc:ns:0:6", "c3");
-        assertDistribution(frame, "userdoc:ns:0:7", "c3");
-
-        assertDistribution(frame, "groupdoc:ns:0:0", "c0");
-        assertDistribution(frame, "groupdoc:ns:0:1", "c0");
-        assertDistribution(frame, "groupdoc:ns:4:2", "c1");
-        assertDistribution(frame, "groupdoc:ns:4:3", "c1");
-        assertDistribution(frame, "groupdoc:ns:2:4", "c2");
-        assertDistribution(frame, "groupdoc:ns:2:5", "c2");
-        assertDistribution(frame, "groupdoc:ns:7:6", "c3");
-        assertDistribution(frame, "groupdoc:ns:7:7", "c3");
-
-        // Test routing based on message type.
-        Message put = new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                          new DocumentId("doc:scheme:"))));
-        frame.setHop(new HopSpec("test", "[SearchColumn]").addRecipient("c0").addRecipient("c1"));
-        frame.setMessage(put);
-        frame.assertMergeOneReply("c0");
-
-        // Test allowed bad parts.
-        frame.setHop(new HopSpec("test", "[SearchColumn:1]").addRecipient("c0"));
-        frame.setMessage(put);
-        Map<String, Integer> replies = new HashMap<>();
-        replies.put("c0", ErrorCode.SERVICE_OOS);
-        frame.assertMergeOk(replies, null);
-
-        replies.put("c0", ErrorCode.SERVICE_OOS);
-        frame.assertMergeOk(replies, null);
-
-        frame.setHop(new HopSpec("test", "[SearchColumn:1]").addRecipient("c0").addRecipient("c1"));
-        frame.setMessage(put);
-        replies.put("c0", ErrorCode.SERVICE_OOS);
-        frame.assertMergeOk(replies, null);
-
-        frame.setHop(new HopSpec("test", "[SearchColumn:1]").addRecipient("c0").addRecipient("c1").addRecipient("c2"));
-        frame.setMessage(put);
-        replies.clear();
-        replies.put("c0", ErrorCode.SERVICE_OOS);
-        frame.assertMergeOk(replies, null);
-
-        frame.setHop(new HopSpec("test", "[SearchColumn:2]").addRecipient("c0").addRecipient("c1").addRecipient("c2"));
-        frame.setMessage(put);
-        replies.clear();
-        replies.put("c0", ErrorCode.SERVICE_OOS);
-        frame.assertMergeOk(replies, null);
-
-        frame.destroy();
     }
 
     private void assertDistribution(PolicyTestFrame frame, String id, String expected) {
