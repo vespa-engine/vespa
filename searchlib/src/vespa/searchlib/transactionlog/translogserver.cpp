@@ -453,8 +453,9 @@ void TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet)
+void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
 {
+    (void) done;
     Domain::SP domain(findDomain(domainName));
     if (domain) {
         domain->commit(packet);

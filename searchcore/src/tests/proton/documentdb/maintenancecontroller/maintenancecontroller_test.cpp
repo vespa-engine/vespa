@@ -26,7 +26,7 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -232,7 +232,7 @@ public:
     }
 
     // Implements IOperationStorer
-    virtual void storeOperation(FeedOperation &op) override;
+    virtual void storeOperation(const FeedOperation &op, DoneCallback) override;
 
     uint32_t getHeartBeats() {
         return _heartBeats;
@@ -781,7 +781,6 @@ MyFeedHandler::isExecutorThread()
 void
 MyFeedHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx)
 {
-    (void) moveDoneCtx;
     assert(isExecutorThread());
     assert(op.getValidPrevDbdId());
     _subDBs[op.getSubDbId()]->prepareMove(op);
@@ -792,7 +791,7 @@ MyFeedHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx
     assert(op.getPrevSubDbId() != 1u);
     assert(op.getSubDbId() < _subDBs.size());
     assert(op.getPrevSubDbId() < _subDBs.size());
-    storeOperation(op);
+    storeOperation(op, std::move(moveDoneCtx));
     _subDBs[op.getSubDbId()]->handleMove(op);
     _subDBs[op.getPrevSubDbId()]->handleMove(op);
 }
@@ -803,7 +802,7 @@ MyFeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op)
 {
     assert(isExecutorThread());
     if (op.getLidsToRemove()->getNumLids() != 0u) {
-        storeOperation(op);
+        storeOperation(op, std::make_shared<search::IgnoreCallback>());
         // magic number.
         _subDBs[1u]->handlePruneRemovedDocuments(op);
     }
@@ -826,9 +825,9 @@ MyFeedHandler::setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs)
 
 
 void
-MyFeedHandler::storeOperation(FeedOperation &op)
+MyFeedHandler::storeOperation(const FeedOperation &op, DoneCallback)
 {
-    op.setSerialNum(incSerialNum());
+    const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
 }
 
 
@@ -1011,22 +1010,16 @@ MaintenanceControllerFixture::performForwardMaintenanceConfig()
 
 
 void
-MaintenanceControllerFixture::insertDocs(const test::UserDocuments &docs,
-        MyDocumentSubDB &subDb)
+MaintenanceControllerFixture::insertDocs(const test::UserDocuments &docs, MyDocumentSubDB &subDb)
 {
 
-    for (test::UserDocuments::Iterator itr = docs.begin();
-         itr != docs.end();
-         ++itr) {
+    for (auto itr = docs.begin(); itr != docs.end(); ++itr) {
         const test::BucketDocuments &bucketDocs = itr->second;
         for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
             const test::Document &testDoc = bucketDocs.getDocs()[i];
-            PutOperation op(testDoc.getBucket(),
-                            testDoc.getTimestamp(),
-                            testDoc.getDoc());
-            op.setDbDocumentId(DbDocumentId(subDb.getSubDBId(),
-                                       testDoc.getLid()));
-            _fh.storeOperation(op);
+            PutOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc());
+            op.setDbDocumentId(DbDocumentId(subDb.getSubDBId(), testDoc.getLid()));
+            _fh.storeOperation(op, std::make_shared<search::IgnoreCallback>());
             subDb.handlePut(op);
         }
     }
@@ -1038,18 +1031,13 @@ MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs,
         Timestamp timestamp)
 {
 
-    for (test::UserDocuments::Iterator itr = docs.begin();
-         itr != docs.end();
-         ++itr) {
+    for (auto itr = docs.begin(); itr != docs.end(); ++itr) {
         const test::BucketDocuments &bucketDocs = itr->second;
         for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
             const test::Document &testDoc = bucketDocs.getDocs()[i];
-            RemoveOperation op(testDoc.getBucket(),
-                            timestamp,
-                            testDoc.getDoc()->getId());
-            op.setDbDocumentId(DbDocumentId(_removed.getSubDBId(),
-                                       testDoc.getLid()));
-            _fh.storeOperation(op);
+            RemoveOperation op(testDoc.getBucket(), timestamp, testDoc.getDoc()->getId());
+            op.setDbDocumentId(DbDocumentId(_removed.getSubDBId(), testDoc.getLid()));
+            _fh.storeOperation(op, std::make_shared<search::IgnoreCallback>());
             _removed.handleRemove(op);
         }
     }
