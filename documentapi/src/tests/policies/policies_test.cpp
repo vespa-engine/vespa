@@ -48,8 +48,6 @@ private:
 
 private:
     bool trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string> &expected);
-    bool tryDistribution(TestFrame &frame, const string &id, const string &expected);
-    void tryWasFound(TestFrame &frame, uint32_t expectedRecipients, uint32_t foundMask, bool expectedFound);
     void setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern, int32_t numEntries = -1);
     StoragePolicy &setupStoragePolicy(TestFrame &frame, const string &param,
                                       const string &pattern = "", int32_t numEntries = -1);
@@ -543,41 +541,6 @@ Test::testRoundRobinCache()
 }
 
 void
-Test::tryWasFound(TestFrame &frame, uint32_t expectedRecipients,
-                  uint32_t foundMask, bool expectedFound)
-{
-    {
-        frame.setMessage(make_unique<RemoveDocumentMessage>(DocumentId("doc:scheme:69")));
-        std::vector<mbus::RoutingNode*> selected;
-        EXPECT_TRUE(frame.select(selected, expectedRecipients));
-        for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
-            mbus::Reply::UP reply(new RemoveDocumentReply());
-            static_cast<RemoveDocumentReply&>(*reply).setWasFound((1 << i) & foundMask);
-            selected[i]->handleReply(std::move(reply));
-        }
-        mbus::Reply::UP reply = frame.getReceptor().getReply(600);
-        EXPECT_TRUE(reply);
-        EXPECT_EQUAL((uint32_t)DocumentProtocol::REPLY_REMOVEDOCUMENT, reply->getType());
-        EXPECT_EQUAL(expectedFound, static_cast<RemoveDocumentReply&>(*reply).wasFound());
-    }
-    {
-        DocumentUpdate::SP upd(new DocumentUpdate(*_docType, DocumentId("doc:scheme:")));
-        frame.setMessage(mbus::Message::UP(new UpdateDocumentMessage(upd)));
-        std::vector<mbus::RoutingNode*> selected;
-        EXPECT_TRUE(frame.select(selected, expectedRecipients));
-        for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
-            mbus::Reply::UP reply(new UpdateDocumentReply());
-            static_cast<UpdateDocumentReply&>(*reply).setWasFound((1 << i) & foundMask);
-            selected[i]->handleReply(std::move(reply));
-        }
-        mbus::Reply::UP reply = frame.getReceptor().getReply(600);
-        EXPECT_TRUE(reply);
-        EXPECT_EQUAL((uint32_t)DocumentProtocol::REPLY_UPDATEDOCUMENT, reply->getType());
-        EXPECT_EQUAL(expectedFound, static_cast<UpdateDocumentReply&>(*reply).wasFound());
-    }
-}
-
-void
 Test::multipleGetRepliesAreMergedToFoundDocument()
 {
     TestFrame frame(_repo);
@@ -607,15 +570,6 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
     EXPECT_TRUE(reply);
     EXPECT_EQUAL(static_cast<uint32_t>(DocumentProtocol::REPLY_GETDOCUMENT), reply->getType());
     EXPECT_EQUAL(123456ULL, static_cast<GetDocumentReply&>(*reply).getLastModified());
-}
-
-bool
-Test::tryDistribution(TestFrame &frame, const string &id, const string &expected)
-{
-    Document::SP doc(new Document(*_docType, DocumentId(id)));
-    mbus::Message::UP msg = make_unique<PutDocumentMessage>(doc);
-    frame.setMessage(std::move(msg));
-    return frame.testSelect(StringList().add(expected));
 }
 
 void
