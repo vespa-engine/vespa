@@ -577,7 +577,9 @@ performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)
 {
     const LidVectorContext::SP lids_to_remove = pruneOp.getLidsToRemove();
     if (lids_to_remove && lids_to_remove->getNumLids() != 0) {
-        storeOperationSync(pruneOp);
+        vespalib::Gate gate;
+        storeOperation(pruneOp, std::make_shared<search::GateCallback>(gate));
+        gate.await();
         _activeFeedView->handlePruneRemovedDocuments(pruneOp);
     }
 }
