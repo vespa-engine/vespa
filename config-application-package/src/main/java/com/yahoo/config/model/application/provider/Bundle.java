@@ -132,7 +132,7 @@ public class Bundle {
             defName = nameAndNamespace.first;
             defNamespace = getNamespace();
             if (defNamespace.isEmpty())
-                throw new IllegalArgumentException("Config definition '" + defName + "' is missing a namespace");
+                throw new IllegalArgumentException("Config definition '" + defName + "' is missing a package (or namespace)");
             contents = getContents();
         }
 
