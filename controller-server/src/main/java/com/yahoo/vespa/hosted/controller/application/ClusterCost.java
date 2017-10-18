@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import java.util.Objects;
+
 /**
  * Calculate utilization relative to the target utilization,
  * tco and waste for one cluster of one deployment.
@@ -35,6 +37,9 @@ public class ClusterCost {
      */
     public ClusterCost(ClusterInfo clusterInfo,
                        ClusterUtilization systemUtilization) {
+
+        Objects.requireNonNull(clusterInfo, "Cluster info cannot be null");
+        Objects.requireNonNull(systemUtilization, "Cluster utilization cannot be null");
 
         this.clusterInfo = clusterInfo;
         this.systemUtilization = systemUtilization;
