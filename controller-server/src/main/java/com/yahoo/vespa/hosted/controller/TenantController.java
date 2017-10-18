@@ -209,11 +209,15 @@ public class TenantController {
 
             ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(nToken);
             zmsClient.createTenant(tenantDomain);
-            List<Application> applications = controller.applications().asList(TenantName.from(existing.getId().id()));
-            applications.forEach(a -> {
-                ApplicationId applicationId = new ApplicationId(a.id().application().value());
-                zmsClient.addApplication(tenantDomain, applicationId);
-            });
+
+            // Create resource group in Athenz for each application name
+            controller.applications()
+                    .asList(TenantName.from(existing.getId().id()))
+                    .stream()
+                    .map(name -> new ApplicationId(name.id().application().value()))
+                    .distinct()
+                    .forEach(appId -> zmsClient.addApplication(tenantDomain, appId));
+
             db.deleteTenant(tenantId);
             Tenant tenant = Tenant.createAthensTenant(tenantId, tenantDomain, property, Optional.of(propertyId));
             db.createTenant(tenant);
