@@ -1,1 +1,4 @@
 Vespa malloc Library (runtime)
+
+Vespamalloc improves performance, by not having to go to the kernel every time we need to allocate memory for a query, 
+and avoid having to clear memory on free/reuse. It is made for Vespa, but can (and has) also been used for other programs.
