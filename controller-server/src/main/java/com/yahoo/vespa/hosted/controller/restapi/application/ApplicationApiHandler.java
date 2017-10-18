@@ -769,6 +769,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                           tenant,
                                                           applicationId);
         } else { // In case of host-based principal
+            // TODO What about other user type principals like Bouncer?
+            log.log(LogLevel.WARNING,
+                    "Using deprecated DeployAuthorizer.throwIfUnauthorizedForDeploy. Principal=" + principal);
             UserId userId = new UserId(principal.getName());
             deployAuthorizer.throwIfUnauthorizedForDeploy(
                     Environment.from(environment),

@@ -90,7 +90,6 @@ public class DeployAuthorizer {
                                              Tenant tenant,
                                              ApplicationId applicationId,
                                              Optional<ScrewdriverId> optionalScrewdriverId) {
-
         Principal principal = new UnauthenticatedUserPrincipal(userId.id());
 
         if (athenzCredentialsRequired(environment, tenant, applicationId, principal)) {
