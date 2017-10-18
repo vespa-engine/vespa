@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchlib/transactionlog/common.h>
+
 namespace proton {
 
 class FeedOperation;
@@ -11,12 +13,13 @@ class FeedOperation;
  */
 struct IOperationStorer
 {
-    virtual ~IOperationStorer() {}
+    using DoneCallback = search::transactionlog::Writer::DoneCallback;
+    virtual ~IOperationStorer() = default;
 
     /**
      * Assign serial number to (if not set) and store the given operation.
      */
-    virtual void storeOperation(FeedOperation &op) = 0;
+    virtual void storeOperation(const FeedOperation &op, DoneCallback onDone) = 0;
 };
 
 } // namespace proton

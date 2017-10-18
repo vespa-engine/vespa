@@ -21,9 +21,8 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/searchlib/common/transport.h>
-#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -254,7 +253,7 @@ public:
         op.setSerialNum(serialNum);
         op.setDbDocumentId(dbdId);
         op.setPrevDbDocumentId(prevDbdId);
-        _ddb->getFeedHandler().storeOperation(op);
+        _ddb->getFeedHandler().storeOperation(op, std::make_shared<search::IgnoreCallback>());
         SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));
         if (sv != NULL) {
             // cf. FeedView::putAttributes()
