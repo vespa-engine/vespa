@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
@@ -24,48 +24,48 @@ public class ZmsClientMock implements ZmsClient {
 
     private static final Logger log = Logger.getLogger(ZmsClientMock.class.getName());
 
-    private final AthensDbMock athens;
+    private final AthenzDbMock athenz;
 
-    public ZmsClientMock(AthensDbMock athens) {
-        this.athens = athens;
+    public ZmsClientMock(AthenzDbMock athenz) {
+        this.athenz = athenz;
     }
 
     @Override
-    public void createTenant(AthensDomain tenantDomain) {
+    public void createTenant(AthenzDomain tenantDomain) {
         log("createTenant(tenantDomain='%s')", tenantDomain);
         getDomainOrThrow(tenantDomain, false).isVespaTenant = true;
     }
 
     @Override
-    public void deleteTenant(AthensDomain tenantDomain) {
+    public void deleteTenant(AthenzDomain tenantDomain) {
         log("deleteTenant(tenantDomain='%s')", tenantDomain);
-        AthensDbMock.Domain domain = getDomainOrThrow(tenantDomain, false);
+        AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, false);
         domain.isVespaTenant = false;
         domain.applications.clear();
         domain.tenantAdmins.clear();
     }
 
     @Override
-    public void addApplication(AthensDomain tenantDomain, ApplicationId applicationName) {
+    public void addApplication(AthenzDomain tenantDomain, ApplicationId applicationName) {
         log("addApplication(tenantDomain='%s', applicationName='%s')", tenantDomain, applicationName);
-        AthensDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
+        AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
         if (!domain.applications.containsKey(applicationName)) {
-            domain.applications.put(applicationName, new AthensDbMock.Application());
+            domain.applications.put(applicationName, new AthenzDbMock.Application());
         }
     }
 
     @Override
-    public void deleteApplication(AthensDomain tenantDomain, ApplicationId applicationName) {
+    public void deleteApplication(AthenzDomain tenantDomain, ApplicationId applicationName) {
         log("addApplication(tenantDomain='%s', applicationName='%s')", tenantDomain, applicationName);
         getDomainOrThrow(tenantDomain, true).applications.remove(applicationName);
     }
 
     @Override
-    public boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthensDomain tenantDomain, ApplicationId applicationName) {
+    public boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName) {
         log("hasApplicationAccess(principal='%s', action='%s', tenantDomain='%s', applicationName='%s')",
                  principal, action, tenantDomain, applicationName);
-        AthensDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
-        AthensDbMock.Application application = domain.applications.get(applicationName);
+        AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
+        AthenzDbMock.Application application = domain.applications.get(applicationName);
         if (application == null) {
             throw zmsException(400, "Application '%s' not found", applicationName);
         }
@@ -73,22 +73,22 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public boolean hasTenantAdminAccess(AthenzPrincipal principal, AthensDomain tenantDomain) {
+    public boolean hasTenantAdminAccess(AthenzPrincipal principal, AthenzDomain tenantDomain) {
         log("hasTenantAdminAccess(principal='%s', tenantDomain='%s')", principal, tenantDomain);
         return isDomainAdmin(principal, tenantDomain) ||
                 getDomainOrThrow(tenantDomain, true).tenantAdmins.contains(principal);
     }
 
     @Override
-    public boolean isDomainAdmin(AthenzPrincipal principal, AthensDomain domain) {
+    public boolean isDomainAdmin(AthenzPrincipal principal, AthenzDomain domain) {
         log("isDomainAdmin(principal='%s', domain='%s')", principal, domain);
         return getDomainOrThrow(domain, false).admins.contains(principal);
     }
 
     @Override
-    public List<AthensDomain> getDomainList(String prefix) {
+    public List<AthenzDomain> getDomainList(String prefix) {
         log("getDomainList()");
-        return new ArrayList<>(athens.domains.keySet());
+        return new ArrayList<>(athenz.domains.keySet());
     }
 
     @Override
@@ -101,8 +101,8 @@ public class ZmsClientMock implements ZmsClient {
         throw new UnsupportedOperationException();
     }
 
-    private AthensDbMock.Domain getDomainOrThrow(AthensDomain domainName, boolean verifyVespaTenant) {
-        AthensDbMock.Domain domain = Optional.ofNullable(athens.domains.get(domainName))
+    private AthenzDbMock.Domain getDomainOrThrow(AthenzDomain domainName, boolean verifyVespaTenant) {
+        AthenzDbMock.Domain domain = Optional.ofNullable(athenz.domains.get(domainName))
                 .orElseThrow(() -> zmsException(400, "Domain '%s' not found", domainName));
         if (verifyVespaTenant && !domain.isVespaTenant) {
             throw zmsException(400, "Domain not a Vespa tenant: '%s'", domainName);

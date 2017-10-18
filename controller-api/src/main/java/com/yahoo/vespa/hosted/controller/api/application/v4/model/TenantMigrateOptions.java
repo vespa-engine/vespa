@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 
 /**
  * @author bjorncs
@@ -12,11 +12,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class TenantMigrateOptions {
 
-    public AthensDomain athensDomain;
+    public AthenzDomain athensDomain;
 
     public TenantMigrateOptions() {}
 
-    public TenantMigrateOptions(AthensDomain athensDomain) {
+    public TenantMigrateOptions(AthenzDomain athensDomain) {
         this.athensDomain = athensDomain;
     }
 }

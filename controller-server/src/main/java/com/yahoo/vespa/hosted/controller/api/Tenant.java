@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api;
 
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -19,41 +19,41 @@ public class Tenant {
     private final TenantId id;
     private final Optional<UserGroup> userGroup;
     private final Optional<Property> property;
-    private final Optional<AthensDomain> athensDomain;
+    private final Optional<AthenzDomain> athenzDomain;
     private final Optional<PropertyId> propertyId;
 
     // TODO: Use factory methods. They're down at the bottom!
-    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthensDomain> athensDomain) {
-        this(id, userGroup, property, athensDomain, Optional.empty());
+    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthenzDomain> athenzDomain) {
+        this(id, userGroup, property, athenzDomain, Optional.empty());
     }
 
-    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthensDomain> athensDomain, Optional<PropertyId> propertyId) {
+    public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthenzDomain> athenzDomain, Optional<PropertyId> propertyId) {
         if (id.isUser()) {
             require(!userGroup.isPresent(), "User tenant '%s' cannot have a user group.", id);
             require(!property.isPresent(), "User tenant '%s' cannot have a property.", id);
             require(!propertyId.isPresent(), "User tenant '%s' cannot have a property ID.", id);
-            require(!athensDomain.isPresent(), "User tenant '%s' cannot have an athens domain.", id);
-        } else if (athensDomain.isPresent()) {
+            require(!athenzDomain.isPresent(), "User tenant '%s' cannot have an athens domain.", id);
+        } else if (athenzDomain.isPresent()) {
             require(property.isPresent(), "Athens tenant '%s' must have a property.", id);
             require(!userGroup.isPresent(), "Athens tenant '%s' cannot have a user group.", id);
-            require(athensDomain.isPresent(), "Athens tenant '%s' must have an athens domain.", id);
+            require(athenzDomain.isPresent(), "Athens tenant '%s' must have an athens domain.", id);
         } else {
             require(property.isPresent(), "OpsDB tenant '%s' must have a property.", id);
             require(userGroup.isPresent(), "OpsDb tenant '%s' must have a user group.", id);
-            require(!athensDomain.isPresent(), "OpsDb tenant '%s' cannot have an athens domain.", id);
+            require(!athenzDomain.isPresent(), "OpsDb tenant '%s' cannot have an athens domain.", id);
         }
         this.id = id;
         this.userGroup = userGroup;
         this.property = property;
-        this.athensDomain = athensDomain;
+        this.athenzDomain = athenzDomain;
         this.propertyId = propertyId; // TODO: Check validity after TODO@14. OpsDb tenants have this set in Sherpa, while athens tenants do not.
     }
 
-    public boolean isAthensTenant() { return athensDomain.isPresent(); }
+    public boolean isAthensTenant() { return athenzDomain.isPresent(); }
     public boolean isOpsDbTenant() { return userGroup.isPresent();}
 
     public TenantType tenantType() {
-        if (athensDomain.isPresent()) {
+        if (athenzDomain.isPresent()) {
             return TenantType.ATHENS;
         } else if (id.isUser()) {
             return TenantType.USER;
@@ -80,15 +80,15 @@ public class Tenant {
         return propertyId;
     }
 
-    public Optional<AthensDomain> getAthensDomain() {
-        return athensDomain;
+    public Optional<AthenzDomain> getAthensDomain() {
+        return athenzDomain;
     }
 
     private void require(boolean statement, String message, TenantId id) {
         if (!statement) throw new IllegalArgumentException(String.format(message, id));
     }
 
-    public static Tenant createAthensTenant(TenantId id, AthensDomain athensDomain, Property property, Optional<PropertyId> propertyId) {
+    public static Tenant createAthensTenant(TenantId id, AthenzDomain athensDomain, Property property, Optional<PropertyId> propertyId) {
         if (id.isUser()) {
             throw new IllegalArgumentException("Invalid id for non-user tenant: " + id);
         }
@@ -124,7 +124,7 @@ public class Tenant {
         if (!id.equals(tenant.id)) return false;
         if (!userGroup.equals(tenant.userGroup)) return false;
         if (!property.equals(tenant.property)) return false;
-        if (!athensDomain.equals(tenant.athensDomain)) return false;
+        if (!athenzDomain.equals(tenant.athenzDomain)) return false;
         if (!propertyId.equals(tenant.propertyId)) return false;
         return true;
     }
@@ -134,7 +134,7 @@ public class Tenant {
         int result = id.hashCode();
         result = 31 * result + userGroup.hashCode();
         result = 31 * result + property.hashCode();
-        result = 31 * result + athensDomain.hashCode();
+        result = 31 * result + athenzDomain.hashCode();
         result = 31 * result + propertyId.hashCode();
         return result;
     }

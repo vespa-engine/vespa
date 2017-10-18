@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
@@ -32,7 +32,7 @@ public class MockAuthorizer extends Authorizer {
     @Override
     public Optional<Principal> getPrincipalIfAny(HttpRequest request) {
         if (request.getProperty("user") == null) return Optional.empty();
-        return Optional.of(new AthenzPrincipal(new AthensDomain(request.getProperty("domain")),
+        return Optional.of(new AthenzPrincipal(new AthenzDomain(request.getProperty("domain")),
                                                new UserId(request.getProperty("user"))));
     }
 

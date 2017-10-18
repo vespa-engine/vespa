@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -62,7 +62,7 @@ public class DeployAuthorizer {
 
     // TODO: inline when deployment via ssh is removed
     private void checkAthensCredentials(Principal principal, Tenant tenant, ApplicationId applicationId) {
-        AthensDomain domain = tenant.getAthensDomain().get();
+        AthenzDomain domain = tenant.getAthensDomain().get();
         if (! (principal instanceof AthenzPrincipal))
             throw loggedForbiddenException("Principal '%s' is not authenticated.", principal.getName());
 
@@ -101,7 +101,7 @@ public class DeployAuthorizer {
         }
     }
 
-    private boolean hasDeployAccessToAthensApplication(AthenzPrincipal principal, AthensDomain domain, ApplicationId applicationId) {
+    private boolean hasDeployAccessToAthensApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationId applicationId) {
         try {
             return athenzClientFactory.createZmsClientWithServicePrincipal()
                     .hasApplicationAccess(

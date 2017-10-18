@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -140,7 +140,7 @@ public class Controller extends AbstractComponent {
     /** Returns the instance controlling applications */
     public ApplicationController applications() { return applicationController; }
 
-    public List<AthensDomain> getDomainList(String prefix) {
+    public List<AthenzDomain> getDomainList(String prefix) {
         return zmsClient.getDomainList(prefix);
     }
 

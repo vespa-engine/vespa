@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
@@ -25,7 +25,7 @@ public class NTokenValidatorTest {
 
     private static final KeyPair TRUSTED_KEY = AthenzTestUtils.generateRsaKeypair();
     private static final KeyPair UNKNOWN_KEY = AthenzTestUtils.generateRsaKeypair();
-    private static final AthenzPrincipal PRINCIPAL = new AthenzPrincipal(new AthensDomain("yby"), new UserId("user"));
+    private static final AthenzPrincipal PRINCIPAL = new AthenzPrincipal(new AthenzDomain("yby"), new UserId("user"));
 
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();

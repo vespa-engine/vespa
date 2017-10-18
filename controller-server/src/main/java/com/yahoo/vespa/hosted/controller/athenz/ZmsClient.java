@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.athenz;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 
 import java.util.List;
 
@@ -11,22 +11,22 @@ import java.util.List;
  */
 public interface ZmsClient {
 
-    void createTenant(AthensDomain tenantDomain);
+    void createTenant(AthenzDomain tenantDomain);
 
-    void deleteTenant(AthensDomain tenantDomain);
+    void deleteTenant(AthenzDomain tenantDomain);
 
-    void addApplication(AthensDomain tenantDomain, ApplicationId applicationName);
+    void addApplication(AthenzDomain tenantDomain, ApplicationId applicationName);
 
-    void deleteApplication(AthensDomain tenantDomain, ApplicationId applicationName);
+    void deleteApplication(AthenzDomain tenantDomain, ApplicationId applicationName);
 
-    boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthensDomain tenantDomain, ApplicationId applicationName);
+    boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName);
 
-    boolean hasTenantAdminAccess(AthenzPrincipal principal, AthensDomain tenantDomain);
+    boolean hasTenantAdminAccess(AthenzPrincipal principal, AthenzDomain tenantDomain);
 
     // Used before vespa tenancy is established for the domain.
-    boolean isDomainAdmin(AthenzPrincipal principal, AthensDomain domain);
+    boolean isDomainAdmin(AthenzPrincipal principal, AthenzDomain domain);
 
-    List<AthensDomain> getDomainList(String prefix);
+    List<AthenzDomain> getDomainList(String prefix);
 
     AthenzPublicKey getPublicKey(AthenzService service, String keyId);
 
