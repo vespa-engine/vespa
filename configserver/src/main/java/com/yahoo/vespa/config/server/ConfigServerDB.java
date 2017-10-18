@@ -28,7 +28,7 @@ public class ConfigServerDB {
     public ConfigServerDB(ConfigserverConfig configserverConfig) {
         this.configserverConfig = configserverConfig;
         this.serverDB = new File(Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir()));
-        create();
+        createDirectory(serverdefs());
         try {
             initialize(configserverConfig.configModelPluginDir());
         } catch (IllegalArgumentException e) {
@@ -38,25 +38,18 @@ public class ConfigServerDB {
         }
     }
 
-    public static ConfigServerDB createTestConfigServerDb(String dir) {
-        return new ConfigServerDB(new ConfigserverConfig(new ConfigserverConfig.Builder().configServerDBDir(dir)));
+    public static ConfigServerDB createTestConfigServerDb(String dbDir, String definitionsDir) {
+        return new ConfigServerDB(new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                                 .configServerDBDir(dbDir)
+                                                                 .configDefinitionsDir(definitionsDir)));
     }
 
-    public File classes() { return new File(serverDB, "classes"); }
-    public File vespaapps() { return new File(serverDB, "vespaapps"); }
+    // The config definitions shipped with Vespa
+    public File classes() { return new File(Defaults.getDefaults().underVespaHome(configserverConfig.configDefinitionsDir()));}
+
     public File serverdefs() { return new File(serverDB, "serverdefs"); }
 
-
-    /**
-     * Creates all the config server db's dirs that are global.
-     */
-    public void create() {
-        cr(classes());
-        cr(vespaapps());
-        cr(serverdefs());
-    }
-
-    public static void cr(File d) {
+    public static void createDirectory(File d) {
         if (d.exists()) {
             if (!d.isDirectory()) {
                 throw new IllegalArgumentException(d.getAbsolutePath() + " exists, but isn't a directory.");
