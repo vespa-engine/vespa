@@ -381,7 +381,7 @@ public class ControllerTest {
 
         // Migrate tenant to Athens
         NToken nToken = TestIdentities.userNToken;
-        tester.controller().tenants().migrateTenantToAthens(
+        tester.controller().tenants().migrateTenantToAthenz(
                 tenantId, athensDomain, new PropertyId("1567"), new Property("vespa_dev.no"), nToken);
 
         // Verify that tenant is migrated
