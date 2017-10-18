@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 public class NodeFlavorsTest {
@@ -53,7 +54,7 @@ public class NodeFlavorsTest {
         builder.flavor(flavorBuilderList);
         FlavorsConfig config = new FlavorsConfig(builder);
         NodeFlavors nodeFlavors = new NodeFlavors(config);
-        assertThat(nodeFlavors.getFlavor("banana").get().cost(), is(3));
+        assertThat(nodeFlavors.getFlavorOrThrow("banana").cost(), is(3));
     }
 
     @Test
@@ -75,6 +76,35 @@ public class NodeFlavorsTest {
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Flavor 'retired' is retired, but has no replacement");
         new NodeFlavors(config);
+    }
+
+    @Test
+    public void testTransitiveReplacement() {
+        FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
+        List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
+        {
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            FlavorsConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new FlavorsConfig.Flavor.Replaces.Builder();
+            flavorReplacesBuilder.name("banana");
+            flavorBuilder.name("strawberry").cost(2).replaces.add(flavorReplacesBuilder);
+            flavorBuilderList.add(flavorBuilder);
+        }
+        {
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            FlavorsConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new FlavorsConfig.Flavor.Replaces.Builder();
+            flavorReplacesBuilder.name("strawberry");
+            flavorBuilder.name("pineapple").cost(1).replaces.add(flavorReplacesBuilder);
+            flavorBuilderList.add(flavorBuilder);
+        }
+        {
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            flavorBuilder.name("banana").cost(3);
+            flavorBuilderList.add(flavorBuilder);
+        }
+        builder.flavor(flavorBuilderList);
+        FlavorsConfig config = new FlavorsConfig(builder);
+        NodeFlavors nodeFlavors = new NodeFlavors(config);
+        assertTrue(nodeFlavors.getFlavorOrThrow("pineapple").satisfies(nodeFlavors.getFlavorOrThrow("banana")));
     }
 
 }
