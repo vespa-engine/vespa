@@ -9,7 +9,7 @@ BUILD_DIR=~/build
 mkdir "${BUILD_DIR}"
 
 cd ${SOURCE_DIR}
-./boostrap.sh java
+./bootstrap.sh java
 mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS} \
             -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 cd ${BUILD_DIR}
