@@ -9,8 +9,6 @@ namespace api {
 
 IMPLEMENT_COMMAND(MapVisitorCommand, MapVisitorReply)
 IMPLEMENT_REPLY(MapVisitorReply)
-IMPLEMENT_COMMAND(DocumentListCommand, DocumentListReply)
-IMPLEMENT_REPLY(DocumentListReply)
 IMPLEMENT_COMMAND(EmptyBucketsCommand, EmptyBucketsReply)
 IMPLEMENT_REPLY(EmptyBucketsReply)
 
@@ -48,52 +46,6 @@ MapVisitorReply::print(std::ostream& out, bool verbose,
                        const std::string& indent) const
 {
     out << "MapVisitorReply()";
-    if (verbose) {
-        out << " : ";
-        StorageReply::print(out, verbose, indent);
-    }
-}
-
-DocumentListCommand::DocumentListCommand(const document::BucketId& bid)
-    : StorageCommand(MessageType::DOCUMENTLIST),
-      _bucket(BucketSpace::placeHolder(), bid),
-      _documents()
-{
-}
-
-void
-DocumentListCommand::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
-{
-    out << "DocumentList(" << _bucket.getBucketId();
-    if (_documents.empty()) {
-        out << ", empty";
-    } else if (verbose) {
-        out << ",";
-        for (uint32_t i=0; i<_documents.size(); ++i) {
-            out << "\n" << indent << "  ";
-            out << ":" << _documents[i];
-        }
-    } else {
-        out << ", " << _documents.size() << " documents";
-    }
-    out << ")";
-    if (verbose) {
-        out << " : ";
-        StorageCommand::print(out, verbose, indent);
-    }
-}
-
-DocumentListReply::DocumentListReply(const DocumentListCommand& cmd)
-    : StorageReply(cmd)
-{
-}
-
-void
-DocumentListReply::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
-{
-    out << "DocumentListReply()";
     if (verbose) {
         out << " : ";
         StorageReply::print(out, verbose, indent);
@@ -141,14 +93,6 @@ EmptyBucketsReply::print(std::ostream& out, bool verbose,
         out << " : ";
         StorageReply::print(out, verbose, indent);
     }
-}
-
-std::ostream& operator<<(std::ostream& out, const DocumentListCommand::Entry& e)
-{
-    out << e._doc->getId();
-    if (e._removeEntry) out << " - removed";
-    out << ", last modified at " << e._lastModified;
-    return out;
 }
 
 } // api

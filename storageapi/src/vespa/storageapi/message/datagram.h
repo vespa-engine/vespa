@@ -43,58 +43,6 @@ public:
 };
 
 /**
- * @class DocumentListCommand
- * @ingroup message
- *
- * @brief Sends a list of documents to the visitor data handler.
- *
- * This is used in synchronization in order to transfer minimal amount of data
- * to the synchronization agent.
- */
-class DocumentListCommand : public StorageCommand {
-public:
-    struct Entry {
-        document::Document::SP _doc;
-        int64_t _lastModified;
-        bool _removeEntry;
-
-        Entry() : _doc(), _lastModified(0), _removeEntry(false) {}
-        Entry(const document::Document::SP& doc, int64_t lastModified,
-              bool removeEntry)
-            : _doc(doc),
-              _lastModified(lastModified),
-              _removeEntry(removeEntry)
-        { }
-    };
-
-private:
-    document::Bucket   _bucket;
-    std::vector<Entry> _documents;
-public:
-    DocumentListCommand(const document::BucketId& bid);
-    document::Bucket getBucket() const override { return _bucket; }
-    std::vector<Entry>& getDocuments() { return _documents; }
-    const std::vector<Entry>& getDocuments() const { return _documents; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGECOMMAND(DocumentListCommand, onDocumentList)
-};
-
-std::ostream& operator<<(std::ostream& out, const DocumentListCommand::Entry& e);
-
-/**
- * @class DocumentListReply
- * @ingroup message
- *
- * @brief Confirm that a given visitorstatisticscommand has been received.
- */
-class DocumentListReply : public StorageReply {
-public:
-    explicit DocumentListReply(const DocumentListCommand&);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGEREPLY(DocumentListReply, onDocumentListReply)
-};
-
-/**
  * @class EmptyBucketsCommand
  * @ingroup message
  *

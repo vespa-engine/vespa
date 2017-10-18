@@ -103,9 +103,6 @@ class StatBucketReply;
 class GetBucketListCommand;
 class GetBucketListReply;
 
-class DocumentListCommand;
-class DocumentListReply;
-
 class EmptyBucketsCommand;
 class EmptyBucketsReply;
 
@@ -209,12 +206,6 @@ public:
         { return false; }
     virtual bool onDocumentSummaryReply(
             const std::shared_ptr<api::DocumentSummaryReply>&)
-        { return false; }
-    virtual bool onDocumentList(
-            const std::shared_ptr<api::DocumentListCommand>&)
-        { return false; }
-    virtual bool onDocumentListReply(
-            const std::shared_ptr<api::DocumentListReply>&)
         { return false; }
     virtual bool onEmptyBuckets(
             const std::shared_ptr<api::EmptyBucketsCommand>&)

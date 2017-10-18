@@ -277,21 +277,6 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
         toMsg = std::move(to);
         break;
     }
-    case api::MessageType::DOCUMENTLIST_ID:
-    {
-        api::DocumentListCommand& from(static_cast<api::DocumentListCommand&>(fromMsg));
-        documentapi::DocumentListMessage::UP to(new documentapi::DocumentListMessage(from.getBucketId()));
-
-        for (uint32_t i = 0; i < from.getDocuments().size(); i++) {
-            to->getDocuments().push_back(
-                    documentapi::DocumentListMessage::Entry(
-                        from.getDocuments()[i]._lastModified,
-                        from.getDocuments()[i]._doc,
-                        from.getDocuments()[i]._removeEntry));
-        }
-        toMsg = std::move(to);
-        break;
-    }
     case api::MessageType::EMPTYBUCKETS_ID:
     {
         api::EmptyBucketsCommand& from(static_cast<api::EmptyBucketsCommand&>(fromMsg));
