@@ -12,6 +12,7 @@ LOG_SETUP(".distributor.callback.doc.update");
 
 using namespace storage::distributor;
 using namespace storage;
+using document::BucketSpace;
 
 UpdateOperation::UpdateOperation(DistributorComponent& manager,
                                  const std::shared_ptr<api::UpdateCommand> & msg,
@@ -90,7 +91,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             std::shared_ptr<api::UpdateCommand> command(
-                    new api::UpdateCommand(entries[j].getBucketId(),
+                    new api::UpdateCommand(document::Bucket(BucketSpace::placeHolder(), entries[j].getBucketId()),
                             _msg->getUpdate(),
                             _msg->getTimestamp()));
             copyMessageSettings(*_msg, *command);

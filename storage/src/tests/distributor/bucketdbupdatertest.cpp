@@ -8,12 +8,14 @@
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 using namespace storage::api;
 using namespace storage::lib;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -1102,7 +1104,7 @@ BucketDBUpdaterTest::testNotifyBucketChange()
     {
         api::BucketInfo info(1, 2, 3, 4, 5, true, true);
         auto cmd(std::make_shared<api::NotifyBucketChangeCommand>(
-                document::BucketId(16, 1), info));
+                makeDocumentBucket(document::BucketId(16, 1)), info));
         cmd->setSourceIndex(0);
         getBucketDBUpdater().onNotifyBucketChange(cmd);
     }
@@ -1110,7 +1112,7 @@ BucketDBUpdaterTest::testNotifyBucketChange()
     {
         api::BucketInfo info(10, 11, 12, 13, 14, false, false);
         auto cmd(std::make_shared<api::NotifyBucketChangeCommand>(
-                document::BucketId(16, 2), info));
+                makeDocumentBucket(document::BucketId(16, 2)), info));
         cmd->setSourceIndex(0);
         getBucketDBUpdater().onNotifyBucketChange(cmd);
     }
@@ -1173,7 +1175,7 @@ BucketDBUpdaterTest::testNotifyBucketChangeFromNodeDown()
     {
         api::BucketInfo info(8999, 300, 3000, 500, 5000, false, false);
         auto cmd(std::make_shared<api::NotifyBucketChangeCommand>(
-                document::BucketId(16, 1), info));
+                makeDocumentBucket(document::BucketId(16, 1)), info));
         cmd->setSourceIndex(0);
         getBucketDBUpdater().onNotifyBucketChange(cmd);
     }
@@ -1230,7 +1232,7 @@ BucketDBUpdaterTest::testNotifyChangeWithPendingStateQueuesBucketInfoRequests()
     {
         api::BucketInfo info(8999, 300, 3000, 500, 5000, false, false);
         auto cmd(std::make_shared<api::NotifyBucketChangeCommand>(
-                document::BucketId(16, 1), info));
+                makeDocumentBucket(document::BucketId(16, 1)), info));
         cmd->setSourceIndex(0);
         getBucketDBUpdater().onNotifyBucketChange(cmd);
     }
@@ -1279,7 +1281,7 @@ BucketDBUpdaterTest::testMergeReply()
     nodes.push_back(api::MergeBucketCommand::Node(1));
     nodes.push_back(api::MergeBucketCommand::Node(2));
 
-    api::MergeBucketCommand cmd(document::BucketId(16, 1234), nodes, 0);
+    api::MergeBucketCommand cmd(makeDocumentBucket(document::BucketId(16, 1234)), nodes, 0);
 
     auto reply(std::make_shared<api::MergeBucketReply>(cmd));
 
@@ -1325,7 +1327,7 @@ BucketDBUpdaterTest::testMergeReplyNodeDown()
         nodes.push_back(api::MergeBucketCommand::Node(i));
     }
 
-    api::MergeBucketCommand cmd(document::BucketId(16, 1234), nodes, 0);
+    api::MergeBucketCommand cmd(makeDocumentBucket(document::BucketId(16, 1234)), nodes, 0);
 
     auto reply(std::make_shared<api::MergeBucketReply>(cmd));
 
@@ -1372,7 +1374,7 @@ BucketDBUpdaterTest::testMergeReplyNodeDownAfterRequestSent()
         nodes.push_back(api::MergeBucketCommand::Node(i));
     }
 
-    api::MergeBucketCommand cmd(document::BucketId(16, 1234), nodes, 0);
+    api::MergeBucketCommand cmd(makeDocumentBucket(document::BucketId(16, 1234)), nodes, 0);
 
     auto reply(std::make_shared<api::MergeBucketReply>(cmd));
 
@@ -1421,7 +1423,7 @@ BucketDBUpdaterTest::testFlush()
         nodes.push_back(api::MergeBucketCommand::Node(i));
     }
 
-    api::MergeBucketCommand cmd(document::BucketId(16, 1234),
+    api::MergeBucketCommand cmd(makeDocumentBucket(document::BucketId(16, 1234)),
                                 nodes,
                                 0);
 

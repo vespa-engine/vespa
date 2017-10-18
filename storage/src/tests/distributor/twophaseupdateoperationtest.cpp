@@ -13,7 +13,10 @@
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -321,7 +324,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     }
 
     auto msg(std::make_shared<api::UpdateCommand>(
-            document::BucketId(0), update, api::Timestamp(0)));
+            makeDocumentBucket(document::BucketId(0)), update, api::Timestamp(0)));
     // Misc settings for checking that propagation works.
     msg->getTrace().setLevel(6);
     msg->setTimeout(6789);

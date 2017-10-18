@@ -57,6 +57,8 @@ public:
     */
     const document::BucketId& getBucketId() const { return _id; }
 
+    document::Bucket getBucket() const { return document::Bucket(document::BucketSpace::placeHolder(), _id); }
+
     /**
        Returns the target nodes
 
@@ -141,6 +143,8 @@ public:
        @return The target bucket.
     */
     const document::BucketId& getBucketId() const { return _bucketAndNodes.getBucketId(); }
+
+    document::Bucket getBucket() const { return _bucketAndNodes.getBucket(); }
 
     /**
        Returns the target of the operation.

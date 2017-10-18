@@ -5,6 +5,9 @@
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <tests/common/make_document_bucket.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -177,13 +180,13 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
 
 std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommand(const vespalib::string& id) const {
-    return std::make_shared<api::GetCommand>(document::BucketId(0), DocumentId(id), "[all]");
+    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), "[all]");
 }
 
 std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommandForUser(uint64_t id) const {
     DocumentId docId(document::UserDocIdString(vespalib::make_string("userdoc:foo:%lu:bar", id)));
-    return std::make_shared<api::GetCommand>(document::BucketId(0), docId, "[all]");
+    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, "[all]");
 }
 
 std::shared_ptr<api::UpdateCommand> ExternalOperationHandlerTest::makeUpdateCommand(
@@ -193,7 +196,7 @@ std::shared_ptr<api::UpdateCommand> ExternalOperationHandlerTest::makeUpdateComm
             *_testDocMan.getTypeRepo().getDocumentType(doc_type),
             document::DocumentId(id));
     return std::make_shared<api::UpdateCommand>(
-            document::BucketId(0), std::move(update), api::Timestamp(0));
+            makeDocumentBucket(document::BucketId(0)), std::move(update), api::Timestamp(0));
 }
 
 std::shared_ptr<api::UpdateCommand>
@@ -206,11 +209,11 @@ std::shared_ptr<api::PutCommand> ExternalOperationHandlerTest::makePutCommand(
         const vespalib::string& id) const {
     auto doc = _testDocMan.createDocument(doc_type, id);
     return std::make_shared<api::PutCommand>(
-            document::BucketId(0), std::move(doc), api::Timestamp(0));
+            makeDocumentBucket(document::BucketId(0)), std::move(doc), api::Timestamp(0));
 }
 
 std::shared_ptr<api::RemoveCommand> ExternalOperationHandlerTest::makeRemoveCommand(const vespalib::string& id) const {
-    return std::make_shared<api::RemoveCommand>(document::BucketId(0), DocumentId(id), api::Timestamp(0));
+    return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), api::Timestamp(0));
 }
 
 void
@@ -331,7 +334,7 @@ void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached
     DocumentId id("id:foo:testdoctype1::bar");
     getExternalOperationHandler().handleMessage(
             std::make_shared<api::RemoveCommand>(
-                document::BucketId(0), id, api::Timestamp(0)),
+                makeDocumentBucket(document::BucketId(0)), id, api::Timestamp(0)),
             generated);
     CPPUNIT_ASSERT(generated.get() != nullptr);
     CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());

@@ -1,9 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/storagelinktest.h>
+#include <tests/common/make_document_bucket.h>
 #include <iostream>
 #include <string>
 #include <vespa/storageapi/message/stat.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -41,7 +44,7 @@ void StorageLinkTest::testNotImplemented() {
       // Test that a message that nobody handles fails with NOT_IMPLEMENTED
     _replier->setIgnore(true);
     _feeder->sendDown(api::StorageCommand::SP(
-                new api::StatBucketCommand(document::BucketId(0), "")));
+                new api::StatBucketCommand(makeDocumentBucket(document::BucketId(0)), "")));
     _feeder->close();
     _feeder->flush();
     CPPUNIT_ASSERT_EQUAL((size_t) 1, _feeder->getNumReplies());

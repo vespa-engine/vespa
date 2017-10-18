@@ -3,6 +3,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -12,6 +13,7 @@
 using document::DocumentType;
 using storage::framework::defaultimplementation::AllocationLogic;
 using storage::spi::test::makeBucket;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -113,7 +115,7 @@ PersistenceTestUtils::schedulePut(
             location, timestamp, minSize, maxSize));
     std::shared_ptr<api::StorageMessage> msg(
             new api::PutCommand(
-                document::BucketId(16, location), doc, timestamp));
+                makeDocumentBucket(document::BucketId(16, location)), doc, timestamp));
     fsHandler().schedule(msg, disk);
     return doc;
 }

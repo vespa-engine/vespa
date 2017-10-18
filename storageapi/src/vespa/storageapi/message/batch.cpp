@@ -39,8 +39,8 @@ BatchPutRemoveCommand::RemoveOperation::RemoveOperation(const document::Document
 {
 }
 
-BatchPutRemoveCommand::BatchPutRemoveCommand(const document::BucketId& bucketId)
-    : BucketInfoCommand(MessageType::BATCHPUTREMOVE, bucketId),
+BatchPutRemoveCommand::BatchPutRemoveCommand(const document::Bucket &bucket)
+    : BucketInfoCommand(MessageType::BATCHPUTREMOVE, bucket),
       _approxSize(0)
 {
 }

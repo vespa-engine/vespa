@@ -138,7 +138,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
 
     if (_mnodes.size() > 1) {
         auto msg = std::make_shared<api::MergeBucketCommand>(
-                getBucketId(),
+                getBucket(),
                 _mnodes,
                 _manager->getDistributorComponent().getUniqueTimestamp(),
                 clusterState.getVersion());

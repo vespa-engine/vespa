@@ -8,6 +8,7 @@ LOG_SETUP(".distributor.operation.external.remove");
 
 using namespace storage::distributor;
 using namespace storage;
+using document::BucketSpace;
 
 RemoveOperation::RemoveOperation(DistributorComponent& manager,
                                  const std::shared_ptr<api::RemoveCommand> & msg,
@@ -45,7 +46,7 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
 
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             std::shared_ptr<api::RemoveCommand> command(new api::RemoveCommand(
-                                                                  e.getBucketId(),
+                                                                  document::Bucket(BucketSpace::placeHolder(), e.getBucketId()),
                                                                   _msg->getDocumentId(),
                                                                   _msg->getTimestamp()));
 

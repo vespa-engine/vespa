@@ -10,8 +10,8 @@ IMPLEMENT_COMMAND(RemoveLocationCommand, RemoveLocationReply)
 IMPLEMENT_REPLY(RemoveLocationReply)
 
 RemoveLocationCommand::RemoveLocationCommand(const vespalib::stringref & documentSelection,
-                                             const document::BucketId& id)
-    : BucketInfoCommand(MessageType::REMOVELOCATION, id),
+                                             const document::Bucket &bucket)
+    : BucketInfoCommand(MessageType::REMOVELOCATION, bucket),
       _documentSelection(documentSelection)
 {}
 

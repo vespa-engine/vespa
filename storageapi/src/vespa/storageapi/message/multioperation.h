@@ -28,11 +28,11 @@ private:
 
 public:
     explicit MultiOperationCommand(const document::DocumentTypeRepo::SP &repo,
-                                   const document::BucketId& id,
+                                   const document::Bucket &bucket,
                                    int bufferSize,
                                    bool keepTimeStamps = false);
     explicit MultiOperationCommand(const document::DocumentTypeRepo::SP &repo,
-                                   const document::BucketId& id,
+                                   const document::Bucket &bucket,
                                    const std::vector<char>& buffer,
                                    bool keepTimeStamps = false);
     explicit MultiOperationCommand(const MultiOperationCommand& template_);

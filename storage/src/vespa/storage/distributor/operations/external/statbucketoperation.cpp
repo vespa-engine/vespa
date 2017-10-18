@@ -51,7 +51,7 @@ StatBucketOperation::onStart(DistributorMessageSender& sender)
         for (uint32_t i = 0; i < nodes.size(); i++) {
             std::shared_ptr<api::StatBucketCommand> cmd(
                     new api::StatBucketCommand(
-                            _command->getBucketId(),
+                            _command->getBucket(),
                             _command->getDocumentSelection()));
 
             messages.push_back(cmd);

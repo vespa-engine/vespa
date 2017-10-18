@@ -8,9 +8,11 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/common/exceptions.h>
 
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -110,7 +112,7 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
                                     api::StorageMessage::Priority priority)
 {
     auto cmd = std::make_shared<api::RemoveCommand>(
-            document::BucketId(0),
+            makeDocumentBucket(document::BucketId(0)),
             document::DocumentId("doc:foo:bar"),
             timestamp);
     cmd->setPriority(priority);
@@ -165,7 +167,7 @@ BouncerTest::testAllowNotifyBucketChangeEvenWhenDistributorDown()
     
     document::BucketId bucket(16, 1234);
     api::BucketInfo info(0x1, 0x2, 0x3);
-    auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, info);
+    auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
     _upper->sendDown(cmd);
 
     CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
@@ -246,7 +248,7 @@ BouncerTest::readOnlyOperationsAreNotRejected()
     // StatBucket is an external operation, but it's not a mutating operation
     // and should therefore not be blocked.
     auto cmd = std::make_shared<api::StatBucketCommand>(
-            document::BucketId(16, 5), "");
+            makeDocumentBucket(document::BucketId(16, 5)), "");
     cmd->setPriority(Priority(2));
     _upper->sendDown(cmd);
     assertMessageNotBounced();
@@ -258,7 +260,7 @@ BouncerTest::internalOperationsAreNotRejected()
     configureRejectionThreshold(Priority(1));
     document::BucketId bucket(16, 1234);
     api::BucketInfo info(0x1, 0x2, 0x3);
-    auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, info);
+    auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
     cmd->setPriority(Priority(2));
     _upper->sendDown(cmd);
     assertMessageNotBounced();

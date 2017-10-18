@@ -19,14 +19,14 @@ IMPLEMENT_REPLY(RemoveReply)
 IMPLEMENT_COMMAND(RevertCommand, RevertReply)
 IMPLEMENT_REPLY(RevertReply)
 
-TestAndSetCommand::TestAndSetCommand(const MessageType & messageType, const document::BucketId & id)
-    : BucketInfoCommand(messageType, id)
+TestAndSetCommand::TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket)
+    : BucketInfoCommand(messageType, bucket)
 {}
 TestAndSetCommand::~TestAndSetCommand() { }
 
-PutCommand::PutCommand(const document::BucketId& id,
+PutCommand::PutCommand(const document::Bucket &bucket,
                        const document::Document::SP& doc, Timestamp time)
-    : TestAndSetCommand(MessageType::PUT, id),
+    : TestAndSetCommand(MessageType::PUT, bucket),
       _doc(doc),
       _timestamp(time),
       _updateTimestamp(0)
@@ -38,15 +38,6 @@ PutCommand::PutCommand(const document::BucketId& id,
 }
 
 PutCommand::~PutCommand() {}
-
-StorageCommand::UP
-PutCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    StorageCommand::UP cmd(new PutCommand(bucket, _doc, timestamp));
-    static_cast<PutCommand&>(*cmd).setUpdateTimestamp(_updateTimestamp);
-    return cmd;
-}
 
 vespalib::string
 PutCommand::getSummary() const
@@ -106,10 +97,10 @@ PutReply::print(std::ostream& out, bool verbose,
     }
 }
 
-UpdateCommand::UpdateCommand(const document::BucketId& id,
+UpdateCommand::UpdateCommand(const document::Bucket &bucket,
                              const document::DocumentUpdate::SP& update,
                              Timestamp time)
-    : TestAndSetCommand(MessageType::UPDATE, id),
+    : TestAndSetCommand(MessageType::UPDATE, bucket),
       _update(update),
       _timestamp(time),
       _oldTimestamp(0)
@@ -154,15 +145,6 @@ UpdateCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-StorageCommand::UP
-UpdateCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    StorageCommand::UP cmd(new UpdateCommand(bucket, _update, timestamp));
-    static_cast<UpdateCommand&>(*cmd).setOldTimestamp(_oldTimestamp);
-    return cmd;
-}
-
 UpdateReply::UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp)
     : BucketInfoReply(cmd),
       _docId(cmd.getDocumentId()),
@@ -194,10 +176,10 @@ UpdateReply::print(std::ostream& out, bool verbose,
     }
 }
 
-GetCommand::GetCommand(const document::BucketId& bid,
+GetCommand::GetCommand(const document::Bucket &bucket,
                        const document::DocumentId& docId,
                        const vespalib::stringref & fieldSet, Timestamp before)
-    : BucketInfoCommand(MessageType::GET, bid),
+    : BucketInfoCommand(MessageType::GET, bucket),
       _docId(docId),
       _beforeTimestamp(before),
       _fieldSet(fieldSet)
@@ -205,16 +187,6 @@ GetCommand::GetCommand(const document::BucketId& bid,
 }
 
 GetCommand::~GetCommand() {}
-
-StorageCommand::UP
-GetCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    (void) timestamp;
-    StorageCommand::UP cmd(new GetCommand(
-            bucket, _docId, _fieldSet, _beforeTimestamp));
-    return cmd;
-}
 
 vespalib::string
 GetCommand::getSummary() const
@@ -266,24 +238,16 @@ GetReply::print(std::ostream& out, bool verbose,
     }
 }
 
-RemoveCommand::RemoveCommand(const document::BucketId& bid,
+RemoveCommand::RemoveCommand(const document::Bucket &bucket,
                              const document::DocumentId& docId,
                              Timestamp timestamp)
-    : TestAndSetCommand(MessageType::REMOVE, bid),
+    : TestAndSetCommand(MessageType::REMOVE, bucket),
       _docId(docId),
       _timestamp(timestamp)
 {
 }
 
 RemoveCommand::~RemoveCommand() {}
-
-StorageCommand::UP
-RemoveCommand::createCopyToForward(
-        const document::BucketId& bucket, uint64_t timestamp) const
-{
-    StorageCommand::UP cmd(new RemoveCommand(bucket, _docId, timestamp));
-    return cmd;
-}
 
 vespalib::string
 RemoveCommand::getSummary() const {
@@ -333,9 +297,9 @@ RemoveReply::print(std::ostream& out, bool verbose,
     }
 }
 
-RevertCommand::RevertCommand(const document::BucketId& id,
+RevertCommand::RevertCommand(const document::Bucket &bucket,
                              const std::vector<Timestamp>& revertTokens)
-    : BucketInfoCommand(MessageType::REVERT, id),
+    : BucketInfoCommand(MessageType::REVERT, bucket),
       _tokens(revertTokens)
 {
 }

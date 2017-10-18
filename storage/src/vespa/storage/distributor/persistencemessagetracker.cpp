@@ -93,8 +93,9 @@ PersistenceMessageTrackerImpl::revert(
         reverts.push_back(_revertTimestamp);
 
         for (uint32_t i = 0; i < revertNodes.size(); i++) {
+            document::Bucket bucket(document::BucketSpace::placeHolder(), revertNodes[i].first);
             std::shared_ptr<api::RevertCommand> toRevert(
-                    new api::RevertCommand(revertNodes[i].first, reverts));
+                    new api::RevertCommand(bucket, reverts));
             toRevert->setPriority(_priority);
             queueCommand(toRevert, revertNodes[i].second);
         }

@@ -13,6 +13,7 @@ LOG_SETUP(".distributor.callback.doc.removelocation");
 
 using namespace storage::distributor;
 using namespace storage;
+using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
         DistributorComponent& manager,
@@ -79,7 +80,7 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
             std::shared_ptr<api::RemoveLocationCommand> command(
                     new api::RemoveLocationCommand(
                             _msg->getDocumentSelection(),
-                            e.getBucketId()));
+                            document::Bucket(BucketSpace::placeHolder(), e.getBucketId())));
 
             copyMessageSettings(*_msg, *command);
             _tracker.queueCommand(command, nodes[i]);

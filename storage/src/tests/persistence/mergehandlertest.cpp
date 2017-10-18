@@ -6,11 +6,14 @@
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.persistence.handler.merge");
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -264,7 +267,7 @@ MergeHandlerTest::testMergeBucketCommand()
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
     LOG(info, "Handle a merge bucket command");
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     cmd.setSourceIndex(1234);
     MessageTracker::UP tracker = handler.handleMergeBucket(cmd, *_context);
 
@@ -291,7 +294,7 @@ MergeHandlerTest::testGetBucketDiffChain(bool midChain)
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
     LOG(info, "Verifying that get bucket diff is sent on");
-    api::GetBucketDiffCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::GetBucketDiffCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     MessageTracker::UP tracker1 = handler.handleGetBucketDiff(cmd, *_context);
     api::StorageMessage::SP replySent = tracker1->getReply();
 
@@ -335,7 +338,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
     LOG(info, "Verifying that apply bucket diff is sent on");
-    api::ApplyBucketDiffCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::ApplyBucketDiffCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     MessageTracker::UP tracker1 = handler.handleApplyBucketDiff(cmd, *_context);
     api::StorageMessage::SP replySent = tracker1->getReply();
 
@@ -379,7 +382,7 @@ MergeHandlerTest::testMasterMessageFlow()
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
     LOG(info, "Handle a merge bucket command");
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
 
     handler.handleMergeBucket(cmd, *_context);
     LOG(info, "Check state");
@@ -641,7 +644,7 @@ MergeHandlerTest::testChunkedApplyBucketDiff()
     MergeHandler handler(getPersistenceProvider(), getEnv(), maxChunkSize);
 
     LOG(info, "Handle a merge bucket command");
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
     std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
@@ -729,7 +732,7 @@ MergeHandlerTest::testChunkLimitPartiallyFilledDiff()
 
     setUpChain(MIDDLE);
     std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, maxChunkSize));
+            new api::ApplyBucketDiffCommand(makeDocumentBucket(_bucket), _nodes, maxChunkSize));
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     MergeHandler handler(
@@ -750,7 +753,7 @@ MergeHandlerTest::testMaxTimestamp()
 
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
     std::shared_ptr<api::GetBucketDiffCommand> getCmd(
@@ -817,7 +820,7 @@ MergeHandlerTest::createDummyApplyDiff(int timestampOffset,
     }
 
     std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, 1024*1024));
+            new api::ApplyBucketDiffCommand(makeDocumentBucket(_bucket), _nodes, 1024*1024));
     applyBucketDiffCmd->getDiff() = applyDiff;
     return applyBucketDiffCmd;
 }
@@ -853,7 +856,7 @@ MergeHandlerTest::createDummyGetBucketDiff(int timestampOffset,
     }
 
     std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
-            new api::GetBucketDiffCommand(_bucket, _nodes, 1024*1024));
+            new api::GetBucketDiffCommand(makeDocumentBucket(_bucket), _nodes, 1024*1024));
     getBucketDiffCmd->getDiff() = diff;
     return getBucketDiffCmd;
 }
@@ -895,7 +898,7 @@ MergeHandlerTest::testBucketNotFoundInDb()
 {
     MergeHandler handler(getPersistenceProvider(), getEnv());
     // Send merge for unknown bucket
-    api::MergeBucketCommand cmd(document::BucketId(16, 6789), _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(document::BucketId(16, 6789)), _nodes, _maxTimestamp);
     MessageTracker::UP tracker = handler.handleMergeBucket(cmd, *_context);
     CPPUNIT_ASSERT(tracker->getResult().isBucketDisappearance());
 }
@@ -904,7 +907,7 @@ void
 MergeHandlerTest::testMergeProgressSafeGuard()
 {
     MergeHandler handler(getPersistenceProvider(), getEnv());
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
     std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
@@ -940,7 +943,7 @@ MergeHandlerTest::testSafeGuardNotInvokedWhenHasMaskChanges()
     _nodes.push_back(api::MergeBucketCommand::Node(0, false));
     _nodes.push_back(api::MergeBucketCommand::Node(1, false));
     _nodes.push_back(api::MergeBucketCommand::Node(2, false));
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
     std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
@@ -988,7 +991,7 @@ MergeHandlerTest::testEntryRemovedAfterGetBucketDiff()
     }
     setUpChain(BACK);
     std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, 1024*1024));
+            new api::ApplyBucketDiffCommand(makeDocumentBucket(_bucket), _nodes, 1024*1024));
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     MessageTracker::UP tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
@@ -1083,7 +1086,7 @@ MergeHandlerTest::HandleMergeBucketInvoker::invoke(
         MergeHandler& handler,
         spi::Context& context)
 {
-    api::MergeBucketCommand cmd(test._bucket, test._nodes, test._maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(test._bucket), test._nodes, test._maxTimestamp);
     handler.handleMergeBucket(cmd, context);
 }
 
@@ -1123,7 +1126,7 @@ MergeHandlerTest::HandleGetBucketDiffInvoker::invoke(
         MergeHandler& handler,
         spi::Context& context)
 {
-    api::GetBucketDiffCommand cmd(test._bucket, test._nodes, test._maxTimestamp);
+    api::GetBucketDiffCommand cmd(makeDocumentBucket(test._bucket), test._nodes, test._maxTimestamp);
     handler.handleGetBucketDiff(cmd, context);
 }
 
@@ -1212,7 +1215,7 @@ MergeHandlerTest::HandleGetBucketDiffReplyInvoker::beforeInvoke(
         MergeHandler& handler,
         spi::Context& context)
 {
-    api::MergeBucketCommand cmd(test._bucket, test._nodes, test._maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(test._bucket), test._nodes, test._maxTimestamp);
     handler.handleMergeBucket(cmd, context);
     _diffCmd = test.fetchSingleMessage<api::GetBucketDiffCommand>();
 }
@@ -1284,7 +1287,7 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::beforeInvoke(
     ++_counter;
     _stub.clear();
     if (getChainPos() == FRONT) {
-        api::MergeBucketCommand cmd(test._bucket, test._nodes, test._maxTimestamp);
+        api::MergeBucketCommand cmd(makeDocumentBucket(test._bucket), test._nodes, test._maxTimestamp);
         handler.handleMergeBucket(cmd, context);
         std::shared_ptr<api::GetBucketDiffCommand> diffCmd(
                 test.fetchSingleMessage<api::GetBucketDiffCommand>());
@@ -1467,7 +1470,7 @@ MergeHandlerTest::testRemovePutOnExistingTimestamp()
     }
 
     std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, 1024*1024));
+            new api::ApplyBucketDiffCommand(makeDocumentBucket(_bucket), _nodes, 1024*1024));
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     MessageTracker::UP tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
@@ -1477,7 +1480,7 @@ MergeHandlerTest::testRemovePutOnExistingTimestamp()
                     tracker->getReply()));
     CPPUNIT_ASSERT(applyBucketDiffReply.get());
 
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
+    api::MergeBucketCommand cmd(makeDocumentBucket(_bucket), _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
     std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(

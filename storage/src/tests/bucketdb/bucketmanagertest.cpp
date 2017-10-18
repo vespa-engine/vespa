@@ -14,6 +14,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -29,6 +30,7 @@ using document::DocumenttypesConfig;
 using config::FileSpec;
 using document::DocumentType;
 using document::DocumentTypeRepo;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -306,7 +308,7 @@ BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
 void BucketManagerTest::testRemoveLastModifiedOK()
 {
     CPPUNIT_ASSERT(!wasBlockedDueToLastModified(
-                           new api::RemoveCommand(document::BucketId(16, 1),
+                           new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 1)),
                                    document::DocumentId("userdoc:m:1:foo"),
                                    api::Timestamp(1235)),
                            1235));
@@ -316,7 +318,7 @@ void BucketManagerTest::testRemoveLastModifiedOK()
 void BucketManagerTest::testRemoveLastModifiedFailed()
 {
     CPPUNIT_ASSERT(wasBlockedDueToLastModified(
-                           new api::RemoveCommand(document::BucketId(16, 1),
+                           new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 1)),
                                    document::DocumentId("userdoc:m:1:foo"),
                                    api::Timestamp(1233)),
                            1233));
@@ -344,7 +346,7 @@ void BucketManagerTest::testDistributionBitChangeOnCreateBucket()
     CPPUNIT_ASSERT_EQUAL(16u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 
     std::shared_ptr<api::CreateBucketCommand> cmd(
-            new api::CreateBucketCommand(document::BucketId(4, 5678)));
+            new api::CreateBucketCommand(makeDocumentBucket(document::BucketId(4, 5678))));
     _top->sendDown(cmd);
     CPPUNIT_ASSERT_EQUAL(4u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
@@ -367,7 +369,7 @@ void BucketManagerTest::testMinUsedBitsFromComponentIsHonored()
     // 12 >= 10, so no update of reported state (left at 13; this should of
     // course not happen in practice, but used for faking in the test)
     std::shared_ptr<api::CreateBucketCommand> cmd(
-            new api::CreateBucketCommand(document::BucketId(12, 5678)));
+            new api::CreateBucketCommand(makeDocumentBucket(document::BucketId(12, 5678))));
     _top->sendDown(cmd);
     CPPUNIT_ASSERT_EQUAL(13u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
@@ -593,7 +595,7 @@ BucketManagerTest::testSwallowNotifyBucketChangeReply()
     _node->getDoneInitializeHandler().notifyDoneInitializing();
     _top->doneInit();
 
-    api::NotifyBucketChangeCommand cmd(document::BucketId(1, 16),
+    api::NotifyBucketChangeCommand cmd(makeDocumentBucket(document::BucketId(1, 16)),
                                        api::BucketInfo());
     std::shared_ptr<api::NotifyBucketChangeReply> reply(
             new api::NotifyBucketChangeReply(cmd));
@@ -705,7 +707,7 @@ public:
         // Note: this is a dummy message; its contained document ID will not
         // map to the provided bucket ID (at least it's extremely unlikely..)
         return std::make_shared<api::RemoveCommand>(
-                bucket,
+                makeDocumentBucket(bucket),
                 document::DocumentId("id:foo:testdoctype1::bar"),
                 timestamp);
     }
@@ -714,7 +716,7 @@ public:
         auto doc = _self._node->getTestDocMan().createDocument(
                 "a foo walks into a bar", "id:foo:testdoctype1::bar1");
         return std::make_shared<api::PutCommand>(
-                bucket, std::move(doc), api::Timestamp(123456));
+                makeDocumentBucket(bucket), std::move(doc), api::Timestamp(123456));
     }
 
     auto createUpdateCommand(const document::BucketId& bucket) const {
@@ -723,7 +725,7 @@ public:
                     .getDocumentType("testdoctype1"),
                 document::DocumentId("id:foo:testdoctype1::bar2"));
         return std::make_shared<api::UpdateCommand>(
-                bucket, update, api::Timestamp(123456));
+                makeDocumentBucket(bucket), update, api::Timestamp(123456));
     }
 
     auto createFullFetchCommand() const {
@@ -817,7 +819,7 @@ BucketManagerTest::testSplitReplyOrderedAfterBucketReply()
 
     // Split bucket A to model a concurrent modification to an already fetched
     // bucket.
-    auto splitCmd = std::make_shared<api::SplitBucketCommand>(bucketA);
+    auto splitCmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketA));
     _top->sendDown(splitCmd);
     fixture.bounceWithReply(*splitCmd);
     // Let bucket manager breathe again.
@@ -839,7 +841,7 @@ BucketManagerTest::testJoinReplyOrderedAfterBucketReply()
                   .add(bucketB, api::BucketInfo(100, 200, 400)));
     auto guard = fixture.acquireBucketLockAndSendInfoRequest(bucketB);
 
-    auto joinCmd = std::make_shared<api::JoinBucketsCommand>(parent);
+    auto joinCmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(parent));
     joinCmd->getSourceBuckets().assign({bucketA, bucketB});
     _top->sendDown(joinCmd);
     fixture.bounceWithReply(*joinCmd);
@@ -863,7 +865,7 @@ BucketManagerTest::testDeleteReplyOrderedAfterBucketReply()
                   .add(bucketB, api::BucketInfo(100, 200, 400)));
     auto guard = fixture.acquireBucketLockAndSendInfoRequest(bucketB);
 
-    auto deleteCmd = std::make_shared<api::DeleteBucketCommand>(bucketA);
+    auto deleteCmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucketA));
     _top->sendDown(deleteCmd);
     fixture.bounceWithReply(*deleteCmd);
 
@@ -882,7 +884,7 @@ BucketManagerTest::testOnlyEnqueueWhenProcessingRequest()
                   .add(bucketA, api::BucketInfo(50, 100, 200)));
 
     // Process delete command _before_ processing bucket requests.
-    auto deleteCmd = std::make_shared<api::DeleteBucketCommand>(bucketA);
+    auto deleteCmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucketA));
     _top->sendDown(deleteCmd);
     fixture.bounceWithReply(*deleteCmd);
     // Should arrive happily on the top.
@@ -914,7 +916,7 @@ BucketManagerTest::testOrderRepliesAfterBucketSpecificRequest()
     waitUntilRequestsAreProcessing();
     // Barrier: roundtrip thread now blocked. Send a split whose reply shall
     // be enqueued since there's a RequestBucketInfo currently doing its thing.
-    auto splitCmd = std::make_shared<api::SplitBucketCommand>(bucketA);
+    auto splitCmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketA));
     _top->sendDown(splitCmd);
     // Enqueuing happens synchronously in this thread, so no need for further
     // synchronization.
@@ -955,7 +957,7 @@ BucketManagerTest::testQueuedRepliesOnlyDispatchedWhenAllProcessingDone()
         _top->waitForMessages(3, MESSAGE_WAIT_TIME);
     });
     waitUntilRequestsAreProcessing(2);
-    auto splitCmd = std::make_shared<api::SplitBucketCommand>(bucketA);
+    auto splitCmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketA));
     _top->sendDown(splitCmd);
     fixture.bounceWithReply(*splitCmd);
 
@@ -1049,7 +1051,7 @@ BucketManagerTest::testMutationRepliesForSplitBucketAreEnqueued()
     document::BucketId bucket(17, 0);
     doTestConflictingReplyIsEnqueued(
             bucket,
-            std::make_shared<api::SplitBucketCommand>(bucket),
+            std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucket)),
             api::MessageType::SPLITBUCKET_REPLY);
 }
 
@@ -1059,7 +1061,7 @@ BucketManagerTest::testMutationRepliesForDeletedBucketAreEnqueued()
     document::BucketId bucket(17, 0);
     doTestConflictingReplyIsEnqueued(
             bucket,
-            std::make_shared<api::DeleteBucketCommand>(bucket),
+            std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket)),
             api::MessageType::DELETEBUCKET_REPLY);
 }
 
@@ -1072,7 +1074,7 @@ BucketManagerTest::testMutationRepliesForJoinedBucketAreEnqueued()
     document::BucketId parent(16, 0);
     // We only test for the parent bucket, since that's what queued operations
     // will be remapped to after a successful join.
-    auto joinCmd = std::make_shared<api::JoinBucketsCommand>(parent);
+    auto joinCmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(parent));
     joinCmd->getSourceBuckets().assign({bucketA, bucketB});
 
     auto params = TestParams()
@@ -1095,7 +1097,7 @@ BucketManagerTest::testConflictingPutRepliesAreEnqueued()
     auto params = TestParams()
         .bucket(bucket)
         .documentMutation(fixture.createPutCommand(bucket))
-        .treeMutation(std::make_shared<api::SplitBucketCommand>(bucket))
+        .treeMutation(std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucket)))
         .expectedOrdering({&api::MessageType::REQUESTBUCKETINFO_REPLY,
                            &api::MessageType::SPLITBUCKET_REPLY,
                            &api::MessageType::PUT_REPLY});
@@ -1112,7 +1114,7 @@ BucketManagerTest::testConflictingUpdateRepliesAreEnqueued()
     auto params = TestParams()
         .bucket(bucket)
         .documentMutation(fixture.createUpdateCommand(bucket))
-        .treeMutation(std::make_shared<api::SplitBucketCommand>(bucket))
+        .treeMutation(std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucket)))
         .expectedOrdering({&api::MessageType::REQUESTBUCKETINFO_REPLY,
                            &api::MessageType::SPLITBUCKET_REPLY,
                            &api::MessageType::UPDATE_REPLY});
@@ -1137,7 +1139,7 @@ BucketManagerTest::testRemappedMutationIsCheckedAgainstOriginalBucket()
         .bucket(bucket)
         .documentMutation(fixture.createRemoveCommand(bucket))
         .remappedTo(remappedToBucket)
-        .treeMutation(std::make_shared<api::SplitBucketCommand>(bucket))
+        .treeMutation(std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucket)))
         .expectedOrdering({&api::MessageType::REQUESTBUCKETINFO_REPLY,
                            &api::MessageType::SPLITBUCKET_REPLY,
                            &api::MessageType::REMOVE_REPLY});
@@ -1159,7 +1161,7 @@ BucketManagerTest::scheduleBucketInfoRequestWithConcurrentOps(
             bucketForRemove);
 
     auto conflictingOp(
-            std::make_shared<api::SplitBucketCommand>(bucketForSplit));
+            std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketForSplit)));
     _top->sendDown(conflictingOp);
     fixture.bounceWithReply(*conflictingOp);
     fixture.bounceWithReply(*mutation);
@@ -1242,7 +1244,7 @@ BucketManagerTest::testConflictSetOnlyClearedAfterAllBucketRequestsDone()
     // guards holding their desired bucket locks.
     waitUntilRequestsAreProcessing(2);
 
-    auto conflictingOp = std::make_shared<api::SplitBucketCommand>(bucketA);
+    auto conflictingOp = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketA));
     _top->sendDown(conflictingOp);
     fixture.bounceWithReply(*conflictingOp);
     // Releasing guard A (and allowing the request for A to go through) should

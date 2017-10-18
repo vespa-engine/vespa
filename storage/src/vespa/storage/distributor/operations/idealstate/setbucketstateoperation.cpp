@@ -22,7 +22,7 @@ void
 SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active) {
     std::shared_ptr<api::SetBucketStateCommand> msg(
             new api::SetBucketStateCommand(
-                    getBucketId(),
+                    getBucket(),
                     active
                     ? api::SetBucketStateCommand::ACTIVE
                     : api::SetBucketStateCommand::INACTIVE));

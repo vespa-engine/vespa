@@ -8,6 +8,7 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/helper/configgetter.hpp>
@@ -20,6 +21,7 @@ using std::shared_ptr;
 using config::ConfigGetter;
 using document::DocumenttypesConfig;
 using config::FileSpec;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -70,7 +72,7 @@ public:
 
     void sendGet() {
         std::shared_ptr<api::GetCommand> msg(
-                new api::GetCommand(document::BucketId(0), docId, "[all]"));
+                new api::GetCommand(makeDocumentBucket(document::BucketId(0)), docId, "[all]"));
 
         op.reset(new GetOperation(getExternalOperationHandler(),
                                   msg,

@@ -10,6 +10,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <tests/distributor/distributortestutil.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -26,6 +27,7 @@ using namespace storage;
 using namespace storage::api;
 using namespace storage::lib;
 using namespace std::literals::string_literals;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -148,7 +150,7 @@ public:
             const Document::SP doc) const
     {
         return std::shared_ptr<api::PutCommand>(
-                new api::PutCommand(document::BucketId(0), doc, 100));
+                new api::PutCommand(makeDocumentBucket(document::BucketId(0)), doc, 100));
     }
 };
 
@@ -164,7 +166,7 @@ PutOperationTest::createAndSendSampleDocument(uint32_t timeout) {
     addIdealNodes(id);
 
     std::shared_ptr<api::PutCommand> msg(
-            new api::PutCommand(document::BucketId(0),
+            new api::PutCommand(makeDocumentBucket(document::BucketId(0)),
                                 doc,
                                 0));
     msg->setTimestamp(100);
