@@ -166,6 +166,7 @@ public class QueryRewrite {
             switch (optimizeByRestrict(item.getItem(i), restrictParam)) {
                 case RECALLS_EVERYTHING:
                     if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                        removeOtherNonrankedChildren(item, i);
                         recall = Recall.RECALLS_EVERYTHING;
                     } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
                         item.removeItem(i);
@@ -191,6 +192,15 @@ public class QueryRewrite {
         return recall;
     }
 
+    private static void removeOtherNonrankedChildren(CompositeItem parent, int indexOfChildToKeep) {
+        Item childToKeep = parent.getItem(indexOfChildToKeep);
+        for (int i = parent.getItemCount(); --i >= 0; ) {
+            Item child = parent.getItem(i);
+            if ( child != childToKeep && ! parent.getItem(i).isRanked())
+                parent.removeItem(i);
+        }
+    }
+    
     private static Item collapseSingleComposites(Item item) {
         if (!(item instanceof CompositeItem)) {
             return item;

@@ -3,6 +3,7 @@ package com.yahoo.prelude.querytransform.test;
 
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
@@ -33,8 +34,13 @@ public class QueryRewriteTestCase {
 
     @Test
     public void testRestrictRewriteDoesNotRemoveRankContributingTerms() {
-        assertRewritten("sddocname:per OR foo OR bar", "per", "OR sddocname:per foo bar");
+        Query query = query("sddocname:per OR foo OR bar", "per");
+        assertRewritten(query, "OR sddocname:per foo bar");
+        ((OrItem)query.getModel().getQueryTree().getRoot()).getItem(2).setRanked(false); // set 'bar' unranked
+        assertRewritten(query, "OR sddocname:per foo");
+
         assertRewritten("sddocname:per OR foo OR (bar AND fuz)", "per", "OR sddocname:per foo (AND bar fuz)");
+
     }
 
     @Test
@@ -72,8 +78,15 @@ public class QueryRewriteTestCase {
         assertRewritten("sddocname:per&filter=abc", "per", "RANK sddocname:per |abc");
     }
 
-    private static void assertRewritten(String queryParam, String restrictParam, String expectedOptimizedQuery) {
-        Query query = new Query("?type=adv&query=" + queryParam.replace(" ", "%20") + "&restrict=" + restrictParam);
+    private static Query query(String queryString, String restrict) {
+        return new Query("?type=adv&query=" + queryString.replace(" ", "%20") + "&restrict=" + restrict);
+    }
+
+    private static void assertRewritten(String query, String restrict, String expectedOptimizedQuery) {
+        assertRewritten(query(query, restrict), expectedOptimizedQuery);
+    }
+
+    private static void assertRewritten(Query query, String expectedOptimizedQuery) {
         QueryRewrite.optimizeByRestrict(query);
         QueryRewrite.collapseSingleComposites(query);
         assertEquals(expectedOptimizedQuery, query.getModel().getQueryTree().toString());
