@@ -82,7 +82,6 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-
         for (Application application : controller().applications().asList()) {
             try (Lock lock = controller().applications().lock(application.id())) {
                 for (Deployment deployment : application.deployments().values()) {
@@ -99,4 +98,5 @@ public class ClusterInfoMaintainer extends Maintainer {
             }
         }
     }
+
 }
