@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,22 +36,24 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     DeploymentMetrics appMetrics = new DeploymentMetrics(metrics.queriesPerSecond(), metrics.writesPerSecond(),
                                                                          metrics.documentCount(), metrics.queryLatencyMillis(), metrics.writeLatencyMillis());
 
-                    // Avoid locking for a long time, due to slow YAMAS.
                     try (Lock lock = controller().applications().lock(application.id())) {
-                        // Deployment (or application) may have changed (or be gone) now:
-                        controller().applications().get(application.id()).ifPresent(freshApplication -> {
-                            Deployment freshDeployment = freshApplication.deployments().get(deployment.zone());
-                            if (freshDeployment != null)
-                                controller().applications().store(freshApplication.with(freshDeployment.withMetrics(appMetrics)), lock);
-                        });
+
+                        // Deployment or application may have changed (or be gone) now:
+                        application = controller().applications().get(application.id()).orElse(null);
+                        if (application == null)
+                            break;
+
+                        deployment = application.deployments().get(deployment.zone());
+                        if (deployment == null)
+                            continue;
+
+                        controller().applications().store(application.with(deployment.withMetrics(appMetrics)), lock);
                     }
                 }
                 catch (UncheckedIOException e) {
-                    log.warning("Timed out talking to YAMAS; retrying in " + maintenanceInterval() + ":\n" + e);
+                    log.log(Level.WARNING, "Timed out talking to YAMAS; retrying in " + maintenanceInterval(), e);
                 }
-
             }
-
         }
 
     }
