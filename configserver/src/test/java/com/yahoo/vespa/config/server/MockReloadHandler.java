@@ -4,6 +4,8 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 
+import java.util.Set;
+
 /**
  * @author lulf
  * @since 5.1.24
@@ -22,5 +24,8 @@ public class MockReloadHandler implements ReloadHandler {
     public void removeApplication(ApplicationId applicationId) {
         lastRemoved = applicationId;
     }
+
+    @Override
+    public void removeApplicationsExcept(Set<ApplicationId> applicationIds) { }
 
 }
