@@ -56,8 +56,8 @@ public class AthenzInstanceProviderServiceTest {
     @Test
     @Ignore("Requires private key for Athenz service")
     public void provider_service_hosts_endpoint_secured_with_tls() throws Exception {
-        String domain = "vespa.vespa.cd";
-        String service = "provider_dev_cd-us-central-1";
+        String domain = "INSERT DOMAIN HERE";
+        String service = "INSERT SERVICE NAME HERE";
         DummyKeyProvider keyProvider = new DummyKeyProvider();
         PrivateKey privateKey = Crypto.loadPrivateKey(keyProvider.getPrivateKey(0));
 
