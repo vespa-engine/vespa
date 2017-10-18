@@ -7,57 +7,12 @@ using document::BucketSpace;
 namespace storage {
 namespace api {
 
-IMPLEMENT_COMMAND(DocBlockCommand, DocBlockReply)
-IMPLEMENT_REPLY(DocBlockReply)
 IMPLEMENT_COMMAND(MapVisitorCommand, MapVisitorReply)
 IMPLEMENT_REPLY(MapVisitorReply)
 IMPLEMENT_COMMAND(DocumentListCommand, DocumentListReply)
 IMPLEMENT_REPLY(DocumentListReply)
 IMPLEMENT_COMMAND(EmptyBucketsCommand, EmptyBucketsReply)
 IMPLEMENT_REPLY(EmptyBucketsReply)
-
-DocBlockCommand::DocBlockCommand(const document::BucketId& bucketId,
-                                 const vdslib::DocumentList& block,
-                                 const std::shared_ptr<void>& buffer)
-    : StorageCommand(MessageType::DOCBLOCK),
-      _bucket(BucketSpace::placeHolder(), bucketId),
-      _docBlock(block),
-      _buffer(buffer),
-      _keepTimeStamps(false)
-{
-}
-
-DocBlockCommand::~DocBlockCommand() {}
-
-void
-DocBlockCommand::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-{
-    out << "DocBlockCommand("
-        << "size " << _docBlock.getBufferSize() << ", used space "
-        << (_docBlock.getBufferSize() - _docBlock.countFree()) << ", doccount "
-        << _docBlock.size() << ")";
-    if (verbose) {
-        out << " : ";
-        StorageCommand::print(out, verbose, indent);
-    }
-}
-
-DocBlockReply::DocBlockReply(const DocBlockCommand& cmd)
-    : StorageReply(cmd)
-{
-}
-
-void
-DocBlockReply::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
-{
-    out << "DocBlockReply()";
-    if (verbose) {
-        out << " : ";
-        StorageReply::print(out, verbose, indent);
-    }
-}
 
 MapVisitorCommand::MapVisitorCommand()
     : StorageCommand(MessageType::MAPVISITOR)

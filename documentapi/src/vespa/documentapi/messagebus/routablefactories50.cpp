@@ -270,36 +270,6 @@ RoutableFactories50::DestroyVisitorReplyFactory::doEncode(const DocumentReply &o
 }
 
 DocumentMessage::UP
-RoutableFactories50::DocBlockMessageFactory::doDecode(document::ByteBuffer &buf) const
-{
-    (void)buf;
-    return DocumentMessage::UP(); // TODO: remove message type
-}
-
-bool
-RoutableFactories50::DocBlockMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    (void)obj;
-    (void)buf;
-    return false;
-}
-
-DocumentReply::UP
-RoutableFactories50::DocBlockReplyFactory::doDecode(document::ByteBuffer &buf) const
-{
-    (void)buf;
-    return DocumentReply::UP(); // TODO: remove reply type
-}
-
-bool
-RoutableFactories50::DocBlockReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    (void)obj;
-    (void)buf;
-    return false;
-}
-
-DocumentMessage::UP
 RoutableFactories50::DocumentListMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
     DocumentMessage::UP ret(new DocumentListMessage());

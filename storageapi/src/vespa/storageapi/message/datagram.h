@@ -10,53 +10,6 @@
 namespace storage::api {
 
 /**
- * @class DocBlockCommand
- * @ingroup message
- *
- * @brief Sends a docblock to a visitor or subscriber.
- */
-class DocBlockCommand : public StorageCommand {
-    document::Bucket _bucket;
-    vdslib::DocumentList _docBlock;
-    std::shared_ptr<void> _buffer; // Owns data in docblock
-    bool _keepTimeStamps; // Used for recovery/synchronization where we want to
-                          // keep the timestamps of the origin.
-
-public:
-    DocBlockCommand(const document::BucketId& bucketId,
-                    const vdslib::DocumentList& block,
-                    const std::shared_ptr<void>& buffer);
-    ~DocBlockCommand();
-
-    vdslib::DocumentList& getDocumentBlock()
-        { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
-    const vdslib::DocumentList& getDocumentBlock() const
-        { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
-    void setDocumentBlock(vdslib::DocumentList& block) { _docBlock = block; }
-
-    document::Bucket getBucket() const override { return _bucket; }
-    bool hasSingleBucketId() const override { return true; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool keepTimeStamps() const { return _keepTimeStamps; }
-    void keepTimeStamps(bool keepTime) { _keepTimeStamps = keepTime; }
-
-    DECLARE_STORAGECOMMAND(DocBlockCommand, onDocBlock)
-};
-
-/**
- * @class DocBlockReply
- * @ingroup message
- *
- * @brief Confirm that a given docblock have been received.
- */
-class DocBlockReply : public StorageReply {
-public:
-    explicit DocBlockReply(const DocBlockCommand&);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGEREPLY(DocBlockReply, onDocBlockReply)
-};
-
-/**
  * @class MapStorageCommand
  * @ingroup message
  *

@@ -244,13 +244,6 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
         toMsg = std::move(to);
         break;
     }
-    case api::MessageType::DOCBLOCK_ID:
-    {
-        api::DocBlockCommand& from(static_cast<api::DocBlockCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::MultiOperationMessage>(from.getBucketId(), from.getDocumentBlock(),
-                                                                     from.keepTimeStamps());
-        break;
-    }
     case api::MessageType::SEARCHRESULT_ID:
     {
         api::SearchResultCommand& from(static_cast<api::SearchResultCommand&>(fromMsg));
