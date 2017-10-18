@@ -64,11 +64,8 @@ handleSync(FastOS_FileInterface &file)
 }
 
 string
-handleWriteError(const char *text,
-                 FastOS_FileInterface &file,
-                 int64_t lastKnownGoodPos,
-                 const Packet::Entry &entry,
-                 int bufLen)
+handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
+                 const Packet::Entry &entry, int bufLen)
 {
     string last(FastOS_File::getLastErrorString());
     string e(make_string("%s. File '%s' at position %" PRId64 " for entry %" PRIu64 " of length %u. "
@@ -110,12 +107,8 @@ tailOfFileIsZero(FastOS_FileInterface &file, int64_t lastKnownGoodPos)
 }
 
 bool
-handleReadError(const char *text,
-                FastOS_FileInterface &file,
-                ssize_t len,
-                ssize_t rlen,
-                int64_t lastKnownGoodPos,
-                bool allowTruncate)
+handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize_t rlen,
+                int64_t lastKnownGoodPos, bool allowTruncate)
 {
     bool retval(true);
     if (rlen != -1) {
