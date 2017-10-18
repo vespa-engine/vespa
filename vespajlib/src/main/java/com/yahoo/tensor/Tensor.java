@@ -112,6 +112,10 @@ public interface Tensor {
                                                     Collections.singletonList(toDimension)).evaluate();
     }
 
+    default Tensor concat(double argument, String dimension) {
+        return concat(Tensor.Builder.of(TensorType.empty).cell(argument).build(), dimension);
+    }
+
     default Tensor concat(Tensor argument, String dimension) {
         return new Concat(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
     }

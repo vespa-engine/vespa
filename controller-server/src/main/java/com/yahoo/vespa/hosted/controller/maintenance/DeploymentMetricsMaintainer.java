@@ -27,7 +27,6 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-
         for (Application application : controller().applications().asList()) {
             for (Deployment deployment : application.deployments().values()) {
                 try {

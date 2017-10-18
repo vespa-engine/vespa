@@ -20,7 +20,7 @@ public class DeploymentMetrics {
     }
 
     public DeploymentMetrics(double queriesPerSecond, double writesPerSecond, double documentCount,
-                      double queryLatencyMillis, double writeLatencyMills) {
+                             double queryLatencyMillis, double writeLatencyMills) {
         this.queriesPerSecond = queriesPerSecond;
         this.writesPerSecond = writesPerSecond;
         this.documentCount = documentCount;
@@ -47,4 +47,5 @@ public class DeploymentMetrics {
     public double writeLatencyMillis() {
         return writeLatencyMills;
     }
+
 }

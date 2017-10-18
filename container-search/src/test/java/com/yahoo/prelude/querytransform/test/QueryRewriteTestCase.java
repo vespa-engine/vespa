@@ -3,6 +3,7 @@ package com.yahoo.prelude.querytransform.test;
 
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
@@ -17,18 +18,29 @@ import static org.junit.Assert.assertTrue;
 public class QueryRewriteTestCase {
 
     @Test
-    public void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecall() {
+    public void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecallAndDontImpactRank() {
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "foo", "sddocname:foo");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "bar", "sddocname:bar");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "baz", "sddocname:baz");
 
-        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "foo", "sddocname:foo");
-        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "bar", "sddocname:bar");
-        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "baz", "sddocname:baz");
+        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "foo", "OR lhs sddocname:foo");
+        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "bar", "OR lhs sddocname:bar");
+        assertRewritten("lhs OR (sddocname:foo OR sddocname:bar OR sddocname:baz)", "baz", "OR lhs sddocname:baz");
 
         assertRewritten("lhs AND (sddocname:foo OR sddocname:bar OR sddocname:baz)", "foo", "lhs");
         assertRewritten("lhs AND (sddocname:foo OR sddocname:bar OR sddocname:baz)", "bar", "lhs");
         assertRewritten("lhs AND (sddocname:foo OR sddocname:bar OR sddocname:baz)", "baz", "lhs");
+    }
+
+    @Test
+    public void testRestrictRewriteDoesNotRemoveRankContributingTerms() {
+        Query query = query("sddocname:per OR foo OR bar", "per");
+        assertRewritten(query, "OR sddocname:per foo bar");
+        ((OrItem)query.getModel().getQueryTree().getRoot()).getItem(2).setRanked(false); // set 'bar' unranked
+        assertRewritten(query, "OR sddocname:per foo");
+
+        assertRewritten("sddocname:per OR foo OR (bar AND fuz)", "per", "OR sddocname:per foo (AND bar fuz)");
+
     }
 
     @Test
@@ -59,15 +71,22 @@ public class QueryRewriteTestCase {
         assertRewritten("sddocname:perder ANDNOT b", "per", "NULL");
         assertRewritten("a ANDNOT sddocname:per a b", "per", "NULL");
     }
-
+    
     @Test
     public void testRestrictRank() {
         assertRewritten("sddocname:per&filter=abc", "espen", "|abc");
         assertRewritten("sddocname:per&filter=abc", "per", "RANK sddocname:per |abc");
     }
 
-    private static void assertRewritten(String queryParam, String restrictParam, String expectedOptimizedQuery) {
-        Query query = new Query("?type=adv&query=" + queryParam.replace(" ", "%20") + "&restrict=" + restrictParam);
+    private static Query query(String queryString, String restrict) {
+        return new Query("?type=adv&query=" + queryString.replace(" ", "%20") + "&restrict=" + restrict);
+    }
+
+    private static void assertRewritten(String query, String restrict, String expectedOptimizedQuery) {
+        assertRewritten(query(query, restrict), expectedOptimizedQuery);
+    }
+
+    private static void assertRewritten(Query query, String expectedOptimizedQuery) {
         QueryRewrite.optimizeByRestrict(query);
         QueryRewrite.collapseSingleComposites(query);
         assertEquals(expectedOptimizedQuery, query.getModel().getQueryTree().toString());

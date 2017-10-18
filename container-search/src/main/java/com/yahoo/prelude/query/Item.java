@@ -149,7 +149,7 @@ public abstract class Item implements Cloneable {
     /**
      * Sets whether this is a filter term.
      * This indicates that the term origins from the filter parameter in the search API.
-     * The search backend does to handle filter terms any different than non-filter terms.
+     * The search backend does not handle filter terms any different than non-filter terms.
      */
     public void setFilter(boolean filter) {
         if (filter) {
