@@ -131,7 +131,6 @@ public class OperationProcessor {
                 exceptionMessage.contains("SEND_QUEUE_CLOSED") ||
                 exceptionMessage.contains("ILLEGAL_ROUTE") ||
                 exceptionMessage.contains("NO_SERVICES_FOR_ROUTE") ||
-                exceptionMessage.contains("SERVICE_OOS") ||
                 exceptionMessage.contains("NETWORK_ERROR") ||
                 exceptionMessage.contains("SEQUENCE_ERROR") ||
                 exceptionMessage.contains("NETWORK_SHUTDOWN") ||

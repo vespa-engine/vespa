@@ -50,7 +50,9 @@ public final class ErrorCode {
     /** No services found for the message route. */
     public static final int NO_SERVICES_FOR_ROUTE  = FATAL_ERROR + 3;
 
-    /** The selected service was out of service. */
+    /** The selected service was out of service.
+     */
+    @Deprecated // Unused and will be removed
     public static final int SERVICE_OOS            = FATAL_ERROR + 4;
 
     /** An error occured while encoding the message. */

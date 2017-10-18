@@ -116,26 +116,6 @@ public abstract class RoutingPolicyFactories {
         }
     }
 
-    static class SearchColumnPolicyFactory implements RoutingPolicyFactory {
-        public DocumentProtocolRoutingPolicy createPolicy(String param) {
-            return new SearchColumnPolicy(param);
-        }
-
-
-        public void destroy() {
-        }
-    }
-
-    static class SearchRowPolicyFactory implements RoutingPolicyFactory {
-        public DocumentProtocolRoutingPolicy createPolicy(String param) {
-            return new SearchRowPolicy(param);
-        }
-
-
-        public void destroy() {
-        }
-    }
-
     static class SubsetServicePolicyFactory implements RoutingPolicyFactory {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new SubsetServicePolicy(param);

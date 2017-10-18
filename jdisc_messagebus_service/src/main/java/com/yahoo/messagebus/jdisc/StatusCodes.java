@@ -34,8 +34,6 @@ public class StatusCodes {
             return Response.Status.BAD_REQUEST;
         case ErrorCode.NO_SERVICES_FOR_ROUTE:
             return Response.Status.NOT_FOUND;
-        case ErrorCode.SERVICE_OOS:
-            return Response.Status.SERVICE_UNAVAILABLE;
         case ErrorCode.ENCODE_ERROR:
             return Response.Status.BAD_REQUEST;
         case ErrorCode.NETWORK_ERROR:

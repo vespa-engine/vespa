@@ -11,8 +11,6 @@ vespa_add_library(documentapi_documentapipolicies OBJECT
     externpolicy.cpp
     localservicepolicy.cpp
     roundrobinpolicy.cpp
-    searchcolumnpolicy.cpp
-    searchrowpolicy.cpp
     subsetservicepolicy.cpp
     loadbalancer.cpp
     loadbalancerpolicy.cpp
