@@ -21,7 +21,7 @@ struct DocumentTypeTest : public CppUnit::TestFixture {
 
     void testSetGet();
     void testHeaderContent();
-    void testFieldSet();
+    void testFieldSetCanContainFieldsNotInDocType();
     void testInheritance();
     void testInheritanceConfig();
     void testMultipleInheritance();
@@ -29,7 +29,7 @@ struct DocumentTypeTest : public CppUnit::TestFixture {
 
     CPPUNIT_TEST_SUITE( DocumentTypeTest);
     CPPUNIT_TEST(testSetGet);
-    CPPUNIT_TEST(testFieldSet);
+    CPPUNIT_TEST(testFieldSetCanContainFieldsNotInDocType);
     CPPUNIT_TEST(testInheritance);
     CPPUNIT_TEST(testInheritanceConfig);
     CPPUNIT_TEST(testMultipleInheritance);
@@ -162,20 +162,28 @@ void DocumentTypeTest::testMultipleInheritance()
                          doc.getValue(doc.getField("tmp"))->getAsString());
 }
 
-void DocumentTypeTest::testFieldSet()
-{
+namespace {
+
+bool containsField(const DocumentType::FieldSet &fieldSet, const vespalib::string &field) {
+    return fieldSet.getFields().find(field) != fieldSet.getFields().end();
+}
+
+}
+
+void DocumentTypeTest::testFieldSetCanContainFieldsNotInDocType() {
     DocumentType docType("test1");
     docType.addField(Field("stringattr", 3, *DataType::STRING, false));
     docType.addField(Field("nalle", 0, *DataType::INT, false));
-    DocumentType::FieldSet::Fields tmp;
-    tmp.insert("nalle");
-    tmp.insert("nulle");
-    try {
+    {
+        DocumentType::FieldSet::Fields tmp;
+        tmp.insert("nalle");
+        tmp.insert("nulle");
         docType.addFieldSet("a", tmp);
-        CPPUNIT_ASSERT(false);
-    } catch (const vespalib::IllegalArgumentException & e) {
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("Fieldset 'a': No field with name 'nulle' in document type 'test1'."), e.getMessage());
     }
+    auto fieldSet = docType.getFieldSet("a");
+    CPPUNIT_ASSERT_EQUAL((size_t)2, fieldSet->getFields().size());
+    CPPUNIT_ASSERT(containsField(*fieldSet, "nalle"));
+    CPPUNIT_ASSERT(containsField(*fieldSet, "nulle"));
 }
 
 void DocumentTypeTest::testInheritance()
