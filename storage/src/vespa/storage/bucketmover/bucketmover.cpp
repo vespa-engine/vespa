@@ -13,6 +13,8 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketmover");
 
+using document::BucketSpace;
+
 namespace storage::bucketmover {
 
 BucketMover::BucketMover(const config::ConfigUri & configUri,
@@ -131,8 +133,9 @@ BucketMover::queueNewMoves()
             break;
         }
         _pendingMoves.push_back(nextMove);
+        document::Bucket bucket(BucketSpace::placeHolder(), nextMove.getBucketId());
         std::shared_ptr<BucketDiskMoveCommand> cmd(
-                new BucketDiskMoveCommand(nextMove.getBucketId(),
+                new BucketDiskMoveCommand(bucket,
                                           nextMove.getSourceDisk(),
                                           nextMove.getTargetDisk()));
         cmd->setPriority(nextMove.getPriority());

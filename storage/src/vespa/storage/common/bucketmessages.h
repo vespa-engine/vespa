@@ -17,14 +17,16 @@ namespace storage {
  * @brief List buckets existing on a partition.
  */
 class ReadBucketList : public api::InternalCommand {
+    document::BucketSpace _bucketSpace;
     spi::PartitionId _partition;
 
 public:
     typedef std::unique_ptr<ReadBucketList> UP;
     static const uint32_t ID = 2003;
 
-    ReadBucketList(spi::PartitionId partition);
+    ReadBucketList(document::BucketSpace bucketSpace, spi::PartitionId partition);
     ~ReadBucketList();
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     spi::PartitionId getPartition() const { return _partition; }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
@@ -38,6 +40,7 @@ public:
  * @ingroup common
  */
 class ReadBucketListReply : public api::InternalReply {
+    document::BucketSpace _bucketSpace;
     spi::PartitionId _partition;
     spi::BucketIdListResult::List _buckets;
 
@@ -49,6 +52,7 @@ public:
     ReadBucketListReply(const ReadBucketList& cmd);
     ~ReadBucketListReply();
 
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     spi::PartitionId getPartition() const { return _partition; }
 
     spi::BucketIdListResult::List& getBuckets() { return _buckets; }
@@ -75,7 +79,7 @@ class ReadBucketInfo : public api::InternalCommand {
 public:
     static const uint32_t ID = 2005;
 
-    ReadBucketInfo(const document::BucketId& bucketId);
+    ReadBucketInfo(const document::Bucket &bucket);
     ~ReadBucketInfo();
 
     document::Bucket getBucket() const override { return _bucket; }
@@ -129,7 +133,7 @@ public:
 
     static const uint32_t ID = 2007;
 
-    RepairBucketCommand(const document::BucketId& bucket, uint16_t disk);
+    RepairBucketCommand(const document::Bucket &bucket, uint16_t disk);
     ~RepairBucketCommand();
 
     bool hasSingleBucketId() const override { return true; }
@@ -196,7 +200,7 @@ public:
     typedef std::shared_ptr<BucketDiskMoveCommand> SP;
     static const uint32_t ID = 2012;
 
-    BucketDiskMoveCommand(const document::BucketId& bucket, uint16_t srcDisk, uint16_t dstDisk);
+    BucketDiskMoveCommand(const document::Bucket &bucket, uint16_t srcDisk, uint16_t dstDisk);
     ~BucketDiskMoveCommand();
 
     document::Bucket getBucket() const override { return _bucket; }
@@ -267,7 +271,7 @@ class InternalBucketJoinCommand : public api::InternalCommand {
 public:
     static const uint32_t ID = 2015;
 
-    InternalBucketJoinCommand(const document::BucketId& bucket, uint16_t keepOnDisk, uint16_t joinFromDisk);
+    InternalBucketJoinCommand(const document::Bucket &bucket, uint16_t keepOnDisk, uint16_t joinFromDisk);
     ~InternalBucketJoinCommand();
 
     document::Bucket getBucket() const override { return _bucket; }

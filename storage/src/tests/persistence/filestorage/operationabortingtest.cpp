@@ -352,7 +352,7 @@ OperationAbortingTest::testDoNotAbortRecheckBucketCommands()
 {
     document::BucketId bucket(16, 1);
     std::vector<api::StorageMessage::SP> msgs;
-    msgs.push_back(api::StorageMessage::SP(new RecheckBucketInfoCommand(bucket)));
+    msgs.push_back(api::StorageMessage::SP(new RecheckBucketInfoCommand(makeDocumentBucket(bucket))));
 
     bool shouldCreateBucketInitially(true);
     doTestSpecificOperationsNotAborted(

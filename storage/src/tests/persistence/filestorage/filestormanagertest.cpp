@@ -490,7 +490,7 @@ FileStorManagerTest::testDiskMove()
 
     {
         std::shared_ptr<BucketDiskMoveCommand> cmd(
-                new BucketDiskMoveCommand(bid, 0, 1));
+                new BucketDiskMoveCommand(makeDocumentBucket(bid), 0, 1));
 
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
@@ -571,7 +571,7 @@ FileStorManagerTest::testRepairNotifiesDistributorOnChange()
     getDummyPersistence().simulateMaintenanceFailure();
 
     std::shared_ptr<RepairBucketCommand> cmd(
-            new RepairBucketCommand(document::BucketId(16, 1), 0));
+            new RepairBucketCommand(makeDocumentBucket(document::BucketId(16, 1)), 0));
     top.sendDown(cmd);
 
     top.waitForMessages(2, _waitTime);
@@ -1931,7 +1931,7 @@ createIterator(DummyStorageLink& link,
     selection.setFromTimestamp(spi::Timestamp(fromTime.getTime()));
     selection.setToTimestamp(spi::Timestamp(toTime.getTime()));
     CreateIteratorCommand::SP createIterCmd(
-            new CreateIteratorCommand(bucket,
+            new CreateIteratorCommand(makeDocumentBucket(bucket),
                                       selection,
                                       headerOnly ? "[header]" : "[all]",
                                       spi::NEWEST_DOCUMENT_ONLY));
@@ -2019,7 +2019,7 @@ FileStorManagerTest::testVisiting()
                 127));
         spi::IteratorId iterId(createIterator(top, ids[0], "true"));
         std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token), ids[0], iterId, 16*1024));
+                new GetIterCommand(std::move(token), makeDocumentBucket(ids[0]), iterId, 16*1024));
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2047,7 +2047,7 @@ FileStorManagerTest::testVisiting()
                     16*1024,
                     127));
             std::shared_ptr<GetIterCommand> cmd(
-                    new GetIterCommand(std::move(token), ids[1], iterId, 16*1024));
+                    new GetIterCommand(std::move(token), makeDocumentBucket(ids[1]), iterId, 16*1024));
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2086,7 +2086,7 @@ FileStorManagerTest::testVisiting()
                     16*1024,
                     127));
             std::shared_ptr<GetIterCommand> cmd(
-                    new GetIterCommand(std::move(token), ids[1], iterId, 16*1024));
+                    new GetIterCommand(std::move(token), makeDocumentBucket(ids[1]), iterId, 16*1024));
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2807,7 +2807,7 @@ FileStorManagerTest::testGetIter()
                 2048,
                 127));
         std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token), bid, iterId, 2048));
+                new GetIterCommand(std::move(token), makeDocumentBucket(bid), iterId, 2048));
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2845,7 +2845,7 @@ FileStorManagerTest::testGetIter()
                 2048,
                 127));
         std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token), bid, iterId, 2048));
+                new GetIterCommand(std::move(token), makeDocumentBucket(bid), iterId, 2048));
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2909,7 +2909,7 @@ FileStorManagerTest::testSetBucketActiveState()
     // Trigger bucket info to be read back into the database
     {
         std::shared_ptr<ReadBucketInfo> cmd(
-                new ReadBucketInfo(bid));
+                new ReadBucketInfo(makeDocumentBucket(bid)));
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());

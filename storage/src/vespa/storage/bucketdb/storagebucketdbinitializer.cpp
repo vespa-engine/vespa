@@ -16,6 +16,8 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.initializer");
 
+using document::BucketSpace;
+
 namespace storage {
 
 using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
@@ -153,7 +155,7 @@ StorageBucketDBInitializer::onOpen()
         // Trigger bucket database initialization
     for (uint32_t i=0; i<_system._partitions.size(); ++i) {
         if (!_system._partitions[i].isUp()) continue;
-        ReadBucketList::SP msg(new ReadBucketList(spi::PartitionId(i)));
+        ReadBucketList::SP msg(new ReadBucketList(BucketSpace::placeHolder(), spi::PartitionId(i)));
         _state._lists[msg->getMsgId()] = msg;
         sendDown(msg);
     }
@@ -335,26 +337,27 @@ StorageBucketDBInitializer::reportHtmlStatus(
 
 // Always called from worker thread. Worker monitor already grabbed
 void
-StorageBucketDBInitializer::registerBucket(const document::BucketId& bucket,
+StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
                                            spi::PartitionId partition,
                                            api::BucketInfo bucketInfo)
 {
+    document::BucketId bucketId(bucket.getBucketId());
     StorBucketDatabase::WrappedEntry entry(_system._bucketDatabase.get(
-                bucket, "StorageBucketDBInitializer::registerBucket",
+                bucketId, "StorageBucketDBInitializer::registerBucket",
                 StorBucketDatabase::CREATE_IF_NONEXISTING));
     if (bucketInfo.valid()) {
         if (entry.preExisted()) {
             LOG(debug, "Had value %s for %s before registering",
                 entry->getBucketInfo().toString().c_str(),
-                bucket.toString().c_str());
+                bucketId.toString().c_str());
         }
         LOG(debug, "Got new value %s from %s partition %u",
-            bucketInfo.toString().c_str(), bucket.toString().c_str(),
+            bucketInfo.toString().c_str(), bucketId.toString().c_str(),
             partition.getValue());
         entry->setBucketInfo(bucketInfo);
     } else {
         LOG(debug, "Got invalid bucket info from %s partition %u: %s",
-            bucket.toString().c_str(), partition.getValue(),
+            bucketId.toString().c_str(), partition.getValue(),
             bucketInfo.toString().c_str());
     }
     if (entry.preExisted()) {
@@ -362,13 +365,13 @@ StorageBucketDBInitializer::registerBucket(const document::BucketId& bucket,
             LOG(debug, "%s already existed in bucket database on disk %i. "
                        "Might have been moved from wrong directory prior to "
                        "listing this directory.",
-                bucket.toString().c_str(), int(partition));
+                bucketId.toString().c_str(), int(partition));
             return;
         }
         uint32_t keepOnDisk, joinFromDisk;
         if (_system._distribution.getPreferredAvailableDisk(
                 _system._nodeState, _system._nodeIndex,
-                bucket.stripUnused()) == partition)
+                bucketId.stripUnused()) == partition)
         {
             keepOnDisk = partition;
             joinFromDisk = entry->disk;
@@ -378,7 +381,7 @@ StorageBucketDBInitializer::registerBucket(const document::BucketId& bucket,
         }
         LOG(debug, "%s exist on both disk %u and disk %i. Joining two versions "
                    "onto disk %u.",
-            bucket.toString().c_str(), entry->disk, int(partition), keepOnDisk);
+            bucketId.toString().c_str(), entry->disk, int(partition), keepOnDisk);
         entry.unlock();
         // Must not have bucket db lock while sending down
         InternalBucketJoinCommand::SP cmd(new InternalBucketJoinCommand(
@@ -388,13 +391,13 @@ StorageBucketDBInitializer::registerBucket(const document::BucketId& bucket,
         }
         sendDown(cmd);
     } else {
-        _system._component.getMinUsedBitsTracker().update(bucket);
+        _system._component.getMinUsedBitsTracker().update(bucketId);
         LOG(spam, "Inserted %s on disk %i into bucket database",
-            bucket.toString().c_str(), int(partition));
+            bucketId.toString().c_str(), int(partition));
         entry->disk = partition;
         entry.write();
         uint16_t disk(_system._distribution.getIdealDisk(
-                _system._nodeState, _system._nodeIndex, bucket.stripUnused(),
+                _system._nodeState, _system._nodeIndex, bucketId.stripUnused(),
                 lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN));
         if (disk != partition) {
             ++_metrics._wrongDisk;
@@ -478,7 +481,8 @@ StorageBucketDBInitializer::sendReadBucketInfo(spi::PartitionId disk)
         _state._infoSetByLoad += finder._alreadySet;
     }
     for (uint32_t i=0; i<finder._next.size(); ++i) {
-        ReadBucketInfo::SP cmd(new ReadBucketInfo(finder._next[i]));
+        document::Bucket bucket(BucketSpace::placeHolder(), finder._next[i]);
+        ReadBucketInfo::SP cmd(new ReadBucketInfo(bucket));
         cmd->setPriority(_config._infoReadPriority);
         state._pending.insert(finder._next[i]);
         _state._infoRequests[cmd->getMsgId()] = disk;
@@ -583,7 +587,7 @@ StorageBucketDBInitializer::handleReadBucketListReply(
     api::BucketInfo info;
     assert(!info.valid());
     for (uint32_t i=0, n=list.size(); i<n; ++i) {
-        registerBucket(list[i], reply.getPartition(), info);
+        registerBucket(document::Bucket(reply.getBucketSpace(), list[i]), reply.getPartition(), info);
     }
     if (++_state._dirsListed == _state._dirsToList) {
         handleListingCompleted();
