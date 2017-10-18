@@ -136,8 +136,7 @@ public class NodeFailer extends Maintainer {
 
     private List<Node> readyNodesWithHardwareDivergence() {
         return nodeRepository().getNodes(Node.State.ready).stream()
-                .filter(node -> node.status().hardwareDivergence().isPresent()
-                        && !node.status().hardwareDivergence().get().equals("null"))
+                .filter(node -> node.status().hardwareDivergence().isPresent())
                 .collect(Collectors.toList());
     }
 
