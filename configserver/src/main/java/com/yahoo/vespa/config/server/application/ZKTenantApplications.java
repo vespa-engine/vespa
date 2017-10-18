@@ -164,10 +164,13 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
             case CHILD_REMOVED:
                 applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;
+            case CHILD_UPDATED:
+                // do nothing, application just got redeployed
+                break;
             default:
                 // We don't know if applications have been added or removed so possibly need to remove some of them
                 // (new applications are not added here)
-                removeApplications();
+                removeApplications(event.getType());
                 break;
         }
     }
@@ -181,9 +184,9 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application added: " + applicationId);
     }
 
-    private void removeApplications() {
+    private void removeApplications(PathChildrenCacheEvent.Type eventType) {
         ImmutableSet<ApplicationId> allApplications = ImmutableSet.copyOf(listApplications());
-        log.log(Level.INFO, "We probably lost events, need to check if applications have been removed, " +
+        log.log(Level.INFO, "Got " + eventType + " event, need to check if applications have been removed, " +
                 " found these active applications: " + allApplications);
         reloadHandler.removeApplicationsExcept(allApplications);
     }
