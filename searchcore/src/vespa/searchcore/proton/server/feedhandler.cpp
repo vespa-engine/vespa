@@ -190,13 +190,13 @@ FeedHandler::performGarbageCollect(FeedToken token)
 void
 FeedHandler::performCreateBucket(FeedToken token, CreateBucketOperation &op)
 {
-    storeOperation(op, std::move(token));
+    storeOperation(op, token);
     _bucketDBHandler->handleCreateBucket(op.getBucketId());
 }
 
 void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
     _activeFeedView->prepareDeleteBucket(op);
-    storeOperation(op, std::move(token));
+    storeOperation(op, token);
     // Delete documents in bucket
     _activeFeedView->handleDeleteBucket(op);
     // Delete bucket itself, should no longer have documents.
@@ -205,12 +205,12 @@ void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op
 }
 
 void FeedHandler::performSplit(FeedToken token, SplitBucketOperation &op) {
-    storeOperation(op, std::move(token));
+    storeOperation(op, token);
     _bucketDBHandler->handleSplit(op.getSerialNum(), op.getSource(), op.getTarget1(), op.getTarget2());
 }
 
 void FeedHandler::performJoin(FeedToken token, JoinBucketsOperation &op) {
-    storeOperation(op, std::move(token));
+    storeOperation(op, token);
     _bucketDBHandler->handleJoin(op.getSerialNum(), op.getSource1(), op.getSource2(), op.getTarget());
 }
 
