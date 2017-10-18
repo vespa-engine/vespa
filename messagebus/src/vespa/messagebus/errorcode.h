@@ -72,7 +72,8 @@ public:
         NO_SERVICES_FOR_ROUTE = FATAL_ERROR + 3,
 
         // The selected service was out of service.
-        SERVICE_OOS = FATAL_ERROR + 4,
+        // Unused.....
+        // SERVICE_OOS = FATAL_ERROR + 4,
 
         // An error occured while encoding the message.
         ENCODE_ERROR = FATAL_ERROR + 5,

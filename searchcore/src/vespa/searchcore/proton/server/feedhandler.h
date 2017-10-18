@@ -65,7 +65,7 @@ private:
             _tls_mgr(tls_mgr),
             _tlsDirectWriter(tlsDirectWriter)
         { }
-        void storeOperation(const FeedOperation &op) override;
+        void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
         bool erase(SerialNum oldest_to_keep) override;
         SerialNum sync(SerialNum syncTo) override;
     };
@@ -234,7 +234,8 @@ public:
     void eof() override;
     void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
     void syncTls(SerialNum syncTo);
-    void storeOperation(FeedOperation &op) override;
+    void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
+    void storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
 };
 

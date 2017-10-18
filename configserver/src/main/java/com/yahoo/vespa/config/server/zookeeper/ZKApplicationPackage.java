@@ -2,8 +2,6 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
@@ -12,7 +10,6 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.*;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.io.IOUtils;
@@ -61,37 +58,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private Optional<AllocatedHosts> importAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
         if ( ! liveApp.exists(allocatedHostsPath)) return Optional.empty();
-        Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(allocatedHostsPath, nodeFlavors);
-        if ( ! allocatedHosts.isPresent()) { // Read from legacy location. TODO: Remove when 6.143 is in production everywhere
-            List<String> allocatedHostsByVersionNodes = liveApp.getChildren(allocatedHostsPath);
-            allocatedHosts = merge(readAllocatedHostsByVersion(allocatedHostsByVersionNodes, nodeFlavors));
-        }
-        return allocatedHosts;
-    }
-    
-    private Map<Version, AllocatedHosts> readAllocatedHostsByVersion(List<String> allocatedHostsByVersionNodes, 
-                                                                     Optional<NodeFlavors> nodeFlavors) {
-        Map<Version, AllocatedHosts> allocatedHostsByVersion = new HashMap<>();
-        allocatedHostsByVersionNodes.stream()
-                .forEach(versionStr -> {
-                    Version version = Version.fromString(versionStr);
-                    Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(Joiner.on("/").join(allocatedHostsNode, versionStr),
-                                                                                nodeFlavors);
-                    allocatedHosts.ifPresent(info -> allocatedHostsByVersion.put(version, info));
-                });
-        return allocatedHostsByVersion;
-    }
-
-    private Optional<AllocatedHosts> merge(Map<Version, AllocatedHosts> allocatedHostsByVersion) {
-        // Merge the allocated hosts in any order. This is wrong but preserves current behavior (modulo order differences)
-        if (allocatedHostsByVersion.isEmpty()) return Optional.empty();
-        
-        Map<String, HostSpec> merged = new HashMap<>();
-        for (Map.Entry<Version, AllocatedHosts> entry : allocatedHostsByVersion.entrySet()) {
-            for (HostSpec host : entry.getValue().getHosts())
-                merged.put(host.hostname(), host);
-        }
-        return Optional.of(AllocatedHosts.withHosts(ImmutableSet.copyOf(merged.values())));
+        return Optional.of(readAllocatedHosts(allocatedHostsPath, nodeFlavors));
     }
 
     /** 
@@ -99,11 +66,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
      * 
      * @return the allocated hosts at this node or empty if there is no data at this path
      */
-    private Optional<AllocatedHosts> readAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
+    private AllocatedHosts readAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
         try {
-            byte[] data = liveApp.getBytes(allocatedHostsPath);
-            if (data.length == 0) return Optional.empty(); // TODO: Remove this line (and make return non-optional) when 6.143 is in production everywhere
-            return Optional.of(AllocatedHosts.fromJson(data, nodeFlavors));
+            return AllocatedHosts.fromJson(liveApp.getBytes(allocatedHostsPath), nodeFlavors);
         } catch (Exception e) {
             throw new RuntimeException("Unable to read allocated hosts", e);
         }

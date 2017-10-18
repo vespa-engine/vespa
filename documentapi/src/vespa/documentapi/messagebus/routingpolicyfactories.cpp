@@ -6,8 +6,6 @@
 #include <vespa/documentapi/messagebus/policies/externpolicy.h>
 #include <vespa/documentapi/messagebus/policies/localservicepolicy.h>
 #include <vespa/documentapi/messagebus/policies/roundrobinpolicy.h>
-#include <vespa/documentapi/messagebus/policies/searchcolumnpolicy.h>
-#include <vespa/documentapi/messagebus/policies/searchrowpolicy.h>
 #include <vespa/documentapi/messagebus/policies/subsetservicepolicy.h>
 #include <vespa/documentapi/messagebus/policies/storagepolicy.h>
 #include <vespa/documentapi/messagebus/policies/contentpolicy.h>
@@ -104,18 +102,6 @@ mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::RoundRobinPolicyFactory::createPolicy(const string &param) const
 {
     return mbus::IRoutingPolicy::UP(new RoundRobinPolicy(param));
-}
-
-mbus::IRoutingPolicy::UP
-RoutingPolicyFactories::SearchColumnPolicyFactory::createPolicy(const string &param) const
-{
-    return mbus::IRoutingPolicy::UP(new SearchColumnPolicy(param));
-}
-
-mbus::IRoutingPolicy::UP
-RoutingPolicyFactories::SearchRowPolicyFactory::createPolicy(const string &param) const
-{
-    return mbus::IRoutingPolicy::UP(new SearchRowPolicy(param));
 }
 
 mbus::IRoutingPolicy::UP

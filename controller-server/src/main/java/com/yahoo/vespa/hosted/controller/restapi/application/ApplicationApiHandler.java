@@ -160,7 +160,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
-        if (path.matches("/application/v4/athensDomain")) return athensDomains(request);
+        if (path.matches("/application/v4/athensDomain")) return athenzDomains(request);
         if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/cookiefreshness")) return cookieFreshness(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
@@ -269,12 +269,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
     
-    private HttpResponse athensDomains(HttpRequest request) {
+    private HttpResponse athenzDomains(HttpRequest request) {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor array = response.setArray("data");
-        for (AthenzDomain athensDomain : controller.getDomainList(request.getProperty("prefix"))) {
-            array.addString(athensDomain.id());
+        for (AthenzDomain athenzDomain : controller.getDomainList(request.getProperty("prefix"))) {
+            array.addString(athenzDomain.id());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -638,7 +638,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (tenant.isOpsDbTenant())
             throwIfNotSuperUserOrPartOfOpsDbGroup(new UserGroup(mandatory("userGroup", requestData).asString()), request);
         if (tenant.isAthensTenant())
-            throwIfNotAthensDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
+            throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
  
         controller.tenants().addTenant(tenant, authorizer.getNToken(request));
         return new SlimeJsonResponse(toSlime(tenant, request, true));
@@ -652,11 +652,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         PropertyId propertyId = new PropertyId(mandatory("propertyId", requestData).asString());
 
         authorizer.throwIfUnauthorized(tenantid, request);
-        throwIfNotAthensDomainAdmin(tenantDomain, request);
+        throwIfNotAthenzDomainAdmin(tenantDomain, request);
         NToken nToken = authorizer.getNToken(request)
                 .orElseThrow(() ->
                         new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
-        Tenant tenant = controller.tenants().migrateTenantToAthens(tenantid, tenantDomain, propertyId, property, nToken);
+        Tenant tenant = controller.tenants().migrateTenantToAthenz(tenantid, tenantDomain, propertyId, property, nToken);
         return new SlimeJsonResponse(toSlime(tenant, request, true));
     }
 
@@ -769,6 +769,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                           tenant,
                                                           applicationId);
         } else { // In case of host-based principal
+            // TODO What about other user type principals like Bouncer?
+            log.log(LogLevel.WARNING,
+                    "Using deprecated DeployAuthorizer.throwIfUnauthorizedForDeploy. Principal=" + principal);
             UserId userId = new UserId(principal.getName());
             deployAuthorizer.throwIfUnauthorizedForDeploy(
                     Environment.from(environment),
@@ -959,11 +962,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void throwIfNotAthensDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
+    private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
         UserId userId = authorizer.getUserId(request);
-        if ( ! authorizer.isAthensDomainAdmin(userId, tenantDomain)) {
+        if ( ! authorizer.isAthenzDomainAdmin(userId, tenantDomain)) {
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athens domain '%s'", userId.id(), tenantDomain.id()));
+                    String.format("The user '%s' is not admin in Athenz domain '%s'", userId.id(), tenantDomain.id()));
         }
     }
 
