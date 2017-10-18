@@ -45,6 +45,8 @@ public class ProviderServiceServlet extends HttpServlet {
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             } else {
                 resp.setStatus(HttpServletResponse.SC_OK);
+                resp.setContentType("application/json");
+                resp.getWriter().write(Utils.getMapper().writeValueAsString(instanceConfirmation));
             }
         } catch (JsonParseException | JsonMappingException e) {
             log.log(LogLevel.ERROR, "InstanceConfirmation is not valid JSON", e);
