@@ -121,7 +121,7 @@ public class ZmsClientImpl implements ZmsClient {
                     DomainList domainList = zmsClient.getDomainList(
                             /*limit*/null, /*skip*/null, prefix, /*depth*/null, /*domain*/null,
                             /*productId*/ null, /*modifiedSince*/null);
-                    return toAthensDomains(domainList.getNames());
+                    return toAthenzDomains(domainList.getNames());
                 });
     }
 
@@ -139,7 +139,7 @@ public class ZmsClientImpl implements ZmsClient {
         log("getServiceIdentity(domain=%s, service=%s)", service.getDomain().id(), service.getServiceName());
         return getOrThrow(() -> {
             ServiceIdentity serviceIdentity = zmsClient.getServiceIdentity(service.getDomain().id(), service.getServiceName());
-            return toAthensPublicKeys(serviceIdentity.getPublicKeys());
+            return toAthenzPublicKeys(serviceIdentity.getPublicKeys());
         });
     }
 
@@ -153,11 +153,11 @@ public class ZmsClientImpl implements ZmsClient {
                 .collect(toList());
     }
 
-    private static List<AthenzDomain> toAthensDomains(List<String> domains) {
+    private static List<AthenzDomain> toAthenzDomains(List<String> domains) {
         return domains.stream().map(AthenzDomain::new).collect(toList());
     }
 
-    private static List<AthenzPublicKey> toAthensPublicKeys(List<PublicKeyEntry> publicKeys) {
+    private static List<AthenzPublicKey> toAthenzPublicKeys(List<PublicKeyEntry> publicKeys) {
         return publicKeys.stream()
                 .map(entry -> fromYbase64EncodedKey(entry.getKey(), entry.getId()))
                 .collect(toList());
@@ -192,7 +192,7 @@ public class ZmsClientImpl implements ZmsClient {
     }
 
     private static void logWarning(ZMSClientException e) {
-        log.warning("Error from Athens: " + e.getMessage());
+        log.warning("Error from Athenz: " + e.getMessage());
     }
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {

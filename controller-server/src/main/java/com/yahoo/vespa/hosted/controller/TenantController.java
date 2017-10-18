@@ -140,7 +140,7 @@ public class TenantController {
             if (updatedTenant.isAthensTenant() && ! token.isPresent())
                 throw new IllegalArgumentException("Could not update " + updatedTenant + ": No NToken provided");
 
-            updateAthensDomain(updatedTenant, token);
+            updateAthenzDomain(updatedTenant, token);
             db.updateTenant(updatedTenant);
             log.info("Updated " + updatedTenant);
         } catch (PersistenceException e) {
@@ -148,7 +148,7 @@ public class TenantController {
         }
     }
 
-    private void updateAthensDomain(Tenant updatedTenant, Optional<NToken> token) {
+    private void updateAthenzDomain(Tenant updatedTenant, Optional<NToken> token) {
         Tenant existingTenant = tenant(updatedTenant.getId()).get();
         if ( ! existingTenant.isAthensTenant()) return;
 
@@ -192,7 +192,7 @@ public class TenantController {
         }
     }
 
-    public Tenant migrateTenantToAthens(TenantId tenantId,
+    public Tenant migrateTenantToAthenz(TenantId tenantId,
                                         AthenzDomain tenantDomain,
                                         PropertyId propertyId,
                                         Property property,

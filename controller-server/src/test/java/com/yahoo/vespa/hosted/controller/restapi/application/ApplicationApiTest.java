@@ -529,7 +529,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}",
                                       Request.Method.POST,
                                       "domain1", unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'othertenant' is not admin in Athens domain 'domain1'\"}",
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'othertenant' is not admin in Athenz domain 'domain1'\"}",
                               403);
 
         // (Create it with the right tenant id)
