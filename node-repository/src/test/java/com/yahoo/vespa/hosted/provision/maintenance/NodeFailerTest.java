@@ -353,6 +353,23 @@ public class NodeFailerTest {
     }
 
     @Test
+    public void failing_divergent_ready_nodes() {
+        NodeFailTester tester = NodeFailTester.withNoApplications();
+
+        Node readyNode = tester.createReadyNodes(1).get(0);
+
+        tester.failer.run();
+
+        assertEquals(Node.State.ready, readyNode.state());
+
+        readyNode.status().withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"));
+
+        tester.failer.run();
+
+        assertEquals(Node.State.failed, readyNode.state());
+    }
+
+    @Test
     public void node_failing_throttle() {
         // Throttles based on a absolute number in small zone
         {
