@@ -83,6 +83,7 @@ private:
     void commitIfStale(const vespalib::MonitorGuard & guard);
     class Chunk {
     public:
+
         void add(const Packet & packet, Writer::DoneCallback onDone);
         size_t sizeBytes() const { return _data.sizeBytes(); }
         const Packet & getPacket() const { return _data; }
@@ -112,6 +113,7 @@ private:
     using DurationSeconds = std::chrono::duration<double>;
 
     std::unique_ptr<Chunk> _currentChunk;
+    SerialNum           _lastSerial;
     DomainPart::Crc     _defaultCrcType;
     FastOS_ThreadPool & _threadPool;
     Executor          & _commitExecutor;

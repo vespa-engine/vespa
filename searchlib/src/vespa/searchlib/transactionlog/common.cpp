@@ -51,8 +51,11 @@ Packet::Packet(const void * buf, size_t sz) :
 
 bool Packet::merge(const Packet & packet)
 {
-    bool retval(_range.to() < packet._range.from());
+    bool retval(_range.to() < packet.range().from());
     if (retval) {
+        if (_buf.empty()) {
+            _range.from(packet.range().from());
+        }
         _count += packet._count;
         _range.to(packet._range.to());
         _buf.write(packet.getHandle().c_str(), packet.getHandle().size());

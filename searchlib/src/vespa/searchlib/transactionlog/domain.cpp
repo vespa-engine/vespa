@@ -28,6 +28,7 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
                Executor & commitExecutor, Executor & sessionExecutor, uint64_t domainPartSize,
                DomainPart::Crc defaultCrcType, const FileHeaderContext &fileHeaderContext) :
     _currentChunk(std::make_unique<Chunk>()),
+    _lastSerial(0),
     _defaultCrcType(defaultCrcType),
     _threadPool(threadPool),
     _commitExecutor(commitExecutor),
@@ -68,6 +69,7 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
     }
+    _lastSerial = end();
     _self = _threadPool.NewThread(this);
     assert(_self);
 }
@@ -156,7 +158,7 @@ Domain::begin(const LockGuard & guard) const
     assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
-        s = _parts.begin()->second->range().from();
+        s = _parts.cbegin()->second->range().from();
     }
     return s;
 }
@@ -174,7 +176,7 @@ Domain::end(const LockGuard & guard) const
     assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
-        s = _parts.rbegin()->second->range().to();
+        s = _parts.crbegin()->second->range().to();
     }
     return s;
 }
@@ -327,9 +329,14 @@ Domain::Chunk::age() const {
 
 void
 Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
-
     std::unique_ptr<Chunk> completed;
     vespalib::MonitorGuard guard(_currentChunkMonitor);
+    if (! (_lastSerial < packet.range().from())) {
+        throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
+                                        packet.range().from(), _lastSerial));
+    } else {
+        _lastSerial = packet.range().to();
+    }
     _currentChunk->add(packet, std::move(onDone));
     if (_currentChunk->sizeBytes() > _chunkSizeLimit) {
         completed = grabCurrentChunk(guard);
