@@ -40,7 +40,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     try (Lock lock = controller().applications().lock(application.id())) {
 
                         // Deployment or application may have changed (or be gone) now:
-                        application = controller().applications().require(application.id());
+                        application = controller().applications().get(application.id()).orElse(null);
                         if (application == null)
                             break;
 
@@ -52,7 +52,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     }
                 }
                 catch (UncheckedIOException e) {
-                    log.log(Level.WARNING, "Timed out talking to YAMAS; retrying in " + maintenanceInterval() + ":\n", e);
+                    log.log(Level.WARNING, "Timed out talking to YAMAS; retrying in " + maintenanceInterval(), e);
                 }
             }
         }
