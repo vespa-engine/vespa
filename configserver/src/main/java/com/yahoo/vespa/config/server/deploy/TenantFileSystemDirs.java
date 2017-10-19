@@ -22,7 +22,7 @@ public class TenantFileSystemDirs {
     public TenantFileSystemDirs(File dir, TenantName tenant) {
         this.serverDB = dir;
         this.tenant = tenant;
-        ConfigServerDB.cr(path());
+        ConfigServerDB.createDirectory(path());
     }
 
     public static TenantFileSystemDirs createTestDirs(TenantName tenantName) {

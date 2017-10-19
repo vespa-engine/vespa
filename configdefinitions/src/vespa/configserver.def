@@ -13,6 +13,7 @@ zookeeperserver[].port int default=2181
 zookeeper.barrierTimeout long default=120
 configModelPluginDir[] string
 configServerDBDir string default="var/db/vespa/config_server/serverdb/"
+configDefinitionsDir string default="share/vespa/configdefinitions/"
 maxgetconfigclients int default=1000000
 maxoutputbuffersize int default=65536
 # in seconds

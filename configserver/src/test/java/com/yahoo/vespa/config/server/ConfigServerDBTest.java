@@ -18,18 +18,20 @@ import static org.junit.Assert.assertThat;
  */
 public class ConfigServerDBTest {
     private ConfigServerDB serverDB;
-    private File tempDir;
+    private File dbDir;
+    private File definitionsDir;
 
     @Before
     public void setup() {
-        tempDir = Files.createTempDir();
-        serverDB = ConfigServerDB.createTestConfigServerDb(tempDir.getAbsolutePath());
+        dbDir = Files.createTempDir();
+        definitionsDir = Files.createTempDir();
+        serverDB = ConfigServerDB.createTestConfigServerDb(dbDir.getAbsolutePath(), definitionsDir.getAbsolutePath());
     }
 
-    private ConfigServerDB createInitializer() throws IOException {
+    private void createInitializer() throws IOException {
         File existingDef = new File(serverDB.classes(), "test.def");
         IOUtils.writeFile(existingDef, "hello", false);
-        return ConfigServerDB.createTestConfigServerDb(tempDir.getAbsolutePath());
+        ConfigServerDB.createTestConfigServerDb(dbDir.getAbsolutePath(), definitionsDir.getAbsolutePath());
     }
 
     @Test

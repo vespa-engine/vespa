@@ -71,7 +71,9 @@ public class DeployTester {
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
         this(appPath, modelFactories, new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                      .configServerDBDir(Files.createTempDir()
-                                                                                             .getAbsolutePath())),
+                                                                                             .getAbsolutePath())
+                                                                     .configDefinitionsDir(Files.createTempDir()
+                                                                                                .getAbsolutePath())),
              Clock.systemUTC());
     }
 

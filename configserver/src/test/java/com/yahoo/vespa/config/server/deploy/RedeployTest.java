@@ -72,6 +72,8 @@ public class RedeployTest {
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                                .configServerDBDir(Files.createTempDir()
                                                                                                        .getAbsolutePath())
+                                                                               .configDefinitionsDir(Files.createTempDir()
+                                                                                                          .getAbsolutePath())
                                                                                .sessionLifetime(60));
         DeployTester tester = new DeployTester("src/test/apps/app", configserverConfig, clock);
         tester.deployApp("myapp", Instant.now()); // session 2 (numbering starts at 2)
