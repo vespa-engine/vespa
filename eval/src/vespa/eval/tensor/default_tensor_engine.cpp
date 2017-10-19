@@ -293,13 +293,13 @@ DefaultTensorEngine::decode(nbostream &input, Stash &stash) const
 //-----------------------------------------------------------------------------
 
 const Value &
-DefaultTensorEngine::map(const Value &a, const std::function<double(double)> &function, Stash &stash) const
+DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
     return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
 }
 
 const Value &
-DefaultTensorEngine::join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const
+DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
     return to_default(simple_engine().join(to_simple(a, stash), to_simple(b, stash), function, stash), stash);
 }

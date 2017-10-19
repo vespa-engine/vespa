@@ -543,7 +543,7 @@ SimpleTensor::SimpleTensor(const ValueType &type_in, Cells cells_in)
 }
 
 std::unique_ptr<SimpleTensor>
-SimpleTensor::map(const std::function<double(double)> &function) const
+SimpleTensor::map(map_fun_t function) const
 {
     Cells cells(_cells);
     for (auto &cell: cells) {
@@ -629,7 +629,7 @@ SimpleTensor::equal(const SimpleTensor &a, const SimpleTensor &b)
 }
 
 std::unique_ptr<SimpleTensor>
-SimpleTensor::join(const SimpleTensor &a, const SimpleTensor &b, const std::function<double(double,double)> &function)
+SimpleTensor::join(const SimpleTensor &a, const SimpleTensor &b, join_fun_t function)
 {
     ValueType result_type = ValueType::join(a.type(), b.type());
     if (result_type.is_error()) {

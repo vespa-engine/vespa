@@ -52,6 +52,42 @@ struct BinaryOperation : Operation {
 
 //-----------------------------------------------------------------------------
 
+/**
+ * Utility class used to adapt stateless function pointers to stateful
+ * functors by using thread-local bindings.
+ **/
+class UnaryOperationProxy {
+private:
+    static __thread const UnaryOperation *_ctx;
+    static double eval_proxy(double a);
+    const UnaryOperation *_my_ctx;
+    const UnaryOperation *_old_ctx;
+public:
+    using fun_t = double (*)(double);
+    UnaryOperationProxy(const UnaryOperation &op);
+    operator fun_t() const { return eval_proxy; }
+    ~UnaryOperationProxy();
+};
+
+/**
+ * Utility class used to adapt stateless function pointers to stateful
+ * functors by using thread-local bindings.
+ **/
+class BinaryOperationProxy {
+private:
+    static __thread const BinaryOperation *_ctx;
+    static double eval_proxy(double a, double b);
+    const BinaryOperation *_my_ctx;
+    const BinaryOperation *_old_ctx;
+public:
+    using fun_t = double (*)(double, double);
+    BinaryOperationProxy(const BinaryOperation &op);
+    operator fun_t() const { return eval_proxy; }
+    ~BinaryOperationProxy();
+};
+
+//-----------------------------------------------------------------------------
+
 template <typename T>
 struct Op1 : UnaryOperation {
     virtual void accept(OperationVisitor &visitor) const override;

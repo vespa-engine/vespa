@@ -127,13 +127,13 @@ SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op
 const Value &
 SimpleTensorEngine::map(const UnaryOperation &op, const eval::Tensor &a, Stash &stash) const
 {
-    return to_value(to_simple(a).map([&op](double x){ return op.eval(x); }), stash);
+    return to_value(to_simple(a).map(UnaryOperationProxy(op)), stash);
 }
 
 const Value &
 SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, const eval::Tensor &b, Stash &stash) const
 {
-    return to_value(SimpleTensor::join(to_simple(a), to_simple(b), [&op](double x, double y){ return op.eval(x, y); }), stash);
+    return to_value(SimpleTensor::join(to_simple(a), to_simple(b), BinaryOperationProxy(op)), stash);
 }
 
 //-----------------------------------------------------------------------------
@@ -153,13 +153,13 @@ SimpleTensorEngine::decode(nbostream &input, Stash &stash) const
 //-----------------------------------------------------------------------------
 
 const Value &
-SimpleTensorEngine::map(const Value &a, const std::function<double(double)> &function, Stash &stash) const
+SimpleTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
     return to_value(to_simple(a, stash).map(function), stash);
 }
 
 const Value &
-SimpleTensorEngine::join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const
+SimpleTensorEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
     return to_value(SimpleTensor::join(to_simple(a, stash), to_simple(b, stash), function), stash);
 }

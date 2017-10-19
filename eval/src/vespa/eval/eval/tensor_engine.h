@@ -38,6 +38,8 @@ struct TensorEngine
     using Tensor = eval::Tensor;
     using TensorSpec = eval::TensorSpec;
     using Value = eval::Value;
+    using map_fun_t = double (*)(double);
+    using join_fun_t = double (*)(double, double);
     using BinaryOperation = eval::BinaryOperation;
     using UnaryOperation = eval::UnaryOperation;
     using Aggr = eval::Aggr;
@@ -57,8 +59,8 @@ struct TensorEngine
     // havardpe: new API, WIP
     virtual void encode(const Value &value, nbostream &output, Stash &stash) const = 0;
     virtual const Value &decode(nbostream &input, Stash &stash) const = 0;
-    virtual const Value &map(const Value &a, const std::function<double(double)> &function, Stash &stash) const = 0;
-    virtual const Value &join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const = 0;
+    virtual const Value &map(const Value &a, map_fun_t function, Stash &stash) const = 0;
+    virtual const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const = 0;
     virtual const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;
     virtual const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const = 0;
     virtual const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
