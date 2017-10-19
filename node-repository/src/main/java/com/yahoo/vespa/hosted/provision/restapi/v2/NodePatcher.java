@@ -172,7 +172,7 @@ public class NodePatcher {
 
     // Remove when we no longer have "null" strings for this field in the node repo
     private Optional<String> removeQuotedNulls(Optional<String> value) {
-        return value.isPresent() && value.get().equals("null") ? Optional.empty() : value;
+        return value.filter(v -> !v.equals("null"));
     }
 
     private boolean asBoolean(Inspector field) {
