@@ -496,6 +496,13 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        "{\"message\":\"Updated host6.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
+
+        // Clear on quoted "null" report
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                        Utf8.toBytes("{\"hardwareDivergence\": \"null\"}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
     }
 
     /** Tests the rendering of each node separately to make it easier to find errors */
