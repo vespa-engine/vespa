@@ -69,7 +69,6 @@ public class ControllerApiTest extends ControllerContainerTest {
                                           "{\"ignoreConfidence\":true}", Request.Method.PATCH),
                               "{\"upgradesPerMinute\":42.0,\"ignoreConfidence\":true}",
                               200);
-
     }
 
 }

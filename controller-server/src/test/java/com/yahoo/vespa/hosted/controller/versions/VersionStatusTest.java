@@ -231,17 +231,6 @@ public class VersionStatusTest {
                      Confidence.high, confidence(tester.controller(), version2));
         assertEquals("40% of defaults failed: Broken",
                      VespaVersion.Confidence.broken, confidence(tester.controller(), version3));
-
-        // Same as above, but ignore confidence calculations, will force normal confidence
-        tester.controllerTester().curator().writeIgnoreConfidence(true);
-        tester.updateVersionStatus();
-
-        assertEquals("Confidence remains unchanged for version0: High",
-                     Confidence.high, confidence(tester.controller(), version0));
-        assertEquals("Confidence remains unchanged for version2: High",
-                     Confidence.high, confidence(tester.controller(), version2));
-        assertEquals("40% of defaults failed, but confidence is ignored: Normal ",
-                     VespaVersion.Confidence.normal, confidence(tester.controller(), version3));
     }
 
 
