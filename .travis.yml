@@ -24,11 +24,4 @@ install: true
 
 language: minimal
 
-matrix:
-  include:
-    - script: ./travis/travis.sh java
-      if: type = pull_request
-    - script: ./travis/travis.sh cpp
-      if: type = pull_request
-    - script: ./travis/travis.sh full
-      if: NOT type = pull_request
+script: ./travis/travis.sh
