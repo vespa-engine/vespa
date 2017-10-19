@@ -171,7 +171,7 @@ public class NodeSerializer {
                           hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
                           wantToDeprovision,
-                          hardwareDivergenceFromSlime(object));
+                          removeQuotedNulls(hardwareDivergenceFromSlime(object)));
     }
 
     private Flavor flavorFromSlime(Inspector object) {
@@ -238,6 +238,12 @@ public class NodeSerializer {
         }
         return Optional.empty();
     }
+
+    // Remove when we no longer have "null" strings for this field in the node repo
+    private Optional<String> removeQuotedNulls(Optional<String> value) {
+        return value.filter(v -> !v.equals("null"));
+    }
+
 
     private Set<String> ipAddressesFromSlime(Inspector object, String key) {
         ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();

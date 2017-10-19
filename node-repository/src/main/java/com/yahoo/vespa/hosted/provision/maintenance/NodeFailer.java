@@ -88,6 +88,10 @@ public class NodeFailer extends Maintainer {
             if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
                                                          Agent.system, "Node has hardware failure");
 
+        for (Node node: readyNodesWithHardwareDivergence())
+            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
+                                                         Agent.system, "Node hardware diverges from spec");
+
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
@@ -127,6 +131,12 @@ public class NodeFailer extends Maintainer {
         return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
                 .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
+                .collect(Collectors.toList());
+    }
+
+    private List<Node> readyNodesWithHardwareDivergence() {
+        return nodeRepository().getNodes(Node.State.ready).stream()
+                .filter(node -> node.status().hardwareDivergence().isPresent())
                 .collect(Collectors.toList());
     }
 
