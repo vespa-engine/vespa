@@ -362,7 +362,8 @@ public class NodeFailerTest {
 
         assertEquals(Node.State.ready, readyNode.state());
 
-        readyNode.status().withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"));
+        tester.nodeRepository.write(readyNode.with(readyNode.status()
+                .withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"))));
 
         tester.failer.run();
 
