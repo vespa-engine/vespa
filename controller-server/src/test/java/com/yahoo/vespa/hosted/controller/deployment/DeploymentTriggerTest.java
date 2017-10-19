@@ -269,6 +269,7 @@ public class DeploymentTriggerTest {
         BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
                                                                                 Duration.ofHours(1),
                                                                                 new JobControl(tester.controllerTester().curator()));
+
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
 
@@ -276,10 +277,14 @@ public class DeploymentTriggerTest {
                 .upgradePolicy("canary")
                 // Block revision changes on tuesday in hours 18 and 19
                 .blockChange(true, false, "tue", "18-19", "UTC")
-                .region("us-west-1");
+                .region("us-west-1")
+                .region("us-central-1")
+                .region("us-east-3");
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
 
+        
+        
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
         
         blockedChangeDeployer.run();

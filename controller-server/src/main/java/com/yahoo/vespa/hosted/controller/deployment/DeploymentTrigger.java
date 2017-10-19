@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -130,21 +131,19 @@ public class DeploymentTrigger {
     private void triggerReadyJobs(Application application, Lock lock) {
         if ( ! application.deploying().isPresent()) return;
         for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
-            // TODO: Do this for all jobs not just staging, and (with more work) remove triggerFailing and triggerDelayed
-            if (jobType.environment().equals(Environment.staging)) {
-                JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-                if (jobStatus.isRunning(jobTimeoutLimit())) continue;
+            JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+            if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
-                for (JobType nextJobType : order.nextAfter(jobType, application)) {
-                    JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
-                    
-                    // Attempt to trigger if there are changes available - is rejected if the change is in progress,
-                    // or is currently blocked
-                    if (changesAvailable(jobStatus, nextStatus))
-                        trigger(nextJobType, application, false, "Triggering previously blocked job", lock);
-                }
-                
+            // Collect the subset of next jobs which have not run with the last changes
+            List<JobType> nextToTrigger = new ArrayList<>();
+            for (JobType nextJobType : order.nextAfter(jobType, application)) {
+                JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
+                if (changesAvailable(application, jobStatus, nextStatus))
+                    nextToTrigger.add(nextJobType);
             }
+            // Trigger them in parallel
+            application = trigger(nextToTrigger, application, "Triggering previously blocked jobs", lock);
+            controller.applications().store(application, lock);
         }
     }
 
@@ -152,8 +151,15 @@ public class DeploymentTrigger {
      * Returns true if the previous job has completed successfully with a revision and/or version which is
      * newer (different) than the one last completed successfully in next
      */
-    private boolean changesAvailable(JobStatus previous, JobStatus next) {
+    private boolean changesAvailable(Application application, JobStatus previous, JobStatus next) {
         if ( ! previous.lastSuccess().isPresent()) return false;
+
+        if ( ! application.deploying().isPresent()) return false;
+        Change change = application.deploying().get();
+        if (change instanceof Change.VersionChange && // the last completed is out of date - don't continue with it 
+            ! ((Change.VersionChange)change).version().equals(previous.lastSuccess().get().version()))
+            return false;
+
         if (next == null) return true;
         if ( ! next.lastSuccess().isPresent()) return true;
         
@@ -327,7 +333,7 @@ public class DeploymentTrigger {
 
     /**
      * Trigger a job for an application 
-     * 
+     *
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
      * @param first whether to trigger the job before other jobs
@@ -335,6 +341,27 @@ public class DeploymentTrigger {
      * @return the application in the triggered state, which *must* be stored by the caller
      */
     private Application trigger(JobType jobType, Application application, boolean first, String cause, Lock lock) {
+        if (isRunningProductionJob(application)) return application;
+        return triggerAllowParallel(jobType, application, first, cause, lock);
+    }
+
+    private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
+        if (isRunningProductionJob(application)) return application;
+        for (JobType job : jobs)
+            application = triggerAllowParallel(job, application, false, cause, lock);
+        return application;
+    }
+
+    /**
+     * Trigger a job for an application 
+     * 
+     * @param jobType the type of the job to trigger, or null to trigger nothing
+     * @param application the application to trigger the job for
+     * @param first whether to trigger the job before other jobs
+     * @param cause describes why the job is triggered
+     * @return the application in the triggered state, which *must* be stored by the caller
+     */
+    private Application triggerAllowParallel(JobType jobType, Application application, boolean first, String cause, Lock lock) {
         if (jobType == null) { // previous was last job
             return application;
         }
@@ -383,12 +410,11 @@ public class DeploymentTrigger {
         return application.withJobTriggering(jobType, application.deploying(), clock.instant(), controller);
     }
 
-    private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
-        for (JobType job : jobs)
-            application = trigger(job, application, false, cause, lock);
-        return application;
+    private boolean isRunningProductionJob(Application application) {
+        return application.deploymentJobs().jobStatus().entrySet().stream()
+                .anyMatch(entry -> entry.getKey().isProduction() && entry.getValue().isRunning(jobTimeoutLimit()));
     }
-
+    
     private boolean acceptNewRevisionNow(Application application) {
         if ( ! application.deploying().isPresent()) return true;
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok

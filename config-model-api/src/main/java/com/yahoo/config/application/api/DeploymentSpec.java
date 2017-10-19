@@ -239,7 +239,7 @@ public class DeploymentSpec {
         }
     }
 
-    /** A delpoyment step */
+    /** A deployment step */
     public abstract static class Step {
         
         /** Returns whether this step deploys to the given region */

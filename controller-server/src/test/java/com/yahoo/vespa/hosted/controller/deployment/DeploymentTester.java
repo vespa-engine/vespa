@@ -153,7 +153,7 @@ public class DeploymentTester {
             jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
-            deployAndNotify(application, applicationPackage, !failJob, job);
+            deployAndNotify(application, applicationPackage, !failJob, false, job);
             if (failJob) {
                 break;
             }
@@ -205,8 +205,14 @@ public class DeploymentTester {
         job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage, deployCurrentVersion));
     }
 
-    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success, JobType... jobs) {
-        assertScheduledJob(application, jobs);
+    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
+                                JobType... jobs) {
+        deployAndNotify(application, applicationPackage, success, true, jobs);
+    }
+
+    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success, 
+                                boolean expectOnlyTheseJobs, JobType... jobs) {
+        consumeJobs(application, expectOnlyTheseJobs, jobs);
         for (JobType job : jobs) {
             if (success) {
                 deploy(job, application, applicationPackage);
@@ -215,13 +221,16 @@ public class DeploymentTester {
         }
     }
 
-    private void assertScheduledJob(Application application, JobType... jobs) {
+    /** Assert that the sceduled jobs of this application are exactly those given, and take them */
+    private void consumeJobs(Application application, boolean expectOnlyTheseJobs, JobType... jobs) {
         for (JobType job : jobs) {
             Optional<BuildService.BuildJob> buildJob = findJob(application, job);
             assertTrue(String.format("Job %s is scheduled for %s", job, application), buildJob.isPresent());
             assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.get().projectId());
             assertEquals(job.id(), buildJob.get().jobName());
         }
+        if (expectOnlyTheseJobs)
+            assertEquals(jobs.length, countJobsOf(application));
         buildSystem().removeJobs(application.id());
     }
 
@@ -232,6 +241,11 @@ public class DeploymentTester {
         return Optional.empty();
     }
 
+    private int countJobsOf(Application application) {
+        return (int)buildSystem().jobs().stream()
+                                        .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
+                                        .count();
+    }
     private DeploymentJobs.JobReport jobReport(Application application, JobType jobType, Optional<DeploymentJobs.JobError> jobError) {
         return new DeploymentJobs.JobReport(
                 application.id(),
