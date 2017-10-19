@@ -2,7 +2,7 @@
   {
     "tenant": "tenant1",
     "metaData": {
-      "type": "ATHENS",
+      "type": "ATHENZ",
       "athensDomain": "domain1",
       "property": "property1"
     },

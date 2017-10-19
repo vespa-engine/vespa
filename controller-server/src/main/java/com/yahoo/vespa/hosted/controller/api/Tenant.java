@@ -54,7 +54,7 @@ public class Tenant {
 
     public TenantType tenantType() {
         if (athenzDomain.isPresent()) {
-            return TenantType.ATHENS;
+            return TenantType.ATHENZ;
         } else if (id.isUser()) {
             return TenantType.USER;
         } else {
