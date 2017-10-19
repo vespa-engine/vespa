@@ -395,21 +395,48 @@ ConfigHandler::handleCommand(CommandConnection *c)
     }
 }
 
+namespace {
+
+void
+fillRestarts(vespalib::SimpleMetricSnapshot &snapshot, unsigned long restarts)
+{
+    snapshot.addCount("sentinel.restarts",
+                      "how many times sentinel restarted a service",
+                      restarts);
+}
+
+void
+fillRunning(vespalib::SimpleMetricSnapshot &snapshot, unsigned long running)
+{
+    snapshot.addGauge("sentinel.running",
+                      "how many services the sentinel has running currently",
+                      running);
+}
+
+void
+fillUptime(vespalib::SimpleMetricSnapshot &snapshot, long uptime)
+{
+    snapshot.addGauge("sentinel.uptime",
+                      "how many seconds has the sentinel been running",
+                      uptime);
+}
+
+} // namespace <unnamed>
+
 void
 ConfigHandler::updateMetrics()
 {
+    time_t now = time(nullptr);
     vespalib::SimpleMetricSnapshot snapshot(_startMetrics.snapshotStart, _startMetrics.snapshotEnd);
-    snapshot.addCount("sentinel.restarts", "how many times sentinel restarted a service",
-                      _startMetrics.totalRestartsLastSnapshot);
-    snapshot.addGauge("sentinel.running", "how many services the sentinel has running currently",
-                      _startMetrics.currentlyRunningServices);
+    fillRestarts(snapshot, _startMetrics.totalRestartsLastSnapshot);
+    fillRunning(snapshot, _startMetrics.currentlyRunningServices);
+    fillUptime(snapshot, now - _startMetrics.startedTime);
     _stateApi.myMetrics.setMetrics(snapshot.asString());
 
-    vespalib::SimpleMetricSnapshot totals(_startMetrics.startedTime, time(nullptr));
-    totals.addCount("sentinel.restarts", "how many times sentinel restarted a service",
-                    _startMetrics.totalRestartsCounter);
-    totals.addGauge("sentinel.running", "how many services the sentinel has running currently",
-                    _startMetrics.currentlyRunningServices);
+    vespalib::SimpleMetricSnapshot totals(_startMetrics.startedTime, now);
+    fillRestarts(totals, _startMetrics.totalRestartsCounter);
+    fillRunning(totals, _startMetrics.currentlyRunningServices);
+    fillUptime(totals, now - _startMetrics.startedTime);
     _stateApi.myMetrics.setTotalMetrics(totals.asString());
 
 }

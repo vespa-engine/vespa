@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,6 +64,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         }
     }
 
+    // TODO: October 2017: Evaluate and remove if possible, seems to be compatibility code that is not needed anymore
     private void rewriteApplicationIds() {
         try {
             List<String> appNodes = curator.framework().getChildren().forPath(applicationsPath.getAbsolute());
@@ -161,6 +164,14 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
             case CHILD_REMOVED:
                 applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;
+            case CHILD_UPDATED:
+                // do nothing, application just got redeployed
+                break;
+            default:
+                // We don't know if applications have been added or removed so possibly need to remove some of them
+                // (new applications are not added here)
+                removeApplications(event.getType());
+                break;
         }
     }
 
@@ -171,6 +182,13 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void applicationAdded(ApplicationId applicationId) {
         log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application added: " + applicationId);
-    }    
+    }
+
+    private void removeApplications(PathChildrenCacheEvent.Type eventType) {
+        ImmutableSet<ApplicationId> allApplications = ImmutableSet.copyOf(listApplications());
+        log.log(Level.INFO, "Got " + eventType + " event, need to check if applications have been removed, " +
+                " found these active applications: " + allApplications);
+        reloadHandler.removeApplicationsExcept(allApplications);
+    }
 
 }

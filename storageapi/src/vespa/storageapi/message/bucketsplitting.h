@@ -45,7 +45,7 @@ private:
     uint32_t _minDocCount;
 
 public:
-    SplitBucketCommand(const document::BucketId& id);
+    SplitBucketCommand(const document::Bucket& bucket);
 
     uint8_t getMinSplitBits() const { return _minSplitBits; }
     uint8_t getMaxSplitBits() const { return _maxSplitBits; }
@@ -93,7 +93,7 @@ class JoinBucketsCommand : public MaintenanceCommand {
     std::vector<document::BucketId> _sources;
     uint8_t _minJoinBits;
 public:
-    explicit JoinBucketsCommand(const document::BucketId& target);
+    explicit JoinBucketsCommand(const document::Bucket &target);
     std::vector<document::BucketId>& getSourceBuckets() { return _sources; }
     const std::vector<document::BucketId>& getSourceBuckets() const { return _sources; }
     void setMinJoinBits(uint8_t minJoinBits) { _minJoinBits = minJoinBits; }

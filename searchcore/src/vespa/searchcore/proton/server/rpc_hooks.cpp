@@ -189,15 +189,22 @@ RPCHooksBase::initRPC()
     
 }
 
+RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident)
+        : proton(parent),
+          slobrok_config(config::ConfigUri("admin/slobrok.0")),
+          identity(ident),
+          rtcPort(port)
+{ }
+
+RPCHooksBase::Params::~Params() = default;
+
 RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
       _docsumByRPC(new DocsumByRPC(_proton.getDocsumBySlime())),
       _orb(std::make_unique<FRT_Supervisor>()),
       _regAPI(*_orb, params.slobrok_config),
-      _executor(48, 128 * 1024),
-      _ooscli(params, *_orb)
-{
-}
+      _executor(48, 128 * 1024)
+{ }
 
 void
 RPCHooksBase::open(Params & params)
@@ -209,9 +216,7 @@ RPCHooksBase::open(Params & params)
     LOG(debug, "started monitoring interface");
 }
 
-RPCHooksBase::~RPCHooksBase()
-{
-}
+RPCHooksBase::~RPCHooksBase() = default;
 
 void
 RPCHooksBase::close()

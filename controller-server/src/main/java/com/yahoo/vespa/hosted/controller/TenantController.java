@@ -5,7 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -66,7 +66,7 @@ public class TenantController {
 
     public List<Tenant> asList(UserId user) {
         Set<UserGroup> userGroups = entityService.getUserGroups(user);
-        Set<AthensDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
+        Set<AthenzDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
                                                               .getTenantDomainsForUser(AthenzUtils.createPrincipal(user)));
 
         Predicate<Tenant> hasUsersGroup = (tenant) -> tenant.getUserGroup().isPresent() && userGroups.contains(tenant.getUserGroup().get());
@@ -105,7 +105,7 @@ public class TenantController {
             throw new IllegalArgumentException("Could not create " + tenant + ": No NToken provided");
 
         if (tenant.isAthensTenant()) {
-            AthensDomain domain = tenant.getAthensDomain().get();
+            AthenzDomain domain = tenant.getAthensDomain().get();
             Optional<Tenant> existingTenantWithDomain = tenantHaving(domain);
             if (existingTenantWithDomain.isPresent())
                 throw new IllegalArgumentException("Could not create " + tenant + ": The Athens domain '" + domain +
@@ -119,7 +119,7 @@ public class TenantController {
     }
 
     /** Returns the tenant having the given Athens domain, or empty if none */
-    private Optional<Tenant> tenantHaving(AthensDomain domain) {
+    private Optional<Tenant> tenantHaving(AthenzDomain domain) {
         return asList().stream().filter(Tenant::isAthensTenant)
                 .filter(t -> t.getAthensDomain().get().equals(domain))
                 .findAny();
@@ -140,7 +140,7 @@ public class TenantController {
             if (updatedTenant.isAthensTenant() && ! token.isPresent())
                 throw new IllegalArgumentException("Could not update " + updatedTenant + ": No NToken provided");
 
-            updateAthensDomain(updatedTenant, token);
+            updateAthenzDomain(updatedTenant, token);
             db.updateTenant(updatedTenant);
             log.info("Updated " + updatedTenant);
         } catch (PersistenceException e) {
@@ -148,12 +148,12 @@ public class TenantController {
         }
     }
 
-    private void updateAthensDomain(Tenant updatedTenant, Optional<NToken> token) {
+    private void updateAthenzDomain(Tenant updatedTenant, Optional<NToken> token) {
         Tenant existingTenant = tenant(updatedTenant.getId()).get();
         if ( ! existingTenant.isAthensTenant()) return;
 
-        AthensDomain existingDomain = existingTenant.getAthensDomain().get();
-        AthensDomain newDomain = updatedTenant.getAthensDomain().get();
+        AthenzDomain existingDomain = existingTenant.getAthensDomain().get();
+        AthenzDomain newDomain = updatedTenant.getAthensDomain().get();
         if (existingDomain.equals(newDomain)) return;
         Optional<Tenant> existingTenantWithNewDomain = tenantHaving(newDomain);
         if (existingTenantWithNewDomain.isPresent())
@@ -192,8 +192,8 @@ public class TenantController {
         }
     }
 
-    public Tenant migrateTenantToAthens(TenantId tenantId,
-                                        AthensDomain tenantDomain,
+    public Tenant migrateTenantToAthenz(TenantId tenantId,
+                                        AthenzDomain tenantDomain,
                                         PropertyId propertyId,
                                         Property property,
                                         NToken nToken) {
@@ -209,11 +209,15 @@ public class TenantController {
 
             ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(nToken);
             zmsClient.createTenant(tenantDomain);
-            List<Application> applications = controller.applications().asList(TenantName.from(existing.getId().id()));
-            applications.forEach(a -> {
-                ApplicationId applicationId = new ApplicationId(a.id().application().value());
-                zmsClient.addApplication(tenantDomain, applicationId);
-            });
+
+            // Create resource group in Athenz for each application name
+            controller.applications()
+                    .asList(TenantName.from(existing.getId().id()))
+                    .stream()
+                    .map(name -> new ApplicationId(name.id().application().value()))
+                    .distinct()
+                    .forEach(appId -> zmsClient.addApplication(tenantDomain, appId));
+
             db.deleteTenant(tenantId);
             Tenant tenant = Tenant.createAthensTenant(tenantId, tenantDomain, property, Optional.of(propertyId));
             db.createTenant(tenant);

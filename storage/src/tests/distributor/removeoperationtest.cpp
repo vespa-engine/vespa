@@ -6,7 +6,10 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -52,7 +55,7 @@ public:
 
     void sendRemove(document::DocumentId dId) {
         std::shared_ptr<api::RemoveCommand> msg(
-                new api::RemoveCommand(document::BucketId(0), dId, 100));
+                new api::RemoveCommand(makeDocumentBucket(document::BucketId(0)), dId, 100));
 
         op.reset(new RemoveOperation(getExternalOperationHandler(),
                                      msg,

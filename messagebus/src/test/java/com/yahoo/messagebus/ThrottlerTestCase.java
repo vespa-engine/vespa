@@ -29,8 +29,8 @@ public class ThrottlerTestCase extends junit.framework.TestCase {
         table.addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"));
         table.addRoute("test", Arrays.asList("dst"));
         slobrok = new Slobrok();
-        src = new TestServer("test/src", table, slobrok, null, null);
-        dst = new TestServer("test/dst", table, slobrok, null, null);
+        src = new TestServer("test/src", table, slobrok, null);
+        dst = new TestServer("test/dst", table, slobrok, null);
     }
 
     public void tearDown() {

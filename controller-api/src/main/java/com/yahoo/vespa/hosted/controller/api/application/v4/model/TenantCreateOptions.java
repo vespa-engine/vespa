@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class TenantCreateOptions {
-    public AthensDomain athensDomain;
+    public AthenzDomain athensDomain;
     public Property property;
     public PropertyId propertyId;
     public UserGroup userGroup;
@@ -27,7 +27,7 @@ public class TenantCreateOptions {
         this.propertyId = propertyId;
     }
 
-    public TenantCreateOptions(AthensDomain athensDomain, Property property, PropertyId propertyId) {
+    public TenantCreateOptions(AthenzDomain athensDomain, Property property, PropertyId propertyId) {
         this.athensDomain = athensDomain;
         this.property = property;
         this.propertyId = propertyId;

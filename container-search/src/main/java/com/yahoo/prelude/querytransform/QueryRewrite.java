@@ -22,18 +22,14 @@ import com.yahoo.search.result.Hit;
 // TODO: This overlaps with QueryCanonicalizer
 public class QueryRewrite {
 
-    private enum Recall {
-        RECALLS_EVERYTHING,
-        RECALLS_NOTHING,
-        UNKNOWN_RECALL
-    }
+    private enum Recall { RECALLS_EVERYTHING, RECALLS_NOTHING, UNKNOWN_RECALL }
 
+    // ------------------- Start public API
+    
     /**
      * Optimize multiple NotItems under and or by collapsing them in to one and leaving
      * the positive ones behind in its place and moving itself with the original and as its positive item
      * and the union of all the negative items of all the original NotItems as its negative items.
-     *
-     * @param query to optimize
      */
     public static void optimizeAndNot(Query query) {
         Item root = query.getModel().getQueryTree().getRoot();
@@ -42,12 +38,52 @@ public class QueryRewrite {
             query.getModel().getQueryTree().setRoot(possibleNewRoot);
         }
     }
+
+    /**
+     * Optimizes the given query tree based on its {@link Model#getRestrict()} parameter, if any.
+     */
+    public static void optimizeByRestrict(Query query) {
+        if (query.getModel().getRestrict().size() != 1) {
+            return;
+        }
+        Item root = query.getModel().getQueryTree().getRoot();
+        if (optimizeByRestrict(root, query.getModel().getRestrict().iterator().next()) == Recall.RECALLS_NOTHING) {
+            query.getModel().getQueryTree().setRoot(new NullItem());
+        }
+    }
+
+    /**
+     * Collapses all single-child {@link CompositeItem}s into their parent item.
+     */
+    public static void collapseSingleComposites(Query query) {
+        Item oldRoot = query.getModel().getQueryTree().getRoot();
+        Item newRoot = collapseSingleComposites(oldRoot);
+        if (oldRoot != newRoot) {
+            query.getModel().getQueryTree().setRoot(newRoot);
+        }
+    }
+
+    /**
+     * Replaces and {@link SimpleIndexedItem} searching in the {@link Hit#SDDOCNAME_FIELD} with an item
+     * appropriate for the search node.
+     */
+    public static void rewriteSddocname(Query query) {
+        Item oldRoot = query.getModel().getQueryTree().getRoot();
+        Item newRoot = rewriteSddocname(oldRoot);
+        if (oldRoot != newRoot) {
+            query.getModel().getQueryTree().setRoot(newRoot);
+        }
+    }
+
+    // ------------------- End public API
+
     private static Item optimizeAndNot(Item node) {
         if (node instanceof CompositeItem) {
             return extractAndNotRecursively((CompositeItem) node);
         }
         return node;
     }
+
     private static CompositeItem extractAndNotRecursively(CompositeItem parent) {
         for (int i = 0; i < parent.getItemCount(); i++) {
             Item child = parent.getItem(i);
@@ -61,6 +97,7 @@ public class QueryRewrite {
         }
         return parent;
     }
+
     private static CompositeItem extractAndNot(AndItem parent) {
         NotItem theOnlyNot = null;
         for (int i = 0; i < parent.getItemCount(); i++) {
@@ -79,20 +116,6 @@ public class QueryRewrite {
             }
         }
         return (theOnlyNot != null) ? theOnlyNot : parent;
-    }
-    /**
-     * Optimizes the given query tree based on its {@link Model#getRestrict()} parameter, if any.
-     *
-     * @param query to optimize.
-     */
-    public static void optimizeByRestrict(Query query) {
-        if (query.getModel().getRestrict().size() != 1) {
-            return;
-        }
-        Item root = query.getModel().getQueryTree().getRoot();
-        if (optimizeByRestrict(root, query.getModel().getRestrict().iterator().next()) == Recall.RECALLS_NOTHING) {
-            query.getModel().getQueryTree().setRoot(new NullItem());
-        }
     }
 
     private static Recall optimizeByRestrict(Item item, String restrictParam) {
@@ -127,68 +150,57 @@ public class QueryRewrite {
         for (int i = item.getItemCount(); --i >= 1; ) {
             Item child = item.getItem(i);
             switch (optimizeByRestrict(child, restrictParam)) {
-            case RECALLS_EVERYTHING:
-                return Recall.RECALLS_NOTHING;
-            case RECALLS_NOTHING:
-                item.removeItem(i);
-                break;
+                case RECALLS_EVERYTHING:
+                    return Recall.RECALLS_NOTHING;
+                case RECALLS_NOTHING:
+                    item.removeItem(i);
+                    break;
             }
         }
         return Recall.UNKNOWN_RECALL;
     }
 
     private static Recall optimizeCompositeItemByRestrict(CompositeItem item, String restrictParam) {
+        Recall recall = Recall.UNKNOWN_RECALL;
         for (int i = item.getItemCount(); --i >= 0; ) {
             switch (optimizeByRestrict(item.getItem(i), restrictParam)) {
-            case RECALLS_EVERYTHING:
-                if ((item instanceof OrItem) || (item instanceof EquivItem)) {
-                    retainChild(item, i);
-                    return Recall.RECALLS_EVERYTHING;
-                } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
-                    item.removeItem(i);
-                } else if (item instanceof RankItem) {
-                    // empty
-                } else {
-                    throw new UnsupportedOperationException(item.getClass().getName());
-                }
-                break;
-            case RECALLS_NOTHING:
-                if ((item instanceof OrItem) || (item instanceof EquivItem)) {
-                    item.removeItem(i);
-                } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
-                    return Recall.RECALLS_NOTHING;
-                } else if (item instanceof RankItem) {
-                    item.removeItem(i);
-                } else {
-                    throw new UnsupportedOperationException(item.getClass().getName());
-                }
-                break;
+                case RECALLS_EVERYTHING:
+                    if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                        removeOtherNonrankedChildren(item, i);
+                        recall = Recall.RECALLS_EVERYTHING;
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
+                        item.removeItem(i);
+                    } else if (item instanceof RankItem) {
+                        // empty
+                    } else {
+                        throw new UnsupportedOperationException(item.getClass().getName());
+                    }
+                    break;
+                case RECALLS_NOTHING:
+                    if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                        item.removeItem(i);
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
+                        return Recall.RECALLS_NOTHING;
+                    } else if (item instanceof RankItem) {
+                        item.removeItem(i);
+                    } else {
+                        throw new UnsupportedOperationException(item.getClass().getName());
+                    }
+                    break;
             }
         }
-        return Recall.UNKNOWN_RECALL;
+        return recall;
     }
 
-    private static void retainChild(CompositeItem item, int childIdx) {
-        Item child = item.removeItem(childIdx);
-        for (int i = item.getItemCount(); --i >= 0; ) {
-            item.removeItem(i);
-        }
-        item.addItem(child);
-    }
-
-    /**
-     * Collapses all single-child {@link CompositeItem}s into their parent item.
-     *
-     * @param query The query whose composites to collapse.
-     */
-    public static void collapseSingleComposites(Query query) {
-        Item oldRoot = query.getModel().getQueryTree().getRoot();
-        Item newRoot = collapseSingleComposites(oldRoot);
-        if (oldRoot != newRoot) {
-            query.getModel().getQueryTree().setRoot(newRoot);
+    private static void removeOtherNonrankedChildren(CompositeItem parent, int indexOfChildToKeep) {
+        Item childToKeep = parent.getItem(indexOfChildToKeep);
+        for (int i = parent.getItemCount(); --i >= 0; ) {
+            Item child = parent.getItem(i);
+            if ( child != childToKeep && ! parent.getItem(i).isRanked())
+                parent.removeItem(i);
         }
     }
-
+    
     private static Item collapseSingleComposites(Item item) {
         if (!(item instanceof CompositeItem)) {
             return item;
@@ -203,20 +215,6 @@ public class QueryRewrite {
             }
         }
         return numChildren == 1 ? parent.getItem(0) : item;
-    }
-
-    /**
-     * Replaces and {@link SimpleIndexedItem} searching in the {@link Hit#SDDOCNAME_FIELD} with an item
-     * appropriate for the search node.
-     *
-     * @param query The query to rewrite.
-     */
-    public static void rewriteSddocname(Query query) {
-        Item oldRoot = query.getModel().getQueryTree().getRoot();
-        Item newRoot = rewriteSddocname(oldRoot);
-        if (oldRoot != newRoot) {
-            query.getModel().getQueryTree().setRoot(newRoot);
-        }
     }
 
     private static Item rewriteSddocname(Item item) {
@@ -239,4 +237,5 @@ public class QueryRewrite {
         }
         return item;
     }
+
 }

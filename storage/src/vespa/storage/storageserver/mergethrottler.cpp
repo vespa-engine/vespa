@@ -368,7 +368,7 @@ MergeThrottler::forwardCommandToNode(
 
     std::shared_ptr<api::MergeBucketCommand> fwdMerge(
             std::make_shared<api::MergeBucketCommand>(
-                    mergeCmd.getBucketId(),
+                    mergeCmd.getBucket(),
                     mergeCmd.getNodes(),
                     mergeCmd.getMaxTimestamp(),
                     mergeCmd.getClusterStateVersion(),

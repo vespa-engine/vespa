@@ -3,6 +3,7 @@ vespa_add_library(storage_testcommon TEST
     SOURCES
     dummystoragelink.cpp
     testhelper.cpp
+    make_document_bucket.cpp
     metricstest.cpp
     storagelinktest.cpp
     testnodestateupdater.cpp

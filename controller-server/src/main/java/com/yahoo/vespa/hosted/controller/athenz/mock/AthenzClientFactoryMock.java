@@ -17,36 +17,36 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
 
     private static final Logger log = Logger.getLogger(AthenzClientFactoryMock.class.getName());
 
-    private final AthensDbMock athens;
+    private final AthenzDbMock athenz;
 
     public AthenzClientFactoryMock() {
-        this(new AthensDbMock());
+        this(new AthenzDbMock());
     }
 
-    public AthenzClientFactoryMock(AthensDbMock athens) {
-        this.athens = athens;
+    public AthenzClientFactoryMock(AthenzDbMock athenz) {
+        this.athenz = athenz;
     }
 
-    public AthensDbMock getSetup() {
-        return athens;
+    public AthenzDbMock getSetup() {
+        return athenz;
     }
 
     @Override
     public ZmsClient createZmsClientWithServicePrincipal() {
         log("createZmsClientWithServicePrincipal()");
-        return new ZmsClientMock(athens);
+        return new ZmsClientMock(athenz);
     }
 
     @Override
     public ZtsClient createZtsClientWithServicePrincipal() {
         log("createZtsClientWithServicePrincipal()");
-        return new ZtsClientMock(athens);
+        return new ZtsClientMock(athenz);
     }
 
     @Override
     public ZmsClient createZmsClientWithAuthorizedServiceToken(NToken authorizedServiceToken) {
         log("createZmsClientWithAuthorizedServiceToken(authorizedServiceToken='%s')", authorizedServiceToken);
-        return new ZmsClientMock(athens);
+        return new ZmsClientMock(athenz);
     }
 
     private static void log(String format, Object... args) {

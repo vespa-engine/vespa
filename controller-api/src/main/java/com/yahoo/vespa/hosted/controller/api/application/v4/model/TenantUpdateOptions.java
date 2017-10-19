@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 
@@ -21,12 +21,12 @@ import java.util.Optional;
 public class TenantUpdateOptions {
     public final Property property;
     public final Optional<UserGroup> userGroup;
-    public final Optional<AthensDomain> athensDomain;
+    public final Optional<AthenzDomain> athensDomain;
 
     @JsonCreator
     public TenantUpdateOptions(@JsonProperty("property") Property property,
                                @JsonProperty("userGroup") Optional<UserGroup> userGroup,
-                               @JsonProperty("athensDomain") Optional<AthensDomain> athensDomain) {
+                               @JsonProperty("athensDomain") Optional<AthenzDomain> athensDomain) {
         this.userGroup = userGroup;
         this.property = property;
         this.athensDomain = athensDomain;

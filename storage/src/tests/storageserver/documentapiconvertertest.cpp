@@ -13,6 +13,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <tests/common/make_document_bucket.h>
 
 using document::DataType;
 using document::DocIdString;
@@ -20,6 +21,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -374,7 +376,7 @@ DocumentApiConverterTest::testMultiOperation()
     }
 
     {
-        api::MultiOperationCommand mocmd(_repo, bucketId, 10000, false);
+        api::MultiOperationCommand mocmd(_repo, makeDocumentBucket(bucketId), 10000, false);
         mocmd.getOperations().addPut(*doc, 100);
 
         // Convert it to documentapi

@@ -9,6 +9,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.get");
 
+using document::BucketSpace;
+
 namespace storage::distributor {
 
 GetOperation::GroupId::GroupId(const document::BucketId& id,
@@ -98,9 +100,10 @@ GetOperation::sendForChecksum(DistributorMessageSender& sender,
     const int best = findBestUnsentTarget(res);
 
     if (best != -1) {
+        document::Bucket bucket(BucketSpace::placeHolder(), id);
         std::shared_ptr<api::GetCommand> command(
                 std::make_shared<api::GetCommand>(
-                        id,
+                        bucket,
                         _msg->getDocumentId(),
                         _msg->getFieldSet(),
                         _msg->getBeforeTimestamp()));

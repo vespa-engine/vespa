@@ -291,8 +291,6 @@ public class DocumentProtocol implements Protocol {
         putRoutingPolicyFactory("MessageType", new RoutingPolicyFactories.MessageTypePolicyFactory(cfg));
         putRoutingPolicyFactory("RoundRobin", new RoutingPolicyFactories.RoundRobinPolicyFactory());
         putRoutingPolicyFactory("LoadBalancer", new RoutingPolicyFactories.LoadBalancerPolicyFactory());
-        putRoutingPolicyFactory("SearchColumn", new RoutingPolicyFactories.SearchColumnPolicyFactory());
-        putRoutingPolicyFactory("SearchRow", new RoutingPolicyFactories.SearchRowPolicyFactory());
         putRoutingPolicyFactory("Storage", new RoutingPolicyFactories.StoragePolicyFactory());
         putRoutingPolicyFactory("SubsetService", new RoutingPolicyFactories.SubsetServicePolicyFactory());
 

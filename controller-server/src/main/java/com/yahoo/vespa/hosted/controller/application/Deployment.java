@@ -38,7 +38,7 @@ public class Deployment {
         Objects.requireNonNull(deployTime, "deployTime cannot be null");
         Objects.requireNonNull(clusterUtils, "clusterUtils cannot be null");
         Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
-        Objects.requireNonNull(clusterInfo, "deployment metrics cannot be null");
+        Objects.requireNonNull(metrics, "deployment metrics cannot be null");
         this.zone = zone;
         this.revision = revision;
         this.version = version;
@@ -94,7 +94,12 @@ public class Deployment {
 
         Map<String, ClusterCost> costClusters = new HashMap<>();
         for (Id clusterId : clusterUtils.keySet()) {
-            costClusters.put(clusterId.value(), new ClusterCost(clusterInfo.get(clusterId), clusterUtils.get(clusterId)));
+
+            // Only include cluster cost if we have both cluster utilization and cluster info
+            if (clusterInfo.containsKey(clusterId)) {
+                costClusters.put(clusterId.value(), new ClusterCost(clusterInfo.get(clusterId),
+                        clusterUtils.get(clusterId)));
+            }
         }
 
         return new DeploymentCost(costClusters);

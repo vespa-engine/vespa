@@ -9,10 +9,12 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 
 using std::shared_ptr;
 using namespace document;
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -317,7 +319,7 @@ SplitOperationTest::testOperationBlockedByPendingJoin()
     std::vector<document::BucketId> joinSources = {
         document::BucketId(3, 1), document::BucketId(3, 5)
     };
-    auto joinCmd = std::make_shared<api::JoinBucketsCommand>(joinTarget);
+    auto joinCmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(joinTarget));
     joinCmd->getSourceBuckets() = joinSources;
     joinCmd->setAddress(
             api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));

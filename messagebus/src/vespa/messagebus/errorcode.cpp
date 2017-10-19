@@ -30,7 +30,6 @@ ErrorCode::getName(uint32_t errorCode)
     case SEND_QUEUE_CLOSED      : return "SEND_QUEUE_CLOSED";
     case SEND_QUEUE_FULL        : return "SEND_QUEUE_FULL";
     case SEQUENCE_ERROR         : return "SEQUENCE_ERROR";
-    case SERVICE_OOS            : return "SERVICE_OOS";
     case SESSION_BUSY           : return "SESSION_BUSY";
     case TIMEOUT                : return "TIMEOUT";
     case TRANSIENT_ERROR        : return "TRANSIENT_ERROR";

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 
@@ -17,7 +17,7 @@ import java.util.List;
 public class TenantWithApplications {
     // TODO: use TenantMetaData instead of individual fields (requires dashboard updates)
     public TenantType type;
-    public AthensDomain athensDomain;
+    public AthenzDomain athensDomain;
     public Property property;
     public UserGroup userGroup;
     public List<ApplicationReference> applications;
@@ -26,7 +26,7 @@ public class TenantWithApplications {
 
     public TenantWithApplications(
             TenantType type,
-            AthensDomain athensDomain,
+            AthenzDomain athensDomain,
             Property property,
             UserGroup userGroup,
             List<ApplicationReference> applications) {

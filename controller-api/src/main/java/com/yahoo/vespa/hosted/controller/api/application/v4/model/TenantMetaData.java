@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 
@@ -17,7 +17,7 @@ import java.util.Optional;
 @JsonInclude(value = Include.NON_EMPTY)
 public class TenantMetaData {
     public TenantType type;
-    public Optional<AthensDomain> athensDomain;
+    public Optional<AthenzDomain> athensDomain;
     public Optional<Property> property;
     public Optional<UserGroup> userGroup;
 
@@ -25,7 +25,7 @@ public class TenantMetaData {
     public TenantMetaData() {}
 
     public TenantMetaData(TenantType type,
-                          Optional<AthensDomain> athensDomain,
+                          Optional<AthenzDomain> athensDomain,
                           Optional<Property> property,
                           Optional<UserGroup> userGroup) {
         this.type = type;

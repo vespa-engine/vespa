@@ -23,7 +23,6 @@ namespace slobrok {
 
 namespace mbus {
 
-class OOSManager;
 class RPCServicePool;
 class RPCTargetPool;
 class RPCNetworkParams;
@@ -72,7 +71,6 @@ private:
     std::unique_ptr<slobrok::ConfiguratorFactory>   _slobrokCfgFactory;
     std::unique_ptr<slobrok::api::IMirrorAPI>       _mirror;
     std::unique_ptr<slobrok::api::RegisterAPI>      _regAPI;
-    std::unique_ptr<OOSManager>                     _oosManager;
     int                                             _requestedPort;
     std::unique_ptr<vespalib::ThreadStackExecutor>  _executor;
     std::unique_ptr<RPCSendAdapter>                 _sendV1;
@@ -185,14 +183,6 @@ public:
      * @return internal scheduler
      **/
     FNET_Scheduler &getScheduler() { return _scheduler; }
-
-    /**
-     * Obtain a reference to the internal OOS manager object. This will be
-     * mostly used for testing.
-     *
-     * @return internal OOS manager
-     **/
-    OOSManager &getOOSManager() { return *_oosManager; }
 
     /**
      * Obtain a reference to the internal supervisor. This is used by

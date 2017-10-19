@@ -28,7 +28,7 @@ GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
         std::shared_ptr<api::RemoveLocationCommand> command(
                 new api::RemoveLocationCommand(
                         _manager->getDistributorComponent().getDistributor().getConfig().getGarbageCollectionSelection(),
-                        getBucketId()));
+                        getBucket()));
 
         command->setPriority(_priority);
         _tracker.queueCommand(command, nodes[i]);

@@ -89,9 +89,10 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private Curator curator = new MockCurator();
         private Optional<ConfigCurator> configCurator = Optional.empty();
         private Metrics metrics = Metrics.createTestMetrics();
+        private String configserverTempDir = Files.createTempDir().getAbsolutePath();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                                       .configServerDBDir(Files.createTempDir()
-                                                                                                               .getAbsolutePath()));
+                                                                                       .configServerDBDir(configserverTempDir)
+                                                                                       .configDefinitionsDir(configserverTempDir));
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private TenantRequestHandlerTest.MockReloadListener reloadListener = new TenantRequestHandlerTest.MockReloadListener();
         private MockTenantListener tenantListener = new MockTenantListener();

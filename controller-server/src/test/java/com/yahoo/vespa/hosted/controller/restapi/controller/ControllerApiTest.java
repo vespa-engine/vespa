@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * @author bratseth

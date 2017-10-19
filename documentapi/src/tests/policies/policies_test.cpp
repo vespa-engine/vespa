@@ -10,8 +10,6 @@
 #include <vespa/documentapi/messagebus/policies/loadbalancerpolicy.h>
 #include <vespa/documentapi/messagebus/policies/localservicepolicy.h>
 #include <vespa/documentapi/messagebus/policies/roundrobinpolicy.h>
-#include <vespa/documentapi/messagebus/policies/searchcolumnpolicy.h>
-#include <vespa/documentapi/messagebus/policies/searchrowpolicy.h>
 #include <vespa/documentapi/messagebus/policies/storagepolicy.h>
 #include <vespa/documentapi/messagebus/policies/subsetservicepolicy.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -38,6 +36,9 @@ using document::DocumentUpdate;
 using document::readDocumenttypesConfig;
 using slobrok::api::IMirrorAPI;
 using namespace documentapi;
+using vespalib::make_string;
+using std::make_unique;
+using std::make_shared;
 
 class Test : public vespalib::TestApp {
 private:
@@ -47,17 +48,12 @@ private:
 
 private:
     bool trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string> &expected);
-    bool tryDistribution(TestFrame &frame, const string &id, const string &expected);
-    void tryWasFound(TestFrame &frame, uint32_t expectedRecipients,
-                     uint32_t foundMask, bool expectedFound);
-    void setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern,
-                           int32_t numEntries = -1);
+    void setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern, int32_t numEntries = -1);
     StoragePolicy &setupStoragePolicy(TestFrame &frame, const string &param,
                                       const string &pattern = "", int32_t numEntries = -1);
     bool isErrorPolicy(const string &name, const string &param);
     void assertMirrorReady(const IMirrorAPI &mirror);
-    void assertMirrorContains(const IMirrorAPI &mirror, const string &pattern,
-                              uint32_t numEntries);
+    void assertMirrorContains(const IMirrorAPI &mirror, const string &pattern, uint32_t numEntries);
     mbus::Message::UP newPutDocumentMessage(const string &documentId);
 
 public:
@@ -75,9 +71,6 @@ public:
     void testProtocol();
     void testRoundRobin();
     void testRoundRobinCache();
-    void testSearchColumn();
-    void testSearchRow();
-    void testSearchRowMerge();
     void multipleGetRepliesAreMergedToFoundDocument();
     void testSubsetService();
     void testSubsetServiceCache();
@@ -117,9 +110,6 @@ Test::Main() {
     testLocalServiceCache();            TEST_FLUSH();
     testRoundRobin();                   TEST_FLUSH();
     testRoundRobinCache();              TEST_FLUSH();
-    testSearchColumn();                 TEST_FLUSH();
-    testSearchRow();                    TEST_FLUSH();
-    testSearchRowMerge();               TEST_FLUSH();
     testSubsetService();                TEST_FLUSH();
     testSubsetServiceCache();           TEST_FLUSH();
 
@@ -144,43 +134,34 @@ Test::testProtocol()
     mbus::IProtocol::SP protocol(new DocumentProtocol(_loadTypes, _repo));
 
     mbus::IRoutingPolicy::UP policy = protocol->createPolicy("AND", "");
-    ASSERT_TRUE(dynamic_cast<ANDPolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<ANDPolicy*>(policy.get()) != nullptr);
 
     policy = protocol->createPolicy("DocumentRouteSelector", "raw:route[0]\n");
-    ASSERT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(policy.get()) != nullptr);
 
     policy = protocol->createPolicy("Extern", "foo;bar/baz");
-    ASSERT_TRUE(dynamic_cast<ExternPolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<ExternPolicy*>(policy.get()) != nullptr);
 
     policy = protocol->createPolicy("LoadBalancer",
                                     "cluster=docproc/cluster.default;"
                                     "session=chain.default;syncinit");
-    ASSERT_TRUE(dynamic_cast<LoadBalancerPolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<LoadBalancerPolicy*>(policy.get()) != nullptr);
 
     policy = protocol->createPolicy("LocalService", "");
-    ASSERT_TRUE(dynamic_cast<LocalServicePolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<LocalServicePolicy*>(policy.get()) != nullptr);
 
     policy = protocol->createPolicy("RoundRobin", "");
-    ASSERT_TRUE(dynamic_cast<RoundRobinPolicy*>(policy.get()) != NULL);
-
-    policy = protocol->createPolicy("SearchRow", "");
-    ASSERT_TRUE(dynamic_cast<SearchRowPolicy*>(policy.get()) != NULL);
-
-    policy = protocol->createPolicy("SearchColumn", "");
-    ASSERT_TRUE(dynamic_cast<SearchColumnPolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<RoundRobinPolicy*>(policy.get()) != nullptr);
 
     policy = protocol->createPolicy("SubsetService", "");
-    ASSERT_TRUE(dynamic_cast<SubsetServicePolicy*>(policy.get()) != NULL);
+    ASSERT_TRUE(dynamic_cast<SubsetServicePolicy*>(policy.get()) != nullptr);
 }
 
 void
 Test::testAND()
 {
     TestFrame frame(_repo);
-    frame.setMessage(mbus::Message::UP(new PutDocumentMessage(
-                            document::Document::SP(
-                                    new document::Document(*_docType,
-                                            DocumentId("doc:scheme:"))))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:"))));
     frame.setHop(mbus::HopSpec("test", "[AND]")
                  .addRecipient("foo")
                  .addRecipient("bar"));
@@ -229,8 +210,7 @@ Test::requireThatExternPolicySelectsFromExternSlobrok()
     std::vector<mbus::TestServer*> servers;
     for (uint32_t i = 0; i < 10; ++i) {
         mbus::TestServer *server = new mbus::TestServer(
-                mbus::Identity(vespalib::make_string("docproc/cluster.default/%d", i)),
-                mbus::RoutingSpec(), slobrok, "",
+                mbus::Identity(make_string("docproc/cluster.default/%d", i)), mbus::RoutingSpec(), slobrok,
                 mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
         servers.push_back(server);
         server->net.registerSession("chain.default");
@@ -243,7 +223,7 @@ Test::requireThatExternPolicySelectsFromExternSlobrok()
         lst.insert(leaf[0]->getRoute().toString());
 
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600).get() != NULL);
+        ASSERT_TRUE(frame.getReceptor().getReply(600));
     }
     EXPECT_EQUAL(servers.size(), lst.size());
     for (uint32_t i = 0; i < servers.size(); ++i) {
@@ -257,8 +237,7 @@ Test::requireThatExternPolicyMergesOneReplyAsProtocol()
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("doc:scheme:"));
     mbus::Slobrok slobrok;
-    mbus::TestServer server(mbus::Identity("docproc/cluster.default/0"),
-                            mbus::RoutingSpec(), slobrok, "",
+    mbus::TestServer server(mbus::Identity("docproc/cluster.default/0"), mbus::RoutingSpec(), slobrok,
                             mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
     server.net.registerSession("chain.default");
     setupExternPolicy(frame, slobrok, "docproc/cluster.default/0/chain.default", 1);
@@ -269,15 +248,14 @@ mbus::Message::UP
 Test::newPutDocumentMessage(const string &documentId)
 {
     Document::SP doc(new Document(*_docType, DocumentId(documentId)));
-    return mbus::Message::UP(new PutDocumentMessage(doc));
+    return make_unique<PutDocumentMessage>(doc);
 }
 
 void
 Test::setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern,
                         int32_t numEntries)
 {
-    string param = vespalib::make_string("tcp/localhost:%d;%s",
-                                         slobrok.port(), pattern.c_str());
+    string param = vespalib::make_string("tcp/localhost:%d;%s", slobrok.port(), pattern.c_str());
     frame.setHop(mbus::HopSpec("test", vespalib::make_string("[Extern:%s]", param.c_str())));
     mbus::MessageBus &mbus = frame.getMessageBus();
     const mbus::HopBlueprint *hop = mbus.getRoutingTable(DocumentProtocol::NAME)->getHop("test");
@@ -322,9 +300,8 @@ Test::testExternSend()
 {
     // Setup local source node.
     mbus::Slobrok local;
-    mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local, "",
-                         mbus::IProtocol::SP(
-                                 new DocumentProtocol(_loadTypes, _repo)));
+    mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local,
+                         std::make_shared<DocumentProtocol>(_loadTypes, _repo));
     mbus::Receptor sr;
     mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60));
 
@@ -333,30 +310,29 @@ Test::testExternSend()
                          .addTable(mbus::RoutingTableSpec(DocumentProtocol::NAME)
                                    .addRoute(mbus::RouteSpec("default").addHop("dst"))
                                    .addHop(mbus::HopSpec("dst", "dst/session"))),
-                         slobrok, "", mbus::IProtocol::SP(
-                                 new DocumentProtocol(_loadTypes, _repo)));
+                         slobrok, std::make_shared<DocumentProtocol>(_loadTypes, _repo));
     mbus::Receptor ir;
     mbus::IntermediateSession::UP is = itr.mb.createIntermediateSession("session", true, ir, ir);
 
-    mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), slobrok, "",
-                         mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+    mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), slobrok,
+                         std::make_shared<DocumentProtocol>(_loadTypes, _repo));
     mbus::Receptor dr;
     mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
     // Send message from local node to remote cluster and resolve route there.
-    mbus::Message::UP msg(new GetDocumentMessage(document::DocumentId("doc:scheme:"), 0));
+    mbus::Message::UP msg(new GetDocumentMessage(DocumentId("doc:scheme:"), 0));
     msg->getTrace().setLevel(9);
     msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:tcp/localhost:%d;itr/session] default", slobrok.port())));
 
     ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
-    ASSERT_TRUE((msg = ir.getMessage(600)).get() != NULL);
+    ASSERT_TRUE((msg = ir.getMessage(600)));
     is->forward(std::move(msg));
-    ASSERT_TRUE((msg = dr.getMessage(600)).get() != NULL);
+    ASSERT_TRUE((msg = dr.getMessage(600)));
     ds->acknowledge(std::move(msg));
     mbus::Reply::UP reply = ir.getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     is->forward(std::move(reply));
-    ASSERT_TRUE((reply = sr.getReply(600)).get() != NULL);
+    ASSERT_TRUE((reply = sr.getReply(600)));
 
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
 }
@@ -365,8 +341,8 @@ void
 Test::testExternMultipleSlobroks()
 {
     mbus::Slobrok local;
-    mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local, "",
-                         mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+    mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local,
+                         std::make_shared<DocumentProtocol>(_loadTypes, _repo));
     mbus::Receptor sr;
     mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60));
 
@@ -376,33 +352,33 @@ Test::testExternMultipleSlobroks()
         mbus::Slobrok ext;
         spec.append(vespalib::make_string("tcp/localhost:%d", ext.port()));
 
-        mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), ext, "",
-                             mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+        mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), ext,
+                             std::make_shared<DocumentProtocol>(_loadTypes, _repo));
         mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
-        mbus::Message::UP msg(new GetDocumentMessage(document::DocumentId("doc:scheme:"), 0));
+        mbus::Message::UP msg(new GetDocumentMessage(DocumentId("doc:scheme:"), 0));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
-        ASSERT_TRUE((msg = dr.getMessage(600)).get() != NULL);
+        ASSERT_TRUE((msg = dr.getMessage(600)));
         ds->acknowledge(std::move(msg));
         mbus::Reply::UP reply = sr.getReply(600);
-        ASSERT_TRUE(reply.get() != NULL);
+        ASSERT_TRUE(reply);
     }
     {
         mbus::Slobrok ext;
         spec.append(vespalib::make_string(",tcp/localhost:%d", ext.port()));
 
-        mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), ext, "",
-                             mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+        mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), ext,
+                             std::make_shared<DocumentProtocol>(_loadTypes, _repo));
         mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
-        mbus::Message::UP msg(new GetDocumentMessage(document::DocumentId("doc:scheme:"), 0));
+        mbus::Message::UP msg(new GetDocumentMessage(DocumentId("doc:scheme:"), 0));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
-        ASSERT_TRUE((msg = dr.getMessage(600)).get() != NULL);
+        ASSERT_TRUE((msg = dr.getMessage(600)));
         ds->acknowledge(std::move(msg));
         mbus::Reply::UP reply = sr.getReply(600);
-        ASSERT_TRUE(reply.get() != NULL);
+        ASSERT_TRUE(reply);
     }
 }
 
@@ -411,9 +387,7 @@ Test::testLocalService()
 {
     // Prepare message.
     TestFrame frame(_repo, "docproc/cluster.default");
-    frame.setMessage(mbus::Message::UP(new PutDocumentMessage(Document::SP(
-                                    new Document(*_docType,
-                                            DocumentId("doc:scheme:"))))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:"))));
 
     // Test select with proper address.
     for (uint32_t i = 0; i < 10; ++i) {
@@ -429,7 +403,7 @@ Test::testLocalService()
         lst.insert(leaf[0]->getRoute().toString());
 
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600).get() != NULL);
+        ASSERT_TRUE(frame.getReceptor().getReply(600));
     }
     EXPECT_EQUAL(10u, lst.size());
 
@@ -442,7 +416,7 @@ Test::testLocalService()
         lst.insert(leaf[0]->getRoute().toString());
 
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600).get() != NULL);
+        ASSERT_TRUE(frame.getReceptor().getReply(600));
     }
     EXPECT_EQUAL(1u, lst.size());
     EXPECT_EQUAL("docproc/cluster.default/*/chain.default", *lst.begin());
@@ -457,12 +431,12 @@ Test::testLocalServiceCache()
 {
     TestFrame fooFrame(_repo, "docproc/cluster.default");
     mbus::HopSpec fooHop("foo", "docproc/cluster.default/[LocalService]/chain.foo");
-    fooFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:foo"))));
+    fooFrame.setMessage(make_unique<GetDocumentMessage>(DocumentId("doc:scheme:foo")));
     fooFrame.setHop(fooHop);
 
     TestFrame barFrame(fooFrame);
     mbus::HopSpec barHop("test", "docproc/cluster.default/[LocalService]/chain.bar");
-    barFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:bar"))));
+    barFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(DocumentId("doc:scheme:bar"))));
     barFrame.setHop(barHop);
 
     fooFrame.getMessageBus().setupRouting(
@@ -485,8 +459,8 @@ Test::testLocalServiceCache()
     barSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
     fooSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
 
-    ASSERT_TRUE(barFrame.getReceptor().getReply(600).get() != NULL);
-    ASSERT_TRUE(fooFrame.getReceptor().getReply(600).get() != NULL);
+    ASSERT_TRUE(barFrame.getReceptor().getReply(600));
+    ASSERT_TRUE(fooFrame.getReceptor().getReply(600));
 }
 
 void
@@ -494,9 +468,7 @@ Test::testRoundRobin()
 {
     // Prepare message.
     TestFrame frame(_repo, "docproc/cluster.default");
-    frame.setMessage(mbus::Message::UP(new PutDocumentMessage(Document::SP(
-                                    new Document(*_docType,
-                                            DocumentId("doc:scheme:"))))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:"))));
 
     // Test select with proper address.
     for (uint32_t i = 0; i < 10; ++i) {
@@ -535,13 +507,13 @@ Test::testRoundRobinCache()
     TestFrame fooFrame(_repo, "docproc/cluster.default");
     mbus::HopSpec fooHop("foo", "[RoundRobin]");
     fooHop.addRecipient("docproc/cluster.default/0/chain.foo");
-    fooFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:foo"))));
+    fooFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(DocumentId("doc:scheme:foo"))));
     fooFrame.setHop(fooHop);
 
     TestFrame barFrame(fooFrame);
     mbus::HopSpec barHop("bar", "[RoundRobin]");
     barHop.addRecipient("docproc/cluster.default/0/chain.bar");
-    barFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:bar"))));
+    barFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(DocumentId("doc:scheme:bar"))));
     barFrame.setHop(barHop);
 
     fooFrame.getMessageBus().setupRouting(
@@ -564,155 +536,8 @@ Test::testRoundRobinCache()
     barSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
     fooSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
 
-    ASSERT_TRUE(barFrame.getReceptor().getReply(600).get() != NULL);
-    ASSERT_TRUE(fooFrame.getReceptor().getReply(600).get() != NULL);
-}
-
-void
-Test::testSearchRow()
-{
-    TestFrame frame(_repo);
-    frame.setMessage(mbus::Message::UP(new PutDocumentMessage(Document::SP(
-                                    new Document(*_docType,
-                                            DocumentId("doc:scheme:"))))));
-    frame.setHop(mbus::HopSpec("test", "[SearchRow]")
-                 .addRecipient("foo"));
-    EXPECT_TRUE(frame.testMergeOneReply("foo"));
-    frame.setHop(mbus::HopSpec("test", "[SearchRow]")
-                 .addRecipient("foo")
-                 .addRecipient("bar"));
-    EXPECT_TRUE(frame.testMergeTwoReplies("foo", "bar"));
-
-    frame.setHop(mbus::HopSpec("test", "[SearchRow:1]")
-                 .addRecipient("foo"));
-    TestFrame::ReplyMap replies;
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    EXPECT_TRUE(frame.testMergeError(replies, UIntList().add(mbus::ErrorCode::SERVICE_OOS)));
-
-    frame.setHop(mbus::HopSpec("test", "[SearchRow:1]")
-                 .addRecipient("foo")
-                 .addRecipient("bar"));
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::NONE;
-    EXPECT_TRUE(frame.testMergeOk(replies, StringList().add("bar")));
-
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::SERVICE_OOS;
-    EXPECT_TRUE(frame.testMergeError(replies, UIntList()
-                                    .add(mbus::ErrorCode::SERVICE_OOS)
-                                    .add(mbus::ErrorCode::SERVICE_OOS)));
-
-    frame.setHop(mbus::HopSpec("test", "[SearchRow:1]")
-                 .addRecipient("foo")
-                 .addRecipient("bar")
-                 .addRecipient("baz"));
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::NONE;
-    replies["baz"] = mbus::ErrorCode::NONE;
-    EXPECT_TRUE(frame.testMergeOk(replies, StringList().add("bar").add("baz")));
-
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["baz"] = mbus::ErrorCode::NONE;
-    EXPECT_TRUE(frame.testMergeOk(replies, StringList().add("baz")));
-
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["baz"] = mbus::ErrorCode::SERVICE_OOS;
-    EXPECT_TRUE(frame.testMergeError(replies, UIntList()
-                                    .add(mbus::ErrorCode::SERVICE_OOS)
-                                    .add(mbus::ErrorCode::SERVICE_OOS)
-                                    .add(mbus::ErrorCode::SERVICE_OOS)));
-
-    frame.setHop(mbus::HopSpec("test", "[SearchRow:2]")
-                 .addRecipient("foo")
-                 .addRecipient("bar")
-                 .addRecipient("baz"));
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::NONE;
-    replies["baz"] = mbus::ErrorCode::NONE;
-    EXPECT_TRUE(frame.testMergeOk(replies, StringList().add("bar").add("baz")));
-
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["baz"] = mbus::ErrorCode::NONE;
-    EXPECT_TRUE(frame.testMergeError(replies, UIntList()
-                                    .add(mbus::ErrorCode::SERVICE_OOS)
-                                    .add(mbus::ErrorCode::SERVICE_OOS)));
-
-    replies["foo"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["bar"] = mbus::ErrorCode::SERVICE_OOS;
-    replies["baz"] = mbus::ErrorCode::SERVICE_OOS;
-    EXPECT_TRUE(frame.testMergeError(replies, UIntList()
-                                    .add(mbus::ErrorCode::SERVICE_OOS)
-                                    .add(mbus::ErrorCode::SERVICE_OOS)
-                                    .add(mbus::ErrorCode::SERVICE_OOS)));
-}
-
-void
-Test::testSearchRowMerge()
-{
-    TestFrame frame(_repo);
-    frame.setHop(mbus::HopSpec("test", "[SearchRow]")
-                 .addRecipient("foo"));
-    tryWasFound(frame, 1, 0x0, false);
-    tryWasFound(frame, 1, 0x1, true);
-
-    frame.setHop(mbus::HopSpec("test", "[SearchRow]")
-                 .addRecipient("foo")
-                 .addRecipient("bar"));
-    tryWasFound(frame, 2, 0x0, false);
-    tryWasFound(frame, 2, 0x1, true);
-    tryWasFound(frame, 2, 0x2, true);
-    tryWasFound(frame, 2, 0x3, true);
-
-    frame.setHop(mbus::HopSpec("test", "[SearchRow]")
-                 .addRecipient("foo")
-                 .addRecipient("bar")
-                 .addRecipient("baz"));
-    tryWasFound(frame, 3, 0x0, false);
-    tryWasFound(frame, 3, 0x1, true);
-    tryWasFound(frame, 3, 0x2, true);
-    tryWasFound(frame, 3, 0x3, true);
-    tryWasFound(frame, 3, 0x4, true);
-    tryWasFound(frame, 3, 0x5, true);
-    tryWasFound(frame, 3, 0x6, true);
-    tryWasFound(frame, 3, 0x7, true);
-}
-
-void
-Test::tryWasFound(TestFrame &frame, uint32_t expectedRecipients,
-                  uint32_t foundMask, bool expectedFound)
-{
-    {
-        frame.setMessage(mbus::Message::UP(new RemoveDocumentMessage(DocumentId("doc:scheme:69"))));
-        std::vector<mbus::RoutingNode*> selected;
-        EXPECT_TRUE(frame.select(selected, expectedRecipients));
-        for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
-            mbus::Reply::UP reply(new RemoveDocumentReply());
-            static_cast<RemoveDocumentReply&>(*reply).setWasFound((1 << i) & foundMask);
-            selected[i]->handleReply(std::move(reply));
-        }
-        mbus::Reply::UP reply = frame.getReceptor().getReply(600);
-        EXPECT_TRUE(reply.get() != NULL);
-        EXPECT_EQUAL((uint32_t)DocumentProtocol::REPLY_REMOVEDOCUMENT, reply->getType());
-        EXPECT_EQUAL(expectedFound, static_cast<RemoveDocumentReply&>(*reply).wasFound());
-    }
-    {
-        DocumentUpdate::SP upd(new DocumentUpdate(*_docType, DocumentId("doc:scheme:")));
-        frame.setMessage(mbus::Message::UP(new UpdateDocumentMessage(upd)));
-        std::vector<mbus::RoutingNode*> selected;
-        EXPECT_TRUE(frame.select(selected, expectedRecipients));
-        for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
-            mbus::Reply::UP reply(new UpdateDocumentReply());
-            static_cast<UpdateDocumentReply&>(*reply).setWasFound((1 << i) & foundMask);
-            selected[i]->handleReply(std::move(reply));
-        }
-        mbus::Reply::UP reply = frame.getReceptor().getReply(600);
-        EXPECT_TRUE(reply.get() != NULL);
-        EXPECT_EQUAL((uint32_t)DocumentProtocol::REPLY_UPDATEDOCUMENT, reply->getType());
-        EXPECT_EQUAL(expectedFound, static_cast<UpdateDocumentReply&>(*reply).wasFound());
-    }
+    ASSERT_TRUE(barFrame.getReceptor().getReply(600));
+    ASSERT_TRUE(fooFrame.getReceptor().getReply(600));
 }
 
 void
@@ -729,11 +554,11 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
                                "route[1].feed \"myfeed\"\n]")
                  .addRecipient("foo")
                  .addRecipient("bar"));
-    frame.setMessage(mbus::Message::UP(new GetDocumentMessage(DocumentId("doc:scheme:yarn"))));
+    frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("doc:scheme:yarn")));
     std::vector<mbus::RoutingNode*> selected;
     EXPECT_TRUE(frame.select(selected, 2));
     for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
-        document::Document::SP doc;
+        Document::SP doc;
         if (i == 0) {
             doc.reset(new Document(*_docType, DocumentId("doc:scheme:yarn")));
             doc->setLastModified(123456ULL);
@@ -742,59 +567,9 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
         selected[i]->handleReply(std::move(reply));
     }
     mbus::Reply::UP reply = frame.getReceptor().getReply(600);
-    EXPECT_TRUE(reply.get() != NULL);
-    EXPECT_EQUAL(static_cast<uint32_t>(DocumentProtocol::REPLY_GETDOCUMENT),
-                 reply->getType());
+    EXPECT_TRUE(reply);
+    EXPECT_EQUAL(static_cast<uint32_t>(DocumentProtocol::REPLY_GETDOCUMENT), reply->getType());
     EXPECT_EQUAL(123456ULL, static_cast<GetDocumentReply&>(*reply).getLastModified());
-}
-
-void
-Test::testSearchColumn()
-{
-    TestFrame frame(_repo);
-    frame.setHop(mbus::HopSpec("test", "[SearchColumn]")
-                 .addRecipient("c0")
-                 .addRecipient("c1")
-                 .addRecipient("c2")
-                 .addRecipient("c3"));
-
-    // Test hash distribution.
-    EXPECT_TRUE(tryDistribution(frame, "doc:ns:3", "c0"));
-    EXPECT_TRUE(tryDistribution(frame, "doc:ns:18", "c1"));
-    EXPECT_TRUE(tryDistribution(frame, "doc:ns:0", "c2"));
-    EXPECT_TRUE(tryDistribution(frame, "doc:ns:4", "c3"));
-
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:49152:0", "c0"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:49152:1", "c0"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:16384:2", "c1"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:16384:3", "c1"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:5461:4", "c2"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:5461:5", "c2"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:0:6", "c3"));
-    EXPECT_TRUE(tryDistribution(frame, "userdoc:ns:0:7", "c3"));
-
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:0:0", "c0"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:0:1", "c0"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:4:2", "c1"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:4:3", "c1"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:2:4", "c2"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:2:5", "c2"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:7:6", "c3"));
-    EXPECT_TRUE(tryDistribution(frame, "groupdoc:ns:7:7", "c3"));
-
-    // Test routing based on message type.
-    mbus::Message::UP put(new PutDocumentMessage(Document::SP(
-                            new Document(*_docType,
-                                    DocumentId("doc:scheme:")))));
-}
-
-bool
-Test::tryDistribution(TestFrame &frame, const string &id, const string &expected)
-{
-    Document::SP doc(new Document(*_docType, DocumentId(id)));
-    mbus::Message::UP msg(new PutDocumentMessage(doc));
-    frame.setMessage(std::move(msg));
-    return frame.testSelect(StringList().add(expected));
 }
 
 void
@@ -809,13 +584,13 @@ Test::testDocumentRouteSelector()
         "route[0].feed \"baz\"\n";
     {
         DocumentProtocol protocol(_loadTypes, _repo, okConfig);
-        EXPECT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(protocol.createPolicy("DocumentRouteSelector", "").get()) != NULL);
-        EXPECT_TRUE(dynamic_cast<ErrorPolicy*>(protocol.createPolicy("DocumentRouteSelector", errConfig).get()) != NULL);
+        EXPECT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(protocol.createPolicy("DocumentRouteSelector", "").get()) != nullptr);
+        EXPECT_TRUE(dynamic_cast<ErrorPolicy*>(protocol.createPolicy("DocumentRouteSelector", errConfig).get()) != nullptr);
     }
     {
         DocumentProtocol protocol(_loadTypes, _repo, errConfig);
-        EXPECT_TRUE(dynamic_cast<ErrorPolicy*>(protocol.createPolicy("DocumentRouteSelector", "").get()) != NULL);
-        EXPECT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(protocol.createPolicy("DocumentRouteSelector", okConfig).get()) != NULL);
+        EXPECT_TRUE(dynamic_cast<ErrorPolicy*>(protocol.createPolicy("DocumentRouteSelector", "").get()) != nullptr);
+        EXPECT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(protocol.createPolicy("DocumentRouteSelector", okConfig).get()) != nullptr);
     }
 
     // Test policy with proper config.
@@ -831,19 +606,17 @@ Test::testDocumentRouteSelector()
                  .addRecipient("foo")
                  .addRecipient("bar"));
 
-    frame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:"), 0)));
+    frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("doc:scheme:"), 0));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
 
-    mbus::Message::UP put(new PutDocumentMessage(Document::SP(
-                            new Document(*_docType,
-                                    DocumentId("doc:scheme:")))));
+    mbus::Message::UP put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:")));
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testSelect( StringList().add("foo")));
 
     {
         vdslib::OperationList opList;
 
-        document::DocumentId id("doc:scheme:");
+        DocumentId id("doc:scheme:");
         Document::UP doc(new Document(*_docType, id));
         opList.addPut(std::move(doc));
 
@@ -854,24 +627,20 @@ Test::testDocumentRouteSelector()
 
     {
         vdslib::OperationList opList;
-        document::DocumentId id("doc:scheme:");
+        DocumentId id("doc:scheme:");
         Document::UP doc(new Document(*_repo->getDocumentType("other"), id));
         opList.addPut(std::move(doc));
 
         document::BucketIdFactory factory;
-        put = frame.setMessage(MultiOperationMessage::create(_repo,
-            factory.getBucketId(id), opList));
+        put = frame.setMessage(MultiOperationMessage::create(_repo, factory.getBucketId(id), opList));
         EXPECT_TRUE(frame.testSelect(StringList().add("bar")));
     }
 
-    frame.setMessage(mbus::Message::UP(new RemoveDocumentMessage(document::DocumentId("doc:scheme:"))));
+    frame.setMessage(mbus::Message::UP(new RemoveDocumentMessage(DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
 
-    frame.setMessage(mbus::Message::UP(new UpdateDocumentMessage(
-                            document::DocumentUpdate::SP(
-                                    new document::DocumentUpdate(
-                                            *_docType,
-                                            DocumentId("doc:scheme:"))))));
+    frame.setMessage(make_unique<UpdateDocumentMessage>(
+            make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
     frame.setMessage(std::move(put));
@@ -889,22 +658,17 @@ Test::testDocumentRouteSelectorIgnore()
                                "route[0].feed \"myfeed\"\n]")
                  .addRecipient("docproc/cluster.foo"));
 
-    frame.setMessage(mbus::Message::UP(new PutDocumentMessage(
-                            document::Document::SP(
-                                    new document::Document(*_docType,
-                                            DocumentId("id:yarn:testdoc:n=1234:fluff"))))));
+    frame.setMessage(make_unique<PutDocumentMessage>(
+            make_shared<Document>(*_docType, DocumentId("id:yarn:testdoc:n=1234:fluff"))));
     std::vector<mbus::RoutingNode*> leaf;
     ASSERT_TRUE(frame.select(leaf, 0));
     mbus::Reply::UP reply = frame.getReceptor().getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(uint32_t(DocumentProtocol::REPLY_DOCUMENTIGNORED), reply->getType());
     EXPECT_EQUAL(0u, reply->getNumErrors());
 
-    frame.setMessage(mbus::Message::UP(new UpdateDocumentMessage(
-                            document::DocumentUpdate::SP(
-                                    new document::DocumentUpdate(
-                                            *_docType,
-                                            DocumentId("doc:scheme:"))))));
+    frame.setMessage(make_unique<UpdateDocumentMessage>(
+            make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("docproc/cluster.foo")));
 }
 
@@ -993,7 +757,7 @@ Test::requireThatStoragePolicyIsRandomWithoutState()
     for (uint32_t i = 0; i < 5; ++i) {
         mbus::TestServer *srv = new mbus::TestServer(
                 mbus::Identity(vespalib::make_string("storage/cluster.mycluster/distributor/%d", i)),
-                mbus::RoutingSpec(), slobrok, "",
+                mbus::RoutingSpec(), slobrok,
                 mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
         servers.push_back(srv);
         srv->net.registerSession("default");
@@ -1004,7 +768,7 @@ Test::requireThatStoragePolicyIsRandomWithoutState()
     StoragePolicy &policy = setupStoragePolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
-    ASSERT_TRUE(policy.getSystemState() == NULL);
+    ASSERT_TRUE(policy.getSystemState() == nullptr);
 
     std::set<string> lst;
     for (uint32_t i = 0; i < 666; i++) {
@@ -1027,10 +791,8 @@ Test::setupStoragePolicy(TestFrame &frame, const string &param,
     mbus::MessageBus &mbus = frame.getMessageBus();
     const mbus::HopBlueprint *hop = mbus.getRoutingTable(DocumentProtocol::NAME)->getHop("test");
     const mbus::PolicyDirective dir = static_cast<mbus::PolicyDirective&>(*hop->getDirective(0));
-    StoragePolicy &policy = static_cast<StoragePolicy&>(*mbus.getRoutingPolicy(
-                    DocumentProtocol::NAME,
-                    dir.getName(),
-                    dir.getParam()));
+    StoragePolicy &policy = static_cast<StoragePolicy&>(*mbus.getRoutingPolicy(DocumentProtocol::NAME,
+                                                                               dir.getName(), dir.getParam()));
     policy.initSynchronous();
     assertMirrorReady(*policy.getMirror());
     if (numEntries >= 0) {
@@ -1050,8 +812,8 @@ Test::requireThatStoragePolicyIsTargetedWithState()
     for (uint32_t i = 0; i < 5; ++i) {
         mbus::TestServer *srv = new mbus::TestServer(
                 mbus::Identity(vespalib::make_string("storage/cluster.mycluster/distributor/%d", i)),
-                mbus::RoutingSpec(), slobrok, "",
-                mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+                mbus::RoutingSpec(), slobrok,
+                make_shared<DocumentProtocol>(_loadTypes, _repo));
         servers.push_back(srv);
         srv->net.registerSession("default");
     }
@@ -1061,12 +823,12 @@ Test::requireThatStoragePolicyIsTargetedWithState()
     StoragePolicy &policy = setupStoragePolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
-    ASSERT_TRUE(policy.getSystemState() == NULL);
+    ASSERT_TRUE(policy.getSystemState() == nullptr);
     {
         std::vector<mbus::RoutingNode*> leaf;
         ASSERT_TRUE(frame.select(leaf, 1));
         leaf[0]->handleReply(mbus::Reply::UP(new WrongDistributionReply("distributor:5 storage:5")));
-        ASSERT_TRUE(policy.getSystemState() != NULL);
+        ASSERT_TRUE(policy.getSystemState() != nullptr);
         EXPECT_EQUAL(policy.getSystemState()->toString(), "distributor:5 storage:5");
     }
     std::set<string> lst;
@@ -1090,8 +852,8 @@ Test::requireThatStoragePolicyCombinesSystemAndSlobrokState()
 
     mbus::Slobrok slobrok;
     mbus::TestServer server(mbus::Identity("storage/cluster.mycluster/distributor/0"),
-                            mbus::RoutingSpec(), slobrok, "",
-                            mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+                            mbus::RoutingSpec(), slobrok,
+                            make_shared<DocumentProtocol>(_loadTypes, _repo));
     server.net.registerSession("default");
 
     string param = vespalib::make_string(
@@ -1100,12 +862,12 @@ Test::requireThatStoragePolicyCombinesSystemAndSlobrokState()
     StoragePolicy &policy = setupStoragePolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 1);
-    ASSERT_TRUE(policy.getSystemState() == NULL);
+    ASSERT_TRUE(policy.getSystemState() == nullptr);
     {
         std::vector<mbus::RoutingNode*> leaf;
         ASSERT_TRUE(frame.select(leaf, 1));
         leaf[0]->handleReply(mbus::Reply::UP(new WrongDistributionReply("distributor:99 storage:99")));
-        ASSERT_TRUE(policy.getSystemState() != NULL);
+        ASSERT_TRUE(policy.getSystemState() != nullptr);
         EXPECT_EQUAL(policy.getSystemState()->toString(), "distributor:99 storage:99");
     }
     for (int i = 0; i < 666; i++) {
@@ -1118,9 +880,7 @@ Test::testSubsetService()
 {
     // Prepare message.
     TestFrame frame(_repo, "docproc/cluster.default");
-    frame.setMessage(mbus::Message::UP(new PutDocumentMessage(Document::SP(
-                                    new Document(*_docType,
-                                            DocumentId("doc:scheme:"))))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:"))));
 
     // Test requerying for adding nodes.
     frame.setHop(mbus::HopSpec("test", "docproc/cluster.default/[SubsetService:2]/chain.default"));
@@ -1133,7 +893,7 @@ Test::testSubsetService()
         ASSERT_TRUE(frame.select(leaf, 1));
         lst.insert(leaf[0]->getRoute().toString());
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600).get() != NULL);
+        ASSERT_TRUE(frame.getReceptor().getReply(600));
     }
     ASSERT_TRUE(lst.size() > 1); // must have requeried
 
@@ -1152,7 +912,7 @@ Test::testSubsetService()
 
         prev = next;
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600).get() != NULL);
+        ASSERT_TRUE(frame.getReceptor().getReply(600));
     }
 
     // Test requerying for dropping nodes.
@@ -1169,7 +929,7 @@ Test::testSubsetService()
         mbus::Reply::UP reply(new mbus::EmptyReply());
         reply->addError(mbus::Error(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE, route));
         leaf[0]->handleReply(std::move(reply));
-        ASSERT_TRUE(frame.getReceptor().getReply(600).get() != NULL);
+        ASSERT_TRUE(frame.getReceptor().getReply(600));
     }
     EXPECT_EQUAL(10u, lst.size());
 
@@ -1183,12 +943,12 @@ Test::testSubsetServiceCache()
 {
     TestFrame fooFrame(_repo, "docproc/cluster.default");
     mbus::HopSpec fooHop("foo", "docproc/cluster.default/[SubsetService:2]/chain.foo");
-    fooFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:foo"))));
+    fooFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(DocumentId("doc:scheme:foo"))));
     fooFrame.setHop(fooHop);
 
     TestFrame barFrame(fooFrame);
     mbus::HopSpec barHop("bar", "docproc/cluster.default/[SubsetService:2]/chain.bar");
-    barFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(document::DocumentId("doc:scheme:bar"))));
+    barFrame.setMessage(mbus::Message::UP(new GetDocumentMessage(DocumentId("doc:scheme:bar"))));
     barFrame.setHop(barHop);
 
     fooFrame.getMessageBus().setupRouting(
@@ -1211,8 +971,8 @@ Test::testSubsetServiceCache()
     barSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
     fooSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
 
-    ASSERT_TRUE(barFrame.getReceptor().getReply(600).get() != NULL);
-    ASSERT_TRUE(fooFrame.getReceptor().getReply(600).get() != NULL);
+    ASSERT_TRUE(barFrame.getReceptor().getReply(600));
+    ASSERT_TRUE(fooFrame.getReceptor().getReply(600));
 }
 
 bool
@@ -1227,7 +987,7 @@ Test::trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string>
         } else {
             frame.select(leaf, 0);
         }
-        if(frame.getReceptor().getReply(600).get() == NULL) {
+        if( ! frame.getReceptor().getReply(600)) {
             LOG(error, "Reply failed to propagate to reply handler.");
             return false;
         }
@@ -1252,6 +1012,6 @@ Test::isErrorPolicy(const string &name, const string &param)
     DocumentProtocol protocol(_loadTypes, _repo);
     mbus::IRoutingPolicy::UP policy = protocol.createPolicy(name, param);
 
-    return policy.get() != NULL && dynamic_cast<ErrorPolicy*>(policy.get()) != NULL;
+    return policy && dynamic_cast<ErrorPolicy*>(policy.get()) != nullptr;
 }
 

@@ -7,13 +7,11 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -116,8 +114,8 @@ public class Upgrader extends Maintainer {
         return curator.readIgnoreConfidence();
     }
 
-    /** Sets applications giving minimum confidence */
-    public void setIgnoreConfidence(boolean value) {
+    /** Controls whether to ignore confidence calculations or not */
+    public void ignoreConfidence(boolean value) {
         curator.writeIgnoreConfidence(value);
     }
 

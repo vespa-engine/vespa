@@ -8,6 +8,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.multioperation");
 
+using document::BucketSpace;
+
 namespace storage::distributor {
 
 MultiOperationOperation::MultiOperationOperation(
@@ -190,11 +192,12 @@ MultiOperationOperation::onStart(DistributorMessageSender& sender)
         }
         assert(blockSize > 4);
 
+        document::Bucket bucket(BucketSpace::placeHolder(), bucketIt->first);
         //now create a MultiOperationCommand with the new DocumentList
         std::shared_ptr<api::MultiOperationCommand>
             command(new api::MultiOperationCommand(
                             _manager.getTypeRepo(),
-                            bucketIt->first, blockSize));
+                            bucket, blockSize));
         copyMessageSettings(*_msg, *command);
 
         LOG(debug, "Block size %d", blockSize);

@@ -97,7 +97,7 @@ public class TargetPoolTestCase extends junit.framework.TestCase {
     }
 
     private RPCServiceAddress registerServer() throws ListenFailedException, UnknownHostException {
-        servers.add(new TestServer("srv" + servers.size(), null, slobrok, null, null));
+        servers.add(new TestServer("srv" + servers.size(), null, slobrok, null));
         return new RPCServiceAddress("foo/bar", servers.get(servers.size() - 1).mb.getConnectionSpec());
     }
 

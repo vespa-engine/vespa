@@ -9,7 +9,9 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -240,7 +242,7 @@ IdealStateManagerTest::testBlockCheckForAllOperationsToSpecificBucket()
     document::BucketId bid(16, 1234);
 
     {
-        auto msg = std::make_shared<api::JoinBucketsCommand>(bid);
+        auto msg = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(bid));
         msg->setAddress(
                 api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 4));
         tracker.insert(msg);

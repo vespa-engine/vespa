@@ -6,6 +6,9 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/loadtypes/loadtype.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <tests/common/make_document_bucket.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -41,7 +44,7 @@ ProcessAllHandlerTest::testRemoveLocation()
     doPut(4, spi::Timestamp(1234));
     doPut(4, spi::Timestamp(2345));
 
-    api::RemoveLocationCommand removeLocation("id.user == 4", bucketId);
+    api::RemoveLocationCommand removeLocation("id.user == 4", makeDocumentBucket(bucketId));
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     handler.handleRemoveLocation(removeLocation, context);
@@ -67,7 +70,7 @@ ProcessAllHandlerTest::testRemoveLocationDocumentSubset()
     }
 
     api::RemoveLocationCommand
-        removeLocation("testdoctype1.headerval % 2 == 0", bucketId);
+        removeLocation("testdoctype1.headerval % 2 == 0", makeDocumentBucket(bucketId));
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     handler.handleRemoveLocation(removeLocation, context);
 
@@ -92,7 +95,7 @@ ProcessAllHandlerTest::testRemoveLocationUnknownDocType()
     doPut(4, spi::Timestamp(1234));
 
     api::RemoveLocationCommand
-        removeLocation("unknowndoctype.headerval % 2 == 0", bucketId);
+        removeLocation("unknowndoctype.headerval % 2 == 0", makeDocumentBucket(bucketId));
 
     bool gotException = false;
     try {
@@ -115,7 +118,7 @@ ProcessAllHandlerTest::testRemoveLocationBogusSelection()
     document::BucketId bucketId(16, 4);
     doPut(4, spi::Timestamp(1234));
 
-    api::RemoveLocationCommand removeLocation("id.bogus != badgers", bucketId);
+    api::RemoveLocationCommand removeLocation("id.bogus != badgers", makeDocumentBucket(bucketId));
 
     bool gotException = false;
     try {
@@ -145,7 +148,7 @@ ProcessAllHandlerTest::testStat()
         doPut(doc, bucketId, spi::Timestamp(100 + i), 0);
     }
 
-    api::StatBucketCommand statBucket(bucketId,
+    api::StatBucketCommand statBucket(makeDocumentBucket(bucketId),
                                       "testdoctype1.headerval % 2 == 0");
         spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
@@ -184,7 +187,7 @@ ProcessAllHandlerTest::testStatWithRemove()
                  true);
     }
 
-    api::StatBucketCommand statBucket(bucketId, "true");
+    api::StatBucketCommand statBucket(makeDocumentBucket(bucketId), "true");
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
@@ -233,7 +236,7 @@ ProcessAllHandlerTest::testStatWholeBucket()
         doPut(doc, bucketId, spi::Timestamp(100 + i), 0);
     }
 
-    api::StatBucketCommand statBucket(bucketId, "true");
+    api::StatBucketCommand statBucket(makeDocumentBucket(bucketId), "true");
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 

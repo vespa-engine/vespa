@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,8 @@ import java.util.stream.Collectors;
  */
 public class ClusterInfoMaintainer extends Maintainer {
 
+    private static final Logger log = Logger.getLogger(ClusterInfoMaintainer.class.getName());
+    
     private final Controller controller;
 
     ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl) {
@@ -53,7 +56,7 @@ public class ClusterInfoMaintainer extends Maintainer {
         for (String id : clusters.keySet()) {
             List<NodeList.Node> clusterNodes = clusters.get(id);
 
-            //Assume they are all equal and use first node as a representatitve for the cluster
+            // Assume they are all equal and use first node as a representative for the cluster
             NodeList.Node node = clusterNodes.get(0);
 
             // Extract flavor info
@@ -73,7 +76,7 @@ public class ClusterInfoMaintainer extends Maintainer {
             // Add to map
             List<String> hostnames = clusterNodes.stream().map(node1 -> node1.hostname).collect(Collectors.toList());
             ClusterInfo inf = new ClusterInfo(node.flavor, node.cost, cpu, mem, disk,
-                    ClusterSpec.Type.from(node.membership.clusterType), hostnames);
+                                              ClusterSpec.Type.from(node.membership.clusterType), hostnames);
             infoMap.put(new ClusterSpec.Id(id), inf);
         }
 
@@ -82,7 +85,6 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-
         for (Application application : controller().applications().asList()) {
             try (Lock lock = controller().applications().lock(application.id())) {
                 for (Deployment deployment : application.deployments().values()) {
@@ -92,11 +94,13 @@ public class ClusterInfoMaintainer extends Maintainer {
                         Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
                         Application app = application.with(deployment.withClusterInfo(clusterInfo));
                         controller.applications().store(app, lock);
-                    } catch (IOException ioe) {
-                        Logger.getLogger(ClusterInfoMaintainer.class.getName()).fine(ioe.getMessage());
+                    } 
+                    catch (IOException | IllegalArgumentException e) {
+                        log.log(Level.WARNING, "Failing getting cluster info of for " + deploymentId, e);
                     }
                 }
             }
         }
     }
+
 }

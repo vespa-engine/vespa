@@ -12,7 +12,7 @@
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <unistd.h>
 
@@ -34,6 +34,8 @@ using vespalib::makeLambdaTask;
 using vespalib::make_string;
 using vespalib::MonitorGuard;
 using vespalib::LockGuard;
+using std::make_unique;
+using std::make_shared;
 
 namespace proton {
 
@@ -46,8 +48,8 @@ ignoreOperation(const DocumentOperation &op) {
 
 }  // namespace
 
-void FeedHandler::TlsMgrWriter::storeOperation(const FeedOperation &op) {
-    TlcProxy(_tls_mgr.getDomainName(), *_tlsDirectWriter).storeOperation(op);
+void FeedHandler::TlsMgrWriter::storeOperation(const FeedOperation &op, DoneCallback onDone) {
+    TlcProxy(_tls_mgr.getDomainName(), *_tlsDirectWriter).storeOperation(op, std::move(onDone));
 }
 bool FeedHandler::TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
@@ -72,7 +74,6 @@ FeedHandler::TlsMgrWriter::sync(SerialNum syncTo)
         LOG(spam, "Tls sync incomplete, reached %" PRIu64 ", retrying", syncedTo);
     }
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
-    return 0;
 }
 
 void
@@ -90,13 +91,13 @@ void FeedHandler::performPut(FeedToken token, PutOperation &op) {
         LOG(debug, "performPut(): ignoreOperation: docId(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
             op.getDocument()->getId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
-            token->setResult(std::make_unique<Result>(), false);
+            token->setResult(make_unique<Result>(), false);
         }
         return;
     }
-    storeOperation(op);
+    storeOperation(op, token);
     if (token) {
-        token->setResult(std::make_unique<Result>(), false);
+        token->setResult(make_unique<Result>(), false);
     }
     _activeFeedView->handlePut(std::move(token), op);
 }
@@ -112,7 +113,7 @@ FeedHandler::performUpdate(FeedToken token, UpdateOperation &op)
         createNonExistingDocument(std::move(token), op);
     } else {
         if (token) {
-            token->setResult(std::make_unique<UpdateResult>(Timestamp(0)), false);
+            token->setResult(make_unique<UpdateResult>(Timestamp(0)), false);
         }
     }
 }
@@ -121,9 +122,9 @@ FeedHandler::performUpdate(FeedToken token, UpdateOperation &op)
 void
 FeedHandler::performInternalUpdate(FeedToken token, UpdateOperation &op)
 {
-    storeOperation(op);
+    storeOperation(op, token);
     if (token) {
-        token->setResult(ResultUP(new UpdateResult(op.getPrevTimestamp())), true);
+        token->setResult(make_unique<UpdateResult>(op.getPrevTimestamp()), true);
     }
     _activeFeedView->handleUpdate(std::move(token), op);
 }
@@ -132,14 +133,14 @@ FeedHandler::performInternalUpdate(FeedToken token, UpdateOperation &op)
 void
 FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &op)
 {
-    Document::SP doc(new Document(op.getUpdate()->getType(), op.getUpdate()->getId()));
+    auto doc = make_shared<Document>(op.getUpdate()->getType(), op.getUpdate()->getId());
     doc->setRepo(*_activeFeedView->getDocumentTypeRepo());
     op.getUpdate()->applyTo(*doc);
     PutOperation putOp(op.getBucketId(), op.getTimestamp(), doc);
     _activeFeedView->preparePut(putOp);
-    storeOperation(putOp);
+    storeOperation(putOp, token);
     if (token) {
-        token->setResult(ResultUP(new UpdateResult(putOp.getTimestamp())), true);
+        token->setResult(make_unique<UpdateResult>(putOp.getTimestamp()), true);
     }
     TransportLatch latch(1);
     _activeFeedView->handlePut(feedtoken::make(latch), putOp);
@@ -153,29 +154,29 @@ void FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
         LOG(debug, "performRemove(): ignoreOperation: docId(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
             op.getDocumentId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
-            token->setResult(ResultUP(new RemoveResult(false)), false);
+            token->setResult(make_unique<RemoveResult>(false), false);
         }
         return;
     }
     if (op.getPrevDbDocumentId().valid()) {
         assert(op.getValidNewOrPrevDbdId());
         assert(op.notMovingLidInSameSubDb());
-        storeOperation(op);
+        storeOperation(op, token);
         if (token) {
             bool documentWasFound = !op.getPrevMarkedAsRemoved();
-            token->setResult(ResultUP(new RemoveResult(documentWasFound)), documentWasFound);
+            token->setResult(make_unique<RemoveResult>(documentWasFound), documentWasFound);
         }
         _activeFeedView->handleRemove(std::move(token), op);
     } else if (op.hasDocType()) {
         assert(op.getDocType() == _docTypeName.getName());
-        storeOperation(op);
+        storeOperation(op, token);
         if (token) {
-            token->setResult(ResultUP(new RemoveResult(false)), false);
+            token->setResult(make_unique<RemoveResult>(false), false);
         }
         _activeFeedView->handleRemove(std::move(token), op);
     } else {
         if (token) {
-            token->setResult(ResultUP(new RemoveResult(false)), false);
+            token->setResult(make_unique<RemoveResult>(false), false);
         }
     }
 }
@@ -186,20 +187,16 @@ FeedHandler::performGarbageCollect(FeedToken token)
     (void) token;
 }
 
-
 void
 FeedHandler::performCreateBucket(FeedToken token, CreateBucketOperation &op)
 {
-    (void) token;
-    storeOperation(op);
+    storeOperation(op, token);
     _bucketDBHandler->handleCreateBucket(op.getBucketId());
 }
 
-
 void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
-    (void) token;
     _activeFeedView->prepareDeleteBucket(op);
-    storeOperation(op);
+    storeOperation(op, token);
     // Delete documents in bucket
     _activeFeedView->handleDeleteBucket(op);
     // Delete bucket itself, should no longer have documents.
@@ -207,20 +204,15 @@ void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op
 
 }
 
-
 void FeedHandler::performSplit(FeedToken token, SplitBucketOperation &op) {
-    (void) token;
-    storeOperation(op);
+    storeOperation(op, token);
     _bucketDBHandler->handleSplit(op.getSerialNum(), op.getSource(), op.getTarget1(), op.getTarget2());
 }
 
-
 void FeedHandler::performJoin(FeedToken token, JoinBucketsOperation &op) {
-    (void) token;
-    storeOperation(op);
+    storeOperation(op, token);
     _bucketDBHandler->handleJoin(op.getSerialNum(), op.getSource1(), op.getSource2(), op.getTarget());
 }
-
 
 void
 FeedHandler::performSync()
@@ -342,7 +334,7 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _prunedSerialNum(0),
       _delayedPrune(false),
       _feedLock(),
-      _feedState(std::make_shared<InitState>(getDocTypeName())),
+      _feedState(make_shared<InitState>(getDocTypeName())),
       _activeFeedView(nullptr),
       _bucketDBHandler(nullptr),
       _syncLock(),
@@ -381,7 +373,7 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flu
     (void) newestFlushedSerial;
     assert(_activeFeedView);
     assert(_bucketDBHandler);
-    FeedState::SP state = std::make_shared<ReplayTransactionLogState>
+    FeedState::SP state = make_shared<ReplayTransactionLogState>
                           (getDocTypeName(), _activeFeedView, *_bucketDBHandler, _replayConfig, config_store);
     changeFeedState(state);
     // Resurrected attribute vector might cause oldestFlushedSerial to
@@ -404,7 +396,7 @@ FeedHandler::flushDone(SerialNum flushedSerial)
 }
 
 void FeedHandler::changeToNormalFeedState() {
-    changeFeedState(FeedState::SP(new NormalState(*this)));
+    changeFeedState(make_shared<NormalState>(*this));
 }
 
 bool
@@ -412,18 +404,28 @@ FeedHandler::isDoingReplay() const {
     return _tlsMgr.isDoingReplay();
 }
 
-bool FeedHandler::getTransactionLogReplayDone() const {
+bool
+FeedHandler::getTransactionLogReplayDone() const {
     return _tlsMgr.getReplayDone();
 }
 
-void FeedHandler::storeOperation(FeedOperation &op) {
+void
+FeedHandler::storeOperation(const FeedOperation &op, TlsWriter::DoneCallback onDone) {
     if (!op.getSerialNum()) {
-        op.setSerialNum(incSerialNum());
+        const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
     }
-    _tlsWriter.storeOperation(op);
+    _tlsWriter.storeOperation(op, std::move(onDone));
 }
 
-void FeedHandler::tlsPrune(SerialNum oldest_to_keep) {
+void
+FeedHandler::storeOperationSync(const FeedOperation &op) {
+    vespalib::Gate gate;
+    storeOperation(op, make_shared<search::GateCallback>(gate));
+    gate.await();
+}
+
+void
+FeedHandler::tlsPrune(SerialNum oldest_to_keep) {
     if (!_tlsWriter.erase(oldest_to_keep)) {
         throw IllegalStateException(make_string("Failed to prune TLS to token %" PRIu64 ".", oldest_to_keep));
     }
@@ -445,7 +447,7 @@ void feedOperationRejected(FeedToken & token, const vespalib::string &opType, co
     if (token) {
         auto message = make_string("%s operation rejected for document '%s' of type '%s': '%s'",
                                    opType.c_str(), docId.c_str(), docTypeName.toString().c_str(), rejectMessage.c_str());
-        token->setResult(ResultUP(new ResultType(Result::RESOURCE_EXHAUSTED, message)), false);
+        token->setResult(make_unique<ResultType>(Result::RESOURCE_EXHAUSTED, message), false);
         token->fail();
     }
 }
@@ -533,7 +535,7 @@ FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCa
     assert(op.getValidDbdId());
     assert(op.getValidPrevDbdId());
     assert(op.getSubDbId() != op.getPrevSubDbId());
-    storeOperation(op);
+    storeOperation(op, moveDoneCtx);
     _activeFeedView->handleMove(op, std::move(moveDoneCtx));
 }
 
@@ -558,7 +560,7 @@ FeedHandler::receive(const Packet &packet)
     // (by fnet thread).  Called via DocumentDB::recoverPacket() when
     // recovering from another node.
     FeedState::SP state = getFeedState();
-    PacketWrapper::SP wrap(new PacketWrapper(packet, _tlsReplayProgress.get()));
+    auto wrap = make_shared<PacketWrapper>(packet, _tlsReplayProgress.get());
     state->receive(wrap, _writeService.master());
     wrap->gate.await();
     return wrap->result;
@@ -577,7 +579,7 @@ performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)
 {
     const LidVectorContext::SP lids_to_remove = pruneOp.getLidsToRemove();
     if (lids_to_remove && lids_to_remove->getNumLids() != 0) {
-        storeOperation(pruneOp);
+        storeOperationSync(pruneOp);
         _activeFeedView->handlePruneRemovedDocuments(pruneOp);
     }
 }

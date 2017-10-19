@@ -9,10 +9,13 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -202,7 +205,7 @@ Distributor_Test::testOperationGeneration()
 
     CPPUNIT_ASSERT_EQUAL(std::string("Remove"),
                          testOp(new api::RemoveCommand(
-                                        bid,
+                                        makeDocumentBucket(bid),
                                         document::DocumentId("userdoc:m:1:foo"),
                                         api::Timestamp(1234))));
 
@@ -285,7 +288,7 @@ Distributor_Test::testHandleUnknownMaintenanceReply()
 
     {
         api::SplitBucketCommand::SP cmd(
-                new api::SplitBucketCommand(document::BucketId(16, 1234)));
+                new api::SplitBucketCommand(makeDocumentBucket(document::BucketId(16, 1234))));
         api::SplitBucketReply::SP reply(new api::SplitBucketReply(*cmd));
 
         CPPUNIT_ASSERT(_distributor->handleReply(reply));
@@ -295,7 +298,7 @@ Distributor_Test::testHandleUnknownMaintenanceReply()
         // RemoveLocationReply must be treated as a maintenance reply since
         // it's what GC is currently built around.
         auto cmd = std::make_shared<api::RemoveLocationCommand>(
-                "false", document::BucketId(30, 1234));
+                "false", makeDocumentBucket(document::BucketId(30, 1234)));
         auto reply = std::shared_ptr<api::StorageReply>(cmd->makeReply());
         CPPUNIT_ASSERT(_distributor->handleReply(reply));
     }
@@ -733,7 +736,7 @@ namespace {
 
 auto makeDummyRemoveCommand() {
     return std::make_shared<api::RemoveCommand>(
-            document::BucketId(0),
+            makeDocumentBucket(document::BucketId(0)),
             document::DocumentId("id:foo:testdoctype1:n=1:foo"),
             api::Timestamp(0));
 }
@@ -881,7 +884,7 @@ void Distributor_Test::external_client_requests_are_handled_individually_in_prio
     document::DocumentId id("id:foo:testdoctype1:n=1:foo");
     vespalib::stringref field_set = "";
     for (auto pri : priorities) {
-        auto cmd = std::make_shared<api::GetCommand>(document::BucketId(), id, field_set);
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
         cmd->setPriority(pri);
         // onDown appends to internal message FIFO queue, awaiting hand-off.
         _distributor->onDown(cmd);
@@ -912,7 +915,7 @@ void Distributor_Test::internal_messages_are_started_in_fifo_order_batch() {
     std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 1});
     for (auto pri : priorities) {
         api::BucketInfo fake_info(pri, pri, pri);
-        auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, fake_info);
+        auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), fake_info);
         cmd->setSourceIndex(0);
         cmd->setPriority(pri);
         _distributor->onDown(cmd);
@@ -937,7 +940,7 @@ void Distributor_Test::closing_aborts_priority_queued_client_requests() {
     document::DocumentId id("id:foo:testdoctype1:n=1:foo");
     vespalib::stringref field_set = "";
     for (int i = 0; i < 10; ++i) {
-        auto cmd = std::make_shared<api::GetCommand>(document::BucketId(), id, field_set);
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
         _distributor->onDown(cmd);
     }
     tickDistributorNTimes(1);

@@ -808,7 +808,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
              : _maxChunkSize);
 
         cmd.reset(new api::ApplyBucketDiffCommand(
-                          bucket.getBucketId(), nodes, maxSize));
+                          bucket.getBucket(), nodes, maxSize));
         cmd->setAddress(createAddress(_env._component.getClusterName(),
                                       nodes[1].index));
         findCandidates(bucket.getBucketId(),
@@ -885,7 +885,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
                      ? std::numeric_limits<uint32_t>().max()
                      : _maxChunkSize);
                 cmd.reset(new api::ApplyBucketDiffCommand(
-                                  bucket.getBucketId(), nodes, maxSize));
+                                  bucket.getBucket(), nodes, maxSize));
                 cmd->setAddress(
                         createAddress(_env._component.getClusterName(),
                                       nodes[1].index));
@@ -901,7 +901,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     // If we found no group big enough to handle on its own, do a common
     // merge to merge the remaining data.
     if (cmd.get() == 0) {
-        cmd.reset(new api::ApplyBucketDiffCommand(bucket.getBucketId(),
+        cmd.reset(new api::ApplyBucketDiffCommand(bucket.getBucket(),
                                                   status.nodeList,
                                                   _maxChunkSize));
         cmd->setAddress(createAddress(_env._component.getClusterName(),
@@ -1008,7 +1008,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
     s->startTime = framework::MilliSecTimer(_env._component.getClock());
 
     std::shared_ptr<api::GetBucketDiffCommand> cmd2(
-            new api::GetBucketDiffCommand(id,
+            new api::GetBucketDiffCommand(bucket.getBucket(),
                                           s->nodeList,
                                           s->maxTimestamp.getTime()));
     if (!buildBucketInfoList(bucket,
@@ -1255,7 +1255,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
             local.size() - remote.size());
         std::shared_ptr<api::GetBucketDiffCommand> cmd2(
                 new api::GetBucketDiffCommand(
-                    id, cmd.getNodes(), cmd.getMaxTimestamp()));
+                    bucket.getBucket(), cmd.getNodes(), cmd.getMaxTimestamp()));
         cmd2->setAddress(createAddress(_env._component.getClusterName(),
                                        cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(local);
@@ -1463,7 +1463,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index);
         std::shared_ptr<api::ApplyBucketDiffCommand> cmd2(
                 new api::ApplyBucketDiffCommand(
-                    id, cmd.getNodes(), cmd.getMaxBufferSize()));
+                    bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize()));
         cmd2->setAddress(createAddress(_env._component.getClusterName(),
                                        cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(cmd.getDiff());

@@ -93,7 +93,6 @@ ReturnCode::isNodeDownOrNetwork() const
         case mbus::ErrorCode::UNKNOWN_SESSION:
         case mbus::ErrorCode::HANDSHAKE_FAILED:
         case mbus::ErrorCode::NO_SERVICES_FOR_ROUTE:
-        case mbus::ErrorCode::SERVICE_OOS:
         case mbus::ErrorCode::NETWORK_ERROR:
         case mbus::ErrorCode::UNKNOWN_PROTOCOL:
         case Protocol::ERROR_NODE_NOT_READY:

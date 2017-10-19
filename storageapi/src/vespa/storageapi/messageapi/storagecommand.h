@@ -53,15 +53,6 @@ public:
      * taking command as input.
      */
     virtual std::unique_ptr<StorageReply> makeReply() = 0;
-
-    /**
-     * Distributors need a way to create copies of messages to send to forward
-     * to different nodes. Only messages sent through the distributor needs to
-     * have an actual implementation of this.
-     */
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId& bucket, uint64_t timestamp) const;
-
 };
 
 }

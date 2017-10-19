@@ -103,6 +103,17 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
         }
     }
 
+    @Override
+    public void removeApplicationsExcept(Set<ApplicationId> applications) {
+        for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
+            if (! applications.contains(activeApplication)) {
+                log.log(LogLevel.INFO, "Will remove deleted application " + activeApplication.toShortString());
+                // TODO: Activate
+                //removeApplication(activeApplication);
+            }
+        }
+    }
+
     private void reloadListenersOnRemove(ApplicationId applicationId) {
         for (ReloadListener listener : reloadListeners) {
             listener.applicationRemoved(applicationId);

@@ -110,7 +110,7 @@ public class ControllerApiHandler extends LoggingRequestHandler {
         if (inspect.field(upgradesPerMinuteField).valid()) {
             upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
         } else if (inspect.field(ignoreConfidenceField).valid()) {
-            upgrader.setIgnoreConfidence(inspect.field(ignoreConfidenceField).asBool());
+            upgrader.ignoreConfidence(inspect.field(ignoreConfidenceField).asBool());
         } else {
             return ErrorResponse.badRequest("Unable to configure upgrader with data in request: '" +
                                                     Utf8.toString(jsonBytes) + "'");

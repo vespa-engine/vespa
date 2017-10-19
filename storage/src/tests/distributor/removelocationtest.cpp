@@ -6,7 +6,10 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storage/distributor/operations/external/removelocationoperation.h>
 #include <tests/distributor/distributortestutil.h>
+#include <tests/common/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -34,7 +37,7 @@ public:
 
     void sendRemoveLocation(const std::string& selection) {
         std::shared_ptr<api::RemoveLocationCommand> msg(
-                new api::RemoveLocationCommand(selection, document::BucketId(0)));
+                new api::RemoveLocationCommand(selection, makeDocumentBucket(document::BucketId(0))));
 
         op.reset(new RemoveLocationOperation(getExternalOperationHandler(),
                                              msg,

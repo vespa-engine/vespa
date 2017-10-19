@@ -25,7 +25,7 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>service-monitor</artifactId>
       <version>${project.version}</version>
-      <scope>compile</scope> <!-- TODO: Unbundle, but fix JSON serialization of model objects first. -->
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -35,7 +35,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>config-model-api</artifactId>
+      <artifactId>application-model</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

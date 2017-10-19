@@ -7,8 +7,11 @@
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <tests/common/make_document_bucket.h>
 
 LOG_SETUP(".singlebucketjointest");
+
+using storage::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -37,7 +40,7 @@ SingleBucketJoinTest::testPersistenceCanHandleSingleBucketJoin()
     expectOkReply<api::PutReply>(c.top);
     c.top.getRepliesOnce();
 
-    auto cmd = std::make_shared<api::JoinBucketsCommand>(targetBucket);
+    auto cmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(targetBucket));
     cmd->getSourceBuckets().push_back(sourceBucket);
     cmd->getSourceBuckets().push_back(sourceBucket);
 

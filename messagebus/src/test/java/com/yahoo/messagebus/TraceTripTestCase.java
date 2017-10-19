@@ -33,9 +33,9 @@ public class TraceTripTestCase extends junit.framework.TestCase {
                                  .addRoute("test", Arrays.asList("pxy", "dst"));
 
         slobrok = new Slobrok();
-        src = new TestServer("test/src", table, slobrok, null, null);
-        pxy = new TestServer("test/pxy", table, slobrok, null, null);
-        dst = new TestServer("test/dst", table, slobrok, null, null);
+        src = new TestServer("test/src", table, slobrok, null);
+        pxy = new TestServer("test/pxy", table, slobrok, null);
+        dst = new TestServer("test/dst", table, slobrok, null);
     }
 
     public void tearDown() {

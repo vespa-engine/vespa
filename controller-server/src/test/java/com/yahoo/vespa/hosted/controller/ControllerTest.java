@@ -17,7 +17,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -34,7 +34,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthensDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -357,13 +357,13 @@ public class ControllerTest {
     }
     
     @Test
-    public void testMigratingTenantToAthensWillModifyAthensDomainsCorrectly() {
+    public void testMigratingTenantToAthenzWillModifyAthenzDomainsCorrectly() {
         ControllerTester tester = new ControllerTester();
 
         // Create Athens domain mock
-        AthensDomain athensDomain = new AthensDomain("vespa.john");
-        AthensDbMock.Domain mockDomain = new AthensDbMock.Domain(athensDomain);
-        tester.athensDb().addDomain(mockDomain);
+        AthenzDomain athensDomain = new AthenzDomain("vespa.john");
+        AthenzDbMock.Domain mockDomain = new AthenzDbMock.Domain(athensDomain);
+        tester.athenzDb().addDomain(mockDomain);
 
         // Create OpsDb tenant
         TenantId tenantId = new TenantId("mytenant");
@@ -381,7 +381,7 @@ public class ControllerTest {
 
         // Migrate tenant to Athens
         NToken nToken = TestIdentities.userNToken;
-        tester.controller().tenants().migrateTenantToAthens(
+        tester.controller().tenants().migrateTenantToAthenz(
                 tenantId, athensDomain, new PropertyId("1567"), new Property("vespa_dev.no"), nToken);
 
         // Verify that tenant is migrated

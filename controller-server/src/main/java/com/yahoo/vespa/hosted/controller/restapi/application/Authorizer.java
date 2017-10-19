@@ -6,7 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -92,7 +92,7 @@ public class Authorizer {
     }
 
     public boolean isSuperUser(HttpRequest request) {
-        // TODO Check membership of admin role in Vespa's Athens domain
+        // TODO Check membership of admin role in Vespa's Athenz domain
         return isMemberOfVespaBouncerGroup(request) || isScrewdriverPrincipal(getPrincipal(request));
     }
 
@@ -114,7 +114,7 @@ public class Authorizer {
     private boolean isTenantAdmin(UserId userId, Tenant tenant) {
         switch (tenant.tenantType()) {
             case ATHENS:
-                return isAthensTenantAdmin(userId, tenant.getAthensDomain().get());
+                return isAthenzTenantAdmin(userId, tenant.getAthensDomain().get());
             case OPSDB:
                 return isGroupMember(userId, tenant.getUserGroup().get());
             case USER:
@@ -123,12 +123,12 @@ public class Authorizer {
         throw new IllegalArgumentException("Unknown tenant type: " + tenant.tenantType());
     }
 
-    private boolean isAthensTenantAdmin(UserId userId, AthensDomain tenantDomain) {
+    private boolean isAthenzTenantAdmin(UserId userId, AthenzDomain tenantDomain) {
         return athenzClientFactory.createZmsClientWithServicePrincipal()
                 .hasTenantAdminAccess(AthenzUtils.createPrincipal(userId), tenantDomain);
     }
 
-    public boolean isAthensDomainAdmin(UserId userId, AthensDomain tenantDomain) {
+    public boolean isAthenzDomainAdmin(UserId userId, AthenzDomain tenantDomain) {
         return athenzClientFactory.createZmsClientWithServicePrincipal()
                 .isDomainAdmin(AthenzUtils.createPrincipal(userId), tenantDomain);
     }

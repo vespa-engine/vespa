@@ -9,8 +9,8 @@ namespace api {
 class MaintenanceCommand : public BucketInfoCommand
 {
 public:
-    MaintenanceCommand(const MessageType& type, const document::BucketId& id)
-        : BucketInfoCommand(type, id)
+    MaintenanceCommand(const MessageType& type, const document::Bucket &bucket)
+        : BucketInfoCommand(type, bucket)
     {}
     MaintenanceCommand(MaintenanceCommand &&) = default;
     MaintenanceCommand & operator = (MaintenanceCommand &&) = default;

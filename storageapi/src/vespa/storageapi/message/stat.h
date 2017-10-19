@@ -21,13 +21,12 @@ class StatBucketCommand : public BucketCommand {
 private:
     vespalib::string _docSelection;
 public:
-    StatBucketCommand(const document::BucketId& bucket,
+    StatBucketCommand(const document::Bucket &bucket,
                       const vespalib::stringref & documentSelection);
     ~StatBucketCommand();
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
     DECLARE_STORAGECOMMAND(StatBucketCommand, onStatBucket);
 };
 
@@ -52,7 +51,7 @@ public:
  */
 class GetBucketListCommand : public BucketCommand {
 public:
-    GetBucketListCommand(const document::BucketId& bucket);
+    GetBucketListCommand(const document::Bucket &bucket);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(GetBucketListCommand, onGetBucketList);
 };
