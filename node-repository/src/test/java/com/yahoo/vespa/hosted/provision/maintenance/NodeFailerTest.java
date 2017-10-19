@@ -367,7 +367,7 @@ public class NodeFailerTest {
 
         tester.failer.run();
 
-        assertEquals(Node.State.failed, readyNode.state());
+        assertEquals(1, tester.nodeRepository.getNodes(Node.State.failed).size());
     }
 
     @Test
