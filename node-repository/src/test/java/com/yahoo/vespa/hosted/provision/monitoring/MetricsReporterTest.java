@@ -19,6 +19,8 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -33,6 +35,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author oyving
@@ -41,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 public class MetricsReporterTest {
 
     @Test
-    public void test_registered_metric() throws InterruptedException {
+    public void test_registered_metric() throws Exception {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
@@ -53,14 +58,14 @@ public class MetricsReporterTest {
         nodeRepository.addNodes(Collections.singletonList(hostNode));
 
         Map<String, Number> expectedMetrics = new HashMap<>();
-        expectedMetrics.put("hostedVespa.provisionedHosts", 1);
-        expectedMetrics.put("hostedVespa.parkedHosts", 0);
-        expectedMetrics.put("hostedVespa.readyHosts", 0);
-        expectedMetrics.put("hostedVespa.reservedHosts", 0);
-        expectedMetrics.put("hostedVespa.activeHosts", 0);
-        expectedMetrics.put("hostedVespa.inactiveHosts", 0);
-        expectedMetrics.put("hostedVespa.dirtyHosts", 0);
-        expectedMetrics.put("hostedVespa.failedHosts", 0);
+        expectedMetrics.put("hostedVespa.provisionedHosts", 1L);
+        expectedMetrics.put("hostedVespa.parkedHosts", 0L);
+        expectedMetrics.put("hostedVespa.readyHosts", 0L);
+        expectedMetrics.put("hostedVespa.reservedHosts", 0L);
+        expectedMetrics.put("hostedVespa.activeHosts", 0L);
+        expectedMetrics.put("hostedVespa.inactiveHosts", 0L);
+        expectedMetrics.put("hostedVespa.dirtyHosts", 0L);
+        expectedMetrics.put("hostedVespa.failedHosts", 0L);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityCpu", 0.0);
@@ -68,15 +73,25 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.docker.freeCapacityMem", 0.0);
         expectedMetrics.put("hostedVespa.docker.freeCapacityCpu", 0.0);
 
+        expectedMetrics.put("wantedRebootGeneration", 0L);
+        expectedMetrics.put("currentRebootGeneration", 0L);
+        expectedMetrics.put("wantToReboot", 0);
+        expectedMetrics.put("wantToRetire", 0);
+        expectedMetrics.put("wantToDeprovision", 0);
+        expectedMetrics.put("allowedToBeDown", 0);
+
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
+
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);
     }
 
     @Test
-    public void docker_metrics() throws InterruptedException {
+    public void docker_metrics() throws Exception {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
@@ -103,12 +118,15 @@ public class MetricsReporterTest {
         container2 = container2.with(allocation(Optional.of("app2")).get());
         nodeRepository.addDockerNodes(Collections.singletonList(container2));
 
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
+
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
         metricsReporter.maintain();
 
-        assertEquals(0, metric.values.get("hostedVespa.readyHosts")); /** Only tenants counts **/
-        assertEquals(2, metric.values.get("hostedVespa.reservedHosts"));
+        assertEquals(0L, metric.values.get("hostedVespa.readyHosts")); /** Only tenants counts **/
+        assertEquals(2L, metric.values.get("hostedVespa.reservedHosts"));
 
         assertEquals(12.0, metric.values.get("hostedVespa.docker.totalCapacityDisk"));
         assertEquals(10.0, metric.values.get("hostedVespa.docker.totalCapacityMem"));
