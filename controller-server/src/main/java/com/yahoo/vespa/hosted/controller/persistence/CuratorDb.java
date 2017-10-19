@@ -302,7 +302,8 @@ public class CuratorDb {
 
     private Path lockPath(String provisionId) {
         Path lockPath = root.append("locks")
-                .append(provisionStatePath());
+                .append(provisionStatePath())
+                .append(provisionId);
         curator.create(lockPath);
         return lockPath;
     }
