@@ -8,7 +8,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -221,7 +220,6 @@ FeederThread::~FeederThread() {}
 void
 FeederThread::commitPacket()
 {
-    _packet.close();
     const vespalib::nbostream& stream = _packet.getHandle();
     if (!_session->commit(ConstBufferRef(stream.c_str(), stream.size()))) {
         throw std::runtime_error(vespalib::make_string
@@ -236,8 +234,9 @@ FeederThread::commitPacket()
 bool
 FeederThread::addEntry(const Packet::Entry & e)
 {
-    //LOG(info, "FeederThread: add %s", EntryPrinter::toStr(e).c_str());
-    return _packet.add(e);
+    if (_packet.sizeBytes() > 0xf000) return false;
+    _packet.add(e);
+    return true;
 }
 
 void

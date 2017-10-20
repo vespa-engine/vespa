@@ -2,6 +2,7 @@
 #pragma once
 
 #include "common.h"
+#include "ichunk.h"
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/memory.h>
 #include <map>
@@ -19,10 +20,7 @@ private:
     DomainPart& operator=(const DomainPart &);
 
 public:
-    enum Crc {
-        ccitt_crc32=1,
-        xxh64=2
-    };
+    using Crc = Encoding::Crc;
     typedef std::shared_ptr<DomainPart> SP;
     DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Crc defaultCrc,
                const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
@@ -49,13 +47,13 @@ public:
     }
     bool        isClosed() const;
 private:
+    using Alloc = vespalib::alloc::Alloc;
     bool openAndFind(FastOS_FileInterface &file, const SerialNum &from);
     int64_t buildPacketMapping(bool allowTruncate);
-
-    static bool read(FastOS_FileInterface &file, Packet::Entry &entry, vespalib::alloc::Alloc &buf, bool allowTruncate);
+    static Packet readPacket(FastOS_FileInterface & file, SerialNumRange wanted, size_t targetSize, bool allowTruncate);
+    static bool read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc &buf, bool allowTruncate);
 
     void write(FastOS_FileInterface &file, const Packet::Entry &entry);
-    static int32_t calcCrc(Crc crc, const void * buf, size_t len);
     void writeHeader(const common::FileHeaderContext &fileHeaderContext);
 
     class SkipInfo
@@ -77,21 +75,21 @@ private:
     };
     typedef std::vector<SkipInfo> SkipList;
     typedef std::map<SerialNum, Packet> PacketList;
-    const Crc      _defaultCrc;
-    vespalib::Lock _lock;
-    vespalib::Lock _fileLock;
-    SerialNumRange _range;
-    size_t         _sz;
+    const Crc             _defaultCrc;
+    vespalib::Lock        _lock;
+    vespalib::Lock        _fileLock;
+    SerialNumRange        _range;
+    size_t                _sz;
     std::atomic<uint64_t> _byteSize;
-    PacketList     _packets;
-    vespalib::string _fileName;
+    PacketList            _packets;
+    vespalib::string      _fileName;
     std::unique_ptr<FastOS_FileInterface> _transLog;
-    SkipList       _skipList;
-    uint32_t       _headerLen;
-    vespalib::Lock _writeLock;
+    SkipList              _skipList;
+    uint32_t              _headerLen;
+    vespalib::Lock        _writeLock;
     // Protected by _writeLock
-    SerialNum      _writtenSerial;
-    SerialNum      _syncedSerial;
+    SerialNum             _writtenSerial;
+    SerialNum             _syncedSerial;
 };
 
 }

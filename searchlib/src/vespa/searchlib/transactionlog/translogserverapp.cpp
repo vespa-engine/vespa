@@ -27,9 +27,9 @@ DomainPart::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
 {
     switch (crcType) {
         case searchlib::TranslogserverConfig::ccitt_crc32:
-            return DomainPart::ccitt_crc32;
+            return Encoding::Crc::ccitt_crc32;
         case searchlib::TranslogserverConfig::xxh64:
-            return DomainPart::xxh64;
+            return Encoding::Crc::xxh64;
     }
     abort();
 }

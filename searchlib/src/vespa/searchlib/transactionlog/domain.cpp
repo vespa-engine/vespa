@@ -307,15 +307,20 @@ waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
+
+Domain::Chunk::Chunk()
+    : _data(size_t(-1)),
+      _callBacks(),
+      _firstArrivalTime()
+{}
+
+Domain::Chunk::~Chunk() = default;
 void
 Domain::Chunk::add(const Packet &packet, Writer::DoneCallback onDone) {
     if (_callBacks.empty()) {
         _firstArrivalTime = steady_clock::now();
     }
-    if ( ! _data.merge(packet) ) {
-        throw runtime_error(make_string("Failed merging of packet %zu into packet %zu",
-                                        packet.range().from(), _data.range().from()));
-    }
+    _data.merge(packet);
     _callBacks.emplace_back(std::move(onDone));
 }
 

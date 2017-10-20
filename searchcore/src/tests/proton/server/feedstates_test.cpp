@@ -105,7 +105,7 @@ RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
 {
     op.serialize(str);
     ConstBufferRef buf(str.c_str(), str.wp());
-    packet.reset(new Packet());
+    packet.reset(new Packet(0xf000));
     packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
 }
 RemoveOperationContext::~RemoveOperationContext() {}

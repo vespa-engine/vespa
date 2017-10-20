@@ -83,7 +83,8 @@ private:
     void commitIfStale(const vespalib::MonitorGuard & guard);
     class Chunk {
     public:
-
+        Chunk();
+        ~Chunk();
         void add(const Packet & packet, Writer::DoneCallback onDone);
         size_t sizeBytes() const { return _data.sizeBytes(); }
         const Packet & getPacket() const { return _data; }
