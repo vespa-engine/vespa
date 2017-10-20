@@ -78,17 +78,17 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, DomainPart::Crc::xxh64)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, Encoding::xxh64)
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize,
-                               size_t maxThreads, DomainPart::Crc defaultCrcType)
+                               size_t maxThreads, Encoding defaultCrcType)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
       _domainPartSize(domainPartSize),
-      _defaultCrcType(defaultCrcType),
+      _defaultEncoding(defaultCrcType),
       _commitExecutor(maxThreads, 128*1024),
       _sessionExecutor(maxThreads, 128*1024),
       _threadPool(0x20000),
@@ -107,7 +107,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 if ( ! domainName.empty()) {
                     try {
                         auto domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor, _sessionExecutor,
-                                                          _domainPartSize, _defaultCrcType,_fileHeaderContext);
+                                                          _domainPartSize, _defaultEncoding,_fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -346,7 +346,7 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     if ( !domain ) {
         try {
             domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor, _sessionExecutor,
-                                         _domainPartSize, _defaultCrcType, _fileHeaderContext);
+                                         _domainPartSize, _defaultEncoding, _fileHeaderContext);
             {
                 Guard domainGuard(_lock);
                 _domains[domain->name()] = domain;

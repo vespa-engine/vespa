@@ -23,7 +23,7 @@ public:
 
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext,
-                   uint64_t domainPartSize, size_t maxThreads, DomainPart::Crc defaultCrc);
+                   uint64_t domainPartSize, size_t maxThreads, Encoding defaultCrc);
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext, uint64_t domainPartSize);
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
@@ -80,7 +80,7 @@ private:
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
     const uint64_t                      _domainPartSize;
-    const DomainPart::Crc               _defaultCrcType;
+    const Encoding                      _defaultEncoding;
     vespalib::ThreadStackExecutor       _commitExecutor;
     vespalib::ThreadStackExecutor       _sessionExecutor;
     FastOS_ThreadPool                   _threadPool;

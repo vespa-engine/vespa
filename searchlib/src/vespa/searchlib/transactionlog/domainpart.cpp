@@ -251,9 +251,9 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     return currPos;
 }
 
-DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Crc defaultCrc,
+DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding defaultEncoding,
                        const FileHeaderContext &fileHeaderContext, bool allowTruncate) :
-    _defaultCrc(defaultCrc),
+    _defaultEncoding(defaultEncoding),
     _lock(),
     _fileLock(),
     _range(s),
@@ -535,12 +535,12 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
     int32_t crc(0);
     uint32_t len(entry.serializedSize() + sizeof(crc));
     nbostream os;
-    os << static_cast<uint8_t>(_defaultCrc);
+    os << _defaultEncoding.getRaw();
     os << len;
     size_t start(os.size());
     entry.serialize(os);
     size_t end(os.size());
-    crc = Encoding::calcCrc(_defaultCrc, os.c_str()+start, end - start);
+    crc = Encoding::calcCrc(_defaultEncoding.getCrc(), os.c_str()+start, end - start);
     os << crc;
     size_t osSize = os.size();
     assert(osSize == len + sizeof(len) + sizeof(uint8_t));

@@ -21,4 +21,4 @@ usefsync bool default=false restart
 maxthreads int default=4 restart
 
 ##Default crc method used
-crcmethod enum {ccitt_crc32, xxh64} default=xxh64
+crcmethod enum {ccitt_crc32, xxh64, xxh64lz4} default=xxh64

@@ -26,10 +26,10 @@ namespace search::transactionlog {
 
 Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
                Executor & commitExecutor, Executor & sessionExecutor, uint64_t domainPartSize,
-               DomainPart::Crc defaultCrcType, const FileHeaderContext &fileHeaderContext) :
+               Encoding defaultEncoding, const FileHeaderContext &fileHeaderContext) :
     _currentChunk(std::make_unique<Chunk>()),
     _lastSerial(0),
-    _defaultCrcType(defaultCrcType),
+    _defaultEncoding(defaultEncoding),
     _threadPool(threadPool),
     _commitExecutor(commitExecutor),
     _sessionExecutor(sessionExecutor),
@@ -67,7 +67,7 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
     }
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
+        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultEncoding, _fileHeaderContext, false));
     }
     _lastSerial = end();
     _self = _threadPool.NewThread(this);
@@ -84,7 +84,7 @@ Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
     }
 }
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart));
+    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultEncoding, _fileHeaderContext, isLastPart));
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -381,7 +381,7 @@ Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard &
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false));
+        dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultEncoding, _fileHeaderContext, false));
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;

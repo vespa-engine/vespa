@@ -42,7 +42,7 @@ public:
     using Executor = vespalib::ThreadExecutor;
     Domain(const vespalib::string &name, const vespalib::string &baseDir, FastOS_ThreadPool & threadPool,
            Executor & commitExecutor, Executor & sessionExecutor, uint64_t domainPartSize,
-           DomainPart::Crc defaultCrcType, const common::FileHeaderContext &fileHeaderContext);
+           Encoding defaultEncoding, const common::FileHeaderContext &fileHeaderContext);
 
     ~Domain() override;
 
@@ -115,7 +115,7 @@ private:
 
     std::unique_ptr<Chunk> _currentChunk;
     SerialNum           _lastSerial;
-    DomainPart::Crc     _defaultCrcType;
+    Encoding            _defaultEncoding;
     FastOS_ThreadPool & _threadPool;
     Executor          & _commitExecutor;
     Executor          & _sessionExecutor;

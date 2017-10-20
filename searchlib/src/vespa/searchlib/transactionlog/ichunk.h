@@ -25,6 +25,7 @@ public:
     Crc getCrc() const { return Crc(_raw & 0x3); }
     Compression getCompression() const { return Compression((_raw >> 2) & 0xf); }
     static int32_t calcCrc(Crc version, const void * buf, size_t sz);
+    uint8_t getRaw() const { return _raw; }
 private:
     uint8_t _raw;
 };

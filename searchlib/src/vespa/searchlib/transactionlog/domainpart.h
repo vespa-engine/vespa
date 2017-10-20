@@ -20,9 +20,8 @@ private:
     DomainPart& operator=(const DomainPart &);
 
 public:
-    using Crc = Encoding::Crc;
     typedef std::shared_ptr<DomainPart> SP;
-    DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Crc defaultCrc,
+    DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Encoding defaultEncoding,
                const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
 
     ~DomainPart();
@@ -75,7 +74,7 @@ private:
     };
     typedef std::vector<SkipInfo> SkipList;
     typedef std::map<SerialNum, Packet> PacketList;
-    const Crc             _defaultCrc;
+    const Encoding        _defaultEncoding;
     vespalib::Lock        _lock;
     vespalib::Lock        _fileLock;
     SerialNumRange        _range;

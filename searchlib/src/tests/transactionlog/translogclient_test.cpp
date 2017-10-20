@@ -44,7 +44,7 @@ private:
     bool partialUpdateTest();
     bool testVisitOverGeneratedDomain();
     bool testRemove();
-    void createAndFillDomain(const vespalib::string & name, DomainPart::Crc crcMethod, size_t preExistingDomains);
+    void createAndFillDomain(const vespalib::string & name, Encoding encoding, size_t preExistingDomains);
     void verifyDomain(const vespalib::string & name);
     void testCrcVersions();
     bool testVisitOverPreExistingDomain();
@@ -491,10 +491,10 @@ bool Test::testVisitOverGeneratedDomain()
     return true;
 }
 
-void Test::createAndFillDomain(const vespalib::string & name, DomainPart::Crc crcMethod, size_t preExistingDomains)
+void Test::createAndFillDomain(const vespalib::string & name, Encoding encoding, size_t preExistingDomains)
 {
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test13", 18377, ".", fileHeaderContext, 0x10000, 4, crcMethod);
+    TransLogServer tlss("test13", 18377, ".", fileHeaderContext, 0x10000, 4, encoding);
     TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, name, preExistingDomains);
