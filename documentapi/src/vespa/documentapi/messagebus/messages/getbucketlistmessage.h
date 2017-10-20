@@ -25,7 +25,7 @@ public:
     /**
      * Returns the bucket whose list to retrieve.
      *
-     * @return The bucket id.
+     * @return The bucket.
      */
     const document::Bucket &getBucket() const { return _bucket; }
 
