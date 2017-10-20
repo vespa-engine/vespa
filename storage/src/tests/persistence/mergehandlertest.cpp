@@ -6,14 +6,14 @@
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.persistence.handler.merge");
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

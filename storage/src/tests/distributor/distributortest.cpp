@@ -9,13 +9,13 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

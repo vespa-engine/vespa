@@ -4,7 +4,7 @@
 #include <tests/common/storagelinktest.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/persistence/persistencethread.h>
@@ -41,7 +41,7 @@ using std::unique_ptr;
 using document::Document;
 using namespace storage::api;
 using storage::spi::test::makeBucket;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 #define ASSERT_SINGLE_REPLY(replytype, reply, link, time) \
 reply = 0; \

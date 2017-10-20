@@ -9,12 +9,12 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 
 using std::shared_ptr;
 using namespace document;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

@@ -23,6 +23,7 @@ vespa_define_module(
     src/vespa/document/serialization
     src/vespa/document/update
     src/vespa/document/util
+    src/vespa/document/test
 
     TEST_DEPENDS
     vdstestlib

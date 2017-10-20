@@ -15,6 +15,7 @@
 #include <vespa/document/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -28,20 +29,12 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
+using document::test::makeDocumentBucket;
 using storage::lib::ClusterState;
 using vespalib::string;
 
 namespace storage {
 namespace api {
-
-namespace {
-
-document::Bucket makeDocumentBucket(document::BucketId bucketId)
-{
-    return document::Bucket(BucketSpace::placeHolder(), bucketId);
-}
-
-}
 
 struct StorageProtocolTest : public CppUnit::TestFixture {
     document::TestDocMan _docMan;

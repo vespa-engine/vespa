@@ -5,7 +5,7 @@
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/util/barrier.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/stllike/hash_set_insert.hpp>
@@ -13,7 +13,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".operationabortingtest");
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

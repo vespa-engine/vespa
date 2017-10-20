@@ -5,9 +5,9 @@
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {

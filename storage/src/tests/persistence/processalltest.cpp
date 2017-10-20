@@ -6,9 +6,9 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/loadtypes/loadtype.h>
 #include <tests/persistence/persistencetestutils.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

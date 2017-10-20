@@ -4,10 +4,10 @@
 
 #include <vespa/document/bucket/bucket.h>
 
-namespace storage::test {
+namespace document::test {
 
 // Helper function used by unit tests
 
-document::Bucket makeDocumentBucket(document::BucketId bucketId);
+Bucket makeDocumentBucket(BucketId bucketId);
 
 }

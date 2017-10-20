@@ -4,6 +4,7 @@
 #include <vespa/storage/storageserver/distributornode.h>
 
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
@@ -26,6 +27,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storageservertest");
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -649,10 +652,6 @@ namespace {
             vespalib::MonitorGuard monitor(_threadMonitor);
             monitor.signal();
             return true;
-        }
-
-        static document::Bucket makeDocumentBucket(document::BucketId bucketId) {
-            return document::Bucket(document::BucketSpace::placeHolder(), bucketId);
         }
 
         void run() override {

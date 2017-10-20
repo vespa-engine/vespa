@@ -7,7 +7,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/storage/distributor/distributor.h>
@@ -23,7 +23,7 @@ using namespace storage::lib;
 using config::ConfigGetter;
 using config::FileSpec;
 using vespalib::string;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 class UpdateOperation_Test : public CppUnit::TestFixture,
                              public DistributorTestUtil

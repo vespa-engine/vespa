@@ -3,7 +3,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <tests/persistence/persistencetestutils.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -15,7 +15,7 @@ using std::shared_ptr;
 
 using namespace std::string_literals;
 using storage::spi::test::makeBucket;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

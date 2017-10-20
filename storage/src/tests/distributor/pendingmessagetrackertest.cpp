@@ -7,11 +7,11 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <tests/common/dummystoragelink.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {

@@ -8,12 +8,12 @@
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 using std::shared_ptr;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {

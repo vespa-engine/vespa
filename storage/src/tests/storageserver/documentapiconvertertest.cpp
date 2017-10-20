@@ -13,7 +13,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 
 using document::DataType;
 using document::DocIdString;
@@ -21,7 +21,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
