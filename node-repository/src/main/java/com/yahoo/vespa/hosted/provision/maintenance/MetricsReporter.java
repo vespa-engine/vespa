@@ -77,12 +77,12 @@ public class MetricsReporter extends Maintainer {
 
             Version wantedVersion = allocation.get().membership().cluster().vespaVersion();
             double wantedVersionNumber = getVersionAsNumber(wantedVersion);
-            metric.set("wantedVersion", wantedVersionNumber, context);
+            metric.set("wantedVespaVersion", wantedVersionNumber, context);
 
             Optional<Version> currentVersion = node.status().vespaVersion();
             boolean converged = currentVersion.isPresent() &&
                     currentVersion.get().equals(wantedVersion);
-            metric.set("wantToChangeVersion", converged ? 0 : 1, context);
+            metric.set("wantToChangeVespaVersion", converged ? 0 : 1, context);
         } else {
             context = getContextAt(
                     "state", node.state().name(),
@@ -93,7 +93,7 @@ public class MetricsReporter extends Maintainer {
         // Node repo checks for !isEmpty(), so let's do that here too.
         if (currentVersion.isPresent() && !currentVersion.get().isEmpty()) {
             double currentVersionNumber = getVersionAsNumber(currentVersion.get());
-            metric.set("currentVersion", currentVersionNumber, context);
+            metric.set("currentVespaVersion", currentVersionNumber, context);
         }
 
         long wantedRebootGeneration = node.status().reboot().wanted();
