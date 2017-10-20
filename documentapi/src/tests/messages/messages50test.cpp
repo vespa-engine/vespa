@@ -12,6 +12,7 @@
 using document::DataType;
 using document::DocumentTypeRepo;
 using document::test::makeDocumentBucket;
+using document::BucketSpace;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1112,7 +1113,7 @@ Messages50Test::testWrongDistributionReply()
 bool
 Messages50Test::testGetBucketListReply()
 {
-    GetBucketListReply reply;
+    GetBucketListReply reply(BucketSpace::placeHolder());
     reply.getBuckets().push_back(GetBucketListReply::BucketInfo(document::BucketId(16, 123), "foo"));
     reply.getBuckets().push_back(GetBucketListReply::BucketInfo(document::BucketId(17, 1123), "bar"));
     reply.getBuckets().push_back(GetBucketListReply::BucketInfo(document::BucketId(18, 11123), "zoink"));
