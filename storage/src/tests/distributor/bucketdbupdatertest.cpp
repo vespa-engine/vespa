@@ -8,14 +8,14 @@
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 using namespace storage::api;
 using namespace storage::lib;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {

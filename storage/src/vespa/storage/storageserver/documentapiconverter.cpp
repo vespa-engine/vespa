@@ -112,13 +112,13 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_STATBUCKET:
     {
         documentapi::StatBucketMessage& from(static_cast<documentapi::StatBucketMessage&>(fromMsg));
-        toMsg = std::make_unique<api::StatBucketCommand>(document::Bucket(BucketSpace::placeHolder(), from.getBucketId()), from.getDocumentSelection());
+        toMsg = std::make_unique<api::StatBucketCommand>(from.getBucket(), from.getDocumentSelection());
         break;
     }
     case DocumentProtocol::MESSAGE_GETBUCKETLIST:
     {
         documentapi::GetBucketListMessage& from(static_cast<documentapi::GetBucketListMessage&>(fromMsg));
-        toMsg = std::make_unique<api::GetBucketListCommand>(document::Bucket(BucketSpace::placeHolder(), from.getBucketId()));
+        toMsg = std::make_unique<api::GetBucketListCommand>(from.getBucket());
         break;
     }
     case DocumentProtocol::MESSAGE_VISITORINFO:
@@ -244,13 +244,6 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
         toMsg = std::move(to);
         break;
     }
-    case api::MessageType::DOCBLOCK_ID:
-    {
-        api::DocBlockCommand& from(static_cast<api::DocBlockCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::MultiOperationMessage>(from.getBucketId(), from.getDocumentBlock(),
-                                                                     from.keepTimeStamps());
-        break;
-    }
     case api::MessageType::SEARCHRESULT_ID:
     {
         api::SearchResultCommand& from(static_cast<api::SearchResultCommand&>(fromMsg));
@@ -281,21 +274,6 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
         api::MapVisitorCommand& from(static_cast<api::MapVisitorCommand&>(fromMsg));
         documentapi::MapVisitorMessage::UP to(new documentapi::MapVisitorMessage);
         to->getData() = from.getData();
-        toMsg = std::move(to);
-        break;
-    }
-    case api::MessageType::DOCUMENTLIST_ID:
-    {
-        api::DocumentListCommand& from(static_cast<api::DocumentListCommand&>(fromMsg));
-        documentapi::DocumentListMessage::UP to(new documentapi::DocumentListMessage(from.getBucketId()));
-
-        for (uint32_t i = 0; i < from.getDocuments().size(); i++) {
-            to->getDocuments().push_back(
-                    documentapi::DocumentListMessage::Entry(
-                        from.getDocuments()[i]._lastModified,
-                        from.getDocuments()[i]._doc,
-                        from.getDocuments()[i]._removeEntry));
-        }
         toMsg = std::move(to);
         break;
     }
@@ -336,7 +314,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
     case api::MessageType::STATBUCKET_ID:
     {
         api::StatBucketCommand& from(static_cast<api::StatBucketCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::StatBucketMessage>(from.getBucketId(), from.getDocumentSelection());
+        toMsg = std::make_unique<documentapi::StatBucketMessage>(from.getBucket(), from.getDocumentSelection());
         break;
     }
     default:

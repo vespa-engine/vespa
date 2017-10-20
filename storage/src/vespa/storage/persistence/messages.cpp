@@ -7,12 +7,12 @@ using document::BucketSpace;
 namespace storage {
 
 GetIterCommand::GetIterCommand(framework::MemoryToken::UP token,
-                               const document::BucketId& bucketId,
+                               const document::Bucket &bucket,
                                const spi::IteratorId iteratorId,
                                uint32_t maxByteSize)
     : api::InternalCommand(ID),
       _token(std::move(token)),
-      _bucket(BucketSpace::placeHolder(), bucketId),
+      _bucket(bucket),
       _iteratorId(iteratorId),
       _maxByteSize(maxByteSize)
 {
@@ -55,12 +55,12 @@ GetIterReply::print(std::ostream& out, bool verbose, const std::string& indent) 
     }
 }
 
-CreateIteratorCommand::CreateIteratorCommand(const document::BucketId& bucketId,
+CreateIteratorCommand::CreateIteratorCommand(const document::Bucket &bucket,
                                              const spi::Selection& selection,
                                              const std::string& fields,
                                              spi::IncludedVersions includedVersions)
     : api::InternalCommand(ID),
-      _bucket(BucketSpace::placeHolder(), bucketId),
+      _bucket(bucket),
       _selection(selection),
       _fieldSet(fields),
       _includedVersions(includedVersions),
@@ -122,9 +122,9 @@ DestroyIteratorCommand::makeReply() {
     return std::make_unique<DestroyIteratorReply>(*this);
 }
 
-RecheckBucketInfoCommand::RecheckBucketInfoCommand(const document::BucketId& bucketId)
+RecheckBucketInfoCommand::RecheckBucketInfoCommand(const document::Bucket& bucket)
     : api::InternalCommand(ID),
-      _bucket(BucketSpace::placeHolder(), bucketId)
+      _bucket(bucket)
 { }
 
 RecheckBucketInfoCommand::~RecheckBucketInfoCommand() { }

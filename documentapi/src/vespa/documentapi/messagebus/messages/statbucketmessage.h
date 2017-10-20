@@ -2,13 +2,13 @@
 #pragma once
 
 #include "documentmessage.h"
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 
 namespace documentapi {
 
 class StatBucketMessage : public DocumentMessage {
 private:
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     string        _documentSelection;
 
 protected:
@@ -25,7 +25,7 @@ public:
      *
      * @param bucket The bucket whose list to retrieve.
      */
-    StatBucketMessage(document::BucketId bucket, const string& documentSelection);
+    StatBucketMessage(document::Bucket bucket, const string& documentSelection);
 
     ~StatBucketMessage();
 
@@ -34,14 +34,14 @@ public:
      *
      * @return The bucket id.
      */
-    document::BucketId getBucketId() const { return _bucket; }
+    document::Bucket getBucket() const { return _bucket; }
 
     /**
      * Set the bucket to stat.
      *
      * @param id The identifier to set.
      */
-    void setBucketId(document::BucketId id) { _bucket = id; };
+    void setBucket(document::Bucket bucket) { _bucket = bucket; };
 
     /**
      * Returns the document selection used to filter the documents

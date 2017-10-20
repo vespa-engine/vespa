@@ -6,7 +6,7 @@
 #include <tests/common/storagelinktest.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -22,7 +22,7 @@
 
 using namespace document;
 using namespace storage::api;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

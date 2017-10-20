@@ -4,13 +4,13 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 
 LOG_SETUP(".deletebuckettest");
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

@@ -25,7 +25,7 @@ public:
     typedef std::shared_ptr<GetIterCommand> SP;
 
     GetIterCommand(framework::MemoryToken::UP token,
-                   const document::BucketId& bucketId,
+                   const document::Bucket &bucket,
                    const spi::IteratorId iteratorId,
                    uint32_t maxByteSize);
     ~GetIterCommand();
@@ -93,7 +93,7 @@ public:
     typedef std::unique_ptr<CreateIteratorCommand> UP;
     typedef std::shared_ptr<CreateIteratorCommand> SP;
 
-    CreateIteratorCommand(const document::BucketId& bucketId,
+    CreateIteratorCommand(const document::Bucket &bucket,
                           const spi::Selection& selection,
                           const std::string& fields,
                           spi::IncludedVersions includedVersions);
@@ -176,7 +176,7 @@ public:
     typedef std::shared_ptr<RecheckBucketInfoCommand> SP;
     typedef std::unique_ptr<RecheckBucketInfoCommand> UP;
 
-    RecheckBucketInfoCommand(const document::BucketId& bucketId);
+    RecheckBucketInfoCommand(const document::Bucket &bucket);
     ~RecheckBucketInfoCommand();
 
     document::Bucket getBucket() const override { return _bucket; }

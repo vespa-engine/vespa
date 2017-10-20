@@ -2,11 +2,7 @@
 
 #include "make_document_bucket.h"
 
-using document::Bucket;
-using document::BucketId;
-using document::BucketSpace;
-
-namespace storage::test {
+namespace document::test {
 
 Bucket makeDocumentBucket(BucketId bucketId)
 {

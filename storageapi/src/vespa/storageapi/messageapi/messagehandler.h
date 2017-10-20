@@ -32,7 +32,6 @@ class BatchDocumentUpdateCommand;
 class CreateVisitorCommand; // Create a new visitor
 class DestroyVisitorCommand; // Destroy a running visitor
 class VisitorInfoCommand; // Sends visitor info to visitor controller
-class DocBlockCommand; // A block of documents visited
 class MapVisitorCommand;
 class SearchResultCommand;
 class DocumentSummaryCommand;
@@ -73,7 +72,6 @@ class BatchDocumentUpdateReply;
 class CreateVisitorReply;
 class DestroyVisitorReply;
 class VisitorInfoReply;
-class DocBlockReply;
 class MapVisitorReply;
 class SearchResultReply;
 class DocumentSummaryReply;
@@ -104,9 +102,6 @@ class StatBucketCommand;
 class StatBucketReply;
 class GetBucketListCommand;
 class GetBucketListReply;
-
-class DocumentListCommand;
-class DocumentListReply;
 
 class EmptyBucketsCommand;
 class EmptyBucketsReply;
@@ -188,12 +183,6 @@ public:
     virtual bool onVisitorInfoReply(
             const std::shared_ptr<api::VisitorInfoReply>&)
         { return false; }
-    virtual bool onDocBlock(
-            const std::shared_ptr<api::DocBlockCommand>&)
-        { return false; }
-    virtual bool onDocBlockReply(
-            const std::shared_ptr<api::DocBlockReply>&)
-        { return false; }
     virtual bool onMapVisitor(
             const std::shared_ptr<api::MapVisitorCommand>&)
         { return false; }
@@ -217,12 +206,6 @@ public:
         { return false; }
     virtual bool onDocumentSummaryReply(
             const std::shared_ptr<api::DocumentSummaryReply>&)
-        { return false; }
-    virtual bool onDocumentList(
-            const std::shared_ptr<api::DocumentListCommand>&)
-        { return false; }
-    virtual bool onDocumentListReply(
-            const std::shared_ptr<api::DocumentListReply>&)
         { return false; }
     virtual bool onEmptyBuckets(
             const std::shared_ptr<api::EmptyBucketsCommand>&)

@@ -7,8 +7,10 @@ using document::BucketSpace;
 
 namespace storage {
 
-ReadBucketList::ReadBucketList(spi::PartitionId partition)
-    : api::InternalCommand(ID), _partition(partition)
+ReadBucketList::ReadBucketList(BucketSpace bucketSpace, spi::PartitionId partition)
+    : api::InternalCommand(ID),
+      _bucketSpace(bucketSpace),
+      _partition(partition)
 { }
 
 ReadBucketList::~ReadBucketList() { }
@@ -25,6 +27,7 @@ ReadBucketList::print(std::ostream& out, bool verbose, const std::string& indent
 
 ReadBucketListReply::ReadBucketListReply(const ReadBucketList& cmd)
     : api::InternalReply(ID, cmd),
+      _bucketSpace(cmd.getBucketSpace()),
       _partition(cmd.getPartition())
 { }
 
@@ -45,9 +48,9 @@ ReadBucketList::makeReply() {
     return std::make_unique<ReadBucketListReply>(*this);
 }
 
-ReadBucketInfo::ReadBucketInfo(const document::BucketId& bucketId)
+ReadBucketInfo::ReadBucketInfo(const document::Bucket &bucket)
     : api::InternalCommand(ID),
-      _bucket(BucketSpace::placeHolder(), bucketId)
+      _bucket(bucket)
 { }
 
 ReadBucketInfo::~ReadBucketInfo() { }
@@ -91,9 +94,9 @@ std::unique_ptr<api::StorageReply> ReadBucketInfo::makeReply() {
 }
 
 
-RepairBucketCommand::RepairBucketCommand(const document::BucketId& bucket, uint16_t disk)
+RepairBucketCommand::RepairBucketCommand(const document::Bucket &bucket, uint16_t disk)
     : api::InternalCommand(ID),
-      _bucket(BucketSpace::placeHolder(), bucket),
+      _bucket(bucket),
       _disk(disk),
       _verifyBody(false),
       _moveToIdealDisk(false)
@@ -154,10 +157,10 @@ RepairBucketCommand::makeReply() {
     return std::make_unique<RepairBucketReply>(*this);
 }
 
-BucketDiskMoveCommand::BucketDiskMoveCommand(const document::BucketId& bucket,
+BucketDiskMoveCommand::BucketDiskMoveCommand(const document::Bucket &bucket,
                                              uint16_t srcDisk, uint16_t dstDisk)
     : api::InternalCommand(ID),
-      _bucket(BucketSpace::placeHolder(), bucket),
+      _bucket(bucket),
       _srcDisk(srcDisk),
       _dstDisk(dstDisk)
 {
@@ -209,10 +212,10 @@ BucketDiskMoveCommand::makeReply()
 }
 
 
-InternalBucketJoinCommand::InternalBucketJoinCommand(const document::BucketId& bucket,
+InternalBucketJoinCommand::InternalBucketJoinCommand(const document::Bucket &bucket,
                                                      uint16_t keepOnDisk, uint16_t joinFromDisk)
     : api::InternalCommand(ID),
-      _bucket(BucketSpace::placeHolder(), bucket),
+      _bucket(bucket),
       _keepOnDisk(keepOnDisk),
       _joinFromDisk(joinFromDisk)
 {

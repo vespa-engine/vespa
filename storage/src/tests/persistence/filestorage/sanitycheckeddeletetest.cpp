@@ -4,12 +4,12 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 
 using storage::spi::test::makeBucket;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

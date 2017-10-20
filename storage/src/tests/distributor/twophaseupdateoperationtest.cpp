@@ -13,10 +13,10 @@
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {

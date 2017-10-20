@@ -10,7 +10,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <tests/distributor/distributortestutil.h>
 #include <tests/common/dummystoragelink.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -27,7 +27,7 @@ using namespace storage;
 using namespace storage::api;
 using namespace storage::lib;
 using namespace std::literals::string_literals;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 

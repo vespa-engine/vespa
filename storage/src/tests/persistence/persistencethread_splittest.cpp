@@ -5,10 +5,10 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/persistence/spi/test.h>
 #include <tests/persistence/persistencetestutils.h>
-#include <tests/common/make_document_bucket.h>
+#include <vespa/document/test/make_document_bucket.h>
 
 using storage::spi::test::makeBucket;
-using storage::test::makeDocumentBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace {

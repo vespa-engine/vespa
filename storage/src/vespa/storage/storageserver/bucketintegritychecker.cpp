@@ -14,6 +14,7 @@
 LOG_SETUP(".bucketintegritychecker");
 
 using std::shared_ptr;
+using document::BucketSpace;
 
 namespace storage {
 
@@ -595,9 +596,9 @@ BucketIntegrityChecker::run(framework::ThreadHandle& thread)
                         }
                         break;
                     }
-
+                    document::Bucket bucket(BucketSpace::placeHolder(), bid);
                     std::shared_ptr<RepairBucketCommand> cmd(
-                            new RepairBucketCommand(bid, _status[i].disk));
+                            new RepairBucketCommand(bucket, _status[i].disk));
                     cmd->verifyBody(_currentRunWithFullVerification);
                     cmd->moveToIdealDisk(true);
                     cmd->setPriority(230);
