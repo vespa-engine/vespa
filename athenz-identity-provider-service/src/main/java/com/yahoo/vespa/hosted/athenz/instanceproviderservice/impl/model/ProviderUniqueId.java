@@ -10,13 +10,20 @@ import java.util.Objects;
  */
 public class ProviderUniqueId {
 
-    @JsonProperty("tenant") public final String tenant;
-    @JsonProperty("application") public final String application;
-    @JsonProperty("environment") public final String environment;
-    @JsonProperty("region") public final String region;
-    @JsonProperty("instance") public final String instance;
-    @JsonProperty("cluster-id") public final String clusterId;
-    @JsonProperty("cluster-index") public final int clusterIndex;
+    @JsonProperty("tenant")
+    public final String tenant;
+    @JsonProperty("application")
+    public final String application;
+    @JsonProperty("environment")
+    public final String environment;
+    @JsonProperty("region")
+    public final String region;
+    @JsonProperty("instance")
+    public final String instance;
+    @JsonProperty("cluster-id")
+    public final String clusterId;
+    @JsonProperty("cluster-index")
+    public final int clusterIndex;
 
     public ProviderUniqueId(@JsonProperty("tenant") String tenant,
                             @JsonProperty("application") String application,
@@ -37,14 +44,14 @@ public class ProviderUniqueId {
     @Override
     public String toString() {
         return "ProviderUniqueId{" +
-                "tenant='" + tenant + '\'' +
-                ", application='" + application + '\'' +
-                ", environment='" + environment + '\'' +
-                ", region='" + region + '\'' +
-                ", instance='" + instance + '\'' +
-                ", clusterId='" + clusterId + '\'' +
-                ", clusterIndex=" + clusterIndex +
-                '}';
+               "tenant='" + tenant + '\'' +
+               ", application='" + application + '\'' +
+               ", environment='" + environment + '\'' +
+               ", region='" + region + '\'' +
+               ", instance='" + instance + '\'' +
+               ", clusterId='" + clusterId + '\'' +
+               ", clusterIndex=" + clusterIndex +
+               '}';
     }
 
     @Override
@@ -53,12 +60,12 @@ public class ProviderUniqueId {
         if (o == null || getClass() != o.getClass()) return false;
         ProviderUniqueId that = (ProviderUniqueId) o;
         return clusterIndex == that.clusterIndex &&
-                Objects.equals(tenant, that.tenant) &&
-                Objects.equals(application, that.application) &&
-                Objects.equals(environment, that.environment) &&
-                Objects.equals(region, that.region) &&
-                Objects.equals(instance, that.instance) &&
-                Objects.equals(clusterId, that.clusterId);
+               Objects.equals(tenant, that.tenant) &&
+               Objects.equals(application, that.application) &&
+               Objects.equals(environment, that.environment) &&
+               Objects.equals(region, that.region) &&
+               Objects.equals(instance, that.instance) &&
+               Objects.equals(clusterId, that.clusterId);
     }
 
     @Override

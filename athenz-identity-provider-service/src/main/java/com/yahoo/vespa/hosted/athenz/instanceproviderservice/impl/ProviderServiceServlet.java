@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,9 +27,11 @@ public class ProviderServiceServlet extends HttpServlet {
     private static final Logger log = Logger.getLogger(ProviderServiceServlet.class.getName());
 
     private final InstanceValidator instanceValidator;
+    private final IdentityDocumentGenerator identityDocumentGenerator;
 
-    public ProviderServiceServlet(InstanceValidator instanceValidator) {
+    public ProviderServiceServlet(InstanceValidator instanceValidator, IdentityDocumentGenerator identityDocumentGenerator) {
         this.instanceValidator = instanceValidator;
+        this.identityDocumentGenerator = identityDocumentGenerator;
     }
 
     @Override
@@ -51,6 +54,21 @@ public class ProviderServiceServlet extends HttpServlet {
         } catch (JsonParseException | JsonMappingException e) {
             log.log(LogLevel.ERROR, "InstanceConfirmation is not valid JSON", e);
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        }
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // TODO verify tls client cert
+        String hostname = req.getParameter("hostname");
+        try {
+            String signedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(hostname);
+            resp.setContentType("application/json");
+            PrintWriter writer = resp.getWriter();
+            writer.print(signedIdentityDocument);
+            writer.flush();
+        } catch (Exception e) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, String.format("Unable to generate identity doument [%s]", e.getMessage()));
         }
     }
 

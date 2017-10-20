@@ -11,10 +11,6 @@ import java.util.Objects;
  */
 public class IdentityDocument {
 
-    @JsonProperty("athens-domain")
-    public final String athensDomain;
-    @JsonProperty("athens-service")
-    public final String athensService;
     @JsonProperty("provider-unique-id")
     public final ProviderUniqueId providerUniqueId;
     @JsonProperty("configserver-hostname")
@@ -24,14 +20,11 @@ public class IdentityDocument {
     @JsonProperty("created-at")
     public final Instant createdAt;
 
-    public IdentityDocument(@JsonProperty("athens-domain") String athensDomain,
-                            @JsonProperty("athens-service") String athensService,
+    public IdentityDocument(
                             @JsonProperty("provider-unique-id") ProviderUniqueId providerUniqueId,
                             @JsonProperty("configserver-hostname") String configServerHostname,
                             @JsonProperty("instance-hostname") String instanceHostname,
                             @JsonProperty("created-at") Instant createdAt) {
-        this.athensDomain = athensDomain;
-        this.athensService = athensService;
         this.providerUniqueId = providerUniqueId;
         this.configServerHostname = configServerHostname;
         this.instanceHostname = instanceHostname;
@@ -41,9 +34,7 @@ public class IdentityDocument {
     @Override
     public String toString() {
         return "IdentityDocument{" +
-                "athensDomain='" + athensDomain + '\'' +
-                ", athensService='" + athensService + '\'' +
-                ", providerUniqueId=" + providerUniqueId +
+                "providerUniqueId=" + providerUniqueId +
                 ", configServerHostname='" + configServerHostname + '\'' +
                 ", instanceHostname='" + instanceHostname + '\'' +
                 ", createdAt=" + createdAt +
@@ -55,9 +46,7 @@ public class IdentityDocument {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IdentityDocument that = (IdentityDocument) o;
-        return Objects.equals(athensDomain, that.athensDomain) &&
-                Objects.equals(athensService, that.athensService) &&
-                Objects.equals(providerUniqueId, that.providerUniqueId) &&
+        return  Objects.equals(providerUniqueId, that.providerUniqueId) &&
                 Objects.equals(configServerHostname, that.configServerHostname) &&
                 Objects.equals(instanceHostname, that.instanceHostname) &&
                 Objects.equals(createdAt, that.createdAt);
@@ -65,6 +54,6 @@ public class IdentityDocument {
 
     @Override
     public int hashCode() {
-        return Objects.hash(athensDomain, athensService, providerUniqueId, configServerHostname, instanceHostname, createdAt);
+        return Objects.hash(providerUniqueId, configServerHostname, instanceHostname, createdAt);
     }
 }

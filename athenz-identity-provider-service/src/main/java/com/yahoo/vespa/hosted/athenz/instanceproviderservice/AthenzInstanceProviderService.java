@@ -8,16 +8,19 @@ import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zts.InstanceRefreshRequest;
 import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ssl.ReaderForPath;
 import com.yahoo.jdisc.http.ssl.pem.PemKeyStore;
 import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.identityproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.FileBackedKeyProvider;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentGenerator;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceValidator;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.ProviderServiceServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.StatusServlet;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
@@ -45,16 +48,18 @@ public class AthenzInstanceProviderService extends AbstractComponent {
     private final Server jetty;
 
     @Inject
-    public AthenzInstanceProviderService(AthenzProviderServiceConfig config) {
-        this(config, new FileBackedKeyProvider(config.keyPathPrefix()), Executors.newSingleThreadScheduledExecutor());
+    public AthenzInstanceProviderService(AthenzProviderServiceConfig config, NodeRepository nodeRepository, Zone zone) {
+        this(config, new FileBackedKeyProvider(config.keyPathPrefix()), Executors.newSingleThreadScheduledExecutor(),
+             nodeRepository, zone);
     }
 
     AthenzInstanceProviderService(AthenzProviderServiceConfig config,
                                   KeyProvider keyProvider,
-                                  ScheduledExecutorService scheduler) {
+                                  ScheduledExecutorService scheduler, NodeRepository nodeRepository, Zone zone) {
         this.scheduler = scheduler;
         SslContextFactory sslContextFactory = createSslContextFactory();
-        this.jetty = createJettyServer(config.port(), config.apiPath(), keyProvider, sslContextFactory);
+        this.jetty = createJettyServer(config.port(), config.apiPath(), keyProvider, sslContextFactory,
+                                       nodeRepository, zone);
         AthenzCertificateUpdater reloader = new AthenzCertificateUpdater(
                 sslContextFactory, keyProvider, config);
         scheduler.scheduleAtFixedRate(reloader, 0, 1, TimeUnit.DAYS);
@@ -66,7 +71,10 @@ public class AthenzInstanceProviderService extends AbstractComponent {
     }
 
     private static Server createJettyServer(int port, String apiPath,
-                                            KeyProvider keyProvider, SslContextFactory sslContextFactory)  {
+                                            KeyProvider keyProvider,
+                                            SslContextFactory sslContextFactory,
+                                            NodeRepository nodeRepository,
+                                            Zone zone)  {
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server, sslContextFactory);
         connector.setPort(port);
@@ -74,7 +82,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
         ServletHandler handler = new ServletHandler();
         ProviderServiceServlet providerServiceServlet =
-                new ProviderServiceServlet(new InstanceValidator(keyProvider));
+                new ProviderServiceServlet(new InstanceValidator(keyProvider), new IdentityDocumentGenerator(nodeRepository, zone, keyProvider));
         handler.addServletWithMapping(new ServletHolder(providerServiceServlet), apiPath);
         handler.addServletWithMapping(StatusServlet.class, "/status.html");
         server.setHandler(handler);

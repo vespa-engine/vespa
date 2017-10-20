@@ -62,6 +62,10 @@ public class DedicatedAdminV4Test {
                 "        <metric name='nginx.upstreams.down.last' output-name='nginx.upstreams.down'/>" +
                 "      </consumer>" +
                 "    </metric-consumers>" +
+                "    <identity>" +
+                "        <domain>mydomain</domain>" +
+                "        <service>myservice</service>" +
+                "    </identity>" +
                 "  </admin>" +
                 "</services>";
 

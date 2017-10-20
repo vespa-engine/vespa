@@ -4,6 +4,9 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.athenz.auth.util.Crypto;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.identityproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
@@ -12,6 +15,7 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.Identity
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.InstanceConfirmation;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.SignedIdentityDocument;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -44,6 +48,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author bjorncs
@@ -74,7 +79,9 @@ public class AthenzInstanceProviderServiceTest {
                                 .apiPath("/"));
 
         ScheduledExecutorServiceMock executor = new ScheduledExecutorServiceMock();
-        AthenzInstanceProviderService athenzInstanceProviderService = new AthenzInstanceProviderService(config, keyProvider, executor);
+        NodeRepository nodeRepository = mock(NodeRepository.class);
+        Zone zone = new Zone(Environment.dev, RegionName.from("us-north-1"));
+        AthenzInstanceProviderService athenzInstanceProviderService = new AthenzInstanceProviderService(config, keyProvider, executor, nodeRepository, zone);
 
         try (CloseableHttpClient client = createHttpClient(domain, service)) {
             Runnable certificateRefreshCommand = executor.getCommand().orElseThrow(() -> new AssertionError("Command not present"));
@@ -122,7 +129,6 @@ public class AthenzInstanceProviderServiceTest {
 
     private static HttpEntity createInstanceConfirmation(PrivateKey privateKey) {
         IdentityDocument identityDocument = new IdentityDocument(
-                "domain", "service",
                 new ProviderUniqueId(
                         "tenant", "application", "environment", "region", "instance", "cluster-id", 0),
                 "hostname", "instance-hostname", Instant.now());

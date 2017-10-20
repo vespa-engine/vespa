@@ -40,3 +40,6 @@ useVespaVersionInRequest bool default=false
 # Docker config
 dockerRegistry string default=""
 dockerVespaBaseImage string default=""
+
+# Athenz config
+serviceProviderEndpoint string default=""

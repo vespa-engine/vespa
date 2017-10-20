@@ -141,6 +141,9 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.dockerVespaBaseImage().isPresent()) {
             builder.dockerVespaBaseImage(options.dockerVespaBaseImage().get());
         }
+        if (options.serviceProviderEndpoint().isPresent()) {
+            builder.serviceProviderEndpoint(options.serviceProviderEndpoint().get());
+        }
     }
 
     private String[] getConfigModelPluginDirs() {
