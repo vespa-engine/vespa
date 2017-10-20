@@ -25,14 +25,14 @@ BucketSpace makeBucketSpace(const vespalib::string &docTypeName)
     }
 }
 
-Bucket makeBucket(BucketId bucketId, PartitionId partitionId)
+Bucket makeSpiBucket(BucketId bucketId, PartitionId partitionId)
 {
     return Bucket(document::Bucket(BucketSpace::placeHolder(), bucketId), partitionId);
 }
 
-Bucket makeBucket(BucketId bucketId)
+Bucket makeSpiBucket(BucketId bucketId)
 {
-    return makeBucket(bucketId, PartitionId(0));
+    return makeSpiBucket(bucketId, PartitionId(0));
 }
 
 }

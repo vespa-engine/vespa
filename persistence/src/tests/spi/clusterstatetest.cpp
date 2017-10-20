@@ -8,7 +8,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 namespace spi {
@@ -172,7 +172,7 @@ ClusterStateTest::testReady()
 {
     lib::ClusterState s("version:1 storage:3 distributor:3");
 
-    Bucket b(makeBucket(document::BucketId(16, 1)));
+    Bucket b(makeSpiBucket(document::BucketId(16, 1)));
 
     // With 3 copies, this bucket has ideal state 0, 2, 1
 
