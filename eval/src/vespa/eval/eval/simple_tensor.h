@@ -75,17 +75,20 @@ private:
     Cells _cells;
 
 public:
+    using map_fun_t = double (*)(double);
+    using join_fun_t = double (*)(double, double);
+
     SimpleTensor();
     explicit SimpleTensor(double value);
     SimpleTensor(const ValueType &type_in, Cells cells_in);
     const ValueType &type() const { return _type; }
     const Cells &cells() const { return _cells; }
-    std::unique_ptr<SimpleTensor> map(const std::function<double(double)> &function) const;
+    std::unique_ptr<SimpleTensor> map(map_fun_t function) const;
     std::unique_ptr<SimpleTensor> reduce(Aggregator &aggr, const std::vector<vespalib::string> &dimensions) const;
     std::unique_ptr<SimpleTensor> rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const;
     static std::unique_ptr<SimpleTensor> create(const TensorSpec &spec);
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
-    static std::unique_ptr<SimpleTensor> join(const SimpleTensor &a, const SimpleTensor &b, const std::function<double(double,double)> &function);
+    static std::unique_ptr<SimpleTensor> join(const SimpleTensor &a, const SimpleTensor &b, join_fun_t function);
     static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
     static void encode(const SimpleTensor &tensor, nbostream &output);
     static std::unique_ptr<SimpleTensor> decode(nbostream &input);

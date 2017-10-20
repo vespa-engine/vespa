@@ -4,6 +4,7 @@
 #include "value.h"
 #include "operation_visitor.h"
 #include <cmath>
+#include <assert.h>
 
 namespace vespalib {
 namespace eval {
@@ -34,6 +35,34 @@ BinaryOperation::perform(const Value &lhs, const Value &rhs, Stash &stash) const
     } else {
         return lhs.apply(*this, rhs, stash);
     }
+}
+
+__thread const UnaryOperation *UnaryOperationProxy::_ctx = nullptr;
+double UnaryOperationProxy::eval_proxy(double a) { return _ctx->eval(a); }
+UnaryOperationProxy::UnaryOperationProxy(const UnaryOperation &op)
+    : _my_ctx(&op),
+      _old_ctx(_ctx)
+{
+    _ctx = _my_ctx;
+}
+UnaryOperationProxy::~UnaryOperationProxy()
+{
+    assert(_ctx == _my_ctx);
+    _ctx = _old_ctx;
+}
+
+__thread const BinaryOperation *BinaryOperationProxy::_ctx = nullptr;
+double BinaryOperationProxy::eval_proxy(double a, double b) { return _ctx->eval(a, b); }
+BinaryOperationProxy::BinaryOperationProxy(const BinaryOperation &op)
+    : _my_ctx(&op),
+      _old_ctx(_ctx)
+{
+    _ctx = _my_ctx;
+}
+BinaryOperationProxy::~BinaryOperationProxy()
+{
+    assert(_ctx == _my_ctx);
+    _ctx = _old_ctx;
 }
 
 template <typename T> void Op1<T>::accept(OperationVisitor &visitor) const {

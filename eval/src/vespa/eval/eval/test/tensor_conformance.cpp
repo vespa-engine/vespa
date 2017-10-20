@@ -221,8 +221,9 @@ struct ImmediateReduce : Eval {
 
 // evaluate tensor map operation using tensor engine immediate api
 struct ImmediateMap : Eval {
-    std::function<double(double)> function;
-    ImmediateMap(const std::function<double(double)> &function_in) : function(function_in) {}
+    using fun_t = double (*)(double);
+    fun_t function;
+    ImmediateMap(fun_t function_in) : function(function_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
@@ -232,8 +233,9 @@ struct ImmediateMap : Eval {
 
 // evaluate tensor map operation using tensor engine immediate api
 struct ImmediateJoin : Eval {
-    std::function<double(double,double)> function;
-    ImmediateJoin(const std::function<double(double,double)> &function_in) : function(function_in) {}
+    using fun_t = double (*)(double, double);
+    fun_t function;
+    ImmediateJoin(fun_t function_in) : function(function_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
@@ -595,9 +597,8 @@ struct TestContext {
     }
 
     void test_map_op(const vespalib::string &expr, const UnaryOperation &op, const Sequence &seq) {
-        auto function = [&op](double a){ return op.eval(a); };
         TEST_DO(test_map_op(ImmediateMapOld(op), op, seq));
-        TEST_DO(test_map_op(ImmediateMap(function), op, seq));
+        TEST_DO(test_map_op(ImmediateMap(UnaryOperationProxy(op)), op, seq));
         TEST_DO(test_map_op(RetainedMap(op), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
         TEST_DO(test_map_op(Expr_T(make_string("map(x,f(a)(%s))", expr.c_str())), op, seq));
@@ -872,9 +873,8 @@ struct TestContext {
     }
 
     void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {
-        auto function = [&op](double a, double b){ return op.eval(a, b); };
         TEST_DO(test_apply_op(ImmediateApplyOld(op), op, seq));
-        TEST_DO(test_apply_op(ImmediateJoin(function), op, seq));
+        TEST_DO(test_apply_op(ImmediateJoin(BinaryOperationProxy(op)), op, seq));
         TEST_DO(test_apply_op(RetainedApply(op), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
         TEST_DO(test_apply_op(Expr_TT(make_string("join(x,y,f(a,b)(%s))", expr.c_str())), op, seq));
