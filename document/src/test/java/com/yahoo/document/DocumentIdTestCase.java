@@ -10,6 +10,9 @@ import java.io.*;
 import java.util.regex.Pattern;
 import java.util.Arrays;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+
 public class DocumentIdTestCase extends junit.framework.TestCase {
     DocumentTypeManager manager = new DocumentTypeManager();
 
@@ -289,6 +292,17 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
 
         //Arrays.hashCode() works better...
         assertEquals(Arrays.hashCode(docId0Gid), Arrays.hashCode(docId0CopyGid));
+    }
+
+    public void testDocumentIdCanOnlyContainTextCharacters() throws UnsupportedEncodingException {
+        byte[] rawId = {105, 100, 58, 97, 58, 98, 58, 58, 0, 99}; // "id:a:b::0x0c"
+        String strId = new String(rawId, "UTF-8");
+        try {
+            new DocumentId(strId);
+            fail("Expected an IllegalArgumentException to be thrown");
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage(), containsString("illegal code point 0x0"));
+        }
     }
 
 }

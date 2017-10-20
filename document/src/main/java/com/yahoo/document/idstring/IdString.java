@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.idstring;
 
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.OptionalInt;
 
 /**
  * To be used with DocumentId constructor.
@@ -75,7 +77,16 @@ public abstract class IdString {
         }
     }
 
+    private static void validateTextString(String id) {
+        OptionalInt illegalCodePoint = Text.validateTextString(id);
+        if (illegalCodePoint.isPresent()) {
+            throw new IllegalArgumentException("Unparseable id '" + id + "': Contains illegal code point 0x" +
+                    Integer.toHexString(illegalCodePoint.getAsInt()).toUpperCase());
+        }
+    }
+
     public static IdString createIdString(String id) {
+        validateTextString(id);
         String namespace;
         long userId;
         String group;

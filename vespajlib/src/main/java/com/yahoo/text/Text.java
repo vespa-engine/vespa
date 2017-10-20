@@ -1,5 +1,7 @@
 package com.yahoo.text;
 
+import java.util.OptionalInt;
+
 /**
  * Text utility functions.
  * 
@@ -81,6 +83,25 @@ public final class Text {
         if (codepoint <= 0x10FFFF) return false;
 
         return true;
-    }    
-    
+    }
+
+    /**
+     * Validates that the given string value only contains text characters and
+     * returns the first illegal code point if one is found.
+     */
+    public static OptionalInt validateTextString(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char theChar = value.charAt(i);
+            int codePoint = value.codePointAt(i);
+            if (Character.isHighSurrogate(theChar)) {
+                // Skip one char ahead, since codePointAt() consumes one more char in this case
+                ++i;
+            }
+            if (!Text.isTextCharacter(codePoint)) {
+                return OptionalInt.of(codePoint);
+            }
+        }
+        return OptionalInt.empty();
+    }
+
 }
