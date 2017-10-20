@@ -8,7 +8,7 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 
 namespace storage {
@@ -32,7 +32,7 @@ void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
     TestFileStorComponents c(*this, "delete_bucket_fails_when_provider_out_of_sync");
     document::BucketId bucket(8, 123);
     document::BucketId syncBucket(8, 234);
-    spi::Bucket spiBucket(makeBucket(bucket));
+    spi::Bucket spiBucket(makeSpiBucket(bucket));
 
     // Send a put to ensure bucket isn't empty.
     spi::BucketInfo infoBefore(send_put_and_get_bucket_info(c, spiBucket));
@@ -86,7 +86,7 @@ spi::BucketInfo SanityCheckedDeleteTest::send_put_and_get_bucket_info(
 void SanityCheckedDeleteTest::differing_document_sizes_not_considered_out_of_sync() {
     TestFileStorComponents c(*this, "differing_document_sizes_not_considered_out_of_sync");
     document::BucketId bucket(8, 123);
-    spi::Bucket spiBucket(makeBucket(bucket));
+    spi::Bucket spiBucket(makeSpiBucket(bucket));
 
     spi::BucketInfo info_before(send_put_and_get_bucket_info(c, spiBucket));
     // Expect 1 byte of reported size, which will mismatch with the actually put document.

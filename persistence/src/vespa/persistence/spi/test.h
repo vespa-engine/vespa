@@ -10,7 +10,7 @@ namespace storage::spi::test {
 
 document::BucketSpace makeBucketSpace();
 document::BucketSpace makeBucketSpace(const vespalib::string &docTypeName);
-Bucket makeBucket(document::BucketId bucketId, PartitionId partitionId);
-Bucket makeBucket(document::BucketId bucketId);
+Bucket makeSpiBucket(document::BucketId bucketId, PartitionId partitionId);
+Bucket makeSpiBucket(document::BucketId bucketId);
 
 }

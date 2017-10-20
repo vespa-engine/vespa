@@ -12,7 +12,7 @@
 
 using document::DocumentTypeRepo;
 using document::TestDocRepo;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 
 namespace storage {
@@ -34,7 +34,7 @@ public:
         spi::Context context(spi::LoadType(0, "default"), spi::Priority(0),
                              spi::Trace::TraceLevel(0));
         getPersistenceProvider().createBucket(
-                makeBucket(document::BucketId(16, 4)),
+                makeSpiBucket(document::BucketId(16, 4)),
                 context);
     }
 

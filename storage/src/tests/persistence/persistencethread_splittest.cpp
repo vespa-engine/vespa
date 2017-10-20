@@ -7,7 +7,7 @@
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 
 namespace storage {
@@ -179,7 +179,7 @@ PersistenceThread_SplitTest::doTest(SplitCase splitCase)
     uint64_t splitMask = 1 << (splitLevelToDivide - 1);
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
-    spi::Bucket bucket(makeBucket(document::BucketId(currentSplitLevel, 1)));
+    spi::Bucket bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
     spi.deleteBucket(bucket, context);
     spi.createBucket(bucket, context);

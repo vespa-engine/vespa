@@ -14,7 +14,7 @@ using std::unique_ptr;
 using std::shared_ptr;
 
 using namespace std::string_literals;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 
 namespace storage {
@@ -46,7 +46,7 @@ public:
 
         createBucket(BUCKET_ID);
         getPersistenceProvider().createBucket(
-                makeBucket(BUCKET_ID),
+                makeSpiBucket(BUCKET_ID),
             context);
 
         thread = createPersistenceThread(0);

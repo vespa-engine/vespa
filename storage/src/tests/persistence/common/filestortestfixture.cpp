@@ -8,7 +8,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <sstream>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 
 namespace storage {
@@ -55,7 +55,7 @@ FileStorTestFixture::createBucket(const document::BucketId& bid)
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     _node->getPersistenceProvider().createBucket(
-            makeBucket(bid), context);
+            makeSpiBucket(bid), context);
 
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(bid, "foo",

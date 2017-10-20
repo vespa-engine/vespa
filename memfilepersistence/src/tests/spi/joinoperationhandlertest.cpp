@@ -5,7 +5,7 @@
 #include <vespa/persistence/spi/test.h>
 
 using document::DocumentType;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 namespace memfile {
@@ -140,9 +140,9 @@ JoinOperationHandlerTest::doJoin(const document::BucketId to,
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     return getPersistenceProvider().join(
-            makeBucket(from1),
-            makeBucket(from2),
-            makeBucket(to),
+            makeSpiBucket(from1),
+            makeSpiBucket(from2),
+            makeSpiBucket(to),
             context);
 }
 
@@ -252,9 +252,9 @@ JoinOperationHandlerTest::testMultiDisk()
     setupDisks(10);
     feedMultiDisk();
 
-    getPersistenceProvider().join(makeBucket(SOURCE2, spi::PartitionId(7)),
-                                  makeBucket(SOURCE1, spi::PartitionId(4)),
-                                  makeBucket(TARGET, spi::PartitionId(3)),
+    getPersistenceProvider().join(makeSpiBucket(SOURCE2, spi::PartitionId(7)),
+                                  makeSpiBucket(SOURCE1, spi::PartitionId(4)),
+                                  makeSpiBucket(TARGET, spi::PartitionId(3)),
                                   context);
 
     CPPUNIT_ASSERT_EQUAL(
@@ -278,9 +278,9 @@ JoinOperationHandlerTest::testMultiDiskFlushed()
     env()._cache.flushDirtyEntries();
     env()._cache.clear();
 
-    getPersistenceProvider().join(makeBucket(SOURCE2, spi::PartitionId(7)),
-                                  makeBucket(SOURCE1, spi::PartitionId(4)),
-                                  makeBucket(TARGET, spi::PartitionId(3)),
+    getPersistenceProvider().join(makeSpiBucket(SOURCE2, spi::PartitionId(7)),
+                                  makeSpiBucket(SOURCE1, spi::PartitionId(4)),
+                                  makeSpiBucket(TARGET, spi::PartitionId(3)),
                                   context);
 
     CPPUNIT_ASSERT_EQUAL(
@@ -324,9 +324,9 @@ JoinOperationHandlerTest::testInternalJoin()
     mon->overrideRealStat(512, 100000, 50000);
     CPPUNIT_ASSERT(!mon->isFull(0, .80f));
 
-    getPersistenceProvider().join(makeBucket(SOURCE1, spi::PartitionId(4)),
-                                  makeBucket(SOURCE1, spi::PartitionId(4)),
-                                  makeBucket(SOURCE1, spi::PartitionId(5)),
+    getPersistenceProvider().join(makeSpiBucket(SOURCE1, spi::PartitionId(4)),
+                                  makeSpiBucket(SOURCE1, spi::PartitionId(4)),
+                                  makeSpiBucket(SOURCE1, spi::PartitionId(5)),
                                   context);
 
     env()._cache.clear();
@@ -370,9 +370,9 @@ JoinOperationHandlerTest::testInternalJoinDiskFull()
     CPPUNIT_ASSERT(mon->isFull(0, .08f));
 
     spi::Result result =
-        getPersistenceProvider().join(makeBucket(SOURCE1, spi::PartitionId(4)),
-                                      makeBucket(SOURCE1, spi::PartitionId(4)),
-                                      makeBucket(SOURCE1, spi::PartitionId(5)),
+        getPersistenceProvider().join(makeSpiBucket(SOURCE1, spi::PartitionId(4)),
+                                      makeSpiBucket(SOURCE1, spi::PartitionId(4)),
+                                      makeSpiBucket(SOURCE1, spi::PartitionId(5)),
                                       context);
 
     CPPUNIT_ASSERT(result.hasError());
