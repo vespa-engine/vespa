@@ -302,7 +302,7 @@ public class ConfigUtils {
 
     /**
      * Creates a ConfigDefinitionKey based on a string with namespace, name and version
-     * (e.g. Vespa's own config definitions in $VESPA_HOME/var/db/vespa/configserver/serverdb/classes)
+     * (e.g. Vespa's own config definitions in $VESPA_HOME/share/vespa/configdefinitions)
      *
      * @param input A string consisting of "namespace.name.version"
      * @return a ConfigDefinitionKey

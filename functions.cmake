@@ -539,9 +539,9 @@ endfunction()
 
 function(install_config_definition)
     if(ARGC GREATER 1)
-        install(FILES ${ARGV0} RENAME ${ARGV1} DESTINATION var/db/vespa/config_server/serverdb/classes)
+        install(FILES ${ARGV0} RENAME ${ARGV1} DESTINATION  share/vespa/configdefinitions)
     else()
-        install(FILES ${ARGV0} DESTINATION var/db/vespa/config_server/serverdb/classes)
+        install(FILES ${ARGV0} DESTINATION  share/vespa/configdefinitions)
     endif()
 endfunction()
 

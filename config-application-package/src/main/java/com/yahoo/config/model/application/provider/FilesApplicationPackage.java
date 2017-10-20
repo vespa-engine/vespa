@@ -111,7 +111,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /**
      * New package from given path on local file system. Retrieves config definition files from
-     * the default location 'serverdb/classes'.
+     * the default location '$VESPA_HOME/share/vespa/configdefinitions'.
      *
      * @param appDir application package directory
      * @param preprocessedDir preprocessed application package output directory
