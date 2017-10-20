@@ -152,10 +152,10 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     }
 
     private void removeApplications(PathChildrenCacheEvent.Type eventType) {
-        ImmutableSet<ApplicationId> allApplications = ImmutableSet.copyOf(listApplications());
-        log.log(Level.INFO, "Got " + eventType + " event, need to check if applications have been removed, " +
-                " found these active applications: " + allApplications);
-        reloadHandler.removeApplicationsExcept(allApplications);
+        ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
+        log.log(Level.INFO, "Got " + eventType + " event for tenant '" + tenant +
+                "', removing applications except these active applications: " + activeApplications);
+        reloadHandler.removeApplicationsExcept(activeApplications);
     }
 
 }
