@@ -211,17 +211,16 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testCannotSetUpIfUnknownOldStateAndReportedIsDown() {
+    public void testCanSetUpEvenIfOldWantedStateIsDown() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
-        // Not setting nodes up -> all are down
+        setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 3, 6)));
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 new NodeState(NodeType.STORAGE, State.DOWN), UP_NODE_STATE);
-        assertFalse(result.settingWantedStateIsAllowed());
+        assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Refusing to set wanted state to up when it is currently in Down"));
     }
 
     @Test
