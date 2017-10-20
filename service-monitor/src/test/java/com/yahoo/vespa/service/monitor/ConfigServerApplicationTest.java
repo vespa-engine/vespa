@@ -26,12 +26,11 @@ public class ConfigServerApplicationTest {
         ApplicationInstance<ServiceMonitorStatus> applicationInstance =
                 application.toApplicationInstance(configServerList);
 
-        // Backward compatibility check
         assertEquals(
-                SlobrokAndConfigIntersector.configServerApplicationInstanceId(),
+                ConfigServerApplication.APPLICATION_INSTANCE_ID,
                 applicationInstance.applicationInstanceId());
         assertEquals(
-                SlobrokAndConfigIntersector.syntheticHostedVespaTenantId(),
+                ConfigServerApplication.TENANT_ID,
                 applicationInstance.tenantId());
 
         assertEquals(
