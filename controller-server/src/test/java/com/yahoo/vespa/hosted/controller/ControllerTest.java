@@ -137,7 +137,7 @@ public class ControllerTest {
 
         // system and staging test job - succeeding
         applications.notifyJobCompletion(mockReport(app1, component, true));
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, revision, false, tester.clock().instant())
                               .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
@@ -435,7 +435,7 @@ public class ControllerTest {
         // out of capacity retry mechanism
         tester.clock().advance(Duration.ofMinutes(15));
         tester.notifyJobCompletion(component, app1, true);
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         tester.deploy(stagingTest, app1, applicationPackage);
         assertEquals(1, buildSystem.takeJobsToRun().size());
         tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));

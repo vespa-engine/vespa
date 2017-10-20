@@ -47,8 +47,9 @@ public class DeploymentOrder {
     }
 
     /** Returns a list of jobs to trigger after the given job */
+    // TODO: This does too much - should just tell us the order, as advertised
     public List<JobType> nextAfter(JobType job, Application application) {
-        if (!application.deploying().isPresent()) { // Change was cancelled
+        if ( ! application.deploying().isPresent()) { // Change was cancelled
             return Collections.emptyList();
         }
 
@@ -71,7 +72,7 @@ public class DeploymentOrder {
             return Collections.emptyList();
         }
 
-        // Postpone if step hasn't completed all it's jobs for this change
+        // Postpone if step hasn't completed all its jobs for this change
         if (!completedSuccessfully(currentStep.get(), application.deploying().get(), application)) {
             return Collections.emptyList();
         }

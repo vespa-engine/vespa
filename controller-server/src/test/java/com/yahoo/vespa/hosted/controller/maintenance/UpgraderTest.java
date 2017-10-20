@@ -9,6 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -364,14 +365,14 @@ public class UpgraderTest {
 
     @Test
     public void testBlockVersionChange() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T18:00:00.00Z")); // A tuesday
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T18:00:00.00Z")); // Tuesday, 18:00
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
-                // Block upgrades on tuesday in hours 18 and 19
+                // Block upgrades on Tuesday in hours 18 and 19
                 .blockChange(false, true, "tue", "18-19", "UTC")
                 .region("us-west-1")
                 .build();
@@ -397,6 +398,123 @@ public class UpgraderTest {
         assertFalse("Job is scheduled", tester.buildSystem().jobs().isEmpty());
         tester.completeUpgrade(app, version, "canary");
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+    }
+
+    @Test
+    public void testBlockVersionChangeHalfwayThough() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
+                                                                                Duration.ofHours(1),
+                                                                                new JobControl(tester.controllerTester().curator()));
+
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                // Block upgrades on Tuesday in hours 18 and 19
+                .blockChange(false, true, "tue", "18-19", "UTC")
+                .region("us-west-1")
+                .region("us-central-1")
+                .region("us-east-3")
+                .build();
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        // New version is released
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+
+        // Application upgrade starts
+        tester.upgrader().maintain();
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        assertTrue(tester.buildSystem().jobs().isEmpty()); // Next job not triggered due to being in the block window
+
+        // One hour passes, time is 19:00, still no upgrade
+        tester.clock().advance(Duration.ofHours(1));
+        blockedChangeDeployer.maintain();
+        assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
+
+        // Another hour pass, time is 20:00 and application upgrades
+        tester.clock().advance(Duration.ofHours(1));
+        blockedChangeDeployer.maintain();
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
+        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+    }
+
+    /**
+     * Tests the scenario where a release is deployed to 2 of 3 production zones, then blocked,
+     * followed by timeout of the upgrade and a new release.
+     * In this case, the blocked production zone should not progress with upgrading to the previous version,
+     * and should not upgrade to the new version until the other production zones have it
+     * (expected behavior; both requirements are debatable).
+     */
+    @Test
+    public void testBlockVersionChangeHalfwayThoughThenNewVersion() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-29T16:00:00.00Z")); // Friday, 16:00
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
+                                                                                Duration.ofHours(1),
+                                                                                new JobControl(tester.controllerTester().curator()));
+
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                // Block upgrades on weekends and ouside working hours
+                .blockChange(false, true, "mon-fri", "00-09,17-23", "UTC")
+                .blockChange(false, true, "sat-sun", "00-23", "UTC")
+                .region("us-west-1")
+                .region("us-central-1")
+                .region("us-east-3")
+                .build();
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        // New version is released
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+
+        // Application upgrade starts
+        tester.upgrader().maintain();
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
+        assertTrue(tester.buildSystem().jobs().isEmpty()); // Next job not triggered due to being in the block window
+
+        // A day passes and we get a new version
+        tester.clock().advance(Duration.ofDays(1));
+        version = Version.fromString("5.2");
+        tester.updateVersionStatus(version);
+        tester.upgrader().maintain();
+        blockedChangeDeployer.maintain();
+        assertTrue("Nothing is scheduled", tester.buildSystem().jobs().isEmpty());
+
+        // Monday morning: We are not blocked
+        tester.clock().advance(Duration.ofDays(1)); // Sunday, 17:00
+        tester.clock().advance(Duration.ofHours(17)); // Monday, 10:00
+        tester.upgrader().maintain();
+        blockedChangeDeployer.maintain();
+        // We proceed with the new version in the expected order, not starting with the previously blocked version:
+        // Test jobs are run with the new version, but not production as we are in the block window
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
+        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+        
+        // App is completely upgraded to the latest version
+        for (Deployment deployment : tester.applications().require(app.id()).deployments().values())
+            assertEquals(version, deployment.version());
     }
 
     @Test
