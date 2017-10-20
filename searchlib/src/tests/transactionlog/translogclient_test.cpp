@@ -316,15 +316,12 @@ bool Test::fillDomainTest(TransLogClient::Session * s1, const vespalib::string &
     Packet b(DEFAULT_PACKET_SIZE);
     b.add(e2);
     b.add(e3);
-    b.add(e1);
+    EXPECT_EXCEPTION(b.add(e1), std::runtime_error, "");
     ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(a.getHandle().c_str(), a.getHandle().size())));
     ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(b.getHandle().c_str(), b.getHandle().size())));
-    try {
-        s1->commit(vespalib::ConstBufferRef(a.getHandle().c_str(), a.getHandle().size()));
-        ASSERT_TRUE(false);
-    } catch (const std::exception & e) {
-        EXPECT_EQUAL(vespalib::string("commit failed with code -2. server says: Exception during commit on " + name + " : Incomming serial number(1) must be bigger than the last one (3)."), e.what());
-    }
+    EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().c_str(), a.getHandle().size())),
+                     std::runtime_error,
+                     "commit failed with code -2. server says: Exception during commit on " + name + " : Incomming serial number(1) must be bigger than the last one (3).");
     EXPECT_EQUAL(a.size(), 1u);
     EXPECT_EQUAL(a.range().from(), 1u);
     EXPECT_EQUAL(a.range().to(), 1u);

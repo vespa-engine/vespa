@@ -23,7 +23,7 @@ public:
     Encoding(uint8_t raw) : _raw(raw) {}
     Encoding(Crc crc, Compression compression);
     Crc getCrc() const { return Crc(_raw & 0x3); }
-    Compression getCompression() const { return Compression((_raw << 2) & 0xf); }
+    Compression getCompression() const { return Compression((_raw >> 2) & 0xf); }
     static int32_t calcCrc(Crc version, const void * buf, size_t sz);
 private:
     uint8_t _raw;

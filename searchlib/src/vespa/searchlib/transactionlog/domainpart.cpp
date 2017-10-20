@@ -204,7 +204,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     if ( ! transLog.OpenReadOnly(_transLog->GetFileName())) {
         throw runtime_error(make_string("Failed opening '%s' for buffered readinf with direct io.", transLog.GetFileName()));
     }
-    const int64_t fSize(transLog.GetSize());
+    int64_t fSize(transLog.GetSize());
     int64_t currPos(0);
     try {
         FileHeader header;
@@ -242,8 +242,10 @@ DomainPart::buildPacketMapping(bool allowTruncate)
                 LockGuard guard(_lock);
                 _skipList.push_back(SkipInfo(firstSerial, firstPos));
             }
+        } else {
+            fSize = transLog.GetSize();
         }
-        currPos = _transLog->GetPosition();
+        currPos = transLog.GetPosition();
     }
     transLog.Close();
     return currPos;
@@ -519,9 +521,11 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
     }
 
     packet = readPacket(file, r, TARGET_PACKET_SIZE, false);
-    r.from(packet.range().to());
+    if (!packet.empty()) {
+        r.from(packet.range().to());
+    }
 
-    return true;
+    return !packet.empty();
 }
 
 void

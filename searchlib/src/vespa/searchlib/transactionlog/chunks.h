@@ -13,6 +13,13 @@ protected:
 public:
 };
 
+class CCITTCRC32None : public IChunk {
+protected:
+    void onEncode(nbostream &os) override;
+    void onDecode(nbostream &is) override;
+public:
+};
+
 class XXH64LZ4 : public IChunk {
 protected:
     void onEncode(nbostream &os) override;

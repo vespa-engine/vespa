@@ -39,7 +39,7 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
     _name(domainName),
     _domainPartSizeLimit(domainPartSize),
     _chunkSizeLimit(0x40000),
-    _chunkAgeLimit(10ms),
+    _chunkAgeLimit(1ms),
     _parts(),
     _lock(),
     _currentChunkMonitor(),

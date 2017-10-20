@@ -48,6 +48,12 @@ IChunk::create(uint8_t chunkType) {
         } else {
             throw runtime_error(make_string("Unhandled compression type '%d'", encoding.getCompression()));
         }
+    } else if (encoding.getCrc() == Encoding::Crc::ccitt_crc32) {
+        if (encoding.getCompression() == Encoding::Compression::none) {
+            return make_unique<CCITTCRC32None>();
+        } else {
+            throw runtime_error(make_string("Unhandled compression type '%d'", encoding.getCompression()));
+        }
     } else {
         throw runtime_error(make_string("Unhandled crc type '%d'", encoding.getCrc()));
     }
