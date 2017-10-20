@@ -50,7 +50,6 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         this.applicationsPath = applicationsPath;
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
-        rewriteApplicationIds();
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
@@ -64,44 +63,12 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         }
     }
 
-    // TODO: October 2017: Evaluate and remove if possible, seems to be compatibility code that is not needed anymore
-    private void rewriteApplicationIds() {
-        try {
-            List<String> appNodes = curator.framework().getChildren().forPath(applicationsPath.getAbsolute());
-            for (String appNode : appNodes) {
-                Optional<ApplicationId> appId = parseApplication(appNode);
-                appId.filter(id -> shouldBeRewritten(appNode, id))
-                     .ifPresent(id -> rewriteApplicationId(id, appNode, readSessionId(id, appNode)));
-            }
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Error rewriting application ids on upgrade", e);
-        }
-    }
-
     private long readSessionId(ApplicationId appId, String appNode) {
         String path = applicationsPath.append(appNode).getAbsolute();
         try {
             return Long.parseLong(Utf8.toString(curator.framework().getData().forPath(path)));
         } catch (Exception e) {
             throw new IllegalArgumentException(Tenants.logPre(appId) + "Unable to read the session id from '" + path + "'", e);
-        }
-    }
-
-    private boolean shouldBeRewritten(String appNode, ApplicationId appId) {
-        return !appNode.equals(appId.serializedForm());
-    }
-
-    private void rewriteApplicationId(ApplicationId appId, String origNode, long sessionId) {
-        String newPath = applicationsPath.append(appId.serializedForm()).getAbsolute();
-        String oldPath = applicationsPath.append(origNode).getAbsolute();
-        try (CuratorTransaction transaction = new CuratorTransaction(curator)) {
-            if (curator.framework().checkExists().forPath(newPath) == null) {
-                transaction.add(CuratorOperations.create(newPath, Utf8.toAsciiBytes(sessionId)));
-            }
-            transaction.add(CuratorOperations.delete(oldPath));
-            transaction.commit();
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Error rewriting application id from " + origNode + " to " + appId.serializedForm());
         }
     }
 
