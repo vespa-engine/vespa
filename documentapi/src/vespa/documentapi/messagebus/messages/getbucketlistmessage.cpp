@@ -6,16 +6,9 @@
 
 namespace documentapi {
 
-GetBucketListMessage::GetBucketListMessage() :
+GetBucketListMessage::GetBucketListMessage(const document::Bucket &bucket) :
     DocumentMessage(),
-    _bucketId()
-{
-    // empty
-}
-
-GetBucketListMessage::GetBucketListMessage(const document::BucketId &bucketId) :
-    DocumentMessage(),
-    _bucketId(bucketId)
+    _bucket(bucket)
 {
     // empty
 }

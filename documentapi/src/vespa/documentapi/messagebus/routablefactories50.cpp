@@ -10,6 +10,7 @@
 using vespalib::nbostream;
 using std::make_unique;
 using std::make_shared;
+using document::BucketSpace;
 
 namespace documentapi {
 
@@ -407,19 +408,16 @@ RoutableFactories50::EmptyBucketsReplyFactory::doEncode(const DocumentReply &obj
 DocumentMessage::UP
 RoutableFactories50::GetBucketListMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new GetBucketListMessage());
-    GetBucketListMessage &msg = static_cast<GetBucketListMessage&>(*ret);
-
-    msg.setBucketId(document::BucketId(decodeLong(buf)));
-
-    return ret;
+    document::BucketId bucketId(decodeLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    return std::make_unique<GetBucketListMessage>(bucket);
 }
 
 bool
 RoutableFactories50::GetBucketListMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
     const GetBucketListMessage &msg = static_cast<const GetBucketListMessage&>(obj);
-    buf.putLong(msg.getBucketId().getRawId());
+    buf.putLong(msg.getBucket().getBucketId().getRawId());
     return true;
 }
 

@@ -118,7 +118,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_GETBUCKETLIST:
     {
         documentapi::GetBucketListMessage& from(static_cast<documentapi::GetBucketListMessage&>(fromMsg));
-        toMsg = std::make_unique<api::GetBucketListCommand>(document::Bucket(BucketSpace::placeHolder(), from.getBucketId()));
+        toMsg = std::make_unique<api::GetBucketListCommand>(from.getBucket());
         break;
     }
     case DocumentProtocol::MESSAGE_VISITORINFO:

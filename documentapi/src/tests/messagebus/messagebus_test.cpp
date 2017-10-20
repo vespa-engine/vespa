@@ -2,6 +2,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -13,6 +14,7 @@ using namespace documentapi;
 using mbus::Blob;
 using mbus::Routable;
 using mbus::IRoutingPolicy;
+using document::test::makeDocumentBucket;
 
 class Test : public vespalib::TestApp {
     DocumentTypeRepo::SP _repo;
@@ -119,6 +121,6 @@ void Test::stat_bucket_message_is_not_sequenced() {
 }
 
 void Test::get_bucket_list_message_is_not_sequenced() {
-    GetBucketListMessage message(document::BucketId(16, 1));
+    GetBucketListMessage message(makeDocumentBucket(document::BucketId(16, 1)));
     EXPECT_FALSE(message.hasSequenceId());
 }

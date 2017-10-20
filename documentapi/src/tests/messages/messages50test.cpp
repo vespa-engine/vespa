@@ -7,9 +7,11 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/test/make_document_bucket.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;
+using document::test::makeDocumentBucket;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -88,7 +90,7 @@ createDoc(const DocumentTypeRepo &repo, const string &type_name, const string &i
 bool
 Messages50Test::testGetBucketListMessage()
 {
-    GetBucketListMessage msg(document::BucketId(16, 123));
+    GetBucketListMessage msg(makeDocumentBucket(document::BucketId(16, 123)));
     msg.setLoadType(_loadTypes["foo"]);
     EXPECT_EQUAL(string("foo"), msg.getLoadType().getName());
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 12u, serialize("GetBucketListMessage", msg));
@@ -98,7 +100,7 @@ Messages50Test::testGetBucketListMessage()
         if (EXPECT_TRUE(obj.get() != NULL)) {
             GetBucketListMessage &ref = static_cast<GetBucketListMessage&>(*obj);
             EXPECT_EQUAL(string("foo"), ref.getLoadType().getName());
-            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
+            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucket().getBucketId());
         }
     }
     return true;
