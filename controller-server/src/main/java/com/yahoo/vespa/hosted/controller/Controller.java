@@ -23,7 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.cost.Cost;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
-import com.yahoo.vespa.hosted.controller.api.integration.jira.Jira;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -96,19 +96,19 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
-                      GitHub gitHub, Jira jiraClient, EntityService entityService,
+                      GitHub gitHub, EntityService entityService,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, Cost cost, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Athens athens) {
         this(db, curator, rotationRepository,
-             gitHub, jiraClient, entityService, globalRoutingService, zoneRegistry,
+             gitHub, entityService, globalRoutingService, zoneRegistry,
              cost, configServerClient, metricsService, nameService, routingGenerator, chefClient,
              Clock.systemUTC(), athens);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
-                      GitHub gitHub, Jira jiraClient, EntityService entityService,
+                      GitHub gitHub, EntityService entityService,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, Cost cost, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
@@ -117,7 +117,6 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(curator, "Curator cannot be null");
         Objects.requireNonNull(rotationRepository, "Rotation repository cannot be null");
         Objects.requireNonNull(gitHub, "GitHubClient cannot be null");
-        Objects.requireNonNull(jiraClient, "JiraClient cannot be null");
         Objects.requireNonNull(entityService, "EntityService cannot be null");
         Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");

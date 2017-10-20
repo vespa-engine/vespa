@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -129,8 +130,8 @@ public class Application {
         return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs.withProjectId(projectId), deploying, outstandingChange);
     }
 
-    public Application withJiraIssueId(Optional<String> jiraIssueId) {
-        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs.withJiraIssueId(jiraIssueId), deploying, outstandingChange);
+    public Application withIssueId(IssueId issueId) {
+        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs.withIssueId(issueId), deploying, outstandingChange);
     }
 
     public Application withJobCompletion(JobReport report, Instant notificationTime, Controller controller) {

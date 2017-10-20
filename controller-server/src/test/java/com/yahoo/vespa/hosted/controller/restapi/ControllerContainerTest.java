@@ -41,11 +41,8 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.jira.JiraMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.ContactsMock'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingIssues'/>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.PropertiesMock'/>" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerClientMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>" +
