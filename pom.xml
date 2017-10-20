@@ -800,11 +800,6 @@
                 <version>2.2.2</version>
             </dependency>
             <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-native_${scala.major-version}</artifactId>
-                <version>3.3.0</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>1.7.5</version>
