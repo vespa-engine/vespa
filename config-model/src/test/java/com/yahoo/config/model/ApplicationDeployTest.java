@@ -367,7 +367,7 @@ public class ApplicationDeployTest {
 
     /**
      * Tests that config definitions with namespace are treated properly when they have the format
-     * as in the config definitions dir ($VESPA_HOME/var/db/vespa/config_server/serverdb/classes on a machine
+     * as in the config definitions dir ($VESPA_HOME/share/vespa/configdefinitions on a machine
      * with Vespa packages installed) (does not test when read from user def files). Also tests a config
      * definition without version in file name
      */
