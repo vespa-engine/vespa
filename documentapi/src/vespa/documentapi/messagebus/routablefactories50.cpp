@@ -837,7 +837,8 @@ RoutableFactories50::StatBucketMessageFactory::doDecode(document::ByteBuffer &bu
     DocumentMessage::UP ret(new StatBucketMessage());
     StatBucketMessage &msg = static_cast<StatBucketMessage&>(*ret);
 
-    msg.setBucketId(document::BucketId(decodeLong(buf)));
+    document::Bucket bucket(BucketSpace::placeHolder(), document::BucketId(decodeLong(buf)));
+    msg.setBucket(bucket);
     msg.setDocumentSelection(decodeString(buf));
 
     return ret;
@@ -848,7 +849,7 @@ RoutableFactories50::StatBucketMessageFactory::doEncode(const DocumentMessage &o
 {
     const StatBucketMessage &msg = static_cast<const StatBucketMessage&>(obj);
 
-    buf.putLong(msg.getBucketId().getRawId());
+    buf.putLong(msg.getBucket().getBucketId().getRawId());
     buf.putString(msg.getDocumentSelection());
 
     return true;

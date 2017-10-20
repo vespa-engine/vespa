@@ -112,7 +112,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_STATBUCKET:
     {
         documentapi::StatBucketMessage& from(static_cast<documentapi::StatBucketMessage&>(fromMsg));
-        toMsg = std::make_unique<api::StatBucketCommand>(document::Bucket(BucketSpace::placeHolder(), from.getBucketId()), from.getDocumentSelection());
+        toMsg = std::make_unique<api::StatBucketCommand>(from.getBucket(), from.getDocumentSelection());
         break;
     }
     case DocumentProtocol::MESSAGE_GETBUCKETLIST:
@@ -314,7 +314,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
     case api::MessageType::STATBUCKET_ID:
     {
         api::StatBucketCommand& from(static_cast<api::StatBucketCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::StatBucketMessage>(from.getBucketId(), from.getDocumentSelection());
+        toMsg = std::make_unique<documentapi::StatBucketMessage>(from.getBucket(), from.getDocumentSelection());
         break;
     }
     default:

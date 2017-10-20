@@ -135,7 +135,7 @@ Messages50Test::testEmptyBucketsMessage()
 bool
 Messages50Test::testStatBucketMessage()
 {
-    StatBucketMessage msg(document::BucketId(16, 123), "id.user=123");
+    StatBucketMessage msg(makeDocumentBucket(document::BucketId(16, 123)), "id.user=123");
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 27u, serialize("StatBucketMessage", msg));
 
@@ -143,7 +143,7 @@ Messages50Test::testStatBucketMessage()
         mbus::Routable::UP obj = deserialize("StatBucketMessage", DocumentProtocol::MESSAGE_STATBUCKET, lang);
         if (EXPECT_TRUE(obj.get() != NULL)) {
             StatBucketMessage &ref = static_cast<StatBucketMessage&>(*obj);
-            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
+            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucket().getBucketId());
             EXPECT_EQUAL("id.user=123", ref.getDocumentSelection());
         }
     }
