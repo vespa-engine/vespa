@@ -115,7 +115,7 @@ public class NodeStateChangeChecker {
 
         switch (newState.getState()) {
             case UP:
-                return canSetStateUp(nodeInfo, oldState.getState());
+                return canSetStateUp(nodeInfo);
             case MAINTENANCE:
                 return canSetStateMaintenanceTemporarily(node, clusterState);
             case DOWN:
@@ -166,11 +166,7 @@ public class NodeStateChangeChecker {
         return Result.allowSettingOfWantedState();
     }
 
-    private Result canSetStateUp(NodeInfo nodeInfo, State oldState) {
-        if (oldState != State.MAINTENANCE) {
-            return Result.createDisallowed("Refusing to set wanted state to up when it is currently in " + oldState);
-        }
-
+    private Result canSetStateUp(NodeInfo nodeInfo) {
         if (nodeInfo.getReportedState().getState() != State.UP) {
             return Result.createDisallowed("Refuse to set wanted state to UP, " +
                     "since the reported state is not UP (" +
