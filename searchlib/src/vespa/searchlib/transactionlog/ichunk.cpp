@@ -28,6 +28,15 @@ IChunk::add(const Packet::Entry & entry) {
 }
 
 void
+IChunk::add(nbostream & is) {
+    while (is.good() && !is.empty()) {
+        Packet::Entry e;
+        e.deserialize(is);
+        add(e);
+    }
+}
+
+void
 IChunk::encode(nbostream & ) {
 
 }
@@ -40,22 +49,28 @@ IChunk::decode(nbostream & is) {
 IChunk::UP
 IChunk::create(uint8_t chunkType) {
     Encoding encoding(chunkType);
-    if (encoding.getCrc() == Encoding::Crc::xxh64) {
-        if (encoding.getCompression() == Encoding::Compression::none) {
-            return make_unique<XXH64None>();
-        } else if (encoding.getCompression() == Encoding::Compression::lz4) {
-            return make_unique<XXH64LZ4>();
-        } else {
-            throw runtime_error(make_string("Unhandled compression type '%d'", encoding.getCompression()));
-        }
-    } else if (encoding.getCrc() == Encoding::Crc::ccitt_crc32) {
-        if (encoding.getCompression() == Encoding::Compression::none) {
-            return make_unique<CCITTCRC32None>();
-        } else {
-            throw runtime_error(make_string("Unhandled compression type '%d'", encoding.getCompression()));
-        }
-    } else {
-        throw runtime_error(make_string("Unhandled crc type '%d'", encoding.getCrc()));
+    switch (encoding.getCrc()) {
+        case Encoding::Crc::xxh64:
+            switch (encoding.getCompression()) {
+                case Encoding::Compression::none:
+                    return make_unique<XXH64None>();
+                case Encoding::Compression::lz4:
+                    return make_unique<XXH64LZ4>();
+                case Encoding::Compression::zstd:
+                    return make_unique<XXH64ZSTD>();
+                default:
+                    return make_unique<XXH64LZ4>();
+            }
+        case Encoding::Crc::ccitt_crc32:
+            switch (encoding.getCompression()) {
+                case Encoding::Compression::none:
+                    return make_unique<CCITTCRC32None>();
+                default:
+                    throw runtime_error(make_string("Unhandled compression type '%d' for ccitt_crc32 compression",
+                                                    encoding.getCompression()));
+            }
+        default:
+            throw runtime_error(make_string("Unhandled crc type '%d'", encoding.getCrc()));
     }
 }
 

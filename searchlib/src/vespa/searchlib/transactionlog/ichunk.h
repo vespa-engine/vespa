@@ -18,7 +18,8 @@ public:
     };
     enum Compression {
         none = 0,
-        lz4 = 1
+        lz4 = 1,
+        zstd = 2
     };
     Encoding(uint8_t raw) : _raw(raw) {}
     Encoding(Crc crc, Compression compression);
@@ -45,6 +46,7 @@ public:
 protected:
     virtual void onEncode(nbostream & os) = 0;
     virtual void onDecode(nbostream & is) = 0;
+    void add(nbostream & is);
 private:
     Entries _entries;
 };

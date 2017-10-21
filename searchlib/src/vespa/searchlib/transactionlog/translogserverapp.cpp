@@ -23,18 +23,37 @@ TransLogServerApp::TransLogServerApp(const config::ConfigUri & tlsConfigUri,
 
 namespace {
 
-Encoding
-getEncoding(searchlib::TranslogserverConfig::Crcmethod crcType)
+
+Encoding::Crc
+getCrc(searchlib::TranslogserverConfig::Crcmethod type)
 {
-    switch (crcType) {
+    switch (type) {
         case searchlib::TranslogserverConfig::ccitt_crc32:
-            return Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none);
+            return Encoding::Crc::ccitt_crc32;
         case searchlib::TranslogserverConfig::xxh64:
-            return Encoding(Encoding::Crc::xxh64, Encoding::Compression::none);
-        case searchlib::TranslogserverConfig::xxh64lz4:
-            return Encoding(Encoding::Crc::xxh64, Encoding::Compression::lz4);
+            return Encoding::Crc::xxh64;
     }
-    abort();
+    return Encoding::Crc::xxh64;
+}
+
+Encoding::Compression
+getCompression(searchlib::TranslogserverConfig::Compression::Type type)
+{
+    switch (type) {
+        case searchlib::TranslogserverConfig::Compression::NONE:
+            return Encoding::Compression::none;
+        case searchlib::TranslogserverConfig::Compression::LZ4:
+            return Encoding::Compression::lz4;
+        case searchlib::TranslogserverConfig::Compression::ZSTD:
+            return Encoding::Compression::zstd;
+    }
+    return Encoding::Compression::lz4;
+}
+
+Encoding
+getEncoding(const searchlib::TranslogserverConfig & cfg)
+{
+    return Encoding(getCrc(cfg.crcmethod), getCompression(cfg.compression.type));
 }
 
 }
@@ -43,7 +62,7 @@ void TransLogServerApp::start()
 {
     std::shared_ptr<searchlib::TranslogserverConfig> c = _tlsConfig.get();
     _tls.reset(new TransLogServer(c->servername, c->listenport, c->basedir, _fileHeaderContext,
-                                  c->filesizemax, c->maxthreads, getEncoding(c->crcmethod)));
+                                  c->filesizemax, c->maxthreads, getEncoding(*c)));
 }
 
 TransLogServerApp::~TransLogServerApp()

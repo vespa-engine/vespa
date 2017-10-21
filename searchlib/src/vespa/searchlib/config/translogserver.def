@@ -21,4 +21,12 @@ usefsync bool default=false restart
 maxthreads int default=4 restart
 
 ##Default crc method used
-crcmethod enum {ccitt_crc32, xxh64, xxh64lz4} default=xxh64
+crcmethod enum {ccitt_crc32, xxh64} default=xxh64
+
+## Control compression type.
+compression.type enum {NONE, LZ4, ZSTD} default=LZ4
+
+## Control compression level
+## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both
+compression.level int default=9
