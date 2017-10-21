@@ -37,25 +37,33 @@ void verifyCrc(nbostream & is, Encoding::Crc crcType) {
 
 }
 
-void CCITTCRC32None::onEncode(nbostream &os) {
-    (void) os;
+void CCITTCRC32None::onEncode(nbostream &os) const {
+    size_t start = os.wp();
+    assert(getEntries().size() == 1);
+    serializeEntries(os);
+    int32_t crc = Encoding::calcCrc(Encoding::Crc::ccitt_crc32, os.c_str()+start, os.size() - start);
+    os << crc;
 }
 
 void CCITTCRC32None::onDecode(nbostream &is) {
     verifyCrc(is, Encoding::Crc::ccitt_crc32);
     nbostream data(is.peek(), is.size() - sizeof(int32_t));
-    add(data);
+    deserializeEntries(data);
     is.adjustReadPos(is.size());
 }
 
-void XXH64None::onEncode(nbostream &os) {
-    (void) os;
+void XXH64None::onEncode(nbostream &os) const {
+    size_t start = os.wp();
+    assert(getEntries().size() == 1);
+    serializeEntries(os);
+    int32_t crc = Encoding::calcCrc(Encoding::Crc::xxh64, os.c_str()+start, os.size() - start);
+    os << crc;
 }
 
 void XXH64None::onDecode(nbostream &is) {
     verifyCrc(is, Encoding::Crc::xxh64);
     nbostream data(is.peek(), is.size() - sizeof(int32_t));
-    add(data);
+    deserializeEntries(data);
     is.adjustReadPos(is.size());
 }
 
@@ -67,11 +75,11 @@ XXH64Compressed::decompress(nbostream & is, vespalib::compression::CompressionCo
     ConstBufferRef compressed(is.peek(), is.size()-sizeof(uint32_t)*2);
     ::decompress(type, uncompressedLen, compressed, uncompressed, false);
     nbostream data(uncompressed.getData(), uncompressed.getDataLen());
-    add(data);
+    deserializeEntries(data);
     is.adjustReadPos(is.size());
 }
 
-void XXH64LZ4::onEncode(IChunk::nbostream &os) {
+void XXH64LZ4::onEncode(IChunk::nbostream &os) const {
     (void) os;
 
 }
@@ -81,7 +89,7 @@ void XXH64LZ4::onDecode(IChunk::nbostream &is) {
     decompress(is, CompressionConfig::LZ4);
 }
 
-void XXH64ZSTD::onEncode(IChunk::nbostream &os) {
+void XXH64ZSTD::onEncode(IChunk::nbostream &os) const {
     (void) os;
 
 }

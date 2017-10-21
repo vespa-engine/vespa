@@ -30,7 +30,7 @@ constexpr size_t TARGET_PACKET_SIZE = 0x3f000;
 
 string
 handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
-                 const Packet::Entry &entry, int bufLen) __attribute__ ((noinline));
+                 SerialNumRange range, int bufLen) __attribute__ ((noinline));
 
 bool
 handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize_t rlen,
@@ -61,17 +61,17 @@ handleSync(FastOS_FileInterface &file)
 
 string
 handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
-                 const Packet::Entry &entry, int bufLen)
+                 SerialNumRange range, int bufLen)
 {
     string last(FastOS_File::getLastErrorString());
-    string e(make_string("%s. File '%s' at position %" PRId64 " for entry %" PRIu64 " of length %u. "
-                         "OS says '%s'. Rewind to last known good position %" PRId64 ".",
-                         text, file.GetFileName(), file.GetPosition(), entry.serial(), bufLen,
+    string e(make_string("%s. File '%s' at position %" PRId64 " for entries [%zu, %zu] of length %u. "
+                         "OS says '%s'. Rewind to last known good position %zu.",
+                         text, file.GetFileName(), file.GetPosition(), range.from(), range.to(), bufLen,
                          last.c_str(), lastKnownGoodPos));
     LOG(error, "%s",  e.c_str());
     if ( ! file.SetPosition(lastKnownGoodPos) ) {
         last = FastOS_File::getLastErrorString();
-        throw runtime_error(make_string("Failed setting position %" PRId64 " of file '%s' of size %" PRId64 ": OS says '%s'",
+        throw runtime_error(make_string("Failed setting position %zu of file '%s' of size %zd : OS says '%s'",
                                         lastKnownGoodPos, file.GetFileName(), file.GetSize(), last.c_str()));
     }
     handleSync(file);
@@ -397,10 +397,12 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
         //LOG(spam,
         //"Pos(%d) Len(%d), Lim(%d), Remaining(%d)",
         //h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());
+        IChunk::UP chunk = IChunk::create(_defaultEncoding);
         Packet::Entry entry;
         entry.deserialize(h);
         if (_range.to() < entry.serial()) {
-            write(*_transLog, entry);
+            chunk->add(entry);
+            write(*_transLog, *chunk);
             _sz++;
             _range.to(entry.serial());
         } else {
@@ -529,28 +531,25 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
 }
 
 void
-DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
+DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
 {
-    int64_t lastKnownGoodPos(file.GetPosition());
-    int32_t crc(0);
-    uint32_t len(entry.serializedSize() + sizeof(crc));
     nbostream os;
     os << _defaultEncoding.getRaw();
-    os << len;
-    size_t start(os.size());
-    entry.serialize(os);
-    size_t end(os.size());
-    crc = Encoding::calcCrc(_defaultEncoding.getCrc(), os.c_str()+start, end - start);
-    os << crc;
-    size_t osSize = os.size();
-    assert(osSize == len + sizeof(len) + sizeof(uint8_t));
+    size_t sizePos = os.wp();
+    os << uint32_t(0);
+    chunk.encode(os);
+    size_t end = os.wp();
+    os.wp(sizePos);
+    os << uint32_t(end - (sizePos + sizeof(uint32_t)));
+    os.wp(end);
+    int64_t lastKnownGoodPos(file.GetPosition());
 
     LockGuard guard(_writeLock);
-    if ( ! file.CheckedWrite(os.c_str(), osSize) ) {
-        throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, entry, end - start));
+    if ( ! file.CheckedWrite(os.c_str(), os.size()) ) {
+        throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, chunk.range(), os.size()));
     }
-    _writtenSerial = entry.serial();
-    _byteSize.store(lastKnownGoodPos + osSize, std::memory_order_release);
+    _writtenSerial = chunk.range().to();
+    _byteSize.store(lastKnownGoodPos + os.size(), std::memory_order_release);
 }
 
 bool

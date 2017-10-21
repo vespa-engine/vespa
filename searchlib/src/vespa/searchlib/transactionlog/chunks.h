@@ -9,14 +9,14 @@ namespace search::transactionlog {
 
 class XXH64None : public IChunk {
 protected:
-    void onEncode(nbostream &os) override;
+    void onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 public:
 };
 
 class CCITTCRC32None : public IChunk {
 protected:
-    void onEncode(nbostream &os) override;
+    void onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 public:
 };
@@ -31,13 +31,13 @@ private:
 };
 class XXH64LZ4 : public XXH64Compressed {
 protected:
-    void onEncode(nbostream &os) override;
+    void onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 };
 
 class XXH64ZSTD : public XXH64Compressed {
 protected:
-    void onEncode(nbostream &os) override;
+    void onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 };
 

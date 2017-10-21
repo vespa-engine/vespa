@@ -27,8 +27,15 @@ IChunk::add(const Packet::Entry & entry) {
     _entries.emplace_back(entry);
 }
 
+SerialNumRange
+IChunk::range() const {
+    return _entries.empty()
+           ? SerialNumRange()
+           : SerialNumRange(_entries.front().serial(), _entries.back().serial());
+}
+
 void
-IChunk::add(nbostream & is) {
+IChunk::deserializeEntries(nbostream & is) {
     while (is.good() && !is.empty()) {
         Packet::Entry e;
         e.deserialize(is);
@@ -37,8 +44,15 @@ IChunk::add(nbostream & is) {
 }
 
 void
-IChunk::encode(nbostream & ) {
+IChunk::serializeEntries(nbostream & os) const {
+    for (const auto & e : _entries) {
+        e.serialize(os);
+    }
+}
 
+void
+IChunk::encode(nbostream & os) const {
+    onEncode(os);
 }
 
 void
@@ -48,7 +62,10 @@ IChunk::decode(nbostream & is) {
 
 IChunk::UP
 IChunk::create(uint8_t chunkType) {
-    Encoding encoding(chunkType);
+    return create(Encoding(chunkType));
+}
+IChunk::UP
+IChunk::create(Encoding encoding) {
     switch (encoding.getCrc()) {
         case Encoding::Crc::xxh64:
             switch (encoding.getCompression()) {
