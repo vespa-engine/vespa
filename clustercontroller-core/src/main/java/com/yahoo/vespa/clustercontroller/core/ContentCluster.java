@@ -206,7 +206,6 @@ public class ContentCluster {
     }
 
     public boolean hasConfiguredNode(int index) {
-        return clusterInfo.getConfiguredNodes().containsKey(index);
+        return clusterInfo.hasConfiguredNode(index);
     }
-
 }
