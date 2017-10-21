@@ -10,6 +10,7 @@ using std::runtime_error;
 using std::make_unique;
 using vespalib::make_string;
 using vespalib::nbostream_longlivedbuf;
+using vespalib::compression::CompressionConfig;
 
 namespace search::transactionlog {
 
@@ -72,11 +73,11 @@ IChunk::create(Encoding encoding) {
                 case Encoding::Compression::none:
                     return make_unique<XXH64None>();
                 case Encoding::Compression::lz4:
-                    return make_unique<XXH64LZ4>();
+                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4);
                 case Encoding::Compression::zstd:
-                    return make_unique<XXH64ZSTD>();
+                    return make_unique<XXH64Compressed>(CompressionConfig::ZSTD);
                 default:
-                    return make_unique<XXH64LZ4>();
+                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4);
             }
         case Encoding::Crc::ccitt_crc32:
             switch (encoding.getCompression()) {

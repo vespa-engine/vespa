@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/compressionconfig.h>
 #include "ichunk.h"
+#include <vespa/vespalib/util/compressionconfig.h>
 
 namespace search::transactionlog {
 
@@ -23,22 +23,17 @@ public:
 
 class XXH64Compressed : public IChunk {
 public:
-    void setLevel(uint8_t level) { _compressionLevel = level; }
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+    XXH64Compressed(CompressionConfig::Type);
+    void setLevel(uint8_t level) { _level = level; }
 protected:
-    void decompress(nbostream & os, vespalib::compression::CompressionConfig::Type type);
+    void decompress(nbostream & os);
+    void compress(nbostream & os, Encoding::Crc crc) const;
+    void onEncode(nbostream &os) const override;
+    void onDecode(nbostream &is) override;
 private:
-    uint8_t _compressionLevel;
-};
-class XXH64LZ4 : public XXH64Compressed {
-protected:
-    void onEncode(nbostream &os) const override;
-    void onDecode(nbostream &is) override;
-};
-
-class XXH64ZSTD : public XXH64Compressed {
-protected:
-    void onEncode(nbostream &os) const override;
-    void onDecode(nbostream &is) override;
+    CompressionConfig::Type _type;
+    uint8_t                 _level;
 };
 
 }
