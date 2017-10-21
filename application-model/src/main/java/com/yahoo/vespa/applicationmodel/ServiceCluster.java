@@ -11,13 +11,13 @@ import java.util.Set;
  *
  * @author bjorncs
  */
-public class ServiceCluster<STATUS> {
+public class ServiceCluster {
 
     private final ClusterId clusterId;
     private final ServiceType serviceType;
-    private final Set<ServiceInstance<STATUS>> serviceInstances;
+    private final Set<ServiceInstance> serviceInstances;
 
-    public ServiceCluster(ClusterId clusterId, ServiceType serviceType, Set<ServiceInstance<STATUS>> serviceInstances) {
+    public ServiceCluster(ClusterId clusterId, ServiceType serviceType, Set<ServiceInstance> serviceInstances) {
         this.clusterId = clusterId;
         this.serviceType = serviceType;
         this.serviceInstances = serviceInstances;
@@ -34,7 +34,7 @@ public class ServiceCluster<STATUS> {
     }
 
     @JsonProperty("serviceInstances")
-    public Set<ServiceInstance<STATUS>> serviceInstances() {
+    public Set<ServiceInstance> serviceInstances() {
         return serviceInstances;
     }
 
@@ -51,7 +51,7 @@ public class ServiceCluster<STATUS> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ServiceCluster<?> that = (ServiceCluster<?>) o;
+        ServiceCluster that = (ServiceCluster) o;
         return Objects.equals(clusterId, that.clusterId) &&
                 Objects.equals(serviceType, that.serviceType) &&
                 Objects.equals(serviceInstances, that.serviceInstances);

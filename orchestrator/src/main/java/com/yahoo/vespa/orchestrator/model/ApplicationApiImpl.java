@@ -10,7 +10,6 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
 
 public class ApplicationApiImpl implements ApplicationApi {
-    private final ApplicationInstance<ServiceMonitorStatus> applicationInstance;
+    private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
     private final MutableStatusRegistry hostStatusService;
     private final List<ClusterApi> clusterInOrder;
@@ -118,7 +117,7 @@ public class ApplicationApiImpl implements ApplicationApi {
             (NodeGroup nodeGroup,
              Map<HostName, HostStatus> hostStatusMap,
              ClusterControllerClientFactory clusterControllerClientFactory) {
-        Set<ServiceCluster<ServiceMonitorStatus>> clustersInGroup = getServiceClustersInGroup(nodeGroup);
+        Set<ServiceCluster> clustersInGroup = getServiceClustersInGroup(nodeGroup);
         return clustersInGroup.stream()
                 .map(serviceCluster -> new ClusterApiImpl(
                         serviceCluster,
@@ -138,12 +137,12 @@ public class ApplicationApiImpl implements ApplicationApi {
         return lhs.clusterId().toString().compareTo(rhs.clusterId().toString());
     }
 
-    private static Set<ServiceCluster<ServiceMonitorStatus>> getServiceClustersInGroup(NodeGroup nodeGroup) {
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance = nodeGroup.getApplication();
+    private static Set<ServiceCluster> getServiceClustersInGroup(NodeGroup nodeGroup) {
+        ApplicationInstance applicationInstance = nodeGroup.getApplication();
 
-        Set<ServiceCluster<ServiceMonitorStatus>> serviceClustersInGroup = new HashSet<>();
-        for (ServiceCluster<ServiceMonitorStatus> cluster : applicationInstance.serviceClusters()) {
-            for (ServiceInstance<ServiceMonitorStatus> instance : cluster.serviceInstances()) {
+        Set<ServiceCluster> serviceClustersInGroup = new HashSet<>();
+        for (ServiceCluster cluster : applicationInstance.serviceClusters()) {
+            for (ServiceInstance instance : cluster.serviceInstances()) {
                 if (nodeGroup.contains(instance.hostName())) {
                     serviceClustersInGroup.add(cluster);
                     break;

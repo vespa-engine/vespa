@@ -59,7 +59,7 @@ public class ServiceMonitorImpl implements ServiceMonitor {
 
     @Override
     public Map<ApplicationInstanceReference,
-            ApplicationInstance<ServiceMonitorStatus>> queryStatusOfAllApplicationInstances() {
+            ApplicationInstance> queryStatusOfAllApplicationInstances() {
         return serviceModelCache.get().getAllApplicationInstances();
     }
 }

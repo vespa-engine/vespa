@@ -4,6 +4,7 @@ package com.yahoo.vespa.service.monitor;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.vespa.applicationmodel.ConfigId;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,30 +44,30 @@ public class SlobrokMonitorManagerTest {
     @Test
     public void testGetStatus_ApplicationNotInSlobrok() {
         when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(true);
-        assertEquals(ServiceMonitorStatus.DOWN, getStatus("topleveldispatch"));
+        assertEquals(ServiceStatus.DOWN, getStatus("topleveldispatch"));
     }
 
     @Test
     public void testGetStatus_ApplicationInSlobrok() {
         slobrokMonitorManager.applicationActivated(superModel, application);
         when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(true);
-        assertEquals(ServiceMonitorStatus.UP, getStatus("topleveldispatch"));
+        assertEquals(ServiceStatus.UP, getStatus("topleveldispatch"));
     }
 
     @Test
     public void testGetStatus_ServiceNotInSlobrok() {
         slobrokMonitorManager.applicationActivated(superModel, application);
         when(slobrokMonitor.registeredInSlobrok("config.id")).thenReturn(false);
-        assertEquals(ServiceMonitorStatus.DOWN, getStatus("topleveldispatch"));
+        assertEquals(ServiceStatus.DOWN, getStatus("topleveldispatch"));
     }
 
     @Test
     public void testGetStatus_NotChecked() {
-        assertEquals(ServiceMonitorStatus.NOT_CHECKED, getStatus("slobrok"));
+        assertEquals(ServiceStatus.NOT_CHECKED, getStatus("slobrok"));
         verify(slobrokMonitor, times(0)).registeredInSlobrok(any());
     }
 
-    private ServiceMonitorStatus getStatus(String serviceType) {
+    private ServiceStatus getStatus(String serviceType) {
         return slobrokMonitorManager.getStatus(
                 application.getApplicationId(),
                 new ServiceType(serviceType),

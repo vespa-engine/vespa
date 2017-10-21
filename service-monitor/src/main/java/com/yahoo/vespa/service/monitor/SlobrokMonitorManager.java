@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ConfigId;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 import java.util.HashMap;
@@ -54,22 +55,22 @@ public class SlobrokMonitorManager implements SuperModelListener {
         }
     }
 
-    ServiceMonitorStatus getStatus(ApplicationId applicationId,
-                                   ServiceType serviceType,
-                                   ConfigId configId) {
+    ServiceStatus getStatus(ApplicationId applicationId,
+			    ServiceType serviceType,
+			    ConfigId configId) {
         Optional<String> slobrokServiceName = findSlobrokServiceName(serviceType, configId);
         if (slobrokServiceName.isPresent()) {
             synchronized (monitor) {
                 SlobrokMonitor2 slobrokMonitor = slobrokMonitors.get(applicationId);
                 if (slobrokMonitor != null &&
                         slobrokMonitor.registeredInSlobrok(slobrokServiceName.get())) {
-                    return ServiceMonitorStatus.UP;
+                    return ServiceStatus.UP;
                 } else {
-                    return ServiceMonitorStatus.DOWN;
+                    return ServiceStatus.DOWN;
                 }
             }
         } else {
-            return ServiceMonitorStatus.NOT_CHECKED;
+            return ServiceStatus.NOT_CHECKED;
         }
     }
 

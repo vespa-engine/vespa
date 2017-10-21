@@ -6,7 +6,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -29,17 +28,17 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
     }
 
     @Override
-    public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
-        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
+    public Optional<ApplicationInstance> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
+        Map<ApplicationInstanceReference, ApplicationInstance> instanceMap
                 = serviceMonitor.queryStatusOfAllApplicationInstances();
         return Optional.ofNullable(instanceMap.get(applicationInstanceReference));
     }
 
     @Override
-    public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(HostName hostName) {
-        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap 
+    public Optional<ApplicationInstance> findInstanceByHost(HostName hostName) {
+        Map<ApplicationInstanceReference, ApplicationInstance> instanceMap 
                 = serviceMonitor.queryStatusOfAllApplicationInstances();
-        List<ApplicationInstance<ServiceMonitorStatus>> applicationInstancesUsingHost = instanceMap.entrySet().stream()
+        List<ApplicationInstance> applicationInstancesUsingHost = instanceMap.entrySet().stream()
                 .filter(entry -> applicationInstanceUsesHost(entry.getValue(), hostName))
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
@@ -59,7 +58,7 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
         return serviceMonitor.queryStatusOfAllApplicationInstances().keySet();
     }
 
-    private static boolean applicationInstanceUsesHost(ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+    private static boolean applicationInstanceUsesHost(ApplicationInstance applicationInstance,
                                                        HostName hostName) {
         return applicationInstance.serviceClusters().stream()
                 .anyMatch(serviceCluster ->

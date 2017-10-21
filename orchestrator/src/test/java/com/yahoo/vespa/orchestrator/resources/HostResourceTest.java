@@ -23,7 +23,6 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
 import javax.ws.rs.BadRequestException;
@@ -70,7 +69,7 @@ public class HostResourceTest {
     static {
         when(mockInstanceLookupService.findInstanceByHost(any()))
                 .thenReturn(Optional.of(
-                        new ApplicationInstance<>(
+                        new ApplicationInstance(
                                 TENANT_ID,
                                 APPLICATION_INSTANCE_ID,
                                 makeServiceClusterSet())));
@@ -79,13 +78,13 @@ public class HostResourceTest {
 
     private static final InstanceLookupService alwaysEmptyInstanceLookUpService = new InstanceLookupService() {
         @Override
-        public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(
+        public Optional<ApplicationInstance> findInstanceById(
                 final ApplicationInstanceReference applicationInstanceReference) {
             return Optional.empty();
         }
 
         @Override
-        public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(final HostName hostName) {
+        public Optional<ApplicationInstance> findInstanceByHost(final HostName hostName) {
             return Optional.empty();
         }
 
@@ -98,7 +97,7 @@ public class HostResourceTest {
     private static class AlwaysAllowPolicy implements Policy {
         @Override
         public void grantSuspensionRequest(
-                ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+                ApplicationInstance applicationInstance,
                 HostName hostName,
                 MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
 
@@ -118,7 +117,7 @@ public class HostResourceTest {
 
         @Override
         public void releaseSuspensionGrant(
-                ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+                ApplicationInstance applicationInstance,
                 HostName hostName,
                 MutableStatusRegistry hostStatusRegistry) {
         }
@@ -199,7 +198,7 @@ public class HostResourceTest {
     private static class AlwaysFailPolicy implements Policy {
         @Override
         public void grantSuspensionRequest(
-                ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+                ApplicationInstance applicationInstance,
                 HostName hostName,
                 MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
@@ -222,7 +221,7 @@ public class HostResourceTest {
 
         @Override
         public void releaseSuspensionGrant(
-                ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+                ApplicationInstance applicationInstance,
                 HostName hostName,
                 MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
