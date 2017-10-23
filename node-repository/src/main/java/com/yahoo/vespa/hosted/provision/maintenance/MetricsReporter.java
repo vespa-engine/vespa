@@ -51,10 +51,6 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void updateNodeMetrics(Node node) {
-        // Dimensions automatically added: host, vespaVersion, zone, role, and colo.
-        // 'vespaVersion' is the vespaVersion for the config server and not related
-        // to the node we're making metric for now.
-
         Metric.Context context;
 
         Optional<Allocation> allocation = node.allocation();
