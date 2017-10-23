@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.athenz.identityproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.IdentityDocument;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.SignedIdentityDocument;
@@ -22,11 +23,17 @@ public class IdentityDocumentGenerator {
     private final NodeRepository nodeRepository;
     private final Zone zone;
     private final KeyProvider keyProvider;
+    private final String dnsSuffix;
+    private final String providerService;
+    private final String ztsUrl;
 
-    public IdentityDocumentGenerator(NodeRepository nodeRepository, Zone zone, KeyProvider keyProvider) {
+    public IdentityDocumentGenerator(AthenzProviderServiceConfig config, NodeRepository nodeRepository, Zone zone, KeyProvider keyProvider) {
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;
+        this.dnsSuffix = config.certDnsSuffix();
+        this.providerService = config.serviceName();
+        this.ztsUrl = config.ztsUrl();
     }
 
     public String generateSignedIdentityDocument(String hostname) {
@@ -49,16 +56,20 @@ public class IdentityDocumentGenerator {
                     encodedIdentityDocument,
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
+                    identityDocument.providerUniqueId.asString(),
+                    dnsSuffix,
+                    providerService,
+                    ztsUrl,
                     SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION
             );
             return Utils.getMapper().writeValueAsString(signedIdentityDocument);
         } catch (Exception e) {
-            throw new RuntimeException("Exception generating identity document: " + e.getMessage());
+            throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }
     }
 
     private IdentityDocument generateIdDocument(Node node) {
-        Allocation allocation = node.allocation().get();
+        Allocation allocation = node.allocation().orElseThrow(() -> new RuntimeException("No allocation for node " + node.hostname()));
         ProviderUniqueId providerUniqueId = new ProviderUniqueId(
                 allocation.owner().tenant().value(),
                 allocation.owner().application().value(),
@@ -74,6 +85,5 @@ public class IdentityDocumentGenerator {
                 node.hostname(),
                 Instant.now());
     }
-
 }
 

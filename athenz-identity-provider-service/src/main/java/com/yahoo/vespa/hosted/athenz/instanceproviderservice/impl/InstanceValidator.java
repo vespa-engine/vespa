@@ -43,7 +43,7 @@ public class InstanceValidator {
         return false;
     }
 
-    private static boolean isSignatureValid(PublicKey publicKey, String rawIdentityDocument, String signature) {
+    public static boolean isSignatureValid(PublicKey publicKey, String rawIdentityDocument, String signature) {
         try {
             Signature signatureVerifier = Signature.getInstance("SHA512withRSA");
             signatureVerifier.initVerify(publicKey);

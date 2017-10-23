@@ -23,17 +23,29 @@ public class SignedIdentityDocument {
     @JsonIgnore public final IdentityDocument identityDocument;
     @JsonProperty("signature") public final String signature;
     @JsonProperty("signing-key-version") public final int signingKeyVersion;
+    @JsonProperty("provider-unique-id") public final String providerUniqueId; // String representation
+    @JsonProperty("dns-suffix") public final String dnsSuffix;
+    @JsonProperty("provider-service") public final String providerService;
+    @JsonProperty("zts-endpoint") public final String ztsEndpoint;
     @JsonProperty("document-version") public final int documentVersion;
 
     @JsonCreator
     public SignedIdentityDocument(@JsonProperty("identity-document") String rawIdentityDocument,
                                   @JsonProperty("signature") String signature,
                                   @JsonProperty("signing-key-version") int signingKeyVersion,
+                                  @JsonProperty("provider-unique-id") String providerUniqueId,
+                                  @JsonProperty("dns-suffix") String dnsSuffix,
+                                  @JsonProperty("provider-service") String providerService,
+                                  @JsonProperty("zts-endpoint") String ztsEndpoint,
                                   @JsonProperty("document-version") int documentVersion) {
         this.rawIdentityDocument = rawIdentityDocument;
         this.identityDocument = parseIdentityDocument(rawIdentityDocument);
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
+        this.providerUniqueId = providerUniqueId;
+        this.dnsSuffix = dnsSuffix;
+        this.providerService = providerService;
+        this.ztsEndpoint = ztsEndpoint;
         this.documentVersion = documentVersion;
     }
 

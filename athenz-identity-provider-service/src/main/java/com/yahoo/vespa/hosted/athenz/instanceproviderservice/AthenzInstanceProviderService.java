@@ -58,7 +58,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                                   ScheduledExecutorService scheduler, NodeRepository nodeRepository, Zone zone) {
         this.scheduler = scheduler;
         SslContextFactory sslContextFactory = createSslContextFactory();
-        this.jetty = createJettyServer(config.port(), config.apiPath(), keyProvider, sslContextFactory,
+        this.jetty = createJettyServer(config, keyProvider, sslContextFactory,
                                        nodeRepository, zone);
         AthenzCertificateUpdater reloader = new AthenzCertificateUpdater(
                 sslContextFactory, keyProvider, config);
@@ -70,20 +70,20 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         }
     }
 
-    private static Server createJettyServer(int port, String apiPath,
+    private static Server createJettyServer(AthenzProviderServiceConfig config,
                                             KeyProvider keyProvider,
                                             SslContextFactory sslContextFactory,
                                             NodeRepository nodeRepository,
                                             Zone zone)  {
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server, sslContextFactory);
-        connector.setPort(port);
+        connector.setPort(config.port());
         server.addConnector(connector);
 
         ServletHandler handler = new ServletHandler();
         ProviderServiceServlet providerServiceServlet =
-                new ProviderServiceServlet(new InstanceValidator(keyProvider), new IdentityDocumentGenerator(nodeRepository, zone, keyProvider));
-        handler.addServletWithMapping(new ServletHolder(providerServiceServlet), apiPath);
+                new ProviderServiceServlet(new InstanceValidator(keyProvider), new IdentityDocumentGenerator(config, nodeRepository, zone, keyProvider));
+        handler.addServletWithMapping(new ServletHolder(providerServiceServlet), config.apiPath());
         handler.addServletWithMapping(StatusServlet.class, "/status.html");
         server.setHandler(handler);
         return server;

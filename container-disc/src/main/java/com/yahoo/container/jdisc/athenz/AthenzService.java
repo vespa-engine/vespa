@@ -43,5 +43,4 @@ public class AthenzService {
             throw new RuntimeException(e);
         }
     }
-
 }

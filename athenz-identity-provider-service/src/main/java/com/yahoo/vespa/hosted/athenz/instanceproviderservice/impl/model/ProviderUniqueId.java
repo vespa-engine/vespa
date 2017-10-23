@@ -41,6 +41,10 @@ public class ProviderUniqueId {
         this.clusterIndex = clusterIndex;
     }
 
+    public String asString() {
+        return String.format("%s.%s.%s.%s.%s.%s.%d", tenant, application, environment, region, instance, clusterId, clusterIndex);
+    }
+
     @Override
     public String toString() {
         return "ProviderUniqueId{" +
