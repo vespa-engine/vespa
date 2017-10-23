@@ -425,6 +425,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
         _packets.insert(std::make_pair(firstSerial, std::move(packet)));
         _skipList.push_back(SkipInfo(firstSerial, firstPos));
     }
+    sync();
 }
 
 void DomainPart::sync()
