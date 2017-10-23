@@ -336,6 +336,14 @@ DenseTensorView::apply(const eval::BinaryOperation &op, const Tensor &arg) const
 }
 
 Tensor::UP
+DenseTensorView::join(join_fun_t function, const Tensor &arg) const
+{
+    return dense::apply(*this, arg,
+                        [function](double lhsValue, double rhsValue)
+                        { return function(lhsValue, rhsValue); });
+}
+
+Tensor::UP
 DenseTensorView::reduce(const eval::BinaryOperation &op,
                         const std::vector<vespalib::string> &dimensions) const
 {

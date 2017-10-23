@@ -59,6 +59,8 @@ public:
     virtual Tensor::UP sum(const vespalib::string &dimension) const override;
     virtual Tensor::UP apply(const eval::BinaryOperation &op,
                              const Tensor &arg) const override;
+    virtual Tensor::UP join(join_fun_t function,
+                            const Tensor &arg) const override;
     virtual Tensor::UP reduce(const eval::BinaryOperation &op,
                               const std::vector<vespalib::string> &dimensions)
         const override;
