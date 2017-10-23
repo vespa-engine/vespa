@@ -68,7 +68,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET API root
         tester.assertResponse(request("/application/v4/", "", Request.Method.GET),
                               new File("root.json"));
-        // GET Athenz domains
+        // GET athens domains
         tester.assertResponse(request("/application/v4/athensDomain/", "", Request.Method.GET),
                               new File("athensDomain-list.json"));
         // GET OpsDB properties
@@ -234,7 +234,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/", "", Request.Method.OPTIONS),
                               "");
 
-        // Add another Athenz domain, so we can try to create more tenants
+        // Add another Athens domain, so we can try to create more tenants
         addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2",
@@ -565,7 +565,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Principal 'mytenant' is not a screwdriver principal, and does not have deploy access to application 'tenant1.application1'\"}", 
                               403);
 
-        // Deleting an application for an Athenz domain the user is not admin for is disallowed
+        // Deleting an application for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1",
                                       "",
                                       Request.Method.DELETE,
@@ -581,7 +581,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "",
                               200);
 
-        // Updating a tenant for an Athenz domain the user is not admin for is disallowed
+        // Updating a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1",
                                       "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}",
                                       Request.Method.PUT,
@@ -589,16 +589,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"User othertenant does not have write access to tenant tenant1\"}",
                               403);
         
-        // Change Athenz domain
+        // Change Athens domain
         addTenantAthenzDomain("domain2", "mytenant");
         tester.assertResponse(request("/application/v4/tenant/tenant1",
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property1\"}",
                                       Request.Method.PUT,
                                       "domain1", authorizedUser),
-                              "{\"type\":\"ATHENZ\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
+                              "{\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
                               200);
 
-        // Deleting a tenant for an Athenz domain the user is not admin for is disallowed
+        // Deleting a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1",
                                       "",
                                       Request.Method.DELETE,
@@ -638,7 +638,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             
     }
     
-    /** Make a request with (Athenz) user domain1.mytenant1 */
+    /** Make a request with (athens) user domain1.mytenant1 */
     private Request request(String path, String data, Request.Method method) {
         return request(path, data.getBytes(StandardCharsets.UTF_8), method, "domain1", "mytenant", "application/json");
     }
@@ -673,12 +673,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzDomain athenzDomain = new AthenzDomain(domainName);
-        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athenzDomain);
+        AthenzDomain athensDomain = new AthenzDomain(domainName);
+        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
         domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
         mock.getSetup().addDomain(domain);
-        return athenzDomain;
+        return athensDomain;
     }
 
     /**
