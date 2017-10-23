@@ -22,6 +22,17 @@ T sumT(const V & v) {
     return sum;
 }
 
+template <typename T, size_t C>
+T sumR(const T * v) {
+    if (C == 1) {
+        return v[0];
+    } else if (C == 2) {
+        return v[0] + v[1];
+    } else {
+        return sumR<T, C/2>(v) + sumR<T, C/2>(v+C/2);
+    }
+}
+
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
 static T computeDotProduct(const T * af, const T * bf, size_t sz) __attribute__((noinline));
 
@@ -47,9 +58,8 @@ T computeDotProduct(const T * af, const T * bf, size_t sz)
     for (size_t i(numChunks*ChunkSize); i < sz; i++) {
         sum += af[i] * bf[i];
     }
-    for (size_t i(1); i < VectorsPerChunk; i++) {
-        partial[0] += partial[i];
-    }
+    partial[0] = sumR<V, VectorsPerChunk>(partial);
+
     return sum + sumT<T, V>(partial[0]);
 }
 
