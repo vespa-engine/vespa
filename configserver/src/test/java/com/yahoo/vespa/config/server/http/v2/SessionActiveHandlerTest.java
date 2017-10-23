@@ -93,7 +93,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        localRepo = new LocalSessionRepo(applicationRepo, Clock.systemUTC());
+        localRepo = new LocalSessionRepo(Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         pathProvider = new PathProvider(Path.createRoot());
         hostProvisioner = new MockProvisioner();

@@ -59,7 +59,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() throws Exception {
         applicationRepo = new MemoryTenantApplications();
-        localSessionRepo = new LocalSessionRepo(applicationRepo, Clock.systemUTC());
+        localSessionRepo = new LocalSessionRepo(Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";
         tenantMessage = ",\"tenant\":\"test\"";

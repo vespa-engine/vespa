@@ -117,8 +117,7 @@ public class TenantBuilder {
 
 	private void createLocalSessionRepo() {
         if (localSessionRepo == null) {
-            localSessionRepo = new LocalSessionRepo(tenantFileSystemDirs, localSessionLoader, applicationRepo,
-                                                    componentRegistry.getClock(), componentRegistry.getConfigserverConfig().sessionLifetime());
+            localSessionRepo = new LocalSessionRepo(tenantFileSystemDirs, localSessionLoader, componentRegistry.getClock(), componentRegistry.getConfigserverConfig().sessionLifetime());
         }
     }
 

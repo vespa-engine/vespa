@@ -1,10 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
@@ -14,9 +11,6 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.curator.Curator;
-
-import java.time.Duration;
-import java.util.logging.Logger;
 
 /**
  * Contains all tenant-level components for a single tenant, dealing with editing sessions and
@@ -28,7 +22,6 @@ import java.util.logging.Logger;
  */
 public class Tenant implements TenantHandlerProvider {
 
-    private static final Logger log = Logger.getLogger(Tenant.class.getName());
     public static final String SESSIONS = "sessions";
     public static final String APPLICATIONS = "applications";
 

@@ -127,7 +127,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
         Tenant tenant = tenants.getTenant(application.tenant());
-        LocalSession activeSession = tenant.getLocalSessionRepo().getActiveSession(application);
+        LocalSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, timeoutBudget);
@@ -137,7 +137,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Version version = environment.isManuallyDeployed() ? Vtag.currentVersion : newSession.getVespaVersion();
                 
         return Optional.of(Deployment.unprepared(newSession,
-                                                 tenant.getLocalSessionRepo(),
+                                                 this,
                                                  tenant.getPath(),
                                                  hostProvisioner,
                                                  new ActivateLock(curator, tenant.getPath()),
@@ -147,9 +147,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                  version));
     }
 
-    public Deployment deployFromPreparedSession(LocalSession session, ActivateLock lock, LocalSessionRepo localSessionRepo, Duration timeout) {
+    private Deployment deployFromPreparedSession(LocalSession session, ActivateLock lock, Duration timeout) {
         return Deployment.prepared(session,
-                                   localSessionRepo,
+                                   this,
                                    hostProvisioner,
                                    lock,
                                    timeout, 
@@ -274,12 +274,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   boolean ignoreLockFailure,
                                   boolean ignoreSessionStaleFailure) {
         LocalSession localSession = getLocalSession(tenant, sessionId);
-        LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         ActivateLock activateLock = tenant.getActivateLock();
-        // TODO: Get rid of the activateLock and localSessionRepo arguments in deployFromPreparedSession
+        // TODO: Get rid of the activateLock argument in deployFromPreparedSession
         Deployment deployment = deployFromPreparedSession(localSession,
                                                           activateLock,
-                                                          localSessionRepo,
                                                           timeoutBudget.timeLeft());
         deployment.setIgnoreLockFailure(ignoreLockFailure);
         deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
@@ -385,4 +383,22 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return getLocalSession(tenant, applicationRepo.getSessionIdForApplication(applicationId));
     }
+
+    /**
+     * Gets the active Session for the given application id.
+     *
+     * @return the active session, or null if there is no active session for the given application id.
+     */
+    public LocalSession getActiveSession(ApplicationId applicationId) {
+        return getActiveSession(tenants.getTenant(applicationId.tenant()), applicationId);
+    }
+
+    private LocalSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        if (applicationRepo.listApplications().contains(applicationId)) {
+            return tenant.getLocalSessionRepo().getSession(applicationRepo.getSessionIdForApplication(applicationId));
+        }
+        return null;
+    }
+
 }
