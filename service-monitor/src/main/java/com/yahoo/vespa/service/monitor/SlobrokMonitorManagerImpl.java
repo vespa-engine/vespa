@@ -26,7 +26,7 @@ public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokMon
     private final Object monitor = new Object();
     private final HashMap<ApplicationId, SlobrokMonitor> slobrokMonitors = new HashMap<>();
 
-    SlobrokMonitorManagerImpl() {
+    public SlobrokMonitorManagerImpl() {
         this(() -> new SlobrokMonitor());
     }
 
