@@ -424,7 +424,7 @@ RoutableFactories50::GetBucketListMessageFactory::doEncode(const DocumentMessage
 DocumentReply::UP
 RoutableFactories50::GetBucketListReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentReply::UP ret(new GetBucketListReply(BucketSpace::placeHolder()));
+    DocumentReply::UP ret(new GetBucketListReply());
     GetBucketListReply &reply = static_cast<GetBucketListReply&>(*ret);
 
     int32_t len = decodeInt(buf);

@@ -100,7 +100,7 @@ GetOperation::sendForChecksum(DistributorMessageSender& sender,
     const int best = findBestUnsentTarget(res);
 
     if (best != -1) {
-        document::Bucket bucket(BucketSpace::placeHolder(), id);
+        document::Bucket bucket(_msg->getBucket().getBucketSpace(), id);
         std::shared_ptr<api::GetCommand> command(
                 std::make_shared<api::GetCommand>(
                         bucket,

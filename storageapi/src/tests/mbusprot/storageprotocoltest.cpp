@@ -16,6 +16,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -30,6 +31,7 @@ using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 using storage::lib::ClusterState;
 using vespalib::string;
 
@@ -389,7 +391,7 @@ StorageProtocolTest::testRequestBucketInfo51()
         std::vector<document::BucketId> ids;
         ids.push_back(document::BucketId(3));
         ids.push_back(document::BucketId(7));
-        RequestBucketInfoCommand::SP cmd(new RequestBucketInfoCommand(ids));
+        RequestBucketInfoCommand::SP cmd(new RequestBucketInfoCommand(makeBucketSpace(), ids));
         RequestBucketInfoCommand::SP cmd2(copyCommand(cmd, _version5_1));
         CPPUNIT_ASSERT_EQUAL(ids, cmd2->getBuckets());
         CPPUNIT_ASSERT(!cmd2->hasSystemState());
@@ -399,6 +401,7 @@ StorageProtocolTest::testRequestBucketInfo51()
     {
         ClusterState state("distributor:3 .1.s:d");
         RequestBucketInfoCommand::SP cmd(new RequestBucketInfoCommand(
+                                                 makeBucketSpace(),
                                                  3, state, "14"));
         RequestBucketInfoCommand::SP cmd2(copyCommand(cmd, _version5_1));
         CPPUNIT_ASSERT(cmd2->hasSystemState());
@@ -657,7 +660,7 @@ StorageProtocolTest::testCreateVisitor51()
     buckets.push_back(document::BucketId(16, 2));
 
     CreateVisitorCommand::SP cmd(
-            new CreateVisitorCommand("library", "id", "doc selection"));
+            new CreateVisitorCommand(makeBucketSpace(), "library", "id", "doc selection"));
     cmd->setControlDestination("controldest");
     cmd->setDataDestination("datadest");
     cmd->setVisitorCmdId(1);

@@ -440,8 +440,10 @@ ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
 }
 
 RequestBucketInfoCommand::RequestBucketInfoCommand(
+        document::BucketSpace bucketSpace,
         const std::vector<document::BucketId>& buckets)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
+      _bucketSpace(bucketSpace),
       _buckets(buckets),
       _state(),
       _distributor(0xFFFF)
@@ -449,9 +451,11 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 }
 
 RequestBucketInfoCommand::RequestBucketInfoCommand(
+        document::BucketSpace bucketSpace,
         uint16_t distributor, const lib::ClusterState& state,
         const vespalib::stringref & distributionHash)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
+      _bucketSpace(bucketSpace),
       _buckets(),
       _state(new lib::ClusterState(state)),
       _distributor(distributor),
@@ -460,8 +464,10 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 }
 
 RequestBucketInfoCommand::RequestBucketInfoCommand(
+        document::BucketSpace bucketSpace,
         uint16_t distributor, const lib::ClusterState& state)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
+      _bucketSpace(bucketSpace),
       _buckets(),
       _state(new lib::ClusterState(state)),
       _distributor(distributor),
