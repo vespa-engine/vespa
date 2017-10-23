@@ -85,6 +85,7 @@ public:
 
     VisitorId getVisitorId() const { return _visitorId; }
     uint32_t getVisitorCmdId() const { return _visitorCmdId; }
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     const vespalib::string & getLibraryName() const { return _libName; }
     const vespalib::string & getInstanceId() const { return _instanceId; }
     const vespalib::string & getControlDestination() const
