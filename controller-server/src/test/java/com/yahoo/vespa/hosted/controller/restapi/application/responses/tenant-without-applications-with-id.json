@@ -1,5 +1,5 @@
 {
-  "type": "ATHENZ",
+  "type": "ATHENS",
   "athensDomain": "domain2",
   "property": "property2",
   "propertyId": "1234",

@@ -607,7 +607,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 controller.tenants().updateTenant(updatedTenant, authorizer.getNToken(request));
                 break;
             }
-            case ATHENZ: {
+            case ATHENS: {
                 if (requestData.field("userGroup").valid())
                     throw new BadRequestException("Cannot set OpsDB user group to Athens tenant");
                 updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName), 

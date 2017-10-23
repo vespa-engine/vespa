@@ -113,7 +113,7 @@ public class Authorizer {
 
     private boolean isTenantAdmin(UserId userId, Tenant tenant) {
         switch (tenant.tenantType()) {
-            case ATHENZ:
+            case ATHENS:
                 return isAthenzTenantAdmin(userId, tenant.getAthensDomain().get());
             case OPSDB:
                 return isGroupMember(userId, tenant.getUserGroup().get());
