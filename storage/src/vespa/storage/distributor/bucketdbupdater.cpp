@@ -14,7 +14,6 @@ LOG_SETUP(".distributor.bucketdb.updater");
 
 using storage::lib::Node;
 using storage::lib::NodeType;
-using document::BucketSpace;
 
 namespace storage::distributor {
 
@@ -82,7 +81,7 @@ BucketDBUpdater::sendRequestBucketInfo(
     buckets.push_back(bucket);
 
     std::shared_ptr<api::RequestBucketInfoCommand> msg(
-            new api::RequestBucketInfoCommand(BucketSpace::placeHolder(), buckets));
+            new api::RequestBucketInfoCommand(buckets));
 
     LOG(debug,
         "Sending request bucket info command %lu for "

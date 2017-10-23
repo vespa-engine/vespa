@@ -13,13 +13,11 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/document/test/make_bucket_space.h>
 
 using namespace document;
 using namespace storage::api;
 using namespace storage::lib;
 using namespace std::string_literals;
-using document::test::makeBucketSpace;
 
 namespace storage {
 namespace distributor {
@@ -150,7 +148,7 @@ private:
                          const std::string& docSelection = "")
     {
         api::CreateVisitorCommand::SP cmd(
-                new api::CreateVisitorCommand(makeBucketSpace(), libraryName, instanceId, docSelection));
+                new api::CreateVisitorCommand(libraryName, instanceId, docSelection));
         cmd->setControlDestination("controldestination");
         cmd->setDataDestination("datadestination");
         cmd->setFieldSet("[header]");
@@ -267,8 +265,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     vespalib::string libraryName("dumpvisitor");
     vespalib::string docSelection("");
     api::CreateVisitorCommand::SP msg(
-            new api::CreateVisitorCommand(makeBucketSpace(),
-                                          libraryName,
+            new api::CreateVisitorCommand(libraryName,
                                           instanceId,
                                           docSelection));
     vespalib::string controlDestination("controldestination");
@@ -336,8 +333,7 @@ VisitorOperationTest::testShutdown()
     vespalib::string libraryName("dumpvisitor");
     vespalib::string docSelection("");
     api::CreateVisitorCommand::SP msg(
-            new api::CreateVisitorCommand(makeBucketSpace(),
-                                          libraryName,
+            new api::CreateVisitorCommand(libraryName,
                                           instanceId,
                                           docSelection));
     msg->addBucketToBeVisited(id);
@@ -365,7 +361,7 @@ VisitorOperationTest::testNoBucket()
 
     // Send create visitor
     api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
-            makeBucketSpace(), "dumpvisitor", "instance", ""));
+            "dumpvisitor", "instance", ""));
 
     CPPUNIT_ASSERT_EQUAL(std::string(
                      "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -381,7 +377,7 @@ VisitorOperationTest::testOnlySuperBucketAndProgressAllowed()
 
     // Send create visitor
     api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
-            makeBucketSpace(), "dumpvisitor", "instance", ""));
+            "dumpvisitor", "instance", ""));
     msg->addBucketToBeVisited(nullId);
     msg->addBucketToBeVisited(nullId);
     msg->addBucketToBeVisited(nullId);

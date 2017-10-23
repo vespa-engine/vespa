@@ -192,7 +192,7 @@ MultiOperationOperation::onStart(DistributorMessageSender& sender)
         }
         assert(blockSize > 4);
 
-        document::Bucket bucket(_msg->getBucket().getBucketSpace(), bucketIt->first);
+        document::Bucket bucket(BucketSpace::placeHolder(), bucketIt->first);
         //now create a MultiOperationCommand with the new DocumentList
         std::shared_ptr<api::MultiOperationCommand>
             command(new api::MultiOperationCommand(
