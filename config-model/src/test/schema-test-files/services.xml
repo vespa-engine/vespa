@@ -36,6 +36,10 @@
   </config>
 
   <jdisc id='qrsCluster_1' version='1.0'>
+    <identity>
+      <domain>mydomain</domain>
+      <service>myservice</service>
+    </identity>
     <rest-api path="jersey1">
       <components bundle="my-bundle" />
       <components bundle="other-bundle">

@@ -130,6 +130,17 @@
       <scope>provided</scope>
     </dependency>
     <!-- end WARNING -->
+    <!-- Athenz -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.athenz</groupId>
+      <artifactId>athenz-auth-core</artifactId>
+      <version>${athenz.version}</version>
+    </dependency>
   </dependencies>
   <properties>
     <!-- These versions must be the ones used by the current jersey version (see vespa_jersey2/target/dependency).

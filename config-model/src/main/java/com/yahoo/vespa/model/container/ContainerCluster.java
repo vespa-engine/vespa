@@ -7,11 +7,11 @@ import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
-import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -65,8 +65,8 @@ import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.DiscBindingsConfigGenerator;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.Servlet;
+import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
@@ -82,7 +82,6 @@ import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.utils.FileSender;
 import com.yahoo.vespaclient.config.FeederConfig;
-
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
@@ -187,6 +186,8 @@ public final class ContainerCluster
     private Optional<String> hostClusterId = Optional.empty();
     private Optional<Integer> memoryPercentage = Optional.empty();
 
+    private Identity identity;
+
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
         @Override
         public boolean acceptComponent(Component component) { return true; }
@@ -237,6 +238,9 @@ public final class ContainerCluster
 
     public void setZone(Zone zone) {
         this.zone = zone;
+    }
+    public Zone getZone() {
+        return zone;
     }
 
     public void addMetricStateHandler() {
@@ -835,6 +839,15 @@ public final class ContainerCluster
      * or empty if this is not specified by the application.
      */
     public Optional<Integer> getMemoryPercentage() { return memoryPercentage; }
+
+    public Optional<Identity> getIdentity() {
+        return Optional.ofNullable(identity);
+    }
+
+    public void setIdentity(Identity identity) {
+        this.identity = identity;
+        addSimpleComponent("com.yahoo.container.jdisc.athenz.AthenzIdentityProvider");
+    }
 
     @Override
     public String toString() {
