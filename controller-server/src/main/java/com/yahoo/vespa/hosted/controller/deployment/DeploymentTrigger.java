@@ -132,6 +132,7 @@ public class DeploymentTrigger {
         if ( ! application.deploying().isPresent()) return;
         for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
             JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+            if (jobStatus == null) continue; // never run
             if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
             // Collect the subset of next jobs which have not run with the last changes
