@@ -81,7 +81,7 @@ public class IdentityDocumentGenerator {
 
         return new IdentityDocument(
                 providerUniqueId,
-                "localhost",
+                "localhost", // TODO: Add configserver hostname
                 node.hostname(),
                 Instant.now());
     }
