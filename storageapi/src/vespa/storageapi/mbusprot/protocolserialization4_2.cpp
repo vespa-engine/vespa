@@ -562,11 +562,12 @@ ProtocolSerialization4_2::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
 {
+    BucketSpace bucketSpace(BucketSpace::placeHolder());
     vespalib::stringref libraryName = SH::getString(buf);
     vespalib::stringref instanceId = SH::getString(buf);
     vespalib::stringref selection = SH::getString(buf);
     api::CreateVisitorCommand::UP msg(
-            new api::CreateVisitorCommand(libraryName, instanceId, selection));
+            new api::CreateVisitorCommand(bucketSpace, libraryName, instanceId, selection));
     msg->setVisitorCmdId(SH::getInt(buf));
     msg->setControlDestination(SH::getString(buf));
     msg->setDataDestination(SH::getString(buf));

@@ -10,8 +10,10 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 
 namespace storage {
 namespace distributor {
@@ -198,7 +200,7 @@ IdealStateManagerTest::testBlockIdealStateOpsOnFullRequestBucketInfo()
     // sent to the entire node. It will then use a null bucketid.
     {
         std::shared_ptr<api::RequestBucketInfoCommand> msg(
-                new api::RequestBucketInfoCommand(buckets));
+                new api::RequestBucketInfoCommand(makeBucketSpace(), buckets));
         msg->setAddress(
                 api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 4));
         tracker.insert(msg);
@@ -220,7 +222,7 @@ IdealStateManagerTest::testBlockIdealStateOpsOnFullRequestBucketInfo()
     // Don't block on null-bucket messages that aren't RequestBucketInfo.
     {
         std::shared_ptr<api::CreateVisitorCommand> msg(
-                new api::CreateVisitorCommand("foo", "bar", "baz"));
+                new api::CreateVisitorCommand(makeBucketSpace(), "foo", "bar", "baz"));
         msg->setAddress(
                 api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 7));
         tracker.insert(msg);

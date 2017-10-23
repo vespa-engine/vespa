@@ -2,7 +2,7 @@
 #pragma once
 
 #include "documentreply.h"
-#include <vespa/document/bucket/bucket.h>
+#include <vespa/document/bucket/bucketid.h>
 
 namespace documentapi {
 
@@ -20,14 +20,13 @@ public:
     };
 
 private:
-    document::BucketSpace   _bucketSpace;
     std::vector<BucketInfo> _buckets;
 
 public:
     /**
      * Constructs a new reply with no content.
      */
-    GetBucketListReply(document::BucketSpace bucketSpace);
+    GetBucketListReply();
 
     /**
      * Returns the bucket state contained in this.

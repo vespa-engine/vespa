@@ -16,7 +16,7 @@ GetBucketListMessage::GetBucketListMessage(const document::Bucket &bucket) :
 DocumentReply::UP
 GetBucketListMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new GetBucketListReply(_bucket.getBucketSpace()));
+    return DocumentReply::UP(new GetBucketListReply());
 }
 
 uint32_t

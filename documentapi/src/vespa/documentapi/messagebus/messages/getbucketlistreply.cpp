@@ -23,9 +23,8 @@ GetBucketListReply::BucketInfo::operator==(const GetBucketListReply::BucketInfo 
     return _bucket == rhs._bucket && _bucketInformation == rhs._bucketInformation;
 }
 
-GetBucketListReply::GetBucketListReply(document::BucketSpace bucketSpace) :
+GetBucketListReply::GetBucketListReply() :
     DocumentReply(DocumentProtocol::REPLY_GETBUCKETLIST),
-    _bucketSpace(bucketSpace),
     _buckets()
 {
     // empty
