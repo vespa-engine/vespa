@@ -23,12 +23,12 @@ public class ServiceMonitorImpl implements ServiceMonitor {
 
     private final Zone zone;
     private final List<String> configServerHosts;
-    private final SlobrokMonitorManager slobrokMonitorManager = new SlobrokMonitorManager();
     private final ServiceModelCache serviceModelCache;
 
     @Inject
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
                               ConfigserverConfig configserverConfig,
+                              SlobrokMonitorManagerImpl slobrokMonitorManager,
                               Metric metric,
                               Timer timer) {
         this.zone = superModelProvider.getZone();
@@ -58,8 +58,7 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     }
 
     @Override
-    public Map<ApplicationInstanceReference,
-            ApplicationInstance> queryStatusOfAllApplicationInstances() {
+    public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         return serviceModelCache.get().getAllApplicationInstances();
     }
 }

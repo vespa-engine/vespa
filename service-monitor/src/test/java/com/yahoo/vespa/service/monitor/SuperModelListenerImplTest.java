@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 public class SuperModelListenerImplTest {
     @Test
     public void sanityCheck() {
-        SlobrokMonitorManager slobrokMonitorManager = mock(SlobrokMonitorManager.class);
+        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         ServiceMonitorMetrics metrics = mock(ServiceMonitorMetrics.class);
         ModelGenerator modelGenerator = mock(ModelGenerator.class);
         Zone zone = mock(Zone.class);

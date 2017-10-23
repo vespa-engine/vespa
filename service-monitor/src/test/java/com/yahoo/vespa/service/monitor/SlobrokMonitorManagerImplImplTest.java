@@ -19,14 +19,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SlobrokMonitorManagerTest {
+public class SlobrokMonitorManagerImplImplTest {
     // IntelliJ complains if parametrized type is specified, Maven complains if not specified.
     @SuppressWarnings("unchecked")
-    private final Supplier<SlobrokMonitor2> slobrokMonitorFactory = mock(Supplier.class);
+    private final Supplier<SlobrokMonitor> slobrokMonitorFactory = mock(Supplier.class);
 
-    private final SlobrokMonitorManager slobrokMonitorManager =
-            new SlobrokMonitorManager(slobrokMonitorFactory);
-    private final SlobrokMonitor2 slobrokMonitor = mock(SlobrokMonitor2.class);
+    private final SlobrokMonitorManagerImpl slobrokMonitorManager =
+            new SlobrokMonitorManagerImpl(slobrokMonitorFactory);
+    private final SlobrokMonitor slobrokMonitor = mock(SlobrokMonitor.class);
     private final SuperModel superModel = mock(SuperModel.class);
     private final ApplicationInfo application = mock(ApplicationInfo.class);
 

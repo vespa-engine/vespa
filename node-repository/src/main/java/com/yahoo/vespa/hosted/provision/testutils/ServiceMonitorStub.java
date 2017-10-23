@@ -67,7 +67,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
     }
 
     @Override
-    public Map<ApplicationInstanceReference, ApplicationInstance> queryStatusOfAllApplicationInstances() {
+    public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         // Convert apps information to the response payload to return
         Map<ApplicationInstanceReference, ApplicationInstance> status = new HashMap<>();
         for (Map.Entry<ApplicationId, MockDeployer.ApplicationContext> app : apps.entrySet()) {

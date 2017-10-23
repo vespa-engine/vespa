@@ -30,14 +30,14 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
     @Override
     public Optional<ApplicationInstance> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
         Map<ApplicationInstanceReference, ApplicationInstance> instanceMap
-                = serviceMonitor.queryStatusOfAllApplicationInstances();
+                = serviceMonitor.getAllApplicationInstances();
         return Optional.ofNullable(instanceMap.get(applicationInstanceReference));
     }
 
     @Override
     public Optional<ApplicationInstance> findInstanceByHost(HostName hostName) {
         Map<ApplicationInstanceReference, ApplicationInstance> instanceMap 
-                = serviceMonitor.queryStatusOfAllApplicationInstances();
+                = serviceMonitor.getAllApplicationInstances();
         List<ApplicationInstance> applicationInstancesUsingHost = instanceMap.entrySet().stream()
                 .filter(entry -> applicationInstanceUsesHost(entry.getValue(), hostName))
                 .map(Map.Entry::getValue)
@@ -55,7 +55,7 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
 
     @Override
     public Set<ApplicationInstanceReference> knownInstances() {
-        return serviceMonitor.queryStatusOfAllApplicationInstances().keySet();
+        return serviceMonitor.getAllApplicationInstances().keySet();
     }
 
     private static boolean applicationInstanceUsesHost(ApplicationInstance applicationInstance,

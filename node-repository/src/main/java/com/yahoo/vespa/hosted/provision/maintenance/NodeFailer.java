@@ -187,7 +187,7 @@ public class NodeFailer extends Maintainer {
      */
     private List<Node> determineActiveNodeDownStatus() {
         List<Node> downNodes = new ArrayList<>();
-        for (ApplicationInstance application : serviceMonitor.queryStatusOfAllApplicationInstances().values()) {
+        for (ApplicationInstance application : serviceMonitor.getAllApplicationInstances().values()) {
             for (ServiceCluster cluster : application.serviceClusters()) {
                 for (ServiceInstance service : cluster.serviceInstances()) {
                     Optional<Node> node = nodeRepository().getNode(service.hostName().s(), Node.State.active);
