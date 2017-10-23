@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.monitor;
 
+import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
@@ -26,6 +27,7 @@ public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokMon
     private final Object monitor = new Object();
     private final HashMap<ApplicationId, SlobrokMonitor> slobrokMonitors = new HashMap<>();
 
+    @Inject
     public SlobrokMonitorManagerImpl() {
         this(() -> new SlobrokMonitor());
     }
