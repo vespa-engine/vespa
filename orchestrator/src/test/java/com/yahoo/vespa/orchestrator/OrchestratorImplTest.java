@@ -11,7 +11,6 @@ import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.InMemoryStatusService;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +50,7 @@ public class OrchestratorImplTest {
     @Before
     public void setUp() throws Exception {
         // Extract applications and hosts from dummy instance lookup service
-        Iterator<ApplicationInstance<ServiceMonitorStatus>> iterator = DummyInstanceLookupService.getApplications().iterator();
+        Iterator<ApplicationInstance> iterator = DummyInstanceLookupService.getApplications().iterator();
         ApplicationInstanceReference app1_ref = iterator.next().reference();
         app1 = OrchestratorUtil.toApplicationId(app1_ref);
         app1_host1 = DummyInstanceLookupService.getContentHosts(app1_ref).iterator().next();
@@ -283,7 +282,7 @@ public class OrchestratorImplTest {
     }
 
     private boolean isInMaintenance(ApplicationId appId, HostName hostName) throws ApplicationIdNotFoundException {
-        for (ApplicationInstance<ServiceMonitorStatus> app : DummyInstanceLookupService.getApplications()) {
+        for (ApplicationInstance app : DummyInstanceLookupService.getApplications()) {
             if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId, new DummyInstanceLookupService()))) {
                 return clustercontroller.isInMaintenance(app, hostName);
             }

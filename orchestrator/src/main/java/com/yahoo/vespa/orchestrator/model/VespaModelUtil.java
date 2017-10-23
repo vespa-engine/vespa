@@ -40,11 +40,11 @@ public class VespaModelUtil {
     public static final ServiceType SEARCHNODE_SERVICE_TYPE = new ServiceType("searchnode");
     public static final ServiceType STORAGENODE_SERVICE_TYPE = new ServiceType("storagenode");
 
-    private static final Comparator<ServiceInstance<?>> CLUSTER_CONTROLLER_INDEX_COMPARATOR =
+    private static final Comparator<ServiceInstance> CLUSTER_CONTROLLER_INDEX_COMPARATOR =
             Comparator.comparing(serviceInstance -> VespaModelUtil.getClusterControllerIndex(serviceInstance.configId()));
 
     // @return true iff the service cluster refers to a cluster controller service cluster.
-    public static boolean isClusterController(ServiceCluster<?> cluster) {
+    public static boolean isClusterController(ServiceCluster cluster) {
         return CLUSTER_CONTROLLER_SERVICE_TYPE.equals(cluster.serviceType());
     }
 
@@ -54,14 +54,14 @@ public class VespaModelUtil {
      *
      * @return true iff the service cluster consists of storage nodes (proton or vds).
      */
-    public static boolean isStorage(ServiceCluster<?> cluster) {
+    public static boolean isStorage(ServiceCluster cluster) {
         return STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
     }
 
     /**
      * @return true iff the service cluster is a content service cluster.
      */
-    public static boolean isContent(ServiceCluster<?> cluster) {
+    public static boolean isContent(ServiceCluster cluster) {
         return DISTRIBUTOR_SERVICE_TYPE.equals(cluster.serviceType()) ||
                 SEARCHNODE_SERVICE_TYPE.equals(cluster.serviceType()) ||
                 STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
@@ -70,18 +70,18 @@ public class VespaModelUtil {
     /**
      * @return The set of all Cluster Controller service instances for the application.
      */
-    public static <T> List<HostName> getClusterControllerInstancesInOrder(ApplicationInstance<T> application,
+    public static List<HostName> getClusterControllerInstancesInOrder(ApplicationInstance application,
                                                                           ClusterId contentClusterId)
     {
-        Set<ServiceCluster<T>> controllerClusters = getClusterControllerServiceClusters(application);
+        Set<ServiceCluster> controllerClusters = getClusterControllerServiceClusters(application);
 
-        Collection<ServiceCluster<T>> controllerClustersForContentCluster = filter(controllerClusters, contentClusterId);
+        Collection<ServiceCluster> controllerClustersForContentCluster = filter(controllerClusters, contentClusterId);
 
-        Set<ServiceInstance<T>> clusterControllerInstances;
+        Set<ServiceInstance> clusterControllerInstances;
         if (controllerClustersForContentCluster.size() == 1) {
             clusterControllerInstances = first(controllerClustersForContentCluster).serviceInstances();
         } else if (controllerClusters.size() == 1) {
-            ServiceCluster<T> cluster = first(controllerClusters);
+            ServiceCluster cluster = first(controllerClusters);
             log.warning("No cluster controller cluster for content cluster " + contentClusterId
                     + ", using the only cluster controller cluster available: " + cluster.clusterId());
 
@@ -98,7 +98,7 @@ public class VespaModelUtil {
                 .collect(Collectors.toList());
     }
 
-    private static <T> Collection<ServiceCluster<T>> filter(Set<ServiceCluster<T>> controllerClusters,
+    private static Collection<ServiceCluster> filter(Set<ServiceCluster> controllerClusters,
                                                             ClusterId contentClusterId) {
         ClusterId clusterControllerClusterId = new ClusterId(contentClusterId.s() + "-controllers");
 
@@ -107,7 +107,7 @@ public class VespaModelUtil {
                 collect(Collectors.toList());
     }
 
-    public static <T> Set<ServiceCluster<T>> getClusterControllerServiceClusters(ApplicationInstance<T> application) {
+    public static Set<ServiceCluster> getClusterControllerServiceClusters(ApplicationInstance application) {
         return application.serviceClusters().stream()
                     .filter(VespaModelUtil::isClusterController)
                     .collect(Collectors.toSet());
@@ -118,7 +118,7 @@ public class VespaModelUtil {
      *          no cluster controller was found.
      * @throws  java.lang.IllegalArgumentException if there are no cluster controller instances.
      */
-    public static HostName getControllerHostName(ApplicationInstance<?> application, ClusterId contentClusterId) {
+    public static HostName getControllerHostName(ApplicationInstance application, ClusterId contentClusterId) {
         //  It happens that the master Cluster Controller is the one with the lowest index, if up.
         return getClusterControllerInstancesInOrder(application, contentClusterId).stream()
                 .findFirst()
@@ -139,7 +139,7 @@ public class VespaModelUtil {
      * @return The cluster name managed by a Cluster Controller.
      * @throws IllegalArgumentException if there is not exactly one content cluster name.
      */
-    public static ClusterId getContentClusterName(ApplicationInstance<?> application, HostName hostName) {
+    public static ClusterId getContentClusterName(ApplicationInstance application, HostName hostName) {
         Set<ClusterId> contentClusterIdsOnHost = application.serviceClusters().stream()
                 .filter(VespaModelUtil::isContent)
                 .filter(cluster -> clusterHasInstanceOnHost(cluster, hostName))
@@ -156,7 +156,7 @@ public class VespaModelUtil {
         return contentClusterIdsOnHost.iterator().next();
     }
 
-    private static boolean clusterHasInstanceOnHost(ServiceCluster<?> cluster, HostName hostName) {
+    private static boolean clusterHasInstanceOnHost(ServiceCluster cluster, HostName hostName) {
         return cluster.serviceInstances().stream().anyMatch(service -> Objects.equals(hostName, service.hostName()));
     }
 
@@ -165,8 +165,8 @@ public class VespaModelUtil {
      * @throws java.lang.IllegalArgumentException if there is not exactly one storage node running on the host,
      *         or if the index of that storage node could not be found.
      */
-    public static <T> int getStorageNodeIndex(ApplicationInstance<T> application, HostName hostName) {
-        Optional<ServiceInstance<T>> storageNode = getStorageNodeAtHost(application, hostName);
+    public static int getStorageNodeIndex(ApplicationInstance application, HostName hostName) {
+        Optional<ServiceInstance> storageNode = getStorageNodeAtHost(application, hostName);
         if (!storageNode.isPresent()) {
             throw new IllegalArgumentException("Failed to find a storage node for application " +
                     application.applicationInstanceId() + " at host " + hostName);
@@ -175,9 +175,9 @@ public class VespaModelUtil {
         return getStorageNodeIndex(storageNode.get().configId());
     }
 
-    public static <T> Optional<ServiceInstance<T>> getStorageNodeAtHost(ApplicationInstance<T> application, 
+    public static Optional<ServiceInstance> getStorageNodeAtHost(ApplicationInstance application, 
                                                                         HostName hostName) {
-        Set<ServiceInstance<T>> storageNodesOnHost = application.serviceClusters().stream()
+        Set<ServiceInstance> storageNodesOnHost = application.serviceClusters().stream()
                 .filter(VespaModelUtil::isStorage)
                 .flatMap(cluster -> cluster.serviceInstances().stream())
                 .filter(service -> service.hostName().equals(hostName))

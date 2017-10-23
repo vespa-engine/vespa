@@ -16,14 +16,14 @@ import java.util.Set;
  */
 public class TestUtil {
     @SafeVarargs
-    public static <S> Set<ServiceInstance<S>> makeServiceInstanceSet(
-            final ServiceInstance<S>... serviceInstances) {
+    public static Set<ServiceInstance> makeServiceInstanceSet(
+            final ServiceInstance... serviceInstances) {
         return new HashSet<>(Arrays.asList(serviceInstances));
     }
 
     @SafeVarargs
-    public static <S> Set<ServiceCluster<S>> makeServiceClusterSet(
-            final ServiceCluster<S>... serviceClusters) {
+    public static Set<ServiceCluster> makeServiceClusterSet(
+            final ServiceCluster... serviceClusters) {
         return new HashSet<>(Arrays.asList(serviceClusters));
     }
 

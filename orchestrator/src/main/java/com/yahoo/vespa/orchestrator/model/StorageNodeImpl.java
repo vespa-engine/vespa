@@ -13,7 +13,6 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,14 +22,14 @@ import java.util.logging.Logger;
 public class StorageNodeImpl implements StorageNode {
     private static final Logger logger = Logger.getLogger(StorageNodeImpl.class.getName());
 
-    private final ApplicationInstance<ServiceMonitorStatus> applicationInstance;
+    private final ApplicationInstance applicationInstance;
     private final ClusterId clusterId;
-    private final ServiceInstance<ServiceMonitorStatus> storageService;
+    private final ServiceInstance storageService;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
 
-    StorageNodeImpl(ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+    StorageNodeImpl(ApplicationInstance applicationInstance,
                     ClusterId clusterId,
-                    ServiceInstance<ServiceMonitorStatus> storageService,
+                    ServiceInstance storageService,
                     ClusterControllerClientFactory clusterControllerClientFactory) {
         this.applicationInstance = applicationInstance;
         this.clusterId = clusterId;

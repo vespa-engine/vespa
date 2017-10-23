@@ -9,13 +9,13 @@ import java.util.Set;
 /**
  * @author bjorncs
  */
-public class ApplicationInstance<STATUS> {
+public class ApplicationInstance {
 
     private final TenantId tenantId;
     private final ApplicationInstanceId applicationInstanceId;
-    private final Set<ServiceCluster<STATUS>> serviceClusters;
+    private final Set<ServiceCluster> serviceClusters;
 
-    public ApplicationInstance(TenantId tenantId, ApplicationInstanceId applicationInstanceId, Set<ServiceCluster<STATUS>> serviceClusters) {
+    public ApplicationInstance(TenantId tenantId, ApplicationInstanceId applicationInstanceId, Set<ServiceCluster> serviceClusters) {
         this.tenantId = tenantId;
         this.applicationInstanceId = applicationInstanceId;
         this.serviceClusters = serviceClusters;
@@ -32,7 +32,7 @@ public class ApplicationInstance<STATUS> {
     }
 
     @JsonProperty("serviceClusters")
-    public Set<ServiceCluster<STATUS>> serviceClusters() {
+    public Set<ServiceCluster> serviceClusters() {
         return serviceClusters;
     }
 
@@ -45,7 +45,7 @@ public class ApplicationInstance<STATUS> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ApplicationInstance<?> that = (ApplicationInstance<?>) o;
+        ApplicationInstance that = (ApplicationInstance) o;
         return Objects.equals(tenantId, that.tenantId) &&
                 Objects.equals(applicationInstanceId, that.applicationInstanceId) &&
                 Objects.equals(serviceClusters, that.serviceClusters);

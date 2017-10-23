@@ -4,7 +4,6 @@ package com.yahoo.vespa.orchestrator.resources;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.Map;
 import java.util.Objects;
@@ -14,22 +13,22 @@ import java.util.Objects;
  */
 public class InstanceStatusResponse {
 
-    private final ApplicationInstance<ServiceMonitorStatus> applicationInstance;
+    private final ApplicationInstance applicationInstance;
     private final Map<HostName, String> hostStates;
 
-    private InstanceStatusResponse(ApplicationInstance<ServiceMonitorStatus> applicationInstance, Map<HostName, String> hostStates) {
+    private InstanceStatusResponse(ApplicationInstance applicationInstance, Map<HostName, String> hostStates) {
         this.applicationInstance = applicationInstance;
         this.hostStates = hostStates;
     }
 
     public static InstanceStatusResponse create(
-            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            ApplicationInstance applicationInstance,
             Map<HostName, String> hostStates) {
         return new InstanceStatusResponse(applicationInstance, hostStates);
     }
 
     @JsonProperty("applicationInstance")
-    public ApplicationInstance<ServiceMonitorStatus> applicationInstance() {
+    public ApplicationInstance applicationInstance() {
         return applicationInstance;
     }
 

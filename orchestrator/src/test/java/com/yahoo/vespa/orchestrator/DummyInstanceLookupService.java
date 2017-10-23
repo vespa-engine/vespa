@@ -10,11 +10,11 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -33,89 +33,89 @@ public class DummyInstanceLookupService implements InstanceLookupService {
     public static final HostName TEST3_HOST_NAME = new HostName("test3.hostname.tld");
     public static final HostName TEST6_HOST_NAME = new HostName("test6.hostname.tld");
 
-    private static final Set<ApplicationInstance<ServiceMonitorStatus>> apps = new HashSet<>();
+    private static final Set<ApplicationInstance> apps = new HashSet<>();
 
     static {
-        apps.add(new ApplicationInstance<>(
+        apps.add(new ApplicationInstance(
                 new TenantId("test-tenant-id"),
                 new ApplicationInstanceId("application:prod:utopia-1:instance"),
                 TestUtil.makeServiceClusterSet(
-                        new ServiceCluster<>(
+                        new ServiceCluster(
                                 new ClusterId("test-cluster-id-1"),
                                 new ServiceType("storagenode"),
                                 TestUtil.makeServiceInstanceSet(
-                                        new ServiceInstance<>(
+                                        new ServiceInstance(
                                                 new ConfigId("storage/storage/1"),
                                                 TEST1_HOST_NAME,
-                                                ServiceMonitorStatus.UP),
-                                        new ServiceInstance<>(
+                                                ServiceStatus.UP),
+                                        new ServiceInstance(
                                                 new ConfigId("storage/storage/2"),
                                                 new HostName("test2.hostname.tld"),
-                                                ServiceMonitorStatus.UP))),
-                        new ServiceCluster<>(
+                                                ServiceStatus.UP))),
+                        new ServiceCluster(
                                 new ClusterId("clustercontroller"),
                                 new ServiceType("container-clustercontroller"),
                                 TestUtil.makeServiceInstanceSet(
-                                        new ServiceInstance<>(
+                                        new ServiceInstance(
                                                 new ConfigId("clustercontroller-1"),
                                                 new HostName("myclustercontroller.hostname.tld"),
-                                                ServiceMonitorStatus.UP)))
+                                                ServiceStatus.UP)))
 
                 )
         ));
 
-        apps.add(new ApplicationInstance<>(
+        apps.add(new ApplicationInstance(
                 new TenantId("mediasearch"),
                 new ApplicationInstanceId("imagesearch:prod:utopia-1:default"),
                 TestUtil.makeServiceClusterSet(
-                        new ServiceCluster<>(
+                        new ServiceCluster(
                                 new ClusterId("image"),
                                 new ServiceType("storagenode"),
                                 TestUtil.makeServiceInstanceSet(
-                                        new ServiceInstance<>(
+                                        new ServiceInstance(
                                                 new ConfigId("storage/storage/3"),
                                                 TEST3_HOST_NAME,
-                                                ServiceMonitorStatus.UP),
-                                        new ServiceInstance<>(
+                                                ServiceStatus.UP),
+                                        new ServiceInstance(
                                                 new ConfigId("storage/storage/4"),
                                                 new HostName("test4.hostname.tld"),
-                                                ServiceMonitorStatus.UP))),
-                        new ServiceCluster<>(
+                                                ServiceStatus.UP))),
+                        new ServiceCluster(
                                 new ClusterId("clustercontroller"),
                                 new ServiceType("container-clustercontroller"),
                                 TestUtil.makeServiceInstanceSet(
-                                        new ServiceInstance<>(
+                                        new ServiceInstance(
                                                 new ConfigId("clustercontroller-1"),
                                                 new HostName("myclustercontroller2.hostname.tld"),
-                                                ServiceMonitorStatus.UP)))
+                                                ServiceStatus.UP)))
                                         )
                                 )
         );
 
-        apps.add(new ApplicationInstance<>(
+        apps.add(new ApplicationInstance(
                 new TenantId("tenant-id-3"),
                 new ApplicationInstanceId("application-instance-3:prod:utopia-1:default"),
                 TestUtil.makeServiceClusterSet(
-                        new ServiceCluster<>(
+                        new ServiceCluster(
                                 new ClusterId("cluster-id-3"),
                                 new ServiceType("storagenode"),
                                 TestUtil.makeServiceInstanceSet(
-                                        new ServiceInstance<>(
+                                        new ServiceInstance(
                                                 new ConfigId("storage/storage/1"),
                                                 TEST6_HOST_NAME,
-                                                ServiceMonitorStatus.UP),
-                                        new ServiceInstance<>(
+                                                ServiceStatus.UP),
+                                        new ServiceInstance(
                                                 new ConfigId("storage/storage/4"),
                                                 new HostName("test4.hostname.tld"),
-                                                ServiceMonitorStatus.UP))),
-                        new ServiceCluster<>(
+                                                ServiceStatus.UP))),
+                        new ServiceCluster(
                                 new ClusterId("clustercontroller"),
                                 new ServiceType("container-clustercontroller"),
                                 TestUtil.makeServiceInstanceSet(
-                                        new ServiceInstance<>(
+                                        new ServiceInstance(
                                                 new ConfigId("clustercontroller-1"),
                                                 new HostName("myclustercontroller3.hostname.tld"),
-                                                ServiceMonitorStatus.UP)))
+                                                ServiceStatus.UP)))
                 )
         ));
     }
@@ -127,19 +127,19 @@ public class DummyInstanceLookupService implements InstanceLookupService {
 
 
     @Override
-    public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(
+    public Optional<ApplicationInstance> findInstanceById(
             final ApplicationInstanceReference applicationInstanceReference) {
-        for (ApplicationInstance<ServiceMonitorStatus> app : apps) {
+        for (ApplicationInstance app : apps) {
             if (app.reference().equals(applicationInstanceReference)) return Optional.of(app);
         }
         return Optional.empty();
     }
 
     @Override
-    public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(HostName hostName) {
-        for (ApplicationInstance<ServiceMonitorStatus> app : apps) {
-            for (ServiceCluster<ServiceMonitorStatus> cluster : app.serviceClusters()) {
-                for (ServiceInstance<ServiceMonitorStatus> service : cluster.serviceInstances()) {
+    public Optional<ApplicationInstance> findInstanceByHost(HostName hostName) {
+        for (ApplicationInstance app : apps) {
+            for (ServiceCluster cluster : app.serviceClusters()) {
+                for (ServiceInstance service : cluster.serviceInstances()) {
                     if (hostName.equals(service.hostName())) return Optional.of(app);
                 }
             }
@@ -166,7 +166,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
         return hosts;
     }
 
-    public static  Set<ApplicationInstance<ServiceMonitorStatus>> getApplications() {
+    public static  Set<ApplicationInstance> getApplications() {
        return apps;
     }
 }

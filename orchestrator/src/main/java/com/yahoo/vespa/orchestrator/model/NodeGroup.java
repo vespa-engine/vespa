@@ -4,7 +4,6 @@ package com.yahoo.vespa.orchestrator.model;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,10 +16,10 @@ import java.util.stream.Collectors;
  * A group of nodes belonging to the same application instance.
  */
 public class NodeGroup {
-    private final ApplicationInstance<ServiceMonitorStatus> application;
+    private final ApplicationInstance application;
     private final Set<HostName> hostNames = new HashSet<>();
 
-    public NodeGroup(ApplicationInstance<ServiceMonitorStatus> application, HostName... hostNames) {
+    public NodeGroup(ApplicationInstance application, HostName... hostNames) {
         this.application = application;
         this.hostNames.addAll(Arrays.asList(hostNames));
     }
@@ -35,7 +34,7 @@ public class NodeGroup {
         return application.reference();
     }
 
-    ApplicationInstance<ServiceMonitorStatus> getApplication() {
+    ApplicationInstance getApplication() {
         return application;
     }
 

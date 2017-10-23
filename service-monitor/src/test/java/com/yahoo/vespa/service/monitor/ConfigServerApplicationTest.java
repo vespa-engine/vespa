@@ -2,6 +2,7 @@
 package com.yahoo.vespa.service.monitor;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import org.junit.Test;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class ConfigServerApplicationTest {
     @Test
     public void toApplicationInstance() throws Exception {
         ConfigServerApplication application = new ConfigServerApplication();
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance =
+        ApplicationInstance applicationInstance =
                 application.toApplicationInstance(configServerList);
 
         assertEquals(
@@ -43,7 +44,7 @@ public class ConfigServerApplicationTest {
                 applicationInstance.serviceClusters().iterator().next().clusterId());
 
         assertEquals(
-                ServiceMonitorStatus.NOT_CHECKED,
+                ServiceStatus.NOT_CHECKED,
                 applicationInstance
                         .serviceClusters().iterator().next()
                         .serviceInstances().iterator().next()

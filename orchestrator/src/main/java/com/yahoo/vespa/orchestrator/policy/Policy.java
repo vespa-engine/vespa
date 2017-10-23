@@ -5,7 +5,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 /**
  * @author oyving
@@ -18,7 +17,7 @@ public interface Policy {
      * @throws HostStateChangeDeniedException if the grant was not given.
      */
     void grantSuspensionRequest(
-            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            ApplicationInstance applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
 
@@ -42,7 +41,7 @@ public interface Policy {
      * @throws HostStateChangeDeniedException if the release failed.
      */
     void releaseSuspensionGrant(
-            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            ApplicationInstance applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
 }

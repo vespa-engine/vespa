@@ -10,25 +10,25 @@ import java.util.Optional;
 
 /**
  * The ServiceModel is almost a mirror of the SuperModel, except that it
- * also gives ServiceMonitorStatus on each service, and there may be
+ * also gives ServiceStatus on each service, and there may be
  * artificial applications like the config server "application".
  */
 // @Immutable
 public class ServiceModel {
     private final Map<ApplicationInstanceReference,
-            ApplicationInstance<ServiceMonitorStatus>> applications;
+            ApplicationInstance> applications;
 
     ServiceModel(Map<ApplicationInstanceReference,
-            ApplicationInstance<ServiceMonitorStatus>> applications) {
+            ApplicationInstance> applications) {
         this.applications = Collections.unmodifiableMap(applications);
     }
 
     Map<ApplicationInstanceReference,
-            ApplicationInstance<ServiceMonitorStatus>> getAllApplicationInstances() {
+            ApplicationInstance> getAllApplicationInstances() {
         return applications;
     }
 
-    Optional<ApplicationInstance<ServiceMonitorStatus>> getApplicationInstance(ApplicationInstanceReference reference) {
+    Optional<ApplicationInstance> getApplicationInstance(ApplicationInstanceReference reference) {
         return Optional.ofNullable(applications.get(reference));
     }
 }

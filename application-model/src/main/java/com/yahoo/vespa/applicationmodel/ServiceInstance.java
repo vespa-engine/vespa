@@ -8,13 +8,13 @@ import java.util.Objects;
 /**
  * @author bjorncs
  */
-public class ServiceInstance<STATUS> {
+public class ServiceInstance {
 
     private final ConfigId configId;
     private final HostName hostName;
-    private final STATUS serviceStatus;
+    private final ServiceStatus serviceStatus;
 
-    public ServiceInstance(ConfigId configId, HostName hostName, STATUS serviceStatus) {
+    public ServiceInstance(ConfigId configId, HostName hostName, ServiceStatus serviceStatus) {
         this.configId = configId;
         this.hostName = hostName;
         this.serviceStatus = serviceStatus;
@@ -31,7 +31,7 @@ public class ServiceInstance<STATUS> {
     }
 
     @JsonProperty("serviceStatus")
-    public STATUS serviceStatus() {
+    public ServiceStatus serviceStatus() {
         return serviceStatus;
     }
 
@@ -48,7 +48,7 @@ public class ServiceInstance<STATUS> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ServiceInstance<?> that = (ServiceInstance<?>) o;
+        ServiceInstance that = (ServiceInstance) o;
         return Objects.equals(configId, that.configId) &&
                 Objects.equals(hostName, that.hostName) &&
                 Objects.equals(serviceStatus, that.serviceStatus);

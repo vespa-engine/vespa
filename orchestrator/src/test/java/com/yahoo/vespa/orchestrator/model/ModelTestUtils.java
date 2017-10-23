@@ -8,12 +8,12 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.HashMap;
 import java.util.List;
@@ -46,41 +46,41 @@ public class ModelTestUtils {
     }
 
     ApplicationApiImpl createApplicationApiImpl(
-            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            ApplicationInstance applicationInstance,
             HostName... hostnames) {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostnames);
         return new ApplicationApiImpl(nodeGroup, statusRegistry, clusterControllerClientFactory);
     }
 
-    ApplicationInstance<ServiceMonitorStatus> createApplicationInstance(
-            List<ServiceCluster<ServiceMonitorStatus>> serviceClusters) {
-        Set<ServiceCluster<ServiceMonitorStatus>> serviceClusterSet = serviceClusters.stream()
+    ApplicationInstance createApplicationInstance(
+            List<ServiceCluster> serviceClusters) {
+        Set<ServiceCluster> serviceClusterSet = serviceClusters.stream()
                 .collect(Collectors.toSet());
 
-        return new ApplicationInstance<>(
+        return new ApplicationInstance(
                 new TenantId("tenant"),
                 new ApplicationInstanceId("application-name:foo:bar:default"),
                 serviceClusterSet);
     }
 
-    ServiceCluster<ServiceMonitorStatus> createServiceCluster(
+    ServiceCluster createServiceCluster(
             String clusterId,
             ServiceType serviceType,
-            List<ServiceInstance<ServiceMonitorStatus>> serviceInstances) {
-        Set<ServiceInstance<ServiceMonitorStatus>> serviceInstanceSet = serviceInstances.stream()
+            List<ServiceInstance> serviceInstances) {
+        Set<ServiceInstance> serviceInstanceSet = serviceInstances.stream()
                 .collect(Collectors.toSet());
 
-        return new ServiceCluster<>(
+        return new ServiceCluster(
                 new ClusterId(clusterId),
                 serviceType,
                 serviceInstanceSet);
     }
 
-    ServiceInstance<ServiceMonitorStatus> createServiceInstance(
+    ServiceInstance createServiceInstance(
             String configId,
             HostName hostName,
-            ServiceMonitorStatus status) {
-        return new ServiceInstance<>(
+            ServiceStatus status) {
+        return new ServiceInstance(
                 new ConfigId(configId),
                 hostName,
                 status);

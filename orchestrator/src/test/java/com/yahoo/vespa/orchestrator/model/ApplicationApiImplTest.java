@@ -3,9 +3,9 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,30 +32,30 @@ public class ApplicationApiImplTest {
         HostName hostName3 = new HostName("host3");
         HostName hostName4 = new HostName("host4");
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance =
+        ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-3",
                                 new ServiceType("service-type-3"),
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-1", hostName1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-2", hostName2, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-1", hostName1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-2", hostName2, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 new ServiceType("service-type-1"),
                                 Arrays.asList(
-                                    modelUtils.createServiceInstance("config-id-3", hostName1, ServiceMonitorStatus.UP),
-                                    modelUtils.createServiceInstance("config-id-4", hostName3, ServiceMonitorStatus.UP)
+                                    modelUtils.createServiceInstance("config-id-3", hostName1, ServiceStatus.UP),
+                                    modelUtils.createServiceInstance("config-id-4", hostName3, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 new ServiceType("service-type-2"),
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-5", hostName1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-6", hostName2, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-5", hostName1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-6", hostName2, ServiceStatus.UP)
                                 )
                         )
                 ));
@@ -89,40 +89,40 @@ public class ApplicationApiImplTest {
         HostName hostName6 = new HostName("host6");
         HostName hostName7 = new HostName("host7");
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance =
+        ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-3",
                                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                                 Arrays.asList(
-                                    modelUtils.createServiceInstance("config-id-30", hostName1, ServiceMonitorStatus.UP),
-                                    modelUtils.createServiceInstance("config-id-31", hostName2, ServiceMonitorStatus.UP)
+                                    modelUtils.createServiceInstance("config-id-30", hostName1, ServiceStatus.UP),
+                                    modelUtils.createServiceInstance("config-id-31", hostName2, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-10", hostName3, ServiceMonitorStatus.DOWN),
-                                        modelUtils.createServiceInstance("config-id-11", hostName4, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-10", hostName3, ServiceStatus.DOWN),
+                                        modelUtils.createServiceInstance("config-id-11", hostName4, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-4",
                                 new ServiceType("service-type-4"),
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-40", hostName1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-41", hostName2, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-42", hostName3, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-43", hostName5, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-40", hostName1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-41", hostName2, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-42", hostName3, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-43", hostName5, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-20", hostName6, ServiceMonitorStatus.DOWN),
-                                        modelUtils.createServiceInstance("config-id-21", hostName7, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-20", hostName6, ServiceStatus.DOWN),
+                                        modelUtils.createServiceInstance("config-id-21", hostName7, ServiceStatus.UP)
                                 )
                         )
                 ));
@@ -158,18 +158,18 @@ public class ApplicationApiImplTest {
 
     @Test
     public void testUpConditionOfStorageNode() {
-        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceMonitorStatus.UP, true);
-        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceMonitorStatus.NOT_CHECKED, true);
-        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceMonitorStatus.DOWN, false);
-        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceMonitorStatus.UP, false);
-        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceMonitorStatus.NOT_CHECKED, false);
-        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceMonitorStatus.DOWN, false);
+        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UP, true);
+        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceStatus.NOT_CHECKED, true);
+        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceStatus.DOWN, false);
+        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UP, false);
+        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.NOT_CHECKED, false);
+        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.DOWN, false);
     }
 
-    private void verifyUpConditionWith(HostStatus hostStatus, ServiceMonitorStatus serviceStatus, boolean expectUp) {
+    private void verifyUpConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {
         HostName hostName1 = modelUtils.createNode("host1", hostStatus);
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance =
+        ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-1",
@@ -193,22 +193,22 @@ public class ApplicationApiImplTest {
         HostName hostName2 = modelUtils.createNode("host2", HostStatus.NO_REMARKS);
         HostName hostName3 = modelUtils.createNode("host3", HostStatus.ALLOWED_TO_BE_DOWN);
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance =
+        ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 new ServiceType("service-type-1"),
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-10", hostName1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-11", hostName2, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-10", hostName1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-11", hostName2, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 new ServiceType("service-type-2"),
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-20", hostName1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-21", hostName3, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-20", hostName1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-21", hostName3, ServiceStatus.UP)
                                 )
                         )
                 ));
@@ -250,38 +250,38 @@ public class ApplicationApiImplTest {
         HostName noRemarksHost6 = modelUtils.createNode("host6", HostStatus.NO_REMARKS);
         HostName allowedToBeDownHost7 = modelUtils.createNode("host7", HostStatus.ALLOWED_TO_BE_DOWN);
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance =
+        ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-4",
                                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-40", allowedToBeDownHost1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-41", noRemarksHost2, ServiceMonitorStatus.DOWN)
+                                        modelUtils.createServiceInstance("config-id-40", allowedToBeDownHost1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-41", noRemarksHost2, ServiceStatus.DOWN)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 new ServiceType("service-type-1"),
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-10", allowedToBeDownHost1, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-11", allowedToBeDownHost3, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-10", allowedToBeDownHost1, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-11", allowedToBeDownHost3, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-3",
                                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-30", allowedToBeDownHost4, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-31", noRemarksHost5, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-30", allowedToBeDownHost4, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-31", noRemarksHost5, ServiceStatus.UP)
                                 )
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                                 Arrays.asList(
-                                        modelUtils.createServiceInstance("config-id-20", noRemarksHost6, ServiceMonitorStatus.UP),
-                                        modelUtils.createServiceInstance("config-id-21", allowedToBeDownHost7, ServiceMonitorStatus.UP)
+                                        modelUtils.createServiceInstance("config-id-20", noRemarksHost6, ServiceStatus.UP),
+                                        modelUtils.createServiceInstance("config-id-21", allowedToBeDownHost7, ServiceStatus.UP)
                                 )
                         )
                 ));

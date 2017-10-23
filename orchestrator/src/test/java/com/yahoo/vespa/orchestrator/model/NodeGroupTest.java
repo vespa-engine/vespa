@@ -5,7 +5,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.TenantId;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -16,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeGroupTest {
     @Test
     public void testBasics() {
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance = new ApplicationInstance<>(
+        ApplicationInstance applicationInstance = new ApplicationInstance(
                 new TenantId("tenant"),
                 new ApplicationInstanceId("application-instance"),
                 new HashSet<>());

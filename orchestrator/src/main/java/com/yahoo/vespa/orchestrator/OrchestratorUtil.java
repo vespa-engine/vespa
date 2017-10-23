@@ -38,19 +38,19 @@ public class OrchestratorUtil {
     // Utility class, not to be instantiated.
     private OrchestratorUtil() {}
 
-    public static Set<HostName> getHostsUsedByApplicationInstance(ApplicationInstance<?> applicationInstance) {
+    public static Set<HostName> getHostsUsedByApplicationInstance(ApplicationInstance applicationInstance) {
         return applicationInstance.serviceClusters().stream()
                 .flatMap(serviceCluster -> getHostsUsedByServiceCluster(serviceCluster).stream())
                 .collect(toSet());
     }
 
-    public static Set<HostName> getHostsUsedByServiceCluster(ServiceCluster<?> serviceCluster) {
+    public static Set<HostName> getHostsUsedByServiceCluster(ServiceCluster serviceCluster) {
         return serviceCluster.serviceInstances().stream()
                 .map(ServiceInstance::hostName)
                 .collect(toSet());
     }
 
-    public static <T> Set<ServiceCluster<T>> getServiceClustersUsingHost(Collection<ServiceCluster<T>> serviceClusters,
+    public static Set<ServiceCluster> getServiceClustersUsingHost(Collection<ServiceCluster> serviceClusters,
                                                                          HostName hostName) {
         return serviceClusters.stream()
                 .filter(serviceCluster -> hasServiceInstanceOnHost(serviceCluster, hostName))
@@ -65,11 +65,11 @@ public class OrchestratorUtil {
                         hostName -> hostStatusService.getHostStatus(hostName)));
     }
 
-    private static boolean hasServiceInstanceOnHost(ServiceCluster<?> serviceCluster, HostName hostName) {
+    private static boolean hasServiceInstanceOnHost(ServiceCluster serviceCluster, HostName hostName) {
         return serviceInstancesOnHost(serviceCluster, hostName).count() > 0;
     }
 
-    public static <T> Stream<ServiceInstance<T>> serviceInstancesOnHost(ServiceCluster<T> serviceCluster,
+    public static Stream<ServiceInstance> serviceInstancesOnHost(ServiceCluster serviceCluster,
                                                                         HostName hostName) {
         return serviceCluster.serviceInstances().stream()
                 .filter(instance -> instance.hostName().equals(hostName));

@@ -8,6 +8,7 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 
@@ -26,23 +27,23 @@ public class ConfigServerApplication {
     public static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("zone-config-servers");
     public static final String CONFIG_ID_PREFIX = "configid.";
 
-    ApplicationInstance<ServiceMonitorStatus> toApplicationInstance(List<String> hostnames) {
-        Set<ServiceInstance<ServiceMonitorStatus>> serviceInstances = hostnames.stream()
-                .map(hostname -> new ServiceInstance<>(
+    ApplicationInstance toApplicationInstance(List<String> hostnames) {
+        Set<ServiceInstance> serviceInstances = hostnames.stream()
+                .map(hostname -> new ServiceInstance(
                         new ConfigId(CONFIG_ID_PREFIX + hostname),
                         new HostName(hostname),
-                        ServiceMonitorStatus.NOT_CHECKED))
+                        ServiceStatus.NOT_CHECKED))
                 .collect(Collectors.toSet());
 
-        ServiceCluster<ServiceMonitorStatus> serviceCluster = new ServiceCluster<>(
+        ServiceCluster serviceCluster = new ServiceCluster(
                 CLUSTER_ID,
                 SERVICE_TYPE,
                 serviceInstances);
 
-        Set<ServiceCluster<ServiceMonitorStatus>> serviceClusters =
+        Set<ServiceCluster> serviceClusters =
                 Stream.of(serviceCluster).collect(Collectors.toSet());
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance = new ApplicationInstance<>(
+        ApplicationInstance applicationInstance = new ApplicationInstance(
                 TENANT_ID,
                 APPLICATION_INSTANCE_ID,
                 serviceClusters);
