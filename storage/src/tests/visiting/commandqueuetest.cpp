@@ -5,9 +5,11 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/document/test/make_bucket_space.h>
 
 
 using vespalib::string;
+using document::test::makeBucketSpace;
 
 namespace storage {
 
@@ -39,7 +41,7 @@ namespace {
         ost << name << " t=" << timeout << " p=" << static_cast<unsigned int>(priority);
         // Piggyback name in document selection
         std::shared_ptr<api::CreateVisitorCommand> cmd(
-                new api::CreateVisitorCommand("", "", ost.str()));
+                new api::CreateVisitorCommand(makeBucketSpace(), "", "", ost.str()));
         cmd->setQueueTimeout(timeout);
         cmd->setPriority(priority);
         return cmd;

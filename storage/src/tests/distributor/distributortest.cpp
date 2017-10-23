@@ -10,12 +10,14 @@
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 
 namespace storage {
 
@@ -209,7 +211,7 @@ Distributor_Test::testOperationGeneration()
                                         document::DocumentId("userdoc:m:1:foo"),
                                         api::Timestamp(1234))));
 
-    api::CreateVisitorCommand* cmd = new api::CreateVisitorCommand("foo", "bar", "");
+    api::CreateVisitorCommand* cmd = new api::CreateVisitorCommand(makeBucketSpace(), "foo", "bar", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 1));
     cmd->addBucketToBeVisited(document::BucketId());
 

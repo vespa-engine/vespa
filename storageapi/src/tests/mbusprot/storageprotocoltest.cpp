@@ -660,7 +660,7 @@ StorageProtocolTest::testCreateVisitor51()
     buckets.push_back(document::BucketId(16, 2));
 
     CreateVisitorCommand::SP cmd(
-            new CreateVisitorCommand("library", "id", "doc selection"));
+            new CreateVisitorCommand(makeBucketSpace(), "library", "id", "doc selection"));
     cmd->setControlDestination("controldest");
     cmd->setDataDestination("datadest");
     cmd->setVisitorCmdId(1);

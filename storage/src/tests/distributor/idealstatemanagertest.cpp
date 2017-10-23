@@ -222,7 +222,7 @@ IdealStateManagerTest::testBlockIdealStateOpsOnFullRequestBucketInfo()
     // Don't block on null-bucket messages that aren't RequestBucketInfo.
     {
         std::shared_ptr<api::CreateVisitorCommand> msg(
-                new api::CreateVisitorCommand("foo", "bar", "baz"));
+                new api::CreateVisitorCommand(makeBucketSpace(), "foo", "bar", "baz"));
         msg->setAddress(
                 api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 7));
         tracker.insert(msg);
