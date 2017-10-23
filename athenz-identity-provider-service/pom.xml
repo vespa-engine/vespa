@@ -27,16 +27,6 @@
                     <groupId>org.glassfish.jersey.media</groupId>
                     <artifactId>jersey-media-json-jackson</artifactId>
                 </exclusion>
-                <!-- BouncyCastle is not bundled due to class loading issues
-                when security provider is registered from inside a OSGi bundle -->
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcpkix-jdk15on</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -51,17 +41,6 @@
         </dependency>
 
         <!-- PROVIDED -->
-        <!-- BouncyCastle should be available through jdisc_http_service at runtime -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
