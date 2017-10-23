@@ -431,15 +431,6 @@ function(vespa_workaround_gcc_bug_67055 SOURCE_FILE)
     endif()
 endfunction()
 
-function(vespa_workaround_set_gcc_march_skylake_avx512_if_supported SOURCE_FILE)
-    if(CMAKE_COMPILER_IS_GNUCC)
-        execute_process(COMMAND ${CMAKE_CPP_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-        if (GCC_VERSION VERSION_GREATER "5.2")
-            set_source_files_properties(${SOURCE_FILE} PROPERTIES COMPILE_FLAGS -march=skylake-avx512)
-        endif()
-    endif()
-endfunction()
-
 macro(__initialize_module)
     # Set a couple of useful variables for this module
     set(MODULE_ROOT ${CMAKE_CURRENT_BINARY_DIR})
