@@ -8,16 +8,17 @@ import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * @author mortent
  */
 public class ServiceProviderApi {
 
-    private final String providerEndpoint;
+    private final URI providerUri;
 
-    public ServiceProviderApi(String providerEndpoint) {
-        this.providerEndpoint = providerEndpoint;
+    public ServiceProviderApi(String providerAddress) {
+        providerUri = URI.create(String.format("https://%s:8443/athenz/v1/provider", providerAddress));
     }
 
 
@@ -31,7 +32,7 @@ public class ServiceProviderApi {
         // TODO Use client side auth to establish trusted secure channel
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
 
-            CloseableHttpResponse idDocResponse = httpClient.execute(RequestBuilder.get().setUri(providerEndpoint + "/identity-document").build());
+            CloseableHttpResponse idDocResponse = httpClient.execute(RequestBuilder.get().setUri(providerUri + "/identity-document").build());
             if (HttpStatus.isSuccess(idDocResponse.getStatusLine().getStatusCode())) {
                 return EntityUtils.toString(idDocResponse.getEntity());
             } else {
