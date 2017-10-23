@@ -15,7 +15,6 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -32,7 +31,6 @@ using config::FileSpec;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::test::makeDocumentBucket;
-using document::test::makeBucketSpace;
 
 namespace storage {
 
@@ -417,13 +415,13 @@ void BucketManagerTest::testRequestBucketInfoWithState()
 
         // Send a request bucket info command that will be outdated and failed.
     std::shared_ptr<api::RequestBucketInfoCommand> cmd1(
-            new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[1]));
+            new api::RequestBucketInfoCommand(0, states[1]));
         // Send two request bucket info commands that will be processed together
         // when the bucket manager is idle, as states are equivalent
     std::shared_ptr<api::RequestBucketInfoCommand> cmd2(
-            new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[2]));
+            new api::RequestBucketInfoCommand(0, states[2]));
     std::shared_ptr<api::RequestBucketInfoCommand> cmd3(
-            new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[3]));
+            new api::RequestBucketInfoCommand(0, states[3]));
 
     // Tag server initialized before starting
     _top->open();
@@ -561,7 +559,7 @@ void BucketManagerTest::testRequestBucketInfoWithList()
         bids.push_back(document::BucketId(16, 0xe8c8));
 
         std::shared_ptr<api::RequestBucketInfoCommand> cmd(
-                new api::RequestBucketInfoCommand(makeBucketSpace(), bids));
+                new api::RequestBucketInfoCommand(bids));
 
         _top->sendDown(cmd);
         _top->waitForMessages(1, 5);
@@ -731,11 +729,11 @@ public:
     }
 
     auto createFullFetchCommand() const {
-        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, _state);
+        return std::make_shared<api::RequestBucketInfoCommand>(0, _state);
     }
 
     auto createFullFetchCommandWithHash(vespalib::stringref hash) const {
-        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, _state, hash);
+        return std::make_shared<api::RequestBucketInfoCommand>(0, _state, hash);
     }
 
     auto acquireBucketLockAndSendInfoRequest(const document::BucketId& bucket) {
@@ -909,7 +907,7 @@ BucketManagerTest::testOrderRepliesAfterBucketSpecificRequest()
 
     auto infoRoundtrip = std::async(std::launch::async, [&]() {
         std::vector<document::BucketId> buckets{bucketA};
-        auto infoCmd = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), buckets);
+        auto infoCmd = std::make_shared<api::RequestBucketInfoCommand>(buckets);
         // Can't complete until `guard` has been unlocked.
         _top->sendDown(infoCmd);
         // Barrier: bucket reply and subsequent split reply
@@ -949,7 +947,7 @@ BucketManagerTest::testQueuedRepliesOnlyDispatchedWhenAllProcessingDone()
 
     auto singleBucketInfo = std::async(std::launch::async, [&]() {
         std::vector<document::BucketId> buckets{bucketA};
-        auto infoCmd = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), buckets);
+        auto infoCmd = std::make_shared<api::RequestBucketInfoCommand>(buckets);
         _top->sendDown(infoCmd);
         _top->waitForMessages(3, MESSAGE_WAIT_TIME);
     });
@@ -1211,7 +1209,7 @@ void
 BucketManagerTest::sendSingleBucketInfoRequest(const document::BucketId& id)
 {
     std::vector<document::BucketId> buckets{id};
-    auto infoCmd = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), buckets);
+    auto infoCmd = std::make_shared<api::RequestBucketInfoCommand>(buckets);
     _top->sendDown(infoCmd);
 }
 

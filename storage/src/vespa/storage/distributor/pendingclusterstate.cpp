@@ -10,8 +10,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingclusterstate");
 
-using document::BucketSpace;
-
 namespace storage::distributor {
 
 using lib::Node;
@@ -319,7 +317,6 @@ PendingClusterState::requestNode(uint16_t node)
 
     std::shared_ptr<api::RequestBucketInfoCommand> cmd(
             new api::RequestBucketInfoCommand(
-                    BucketSpace::placeHolder(),
                     _sender.getDistributorIndex(),
                     _newClusterState,
                     distributionHash));

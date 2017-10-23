@@ -638,13 +638,12 @@ ProtocolSerialization5_0::onDecodeRequestBucketInfoCommand(BBuf& buf) const
         buckets[i] = document::BucketId(SH::getLong(buf));
     }
     api::RequestBucketInfoCommand::UP msg;
-    BucketSpace bucketSpace(BucketSpace::placeHolder());
     if (buckets.size() != 0) {
-        msg.reset(new api::RequestBucketInfoCommand(bucketSpace, buckets));
+        msg.reset(new api::RequestBucketInfoCommand(buckets));
     } else {
         int distributor = SH::getShort(buf);
         lib::ClusterState state(SH::getString(buf));
-        msg.reset(new api::RequestBucketInfoCommand(bucketSpace, distributor, state, SH::getString(buf)));
+        msg.reset(new api::RequestBucketInfoCommand(distributor, state, SH::getString(buf)));
     }
     onDecodeCommand(buf, *msg);
     return api::StorageCommand::UP(msg.release());

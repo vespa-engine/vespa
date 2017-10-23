@@ -71,8 +71,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_CREATEVISITOR:
     {
         documentapi::CreateVisitorMessage& from(static_cast<documentapi::CreateVisitorMessage&>(fromMsg));
-        auto to = std::make_unique<api::CreateVisitorCommand>(BucketSpace::placeHolder(),
-                                                              from.getLibraryName(), from.getInstanceId(),
+        auto to = std::make_unique<api::CreateVisitorCommand>(from.getLibraryName(), from.getInstanceId(),
                                                               from.getDocumentSelection());
 
         to->setControlDestination(from.getControlDestination());

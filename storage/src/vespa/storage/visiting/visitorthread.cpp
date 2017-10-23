@@ -497,7 +497,6 @@ VisitorThread::onCreateVisitor(
         visitor->setDocBlockTimeout(_defaultDocBlockTimeout);
         visitor->setVisitorInfoTimeout(_defaultVisitorInfoTimeout);
         visitor->setOwnNodeIndex(_component.getIndex());
-        visitor->setBucketSpace(cmd->getBucketSpace());
 
         // Parse document selection
         try{

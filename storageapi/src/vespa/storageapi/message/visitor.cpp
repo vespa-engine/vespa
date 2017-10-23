@@ -13,12 +13,10 @@ IMPLEMENT_REPLY(DestroyVisitorReply)
 IMPLEMENT_COMMAND(VisitorInfoCommand, VisitorInfoReply)
 IMPLEMENT_REPLY(VisitorInfoReply)
 
-CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
-                                           const vespalib::stringref & libraryName,
+CreateVisitorCommand::CreateVisitorCommand(const vespalib::stringref & libraryName,
                                            const vespalib::stringref & instanceId,
                                            const vespalib::stringref & docSelection)
     : StorageCommand(MessageType::VISITOR_CREATE),
-      _bucketSpace(bucketSpace),
       _libName(libraryName),
       _params(),
       _controlDestination(),
@@ -43,7 +41,6 @@ CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
 
 CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
     : StorageCommand(o),
-      _bucketSpace(o._bucketSpace),
       _libName(o._libName),
       _params(o._params),
       _controlDestination(o._controlDestination),

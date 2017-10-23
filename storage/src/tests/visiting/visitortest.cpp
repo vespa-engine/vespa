@@ -4,7 +4,6 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
@@ -21,7 +20,6 @@
 #include <thread>
 
 using namespace std::chrono_literals;
-using document::test::makeBucketSpace;
 
 namespace storage {
 
@@ -492,7 +490,7 @@ VisitorTest::makeCreateVisitor(const VisitorOptions& options)
 {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     std::shared_ptr<api::CreateVisitorCommand> cmd(
-            new api::CreateVisitorCommand(makeBucketSpace(), options.visitorType, "testvis", ""));
+            new api::CreateVisitorCommand(options.visitorType, "testvis", ""));
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->setAddress(address);
     cmd->setMaximumPendingReplyCount(UINT32_MAX);
