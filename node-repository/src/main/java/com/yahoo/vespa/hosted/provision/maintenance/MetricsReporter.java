@@ -70,7 +70,7 @@ public class MetricsReporter extends Maintainer {
 
             long wantedRestartGeneration = allocation.get().restartGeneration().wanted();
             metric.set("wantedRestartGeneration", wantedRestartGeneration, context);
-            long currentRestartGeneration = allocation.get().restartGeneration().wanted();
+            long currentRestartGeneration = allocation.get().restartGeneration().current();
             metric.set("currentRestartGeneration", currentRestartGeneration, context);
             boolean wantToRestart = currentRestartGeneration < wantedRestartGeneration;
             metric.set("wantToRestart", wantToRestart ? 1 : 0, context);
