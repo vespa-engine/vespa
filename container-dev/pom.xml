@@ -111,6 +111,14 @@
           <groupId>org.scala-lang</groupId>
           <artifactId>scala-library</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.athenz</groupId>
+          <artifactId>athenz-auth-core</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
