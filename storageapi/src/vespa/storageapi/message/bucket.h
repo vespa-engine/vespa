@@ -336,6 +336,7 @@ public:
  * the buckets that belong to the given distributor should be returned.
  */
 class RequestBucketInfoCommand : public StorageCommand {
+    document::BucketSpace _bucketSpace;
     std::vector<document::BucketId> _buckets;
     std::unique_ptr<lib::ClusterState> _state;
     uint16_t _distributor;
@@ -343,12 +344,15 @@ class RequestBucketInfoCommand : public StorageCommand {
 
 public:
     explicit RequestBucketInfoCommand(
+            document::BucketSpace bucketSpace,
             const std::vector<document::BucketId>& buckets);
-    RequestBucketInfoCommand(uint16_t distributor,
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
+                             uint16_t distributor,
                              const lib::ClusterState& state,
                              const vespalib::stringref & _distributionHash);
 
-    RequestBucketInfoCommand(uint16_t distributor,
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
+                             uint16_t distributor,
                              const lib::ClusterState& state);
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
