@@ -2,8 +2,6 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 
 import java.io.File;
@@ -26,23 +24,21 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     private final static FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
 
     private final long sessionLifetime; // in seconds
-    private final TenantApplications applicationRepo;
     private final Clock clock;
 
     public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader,
-                            TenantApplications applicationRepo, Clock clock, long sessionLifeTime) {
-        this(applicationRepo, clock, sessionLifeTime);
+                            Clock clock, long sessionLifeTime) {
+        this(clock, sessionLifeTime);
         loadSessions(tenantFileSystemDirs.path(), loader);
     }
 
     // Constructor public only for testing
-    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock) {
-        this(applicationRepo, clock, TimeUnit.DAYS.toMillis(1));
+    public LocalSessionRepo(Clock clock) {
+        this(clock, TimeUnit.DAYS.toMillis(1));
     }
 
     // Constructor public only for testing
-    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock, long sessionLifetime) {
-        this.applicationRepo = applicationRepo;
+    private LocalSessionRepo(Clock clock, long sessionLifetime) {
         this.sessionLifetime = sessionLifetime;
         this.clock = clock;
     }
@@ -62,19 +58,6 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         }
     }
 
-    /**
-     * Gets the active Session for the given application id.
-     *
-     * @return the active session, or null if there is no active session for the given application id.
-     */
-    public LocalSession getActiveSession(ApplicationId applicationId) {
-        List<ApplicationId> applicationIds = applicationRepo.listApplications();
-        if (applicationIds.contains(applicationId)) {
-            return getSession(applicationRepo.getSessionIdForApplication(applicationId));
-        }
-        return null;
-    }
-
     @Override
     public synchronized void addSession(LocalSession session) {
         purgeOldSessions();
@@ -82,10 +65,9 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     }
 
     private void purgeOldSessions() {
-        final List<ApplicationId> applicationIds = applicationRepo.listApplications();
         List<LocalSession> sessions = new ArrayList<>(listSessions());
         for (LocalSession candidate : sessions) {
-            if (hasExpired(candidate) && !isActiveSession(candidate, applicationIds)) {
+            if (hasExpired(candidate) && !isActiveSession(candidate)) {
                 deleteSession(candidate);
             }
         }
@@ -95,13 +77,8 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         return (candidate.getCreateTime() + sessionLifetime) <= TimeUnit.MILLISECONDS.toSeconds(clock.millis());
     }
 
-    private boolean isActiveSession(LocalSession candidate, List<ApplicationId> activeIds) {
-        if (candidate.getStatus() == Session.Status.ACTIVATE && activeIds.contains(candidate.getApplicationId())) {
-            long sessionId = applicationRepo.getSessionIdForApplication(candidate.getApplicationId());
-            return (candidate.getSessionId() == sessionId);
-        } else {
-            return false;
-        }
+    private boolean isActiveSession(LocalSession candidate) {
+        return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
     private void deleteSession(LocalSession candidate) {

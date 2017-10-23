@@ -35,7 +35,7 @@ public class TestTenantBuilder {
         MemoryTenantApplications applicationRepo = new MemoryTenantApplications();
         TenantBuilder builder = TenantBuilder.create(componentRegistry, tenantName, Path.createRoot().append(tenantName.value()))
                 .withSessionFactory(new SessionCreateHandlerTest.MockSessionFactory())
-                .withLocalSessionRepo(new LocalSessionRepo(applicationRepo, componentRegistry.getClock()))
+                .withLocalSessionRepo(new LocalSessionRepo(componentRegistry.getClock()))
                 .withRemoteSessionRepo(new RemoteSessionRepo())
                 .withApplicationRepo(applicationRepo);
         tenantMap.put(tenantName, builder);
