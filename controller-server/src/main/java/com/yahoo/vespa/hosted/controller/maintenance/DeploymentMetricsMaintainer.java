@@ -51,7 +51,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     }
                 }
                 catch (UncheckedIOException e) {
-                    log.log(Level.WARNING, "Timed out talking to YAMAS; retrying in " + maintenanceInterval(), e);
+                    log.log(Level.WARNING, "Failed talking to YAMAS: " + e.getMessage() +
+                            ", retrying in " + maintenanceInterval());
                 }
             }
         }
