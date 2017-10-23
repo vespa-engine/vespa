@@ -4,9 +4,7 @@
 
 #include "iaccelrated.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 /**
  * Generic cpu agnostic implementation.
@@ -24,5 +22,4 @@ public:
     void notBit(void * a, size_t bytes) const override;
 };
 
-}
 }

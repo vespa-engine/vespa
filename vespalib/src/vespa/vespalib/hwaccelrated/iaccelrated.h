@@ -3,11 +3,9 @@
 #pragma once
 
 #include <memory>
-#include <stdint.h>
+#include <cstdint>
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 /**
  * This contains an interface to all primitives that has different cpu supported accelrations.
@@ -16,7 +14,7 @@ namespace hwaccelrated {
 class IAccelrated
 {
 public:
-    virtual ~IAccelrated() { }
+    virtual ~IAccelrated() = default;
     typedef std::unique_ptr<IAccelrated> UP;
     virtual float dotProduct(const float * a, const float * b, size_t sz) const = 0;
     virtual double dotProduct(const double * a, const double * b, size_t sz) const = 0;
@@ -30,5 +28,4 @@ public:
     static IAccelrated::UP getAccelrator() __attribute__((noinline));
 };
 
-}
 }

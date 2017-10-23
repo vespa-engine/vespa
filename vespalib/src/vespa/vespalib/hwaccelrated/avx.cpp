@@ -3,9 +3,7 @@
 #include "avx.h"
 #include "avxprivate.hpp"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 float
 AvxAccelrator::dotProduct(const float * af, const float * bf, size_t sz) const
@@ -19,5 +17,4 @@ AvxAccelrator::dotProduct(const double * af, const double * bf, size_t sz) const
     return avx::dotProductSelectAlignment<double, 32>(af, bf, sz);
 }
 
-}
 }
