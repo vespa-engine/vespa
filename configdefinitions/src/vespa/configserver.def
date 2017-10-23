@@ -43,4 +43,4 @@ dockerRegistry string default=""
 dockerVespaBaseImage string default=""
 
 # Athenz config
-serviceProviderEndpoint string default=""
+loadBalancerAddress string default=""

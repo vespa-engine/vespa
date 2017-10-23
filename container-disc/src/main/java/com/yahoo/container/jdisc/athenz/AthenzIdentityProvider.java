@@ -30,7 +30,7 @@ public final class AthenzIdentityProvider extends AbstractComponent {
 
     @Inject
     public AthenzIdentityProvider(IdentityConfig config, ConfigserverConfig configserverConfig) throws IOException {
-        this(config, new ServiceProviderApi(configserverConfig.serviceProviderEndpoint()), new AthenzService());
+        this(config, new ServiceProviderApi(configserverConfig.loadBalancerAddress()), new AthenzService());
     }
 
     // Test only

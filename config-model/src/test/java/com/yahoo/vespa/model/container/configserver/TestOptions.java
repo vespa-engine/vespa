@@ -116,7 +116,7 @@ public class TestOptions implements CloudConfigOptions {
     public Optional<String> dockerVespaBaseImage() { return Optional.empty(); }
 
     @Override
-    public Optional<String> serviceProviderEndpoint() { return Optional.empty(); }
+    public Optional<String> loadBalancerAddress() { return Optional.empty(); }
 
     public TestOptions numParallelTenantLoaders(int numLoaders) {
         this.numParallelTenantLoaders = Optional.of(numLoaders);
