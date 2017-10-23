@@ -12,30 +12,31 @@ import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Class to manage Slobrok
  */
-public class SlobrokMonitor2 implements AutoCloseable {
+public class SlobrokMonitor implements AutoCloseable {
     public static final String SLOBROK_SERVICE_TYPE = "slobrok";
     public static final String SLOBROK_RPC_PORT_TAG = "rpc";
 
     private final SlobrokList slobrokList;
     private final Mirror mirror;
 
-    SlobrokMonitor2() {
+    SlobrokMonitor() {
         this(new SlobrokList());
     }
 
     // Package-private for testing.
-    SlobrokMonitor2(SlobrokList slobrokList, Mirror mirror) {
+    SlobrokMonitor(SlobrokList slobrokList, Mirror mirror) {
         this.slobrokList = slobrokList;
         this.mirror = mirror;
     }
 
-    private SlobrokMonitor2(SlobrokList slobrokList) {
+    private SlobrokMonitor(SlobrokList slobrokList) {
         this(slobrokList, new Mirror(new Supervisor(new Transport()), slobrokList));
     }
 
@@ -65,9 +66,12 @@ public class SlobrokMonitor2 implements AutoCloseable {
         return slobrokSpecs;
     }
 
+    List<Mirror.Entry> lookup(String pattern) {
+        return Arrays.asList(mirror.lookup(pattern));
+    }
+
     @Override
     public void close() {
-        // TODO: Make sure registeredInSlobrok returns DOWN from now on (concurrently)
         mirror.shutdown();
     }
 

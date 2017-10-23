@@ -42,7 +42,7 @@ public class ModelGeneratorTest {
         List<String> configServerHosts = Stream.of("cfg1", "cfg2", "cfg3")
                 .collect(Collectors.toList());
 
-        SlobrokMonitorManager slobrokMonitorManager = mock(SlobrokMonitorManager.class);
+        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         when(slobrokMonitorManager.getStatus(any(), any(), any()))
                 .thenReturn(ServiceStatus.UP);
 
@@ -86,7 +86,7 @@ public class ModelGeneratorTest {
 
         List<String> configServerHosts = Collections.emptyList();
 
-        SlobrokMonitorManager slobrokMonitorManager = mock(SlobrokMonitorManager.class);
+        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         when(slobrokMonitorManager.getStatus(any(), any(), any()))
                 .thenReturn(ServiceStatus.UP);
 

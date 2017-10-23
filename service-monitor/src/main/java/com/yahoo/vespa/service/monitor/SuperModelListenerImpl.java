@@ -25,10 +25,10 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
     // superModel and slobrokMonitorManager are always updated together
     // and atomically using this monitor.
     private final Object monitor = new Object();
-    private final SlobrokMonitorManager slobrokMonitorManager;
+    private final SlobrokMonitorManagerImpl slobrokMonitorManager;
     private SuperModel superModel;
 
-    SuperModelListenerImpl(SlobrokMonitorManager slobrokMonitorManager,
+    SuperModelListenerImpl(SlobrokMonitorManagerImpl slobrokMonitorManager,
                            ServiceMonitorMetrics metrics,
                            ModelGenerator modelGenerator,
                            Zone zone,

@@ -18,6 +18,6 @@ public interface ServiceMonitor {
      * Returns the current liveness status (up, down or unknown) of all instances
      * of all services of all clusters of all applications in a zone.
      */
-    Map<ApplicationInstanceReference, ApplicationInstance> queryStatusOfAllApplicationInstances();
+    Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances();
 
 }

@@ -8,10 +8,10 @@ import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
 
-public class SlobrokMonitor2Test {
+public class SlobrokMonitorTest {
     private final SlobrokList slobrokList = mock(SlobrokList.class);
     private final Mirror mirror = mock(Mirror.class);
-    private SlobrokMonitor2 slobrokMonitor = new SlobrokMonitor2(slobrokList, mirror);
+    private SlobrokMonitor slobrokMonitor = new SlobrokMonitor(slobrokList, mirror);
 
     @Test
     public void testUpdateSlobrokList() {

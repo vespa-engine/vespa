@@ -27,7 +27,7 @@ public class ExampleModel {
 
     static final String CLUSTER_ID = "cluster-id";
     static final String SERVICE_NAME = "service-name";
-    static final String SERVICE_TYPE = SlobrokMonitor2.SLOBROK_SERVICE_TYPE;
+    static final String SERVICE_TYPE = SlobrokMonitor.SLOBROK_SERVICE_TYPE;
     static final String CONFIG_ID = "configid/1";
     static final String TENANT = "tenant";
     static final String APPLICATION_NAME = "application";
@@ -39,7 +39,7 @@ public class ExampleModel {
         ApplicationInfo applicationInfo = ExampleModel
                 .createApplication(TENANT, APPLICATION_NAME)
                 .addServiceCluster(CLUSTER_ID, SERVICE_NAME, SERVICE_TYPE, hosts)
-                .addPort(rpcPort, "footag", SlobrokMonitor2.SLOBROK_RPC_PORT_TAG)
+                .addPort(rpcPort, "footag", SlobrokMonitor.SLOBROK_RPC_PORT_TAG)
                 .addPort(rpcPort + 1, "bartag")
                 .then()
                 .build();
