@@ -9,14 +9,14 @@ namespace search::transactionlog {
 
 class XXH64None : public IChunk {
 protected:
-    void onEncode(nbostream &os) const override;
+    Encoding onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 public:
 };
 
 class CCITTCRC32None : public IChunk {
 protected:
-    void onEncode(nbostream &os) const override;
+    Encoding onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 public:
 };
@@ -28,8 +28,8 @@ public:
     void setLevel(uint8_t level) { _level = level; }
 protected:
     void decompress(nbostream & os);
-    void compress(nbostream & os, Encoding::Crc crc) const;
-    void onEncode(nbostream &os) const override;
+    Encoding compress(nbostream & os, Encoding::Crc crc) const;
+    Encoding onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
 private:
     CompressionConfig::Type _type;

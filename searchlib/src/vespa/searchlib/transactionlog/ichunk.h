@@ -40,13 +40,13 @@ public:
     virtual ~IChunk();
     const Entries & getEntries() const { return _entries; }
     void add(const Packet::Entry & entry);
-    void encode(nbostream & os) const;
+    Encoding encode(nbostream & os) const;
     void decode(nbostream & buf);
     static UP create(uint8_t chunkType);
     static UP create(Encoding chunkType);
     SerialNumRange range() const;
 protected:
-    virtual void onEncode(nbostream & os) const = 0;
+    virtual Encoding onEncode(nbostream & os) const = 0;
     virtual void onDecode(nbostream & is) = 0;
     void deserializeEntries(nbostream & is);
     void serializeEntries(nbostream & os) const;

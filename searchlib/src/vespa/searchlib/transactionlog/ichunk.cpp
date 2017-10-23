@@ -51,9 +51,9 @@ IChunk::serializeEntries(nbostream & os) const {
     }
 }
 
-void
+Encoding
 IChunk::encode(nbostream & os) const {
-    onEncode(os);
+    return onEncode(os);
 }
 
 void

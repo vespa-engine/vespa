@@ -534,13 +534,14 @@ void
 DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
 {
     nbostream os;
+    size_t begin = os.wp();
     os << _defaultEncoding.getRaw();
-    size_t sizePos = os.wp();
     os << uint32_t(0);
-    chunk.encode(os);
+    Encoding realEncoding = chunk.encode(os);
     size_t end = os.wp();
-    os.wp(sizePos);
-    os << uint32_t(end - (sizePos + sizeof(uint32_t)));
+    os.wp(0);
+    os << realEncoding.getRaw();
+    os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t)));
     os.wp(end);
     int64_t lastKnownGoodPos(file.GetPosition());
 
@@ -555,7 +556,6 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
 bool
 DomainPart::read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc & buf, bool allowTruncate)
 {
-    bool retval(false);
     char tmp[5];
     int64_t lastKnownGoodPos(file.GetPosition());
     size_t rlen = file.Read(tmp, sizeof(tmp));
@@ -564,12 +564,9 @@ DomainPart::read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc & buf, bo
     uint32_t len(0);
     his >> encoding >> len;
     if (rlen != sizeof(tmp)) {
-        if (rlen == 0) {
-            retval = true; // Eof
-        } else {
-            retval = handleReadError("packet length", file, sizeof(len), rlen, lastKnownGoodPos, allowTruncate);
-        }
-        return retval;
+        return (rlen == 0)
+               ? true
+               : handleReadError("packet length", file, sizeof(len), rlen, lastKnownGoodPos, allowTruncate);
     }
 
     try {
