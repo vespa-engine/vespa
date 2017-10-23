@@ -16,6 +16,7 @@ using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
 using std::make_shared;
 using std::runtime_error;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
@@ -73,22 +74,22 @@ SyncHandler::PerformTask()
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, 0x10000000)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext,
+                     DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::none))
+                             .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000).setChunkAgeLimit( 1ms))
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, Encoding::xxh64)
+                               const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, cfg, 4)
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize,
-                               size_t maxThreads, Encoding defaultCrcType)
+                               const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
-      _domainPartSize(domainPartSize),
-      _defaultEncoding(defaultCrcType),
+      _domainConfig(cfg),
       _commitExecutor(maxThreads, 128*1024),
       _sessionExecutor(maxThreads, 128*1024),
       _threadPool(0x20000),
@@ -106,8 +107,8 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        auto domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor, _sessionExecutor,
-                                                          _domainPartSize, _defaultEncoding,_fileHeaderContext);
+                        auto domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor,
+                                                          _sessionExecutor, cfg,_fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -209,6 +210,17 @@ void TransLogServer::logMetric() const
         EV_COUNT((prefix + "first").c_str(), it->second->begin());
         EV_VALUE((prefix + "numused").c_str(), it->second->size());
     }
+}
+
+
+TransLogServer &
+TransLogServer::setDomainConfig(const DomainConfig & cfg) {
+    Guard domainGuard(_lock);
+    _domainConfig = cfg;
+    for(auto &domain: _domains) {
+        domain.second->setConfig(cfg);
+    }
+    return *this;
 }
 
 DomainStats
@@ -345,8 +357,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor, _sessionExecutor,
-                                         _domainPartSize, _defaultEncoding, _fileHeaderContext);
+            domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor,
+                                         _sessionExecutor, _domainConfig, _fileHeaderContext);
             {
                 Guard domainGuard(_lock);
                 _domains[domain->name()] = domain;

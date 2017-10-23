@@ -95,9 +95,9 @@ XXH64Compressed::decompress(nbostream & is) {
     is.adjustReadPos(is.size());
 }
 
-XXH64Compressed::XXH64Compressed(CompressionConfig::Type type)
+XXH64Compressed::XXH64Compressed(CompressionConfig::Type type, uint8_t level)
     : _type(type),
-      _level(9)
+      _level(level)
 { }
 
 Encoding

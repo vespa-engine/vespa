@@ -24,8 +24,7 @@ public:
 class XXH64Compressed : public IChunk {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    XXH64Compressed(CompressionConfig::Type);
-    void setLevel(uint8_t level) { _level = level; }
+    XXH64Compressed(CompressionConfig::Type, uint8_t level);
 protected:
     void decompress(nbostream & os);
     Encoding compress(nbostream & os, Encoding::Crc crc) const;

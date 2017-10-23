@@ -5,7 +5,7 @@ namespace=searchlib
 listenport int default=13700 restart
 
 ## Max file size (50M)
-filesizemax int default=50000000 restart
+filesizemax int default=50000000
 
 ## Server name to identify server.
 servername string default="tls" restart
@@ -30,3 +30,9 @@ compression.type enum {NONE, LZ4, ZSTD} default=LZ4
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
 ## 9 is a reasonable default for both
 compression.level int default=9
+
+## How large a chunk can grow in memory before beeing flushed
+chunk.sizelimit int default = 256000  # 256k
+
+## How long a chunk can reside in memory befor ebeeing flushed to disk.
+chunk.agelimit double default = 0.0010 # 10 milliseconds

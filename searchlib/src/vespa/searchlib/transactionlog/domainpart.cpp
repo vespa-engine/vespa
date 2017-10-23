@@ -251,9 +251,10 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     return currPos;
 }
 
-DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding defaultEncoding,
-                       const FileHeaderContext &fileHeaderContext, bool allowTruncate) :
-    _defaultEncoding(defaultEncoding),
+DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
+                       uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate) :
+    _encoding(encoding),
+    _compressionLevel(compressionLevel),
     _lock(),
     _fileLock(),
     _range(s),
@@ -397,7 +398,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
         //LOG(spam,
         //"Pos(%d) Len(%d), Lim(%d), Remaining(%d)",
         //h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());
-        IChunk::UP chunk = IChunk::create(_defaultEncoding);
+        IChunk::UP chunk = IChunk::create(_encoding, _compressionLevel);
         Packet::Entry entry;
         entry.deserialize(h);
         if (_range.to() < entry.serial()) {
@@ -535,7 +536,7 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
 {
     nbostream os;
     size_t begin = os.wp();
-    os << _defaultEncoding.getRaw();
+    os << _encoding.getRaw();
     os << uint32_t(0);
     Encoding realEncoding = chunk.encode(os);
     size_t end = os.wp();

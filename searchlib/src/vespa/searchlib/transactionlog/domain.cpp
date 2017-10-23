@@ -21,35 +21,39 @@ using search::common::FileHeaderContext;
 using std::runtime_error;
 using namespace std::chrono_literals;
 using namespace std::chrono;
+using std::make_shared;
 
 namespace search::transactionlog {
 
+DomainConfig::DomainConfig()
+    : _encoding(Encoding::Crc::xxh64, Encoding::Compression::none),
+      _compressionLevel(9),
+      _partSizeLimit(0x10000000), // 256M
+      _chunkSizeLimit(0x40000),   // 256k
+      _chunkAgeLimit(1ms)
+{ }
 Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
-               Executor & commitExecutor, Executor & sessionExecutor, uint64_t domainPartSize,
-               Encoding defaultEncoding, const FileHeaderContext &fileHeaderContext) :
-    _currentChunk(std::make_unique<Chunk>()),
-    _lastSerial(0),
-    _defaultEncoding(defaultEncoding),
-    _threadPool(threadPool),
-    _commitExecutor(commitExecutor),
-    _sessionExecutor(sessionExecutor),
-    _sessionId(1),
-    _syncMonitor(),
-    _pendingSync(false),
-    _name(domainName),
-    _domainPartSizeLimit(domainPartSize),
-    _chunkSizeLimit(0x40000),
-    _chunkAgeLimit(1ms),
-    _parts(),
-    _lock(),
-    _currentChunkMonitor(),
-    _sessionLock(),
-    _sessions(),
-    _maxSessionRunTime(),
-    _baseDir(baseDir),
-    _fileHeaderContext(fileHeaderContext),
-    _markedDeleted(false),
-    _self(nullptr)
+               Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
+               const FileHeaderContext &fileHeaderContext)
+    : _config(cfg),
+      _currentChunk(std::make_unique<Chunk>()),
+      _lastSerial(0),
+      _threadPool(threadPool),
+      _commitExecutor(commitExecutor),
+      _sessionExecutor(sessionExecutor),
+      _sessionId(1),
+      _syncMonitor(),
+      _pendingSync(false),
+      _name(domainName),
+      _parts(),
+      _lock(),
+      _currentChunkMonitor(),
+      _sessionLock(),
+      _sessions(),
+      _baseDir(baseDir),
+      _fileHeaderContext(fileHeaderContext),
+      _markedDeleted(false),
+      _self(nullptr)
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
@@ -67,11 +71,18 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
     }
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultEncoding, _fileHeaderContext, false));
+        _parts[lastPart] = make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
+                                                   _config.getCompressionlevel(), _fileHeaderContext, false);
     }
     _lastSerial = end();
     _self = _threadPool.NewThread(this);
     assert(_self);
+}
+
+Domain &
+Domain::setConfig(const DomainConfig & cfg) {
+    _config = cfg;
+    return *this;
 }
 
 void
@@ -79,12 +90,13 @@ Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
 
     while (!thisThread->GetBreakFlag()) {
         vespalib::MonitorGuard guard(_currentChunkMonitor);
-        guard.wait(duration_cast<milliseconds>(_chunkAgeLimit).count());
+        guard.wait(duration_cast<milliseconds>(_config.getChunkAgeLimit()).count());
         commitIfStale(guard);
     }
 }
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultEncoding, _fileHeaderContext, isLastPart));
+    auto dp = make_shared<DomainPart>(_name, dir(), partId, _config.getEncoding(),
+                                      _config.getCompressionlevel(), _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -343,7 +355,7 @@ Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
         _lastSerial = packet.range().to();
     }
     _currentChunk->add(packet, std::move(onDone));
-    if (_currentChunk->sizeBytes() > _chunkSizeLimit) {
+    if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
         completed = grabCurrentChunk(guard);
     }
     if (completed) {
@@ -362,7 +374,7 @@ Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
 void
 Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
     assert(guard.monitors(_currentChunkMonitor));
-    if (_currentChunk->age() > _chunkAgeLimit) {
+    if (_currentChunk->age() > _config.getChunkAgeLimit()) {
         commitChunk(grabCurrentChunk(guard), guard);
     }
 }
@@ -376,12 +388,13 @@ Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard &
     vespalib::nbostream_longlivedbuf is(packet.getHandle().c_str(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
-    if (dp->byteSize() > _domainPartSizeLimit) {
+    if (dp->byteSize() > _config.getPartSizeLimit()) {
         waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultEncoding, _fileHeaderContext, false));
+        dp = make_shared<DomainPart>(_name, dir(), entry.serial(), _config.getEncoding(),
+                                     _config.getCompressionlevel(), _fileHeaderContext, false);
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;

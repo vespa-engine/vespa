@@ -22,7 +22,7 @@ private:
 public:
     typedef std::shared_ptr<DomainPart> SP;
     DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Encoding defaultEncoding,
-               const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
+               uint8_t compressionLevel, const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
 
     ~DomainPart();
 
@@ -74,7 +74,8 @@ private:
     };
     typedef std::vector<SkipInfo> SkipList;
     typedef std::map<SerialNum, Packet> PacketList;
-    const Encoding        _defaultEncoding;
+    const Encoding        _encoding;
+    const uint8_t         _compressionLevel;
     vespalib::Lock        _lock;
     vespalib::Lock        _fileLock;
     SerialNumRange        _range;

@@ -63,21 +63,21 @@ IChunk::decode(nbostream & is) {
 
 IChunk::UP
 IChunk::create(uint8_t chunkType) {
-    return create(Encoding(chunkType));
+    return create(Encoding(chunkType), 9);
 }
 IChunk::UP
-IChunk::create(Encoding encoding) {
+IChunk::create(Encoding encoding, uint8_t compressionLevel) {
     switch (encoding.getCrc()) {
         case Encoding::Crc::xxh64:
             switch (encoding.getCompression()) {
                 case Encoding::Compression::none:
                     return make_unique<XXH64None>();
                 case Encoding::Compression::lz4:
-                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4);
+                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4, compressionLevel);
                 case Encoding::Compression::zstd:
-                    return make_unique<XXH64Compressed>(CompressionConfig::ZSTD);
+                    return make_unique<XXH64Compressed>(CompressionConfig::ZSTD, compressionLevel);
                 default:
-                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4);
+                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4, compressionLevel);
             }
         case Encoding::Crc::ccitt_crc32:
             switch (encoding.getCompression()) {

@@ -43,7 +43,7 @@ public:
     Encoding encode(nbostream & os) const;
     void decode(nbostream & buf);
     static UP create(uint8_t chunkType);
-    static UP create(Encoding chunkType);
+    static UP create(Encoding chunkType, uint8_t compressionLevel);
     SerialNumRange range() const;
 protected:
     virtual Encoding onEncode(nbostream & os) const = 0;

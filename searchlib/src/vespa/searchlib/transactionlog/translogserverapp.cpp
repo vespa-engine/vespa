@@ -7,12 +7,17 @@
 LOG_SETUP(".translogserverapp");
 
 using search::common::FileHeaderContext;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
+using LockGuard = std::lock_guard<std::mutex>;
+using std::make_unique;
+
 TransLogServerApp::TransLogServerApp(const config::ConfigUri & tlsConfigUri,
                                      const FileHeaderContext & fileHeaderContext)
-    : _tls(),
+    : _lock(),
+      _tls(),
       _tlsConfig(),
       _tlsConfigFetcher(tlsConfigUri.getContext()),
       _fileHeaderContext(fileHeaderContext)
@@ -56,13 +61,25 @@ getEncoding(const searchlib::TranslogserverConfig & cfg)
     return Encoding(getCrc(cfg.crcmethod), getCompression(cfg.compression.type));
 }
 
+DomainConfig
+getDomainConfig(const searchlib::TranslogserverConfig & cfg) {
+    DomainConfig dcfg;
+    dcfg.setEncoding(getEncoding(cfg))
+        .setCompressionLevel(cfg.compression.level)
+        .setPartSizeLimit(cfg.filesizemax)
+        .setChunkSizeLimit(cfg.chunk.sizelimit)
+        .setChunkAgeLimit(std::chrono::microseconds(int64_t(cfg.chunk.agelimit*1000000)));
+    return dcfg;
+}
+
 }
 
 void TransLogServerApp::start()
 {
-    std::shared_ptr<searchlib::TranslogserverConfig> c = _tlsConfig.get();
-    _tls.reset(new TransLogServer(c->servername, c->listenport, c->basedir, _fileHeaderContext,
-                                  c->filesizemax, c->maxthreads, getEncoding(*c)));
+    LockGuard guard(_lock);
+    auto c = _tlsConfig.get();
+    _tls = make_unique<TransLogServer>(c->servername, c->listenport, c->basedir, _fileHeaderContext,
+                                       getDomainConfig(*c), c->maxthreads);
 }
 
 TransLogServerApp::~TransLogServerApp()
@@ -73,8 +90,12 @@ TransLogServerApp::~TransLogServerApp()
 void TransLogServerApp::configure(std::unique_ptr<searchlib::TranslogserverConfig> cfg)
 {
     LOG(config, "configure Transaction Log Server %s at port %d", cfg->servername.c_str(), cfg->listenport);
+    LockGuard guard(_lock);
     _tlsConfig.set(cfg.release());
     _tlsConfig.latch();
+    if (_tls) {
+        _tls->setDomainConfig(getDomainConfig(*cfg));
+    }
 }
 
 }
