@@ -91,7 +91,7 @@ struct PersistenceUtil {
     void updateBucketDatabase(const document::Bucket &bucket,
                               const api::BucketInfo& info);
 
-    uint16_t getPreferredAvailableDisk(const document::BucketId& id) const;
+    uint16_t getPreferredAvailableDisk(const document::Bucket &bucket) const;
 
     /** Lock the given bucket in the file stor handler. */
     struct LockResult {
@@ -104,7 +104,7 @@ struct PersistenceUtil {
     };
 
     LockResult lockAndGetDisk(
-            const document::BucketId& bucket,
+            const document::Bucket &bucket,
             StorBucketDatabase::Flag flags = StorBucketDatabase::NONE);
 
     api::BucketInfo getBucketInfo(const document::Bucket &bucket, int disk = -1) const;

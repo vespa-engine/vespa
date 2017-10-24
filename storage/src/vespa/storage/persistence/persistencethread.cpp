@@ -545,8 +545,8 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
     LOG(debug, "split(%s -> %s, %s)", cmd.getBucketId().toString().c_str(),
         target1.getBucketId().toString().c_str(), target2.getBucketId().toString().c_str());
 
-    PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(target1.getBucketId()));
-    PersistenceUtil::LockResult lock2(_env.lockAndGetDisk(target2.getBucketId()));
+    PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(target1));
+    PersistenceUtil::LockResult lock2(_env.lockAndGetDisk(target2));
 
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
@@ -590,7 +590,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
                 _env.getBucketDatabase().get(
                     target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
                     StorBucketDatabase::CREATE_IF_NONEXISTING),
-                FileStorHandler::RemapInfo(target.getBucketId(), disk)));
+                FileStorHandler::RemapInfo(target, disk)));
         targets.back().first->setBucketInfo(
             _env.getBucketInfo(target, disk));
         targets.back().first->disk = disk;
@@ -606,7 +606,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
             target2.getBucketId().toString().c_str(),
             targ2.getMetaCount());
     }
-    FileStorHandler::RemapInfo source(cmd.getBucketId(), _env._partition);
+    FileStorHandler::RemapInfo source(cmd.getBucket(), _env._partition);
     _env._fileStorHandler.remapQueueAfterSplit(
             source, targets[0].second, targets[1].second);
     bool ownershipChanged(
@@ -615,7 +615,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
     // Now release all the bucketdb locks.
     for (uint32_t i = 0; i < targets.size(); i++) {
         if (ownershipChanged) {
-            notifyGuard.notifyAlways(document::Bucket(spiBucket.getBucketSpace(), targets[i].second.bid),
+            notifyGuard.notifyAlways(targets[i].second.bucket,
                                      targets[i].first->getBucketInfo());
         }
         // The entries vector has the source bucket in element zero, so indexing
@@ -630,7 +630,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
                 // to an empty target bucket, since the provider will have
                 // implicitly erased it by this point.
                 spi::Bucket createTarget(
-                        spi::Bucket(document::Bucket(spiBucket.getBucketSpace(), targets[i].second.bid),
+                        spi::Bucket(targets[i].second.bucket,
                             spi::PartitionId(targets[i].second.diskIndex)));
                 LOG(debug,
                     "Split target %s was empty, but re-creating it since "
@@ -640,7 +640,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
             }
             splitReply->getSplitInfo().push_back(
                     api::SplitBucketReply::Entry(
-                        targets[i].second.bid,
+                        targets[i].second.bucket.getBucketId(),
                         targets[i].first->getBucketInfo()));
             targets[i].first.write();
         } else {
@@ -715,8 +715,9 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
         entry.write();
     }
 
-    document::BucketId firstBucket(cmd.getSourceBuckets()[0]);
-    document::BucketId secondBucket(cmd.getSourceBuckets()[1]);
+    document::Bucket destBucket = cmd.getBucket();
+    document::Bucket firstBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[0]);
+    document::Bucket secondBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[1]);
 
     PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(firstBucket));
     PersistenceUtil::LockResult lock2;
@@ -729,20 +730,19 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
         vespalib::string desc(
                 vespalib::make_string(
                         "join(%s, %s -> %s)",
-                        firstBucket.toString().c_str(),
-                        secondBucket.toString().c_str(),
+                        firstBucket.getBucketId().toString().c_str(),
+                        secondBucket.getBucketId().toString().c_str(),
                         cmd.getBucketId().toString().c_str()));
         LOG_BUCKET_OPERATION(cmd.getBucketId(), desc);
-        LOG_BUCKET_OPERATION(firstBucket, desc);
+        LOG_BUCKET_OPERATION(firstBucket.getBucketId(), desc);
         if (firstBucket != secondBucket) {
-            LOG_BUCKET_OPERATION(secondBucket, desc);
+            LOG_BUCKET_OPERATION(secondBucket.getBucketId(), desc);
         }
     }
 #endif
-    document::Bucket destBucket = cmd.getBucket();
     spi::Result result =
-        _spi.join(spi::Bucket(document::Bucket(destBucket.getBucketSpace(), firstBucket), spi::PartitionId(lock1.disk)),
-                  spi::Bucket(document::Bucket(destBucket.getBucketSpace(), secondBucket), spi::PartitionId(lock2.disk)),
+        _spi.join(spi::Bucket(firstBucket, spi::PartitionId(lock1.disk)),
+                  spi::Bucket(secondBucket, spi::PartitionId(lock2.disk)),
                   spi::Bucket(destBucket, spi::PartitionId(_env._partition)),
                   _context);
     if (!checkForError(result, *tracker)) {
@@ -754,17 +754,17 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
     }
     uint64_t lastModified = 0;
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
-        document::BucketId bId = cmd.getSourceBuckets()[i];
+        document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
         uint16_t disk = (i == 0) ? lock1.disk : lock2.disk;
-        FileStorHandler::RemapInfo target(cmd.getBucketId(),
+        FileStorHandler::RemapInfo target(cmd.getBucket(),
                                           _env._partition);
         _env._fileStorHandler.remapQueueAfterJoin(
-                FileStorHandler::RemapInfo(bId, disk),
+                FileStorHandler::RemapInfo(srcBucket, disk),
                 target);
         // Remove source from bucket db.
         StorBucketDatabase::WrappedEntry entry(
                 _env.getBucketDatabase().get(
-                        bId, "join-remove-source"));
+                        srcBucket.getBucketId(), "join-remove-source"));
         if (entry.exist()) {
             lastModified = std::max(lastModified,
                                     entry->info.getLastModified());
@@ -1101,7 +1101,7 @@ bool hasBucketInfo(const api::StorageMessage& msg)
 
 void
 PersistenceThread::flushAllReplies(
-        const document::BucketId& bucketId,
+        const document::Bucket& bucket,
         std::vector<std::unique_ptr<MessageTracker> >& replies)
 {
     if (replies.empty()) {
@@ -1128,14 +1128,14 @@ PersistenceThread::flushAllReplies(
                 }
             }
             LOG_BUCKET_OPERATION(
-                    bucketId,
+                    bucket.getBucketId(),
                     vespalib::make_string(
                             "flushing %zu operations (%zu puts, %zu removes, "
                             "%zu other)",
                             replies.size(), nputs, nremoves, nother));
         }
 #endif
-        spi::Bucket b(document::Bucket(document::BucketSpace::placeHolder(), bucketId), spi::PartitionId(_env._partition));
+        spi::Bucket b(bucket, spi::PartitionId(_env._partition));
         spi::Result result = _spi.flush(b, _context);
         uint32_t errorCode = _env.convertErrorCode(result);
         if (errorCode != 0) {
@@ -1167,7 +1167,7 @@ PersistenceThread::flushAllReplies(
 void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
 {
     std::vector<MessageTracker::UP> trackers;
-    document::BucketId bucketId = lock.first->getBucketId();
+    document::Bucket bucket = lock.first->getBucket();
 
     while (lock.second.get() != 0) {
         LOG(debug, "Inside while loop %d, nodeIndex %d, ptr=%p",
@@ -1178,7 +1178,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
         // If the next operation wasn't batchable, we should flush
         // everything that came before.
         if (!batchable) {
-            flushAllReplies(bucketId, trackers);
+            flushAllReplies(bucket, trackers);
         }
 
         std::unique_ptr<MessageTracker> tracker = processMessage(*msg);
@@ -1189,15 +1189,13 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
 
         if (hasBucketInfo(*msg)) {
             if (tracker->getReply()->getResult().success()) {
-                document::Bucket bucket = msg->getBucket();
-                assert(bucket.getBucketId() == bucketId);
                 _env.setBucketInfo(*tracker, bucket);
             }
         }
         if (batchable) {
             LOG(spam, "Adding reply %s to batch for bucket %s",
                 tracker->getReply()->toString().c_str(),
-                bucketId.toString().c_str());
+                bucket.getBucketId().toString().c_str());
 
             trackers.push_back(std::move(tracker));
 
@@ -1220,7 +1218,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
         }
     }
 
-    flushAllReplies(bucketId, trackers);
+    flushAllReplies(bucket, trackers);
 }
 
 void

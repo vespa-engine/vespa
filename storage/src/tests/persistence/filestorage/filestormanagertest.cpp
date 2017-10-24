@@ -905,9 +905,9 @@ FileStorManagerTest::testRemapSplit()
                                      "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n"),
                          filestorHandler.dumpQueue(0));
 
-    FileStorHandler::RemapInfo a(document::BucketId(17, 1234), 0);
-    FileStorHandler::RemapInfo b(document::BucketId(17, 1234 | 1 << 16), 0);
-    filestorHandler.remapQueueAfterSplit(FileStorHandler::RemapInfo(bucket1, 0), a, b);
+    FileStorHandler::RemapInfo a(makeDocumentBucket(document::BucketId(17, 1234)), 0);
+    FileStorHandler::RemapInfo b(makeDocumentBucket(document::BucketId(17, 1234 | 1 << 16)), 0);
+    filestorHandler.remapQueueAfterSplit(FileStorHandler::RemapInfo(makeDocumentBucket(bucket1), 0), a, b);
 
     CPPUNIT_ASSERT(a.foundInQueue);
     CPPUNIT_ASSERT(!b.foundInQueue);

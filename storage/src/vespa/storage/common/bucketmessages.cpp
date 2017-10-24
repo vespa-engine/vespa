@@ -15,6 +15,12 @@ ReadBucketList::ReadBucketList(BucketSpace bucketSpace, spi::PartitionId partiti
 
 ReadBucketList::~ReadBucketList() { }
 
+document::Bucket
+ReadBucketList::getBucket() const
+{
+    return document::Bucket(_bucketSpace, document::BucketId());
+}
+
 void
 ReadBucketList::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "ReadBucketList(" << _partition << ")";

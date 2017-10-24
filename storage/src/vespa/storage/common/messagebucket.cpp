@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "messagebucketid.h"
+#include "messagebucket.h"
 #include "statusmessages.h"
 #include "bucketmessages.h"
 #include <vespa/storageapi/message/bucket.h>
@@ -16,76 +16,76 @@
 
 namespace storage {
 
-document::BucketId
-getStorageMessageBucketId(const api::StorageMessage& msg)
+document::Bucket
+getStorageMessageBucket(const api::StorageMessage& msg)
 {
     switch (msg.getType().getId()) {
     case api::MessageType::GET_ID:
-        return static_cast<const api::GetCommand&>(msg).getBucketId();
+        return static_cast<const api::GetCommand&>(msg).getBucket();
     case api::MessageType::PUT_ID:
-        return static_cast<const api::PutCommand&>(msg).getBucketId();
+        return static_cast<const api::PutCommand&>(msg).getBucket();
     case api::MessageType::UPDATE_ID:
-        return static_cast<const api::UpdateCommand&>(msg).getBucketId();
+        return static_cast<const api::UpdateCommand&>(msg).getBucket();
     case api::MessageType::REMOVE_ID:
-        return static_cast<const api::RemoveCommand&>(msg).getBucketId();
+        return static_cast<const api::RemoveCommand&>(msg).getBucket();
     case api::MessageType::REVERT_ID:
-        return static_cast<const api::RevertCommand&>(msg).getBucketId();
+        return static_cast<const api::RevertCommand&>(msg).getBucket();
     case api::MessageType::STATBUCKET_ID:
-        return static_cast<const api::StatBucketCommand&>(msg).getBucketId();
+        return static_cast<const api::StatBucketCommand&>(msg).getBucket();
     case api::MessageType::MULTIOPERATION_ID:
         return static_cast<const api::MultiOperationCommand&>(msg)
-                .getBucketId();
+                .getBucket();
     case api::MessageType::BATCHPUTREMOVE_ID:
         return static_cast<const api::BatchPutRemoveCommand&>(msg)
-            .getBucketId();
+            .getBucket();
     case api::MessageType::REMOVELOCATION_ID:
         return static_cast<const api::RemoveLocationCommand&>(msg)
-                .getBucketId();
+                .getBucket();
     case api::MessageType::CREATEBUCKET_ID:
-        return static_cast<const api::CreateBucketCommand&>(msg).getBucketId();
+        return static_cast<const api::CreateBucketCommand&>(msg).getBucket();
     case api::MessageType::DELETEBUCKET_ID:
-        return static_cast<const api::DeleteBucketCommand&>(msg).getBucketId();
+        return static_cast<const api::DeleteBucketCommand&>(msg).getBucket();
     case api::MessageType::MERGEBUCKET_ID:
-        return static_cast<const api::MergeBucketCommand&>(msg).getBucketId();
+        return static_cast<const api::MergeBucketCommand&>(msg).getBucket();
     case api::MessageType::GETBUCKETDIFF_ID:
-        return static_cast<const api::GetBucketDiffCommand&>(msg).getBucketId();
+        return static_cast<const api::GetBucketDiffCommand&>(msg).getBucket();
     case api::MessageType::GETBUCKETDIFF_REPLY_ID:
-        return static_cast<const api::GetBucketDiffReply&>(msg).getBucketId();
+        return static_cast<const api::GetBucketDiffReply&>(msg).getBucket();
     case api::MessageType::APPLYBUCKETDIFF_ID:
         return static_cast<const api::ApplyBucketDiffCommand&>(msg)
-                .getBucketId();
+                .getBucket();
     case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
-        return static_cast<const api::ApplyBucketDiffReply&>(msg).getBucketId();
+        return static_cast<const api::ApplyBucketDiffReply&>(msg).getBucket();
 
     case api::MessageType::JOINBUCKETS_ID:
-        return static_cast<const api::JoinBucketsCommand&>(msg).getBucketId();
+        return static_cast<const api::JoinBucketsCommand&>(msg).getBucket();
     case api::MessageType::SPLITBUCKET_ID:
-        return static_cast<const api::SplitBucketCommand&>(msg).getBucketId();
+        return static_cast<const api::SplitBucketCommand&>(msg).getBucket();
     case api::MessageType::SETBUCKETSTATE_ID:
-        return static_cast<const api::SetBucketStateCommand&>(msg).getBucketId();
+        return static_cast<const api::SetBucketStateCommand&>(msg).getBucket();
 
     case api::MessageType::INTERNAL_ID:
         switch(static_cast<const api::InternalCommand&>(msg).getType()) {
         case RequestStatusPage::ID:
-            return document::BucketId();
+            return document::Bucket();
         case GetIterCommand::ID:
-            return static_cast<const GetIterCommand&>(msg).getBucketId();
+            return static_cast<const GetIterCommand&>(msg).getBucket();
         case CreateIteratorCommand::ID:
             return static_cast<const CreateIteratorCommand&>(msg)
-                .getBucketId();
+                .getBucket();
         case ReadBucketList::ID:
-            return document::BucketId();
+            return static_cast<const ReadBucketList&>(msg).getBucket();
         case ReadBucketInfo::ID:
-            return static_cast<const ReadBucketInfo&>(msg).getBucketId();
+            return static_cast<const ReadBucketInfo&>(msg).getBucket();
         case RepairBucketCommand::ID:
-            return static_cast<const RepairBucketCommand&>(msg).getBucketId();
+            return static_cast<const RepairBucketCommand&>(msg).getBucket();
         case BucketDiskMoveCommand::ID:
-            return static_cast<const BucketDiskMoveCommand&>(msg).getBucketId();
+            return static_cast<const BucketDiskMoveCommand&>(msg).getBucket();
         case InternalBucketJoinCommand::ID:
             return static_cast<const InternalBucketJoinCommand&>(msg)
-                    .getBucketId();
+                    .getBucket();
         case RecheckBucketInfoCommand::ID:
-            return static_cast<const RecheckBucketInfoCommand&>(msg).getBucketId();
+            return static_cast<const RecheckBucketInfoCommand&>(msg).getBucket();
         default:
             break;
         }

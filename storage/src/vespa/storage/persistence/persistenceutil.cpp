@@ -113,13 +113,13 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
 }
 
 uint16_t
-PersistenceUtil::getPreferredAvailableDisk(const document::BucketId& id) const
+PersistenceUtil::getPreferredAvailableDisk(const document::Bucket &bucket) const
 {
-    return _component.getPreferredAvailablePartition(id);
+    return _component.getPreferredAvailablePartition(bucket.getBucketId());
 }
 
 PersistenceUtil::LockResult
-PersistenceUtil::lockAndGetDisk(const document::BucketId& bucket,
+PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
                                 StorBucketDatabase::Flag flags)
 {
     // To lock the bucket, we need to ensure that we don't conflict with
@@ -135,7 +135,7 @@ PersistenceUtil::lockAndGetDisk(const document::BucketId& bucket,
                 _fileStorHandler.lock(bucket, result.disk));
 
         StorBucketDatabase::WrappedEntry entry(getBucketDatabase().get(
-                bucket, "join-lockAndGetDisk-1", flags));
+                bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
         if (entry.exist() && entry->disk != result.disk) {
             result.disk = entry->disk;
             continue;

@@ -77,14 +77,14 @@ FileStorHandler::getNextMessage(uint16_t thread,
 }
 
 FileStorHandler::BucketLockInterface::SP
-FileStorHandler::lock(const document::BucketId& bucket, uint16_t disk)
+FileStorHandler::lock(const document::Bucket& bucket, uint16_t disk)
 {
     return _impl->lock(bucket, disk);
 }
 
 void
 FileStorHandler::remapQueueAfterDiskMove(
-        const document::BucketId& bucket,
+        const document::Bucket& bucket,
         uint16_t sourceDisk, uint16_t targetDisk)
 {
     RemapInfo target(bucket, targetDisk);
@@ -111,10 +111,10 @@ FileStorHandler::remapQueueAfterSplit(
 }
 
 void
-FileStorHandler::failOperations(const document::BucketId& bid,
+FileStorHandler::failOperations(const document::Bucket &bucket,
                                 uint16_t fromDisk, const api::ReturnCode& err)
 {
-    _impl->failOperations(bid, fromDisk, err);
+    _impl->failOperations(bucket, fromDisk, err);
 }
 
 void

@@ -28,6 +28,7 @@ public:
     ~ReadBucketList();
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     spi::PartitionId getPartition() const { return _partition; }
+    document::Bucket getBucket() const override;
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
