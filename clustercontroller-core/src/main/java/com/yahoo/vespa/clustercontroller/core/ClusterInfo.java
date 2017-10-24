@@ -50,6 +50,8 @@ public class ClusterInfo {
     /** Returns the configured nodes of this as a read-only map indexed on node index (distribution key) */
     Map<Integer, ConfiguredNode> getConfiguredNodes() { return Collections.unmodifiableMap(nodes); }
 
+    boolean hasConfiguredNode(int index) { return nodes.containsKey(index); }
+
     /** Sets the nodes which belongs to this cluster */
     void setNodes(Collection<ConfiguredNode> newNodes, ContentCluster owner, Distribution distribution) {
         // Remove info for removed nodes
