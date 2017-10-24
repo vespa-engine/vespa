@@ -26,6 +26,7 @@ struct Tensor : public eval::Tensor
 {
     typedef std::unique_ptr<Tensor> UP;
     typedef std::reference_wrapper<const Tensor> CREF;
+    using join_fun_t = double (*)(double, double);
 
     Tensor();
     virtual ~Tensor() {}
@@ -41,6 +42,8 @@ struct Tensor : public eval::Tensor
     virtual Tensor::UP sum(const vespalib::string &dimension) const = 0;
     virtual Tensor::UP apply(const eval::BinaryOperation &op,
                              const Tensor &arg) const = 0;
+    virtual Tensor::UP join(join_fun_t function,
+                            const Tensor &arg) const = 0;
     virtual Tensor::UP reduce(const eval::BinaryOperation &op,
                               const std::vector<vespalib::string> &dimensions)
         const = 0;

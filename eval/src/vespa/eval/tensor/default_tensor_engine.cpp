@@ -70,6 +70,11 @@ const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
     return stash.create<DoubleValue>(tensor->sum());
 }
 
+template <typename join_fun_t>
+const Value &fallback_join(const Value &a, const Value &b, join_fun_t function, Stash &stash) {
+    return to_default(simple_engine().join(to_simple(a, stash), to_simple(b, stash), function, stash), stash);
+}
+
 } // namespace vespalib::tensor::<unnamed>
 
 const DefaultTensorEngine DefaultTensorEngine::_engine;
@@ -199,10 +204,33 @@ DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, con
     return stash.create<ErrorValue>();
 }
 
-struct CellFunctionAdapter : tensor::CellFunction {
+struct CellFunctionOpAdapter : tensor::CellFunction {
     const eval::UnaryOperation &op;
-    CellFunctionAdapter(const eval::UnaryOperation &op_in) : op(op_in) {}
+    CellFunctionOpAdapter(const eval::UnaryOperation &op_in) : op(op_in) {}
     virtual double apply(double value) const override { return op.eval(value); }
+};
+
+struct CellFunctionFunAdapter : tensor::CellFunction {
+    using map_fun_t = DefaultTensorEngine::map_fun_t;
+    map_fun_t fun;
+    CellFunctionFunAdapter(map_fun_t fun_in) : fun(fun_in) {}
+    virtual double apply(double value) const override { return fun(value); }
+};
+
+struct CellFunctionBindLeftAdapter : tensor::CellFunction {
+    using join_fun_t = DefaultTensorEngine::join_fun_t;
+    join_fun_t fun;
+    double a;
+    CellFunctionBindLeftAdapter(join_fun_t fun_in, double bound) : fun(fun_in), a(bound) {}
+    virtual double apply(double b) const override { return fun(a, b); }
+};
+
+struct CellFunctionBindRightAdapter : tensor::CellFunction {
+    using join_fun_t = DefaultTensorEngine::join_fun_t;
+    join_fun_t fun;
+    double b;
+    CellFunctionBindRightAdapter(join_fun_t fun_in, double bound) : fun(fun_in), b(bound) {}
+    virtual double apply(double a) const override { return fun(a, b); }
 };
 
 const eval::Value &
@@ -213,7 +241,7 @@ DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash
     if (!tensor::Tensor::supported({my_a.getType()})) {
         return to_default(simple_engine().map(op, to_simple(my_a, stash), stash), stash);
     }
-    CellFunctionAdapter cell_function(op);
+    CellFunctionOpAdapter cell_function(op);
     return to_value(my_a.apply(cell_function), stash);
 }
 
@@ -295,13 +323,64 @@ DefaultTensorEngine::decode(nbostream &input, Stash &stash) const
 const Value &
 DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
-    return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
+    if (a.is_double()) {
+        return stash.create<DoubleValue>(function(a.as_double()));
+    } else if (auto tensor = a.as_tensor()) {
+        assert(&tensor->engine() == this);
+        const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
+        if (!tensor::Tensor::supported({my_a.getType()})) {
+            return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
+        }
+        CellFunctionFunAdapter cell_function(function);
+        return to_value(my_a.apply(cell_function), stash);
+    } else { // error
+        return a;
+    }
 }
 
 const Value &
 DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
-    return to_default(simple_engine().join(to_simple(a, stash), to_simple(b, stash), function, stash), stash);
+    if (a.is_double()) {
+        if (b.is_double()) {
+            return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
+        } else if (auto tensor_b = b.as_tensor()) {
+            assert(&tensor_b->engine() == this);
+            const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
+            if (!tensor::Tensor::supported({my_b.getType()})) {
+                return fallback_join(a, b, function, stash);
+            }
+            CellFunctionBindLeftAdapter cell_function(function, a.as_double());
+            return to_value(my_b.apply(cell_function), stash);
+        } else { // error
+            return b;
+        }
+    } else if (auto tensor_a = a.as_tensor()) {
+        assert(&tensor_a->engine() == this);
+        const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
+        if (b.is_double()) {
+            if (!tensor::Tensor::supported({my_a.getType()})) {
+                return fallback_join(a, b, function, stash);
+            }
+            CellFunctionBindRightAdapter cell_function(function, b.as_double());
+            return to_value(my_a.apply(cell_function), stash);
+        } else if (auto tensor_b = b.as_tensor()) {
+            assert(&tensor_b->engine() == this);
+            const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
+            if (!tensor::Tensor::supported({my_a.getType(), my_b.getType()})) {
+                return fallback_join(a, b, function, stash);
+            }
+            if ((function == eval::operation::Mul::f) && (my_a.getType() == my_b.getType())) {
+                return to_value(my_a.match(my_b), stash);
+            } else {
+                return to_value(my_a.join(function, my_b), stash);
+            }
+        } else { // error
+            return b;
+        }
+    } else { // error
+        return a;
+    }
 }
 
 const Value &

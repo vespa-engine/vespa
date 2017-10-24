@@ -136,6 +136,13 @@ WrappedSimpleTensor::apply(const eval::BinaryOperation &, const Tensor &) const
 }
 
 Tensor::UP
+WrappedSimpleTensor::join(join_fun_t, const Tensor &) const
+{
+    abort();
+    return Tensor::UP();
+}
+
+Tensor::UP
 WrappedSimpleTensor::reduce(const eval::BinaryOperation &, const std::vector<vespalib::string> &) const
 {
     abort();
