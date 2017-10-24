@@ -65,6 +65,7 @@ public class MetricsReporter extends Maintainer {
                     "hostname", node.hostname(),
                     "tenantName", applicationId.tenant().value(),
                     "applicationId", applicationId.serializedForm().replace(':', '.'),
+                    "app", toApp(applicationId),
                     "clustertype", allocation.get().membership().cluster().type().name(),
                     "clusterid", allocation.get().membership().cluster().id().value());
 
@@ -121,6 +122,10 @@ public class MetricsReporter extends Maintainer {
         }
 
         // TODO: Also add metric on whether some services are down on node?
+    }
+
+    private static String toApp(ApplicationId applicationId) {
+        return applicationId.application().value() + "." + applicationId.instance().value();
     }
 
     /**
