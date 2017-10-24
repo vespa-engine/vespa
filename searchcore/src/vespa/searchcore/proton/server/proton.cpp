@@ -237,8 +237,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const auto &hwDiskCfg = protonConfig.hwinfo.disk;
     const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
     const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
-    // TODO: Forward disk size when performance impact of disk usage sampling is verified
-    HwInfoSampler::Config samplerCfg(0,
+    HwInfoSampler::Config samplerCfg(hwDiskCfg.size,
                                      hwDiskCfg.writespeed,
                                      hwDiskCfg.slowwritespeedlimit,
                                      hwDiskCfg.samplewritesize,
