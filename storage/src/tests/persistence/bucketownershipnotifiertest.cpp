@@ -4,6 +4,9 @@
 #include <tests/distributor/messagesenderstub.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -35,22 +38,22 @@ public:
         return distributor == distributorIndex;
     }
     
-    document::BucketId getFirstNonOwnedBucket() {
+    document::Bucket getFirstNonOwnedBucket() {
         for (int i = 0; i < 1000; ++i) {
             if (!ownsBucket(0, document::BucketId(16, i))) {
-                return document::BucketId(16, i);
+                return makeDocumentBucket(document::BucketId(16, i));
             }
         }
-        return document::BucketId(0);
+        return makeDocumentBucket(document::BucketId(0));
     }
         
-    document::BucketId getFirstOwnedBucket() {
+    document::Bucket getFirstOwnedBucket() {
         for (int i = 0; i < 1000; ++i) {
             if (ownsBucket(0, document::BucketId(16, i))) {
-                return document::BucketId(16, i);
+                return makeDocumentBucket(document::BucketId(16, i));
             }
         }
-        return document::BucketId(0);
+        return makeDocumentBucket(document::BucketId(0));
     }
 
 
@@ -59,7 +62,7 @@ public:
     void testIgnoreIdealStateCalculationExceptions();
     void testGuardNotifyAlways();
 
-    void doTestNotification(const document::BucketId& bucket,
+    void doTestNotification(const document::Bucket &bucket,
                             const api::BucketInfo& info,
                             const std::string& wantedSend);
 };
@@ -75,7 +78,7 @@ BucketOwnershipNotifierTest::setUp()
 }
 
 void
-BucketOwnershipNotifierTest::doTestNotification(const document::BucketId& bucket,
+BucketOwnershipNotifierTest::doTestNotification(const document::Bucket &bucket,
                                                 const api::BucketInfo& info,
                                                 const std::string& wantedSend)
 {
@@ -93,12 +96,12 @@ void
 BucketOwnershipNotifierTest::testSendNotifyBucketChangeIfOwningDistributorChanged()
 {
     api::BucketInfo info(0x1, 2, 3);
-    document::BucketId bucket(getFirstNonOwnedBucket());
-    CPPUNIT_ASSERT(bucket.getRawId() != 0);
+    document::Bucket bucket(getFirstNonOwnedBucket());
+    CPPUNIT_ASSERT(bucket.getBucketId().getRawId() != 0);
 
     std::ostringstream wanted;
     wanted << "NotifyBucketChangeCommand("
-           << bucket
+           << bucket.getBucketId()
            << ", " << info
            << ") => 1";
 
@@ -109,8 +112,8 @@ void
 BucketOwnershipNotifierTest::testDoNotSendNotifyBucketChangeIfBucketOwnedByInitialSender()
 {
     api::BucketInfo info(0x1, 2, 3);
-    document::BucketId bucket(getFirstOwnedBucket());
-    CPPUNIT_ASSERT(bucket.getRawId() != 0);
+    document::Bucket bucket(getFirstOwnedBucket());
+    CPPUNIT_ASSERT(bucket.getBucketId().getRawId() != 0);
 
     doTestNotification(bucket, info, "");
 }
@@ -119,8 +122,8 @@ void
 BucketOwnershipNotifierTest::testIgnoreIdealStateCalculationExceptions()
 {
     api::BucketInfo info(0x1, 2, 3);
-    document::BucketId bucket(getFirstNonOwnedBucket());
-    CPPUNIT_ASSERT(bucket.getRawId() != 0);
+    document::Bucket bucket(getFirstNonOwnedBucket());
+    CPPUNIT_ASSERT(bucket.getBucketId().getRawId() != 0);
 
     _app->setClusterState(lib::ClusterState("distributor:0 storage:1"));
 
@@ -138,18 +141,18 @@ BucketOwnershipNotifierTest::testGuardNotifyAlways()
         NotificationGuard guard(notifier);
 
         api::BucketInfo info(0x1, 2, 3);
-        document::BucketId bucket1(getFirstOwnedBucket());
+        document::Bucket bucket1(getFirstOwnedBucket());
         guard.notifyAlways(bucket1, info);
 
-        document::BucketId bucket2(getFirstNonOwnedBucket());
+        document::Bucket bucket2(getFirstNonOwnedBucket());
         guard.notifyAlways(bucket2, info);
 
         wanted << "NotifyBucketChangeCommand("
-               << bucket1
+               << bucket1.getBucketId()
                << ", " << info
                << ") => 0,"
                << "NotifyBucketChangeCommand("
-               << bucket2
+               << bucket2.getBucketId()
                << ", " << info
                << ") => 1";
     }

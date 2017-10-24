@@ -56,7 +56,7 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
         return tracker;
     }
 
-    api::BucketInfo bInfo = _env.getBucketInfo(to, targetDisk);
+    api::BucketInfo bInfo = _env.getBucketInfo(bucket, targetDisk);
     uint32_t sourceFileSize = bInfo.getUsedFileSize();
 
     {

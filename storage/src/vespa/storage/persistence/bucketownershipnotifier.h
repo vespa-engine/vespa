@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vector>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/storage/common/messagesender.h>
@@ -22,13 +22,13 @@ public:
     {}
 
     bool distributorOwns(uint16_t distributor,
-                         const document::BucketId& bucket) const;
+                         const document::Bucket &bucket) const;
 
-    void notifyIfOwnershipChanged(const document::BucketId& bucket,
+    void notifyIfOwnershipChanged(const document::Bucket &bucket,
                                   uint16_t sourceIndex,
                                   const api::BucketInfo& infoToSend);
 
-    void sendNotifyBucketToCurrentOwner(const document::BucketId& bucket,
+    void sendNotifyBucketToCurrentOwner(const document::Bucket &bucket,
                                         const api::BucketInfo& infoToSend);
 private:
     enum IndexMeta {
@@ -36,13 +36,13 @@ private:
     };
 
     void sendNotifyBucketToDistributor(uint16_t distributorIndex,
-                                       const document::BucketId& bucket,
+                                       const document::Bucket &bucket,
                                        const api::BucketInfo& infoToSend);
 
     // Returns either index or FAILED_TO_RESOLVE
-    uint16_t getOwnerDistributorForBucket(const document::BucketId& bucket) const;
+    uint16_t getOwnerDistributorForBucket(const document::Bucket &bucket) const;
 
-    void logNotification(const document::BucketId& bucket,
+    void logNotification(const document::Bucket &bucket,
                          uint16_t sourceIndex,
                          uint16_t currentOwnerIndex,
                          const api::BucketInfo& newInfo);
@@ -56,7 +56,7 @@ class NotificationGuard
 {
     struct BucketToCheck
     {
-        BucketToCheck(const document::BucketId& _bucket,
+        BucketToCheck(const document::Bucket& _bucket,
                       uint16_t _sourceIndex,
                       const api::BucketInfo& _info)
           : bucket(_bucket),
@@ -65,7 +65,7 @@ class NotificationGuard
             alwaysSend(false)
         {}
 
-        document::BucketId bucket;
+        document::Bucket bucket;
         api::BucketInfo info;
         uint16_t sourceIndex;
         bool alwaysSend;
@@ -83,11 +83,11 @@ public:
 
     ~NotificationGuard();
 
-    void notifyIfOwnershipChanged(const document::BucketId& bucket,
+    void notifyIfOwnershipChanged(const document::Bucket &bucket,
                                   uint16_t sourceIndex,
                                   const api::BucketInfo& infoToSend);
 
-    void notifyAlways(const document::BucketId& bucket,
+    void notifyAlways(const document::Bucket &bucket,
                       const api::BucketInfo& infoToSend);
 };
 

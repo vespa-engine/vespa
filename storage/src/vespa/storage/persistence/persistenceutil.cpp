@@ -88,12 +88,12 @@ PersistenceUtil::~PersistenceUtil()
 }
 
 void
-PersistenceUtil::updateBucketDatabase(const document::BucketId& id,
+PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
                                       const api::BucketInfo& i)
 {
     // Update bucket database
     StorBucketDatabase::WrappedEntry entry(getBucketDatabase().get(
-                                                   id,
+                                                   bucket.getBucketId(),
                                                    "env::updatebucketdb"));
     if (entry.exist()) {
         api::BucketInfo info = i;
@@ -108,7 +108,7 @@ PersistenceUtil::updateBucketDatabase(const document::BucketId& id,
     } else {
         LOG(debug,
             "Bucket(%s).getBucketInfo: Bucket does not exist.",
-            id.toString().c_str());
+            bucket.getBucketId().toString().c_str());
     }
 }
 
@@ -147,26 +147,25 @@ PersistenceUtil::lockAndGetDisk(const document::BucketId& bucket,
 }
 
 void
-PersistenceUtil::setBucketInfo(MessageTracker& tracker,
-                               const document::BucketId& bucketId)
+PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket)
 {
-    api::BucketInfo info = getBucketInfo(bucketId, _partition);
+    api::BucketInfo info = getBucketInfo(bucket, _partition);
 
     static_cast<api::BucketInfoReply&>(*tracker.getReply()).
         setBucketInfo(info);
 
-    updateBucketDatabase(bucketId, info);
+    updateBucketDatabase(bucket, info);
 }
 
 api::BucketInfo
-PersistenceUtil::getBucketInfo(const document::BucketId& bId, int disk) const
+PersistenceUtil::getBucketInfo(const document::Bucket &bucket, int disk) const
 {
     if (disk == -1) {
         disk = _partition;
     }
 
     spi::BucketInfoResult response =
-        _spi.getBucketInfo(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), bId), spi::PartitionId(disk)));
+        _spi.getBucketInfo(spi::Bucket(bucket, spi::PartitionId(disk)));
 
     return convertBucketInfo(response.getBucketInfo());
 }
