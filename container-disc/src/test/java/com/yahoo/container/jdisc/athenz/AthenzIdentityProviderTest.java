@@ -1,6 +1,8 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.athenz;
 
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl;
 import com.yahoo.container.jdisc.athenz.impl.AthenzService;
 import com.yahoo.container.jdisc.athenz.impl.InstanceIdentity;
 import com.yahoo.container.jdisc.athenz.impl.ServiceProviderApi;
@@ -21,7 +23,7 @@ public class AthenzIdentityProviderTest {
 
     @Test
     public void ntoken_fetched_on_init() throws IOException {
-        IdentityConfig config = new IdentityConfig(new IdentityConfig.Builder().serviceName("tenantService").domain("tenantDomain"));
+        IdentityConfig config = new IdentityConfig(new IdentityConfig.Builder().service("tenantService").domain("tenantDomain"));
         ServiceProviderApi serviceProviderApi = mock(ServiceProviderApi.class);
         AthenzService athenzService = mock(AthenzService.class);
 
@@ -29,7 +31,7 @@ public class AthenzIdentityProviderTest {
         when(athenzService.sendInstanceRegisterRequest(any(), anyString())).thenReturn(
                 new InstanceIdentity(null, null, null, null, null, null, null, null, "TOKEN"));
 
-        AthenzIdentityProvider identityProvider = new AthenzIdentityProvider(config, serviceProviderApi, athenzService);
+        AthenzIdentityProvider identityProvider = new AthenzIdentityProviderImpl(config, serviceProviderApi, athenzService);
 
         Assert.assertEquals("TOKEN", identityProvider.getNToken());
     }
