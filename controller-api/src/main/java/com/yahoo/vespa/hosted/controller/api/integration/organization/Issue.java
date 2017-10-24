@@ -3,36 +3,46 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class Issue {
 
     private final String summary;
     private final String description;
+    private final String label;
     private final User assignee;
     private final PropertyId propertyId;
 
-    private Issue(String summary, String description, User assignee, PropertyId propertyId) {
+    private Issue(String summary, String description, String label, User assignee, PropertyId propertyId) {
+        if (summary.isEmpty()) throw new IllegalArgumentException("Issue summary can not be empty!");
+        if (description.isEmpty()) throw new IllegalArgumentException("Issue description can not be empty!");
+        Objects.requireNonNull(propertyId, "An issue must belong to a property!");
+
         this.summary = summary;
         this.description = description;
+        this.label = label;
         this.assignee = assignee;
         this.propertyId = propertyId;
     }
 
-    public Issue(String summary, String description) {
-        this(summary, description, null, null);
+    public Issue(String summary, String description, PropertyId propertyId) {
+        this(summary, description, null, null, propertyId);
     }
 
     public Issue append(String appendage) {
-        return new Issue(summary, description + appendage, assignee, propertyId);
+        return new Issue(summary, description + appendage, label, assignee, propertyId);
     }
 
-    public Issue withUser(User assignee) {
-        return new Issue(summary, description, assignee, propertyId);
+    public Issue withLabel(String label) {
+        return new Issue(summary, description, label, assignee, propertyId);
+    }
+    public Issue withAssignee(User assignee) {
+        return new Issue(summary, description, label, assignee, propertyId);
     }
 
     public Issue withPropertyId(PropertyId propertyId) {
-        return new Issue(summary, description, assignee, propertyId);
+        return new Issue(summary, description, label, assignee, propertyId);
     }
 
     public String summary() {
@@ -43,12 +53,16 @@ public class Issue {
         return description;
     }
 
+    public Optional<String> label() {
+        return Optional.ofNullable(label);
+    }
+
     public Optional<User> assignee() {
         return Optional.ofNullable(assignee);
     }
 
-    public Optional<PropertyId> propertyId() {
-        return Optional.ofNullable(propertyId);
+    public PropertyId propertyId() {
+        return propertyId;
     }
 
 }

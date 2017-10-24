@@ -87,6 +87,7 @@ public class Controller extends AbstractComponent {
     private final Chef chefClient;
     private final Athens athens;
     private final ZmsClient zmsClient;
+    private final Organization organization;
 
     /**
      * Creates a controller 
@@ -96,19 +97,19 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
-                      GitHub gitHub, EntityService entityService,
+                      GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, Cost cost, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Athens athens) {
         this(db, curator, rotationRepository,
-             gitHub, entityService, globalRoutingService, zoneRegistry,
+             gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              cost, configServerClient, metricsService, nameService, routingGenerator, chefClient,
              Clock.systemUTC(), athens);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
-                      GitHub gitHub, EntityService entityService,
+                      GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, Cost cost, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
@@ -118,6 +119,7 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(rotationRepository, "Rotation repository cannot be null");
         Objects.requireNonNull(gitHub, "GitHubClient cannot be null");
         Objects.requireNonNull(entityService, "EntityService cannot be null");
+        Objects.requireNonNull(organization, "Organization cannot be null");
         Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         Objects.requireNonNull(cost, "Cost cannot be null");
@@ -133,6 +135,7 @@ public class Controller extends AbstractComponent {
         this.curator = curator;
         this.gitHub = gitHub;
         this.entityService = entityService;
+        this.organization = organization;
         this.globalRoutingService = globalRoutingService;
         this.zoneRegistry = zoneRegistry;
         this.cost = cost;
@@ -266,6 +269,10 @@ public class Controller extends AbstractComponent {
 
     public Chef chefClient() {
         return chefClient;
+    }
+
+    public Organization organization() {
+        return organization;
     }
 
     private String printableVersion(Optional<VespaVersion> vespaVersion) {

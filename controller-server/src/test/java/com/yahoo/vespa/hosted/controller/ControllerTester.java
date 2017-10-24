@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.cost.CostMock;
@@ -206,6 +207,7 @@ public final class ControllerTester {
                                                new MemoryRotationRepository(),
                                                gitHubClientMock,
                                                new MemoryEntityService(),
+                                               new MockOrganization(clock),
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                new CostMock(new MockInsightBackend()),

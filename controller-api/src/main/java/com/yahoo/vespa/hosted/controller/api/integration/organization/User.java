@@ -5,10 +5,6 @@ import java.util.Objects;
 
 public class User {
 
-    public static final User none = new User("") {
-        public String toString() { return "no one"; }
-    };
-
     private final String username;
 
     protected User(String username) {
@@ -21,7 +17,7 @@ public class User {
 
     public static User from(String username) {
         if (username.isEmpty())
-            throw new IllegalArgumentException("username may not be empty");
+            throw new IllegalArgumentException("Username may not be empty!");
 
         return new User(username);
     }
@@ -29,7 +25,7 @@ public class User {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if ( ! (o instanceof User)) return false;
         User that = (User) o;
         return Objects.equals(username, that.username);
     }
