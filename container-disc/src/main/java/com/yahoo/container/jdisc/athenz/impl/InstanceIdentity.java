@@ -1,4 +1,4 @@
-package com.yahoo.container.jdisc.athenz;
+package com.yahoo.container.jdisc.athenz.impl;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class InstanceIdentity {
+public class InstanceIdentity {
     @JsonProperty("attributes") private final Map<String, String> attributes;
     @JsonProperty("provider") private final String provider;
     @JsonProperty("name") private final String name;
@@ -45,11 +45,11 @@ class InstanceIdentity {
         this.serviceToken = serviceToken;
     }
 
-    String getX509Certificate() {
+    public String getX509Certificate() {
         return x509Certificate;
     }
 
-    String getServiceToken() {
+    public String getServiceToken() {
         return serviceToken;
     }
 }

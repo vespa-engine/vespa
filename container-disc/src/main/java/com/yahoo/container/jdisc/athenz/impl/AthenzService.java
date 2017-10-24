@@ -1,4 +1,4 @@
-package com.yahoo.container.jdisc.athenz;
+package com.yahoo.container.jdisc.athenz.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -21,10 +21,9 @@ public class AthenzService {
     /**
      * Send instance register request to ZTS, get InstanceIdentity
      */
-     InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation, String athenzUrl) {
+     public InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation, String athenzUrl) {
         try(CloseableHttpClient client = HttpClientBuilder.create().build()) {
             ObjectMapper objectMapper = new ObjectMapper();
-            System.out.println(objectMapper.writeValueAsString(instanceRegisterInformation));
             HttpUriRequest postRequest = RequestBuilder.post()
                     .setUri(athenzUrl + "/instance")
                     .setEntity(new StringEntity(objectMapper.writeValueAsString(instanceRegisterInformation), ContentType.APPLICATION_JSON))
@@ -33,9 +32,8 @@ public class AthenzService {
             if(HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
                 return objectMapper.readValue(response.getEntity().getContent(), InstanceIdentity.class);
             } else {
-                String s = EntityUtils.toString(response.getEntity());
-                System.out.println("s = " + s);
-                throw new RuntimeException(response.toString());
+                String message = EntityUtils.toString(response.getEntity());
+                throw new RuntimeException(String.format("Unable to get identity. http code/message: %d/%s" + response.getStatusLine().getStatusCode(), message));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
