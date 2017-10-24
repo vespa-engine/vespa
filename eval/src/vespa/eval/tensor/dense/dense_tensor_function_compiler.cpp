@@ -16,13 +16,6 @@ namespace tensor {
 
 namespace {
 
-template <typename T>
-bool    
-isType(const BinaryOperation &op)
-{
-    return (as<T>(op) != nullptr);
-}
-
 bool
 willReduceAllDimensions(const std::vector<vespalib::string> &dimensions)
 {
@@ -47,11 +40,11 @@ struct DotProductFunctionCompiler
 {
     static TensorFunction::UP compile(Node_UP expr) {
         const Reduce *reduce = as<Reduce>(*expr);
-        if (reduce && isType<Add>(*reduce->op) && willReduceAllDimensions(reduce->dimensions)) {
-            const Apply *apply = as<Apply>(*reduce->tensor);
-            if (apply && isType<Mul>(*apply->op)) {
-                const Inject *lhsTensor = as<Inject>(*apply->lhs_tensor);
-                const Inject *rhsTensor = as<Inject>(*apply->rhs_tensor);
+        if (reduce && (reduce->aggr == Aggr::SUM) && willReduceAllDimensions(reduce->dimensions)) {
+            const Join *join = as<Join>(*reduce->tensor);
+            if (join && (join->function == Mul::f)) {
+                const Inject *lhsTensor = as<Inject>(*join->lhs_tensor);
+                const Inject *rhsTensor = as<Inject>(*join->rhs_tensor);
                 if (lhsTensor && rhsTensor &&
                     isCompatibleTensorsForDotProduct(lhsTensor->result_type, rhsTensor->result_type))
                 {

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "value_type.h"
 #include "operation.h"
+#include "aggr.h"
 
 namespace vespalib {
 
@@ -35,7 +36,6 @@ struct TensorFunction
      **/
     struct Input {
         virtual const Value &get_tensor(size_t id) const = 0;
-        virtual const UnaryOperation &get_map_operation(size_t id) const = 0;
         virtual ~Input() {}
     };
 
@@ -59,6 +59,9 @@ struct TensorFunction
 struct TensorFunctionVisitor;
 
 namespace tensor_function {
+
+using map_fun_t = double (*)(double);
+using join_fun_t = double (*)(double, double);
 
 /**
  * Interface used to describe a tensor function as a tree of nodes
@@ -102,46 +105,46 @@ struct Inject : Node {
 
 struct Reduce : Node {
     Node_UP tensor;
-    std::unique_ptr<BinaryOperation> op;
+    Aggr aggr;
     std::vector<vespalib::string> dimensions;
     Reduce(const ValueType &result_type_in,
            Node_UP tensor_in,
-           std::unique_ptr<BinaryOperation> op_in,
+           Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
-        : Node(result_type_in), tensor(std::move(tensor_in)), op(std::move(op_in)), dimensions(dimensions_in) {}
+        : Node(result_type_in), tensor(std::move(tensor_in)), aggr(aggr_in), dimensions(dimensions_in) {}
     void accept(TensorFunctionVisitor &visitor) const override;
     const Value &eval(const Input &input, Stash &stash) const override;
 };
 
 struct Map : Node {
-    size_t map_operation_id;
     Node_UP tensor;
+    map_fun_t function;    
     Map(const ValueType &result_type_in,
-        size_t map_operation_id_in,
-        Node_UP tensor_in)
-        : Node(result_type_in), map_operation_id(map_operation_id_in), tensor(std::move(tensor_in)) {}
+        Node_UP tensor_in,
+        map_fun_t function_in)
+        : Node(result_type_in), tensor(std::move(tensor_in)), function(function_in) {}
     void accept(TensorFunctionVisitor &visitor) const override;
     const Value &eval(const Input &input, Stash &stash) const override;
 };
 
-struct Apply : Node {
-    std::unique_ptr<BinaryOperation> op;
+struct Join : Node {
     Node_UP lhs_tensor;
     Node_UP rhs_tensor;
-    Apply(const ValueType &result_type_in,
-          std::unique_ptr<BinaryOperation> op_in,
-          Node_UP lhs_tensor_in,
-          Node_UP rhs_tensor_in)
-        : Node(result_type_in), op(std::move(op_in)),
-          lhs_tensor(std::move(lhs_tensor_in)), rhs_tensor(std::move(rhs_tensor_in)) {}
+    join_fun_t function;    
+    Join(const ValueType &result_type_in,
+         Node_UP lhs_tensor_in,
+         Node_UP rhs_tensor_in,
+         join_fun_t function_in)
+        : Node(result_type_in), lhs_tensor(std::move(lhs_tensor_in)),
+          rhs_tensor(std::move(rhs_tensor_in)), function(function_in) {}
     void accept(TensorFunctionVisitor &visitor) const override;
     const Value &eval(const Input &input, Stash &stash) const override;
 };
 
 Node_UP inject(const ValueType &type, size_t tensor_id);
-Node_UP reduce(Node_UP tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions);
-Node_UP map(size_t map_operation_id, Node_UP tensor);
-Node_UP apply(const BinaryOperation &op, Node_UP lhs_tensor, Node_UP rhs_tensor);
+Node_UP reduce(Node_UP tensor, Aggr aggr, const std::vector<vespalib::string> &dimensions);
+Node_UP map(Node_UP tensor, map_fun_t function);
+Node_UP join(Node_UP lhs_tensor, Node_UP rhs_tensor, join_fun_t function);
 
 } // namespace vespalib::eval::tensor_function
 
@@ -149,7 +152,7 @@ struct TensorFunctionVisitor {
     virtual void visit(const tensor_function::Inject &) = 0;
     virtual void visit(const tensor_function::Reduce &) = 0;
     virtual void visit(const tensor_function::Map    &) = 0;
-    virtual void visit(const tensor_function::Apply  &) = 0;
+    virtual void visit(const tensor_function::Join   &) = 0;
     virtual ~TensorFunctionVisitor() {}
 };
 

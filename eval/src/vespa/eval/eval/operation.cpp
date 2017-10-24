@@ -73,6 +73,10 @@ template <typename T> double Op1<T>::eval(double a) const {
     return T::f(a);
 }
 
+template <typename T> Operation::op1_fun_t Op1<T>::get_f() const {
+    return T::f;
+}
+
 template <typename T> void Op2<T>::accept(OperationVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));
 }
@@ -83,6 +87,10 @@ template <typename T> std::unique_ptr<BinaryOperation> Op2<T>::clone() const {
 
 template <typename T> double Op2<T>::eval(double a, double b) const {
     return T::f(a, b);
+}
+
+template <typename T> Operation::op2_fun_t Op2<T>::get_f() const {
+    return T::f;
 }
 
 namespace operation {

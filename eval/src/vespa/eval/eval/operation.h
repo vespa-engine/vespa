@@ -20,6 +20,8 @@ struct OperationVisitor;
  * separated by the number of values they operate on.
  **/
 struct Operation {
+    using op1_fun_t = double (*)(double);
+    using op2_fun_t = double (*)(double, double);
     virtual void accept(OperationVisitor &visitor) const = 0;
     virtual ~Operation() {}
 };
@@ -39,6 +41,7 @@ const T *as(const Operation &op) { return dynamic_cast<const T *>(&op); }
 struct UnaryOperation : Operation {
     const Value &perform(const Value &a, Stash &stash) const;
     virtual double eval(double a) const = 0;
+    virtual op1_fun_t get_f() const = 0;
 };
 
 /**
@@ -48,6 +51,7 @@ struct BinaryOperation : Operation {
     const Value &perform(const Value &a, const Value &b, Stash &stash) const;
     virtual double eval(double a, double b) const = 0;
     virtual std::unique_ptr<BinaryOperation> clone() const = 0;
+    virtual op2_fun_t get_f() const = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -92,6 +96,7 @@ template <typename T>
 struct Op1 : UnaryOperation {
     virtual void accept(OperationVisitor &visitor) const override;
     virtual double eval(double a) const override;
+    virtual op1_fun_t get_f() const override;
 };
 
 template <typename T>
@@ -99,6 +104,7 @@ struct Op2 : BinaryOperation {
     virtual void accept(OperationVisitor &visitor) const override;
     virtual std::unique_ptr<BinaryOperation> clone() const override;
     virtual double eval(double a, double b) const final override;
+    virtual op2_fun_t get_f() const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -108,7 +114,7 @@ struct Op2 : BinaryOperation {
  * and lambdas.
  **/
 struct CustomUnaryOperation : Op1<CustomUnaryOperation> {
-    static double f(double);
+    static double f(double) { return error_value; }
 };
 
 //-----------------------------------------------------------------------------

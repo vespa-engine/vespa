@@ -78,9 +78,6 @@ public:
             return _rhsValue;
         }
     }
-    virtual const UnaryOperation &get_map_operation(size_t) const override {
-        abort();
-    }
     double expectedDotProduct() const {
         return calcDotProduct(_lhsDenseTensor, _rhsDenseTensor);
     }

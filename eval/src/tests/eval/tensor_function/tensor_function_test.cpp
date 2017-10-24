@@ -15,11 +15,10 @@ using namespace vespalib::eval::tensor_function;
 struct EvalCtx : TensorFunction::Input {
     const TensorEngine &engine;
     Stash stash;
-    operation::Neg neg;
     ErrorValue error;
     std::map<size_t, Value::UP> tensors;
     EvalCtx(const TensorEngine &engine_in)
-        : engine(engine_in), stash(), neg(), error(), tensors() {}
+        : engine(engine_in), stash(), error(), tensors() {}
     ~EvalCtx() { }
     void add_tensor(std::unique_ptr<Tensor> tensor, size_t id) {
         tensors.emplace(id, std::make_unique<TensorValue>(std::move(tensor)));
@@ -29,10 +28,6 @@ struct EvalCtx : TensorFunction::Input {
             return error;
         }
         return *tensors.find(id)->second;
-    }
-    const UnaryOperation &get_map_operation(size_t id) const override {
-        ASSERT_EQUAL(42u, id);
-        return neg;
     }
     const Value &eval(const TensorFunction &fun) { return fun.eval(*this, stash); }
     const ValueType type(const Tensor &tensor) const { return engine.type_of(tensor); }
@@ -124,7 +119,7 @@ TEST("require that partial tensor reduction works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_reduce_input(), 1);
     auto expect = ctx.make_tensor_reduce_y_output();
-    auto fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), 1), operation::Add(), {"y"});
+    auto fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), 1), Aggr::SUM, {"y"});
     EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
@@ -133,7 +128,7 @@ TEST("require that partial tensor reduction works") {
 TEST("require that full tensor reduction works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_reduce_input(), 1);
-    auto fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), 1), operation::Add(), {});
+    auto fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), 1), Aggr::SUM, {});
     EXPECT_EQUAL(ValueType::from_spec("double"), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     EXPECT_EQUAL(21.0, ctx.eval(*prog).as_double());
@@ -143,20 +138,20 @@ TEST("require that tensor map works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_map_input(), 1);
     auto expect = ctx.make_tensor_map_output();
-    auto fun = map(42, inject(ValueType::from_spec("tensor(x{},y{})"), 1));
+    auto fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), 1), operation::Neg::f);
     EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
 }
 
-TEST("require that tensor apply works") {
+TEST("require that tensor join works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_apply_lhs(), 1);
     ctx.add_tensor(ctx.make_tensor_apply_rhs(), 2);
     auto expect = ctx.make_tensor_apply_output();
-    auto fun = apply(operation::Mul(),
-                     inject(ValueType::from_spec("tensor(x{},y{})"), 1),
-                     inject(ValueType::from_spec("tensor(y{},z{})"), 2));
+    auto fun = join(inject(ValueType::from_spec("tensor(x{},y{})"), 1),
+                    inject(ValueType::from_spec("tensor(y{},z{})"), 2),
+                    operation::Mul::f);
     EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
