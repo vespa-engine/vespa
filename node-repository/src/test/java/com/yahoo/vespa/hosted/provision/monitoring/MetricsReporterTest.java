@@ -78,6 +78,8 @@ public class MetricsReporterTest {
         expectedMetrics.put("wantToReboot", 0);
         expectedMetrics.put("wantToRetire", 0);
         expectedMetrics.put("wantToDeprovision", 0);
+        expectedMetrics.put("hardwareFailure", 0);
+        expectedMetrics.put("hardwareDivergence", 0);
         expectedMetrics.put("allowedToBeDown", 0);
 
         Orchestrator orchestrator = mock(Orchestrator.class);

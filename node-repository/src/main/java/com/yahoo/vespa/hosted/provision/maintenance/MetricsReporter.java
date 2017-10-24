@@ -105,6 +105,12 @@ public class MetricsReporter extends Maintainer {
 
         metric.set("wantToRetire", node.status().wantToRetire() ? 1 : 0, context);
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
+        metric.set("hardwareFailure",
+                node.status().hardwareFailureDescription().isPresent() ? 1 : 0,
+                context);
+        metric.set("hardwareDivergence",
+                node.status().hardwareDivergence().isPresent() ? 1 : 0,
+                context);
 
         try {
             HostStatus status = orchestrator.getNodeStatus(new HostName(node.hostname()));
