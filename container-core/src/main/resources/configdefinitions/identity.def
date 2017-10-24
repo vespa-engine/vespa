@@ -1,4 +1,4 @@
 namespace=container.core.identity
 
 domain string
-serviceName string
+service string

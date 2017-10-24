@@ -402,7 +402,7 @@ public class Container extends AbstractService implements
             ContainerCluster containerCluster = (ContainerCluster) parent;
             Optional<Identity> identity = containerCluster.getIdentity();
             identity.ifPresent(id -> {
-                builder.serviceName(id.getService());
+                builder.service(id.getService());
                 builder.domain(id.getDomain());
             });
         }

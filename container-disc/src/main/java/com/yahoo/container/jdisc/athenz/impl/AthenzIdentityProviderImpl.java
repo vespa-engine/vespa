@@ -37,6 +37,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private final String dnsSuffix;
     private final String providerUniqueId;
+    private final String domain;
+    private final String service;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, ConfigserverConfig configserverConfig) throws IOException {
@@ -46,18 +48,20 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     // Test only
     public AthenzIdentityProviderImpl(IdentityConfig config, ServiceProviderApi serviceProviderApi, AthenzService athenzService) throws IOException {
         KeyPair keyPair = createKeyPair();
+        this.domain = config.domain();
+        this.service = config.service();
         String signedIdentityDocument = serviceProviderApi.getSignedIdentityDocument();
         String athenzUrl = getZtsEndpoint(signedIdentityDocument);
-        dnsSuffix = getDnsSuffix(signedIdentityDocument);
-        providerUniqueId = getProviderUniqueId(signedIdentityDocument);
+        this.dnsSuffix = getDnsSuffix(signedIdentityDocument);
+        this.providerUniqueId = getProviderUniqueId(signedIdentityDocument);
         String providerServiceName = getProviderServiceName(signedIdentityDocument);
 
         InstanceRegisterInformation instanceRegisterInformation = new InstanceRegisterInformation(
                 providerServiceName,
-                config.domain(),
-                config.serviceName(),
+                this.domain,
+                this.service,
                 signedIdentityDocument,
-                createCSR(keyPair, config),
+                createCSR(keyPair),
                 true
         );
         instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation, athenzUrl);
@@ -94,15 +98,15 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         }
     }
 
-    private String createCSR(KeyPair keyPair, IdentityConfig identityConfig) throws IOException {
+    private String createCSR(KeyPair keyPair) throws IOException {
 
         try {
             // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
             // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
             GeneralNames subjectAltNames = new GeneralNames(new GeneralName[]{
                     new GeneralName(GeneralName.dNSName, String.format("%s.%s.%s",
-                                                                          identityConfig.serviceName(),
-                                                                          identityConfig.domain().replace(".", "-"),
+                                                                          service(),
+                                                                          domain().replace(".", "-"),
                                                                           dnsSuffix)),
                     new GeneralName(GeneralName.dNSName, String.format("%s.instanceid.athenz.%s",
                                                                        providerUniqueId,
@@ -113,7 +117,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
             extGen.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
 
             X500Principal subject = new X500Principal(
-                    String.format("CN=%s.%s", identityConfig.domain(), identityConfig.serviceName()));
+                    String.format("CN=%s.%s", domain(), service()));
 
             PKCS10CertificationRequestBuilder requestBuilder =
                     new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic());
@@ -141,6 +145,16 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     @Override
     public String getX509Cert() {
         return instanceIdentity.getX509Certificate();
+    }
+
+    @Override
+    public String domain() {
+        return domain;
+    }
+
+    @Override
+    public String service() {
+        return service;
     }
 }
 

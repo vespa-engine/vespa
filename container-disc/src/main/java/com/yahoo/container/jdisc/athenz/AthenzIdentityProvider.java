@@ -6,7 +6,8 @@ package com.yahoo.container.jdisc.athenz;
  */
 public interface AthenzIdentityProvider {
 
-    String getNToken();
-
-    String getX509Cert();
+    public String getNToken();
+    public String getX509Cert();
+    public String domain();
+    public String service();
 }
