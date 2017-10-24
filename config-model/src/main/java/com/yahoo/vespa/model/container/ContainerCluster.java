@@ -846,7 +846,7 @@ public final class ContainerCluster
 
     public void setIdentity(Identity identity) {
         this.identity = identity;
-        addSimpleComponent("com.yahoo.container.jdisc.athenz.AthenzIdentityProvider");
+        addSimpleComponent("com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.yahoo.container.jdisc.athenz;
 
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl;
 import com.yahoo.container.jdisc.athenz.impl.AthenzService;
 import com.yahoo.container.jdisc.athenz.impl.InstanceIdentity;
 import com.yahoo.container.jdisc.athenz.impl.ServiceProviderApi;
@@ -29,7 +30,7 @@ public class AthenzIdentityProviderTest {
         when(athenzService.sendInstanceRegisterRequest(any(), anyString())).thenReturn(
                 new InstanceIdentity(null, null, null, null, null, null, null, null, "TOKEN"));
 
-        AthenzIdentityProvider identityProvider = new AthenzIdentityProvider(config, serviceProviderApi, athenzService);
+        AthenzIdentityProvider identityProvider = new AthenzIdentityProviderImpl(config, serviceProviderApi, athenzService);
 
         Assert.assertEquals("TOKEN", identityProvider.getNToken());
     }
