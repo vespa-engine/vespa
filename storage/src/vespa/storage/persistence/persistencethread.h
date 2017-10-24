@@ -61,11 +61,7 @@ private:
     vespalib::Monitor         _flushMonitor;
     bool                      _closed;
 
-    void setBucketInfo(MessageTracker& tracker, const document::BucketId& bucketId);
-
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
-
-    void updateBucketDatabase(const document::BucketId& id, const api::BucketInfo& info);
 
     /**
      * Sanity-checking of join command parameters. Invokes tracker.fail() with
