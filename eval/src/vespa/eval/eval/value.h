@@ -39,6 +39,7 @@ struct Value {
 };
 
 struct ErrorValue : public Value {
+    static ErrorValue instance;
     bool is_error() const override { return true; }
     double as_double() const override { return error_value; }
     bool equal(const Value &) const override { return false; }
