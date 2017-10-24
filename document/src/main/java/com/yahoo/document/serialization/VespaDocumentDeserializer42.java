@@ -600,7 +600,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
 
     public DocumentId readDocumentId() {
         Utf8String uri = new Utf8String(parseNullTerminatedString(getBuf().getByteBuffer()));
-        return new DocumentId(uri.toString());
+        return DocumentId.createFromSerialized(uri.toString());
     }
 
     public DocumentType readDocumentType() {

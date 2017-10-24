@@ -77,6 +77,26 @@ public abstract class IdString {
         }
     }
 
+    /**
+     * Creates a IdString based on the given document id string.
+     *
+     * The document id string can only contain text characters.
+     */
+    public static IdString createIdString(String id) {
+        validateTextString(id);
+        return parseAndCreate(id);
+    }
+
+    /**
+     * Creates a IdString based on the given serialized document id string.
+     *
+     * The document id string can not contain 0x0 byte characters.
+     */
+    public static IdString createFromSerialized(String id) {
+        validateNoZeroBytes(id);
+        return parseAndCreate(id);
+    }
+
     private static void validateTextString(String id) {
         OptionalInt illegalCodePoint = Text.validateTextString(id);
         if (illegalCodePoint.isPresent()) {
@@ -85,8 +105,15 @@ public abstract class IdString {
         }
     }
 
-    public static IdString createIdString(String id) {
-        validateTextString(id);
+    private static void validateNoZeroBytes(String id) {
+        for (int i = 0; i < id.length(); i++) {
+            if (id.codePointAt(i) == 0) {
+                throw new IllegalArgumentException("Unparseable id '" + id + "': Contains illegal zero byte code point");
+            }
+        }
+    }
+
+    private static IdString parseAndCreate(String id) {
         String namespace;
         long userId;
         String group;
