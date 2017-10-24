@@ -406,6 +406,16 @@ fillRestarts(vespalib::SimpleMetricSnapshot &snapshot, unsigned long restarts)
 }
 
 void
+fillTotalRestarts(vespalib::SimpleMetricSnapshot &snapshot,
+		  unsigned long totalRestarts)
+{
+    snapshot.addGauge("sentinel.totalRestarts",
+                      "how many times sentinel restarted a service since "
+		      "sentinel start",
+                      totalRestarts);
+}
+
+void
 fillRunning(vespalib::SimpleMetricSnapshot &snapshot, unsigned long running)
 {
     snapshot.addGauge("sentinel.running",
@@ -429,6 +439,7 @@ ConfigHandler::updateMetrics()
     time_t now = time(nullptr);
     vespalib::SimpleMetricSnapshot snapshot(_startMetrics.snapshotStart, _startMetrics.snapshotEnd);
     fillRestarts(snapshot, _startMetrics.totalRestartsLastSnapshot);
+    fillTotalRestarts(snapshot, _startMetrics.totalRestartsCounter);
     fillRunning(snapshot, _startMetrics.currentlyRunningServices);
     fillUptime(snapshot, now - _startMetrics.startedTime);
     _stateApi.myMetrics.setMetrics(snapshot.asString());
