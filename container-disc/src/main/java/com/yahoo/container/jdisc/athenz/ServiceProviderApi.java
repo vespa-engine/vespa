@@ -24,8 +24,6 @@ public class ServiceProviderApi {
 
     /**
      * Get signed identity document from config server
-     *
-     * @return
      */
     String getSignedIdentityDocument() {
 
