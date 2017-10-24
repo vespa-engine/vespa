@@ -1,4 +1,4 @@
-package com.yahoo.container.jdisc.athenz;
+package com.yahoo.container.jdisc.athenz.impl;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
@@ -21,11 +21,10 @@ public class ServiceProviderApi {
         providerUri = URI.create(String.format("https://%s:8443/athenz/v1/provider", providerAddress));
     }
 
-
     /**
      * Get signed identity document from config server
      */
-    String getSignedIdentityDocument() {
+    public String getSignedIdentityDocument() {
 
         // TODO Use client side auth to establish trusted secure channel
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
@@ -38,8 +37,7 @@ public class ServiceProviderApi {
                 throw new RuntimeException("Failed to initialize Athenz instance provider");
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed getting signed identity document", e);
         }
     }
 

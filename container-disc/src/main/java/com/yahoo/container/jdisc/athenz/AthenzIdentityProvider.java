@@ -2,11 +2,16 @@ package com.yahoo.container.jdisc.athenz;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.Beta;
 import com.google.inject.Inject;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.container.jdisc.athenz.impl.AthenzService;
+import com.yahoo.container.jdisc.athenz.impl.InstanceIdentity;
+import com.yahoo.container.jdisc.athenz.impl.InstanceRegisterInformation;
+import com.yahoo.container.jdisc.athenz.impl.ServiceProviderApi;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.operator.OperatorCreationException;
 
@@ -18,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * @author mortent
  */
+@Beta
 public final class AthenzIdentityProvider extends AbstractComponent {
 
     private InstanceIdentity instanceIdentity;
