@@ -136,10 +136,25 @@
       <artifactId>httpclient</artifactId>
       <scope>compile</scope>
     </dependency>
+    <!-- TODO Use BouncyCastle directly -->
     <dependency>
       <groupId>com.yahoo.athenz</groupId>
       <artifactId>athenz-auth-core</artifactId>
       <version>${athenz.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.amazonaws</groupId>
+          <artifactId>aws-java-sdk-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.kohsuke</groupId>
+          <artifactId>libpam4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <properties>

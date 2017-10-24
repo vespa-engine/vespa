@@ -20,8 +20,6 @@ public class AthenzService {
 
     /**
      * Send instance register request to ZTS, get InstanceIdentity
-     *
-     * @param instanceRegisterInformation
      */
      InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation, String athenzUrl) {
         try(CloseableHttpClient client = HttpClientBuilder.create().build()) {
