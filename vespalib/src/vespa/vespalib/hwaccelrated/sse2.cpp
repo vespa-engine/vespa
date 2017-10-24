@@ -2,9 +2,7 @@
 
 #include "sse2.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 namespace {
 
@@ -78,5 +76,4 @@ Sse2Accelrator::dotProduct(const double * af, const double * bf, size_t sz) cons
     return sum; 
 }
 
-}
 }

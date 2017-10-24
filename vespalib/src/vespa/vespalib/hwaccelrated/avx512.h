@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/hwaccelrated/avx2.h>
+#include "avx2.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 /**
  * Avx-512 implementation.
@@ -18,5 +16,4 @@ public:
     double dotProduct(const double * a, const double * b, size_t sz) const override;
 };
 
-}
 }
