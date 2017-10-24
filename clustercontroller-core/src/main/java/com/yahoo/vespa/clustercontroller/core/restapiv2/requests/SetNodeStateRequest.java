@@ -22,6 +22,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class SetNodeStateRequest extends Request<SetResponse> {
@@ -98,7 +99,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 " new-wanted-state=" + newWantedState +
                 " change-check=" + result);
 
-        boolean success = ensureWantedState(
+        boolean success = setWantedStateAccordingToResult(
                 result,
                 newWantedState,
                 condition,
@@ -115,12 +116,13 @@ public class SetNodeStateRequest extends Request<SetResponse> {
      * Returns true if the current/old wanted state already matches the requested
      * wanted state, or the requested state has been accepted as the new wanted state.
      */
-    private static boolean ensureWantedState(NodeStateChangeChecker.Result result,
-                                             NodeState newWantedState,
-                                             SetUnitStateRequest.Condition condition,
-                                             NodeInfo nodeInfo,
-                                             ContentCluster cluster,
-                                             NodeStateOrHostInfoChangeHandler stateListener) {
+    private static boolean setWantedStateAccordingToResult(
+            NodeStateChangeChecker.Result result,
+            NodeState newWantedState,
+            SetUnitStateRequest.Condition condition,
+            NodeInfo nodeInfo,
+            ContentCluster cluster,
+            NodeStateOrHostInfoChangeHandler stateListener) {
         if (result.settingWantedStateIsAllowed()) {
             setNewWantedState(nodeInfo, newWantedState, stateListener);
         }
@@ -133,7 +135,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             // of the distributor. E.g. setting the storage node to maintenance may cause
             // feeding issues unless distributor is also set down.
 
-            ensureDistributorWantedState(cluster, nodeInfo.getNodeIndex(), newWantedState, stateListener);
+            setDistributorWantedState(cluster, nodeInfo.getNodeIndex(), newWantedState, stateListener);
         }
 
         return success;
@@ -143,10 +145,10 @@ public class SetNodeStateRequest extends Request<SetResponse> {
      * Set the wanted state on the distributor to something appropriate given the storage is being
      * set to (or is equal to) newStorageWantedState.
      */
-    private static void ensureDistributorWantedState(ContentCluster cluster,
-                                                     int index,
-                                                     NodeState newStorageWantedState,
-                                                     NodeStateOrHostInfoChangeHandler stateListener) {
+    private static void setDistributorWantedState(ContentCluster cluster,
+                                                  int index,
+                                                  NodeState newStorageWantedState,
+                                                  NodeStateOrHostInfoChangeHandler stateListener) {
         Node distributorNode = new Node(NodeType.DISTRIBUTOR, index);
         NodeInfo nodeInfo = cluster.getNodeInfo(distributorNode);
         if (nodeInfo == null) {
@@ -174,7 +176,9 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         newWantedState.setDescription(newStorageWantedState.getDescription());
 
         NodeState currentWantedState = nodeInfo.getUserWantedState();
-        if (newWantedState.getState() != currentWantedState.getState()) {
+        if (newWantedState.getState() != currentWantedState.getState() ||
+                !Objects.equals(newWantedState.getDescription(),
+                        currentWantedState.getDescription())) {
             setNewWantedState(nodeInfo, newWantedState, stateListener);
         }
     }
