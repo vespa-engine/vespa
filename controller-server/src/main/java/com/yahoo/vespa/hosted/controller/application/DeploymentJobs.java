@@ -9,6 +9,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -30,20 +31,20 @@ public class DeploymentJobs {
 
     private final Optional<Long> projectId;
     private final ImmutableMap<JobType, JobStatus> status;
-    private final Optional<String> jiraIssueId;
+    private final Optional<IssueId> issueId;
 
     public DeploymentJobs(Optional<Long> projectId, Collection<JobStatus> jobStatusEntries,
-                          Optional<String> jiraIssueId) {
-        this(projectId, asMap(jobStatusEntries), jiraIssueId);
+                          Optional<IssueId> issueId) {
+        this(projectId, asMap(jobStatusEntries), issueId);
     }
 
-    private DeploymentJobs(Optional<Long> projectId, Map<JobType, JobStatus> status, Optional<String> jiraIssueId) {
-        requireId(projectId, "projectId cannot be null or <= 0");
+    private DeploymentJobs(Optional<Long> projectId, Map<JobType, JobStatus> status, Optional<IssueId> issueId) {
+        requireId(projectId, "projectId must be a positive integer");
         Objects.requireNonNull(status, "status cannot be null");
-        Objects.requireNonNull(jiraIssueId, "jiraIssueId cannot be null");
+        Objects.requireNonNull(issueId, "issueId cannot be null");
         this.projectId = projectId;
         this.status = ImmutableMap.copyOf(status);
-        this.jiraIssueId = jiraIssueId;
+        this.issueId = issueId;
     }
 
     private static Map<JobType, JobStatus> asMap(Collection<JobStatus> jobStatusEntries) {
@@ -60,7 +61,7 @@ public class DeploymentJobs {
             if (job == null) job = JobStatus.initial(report.jobType());
             return job.withCompletion(report.jobError(), notificationTime, controller);
         });
-        return new DeploymentJobs(Optional.of(report.projectId()), status, jiraIssueId);
+        return new DeploymentJobs(Optional.of(report.projectId()), status, issueId);
     }
 
     public DeploymentJobs withTriggering(JobType jobType,
@@ -75,21 +76,21 @@ public class DeploymentJobs {
                                       change.isPresent() && change.get() instanceof Change.VersionChange,
                                       triggerTime);
         });
-        return new DeploymentJobs(projectId, status, jiraIssueId);
+        return new DeploymentJobs(projectId, status, issueId);
     }
 
     public DeploymentJobs withProjectId(long projectId) {
-        return new DeploymentJobs(Optional.of(projectId), status, jiraIssueId);
+        return new DeploymentJobs(Optional.of(projectId), status, issueId);
     }
 
-    public DeploymentJobs withJiraIssueId(Optional<String> jiraIssueId) {
-        return new DeploymentJobs(projectId, status, jiraIssueId);
+    public DeploymentJobs withIssueId(IssueId issueId) {
+        return new DeploymentJobs(projectId, status, Optional.ofNullable(issueId));
     }
 
     public DeploymentJobs without(JobType job) {
         Map<JobType, JobStatus> status = new HashMap<>(this.status);
         status.remove(job);
-        return new DeploymentJobs(projectId, status, jiraIssueId);
+        return new DeploymentJobs(projectId, status, issueId);
     }
 
     /** Returns an immutable map of the status entries in this */
@@ -158,7 +159,7 @@ public class DeploymentJobs {
      */
     public Optional<Long> projectId() { return projectId; }
 
-    public Optional<String> jiraIssueId() { return jiraIssueId; }
+    public Optional<IssueId> issueId() { return issueId; }
 
     /** Job types that exist in the build system */
     public enum JobType {

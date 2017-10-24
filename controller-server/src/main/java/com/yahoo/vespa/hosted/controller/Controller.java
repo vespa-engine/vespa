@@ -20,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
-import com.yahoo.vespa.hosted.controller.api.integration.jira.Jira;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -74,6 +74,7 @@ public class Controller extends AbstractComponent {
     private final MetricsService metricsService;
     private final Chef chefClient;
     private final ZmsClient zmsClient;
+    private final Organization organization;
 
     /**
      * Creates a controller 
@@ -83,19 +84,19 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
-                      GitHub gitHub, Jira jiraClient, EntityService entityService,
+                      GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, AthenzClientFactory athenzClientFactory) {
         this(db, curator, rotationRepository,
-             gitHub, jiraClient, entityService, globalRoutingService, zoneRegistry,
+             gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServerClient, metricsService, nameService, routingGenerator, chefClient,
              Clock.systemUTC(), athenzClientFactory);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
-                      GitHub gitHub, Jira jiraClient, EntityService entityService,
+                      GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
@@ -105,8 +106,8 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(curator, "Curator cannot be null");
         Objects.requireNonNull(rotationRepository, "Rotation repository cannot be null");
         Objects.requireNonNull(gitHub, "GitHubClient cannot be null");
-        Objects.requireNonNull(jiraClient, "JiraClient cannot be null");
         Objects.requireNonNull(entityService, "EntityService cannot be null");
+        Objects.requireNonNull(organization, "Organization cannot be null");
         Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         Objects.requireNonNull(configServerClient, "ConfigServerClient cannot be null");
@@ -121,6 +122,7 @@ public class Controller extends AbstractComponent {
         this.curator = curator;
         this.gitHub = gitHub;
         this.entityService = entityService;
+        this.organization = organization;
         this.globalRoutingService = globalRoutingService;
         this.zoneRegistry = zoneRegistry;
         this.configServerClient = configServerClient;
@@ -241,7 +243,13 @@ public class Controller extends AbstractComponent {
         return chefClient;
     }
 
-    public CuratorDb curator() { return curator; }
+    public Organization organization() {
+        return organization;
+    }
+
+    public CuratorDb curator() {
+        return curator;
+    }
 
     private String printableVersion(Optional<VespaVersion> vespaVersion) {
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("Unknown");
