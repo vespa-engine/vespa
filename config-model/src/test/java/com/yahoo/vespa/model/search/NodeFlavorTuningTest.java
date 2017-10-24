@@ -86,6 +86,12 @@ public class NodeFlavorTuningTest {
         assertSummaryReadIo(ProtonConfig.Summary.Read.Io.MMAP, false);
     }
 
+    @Test
+    public void require_that_docker_node_is_tagged_with_shared_disk() {
+        assertSharedDisk(true, true);
+        assertSharedDisk(false, false);
+    }
+
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int memoryGb) {
         assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
     }
@@ -101,6 +107,10 @@ public class NodeFlavorTuningTest {
 
     private static void assertSummaryReadIo(ProtonConfig.Summary.Read.Io.Enum expValue, boolean fastDisk) {
         assertEquals(expValue, configFromDiskSetting(fastDisk).summary().read().io());
+    }
+
+    private static void assertSharedDisk(boolean sharedDisk, boolean docker) {
+        assertEquals(sharedDisk, configFromEnvironmentType(docker).hwinfo().disk().shared());
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
@@ -120,6 +130,11 @@ public class NodeFlavorTuningTest {
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
         return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores));
+    }
+
+    private static ProtonConfig configFromEnvironmentType(boolean docker) {
+        String environment = (docker ? "DOCKER_CONTAINER" : "undefined");
+        return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment));
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder) {
