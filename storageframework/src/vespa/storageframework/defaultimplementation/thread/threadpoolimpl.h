@@ -12,11 +12,11 @@ class ThreadImpl;
 
 struct ThreadPoolImpl : public ThreadPool
 {
-    FastOS_ThreadPool _backendThreadPool;
-    std::vector<ThreadImpl*> _threads;
-    vespalib::Lock _threadVectorLock;
-    Clock& _clock;
-    bool _stopping;
+    FastOS_ThreadPool          _backendThreadPool;
+    std::vector<ThreadImpl*>   _threads;
+    vespalib::Lock             _threadVectorLock;
+    Clock                    & _clock;
+    bool                       _stopping;
 
 public:
     ThreadPoolImpl(Clock&);

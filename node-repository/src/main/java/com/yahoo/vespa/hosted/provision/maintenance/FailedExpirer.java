@@ -57,7 +57,7 @@ public class FailedExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
-            if (recycleCandidate.status().hardwareFailureDescription().isPresent()) {
+            if (recycleCandidate.status().hardwareFailureDescription().isPresent() || recycleCandidate.status().hardwareDivergence().isPresent()) {
                 List<String> nonParkedChildren = recycleCandidate.type() != NodeType.host ? Collections.emptyList() :
                         nodeRepository.getChildNodes(recycleCandidate.hostname()).stream()
                                 .filter(node -> node.state() != Node.State.parked)
@@ -65,9 +65,9 @@ public class FailedExpirer extends Expirer {
                                 .collect(Collectors.toList());
 
                 if (nonParkedChildren.isEmpty()) {
-                    nodeRepository.park(recycleCandidate.hostname(), Agent.system, "Parked by FailedExpirer due to HW failure on node");
+                    nodeRepository.park(recycleCandidate.hostname(), Agent.system, "Parked by FailedExpirer due to HW failure/divergence on node");
                 } else {
-                    log.info(String.format("Expired failed node %s with HW fail is not parked because some of its children" +
+                    log.info(String.format("Expired failed node %s with HW failure/divergence is not parked because some of its children" +
                             " (%s) are not yet parked", recycleCandidate.hostname(), String.join(", ", nonParkedChildren)));
                 }
             } else if (! failCountIndicatesHwFail(zone, recycleCandidate) || recycleCandidate.status().failCount() < 5) {

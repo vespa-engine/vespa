@@ -3,21 +3,24 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.cost.MockInsightBackend;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -50,8 +53,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .environment(Environment.prod)
             .region("corp-us-east-1")
             .build();
-    private static final String athensUserDomain = "domain1";
-    private static final String athensScrewdriverDomain = "screwdriver-domain";
+    private static final String athenzUserDomain = "domain1";
+    private static final String athenzScrewdriverDomain = AthenzUtils.SCREWDRIVER_DOMAIN.id();
+
 
     @Test
     public void testApplicationApi() throws Exception {
@@ -59,7 +63,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
 
-        addTenantAthensDomain(athensUserDomain, "mytenant"); // (Necessary but not provided in this API)
+        addTenantAthenzDomain(athenzUserDomain, "mytenant"); // (Necessary but not provided in this API)
 
         // GET API root
         tester.assertResponse(request("/application/v4/", "", Request.Method.GET),
@@ -117,7 +121,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy",
                                       entity,
                                       Request.Method.POST,
-                                      athensUserDomain, "mytenant"),
+                                      athenzUserDomain, "mytenant"),
                               new File("deploy-result.json"));
 
         // POST (deploy) an application to a zone. This simulates calls done by our tenant pipeline.
@@ -134,7 +138,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/",
                                       createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)),
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default",
                                       "",
@@ -146,7 +150,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default/",
                                       createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)),
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default",
                                       "",
@@ -158,7 +162,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/",
                                       createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)),
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, screwdriverProjectId, false, DeploymentJobs.JobType.productionCorpUsEast1);
 
@@ -169,7 +173,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", "", Request.Method.GET),
                               new File("application.json"));
         // GET an application deployment
-        addMockObservedApplicationCost("tenant1", "application1", "default");
+        setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", "", Request.Method.GET),
                               new File("deployment.json"));
         // POST a 'restart application' command
@@ -224,14 +228,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/user?user=newuser&domain=by",
                                       new byte[0],
                                       Request.Method.PUT,
-                                      athensUserDomain, "newuser", "application/json"),
+                                      athenzUserDomain, "newuser", "application/json"),
                               new File("create-user-response.json"));
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", "", Request.Method.OPTIONS),
                               "");
 
         // Add another Athens domain, so we can try to create more tenants
-        addTenantAthensDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
+        addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2",
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
@@ -278,6 +282,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"message\":\"Successfully copied environment hosted-verified-prod to hosted-instance_tenant1_application1_placeholder_component_default\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", "", Request.Method.POST),
                 "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
+
+        controllerTester.controller().deconstruct();
     }
 
     @Test
@@ -286,7 +292,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
-        addTenantAthensDomain(athensUserDomain, "mytenant");
+        addTenantAthenzDomain(athenzUserDomain, "mytenant");
         addScrewdriverUserToDomain("screwdriveruser1", "domain1");
 
         // Create tenant
@@ -306,7 +312,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/deploy",
                                       entity,
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
     }
 
@@ -316,7 +322,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
-        addTenantAthensDomain(athensUserDomain, "mytenant");
+        addTenantAthenzDomain(athenzUserDomain, "mytenant");
         addScrewdriverUserToDomain("screwdriveruser1", "domain1");
 
         // Create tenant
@@ -345,7 +351,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy",
                                       deployData,
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
 
@@ -362,7 +368,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy",
                                       deployData,
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsWest1);
 
@@ -370,7 +376,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy",
                                       deployData,
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
 
@@ -382,7 +388,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testErrorResponses() throws Exception {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         tester.updateSystemVersion();
-        addTenantAthensDomain("domain1", "mytenant");
+        addTenantAthenzDomain("domain1", "mytenant");
 
         // PUT (update) non-existing tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1",
@@ -453,7 +459,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy",
                                       entity,
                                       Request.Method.POST,
-                                      athensUserDomain, "mytenant"),
+                                      athenzUserDomain, "mytenant"),
                               new File("deploy-failure.json"), 400);
 
         // POST (deploy) an application without available capacity
@@ -461,7 +467,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy",
                                       entity,
                                       Request.Method.POST,
-                                      athensUserDomain, "mytenant"),
+                                      athenzUserDomain, "mytenant"),
                               new File("deploy-out-of-capacity.json"), 400);
 
         // DELETE tenant which has an application
@@ -516,14 +522,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "[]",
                               200);
 
-        addTenantAthensDomain("domain1", "mytenant");
+        addTenantAthenzDomain("domain1", "mytenant");
 
         // Creating a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1",
                                       "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}",
                                       Request.Method.POST,
                                       "domain1", unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'othertenant' is not admin in Athens domain 'domain1'\"}",
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'othertenant' is not admin in Athenz domain 'domain1'\"}",
                               403);
 
         // (Create it with the right tenant id)
@@ -555,7 +561,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy",
                                       entity,
                                       Request.Method.POST,
-                                      athensUserDomain, "mytenant"),
+                                      athenzUserDomain, "mytenant"),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Principal 'mytenant' is not a screwdriver principal, and does not have deploy access to application 'tenant1.application1'\"}", 
                               403);
 
@@ -584,7 +590,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               403);
         
         // Change Athens domain
-        addTenantAthensDomain("domain2", "mytenant");
+        addTenantAthenzDomain("domain2", "mytenant");
         tester.assertResponse(request("/application/v4/tenant/tenant1",
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property1\"}",
                                       Request.Method.PUT,
@@ -664,15 +670,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the
      * mock setup to replicate the action.
      */
-    private AthensDomain addTenantAthensDomain(String domainName, String userName) {
-        Athens athens = (AthensMock) container.components().getComponent(
-                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
-        );
-        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
-        AthensDomain athensDomain = new AthensDomain(domainName);
-        AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
+    private AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
+        AthenzDomain athensDomain = new AthenzDomain(domainName);
+        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(new AthensPrincipal(new AthensDomain(athensUserDomain), new UserId(userName)));
+        domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
@@ -682,34 +686,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * mock setup to replicate the action.
      */
     private void addScrewdriverUserToDomain(String screwdriverUserId, String domainName) {
-        Athens athens = (AthensMock) container.components().getComponent(
-                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
-        );
-        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
-        AthensDbMock.Domain domain = mock.getSetup().domains.get(new AthensDomain(domainName));
-        domain.admin(new AthensPrincipal(new AthensDomain(athensScrewdriverDomain), new UserId(screwdriverUserId)));
-    }
-    
-    private void addMockObservedApplicationCost(String tenant, String application, String instance) {
-        MockInsightBackend mock = (MockInsightBackend) container.components().getComponent("com.yahoo.vespa.hosted.controller.cost.MockInsightBackend");
-        
-        ClusterCost cost = new ClusterCost();
-        cost.setCount(2);
-        cost.setResource("cpu");
-        cost.setUtilization(1.0f);
-        cost.setTco(25);
-        cost.setFlavor("flavor1");
-        cost.setWaste(10);
-        cost.setType("content");
-        List<String> hostnames = new ArrayList<>();
-        hostnames.add("host1");
-        hostnames.add("host2");
-        cost.setHostnames(hostnames);
-        Map<String, ClusterCost> clusterCosts = new HashMap<>();
-        clusterCosts.put("cluster1", cost);
-        
-        mock.setApplicationCost(new ApplicationId.Builder().tenant(tenant).applicationName(application).instanceName(instance).build(),
-                                new ApplicationCost("prod.us-west-1", tenant, application + "." + instance, 37, 1.0f, 0.0f, clusterCosts));
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
+        AthenzDbMock.Domain domain = mock.getSetup().domains.get(new AthenzDomain(domainName));
+        domain.admin(new AthenzPrincipal(new AthenzDomain(athenzScrewdriverDomain), new UserId(screwdriverUserId)));
     }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
@@ -721,31 +701,58 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // system-test
         String testPath = String.format("/application/v4/tenant/%s/application/%s/environment/test/region/us-east-1/instance/default",
-                                        application.tenant().value(), application.application().value());
+                application.tenant().value(), application.application().value());
         tester.assertResponse(request(testPath,
                                       deployData,
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
-                              new File("deploy-result.json"));
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
+                new File("deploy-result.json"));
         tester.assertResponse(request(testPath,
-                                      "",
-                                      Request.Method.DELETE),
-                              "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
+                "",
+                Request.Method.DELETE),
+                "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.systemTest);
 
         // staging
         String stagingPath = String.format("/application/v4/tenant/%s/application/%s/environment/staging/region/us-east-3/instance/default",
-                                           application.tenant().value(), application.application().value());
+                application.tenant().value(), application.application().value());
         tester.assertResponse(request(stagingPath,
                                       deployData,
                                       Request.Method.POST,
-                                      athensScrewdriverDomain, "screwdriveruser1"),
-                              new File("deploy-result.json"));
+                                      athenzScrewdriverDomain, "screwdriveruser1"),
+                new File("deploy-result.json"));
         tester.assertResponse(request(stagingPath,
-                                      "",
-                                      Request.Method.DELETE),
-                              "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
+                "",
+                Request.Method.DELETE),
+                "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }
-    
+
+    /**
+     * Cluster info, utilization and deployment metrics are maintained async by maintainers.
+     *
+     * This sets these values as if the maintainers has been ran.
+     *
+     * @param controllerTester
+     */
+    private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
+        for (Application application : controllerTester.controller().applications().asList()) {
+            try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
+                for (Deployment deployment : application.deployments().values()) {
+                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
+                    List<String> hostnames = new ArrayList<>();
+                    hostnames.add("host1");
+                    hostnames.add("host2");
+                    clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, 2, 4, 50, ClusterSpec.Type.content, hostnames));
+                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
+                    clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
+                    deployment = deployment.withClusterInfo(clusterInfo);
+                    deployment = deployment.withClusterUtils(clusterUtils);
+                    deployment = deployment.withMetrics(new DeploymentMetrics(1,2,3,4,5));
+                    application = application.with(deployment);
+                    controllerTester.controller().applications().store(application, lock);
+                }
+            }
+        }
+    }
 }

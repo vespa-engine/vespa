@@ -38,6 +38,7 @@ class CloudConfigYinstVariables extends CloudConfigOptions {
   override val numParallelTenantLoaders = optionalYinstVar[java.lang.Integer]("num_parallel_tenant_loaders")
   override val dockerRegistry = optionalYinstVar[java.lang.String]("docker_registry")
   override val dockerVespaBaseImage = optionalYinstVar[java.lang.String]("docker_vespa_base_image")
+  override val loadBalancerAddress = optionalYinstVar[java.lang.String]("load_balancer_address")
 }
 
 object CloudConfigYinstVariables {

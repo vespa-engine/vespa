@@ -4,6 +4,7 @@
 #include <vespa/storage/storageserver/distributornode.h>
 
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
@@ -26,6 +27,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storageservertest");
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -650,6 +653,7 @@ namespace {
             monitor.signal();
             return true;
         }
+
         void run() override {
             uint32_t seed = 0;
             uint32_t maxDocSize = 65536;
@@ -686,7 +690,7 @@ namespace {
                         entries[bucket].write();
                         entries[bucket] = _bucketDB.get(bucket, "foo");
                         CPPUNIT_ASSERT(entries[bucket].exist());
-                        cmd.reset(new api::CreateBucketCommand(bucket));
+                        cmd.reset(new api::CreateBucketCommand(makeDocumentBucket(bucket)));
                         sendList.push_back(new mbusprot::StorageCommand(cmd));
                     }
                     CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
@@ -695,7 +699,7 @@ namespace {
                     auto *entry = entry_wrapper->get();
                     if (seed % 95 == 93) { // Delete bucket
                         if ((entry->getBucketInfo().getChecksum() & 2) == 0) {
-                            cmd.reset(new api::DeleteBucketCommand(bucket));
+                            cmd.reset(new api::DeleteBucketCommand(makeDocumentBucket(bucket)));
                             entry->setChecksum(
                                     entry->getBucketInfo().getChecksum() | 2);
                             entry_wrapper->write();
@@ -714,7 +718,7 @@ namespace {
                                                      bucket.getRawId());
                             super = super.stripUnused();
                             api::JoinBucketsCommand::SP jcmd(
-                                    new api::JoinBucketsCommand(super));
+                                    new api::JoinBucketsCommand(makeDocumentBucket(super)));
                             entries = _bucketDB.getAll(super, "foo");
                             bool foundAnyLocked = false;
                             for (std::map<document::BucketId,
@@ -747,7 +751,7 @@ namespace {
                             // Use _checksum == 1 to mean that we have a pending
                             // maintenance operation to this bucket.
                         if (entry->getBucketInfo().getChecksum() == 0) {
-                            cmd.reset(new api::SplitBucketCommand(bucket));
+                            cmd.reset(new api::SplitBucketCommand(makeDocumentBucket(bucket)));
                             entry->setChecksum(1);
                             entry_wrapper->write();
                             sendList.push_back(
@@ -755,7 +759,7 @@ namespace {
                         }
                     } else if (seed % 7 == 5) { // Remove
                         if ((entry->getBucketInfo().getChecksum() & 2) == 0) {
-                            cmd.reset(new api::RemoveCommand(bucket,
+                            cmd.reset(new api::RemoveCommand(makeDocumentBucket(bucket),
                                         doc->getId(), 1000ull * seed + 2));
                             sendList.push_back(
                                     new mbusprot::StorageCommand(cmd));
@@ -763,14 +767,14 @@ namespace {
                     } else if (seed % 5 == 3) { // Get
                         if ((entry->getBucketInfo().getChecksum() & 2) == 0) {
                             cmd.reset(new api::GetCommand(
-                                    bucket, doc->getId(), "[all]"));
+                                        makeDocumentBucket(bucket), doc->getId(), "[all]"));
                             sendList.push_back(
                                     new mbusprot::StorageCommand(cmd));
                         }
                     } else { // Put
                         if ((entry->getBucketInfo().getChecksum() & 2) == 0) {
                             cmd.reset(new api::PutCommand(
-                                        bucket, doc, 1000ull * seed + 1));
+                                        makeDocumentBucket(bucket), doc, 1000ull * seed + 1));
                             sendList.push_back(
                                     new mbusprot::StorageCommand(cmd));
                         }

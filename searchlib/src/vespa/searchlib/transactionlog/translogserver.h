@@ -3,6 +3,7 @@
 
 #include "domain.h"
 #include <vespa/vespalib/util/document_runnable.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/util/queue.h>
 #include <vespa/fnet/frt/invokable.h>
 #include <mutex>
@@ -20,20 +21,17 @@ public:
     typedef std::unique_ptr<TransLogServer> UP;
     typedef std::shared_ptr<TransLogServer> SP;
 
-    TransLogServer(const vespalib::string &name,
-                   int listenPort,
-                   const vespalib::string &baseDir,
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext,
-                   uint64_t domainPartSize=0x10000000,
-                   bool useFsync=false,
-                   size_t maxThreads=4,
-                   DomainPart::Crc defaultCrc=DomainPart::xxh64);
+                   uint64_t domainPartSize, size_t maxThreads, DomainPart::Crc defaultCrc);
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                   const common::FileHeaderContext &fileHeaderContext, uint64_t domainPartSize);
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                   const common::FileHeaderContext &fileHeaderContext);
     virtual ~TransLogServer();
-    uint64_t getDomainPartSize() const { return _domainPartSize; }
-    uint64_t setDomainPartSize();
     DomainStats getDomainStats() const;
 
-    void commit(const vespalib::string & domainName, const Packet & packet) override;
+    void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) override;
 
 
     class Session
@@ -63,7 +61,6 @@ private:
     void domainSessionRun(FRT_RPCRequest *req);
     void domainPrune(FRT_RPCRequest *req);
     void domainVisit(FRT_RPCRequest *req);
-    void domainSubscribe(FRT_RPCRequest *req);
     void domainSessionClose(FRT_RPCRequest *req);
     void domainSync(FRT_RPCRequest *req);
 
@@ -79,20 +76,20 @@ private:
 
     static const Session::SP & getSession(FRT_RPCRequest *req);
 
-    typedef std::map<vespalib::string, Domain::SP > DomainList;
+    using DomainList = std::map<vespalib::string, Domain::SP >;
 
-    vespalib::string                   _name;
-    vespalib::string                   _baseDir;
-    const uint64_t                     _domainPartSize;
-    const bool                         _useFsync;
-    const DomainPart::Crc              _defaultCrcType;
-    vespalib::ThreadStackExecutor      _executor;
-    FastOS_ThreadPool                  _threadPool;
-    std::unique_ptr<FRT_Supervisor>    _supervisor;
-    DomainList                         _domains;
-    mutable std::mutex                 _lock;          // Protects _domains
-    std::mutex                         _fileLock;      // Protects the creating and deleting domains including file system operations.
-    document::Queue<FRT_RPCRequest *>  _reqQ;
+    vespalib::string                    _name;
+    vespalib::string                    _baseDir;
+    const uint64_t                      _domainPartSize;
+    const DomainPart::Crc               _defaultCrcType;
+    vespalib::ThreadStackExecutor       _commitExecutor;
+    vespalib::ThreadStackExecutor       _sessionExecutor;
+    FastOS_ThreadPool                   _threadPool;
+    std::unique_ptr<FRT_Supervisor>     _supervisor;
+    DomainList                          _domains;
+    mutable std::mutex                  _lock;          // Protects _domains
+    std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
+    document::Queue<FRT_RPCRequest *>   _reqQ;
     const common::FileHeaderContext    &_fileHeaderContext;
     using Guard = std::lock_guard<std::mutex>;
 };

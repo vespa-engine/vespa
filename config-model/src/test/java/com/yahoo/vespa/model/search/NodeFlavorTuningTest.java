@@ -28,6 +28,12 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_hwinfo_cpu_cores_is_set() {
+        ProtonConfig cfg = configFromNumCoresSetting(24);
+        assertEquals(24, cfg.hwinfo().cpu().cores());
+    }
+
+    @Test
     public void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
         assertEquals(200, cfg.hwinfo().disk().writespeed(), 0.001);
@@ -58,19 +64,6 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
-    public void require_that_documentstore_numthreads_is_based_on_num_cores() {
-        assertDocumentStoreNumThreads(8, 0);
-        assertDocumentStoreNumThreads(8, 1.0);
-        assertDocumentStoreNumThreads(8, 3.0);
-        assertDocumentStoreNumThreads(8, 4.0);
-        assertDocumentStoreNumThreads(8, 8.0);
-        assertDocumentStoreNumThreads(12, 24.0);
-        assertDocumentStoreNumThreads(16, 32.0);
-        assertDocumentStoreNumThreads(24, 48.0);
-        assertDocumentStoreNumThreads(32, 64.0);
-    }
-
-    @Test
     public void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
         assertFlushStrategyMemory(512 * MB, 4);
         assertFlushStrategyMemory(1 * GB, 8);
@@ -87,6 +80,12 @@ public class NodeFlavorTuningTest {
         assertFlushStrategyTlsSize(100 * GB, 24000);
     }
 
+    @Test
+    public void require_that_summary_read_io_is_set_based_on_disk() {
+        assertSummaryReadIo(ProtonConfig.Summary.Read.Io.DIRECTIO, true);
+        assertSummaryReadIo(ProtonConfig.Summary.Read.Io.MMAP, false);
+    }
+
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int memoryGb) {
         assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
     }
@@ -96,12 +95,12 @@ public class NodeFlavorTuningTest {
         assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().each().maxmemory());
     }
 
-    private static void assertDocumentStoreNumThreads(int numThreads, double numCores) {
-        assertEquals(numThreads, configFromNumCoresSetting(numCores).background().threads());
-    }
-
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
         assertEquals(expTlsSizeBytes, configFromDiskSetting(diskGb).flush().memory().maxtlssize());
+    }
+
+    private static void assertSummaryReadIo(ProtonConfig.Summary.Read.Io.Enum expValue, boolean fastDisk) {
+        assertEquals(expValue, configFromDiskSetting(fastDisk).summary().read().io());
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {

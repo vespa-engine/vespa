@@ -7,7 +7,7 @@ using document::BucketId;
 using document::DocumentId;
 using storage::spi::Bucket;
 using storage::spi::PartitionId;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 namespace proton {
 
@@ -23,7 +23,7 @@ BucketFactory::getBucketId(const DocumentId &docId)
 Bucket
 BucketFactory::getBucket(const DocumentId &docId)
 {
-    return makeBucket(getBucketId(docId));
+    return makeSpiBucket(getBucketId(docId));
 }
 
 } // namespace proton

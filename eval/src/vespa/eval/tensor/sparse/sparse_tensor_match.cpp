@@ -112,7 +112,12 @@ SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs,
 {
     if ((lhs.type().dimensions().size() == rhs.type().dimensions().size()) &&
         (lhs.type().dimensions().size() == _builder.type().dimensions().size())) {
-        fastMatch(lhs, rhs);
+        // Ensure that first tensor to fastMatch has fewest cells.
+        if (lhs.cells().size() <= rhs.cells().size()) {
+            fastMatch(lhs, rhs);
+        } else {
+            fastMatch(rhs, lhs);
+        }
     } else {
         slowMatch(lhs, rhs);
     }

@@ -9,27 +9,22 @@
 #pragma once
 
 #include "storagecommand.h"
+#include <vespa/document/bucket/bucket.h>
 
 namespace storage::api {
 
 class BucketCommand : public StorageCommand {
-    document::BucketId _bucket;
+    document::Bucket   _bucket;
     document::BucketId _originalBucket;
 
 protected:
-    BucketCommand(const MessageType& type, const document::BucketId& id)
-        : StorageCommand(type), _bucket(id), _originalBucket()
-    {}
+    BucketCommand(const MessageType& type, const document::Bucket &bucket);
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketCommand);
 
-    void remapBucketId(const document::BucketId& bucket) {
-        if (_originalBucket.getRawId() == 0) _originalBucket = _bucket;
-        _bucket = bucket;
-    }
-
-    document::BucketId getBucketId() const override { return _bucket; }
+    void remapBucketId(const document::BucketId& bucket);
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
     const document::BucketId& getOriginalBucketId() const { return _originalBucket; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

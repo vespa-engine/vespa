@@ -31,7 +31,7 @@ SplitOperation::onStart(DistributorMessageSender& sender)
 
     for (uint32_t i = 0; i < entry->getNodeCount(); i++) {
         std::shared_ptr<api::SplitBucketCommand> msg(
-                new api::SplitBucketCommand(getBucketId()));
+                new api::SplitBucketCommand(getBucket()));
         msg->setMaxSplitBits(_maxBits);
         msg->setMinDocCount(_splitCount);
         msg->setMinByteSize(_splitSize);

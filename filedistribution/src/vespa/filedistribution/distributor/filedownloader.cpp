@@ -285,7 +285,7 @@ FileDownloader::pathToCompletedFile(const std::string& fileReference) const {
 
 boost::optional<FileDownloader::ResumeDataBuffer>
 FileDownloader::getResumeData(const std::string& fileReference) {
-    LOG(debug, ("Reading resume data for " + fileReference).c_str());
+    LOG(debug, "Reading resume data for '%s'", fileReference.c_str());
     try {
         fs::path path = (_dbPath / fileReference).string() + resumeDataSuffix;
         if (fs::exists(path)) {
@@ -294,7 +294,7 @@ FileDownloader::getResumeData(const std::string& fileReference) {
 
             std::istream_iterator<char> iterator(file), end;
             std::copy(iterator, end, std::back_inserter(result));
-            LOG(debug, ("Successfully retrieved resume data for " + fileReference).c_str());
+            LOG(debug, "Successfully retrieved resume data for '%s'", fileReference.c_str());
             if (result.size() < 50) {
                 LOG(info, "Very small resume file %zu bytes.", result.size());
             }
@@ -303,7 +303,7 @@ FileDownloader::getResumeData(const std::string& fileReference) {
         }
     } catch(...) {
         //resume data is only an optimization
-        LOG(info, ("Error while reading resume data for " + fileReference).c_str());
+        LOG(info, "Error while reading resume data for '%s'", fileReference.c_str());
     }
     return boost::optional<ResumeDataBuffer>();
 }

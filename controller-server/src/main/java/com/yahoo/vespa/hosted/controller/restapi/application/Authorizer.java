@@ -6,15 +6,15 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.common.ContextAttributes;
 import com.yahoo.vespa.hosted.controller.restapi.filter.NTokenRequestFilter;
 import com.yahoo.vespa.hosted.controller.restapi.filter.UnauthenticatedUserPrincipal;
@@ -47,15 +47,13 @@ public class Authorizer {
                                                                          new UserId("screwdriver-test"));
 
     private final Controller controller;
-    private final ZmsClientFactory zmsClientFactory;
+    private final AthenzClientFactory athenzClientFactory;
     private final EntityService entityService;
-    private final Athens athens;
 
-    public Authorizer(Controller controller, EntityService entityService) {
+    public Authorizer(Controller controller, EntityService entityService, AthenzClientFactory athenzClientFactory) {
         this.controller = controller;
-        this.zmsClientFactory = controller.athens().zmsClientFactory();
+        this.athenzClientFactory = athenzClientFactory;
         this.entityService = entityService;
-        this.athens = controller.athens();
     }
 
     public void throwIfUnauthorized(TenantId tenantId, HttpRequest request) throws ForbiddenException {
@@ -90,19 +88,19 @@ public class Authorizer {
 
     public Optional<NToken> getNToken(HttpRequest request) {
         String nTokenHeader = (String)request.getJDiscRequest().context().get(NTokenRequestFilter.NTOKEN_HEADER);
-        return Optional.ofNullable(nTokenHeader).map(athens::nTokenFrom);
+        return Optional.ofNullable(nTokenHeader).map(NToken::new);
     }
 
     public boolean isSuperUser(HttpRequest request) {
-        // TODO Check membership of admin role in Vespa's Athens domain
-        return isMemberOfVespaBouncerGroup(request) || isScrewdriverPrincipal(athens, getPrincipal(request));
+        // TODO Check membership of admin role in Vespa's Athenz domain
+        return isMemberOfVespaBouncerGroup(request) || isScrewdriverPrincipal(getPrincipal(request));
     }
 
-    public static boolean isScrewdriverPrincipal(Athens athens, Principal principal) {
+    public static boolean isScrewdriverPrincipal(Principal principal) {
         if (principal instanceof UnauthenticatedUserPrincipal) // Host-based authentication
             return SCREWDRIVER_USERS.contains(new UserId(principal.getName()));
-        else if (principal instanceof AthensPrincipal)
-            return ((AthensPrincipal)principal).getDomain().equals(athens.screwdriverDomain());
+        else if (principal instanceof AthenzPrincipal)
+            return ((AthenzPrincipal)principal).getDomain().equals(AthenzUtils.SCREWDRIVER_DOMAIN);
         else
             return false;
     }
@@ -116,7 +114,7 @@ public class Authorizer {
     private boolean isTenantAdmin(UserId userId, Tenant tenant) {
         switch (tenant.tenantType()) {
             case ATHENS:
-                return isAthensTenantAdmin(userId, tenant.getAthensDomain().get());
+                return isAthenzTenantAdmin(userId, tenant.getAthensDomain().get());
             case OPSDB:
                 return isGroupMember(userId, tenant.getUserGroup().get());
             case USER:
@@ -125,14 +123,14 @@ public class Authorizer {
         throw new IllegalArgumentException("Unknown tenant type: " + tenant.tenantType());
     }
 
-    private boolean isAthensTenantAdmin(UserId userId, AthensDomain tenantDomain) {
-        return zmsClientFactory.createClientWithServicePrincipal()
-                .hasTenantAdminAccess(athens.principalFrom(userId), tenantDomain);
+    private boolean isAthenzTenantAdmin(UserId userId, AthenzDomain tenantDomain) {
+        return athenzClientFactory.createZmsClientWithServicePrincipal()
+                .hasTenantAdminAccess(AthenzUtils.createPrincipal(userId), tenantDomain);
     }
 
-    public boolean isAthensDomainAdmin(UserId userId, AthensDomain tenantDomain) {
-        return zmsClientFactory.createClientWithServicePrincipal()
-                .isDomainAdmin(athens.principalFrom(userId), tenantDomain);
+    public boolean isAthenzDomainAdmin(UserId userId, AthenzDomain tenantDomain) {
+        return athenzClientFactory.createZmsClientWithServicePrincipal()
+                .isDomainAdmin(AthenzUtils.createPrincipal(userId), tenantDomain);
     }
 
     public boolean isGroupMember(UserId userId, UserGroup userGroup) {

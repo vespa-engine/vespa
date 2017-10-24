@@ -2,60 +2,15 @@
 
 #include "datagram.h"
 
+using document::BucketSpace;
+
 namespace storage {
 namespace api {
 
-IMPLEMENT_COMMAND(DocBlockCommand, DocBlockReply)
-IMPLEMENT_REPLY(DocBlockReply)
 IMPLEMENT_COMMAND(MapVisitorCommand, MapVisitorReply)
 IMPLEMENT_REPLY(MapVisitorReply)
-IMPLEMENT_COMMAND(DocumentListCommand, DocumentListReply)
-IMPLEMENT_REPLY(DocumentListReply)
 IMPLEMENT_COMMAND(EmptyBucketsCommand, EmptyBucketsReply)
 IMPLEMENT_REPLY(EmptyBucketsReply)
-
-DocBlockCommand::DocBlockCommand(const document::BucketId& bucketId,
-                                 const vdslib::DocumentList& block,
-                                 const std::shared_ptr<void>& buffer)
-    : StorageCommand(MessageType::DOCBLOCK),
-      _bucketId(bucketId),
-      _docBlock(block),
-      _buffer(buffer),
-      _keepTimeStamps(false)
-{
-}
-
-DocBlockCommand::~DocBlockCommand() {}
-
-void
-DocBlockCommand::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-{
-    out << "DocBlockCommand("
-        << "size " << _docBlock.getBufferSize() << ", used space "
-        << (_docBlock.getBufferSize() - _docBlock.countFree()) << ", doccount "
-        << _docBlock.size() << ")";
-    if (verbose) {
-        out << " : ";
-        StorageCommand::print(out, verbose, indent);
-    }
-}
-
-DocBlockReply::DocBlockReply(const DocBlockCommand& cmd)
-    : StorageReply(cmd)
-{
-}
-
-void
-DocBlockReply::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
-{
-    out << "DocBlockReply()";
-    if (verbose) {
-        out << " : ";
-        StorageReply::print(out, verbose, indent);
-    }
-}
 
 MapVisitorCommand::MapVisitorCommand()
     : StorageCommand(MessageType::MAPVISITOR)
@@ -91,52 +46,6 @@ MapVisitorReply::print(std::ostream& out, bool verbose,
                        const std::string& indent) const
 {
     out << "MapVisitorReply()";
-    if (verbose) {
-        out << " : ";
-        StorageReply::print(out, verbose, indent);
-    }
-}
-
-DocumentListCommand::DocumentListCommand(const document::BucketId& bid)
-    : StorageCommand(MessageType::DOCUMENTLIST),
-      _bucketId(bid),
-      _documents()
-{
-}
-
-void
-DocumentListCommand::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
-{
-    out << "DocumentList(" << _bucketId;
-    if (_documents.empty()) {
-        out << ", empty";
-    } else if (verbose) {
-        out << ",";
-        for (uint32_t i=0; i<_documents.size(); ++i) {
-            out << "\n" << indent << "  ";
-            out << ":" << _documents[i];
-        }
-    } else {
-        out << ", " << _documents.size() << " documents";
-    }
-    out << ")";
-    if (verbose) {
-        out << " : ";
-        StorageCommand::print(out, verbose, indent);
-    }
-}
-
-DocumentListReply::DocumentListReply(const DocumentListCommand& cmd)
-    : StorageReply(cmd)
-{
-}
-
-void
-DocumentListReply::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
-{
-    out << "DocumentListReply()";
     if (verbose) {
         out << " : ";
         StorageReply::print(out, verbose, indent);
@@ -184,14 +93,6 @@ EmptyBucketsReply::print(std::ostream& out, bool verbose,
         out << " : ";
         StorageReply::print(out, verbose, indent);
     }
-}
-
-std::ostream& operator<<(std::ostream& out, const DocumentListCommand::Entry& e)
-{
-    out << e._doc->getId();
-    if (e._removeEntry) out << " - removed";
-    out << ", last modified at " << e._lastModified;
-    return out;
 }
 
 } // api

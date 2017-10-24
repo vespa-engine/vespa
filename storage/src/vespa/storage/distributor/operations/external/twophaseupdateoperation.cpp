@@ -15,6 +15,7 @@
 LOG_SETUP(".distributor.callback.twophaseupdate");
 
 using namespace std::literals::string_literals;
+using document::BucketSpace;
 
 namespace storage {
 namespace distributor {
@@ -180,9 +181,10 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
         _updateCmd->getDocumentId().toString().c_str());
 
     _mode = Mode::SLOW_PATH;
+    document::Bucket bucket(BucketSpace::placeHolder(), document::BucketId(0));
     std::shared_ptr<api::GetCommand> get(
             std::make_shared<api::GetCommand>(
-                document::BucketId(0),
+                bucket,
                 _updateCmd->getDocumentId(),
                 "[all]"));
     copyMessageSettings(*_updateCmd, *get);
@@ -249,8 +251,9 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(
         sendLostOwnershipTransientErrorReply(sender);
         return;
     }
+    document::Bucket bucket(BucketSpace::placeHolder(), document::BucketId(0));
     std::shared_ptr<api::PutCommand> put(
-            new api::PutCommand(document::BucketId(0), doc, putTimestamp));
+            new api::PutCommand(bucket, doc, putTimestamp));
     copyMessageSettings(*_updateCmd, *put);
     std::shared_ptr<PutOperation> putOperation(
             new PutOperation(_manager, put, _putMetric));
@@ -336,8 +339,9 @@ TwoPhaseUpdateOperation::handleFastPathReceive(
                     _updateCmd->getDocumentId().toString().c_str());
 
                 _updateReply = intermediate._reply;
+                document::Bucket bucket(BucketSpace::placeHolder(), bestNode.first);
                 std::shared_ptr<api::GetCommand> cmd(
-                    new api::GetCommand(bestNode.first,
+                    new api::GetCommand(bucket,
                     _updateCmd->getDocumentId(),
                     "[all]"));
                 copyMessageSettings(*_updateCmd, *cmd);

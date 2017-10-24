@@ -5,7 +5,6 @@
 #include "bucketownershipnotifier.h"
 #include "testandsethelper.h"
 #include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
@@ -24,15 +23,8 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
                                      FileStorHandler& filestorHandler,
                                      FileStorThreadMetrics& metrics,
                                      uint16_t deviceIndex,
-                                     uint8_t lowestPriority,
-                                     bool startThread)
-    : _env(configUri,
-           compReg,
-           filestorHandler,
-           metrics,
-           deviceIndex,
-           lowestPriority,
-           provider),
+                                     uint8_t lowestPriority)
+    : _env(configUri, compReg, filestorHandler, metrics, deviceIndex, lowestPriority, provider),
       _warnOnSlowOperations(5000),
       _spi(provider),
       _processAllHandler(_env, provider),
@@ -43,13 +35,10 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
       _flushMonitor(),
       _closed(false)
 {
-    (void) startThread;
     std::ostringstream threadName;
-    threadName << "Disk " << _env._partition << " thread "
-               << (void*) this;
+    threadName << "Disk " << _env._partition << " thread " << (void*) this;
     _component.reset(new ServiceLayerComponent(compReg, threadName.str()));
-    _bucketOwnershipNotifier.reset(
-            new BucketOwnershipNotifier(*_component, filestorHandler));
+    _bucketOwnershipNotifier.reset(new BucketOwnershipNotifier(*_component, filestorHandler));
     framework::MilliSecTime maxProcessingTime(60 * 1000);
     framework::MilliSecTime waitTime(1000);
     _thread = _component->startThread(*this, maxProcessingTime, waitTime);
@@ -57,8 +46,7 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
 
 PersistenceThread::~PersistenceThread()
 {
-    LOG(debug, "Shutting down persistence thread. Waiting for current "
-               "operation to finish.");
+    LOG(debug, "Shutting down persistence thread. Waiting for current operation to finish.");
     _thread->interrupt();
     LOG(debug, "Waiting for thread to terminate.");
     _thread->join();
@@ -66,8 +54,7 @@ PersistenceThread::~PersistenceThread()
 }
 
 spi::Bucket
-PersistenceThread::getBucket(const DocumentId& id,
-                             const BucketId& bucket) const
+PersistenceThread::getBucket(const DocumentId& id, const BucketId& bucket) const
 {
     BucketId docBucket(_env._bucketFactory.getBucketId(id));
     docBucket.setUsedBits(bucket.getUsedBits());
@@ -82,8 +69,7 @@ PersistenceThread::getBucket(const DocumentId& id,
 }
 
 bool
-PersistenceThread::checkForError(const spi::Result& response,
-                             MessageTracker& tracker)
+PersistenceThread::checkForError(const spi::Result& response, MessageTracker& tracker)
 {
     uint32_t code = _env.convertErrorCode(response);
 
@@ -231,7 +217,7 @@ PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd)
         (cmd.verifyBody() ? "Verifying body" : "Not verifying body"));
     api::BucketInfo before = _env.getBucketInfo(cmd.getBucketId());
     spi::Result result =
-        _spi.maintain(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
+        _spi.maintain(spi::Bucket(cmd.getBucket(),
                                   spi::PartitionId(_env._partition)),
                       cmd.verifyBody() ?
                       spi::HIGH : spi::LOW);
@@ -257,8 +243,7 @@ PersistenceThread::handleMultiOperation(api::MultiOperationCommand& cmd)
     MessageTracker::UP tracker(new MessageTracker(
                                        _env._metrics.multiOp[cmd.getLoadType()],
                                        _env._component.getClock()));
-    spi::Bucket b = spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                                spi::PartitionId(_env._partition));
+    spi::Bucket b = spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     long puts = 0;
     long removes = 0;
     long updates = 0;
@@ -314,8 +299,7 @@ PersistenceThread::handleRevert(api::RevertCommand& cmd)
     MessageTracker::UP tracker(new MessageTracker(
                                        _env._metrics.revert[cmd.getLoadType()],
                                        _env._component.getClock()));
-    spi::Bucket b = spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                                spi::PartitionId(_env._partition));
+    spi::Bucket b = spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     const std::vector<api::Timestamp> tokens = cmd.getRevertTokens();
     for (uint32_t i = 0; i < tokens.size(); ++i) {
         spi::Result result = _spi.removeEntry(b,
@@ -337,7 +321,7 @@ PersistenceThread::handleCreateBucket(api::CreateBucketCommand& cmd)
             cmd.getBucketId().toString().c_str());
         DUMP_LOGGED_BUCKET_OPERATIONS(cmd.getBucketId());
     }
-    spi::Bucket spiBucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()), spi::PartitionId(_env._partition));
+    spi::Bucket spiBucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     _spi.createBucket(spiBucket, _context);
     if (cmd.getActive()) {
         _spi.setActiveState(spiBucket, spi::BucketInfo::ACTIVE);
@@ -406,7 +390,7 @@ PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd)
                 api::ReturnCode(api::ReturnCode::ABORTED,
                                 "Bucket was deleted during the merge"));
     }
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     if (!checkProviderBucketInfoMatches(bucket, cmd.getBucketInfo())) {
            return tracker;
     }
@@ -463,7 +447,7 @@ PersistenceThread::handleReadBucketList(ReadBucketList& cmd)
                                        _env._metrics.readBucketList,
                                        _env._component.getClock()));
 
-    spi::BucketIdListResult result(_spi.listBuckets(document::BucketSpace::placeHolder(), cmd.getPartition()));
+    spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace(), cmd.getPartition()));
     if (checkForError(result, *tracker)) {
         ReadBucketListReply::SP reply(new ReadBucketListReply(cmd));
         result.getList().swap(reply->getBuckets());
@@ -497,7 +481,7 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd)
     // _context is reset per command, so it's safe to modify it like this.
     _context.setReadConsistency(cmd.getReadConsistency());
     spi::CreateIteratorResult result(_spi.createIterator(
-        spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()), spi::PartitionId(_env._partition)),
+        spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
             *fieldSet,
             cmd.getSelection(),
             cmd.getIncludedVersions(),
@@ -533,7 +517,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
         return tracker;
     }
 
-    spi::Bucket spiBucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()), spi::PartitionId(_env._partition));
+    spi::Bucket spiBucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     SplitBitDetector::Result targetInfo;
     if (_env._config.enableMultibitSplitOptimalization) {
         targetInfo = SplitBitDetector::detectSplit(
@@ -581,8 +565,8 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
 #endif
     spi::Result result = _spi.split(
             spiBucket,
-            spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), target1), spi::PartitionId(lock1.disk)),
-            spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), target2), spi::PartitionId(lock2.disk)), _context);
+            spi::Bucket(document::Bucket(spiBucket.getBucketSpace(), target1), spi::PartitionId(lock1.disk)),
+            spi::Bucket(document::Bucket(spiBucket.getBucketSpace(), target2), spi::PartitionId(lock2.disk)), _context);
     if (result.hasError()) {
         tracker->fail(_env.convertErrorCode(result),
                       result.getErrorMessage());
@@ -646,7 +630,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
                 // to an empty target bucket, since the provider will have
                 // implicitly erased it by this point.
                 spi::Bucket createTarget(
-                        spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), targets[i].second.bid),
+                        spi::Bucket(document::Bucket(spiBucket.getBucketSpace(), targets[i].second.bid),
                             spi::PartitionId(targets[i].second.diskIndex)));
                 LOG(debug,
                     "Split target %s was empty, but re-creating it since "
@@ -755,18 +739,16 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
         }
     }
 #endif
+    document::Bucket destBucket = cmd.getBucket();
     spi::Result result =
-        _spi.join(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), firstBucket), spi::PartitionId(lock1.disk)),
-                  spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), secondBucket), spi::PartitionId(lock2.disk)),
-                  spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                              spi::PartitionId(_env._partition)),
+        _spi.join(spi::Bucket(document::Bucket(destBucket.getBucketSpace(), firstBucket), spi::PartitionId(lock1.disk)),
+                  spi::Bucket(document::Bucket(destBucket.getBucketSpace(), secondBucket), spi::PartitionId(lock2.disk)),
+                  spi::Bucket(destBucket, spi::PartitionId(_env._partition)),
                   _context);
     if (!checkForError(result, *tracker)) {
         return tracker;
     }
-    result = _spi.flush(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                                    spi::PartitionId(_env._partition)),
-                        _context);
+    result = _spi.flush(spi::Bucket(destBucket, spi::PartitionId(_env._partition)), _context);
     if (!checkForError(result, *tracker)) {
         return tracker;
     }
@@ -813,7 +795,7 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd)
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
 
     LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
-    spi::Bucket bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()), spi::PartitionId(_env._partition));
+    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
     bool shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
     spi::BucketInfo::ActiveState newState(
             shouldBeActive
@@ -860,13 +842,11 @@ PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd)
         entry->disk = _env._partition;
         entry.write();
     }
+    document::Bucket destBucket = cmd.getBucket();
     spi::Result result =
-        _spi.join(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                              spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
-                  spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                              spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
-                  spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), cmd.getBucketId()),
-                              spi::PartitionId(cmd.getDiskOfInstanceToKeep())),
+        _spi.join(spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
+                  spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
+                  spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToKeep())),
                   _context);
     if (checkForError(result, *tracker)) {
         tracker->setReply(

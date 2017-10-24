@@ -23,7 +23,7 @@ namespace ns_log {
 
 uint64_t Timer::getTimestamp() const {
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     uint64_t timestamp = tv.tv_sec;
     timestamp *= 1000000;
     timestamp += tv.tv_usec;
@@ -164,16 +164,16 @@ Logger::~Logger()
 {
   _numInstances--;
   if ((_numInstances == 1)) {
-    if (logger != NULL) {
+    if (logger != nullptr) {
       logger->~Logger();
       free(logger);
-      logger = NULL;
+      logger = nullptr;
     }
   } else if (_numInstances == 0) {
     delete _controlFile;
     logInitialised = false;
     delete _target;
-    _target = NULL;
+    _target = nullptr;
   }
 }
 
@@ -387,13 +387,6 @@ void
 Logger::doEventValue(const char *name, double value)
 {
     doLog(event, "", 0, "value/1 name=\"%s\" value=%.18g", name, value);
-}
-
-void
-Logger::doEventCollection(uint64_t collectionId, const char* name, const char* params)
-{
-  doLog(event, "", 0, "collection/1 collectionId=%lu name=\"%s\" %s",
-        collectionId, name, params);
 }
 
 void

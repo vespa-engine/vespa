@@ -4,10 +4,6 @@ sudo: required
 services:
    - docker
 
-env:
-  - PLATFORM_LANGUAGE=cpp
-  - PLATFORM_LANGUAGE=java
-
 cache:
   timeout: 900
   directories:
@@ -28,5 +24,4 @@ install: true
 
 language: minimal
 
-script: ./travis/travis.sh $PLATFORM_LANGUAGE
-
+script: ./travis/travis.sh

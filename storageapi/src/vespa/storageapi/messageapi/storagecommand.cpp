@@ -40,12 +40,4 @@ StorageCommand::print(std::ostream& out, bool verbose,
     out << ")";
 }
 
-StorageCommand::UP
-StorageCommand::createCopyToForward(const document::BucketId&, uint64_t) const
-{
-    throw vespalib::IllegalStateException(
-            "Command " + _type.getName() + " does not support forwarding.",
-            VESPA_STRLOC);
-}
-
 }

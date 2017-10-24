@@ -31,6 +31,18 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <!-- Required for Athenz libraries -->
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-yahoo-maven</id>
+            <name>bintray</name>
+            <url>http://yahoo.bintray.com/maven</url>
+        </repository>
+    </repositories>
+
     <scm>
         <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
         <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
@@ -96,7 +108,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.8</version>
+                    <version>2.10</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -477,8 +489,18 @@
                 <version>${jackson2.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson2.version}</version>
             </dependency>
             <dependency>
@@ -519,7 +541,7 @@
             <dependency>
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
-                <version>2.6</version>
+                <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-net</groupId>
@@ -783,11 +805,6 @@
                 <version>2.2.2</version>
             </dependency>
             <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-native_${scala.major-version}</artifactId>
-                <version>3.3.0</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>1.7.5</version>
@@ -842,6 +859,16 @@
                 <artifactId>xercesImpl</artifactId>
                 <version>2.11.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
             <!-- jersey 2 support -->
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -883,6 +910,16 @@
                 <artifactId>icu4j</artifactId>
                 <version>57.1</version>
             </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-zms-java-client</artifactId>
+                <version>${athenz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-zts-java-client</artifactId>
+                <version>${athenz.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -893,7 +930,10 @@
         <aries.spifly.version>1.0.8</aries.spifly.version>
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
-        <bouncycastle.version>1.49</bouncycastle.version>
+        <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
+        <athenz.version>1.7.28</athenz.version>
+        <bouncycastle.version>1.58</bouncycastle.version>
+        <commons-lang.version>2.6</commons-lang.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
              using something like
@@ -918,6 +958,7 @@
         <module>application-deploy-plugin</module>
         <module>application-model</module>
         <module>application-preprocessor</module>
+        <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>clustercontroller-apps</module>
@@ -949,6 +990,7 @@
         <module>container-messagebus</module>
         <module>container-search-and-docproc</module>
         <module>container-search</module>
+        <module>container-test</module>
         <module>container-test-jars</module>
         <module>controller-api</module>
         <module>controller-server</module>
@@ -959,7 +1001,6 @@
         <module>documentapi</module>
         <module>document</module>
         <module>documentgen-test</module>
-        <module>dummy-persistence</module>
         <module>fileacquirer</module>
         <module>filedistributionmanager</module>
         <module>filedistribution</module>
@@ -986,7 +1027,6 @@
         <module>node-maintainer</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
-        <module>persistence</module>
         <module>predicate-search</module>
         <module>predicate-search-core</module>
         <module>processing</module>

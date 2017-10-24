@@ -9,10 +9,15 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+
+using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 
 namespace storage {
 
@@ -48,6 +53,9 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(sequencing_config_is_propagated_to_distributor_config);
     CPPUNIT_TEST(merge_busy_inhibit_duration_config_is_propagated_to_distributor_config);
     CPPUNIT_TEST(merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker);
+    CPPUNIT_TEST(external_client_requests_are_handled_individually_in_priority_order);
+    CPPUNIT_TEST(internal_messages_are_started_in_fifo_order_batch);
+    CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -77,6 +85,9 @@ protected:
     void sequencing_config_is_propagated_to_distributor_config();
     void merge_busy_inhibit_duration_config_is_propagated_to_distributor_config();
     void merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker();
+    void external_client_requests_are_handled_individually_in_priority_order();
+    void internal_messages_are_started_in_fifo_order_batch();
+    void closing_aborts_priority_queued_client_requests();
 
 public:
     void setUp() override {
@@ -196,11 +207,11 @@ Distributor_Test::testOperationGeneration()
 
     CPPUNIT_ASSERT_EQUAL(std::string("Remove"),
                          testOp(new api::RemoveCommand(
-                                        bid,
+                                        makeDocumentBucket(bid),
                                         document::DocumentId("userdoc:m:1:foo"),
                                         api::Timestamp(1234))));
 
-    api::CreateVisitorCommand* cmd = new api::CreateVisitorCommand("foo", "bar", "");
+    api::CreateVisitorCommand* cmd = new api::CreateVisitorCommand(makeBucketSpace(), "foo", "bar", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 1));
     cmd->addBucketToBeVisited(document::BucketId());
 
@@ -279,7 +290,7 @@ Distributor_Test::testHandleUnknownMaintenanceReply()
 
     {
         api::SplitBucketCommand::SP cmd(
-                new api::SplitBucketCommand(document::BucketId(16, 1234)));
+                new api::SplitBucketCommand(makeDocumentBucket(document::BucketId(16, 1234))));
         api::SplitBucketReply::SP reply(new api::SplitBucketReply(*cmd));
 
         CPPUNIT_ASSERT(_distributor->handleReply(reply));
@@ -289,7 +300,7 @@ Distributor_Test::testHandleUnknownMaintenanceReply()
         // RemoveLocationReply must be treated as a maintenance reply since
         // it's what GC is currently built around.
         auto cmd = std::make_shared<api::RemoveLocationCommand>(
-                "false", document::BucketId(30, 1234));
+                "false", makeDocumentBucket(document::BucketId(30, 1234)));
         auto reply = std::shared_ptr<api::StorageReply>(cmd->makeReply());
         CPPUNIT_ASSERT(_distributor->handleReply(reply));
     }
@@ -727,7 +738,7 @@ namespace {
 
 auto makeDummyRemoveCommand() {
     return std::make_shared<api::RemoveCommand>(
-            document::BucketId(0),
+            makeDocumentBucket(document::BucketId(0)),
             document::DocumentId("id:foo:testdoctype1:n=1:foo"),
             api::Timestamp(0));
 }
@@ -865,6 +876,83 @@ void Distributor_Test::merge_busy_inhibit_duration_is_propagated_to_pending_mess
     CPPUNIT_ASSERT(node_info.isBusy(0));
     getClock().addSecondsToTime(2);
     CPPUNIT_ASSERT(!node_info.isBusy(0));
+}
+
+void Distributor_Test::external_client_requests_are_handled_individually_in_priority_order() {
+    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
+
+    std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 0});
+    document::DocumentId id("id:foo:testdoctype1:n=1:foo");
+    vespalib::stringref field_set = "";
+    for (auto pri : priorities) {
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
+        cmd->setPriority(pri);
+        // onDown appends to internal message FIFO queue, awaiting hand-off.
+        _distributor->onDown(cmd);
+    }
+    // At the hand-off point we expect client requests to be prioritized.
+    // For each tick, a priority-order client request is processed and sent off.
+    for (size_t i = 1; i <= priorities.size(); ++i) {
+        tickDistributorNTimes(1);
+        CPPUNIT_ASSERT_EQUAL(size_t(i), _sender.commands.size());
+    }
+
+    std::vector<int> expected({0, 10, 40, 50, 255});
+    std::vector<int> actual;
+    for (auto& msg : _sender.commands) {
+        actual.emplace_back(static_cast<int>(msg->getPriority()));
+    }
+    CPPUNIT_ASSERT_EQUAL(expected, actual);
+}
+
+void Distributor_Test::internal_messages_are_started_in_fifo_order_batch() {
+    // To test internal request ordering, we use NotifyBucketChangeCommand
+    // for the reason that it explicitly updates the bucket database for
+    // each individual invocation.
+    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    document::BucketId bucket(16, 1);
+    addNodesToBucketDB(bucket, "0=1/1/1/t");
+
+    std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 1});
+    for (auto pri : priorities) {
+        api::BucketInfo fake_info(pri, pri, pri);
+        auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), fake_info);
+        cmd->setSourceIndex(0);
+        cmd->setPriority(pri);
+        _distributor->onDown(cmd);
+    }
+
+    // Doing a single tick should process all internal requests in one batch
+    tickDistributorNTimes(1);
+    CPPUNIT_ASSERT_EQUAL(size_t(5), _sender.replies.size());
+
+    // The bucket info for priority 1 (last FIFO-order change command received, but
+    // highest priority) should be the end-state of the bucket database, _not_ that
+    // of lowest priority 255.
+    BucketDatabase::Entry e(getBucket(bucket));
+    CPPUNIT_ASSERT_EQUAL(api::BucketInfo(1, 1, 1), e.getBucketInfo().getNode(0)->getBucketInfo());
+}
+
+void Distributor_Test::closing_aborts_priority_queued_client_requests() {
+    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    document::BucketId bucket(16, 1);
+    addNodesToBucketDB(bucket, "0=1/1/1/t");
+
+    document::DocumentId id("id:foo:testdoctype1:n=1:foo");
+    vespalib::stringref field_set = "";
+    for (int i = 0; i < 10; ++i) {
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
+        _distributor->onDown(cmd);
+    }
+    tickDistributorNTimes(1);
+    // Closing should trigger 1 abort via startet GetOperation and 9 aborts from pri queue
+    _distributor->close();
+    CPPUNIT_ASSERT_EQUAL(size_t(10), _sender.replies.size());
+    for (auto& msg : _sender.replies) {
+        CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
+                             dynamic_cast<api::StorageReply&>(*msg).getResult().getResult());
+    }
 }
 
 }

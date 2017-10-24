@@ -43,4 +43,5 @@ public interface CloudConfigOptions {
     Optional<Integer> numParallelTenantLoaders();
     Optional<String> dockerRegistry();
     Optional<String> dockerVespaBaseImage();
+    Optional<String> loadBalancerAddress();
 }

@@ -16,7 +16,7 @@ public final class ServiceClusterSuspendPolicy {
 
     private ServiceClusterSuspendPolicy() {} // Disallow instantiation.
 
-    public static int getSuspendPercentageAllowed(ServiceCluster<?> serviceCluster) {
+    public static int getSuspendPercentageAllowed(ServiceCluster serviceCluster) {
         if (VespaModelUtil.ADMIN_CLUSTER_ID.equals(serviceCluster.clusterId())) {
             if (VespaModelUtil.SLOBROK_SERVICE_TYPE.equals(serviceCluster.serviceType())) {
                 return SUSPENSION_ALLOW_MINIMAL;

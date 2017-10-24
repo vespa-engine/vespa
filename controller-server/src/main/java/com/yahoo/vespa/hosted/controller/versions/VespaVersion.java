@@ -4,13 +4,15 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Set;
+
+import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 
 /**
  * Information about a particular Vespa version.
@@ -26,39 +28,37 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private final Instant releasedAt;
     private final boolean isCurrentSystemVersion;
     private final DeploymentStatistics statistics;
-    private final Confidence confidence;
     private final ImmutableSet<String> configServerHostnames;
+    private final Confidence confidence;
 
-    public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant releasedAt, 
+    public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant releasedAt,
                         boolean isCurrentSystemVersion, Collection<String> configServerHostnames,
-                        Controller controller) {
+                        Confidence confidence) {
         this.statistics = statistics;
         this.releaseCommit = releaseCommit;
         this.releasedAt = releasedAt;
         this.isCurrentSystemVersion = isCurrentSystemVersion;
         this.configServerHostnames = ImmutableSet.copyOf(configServerHostnames);
-        this.confidence = deduceConfidenceFrom(statistics, controller, releasedAt);
+        this.confidence = confidence;
     }
 
-    private static Confidence deduceConfidenceFrom(DeploymentStatistics statistics, 
-                                                   Controller controller, 
-                                                   Instant releasedAt) {
+    public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller,
+                                            Instant releasedAt) {
         // 'production on this': All deployment jobs upgrading to this version have completed without failure
         ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications())
                                                           .notUpgradingTo(statistics.version())
                                                           .notFailing();
         ApplicationList failingOnThis = ApplicationList.from(statistics.failing(), controller.applications());
         ApplicationList all = ApplicationList.from(controller.applications().asList())
-                .hasDeployment()
-                .notPullRequest();
+                                             .hasDeployment()
+                                             .notPullRequest();
 
         // 'broken' if any Canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
         // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
-        int brokenByThisVersion = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt).size();
-        if (brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.1)
+        if (nonCanaryApplicationsBroken(failingOnThis, productionOnThis, releasedAt, controller.curator()))
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
@@ -136,4 +136,17 @@ public class VespaVersion implements Comparable<VespaVersion> {
 
     }
 
+    private static boolean nonCanaryApplicationsBroken(ApplicationList failingOnThis,
+                                                       ApplicationList productionOnThis,
+                                                       Instant releasedAt,
+                                                       CuratorDb curator) {
+        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt);
+        ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
+
+        if (productionNonCanaries.size() + failingNonCanaries.size() == 0 || curator.readIgnoreConfidence()) return false;
+
+        // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
+        int brokenByThisVersion = failingNonCanaries.size();
+        return brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.1;
+     }
 }

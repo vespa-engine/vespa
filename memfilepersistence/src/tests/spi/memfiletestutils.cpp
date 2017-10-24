@@ -13,7 +13,7 @@
 #include <sys/time.h>
 
 using document::DocumentType;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 using storage::spi::test::makeBucketSpace;
 
 namespace storage {
@@ -139,7 +139,7 @@ MemFileTestUtils::flush(const document::BucketId& id, uint16_t disk)
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     return getPersistenceProvider().flush(
-            makeBucket(id, spi::PartitionId(disk)), context);
+            makeSpiBucket(id, spi::PartitionId(disk)), context);
 }
 
 document::Document::SP
@@ -155,7 +155,7 @@ MemFileTestUtils::doPutOnDisk(
     document::Document::SP doc(createRandomDocumentAtLocation(
                              location, timestamp.getTime(), minSize, maxSize));
     getPersistenceProvider().put(
-            makeBucket(document::BucketId(16, location), spi::PartitionId(disk)),
+            makeSpiBucket(document::BucketId(16, location), spi::PartitionId(disk)),
             spi::Timestamp(timestamp.getTime()),
             doc,
             context);
@@ -174,14 +174,14 @@ MemFileTestUtils::doRemoveOnDisk(
                          spi::Trace::TraceLevel(0));
     if (persistRemove == OperationHandler::PERSIST_REMOVE_IF_FOUND) {
         spi::RemoveResult result = getPersistenceProvider().removeIfFound(
-            makeBucket(bucketId, spi::PartitionId(disk)),
+            makeSpiBucket(bucketId, spi::PartitionId(disk)),
             spi::Timestamp(timestamp.getTime()),
             docId,
             context);
         return result.wasFound();
     }
     spi::RemoveResult result = getPersistenceProvider().remove(
-            makeBucket(bucketId, spi::PartitionId(disk)),
+            makeSpiBucket(bucketId, spi::PartitionId(disk)),
             spi::Timestamp(timestamp.getTime()),
             docId,
             context);
@@ -200,7 +200,7 @@ MemFileTestUtils::doUnrevertableRemoveOnDisk(
                          spi::Trace::TraceLevel(0));
     spi::RemoveResult result =
         getPersistenceProvider().remove(
-                makeBucket(bucketId, spi::PartitionId(disk)),
+                makeSpiBucket(bucketId, spi::PartitionId(disk)),
                 spi::Timestamp(timestamp.getTime()),
                 docId, context);
 
@@ -217,7 +217,7 @@ MemFileTestUtils::doGetOnDisk(
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     return getPersistenceProvider().get(
-            makeBucket(bucketId, spi::PartitionId(disk)),
+            makeSpiBucket(bucketId, spi::PartitionId(disk)),
             fields, docId, context);
 }
 
@@ -275,7 +275,7 @@ MemFileTestUtils::doPut(const document::Document::SP& doc,
 {
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
-    getPersistenceProvider().put(makeBucket(bid, spi::PartitionId(disk)),
+    getPersistenceProvider().put(makeSpiBucket(bid, spi::PartitionId(disk)),
                                  spi::Timestamp(time.getTime()), doc, context);
 }
 
@@ -288,7 +288,7 @@ MemFileTestUtils::doUpdate(document::BucketId bid,
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     return getPersistenceProvider().update(
-            makeBucket(bid, spi::PartitionId(disk)),
+            makeSpiBucket(bid, spi::PartitionId(disk)),
             spi::Timestamp(time.getTime()), update, context);
 }
 
@@ -304,12 +304,12 @@ MemFileTestUtils::doRemove(const document::DocumentId& id, Timestamp time,
 
     if (unrevertableRemove) {
         getPersistenceProvider().remove(
-                makeBucket(bucket, spi::PartitionId(disk)),
+                makeSpiBucket(bucket, spi::PartitionId(disk)),
                 spi::Timestamp(time.getTime()),
                 id, context);
     } else {
         spi::RemoveResult result = getPersistenceProvider().removeIfFound(
-                makeBucket(bucket, spi::PartitionId(disk)),
+                makeSpiBucket(bucket, spi::PartitionId(disk)),
                 spi::Timestamp(time.getTime()),
                 id, context);
 

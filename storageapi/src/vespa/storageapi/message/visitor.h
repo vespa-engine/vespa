@@ -26,6 +26,7 @@ namespace api {
  */
 class CreateVisitorCommand : public StorageCommand {
 private:
+    document::BucketSpace _bucketSpace;
     vespalib::string _libName; // Name of visitor library to use, ie. DumpVisitor.so
     vdslib::Parameters _params;
 
@@ -53,7 +54,8 @@ private:
     uint32_t _maxBucketsPerVisitor;
 
 public:
-    CreateVisitorCommand(const vespalib::stringref & libraryName,
+    CreateVisitorCommand(document::BucketSpace bucketSpace,
+                         const vespalib::stringref & libraryName,
                          const vespalib::stringref & instanceId,
                          const vespalib::stringref & docSelection);
 
@@ -83,6 +85,7 @@ public:
 
     VisitorId getVisitorId() const { return _visitorId; }
     uint32_t getVisitorCmdId() const { return _visitorCmdId; }
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     const vespalib::string & getLibraryName() const { return _libName; }
     const vespalib::string & getInstanceId() const { return _instanceId; }
     const vespalib::string & getControlDestination() const
@@ -113,8 +116,6 @@ public:
     uint32_t getMaxBucketsPerVisitor() const { return _maxBucketsPerVisitor; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
-
     DECLARE_STORAGECOMMAND(CreateVisitorCommand, onCreateVisitor)
 };
 

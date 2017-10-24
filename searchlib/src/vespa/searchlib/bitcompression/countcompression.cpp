@@ -3,37 +3,16 @@
 #include "compression.h"
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
-#include <vespa/vespalib/objects/nbostream.h>
 
 namespace search {
 
 namespace bitcompression {
-
-using vespalib::nbostream;
 
 #define K_VALUE_COUNTFILE_LASTDOCID 22
 #define K_VALUE_COUNTFILE_NUMCHUNKS 1
 #define K_VALUE_COUNTFILE_CHUNKNUMDOCS 18
 #define K_VALUE_COUNTFILE_WORDNUMDELTA 0
 #define K_VALUE_COUNTFILE_SPNUMDOCS 0
-
-
-void
-PostingListCountFileDecodeContext::checkPointWrite(nbostream &out)
-{
-    ParentClass::checkPointWrite(out);
-    out << _avgBitsPerDoc << _minChunkDocs << _docIdLimit << _numWordIds;
-    out << _minWordNum;
-}
-
-
-void
-PostingListCountFileDecodeContext::checkPointRead(nbostream &in)
-{
-    ParentClass::checkPointRead(in);
-    in >> _avgBitsPerDoc >> _minChunkDocs >> _docIdLimit >> _numWordIds;
-    in >>  _minWordNum;
-}
 
 
 void
@@ -141,24 +120,6 @@ copyParams(const PostingListCountFileDecodeContext &rhs)
     _minChunkDocs = rhs._minChunkDocs;
     _docIdLimit = rhs._docIdLimit;
     _numWordIds = rhs._numWordIds;
-}
-
-
-void
-PostingListCountFileEncodeContext::checkPointWrite(nbostream &out)
-{
-    ParentClass::checkPointWrite(out);
-    out << _avgBitsPerDoc << _minChunkDocs << _docIdLimit << _numWordIds;
-    out << _minWordNum;
-}
-
-
-void
-PostingListCountFileEncodeContext::checkPointRead(nbostream &in)
-{
-    ParentClass::checkPointRead(in);
-    in >> _avgBitsPerDoc >> _minChunkDocs >> _docIdLimit >> _numWordIds;
-    in >> _minWordNum;
 }
 
 

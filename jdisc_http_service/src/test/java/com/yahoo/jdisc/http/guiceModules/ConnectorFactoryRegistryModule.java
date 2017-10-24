@@ -11,9 +11,6 @@ import com.yahoo.jdisc.http.ConnectorConfig.Builder;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.server.jetty.ConnectorFactory;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
-import com.yahoo.jdisc.http.ssl.ReaderForPath;
-import com.yahoo.jdisc.http.ssl.SslKeyStore;
-import com.yahoo.jdisc.http.ssl.SslKeyStoreFactory;
 
 /**
  * Guice module for test ConnectorFactories
@@ -49,21 +46,7 @@ public class ConnectorFactoryRegistryModule implements Module {
     private static class StaticKeyDbConnectorFactory extends ConnectorFactory {
 
         public StaticKeyDbConnectorFactory(ConnectorConfig connectorConfig) {
-            super(connectorConfig, new ThrowingSslKeyStoreFactory(), new MockSecretStore());
-        }
-
-    }
-
-    private static final class ThrowingSslKeyStoreFactory implements SslKeyStoreFactory {
-
-        @Override
-        public SslKeyStore createKeyStore(ReaderForPath certificateFile, ReaderForPath keyFile) {
-            throw new UnsupportedOperationException("A SSL key store factory component is not available");
-        }
-
-        @Override
-        public SslKeyStore createTrustStore(ReaderForPath certificateFile) {
-            throw new UnsupportedOperationException("A SSL key store factory component is not available");
+            super(connectorConfig, new MockSecretStore());
         }
 
     }

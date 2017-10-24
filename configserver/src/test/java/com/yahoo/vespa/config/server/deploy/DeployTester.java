@@ -57,10 +57,10 @@ import java.util.Optional;
  */
 public class DeployTester {
 
-    private final Curator curator;
     private final Clock clock;
     private final Tenants tenants;
     private final File testApp;
+    private final ApplicationRepository applicationRepository;
 
     private ApplicationId id;
 
@@ -71,7 +71,9 @@ public class DeployTester {
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
         this(appPath, modelFactories, new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                      .configServerDBDir(Files.createTempDir()
-                                                                                             .getAbsolutePath())),
+                                                                                             .getAbsolutePath())
+                                                                     .configDefinitionsDir(Files.createTempDir()
+                                                                                                .getAbsolutePath())),
              Clock.systemUTC());
     }
 
@@ -95,7 +97,7 @@ public class DeployTester {
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
         Metrics metrics = Metrics.createTestMetrics();
-        this.curator = new MockCurator();
+        Curator curator = new MockCurator();
         this.clock = clock;
         TestComponentRegistry componentRegistry = createComponentRegistry(curator, metrics, modelFactories,
                                                                           configserverConfig, clock);
@@ -106,6 +108,10 @@ public class DeployTester {
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
+        applicationRepository = new ApplicationRepository(tenants,
+                                                          createHostProvisioner(),
+                                                          curator,
+                                                          clock);
     }
 
     public Tenant tenant() { return tenants.defaultTenant(); }
@@ -135,7 +141,7 @@ public class DeployTester {
      */
     public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
         Tenant tenant = tenant();
-        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
+        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(clock, Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
         if (vespaVersion != null)
@@ -165,11 +171,11 @@ public class DeployTester {
     }
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(ApplicationId id) {
-        ApplicationRepository applicationRepository = new ApplicationRepository(tenants,
-                                                                                createHostProvisioner(),
-                                                                                curator,
-                                                                                clock);
         return applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
+    }
+
+    public ApplicationRepository applicationRepository() {
+        return applicationRepository;
     }
 
     private Provisioner createHostProvisioner() {

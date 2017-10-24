@@ -72,22 +72,20 @@ struct MyFeedView : public test::DummyFeedView
         _metaStore.constructFreeList();
     }
 
-    // Implements IFeedView
-    virtual const DocumentMetaStore *getDocumentMetaStorePtr() const override { return &_metaStore; }
-    virtual void preparePut(PutOperation &) override { ++_preparePut; }
-    virtual void handlePut(FeedToken *, const PutOperation &) override { ++_handlePut; }
-    virtual void prepareUpdate(UpdateOperation &) override { ++_prepareUpdate; }
-    virtual void handleUpdate(FeedToken *, const UpdateOperation &) override { ++_handleUpdate; }
-    virtual void prepareRemove(RemoveOperation &) override { ++_prepareRemove; }
-    virtual void handleRemove(FeedToken *, const RemoveOperation &) override { ++_handleRemove; }
-    virtual void prepareDeleteBucket(DeleteBucketOperation &) override { ++_prepareDeleteBucket; }
-    virtual void handleDeleteBucket(const DeleteBucketOperation &) override
-    { ++_handleDeleteBucket; }
-    virtual void prepareMove(MoveOperation &) override { ++_prepareMove; }
-    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++_handleMove; }
-    virtual void heartBeat(SerialNum) override { ++_heartBeat; }
-    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++_handlePrune; }
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
+    const DocumentMetaStore *getDocumentMetaStorePtr() const override { return &_metaStore; }
+    void preparePut(PutOperation &) override { ++_preparePut; }
+    void handlePut(FeedToken, const PutOperation &) override { ++_handlePut; }
+    void prepareUpdate(UpdateOperation &) override { ++_prepareUpdate; }
+    void handleUpdate(FeedToken, const UpdateOperation &) override { ++_handleUpdate; }
+    void prepareRemove(RemoveOperation &) override { ++_prepareRemove; }
+    void handleRemove(FeedToken, const RemoveOperation &) override { ++_handleRemove; }
+    void prepareDeleteBucket(DeleteBucketOperation &) override { ++_prepareDeleteBucket; }
+    void handleDeleteBucket(const DeleteBucketOperation &) override { ++_handleDeleteBucket; }
+    void prepareMove(MoveOperation &) override { ++_prepareMove; }
+    void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++_handleMove; }
+    void heartBeat(SerialNum) override { ++_heartBeat; }
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++_handlePrune; }
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
         _wantedLidLimit = op.getLidLimit();
     }
 };
@@ -213,7 +211,7 @@ TEST_F("require that handlePut() sends to 1 feed view", Fixture)
 {
     PutOperation op = f.put(2);
     op.setDbDocumentId(DbDocumentId(READY, 2));
-    f._view.handlePut(NULL, op);
+    f._view.handlePut(FeedToken(), op);
     EXPECT_EQUAL(1u, f._ready._view->_handlePut);
     EXPECT_EQUAL(0u, f._removed._view->_handlePut);
     EXPECT_EQUAL(0u, f._notReady._view->_handlePut);
@@ -225,7 +223,7 @@ TEST_F("require that handlePut() sends to 2 feed views", Fixture)
     PutOperation op = f.put(2);
     op.setDbDocumentId(DbDocumentId(NOT_READY, 2));
     op.setPrevDbDocumentId(DbDocumentId(REMOVED, 2));
-    f._view.handlePut(NULL, op);
+    f._view.handlePut(FeedToken(), op);
     EXPECT_EQUAL(0u, f._ready._view->_handlePut);
     EXPECT_EQUAL(1u, f._removed._view->_handlePut);
     EXPECT_EQUAL(1u, f._notReady._view->_handlePut);
@@ -259,7 +257,7 @@ TEST_F("require that handleRemove() sends op with valid dbdId to 1 feed view", F
 {
     RemoveOperation op = f.remove(1);
     op.setDbDocumentId(DbDocumentId(REMOVED, 1));
-    f._view.handleRemove(NULL, op);
+    f._view.handleRemove(FeedToken(), op);
     EXPECT_EQUAL(0u, f._ready._view->_handleRemove);
     EXPECT_EQUAL(1u, f._removed._view->_handleRemove);
     EXPECT_EQUAL(0u, f._notReady._view->_handleRemove);
@@ -271,7 +269,7 @@ TEST_F("require that handleRemove() sends op with valid dbdId to 2 feed views", 
     RemoveOperation op = f.remove(1);
     op.setDbDocumentId(DbDocumentId(REMOVED, 1));
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
-    f._view.handleRemove(NULL, op);
+    f._view.handleRemove(FeedToken(), op);
     EXPECT_EQUAL(1u, f._ready._view->_handleRemove);
     EXPECT_EQUAL(1u, f._removed._view->_handleRemove);
     EXPECT_EQUAL(0u, f._notReady._view->_handleRemove);
@@ -283,7 +281,7 @@ TEST_F("require that handleRemove() sends op with invalid dbdId to prev view", F
     RemoveOperation op = f.remove(1);
     // can be used in the case where removed feed view does not remember removes.
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
-    f._view.handleRemove(NULL, op);
+    f._view.handleRemove(FeedToken(), op);
     EXPECT_EQUAL(1u, f._ready._view->_handleRemove);
     EXPECT_EQUAL(0u, f._removed._view->_handleRemove);
     EXPECT_EQUAL(0u, f._notReady._view->_handleRemove);
@@ -317,7 +315,7 @@ TEST_F("require that handleUpdate() sends op to correct view", Fixture)
     UpdateOperation op = f.update(1);
     op.setDbDocumentId(DbDocumentId(READY, 1));
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
-    f._view.handleUpdate(NULL, op);
+    f._view.handleUpdate(FeedToken(), op);
     EXPECT_EQUAL(1u, f._ready._view->_handleUpdate);
     EXPECT_EQUAL(0u, f._removed._view->_handleUpdate);
     EXPECT_EQUAL(0u, f._notReady._view->_handleUpdate);

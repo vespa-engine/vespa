@@ -4,9 +4,7 @@
 
 #include "generic.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 /**
  * Generic cpu agnostic implementation.
@@ -18,5 +16,4 @@ public:
     double dotProduct(const double * a, const double * b, size_t sz) const override;
 };
 
-}
 }

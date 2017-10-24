@@ -38,7 +38,7 @@ public class ConfigserverClusterTest {
         root = new MockRoot();
         new ConfigServerContainerModelBuilder(new TestOptions().rpcPort(12345).useVespaVersionInRequest(true)
                                                                .hostedVespa(true).environment("test").region("bar")
-                                                               .numParallelTenantLoaders(4))
+                                                               .numParallelTenantLoaders(99))
                 .build(new DeployState.Builder().build(), null, root, XML.getDocument(services).getDocumentElement());
         root.freezeModelTopology();
     }
@@ -73,7 +73,7 @@ public class ConfigserverClusterTest {
         assertThat(config.httpport(), is(1337));
         assertThat(config.serverId(), is(HostName.getLocalhost()));
         assertTrue(config.useVespaVersionInRequest());
-        assertThat(config.numParallelTenantLoaders(), is(4));
+        assertThat(config.numParallelTenantLoaders(), is(99));
         assertFalse(config.multitenant());
         assertTrue(config.hostedVespa());
         assertThat(config.environment(), is("test"));

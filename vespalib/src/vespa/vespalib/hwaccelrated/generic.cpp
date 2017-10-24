@@ -2,9 +2,7 @@
 
 #include "generic.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 namespace {
 
@@ -115,5 +113,4 @@ GenericAccelrator::notBit(void * aOrg, size_t bytes) const
     }
 }
 
-}
 }

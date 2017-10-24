@@ -44,7 +44,7 @@ using storage::spi::IterateResult;
 using storage::spi::PartitionId;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 using namespace proton;
 using namespace search::index;
@@ -52,7 +52,7 @@ using namespace search::index;
 const uint64_t largeNum = 10000000;
 
 Bucket bucket(size_t x) {
-    return makeBucket(BucketId(x));
+    return makeSpiBucket(BucketId(x));
 }
 
 Selection selectAll() {

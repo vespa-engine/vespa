@@ -265,15 +265,9 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     return currPos;
 }
 
-DomainPart::DomainPart(const string & name,
-                       const string & baseDir,
-                       SerialNum s,
-                       bool useFsync,
-                       Crc defaultCrc,
-                       const FileHeaderContext &fileHeaderContext,
-                       bool allowTruncate) :
+DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Crc defaultCrc,
+                       const FileHeaderContext &fileHeaderContext, bool allowTruncate) :
     _defaultCrc(defaultCrc),
-    _useFsync(useFsync),
     _lock(),
     _fileLock(),
     _range(s),
@@ -427,9 +421,6 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
             throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
                                             entry.serial(), _range.to()));
         }
-    }
-    if (_useFsync) {
-        sync();
     }
 
     bool merged(false);

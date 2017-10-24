@@ -56,7 +56,6 @@ protected:
     uint64_t _oldWordNum;
     uint32_t _residue;
     uint32_t _docIdLimit;
-    bool _checkPointResume;
     vespalib::string _word;
 
     static uint64_t
@@ -117,30 +116,10 @@ public:
           const DocIdMapping &docIdMapping);
 
     virtual bool
-    earlyOpen(const vespalib::string &prefix,
-              const TuneFileSeqRead &tuneFileRead);
-
-    virtual bool
-    lateOpen(const vespalib::string &prefix,
-             const TuneFileSeqRead &tuneFileRead);
-
-    virtual bool
     open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead);
 
     virtual bool
     close();
-
-    /*
-     * To be called between words, not in the middle of one.
-     */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /*
-     * To be called after earlyOpen() but before afterOpen().
-     */
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
 
     virtual void
     setFeatureParams(const PostingListParams &params);
@@ -170,14 +149,6 @@ private:
 
 public:
     FieldReaderEmpty(const IndexIterator &index);
-
-    virtual bool
-    earlyOpen(const vespalib::string &prefix,
-              const TuneFileSeqRead &tuneFileRead) override;
-
-    virtual bool
-    lateOpen(const vespalib::string &prefix,
-             const TuneFileSeqRead &tuneFileRead) override;
 
     virtual bool
     open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead)
@@ -213,4 +184,3 @@ public:
 } // namespace diskindex
 
 } // namespace search
-

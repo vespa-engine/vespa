@@ -6,7 +6,6 @@
 #include "executor_metrics.h"
 #include <vespa/metrics/metrics.h>
 #include "sessionmanager_metrics.h"
-#include "feed_metrics.h"
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 
 namespace proton {
@@ -117,7 +116,6 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
     ExecutorMetrics                              executor;
     ExecutorMetrics                              indexExecutor;
     ExecutorMetrics                              summaryExecutor;
-    PerDocTypeFeedMetrics                        feed;
     search::grouping::SessionManagerMetrics      sessionManager;
     SubDBMetrics                                 ready;
     SubDBMetrics                                 notReady;

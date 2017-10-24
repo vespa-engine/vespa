@@ -19,10 +19,10 @@ public class LoadBalanceTestCase extends junit.framework.TestCase {
 
     public void testLoadBalance() throws ListenFailedException, UnknownHostException {
         Slobrok slobrok = new Slobrok();
-        TestServer src = new TestServer("src", null, slobrok, null, null);
-        TestServer dst1 = new TestServer("dst/1", null, slobrok, null, null);
-        TestServer dst2 = new TestServer("dst/2", null, slobrok, null, null);
-        TestServer dst3 = new TestServer("dst/3", null, slobrok, null, null);
+        TestServer src = new TestServer("src", null, slobrok, null);
+        TestServer dst1 = new TestServer("dst/1", null, slobrok, null);
+        TestServer dst2 = new TestServer("dst/2", null, slobrok, null);
+        TestServer dst3 = new TestServer("dst/3", null, slobrok, null);
 
         // set up handlers
         final QueueAdapter sq = new QueueAdapter();

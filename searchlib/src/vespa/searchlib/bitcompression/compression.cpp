@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "compression.h"
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 
 namespace search::bitcompression {
-
-using vespalib::nbostream;
 
 uint8_t CodingTables::_log2Table[65536];
 
@@ -127,33 +124,6 @@ EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
         _cacheInt |= (dataFragment << (64 - _cacheFree));
         _cacheFree -= length;
     }
-}
-
-void
-EncodeContext64Base::checkPointWrite(nbostream &out)
-{
-    out << _cacheInt << _cacheFree;
-}
-
-
-void
-EncodeContext64Base::checkPointRead(nbostream &in)
-{
-    in >> _cacheInt >> _cacheFree;
-}
-
-
-void
-DecodeContext64Base::checkPointWrite(nbostream &out)
-{
-    (void) out;
-}
-
-
-void
-DecodeContext64Base::checkPointRead(nbostream &in)
-{
-    (void) in;
 }
 
 namespace {

@@ -26,8 +26,8 @@ IMPLEMENT_REPLY(NotifyBucketChangeReply)
 IMPLEMENT_COMMAND(SetBucketStateCommand, SetBucketStateReply)
 IMPLEMENT_REPLY(SetBucketStateReply)
 
-CreateBucketCommand::CreateBucketCommand(const document::BucketId& id)
-    : MaintenanceCommand(MessageType::CREATEBUCKET, id),
+CreateBucketCommand::CreateBucketCommand(const document::Bucket &bucket)
+    : MaintenanceCommand(MessageType::CREATEBUCKET, bucket),
       _active(false)
 { }
 
@@ -65,8 +65,8 @@ CreateBucketReply::print(std::ostream& out, bool verbose,
     }
 }
 
-DeleteBucketCommand::DeleteBucketCommand(const document::BucketId& id)
-    : MaintenanceCommand(MessageType::DELETEBUCKET, id)
+DeleteBucketCommand::DeleteBucketCommand(const document::Bucket &bucket)
+    : MaintenanceCommand(MessageType::DELETEBUCKET, bucket)
 { }
 
 void
@@ -98,10 +98,10 @@ DeleteBucketReply::print(std::ostream& out, bool verbose,
 }
 
 MergeBucketCommand::MergeBucketCommand(
-        const document::BucketId& id, const std::vector<Node>& nodes,
+        const document::Bucket &bucket, const std::vector<Node>& nodes,
         Timestamp maxTimestamp, uint32_t clusterStateVersion,
         const std::vector<uint16_t>& chain)
-    : MaintenanceCommand(MessageType::MERGEBUCKET, id),
+    : MaintenanceCommand(MessageType::MERGEBUCKET, bucket),
       _nodes(nodes),
       _maxTimestamp(maxTimestamp),
       _clusterStateVersion(clusterStateVersion),
@@ -204,9 +204,9 @@ bool GetBucketDiffCommand::Entry::operator==(const Entry& e) const
 }
 
 GetBucketDiffCommand::GetBucketDiffCommand(
-        const document::BucketId& id, const std::vector<Node>& nodes,
+        const document::Bucket &bucket, const std::vector<Node>& nodes,
         Timestamp maxTimestamp)
-    : BucketCommand(MessageType::GETBUCKETDIFF, id),
+    : BucketCommand(MessageType::GETBUCKETDIFF, bucket),
       _nodes(nodes),
       _maxTimestamp(maxTimestamp)
 {}
@@ -340,9 +340,9 @@ ApplyBucketDiffCommand::Entry::operator==(const Entry& e) const
 }
 
 ApplyBucketDiffCommand::ApplyBucketDiffCommand(
-        const document::BucketId& id, const std::vector<Node>& nodes,
+        const document::Bucket &bucket, const std::vector<Node>& nodes,
         uint32_t maxBufferSize)
-    : BucketInfoCommand(MessageType::APPLYBUCKETDIFF, id),
+    : BucketInfoCommand(MessageType::APPLYBUCKETDIFF, bucket),
       _nodes(nodes),
       _diff(),
       _maxBufferSize(maxBufferSize)
@@ -440,8 +440,10 @@ ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
 }
 
 RequestBucketInfoCommand::RequestBucketInfoCommand(
+        document::BucketSpace bucketSpace,
         const std::vector<document::BucketId>& buckets)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
+      _bucketSpace(bucketSpace),
       _buckets(buckets),
       _state(),
       _distributor(0xFFFF)
@@ -449,9 +451,11 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 }
 
 RequestBucketInfoCommand::RequestBucketInfoCommand(
+        document::BucketSpace bucketSpace,
         uint16_t distributor, const lib::ClusterState& state,
         const vespalib::stringref & distributionHash)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
+      _bucketSpace(bucketSpace),
       _buckets(),
       _state(new lib::ClusterState(state)),
       _distributor(distributor),
@@ -460,8 +464,10 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 }
 
 RequestBucketInfoCommand::RequestBucketInfoCommand(
+        document::BucketSpace bucketSpace,
         uint16_t distributor, const lib::ClusterState& state)
     : StorageCommand(MessageType::REQUESTBUCKETINFO),
+      _bucketSpace(bucketSpace),
       _buckets(),
       _state(new lib::ClusterState(state)),
       _distributor(distributor),
@@ -534,8 +540,8 @@ RequestBucketInfoReply::print(std::ostream& out, bool verbose,
 }
 
 NotifyBucketChangeCommand::NotifyBucketChangeCommand(
-        const document::BucketId& id, const BucketInfo& info)
-    : BucketCommand(MessageType::NOTIFYBUCKETCHANGE, id),
+        const document::Bucket &bucket, const BucketInfo& info)
+    : BucketCommand(MessageType::NOTIFYBUCKETCHANGE, bucket),
       _info(info)
 {
 }
@@ -571,7 +577,7 @@ NotifyBucketChangeReply::print(std::ostream& out, bool verbose,
 }
 
 SetBucketStateCommand::SetBucketStateCommand(
-        const document::BucketId& bucket,
+        const document::Bucket &bucket,
         BUCKET_STATE state)
     : MaintenanceCommand(MessageType::SETBUCKETSTATE, bucket),
       _state(state)

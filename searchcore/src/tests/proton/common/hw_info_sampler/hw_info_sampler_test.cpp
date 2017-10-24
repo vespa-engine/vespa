@@ -45,7 +45,7 @@ struct Fixture
 
 TEST_F("Test that hw_info_sampler uses override info", Fixture)
 {
-    Config samplerCfg(0, 75.0, 100.0, sampleLen, sharedDisk, 0);
+    Config samplerCfg(0, 75.0, 100.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(75.0, sampler.diskWriteSpeed());
     EXPECT_NOT_EQUAL(0, time_point_to_long(sampler.sampleTime()));
@@ -58,7 +58,7 @@ TEST_F("Test that hw_info_sampler uses saved info", Fixture)
     builder.disk.writespeed = 72.0;
     builder.disk.sampletime = time_point_to_long(Clock::now());
     f.writeConfig(builder);
-    Config samplerCfg(0, 0.0, 70.0, sampleLen, sharedDisk, 0);
+    Config samplerCfg(0, 0.0, 70.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(builder.disk.writespeed, sampler.diskWriteSpeed());
     EXPECT_EQUAL(builder.disk.sampletime, time_point_to_long(sampler.sampleTime()));
@@ -67,7 +67,7 @@ TEST_F("Test that hw_info_sampler uses saved info", Fixture)
 
 TEST_F("Test that hw_info_sampler can sample disk write speed", Fixture)
 {
-    Config samplerCfg(0, 0.0, 100.0, sampleLen, sharedDisk, 0);
+    Config samplerCfg(0, 0.0, 100.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     ASSERT_NOT_EQUAL(0.0, sampler.diskWriteSpeed());
     ASSERT_NOT_EQUAL(0, time_point_to_long(sampler.sampleTime()));
@@ -79,30 +79,44 @@ TEST_F("Test that hw_info_sampler can sample disk write speed", Fixture)
 
 TEST_F("require that disk size can be specified", Fixture)
 {
-    Config samplerCfg(1024, 1.0, 0.0, sampleLen, sharedDisk, 0);
+    Config samplerCfg(1024, 1.0, 0.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(1024u, sampler.hwInfo().disk().sizeBytes());
 }
 
 TEST_F("require that disk size can be sampled", Fixture)
 {
-    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 0);
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_GREATER(sampler.hwInfo().disk().sizeBytes(), 0u);
 }
 
 TEST_F("require that memory size can be specified", Fixture)
 {
-    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 1024);
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 1024, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_EQUAL(1024u, sampler.hwInfo().memory().sizeBytes());
 }
 
 TEST_F("require that memory size can be sampled", Fixture)
 {
-    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 0);
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 0, 0);
     HwInfoSampler sampler(test_dir, samplerCfg);
     EXPECT_GREATER(sampler.hwInfo().memory().sizeBytes(), 0u);
+}
+
+TEST_F("require that num cpu cores can be specified", Fixture)
+{
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 0, 8);
+    HwInfoSampler sampler(test_dir, samplerCfg);
+    EXPECT_EQUAL(8u, sampler.hwInfo().cpu().cores());
+}
+
+TEST_F("require that num cpu cores can be sampled", Fixture)
+{
+    Config samplerCfg(0, 1.0, 0.0, sampleLen, sharedDisk, 0, 0);
+    HwInfoSampler sampler(test_dir, samplerCfg);
+    EXPECT_GREATER(sampler.hwInfo().cpu().cores(), 0u);
 }
 
 TEST_MAIN()

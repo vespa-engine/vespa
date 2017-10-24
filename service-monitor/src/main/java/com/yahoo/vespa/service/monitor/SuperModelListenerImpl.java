@@ -1,27 +1,43 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.monitor;
 
+import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.service.monitor.internal.LatencyMeasurement;
+import com.yahoo.vespa.service.monitor.internal.ServiceMonitorMetrics;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class SuperModelListenerImpl implements SuperModelListener {
+public class SuperModelListenerImpl implements SuperModelListener, Supplier<ServiceModel> {
     private static final Logger logger = Logger.getLogger(SuperModelListenerImpl.class.getName());
 
-    // Guard for updating superModel and slobrokMonitor exclusively and atomically:
-    //  - superModel and slobrokMonitor must be updated in combination (exclusively and atomically)
-    //  - Anyone may take a snapshot of superModel for reading purposes, hence volatile.
-    private final Object monitor = new Object();
-    private final SlobrokMonitor2 slobrokMonitor;
-    private volatile SuperModel superModel;
+    private final ServiceMonitorMetrics metrics;
+    private final ModelGenerator modelGenerator;
+    private final Zone zone;
+    private final List<String> configServerHosts;
 
-    SuperModelListenerImpl(SlobrokMonitor2 slobrokMonitor) {
-        this.slobrokMonitor = slobrokMonitor;
+    // superModel and slobrokMonitorManager are always updated together
+    // and atomically using this monitor.
+    private final Object monitor = new Object();
+    private final SlobrokMonitorManagerImpl slobrokMonitorManager;
+    private SuperModel superModel;
+
+    SuperModelListenerImpl(SlobrokMonitorManagerImpl slobrokMonitorManager,
+                           ServiceMonitorMetrics metrics,
+                           ModelGenerator modelGenerator,
+                           Zone zone,
+                           List<String> configServerHosts) {
+        this.slobrokMonitorManager = slobrokMonitorManager;
+        this.metrics = metrics;
+        this.modelGenerator = modelGenerator;
+        this.zone = zone;
+        this.configServerHosts = configServerHosts;
     }
 
     void start(SuperModelProvider superModelProvider) {
@@ -30,38 +46,44 @@ public class SuperModelListenerImpl implements SuperModelListener {
             // since applicationActivated()/applicationRemoved() may be called
             // asynchronously even before snapshot() returns.
             SuperModel snapshot = superModelProvider.snapshot(this);
-            exclusiveUpdate(snapshot);
+
+            snapshot.getAllApplicationInfos().stream().forEach(application ->
+                    applicationActivated(snapshot, application));
         }
     }
 
     @Override
-    public void applicationActivated(SuperModel superModel, ApplicationId applicationId) {
+    public void applicationActivated(SuperModel superModel, ApplicationInfo application) {
         synchronized (monitor) {
-            exclusiveUpdate(superModel);
+            this.superModel = superModel;
+            slobrokMonitorManager.applicationActivated(superModel, application);
         }
     }
 
     @Override
     public void applicationRemoved(SuperModel superModel, ApplicationId id) {
         synchronized (monitor) {
-            exclusiveUpdate(superModel);
+            this.superModel = superModel;
+            slobrokMonitorManager.applicationRemoved(superModel, id);
         }
     }
 
-    ServiceModel createServiceModelSnapshot(Zone zone, List<String> configServerHostnames) {
-        // Save a snapshot of volatile this.superModel outside of synchronized block.
-        SuperModel superModelSnapshot = this.superModel;
+    @Override
+    public ServiceModel get() {
+        try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
+            // Reference 'measurement' in a dummy statement, otherwise the compiler
+            // complains about "auto-closeable resource is never referenced in body of
+            // corresponding try statement". Why hasn't javac fixed this!?
+            dummy(measurement);
 
-        ModelGenerator modelGenerator = new ModelGenerator();
-        return modelGenerator.toServiceModel(
-                superModelSnapshot,
-                zone,
-                configServerHostnames,
-                slobrokMonitor);
+            // WARNING: The slobrok monitor manager may be out-of-sync with super model (no locking)
+            return modelGenerator.toServiceModel(
+                    superModel,
+                    zone,
+                    configServerHosts,
+                    slobrokMonitorManager);
+        }
     }
 
-    private void exclusiveUpdate(SuperModel superModel) {
-        this.superModel = superModel;
-        slobrokMonitor.updateSlobrokList(superModel);
-    }
+    private void dummy(LatencyMeasurement measurement) {}
 }

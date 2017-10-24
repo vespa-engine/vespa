@@ -6,9 +6,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace proton
-{
-
+namespace proton {
 
 class DocIdLimit;
 class IGidToLidChangeHandler;
@@ -30,21 +28,11 @@ class PutDoneContext : public OperationDoneContext
     bool _enableNotifyPut;
 
 public:
-    PutDoneContext(std::unique_ptr<FeedToken> token,
-                   const FeedOperation::Type opType,
-                   PerDocTypeFeedMetrics &metrics,
-                   IGidToLidChangeHandler &gidToLidChangeHandler,
-                   const document::GlobalId &gid,
-                   uint32_t lid,
-                   search::SerialNum serialNum,
-                   bool enableNotifyPut);
+    PutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+                   const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum, bool enableNotifyPut);
+    ~PutDoneContext() override;
 
-    virtual ~PutDoneContext();
-
-    void registerPutLid(DocIdLimit *docIdLimit)
-    {
-        _docIdLimit = docIdLimit;
-    }
+    void registerPutLid(DocIdLimit *docIdLimit) { _docIdLimit = docIdLimit; }
 };
 
 

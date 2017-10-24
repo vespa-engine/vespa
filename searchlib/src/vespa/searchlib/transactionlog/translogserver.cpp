@@ -75,23 +75,26 @@ SyncHandler::PerformTask()
 
 }
 
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                               const FileHeaderContext &fileHeaderContext)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, 0x10000000)
+{}
 
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, DomainPart::Crc::xxh64)
+{}
 
-TransLogServer::TransLogServer(const vespalib::string &name,
-                               int listenPort,
-                               const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext,
-                               uint64_t domainPartSize,
-                               bool useFsync,
-                               size_t maxThreads,
-                               DomainPart::Crc defaultCrcType)
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize,
+                               size_t maxThreads, DomainPart::Crc defaultCrcType)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
       _domainPartSize(domainPartSize),
-      _useFsync(useFsync),
       _defaultCrcType(defaultCrcType),
-      _executor(maxThreads, 128*1024),
+      _commitExecutor(maxThreads, 128*1024),
+      _sessionExecutor(maxThreads, 128*1024),
       _threadPool(8192, 1),
       _supervisor(std::make_unique<FRT_Supervisor>()),
       _domains(),
@@ -107,13 +110,8 @@ TransLogServer::TransLogServer(const vespalib::string &name,
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        Domain::SP domain(new Domain(domainName,
-                                dir(),
-                                _executor,
-                                _domainPartSize,
-                                _useFsync,
-                                _defaultCrcType,
-                                _fileHeaderContext));
+                        auto domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
+                                                               _domainPartSize, _defaultCrcType,_fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -169,8 +167,6 @@ void TransLogServer::run()
             bool immediate = true;
             if (strcmp(req->GetMethodName(), "domainSessionClose") == 0) {
                 domainSessionClose(req);
-            } else if (strcmp(req->GetMethodName(), "domainSubscribe") == 0) {
-                domainSubscribe(req);
             } else if (strcmp(req->GetMethodName(), "domainVisit") == 0) {
                 domainVisit(req);
             } else if (strcmp(req->GetMethodName(), "createDomain") == 0) {
@@ -305,13 +301,6 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ParamDesc("to", "Will erase all up and including.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
 
-    //-- Domain Subscribe -----------------------------------------------------------
-    rb.DefineMethod("domainSubscribe", "sl", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
-    rb.MethodDesc("This will create a subscription. It will live till the connection is closed.");
-    rb.ParamDesc("name", "The name of the domain.");
-    rb.ParamDesc("from", "Will return all entries following(not including) <from>.");
-    rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. Positive number is the sessionid");
-
     //-- Domain Visit -----------------------------------------------------------
     rb.DefineMethod("domainVisit", "sll", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will create a visitor that return all operations in the range.");
@@ -335,14 +324,11 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. 1 means busy -> retry. 0 is OK.");
 
     //-- Domain Sync --
-    rb.DefineMethod("domainSync", "sl", "il", true,
-                    FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSync", "sl", "il", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Sync domain to given entry");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("syncto", "Entry to sync to");
-    rb.ReturnDesc("result",
-                  "A resultcode(int) of the operation. "
-                  "Negative number indicates error.");
+    rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
     rb.ReturnDesc("syncedto", "Entry synced to");
 }
 
@@ -359,13 +345,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain.reset(new Domain(domainName,
-                                dir(),
-                                _executor,
-                                _domainPartSize,
-                                _useFsync,
-                                _defaultCrcType,
-                                _fileHeaderContext));
+            domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
+                                              _domainPartSize, _defaultCrcType, _fileHeaderContext);
             {
                 Guard domainGuard(_lock);
                 _domains[domain->name()] = domain;
@@ -472,8 +453,9 @@ void TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet)
+void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
 {
+    (void) done;
     Domain::SP domain(findDomain(domainName));
     if (domain) {
         domain->commit(packet);
@@ -503,22 +485,6 @@ void TransLogServer::domainCommit(FRT_RPCRequest *req)
         ret.AddInt32(-1);
         ret.AddString(make_string("Could not find domain %s", domainName).c_str());
     }
-}
-
-void TransLogServer::domainSubscribe(FRT_RPCRequest *req)
-{
-    uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    LOG(debug, "domainSubscribe(%s)", domainName);
-    Domain::SP domain(findDomain(domainName));
-    if (domain) {
-        SerialNum from(params[1]._intval64);
-        LOG(debug, "domainSubscribe(%s, %" PRIu64 ")", domainName, from);
-        retval = domain->subscribe(domain, from, *_supervisor, req->GetConnection());
-    }
-    ret.AddInt32(retval);
 }
 
 void TransLogServer::domainVisit(FRT_RPCRequest *req)

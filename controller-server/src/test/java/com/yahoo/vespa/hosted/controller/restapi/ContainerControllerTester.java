@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
@@ -21,13 +21,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.Athens;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.ZmsClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -70,7 +68,7 @@ public class ContainerControllerTester {
     }
 
     public Application createApplication(String athensDomain, String tenant, String application) {
-        AthensDomain domain1 = addTenantAthensDomain(athensDomain, "mytenant");
+        AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
         controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
                                                                  new Property("property1"),
                                                                  Optional.of(new PropertyId("1234"))),
@@ -96,15 +94,13 @@ public class ContainerControllerTester {
         ));
     }
 
-    public AthensDomain addTenantAthensDomain(String domainName, String userName) {
-        Athens athens = (AthensMock) containerTester.container().components().getComponent(
-                "com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensMock"
-        );
-        ZmsClientFactoryMock mock = (ZmsClientFactoryMock) athens.zmsClientFactory();
-        AthensDomain athensDomain = new AthensDomain(domainName);
-        AthensDbMock.Domain domain = new AthensDbMock.Domain(athensDomain);
+    public AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
+        AthenzDomain athensDomain = new AthenzDomain(domainName);
+        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(new AthensPrincipal(new AthensDomain("domain"), new UserId(userName)));
+        domain.admin(new AthenzPrincipal(new AthenzDomain("domain"), new UserId(userName)));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }

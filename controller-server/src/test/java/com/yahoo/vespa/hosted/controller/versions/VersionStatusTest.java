@@ -6,6 +6,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.Test;
 
 import java.net.URI;
@@ -46,7 +48,7 @@ public class VersionStatusTest {
     public void testSystemVersionIsControllerVersionIfConfigserversAreNewer() {
         ControllerTester tester = new ControllerTester();
         Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
-        tester.configServer().setDefaultConfigServerVersion(largerThanCurrent);
+        tester.configServer().setDefaultVersion(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(Vtag.currentVersion, versionStatus.systemVersion().get().versionNumber());
     }
@@ -55,7 +57,7 @@ public class VersionStatusTest {
     public void testSystemVersionIsVersionOfOldestConfigServer() throws URISyntaxException {
         ControllerTester tester = new ControllerTester();
         Version oldest = new Version(5);
-        tester.configServer().configServerVersions().put(new URI("http://cfg.prod.corp-us-east-1.test"), oldest);
+        tester.configServer().versions().put(new URI("http://cfg.prod.corp-us-east-1.test"), oldest);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(oldest, versionStatus.systemVersion().get().versionNumber());
     }
@@ -70,7 +72,6 @@ public class VersionStatusTest {
                 .region("us-east-3")
                 .build();
 
-        // Application versions which are older than the current version
         Version version1 = new Version("5.1");
         Version version2 = new Version("5.2");
         tester.upgradeSystem(version1);
@@ -90,14 +91,9 @@ public class VersionStatusTest {
         // - app3 is in production on version1, but then fails in staging test on version2
         tester.completeUpgradeWithError(app3, version2, applicationPackage, stagingTest);
 
-        VersionStatus versionStatus = VersionStatus.compute(tester.controller());
-        List<VespaVersion> versions = versionStatus.versions();
-        assertEquals("The version of this controller, the default config server version, plus the two versions above exist", 4, versions.size());
-
-        VespaVersion v0 = versions.get(2);
-        assertEquals(tester.configServer().getDefaultConfigServerVersion(), v0.versionNumber());
-        assertEquals(0, v0.statistics().failing().size());
-        assertEquals(0, v0.statistics().production().size());
+        tester.updateVersionStatus();
+        List<VespaVersion> versions = tester.controller().versionStatus().versions();
+        assertEquals("The two versions above exist", 2, versions.size());
 
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
@@ -116,11 +112,6 @@ public class VersionStatusTest {
         // Only one application is on v2 in at least one zone
         assertEquals(1, v2.statistics().production().size());
         assertTrue(v2.statistics().production().contains(app2.id()));
-
-        VespaVersion v3 = versions.get(3);
-        assertEquals(Vtag.currentVersion, v3.versionNumber());
-        assertEquals(0, v3.statistics().failing().size());
-        assertEquals(0, v3.statistics().production().size());
     }
     
     @Test
@@ -130,7 +121,7 @@ public class VersionStatusTest {
         Version version0 = new Version("5.0");
         tester.upgradeSystem(version0);
 
-        // Setup applications
+        // Setup applications - all running on version0
         Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
         Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
         Application canary2 = tester.createAndDeploy("canary2", 3, "canary");
@@ -146,8 +137,7 @@ public class VersionStatusTest {
         Application default9 = tester.createAndDeploy("default9", 13, "default");
         Application conservative0 = tester.createAndDeploy("conservative1", 14, "conservative");
 
-
-        // The following applications should not affect confidence calculation:
+        // Applications that do not affect confidence calculation:
 
         // Application without deployment
         Application ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
@@ -157,30 +147,40 @@ public class VersionStatusTest {
                                                                            "ignored1",
                                                                            "default-pr42", 1000);
 
+        assertEquals("All applications running on this version: High",
+                     Confidence.high, confidence(tester.controller(), version0));
+
+        // New version is released
         Version version1 = new Version("5.1");
-        Version version2 = new Version("5.2");
         tester.upgradeSystem(version1);
 
         // Canaries upgrade to new versions and fail
         tester.completeUpgrade(canary0, version1, "canary");
         tester.completeUpgradeWithError(canary1, version1, "canary", productionUsWest1);
-        tester.upgradeSystem(version2);
-        tester.completeUpgrade(canary2, version2, "canary");
-
-        VersionStatus versionStatus = VersionStatus.compute(tester.controller());
-        List<VespaVersion> versions = versionStatus.versions();
-        
+        tester.updateVersionStatus();
         assertEquals("One canary failed: Broken",
-                     VespaVersion.Confidence.broken, confidence(versions, version1));
-        assertEquals("Nothing has failed but not all canaries has deployed: Low",
-                     VespaVersion.Confidence.low, confidence(versions, version2));
-        assertEquals("Current version of this - no deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
+                     Confidence.broken, confidence(tester.controller(), version1));
 
-        // All canaries are upgraded to version2 which raises confidence to normal and more apps upgrade
+        // New version is released
+        Version version2 = new Version("5.2");
+        tester.upgradeSystem(version2);
+        assertEquals("Confidence defaults to low for version with no applications",
+                     Confidence.low, confidence(tester.controller(), version2));
+
+        // All canaries upgrade successfully
         tester.completeUpgrade(canary0, version2, "canary");
         tester.completeUpgrade(canary1, version2, "canary");
+
+        assertEquals("Confidence for remains unchanged for version1: Broken",
+                     Confidence.broken, confidence(tester.controller(), version1));
+        assertEquals("Nothing has failed but not all canaries have upgraded: Low",
+                     Confidence.low, confidence(tester.controller(), version2));
+
+        // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
+        tester.completeUpgrade(canary2, version2, "canary");
         tester.upgradeSystem(version2);
+        assertEquals("Canaries have upgraded: Normal",
+                     Confidence.normal, confidence(tester.controller(), version2));
         tester.completeUpgrade(default0, version2, "default");
         tester.completeUpgrade(default1, version2, "default");
         tester.completeUpgrade(default2, version2, "default");
@@ -189,29 +189,27 @@ public class VersionStatusTest {
         tester.completeUpgrade(default5, version2, "default");
         tester.completeUpgrade(default6, version2, "default");
         tester.completeUpgrade(default7, version2, "default");
+        tester.updateVersionStatus();
 
-        versionStatus = VersionStatus.compute(tester.controller());
-        versions = versionStatus.versions();
+        // Remember confidence across restart
+        tester.restartController();
 
-        assertEquals("No deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, version0));
+        assertEquals("Confidence remains unchanged for version0: High",
+                     Confidence.high, confidence(tester.controller(), version0));
         assertEquals("All canaries deployed + < 90% of defaults: Normal",
-                     VespaVersion.Confidence.normal, confidence(versions, version2));
-        assertEquals("Current version of this - no deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
+                     Confidence.normal, confidence(tester.controller(), version2));
+        assertTrue("Status for version without applications is removed",
+                   tester.controller().versionStatus().versions().stream()
+                           .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
 
         // Another default application upgrades, raising confidence to high
         tester.completeUpgrade(default8, version2, "default");
+        tester.updateVersionStatus();
 
-        versionStatus = VersionStatus.compute(tester.controller());
-        versions = versionStatus.versions();
-
-        assertEquals("No deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, version0));
+        assertEquals("Confidence remains unchanged for version0: High",
+                     Confidence.high, confidence(tester.controller(), version0));
         assertEquals("90% of defaults deployed successfully: High",
-                     VespaVersion.Confidence.high, confidence(versions, version2));
-        assertEquals("Current version of this - no deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
+                     VespaVersion.Confidence.high, confidence(tester.controller(), version2));
 
         // A new version is released, all canaries upgrade successfully, but enough "default" apps fail to mark version
         // as broken
@@ -225,16 +223,57 @@ public class VersionStatusTest {
         tester.completeUpgradeWithError(default1, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default2, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default9, version3, "default", stagingTest);
+        tester.updateVersionStatus();
 
-        versionStatus = VersionStatus.compute(tester.controller());
-        versions = versionStatus.versions();
-
-        assertEquals("No deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, version0));
+        assertEquals("Confidence remains unchanged for version0: High",
+                     Confidence.high, confidence(tester.controller(), version0));
+        assertEquals("Confidence remains unchanged for version2: High",
+                     Confidence.high, confidence(tester.controller(), version2));
         assertEquals("40% of defaults failed: Broken",
-                     VespaVersion.Confidence.broken, confidence(versions, version3));
-        assertEquals("Current version of this - no deployments: Low",
-                     VespaVersion.Confidence.low, confidence(versions, Vtag.currentVersion));
+                     VespaVersion.Confidence.broken, confidence(tester.controller(), version3));
+    }
+
+
+    @Test
+    public void testIgnoreConfigdeince() {
+        DeploymentTester tester = new DeploymentTester();
+
+        Version version0 = new Version("5.0");
+        tester.upgradeSystem(version0);
+
+        // Setup applications - all running on version0
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Application default0 = tester.createAndDeploy("default0", 3, "default");
+        Application default1 = tester.createAndDeploy("default1", 4, "default");
+        Application default2 = tester.createAndDeploy("default2", 5, "default");
+        Application default3 = tester.createAndDeploy("default3", 6, "default");
+        Application default4 = tester.createAndDeploy("default4", 7, "default");
+
+        // New version is released
+        Version version1 = new Version("5.1");
+        tester.upgradeSystem(version1);
+
+        // All canaries upgrade successfully, 1 default apps ok, 3 default apps fail
+        tester.completeUpgrade(canary0, version1, "canary");
+        tester.completeUpgrade(canary1, version1, "canary");
+        tester.upgradeSystem(version1);
+        tester.completeUpgrade(default0, version1, "default");
+        tester.completeUpgradeWithError(default1, version1, "default", stagingTest);
+        tester.completeUpgradeWithError(default2, version1, "default", stagingTest);
+        tester.completeUpgradeWithError(default3, version1, "default", stagingTest);
+        tester.completeUpgradeWithError(default4, version1, "default", stagingTest);
+        tester.updateVersionStatus();
+
+        assertEquals("Canaries have upgraded, 1 of 4 default apps failing: Broken",
+                     Confidence.broken, confidence(tester.controller(), version1));
+
+        // Same as above, but ignore confidence calculations, will force normal confidence
+        tester.controllerTester().curator().writeIgnoreConfidence(true);
+        tester.updateVersionStatus();
+        assertEquals("Canaries have upgraded, 1 of 4 default apps failing, but confidence ignored: Low",
+                     Confidence.normal, confidence(tester.controller(), version1));
+        tester.controllerTester().curator().writeIgnoreConfidence(false);
     }
 
     @Test
@@ -260,8 +299,8 @@ public class VersionStatusTest {
                    vespaVersions.stream().noneMatch(v -> v.versionNumber().equals(versionWithUnknownTag)));
     }
 
-    private VespaVersion.Confidence confidence(List<VespaVersion> versions, Version version) {
-        return versions.stream()
+    private Confidence confidence(Controller controller, Version version) {
+        return controller.versionStatus().versions().stream()
                 .filter(v -> v.statistics().version().equals(version))
                 .findFirst()
                 .map(VespaVersion::confidence)

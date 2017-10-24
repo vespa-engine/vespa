@@ -131,17 +131,17 @@ private:
         Visitor& _visitor;
         VisitorMessageHandler& _messageHandler;
     public:
-        document::BucketId _bucketId;
+        document::Bucket _bucket;
         spi::IteratorId _iteratorId;
         uint32_t _pendingIterators;
         bool _completed;
 
         BucketIterationState(Visitor& visitor,
                              VisitorMessageHandler& messageHandler,
-                             const document::BucketId& id)
+                             const document::Bucket &bucket)
             : _visitor(visitor),
               _messageHandler(messageHandler),
-              _bucketId(id),
+              _bucket(bucket),
               _iteratorId(0),
               _pendingIterators(0),
               _completed(false)
@@ -153,7 +153,8 @@ private:
         void setCompleted(bool completed = true) { _completed = completed; }
         bool isCompleted() const { return _completed; }
 
-        const document::BucketId& getBucketId() const { return _bucketId; }
+        document::Bucket   getBucket() const { return _bucket; }
+        document::BucketId getBucketId() const { return _bucket.getBucketId(); }
 
         void setIteratorId(spi::IteratorId iteratorId) {
             _iteratorId = iteratorId;
@@ -172,7 +173,7 @@ private:
 
         void print(std::ostream& out, bool, const std::string& ) const override {
             out << "BucketIterationState("
-                << _bucketId
+                << _bucket.getBucketId()
                 << ", pending GetIters: " << _pendingIterators
                 << ", iterator id: " << _iteratorId
                 << ", completed: " << (_completed ? "yes" : "no")
@@ -279,6 +280,7 @@ private:
 
     // The list of buckets to visit.
     std::vector<document::BucketId> _buckets;
+    document::BucketSpace _bucketSpace;
 
     // The iterator iterating the buckets to visit.
     uint32_t _currentBucket;
@@ -385,6 +387,7 @@ public:
     void setMemoryManager(framework::MemoryManagerInterface& mm)
         { _memoryManager = &mm; }
     void setOwnNodeIndex(uint16_t nodeIndex) { _ownNodeIndex = nodeIndex; }
+    void setBucketSpace(document::BucketSpace bucketSpace) { _bucketSpace = bucketSpace; }
 
     const documentapi::LoadType& getLoadType() const {
         return _initiatingCmd->getLoadType();

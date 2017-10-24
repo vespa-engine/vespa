@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fastos/file.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domain");
@@ -20,17 +21,13 @@ using std::runtime_error;
 
 namespace search::transactionlog {
 
-Domain::Domain(const string &domainName,
-               const string & baseDir,
-               vespalib::ThreadStackExecutor & executor,
-               uint64_t domainPartSize,
-               bool useFsync,
-               DomainPart::Crc defaultCrcType,
+Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
+               Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
                const FileHeaderContext &fileHeaderContext) :
     _defaultCrcType(defaultCrcType),
-    _executor(executor),
+    _commitExecutor(commitExecutor),
+    _sessionExecutor(sessionExecutor),
     _sessionId(1),
-    _useFsync(useFsync),
     _syncMonitor(),
     _pendingSync(false),
     _name(domainName),
@@ -54,17 +51,17 @@ Domain::Domain(const string &domainName,
     const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
     for (const int64_t partId : partIdVector) {
         if ( partId != -1) {
-            _executor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
+            _sessionExecutor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
         }
     }
-    _executor.sync();
+    _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _useFsync, _defaultCrcType, _fileHeaderContext, false));
+        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
     }
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _useFsync, _defaultCrcType, _fileHeaderContext, isLastPart));
+    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart));
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -111,8 +108,7 @@ Domain::getDomainInfo() const
     DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard));
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
-        info.parts.emplace_back(PartInfo(part.range(), part.size(),
-                                         part.byteSize(), part.fileName()));
+        info.parts.emplace_back(PartInfo(part.range(), part.size(), part.byteSize(), part.fileName()));
     }
     return info;
 }
@@ -198,7 +194,7 @@ Domain::triggerSyncNow()
     if (!_pendingSync) {
         _pendingSync = true;
         DomainPart::SP dp(_parts.rbegin()->second);
-        _executor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
+        _sessionExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
     }
 }
 
@@ -256,7 +252,7 @@ void Domain::cleanSessions()
     LockGuard guard(_sessionLock);
     for (SessionList::iterator it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
         Session * session(it->second.get());
-        if ((!session->continous() && session->inSync())) {
+        if (session->inSync()) {
             _sessions.erase(it++);
         } else if (session->finished()) {
             _sessions.erase(it++);
@@ -266,6 +262,18 @@ void Domain::cleanSessions()
     }
 }
 
+namespace {
+
+void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
+{
+    MonitorGuard guard(syncMonitor);
+    while (pendingSync) {
+        guard.wait();
+    }
+}
+
+}
+
 void Domain::commit(const Packet & packet)
 {
     DomainPart::SP dp(_parts.rbegin()->second);
@@ -273,15 +281,11 @@ void Domain::commit(const Packet & packet)
     Packet::Entry entry;
     entry.deserialize(is);
     if (dp->byteSize() > _domainPartSize) {
+        waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
-        {
-            MonitorGuard guard(_syncMonitor);
-            while (_pendingSync) {
-                guard.wait();
-            }
-        }
+        waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp.reset(new DomainPart(_name, dir(), entry.serial(), _useFsync, _defaultCrcType, _fileHeaderContext, false));
+        dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false));
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;
@@ -290,19 +294,9 @@ void Domain::commit(const Packet & packet)
     }
     dp->commit(entry.serial(), packet);
     cleanSessions();
-
-    LockGuard guard(_sessionLock);
-    for (auto & it : _sessions) {
-        const Session::SP & session(it.second);
-        if (session->continous()) {
-            if (session->ok()) {
-                Session::enQ(session, entry.serial(), packet);
-            }
-        }
-    }
 }
 
-bool Domain::erase(const SerialNum & to)
+bool Domain::erase(SerialNum to)
 {
     bool retval(true);
     /// Do not erase the last element
@@ -320,7 +314,8 @@ bool Domain::erase(const SerialNum & to)
     return retval;
 }
 
-int Domain::visit(const Domain::SP & domain, const SerialNum & from, const SerialNum & to, FRT_Supervisor & supervisor, FNET_Connection *conn)
+int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
+                  FRT_Supervisor & supervisor, FNET_Connection *conn)
 {
     assert(this == domain.get());
     cleanSessions();
@@ -348,13 +343,14 @@ int Domain::startSession(int sessionId)
 
 int Domain::closeSession(int sessionId)
 {
+    _commitExecutor.sync();
     int retval(-1);
     {
         LockGuard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             retval = 1;
-            _executor.sync();
+            _sessionExecutor.sync();
         }
     }
     if (retval == 1) {
@@ -370,18 +366,6 @@ int Domain::closeSession(int sessionId)
     }
     return retval;
 }
-
-int Domain::subscribe(const Domain::SP & domain, const SerialNum & from, FRT_Supervisor & supervisor, FNET_Connection *conn)
-{
-    assert(this == domain.get());
-    cleanSessions();
-    SerialNumRange range(from, end());
-    Session * session = new Session(_sessionId++, range, domain, supervisor, conn, true);
-    LockGuard guard(_sessionLock);
-    _sessions[session->id()] = Session::SP(session);
-    return session->id();
-}
-
 
 Domain::SerialNumList
 Domain::scanDir()

@@ -1,10 +1,11 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <deployment version='1.0'>
     <upgrade policy='canary'/>
-    <block-upgrade days="mon,tue" hours="14,15"/>
-    <block-upgrade days="mon,tue" hours="14,15" time-zone="CET"/>
     <test/>
     <staging/>
+    <block-change revision='true' version='false' days="mon,tue" hours="14,15"/>
+    <block-change days="mon,tue" hours="14,15" time-zone="CET"/>
+    <block-upgrade days="wed" hours="16" time-zone="CET"/><!-- Tests legacy name. Remove in Vespa 7 -->
     <prod global-service-id='qrs'>
         <region active='true'>us-west-1</region>
         <delay hours='3'/>

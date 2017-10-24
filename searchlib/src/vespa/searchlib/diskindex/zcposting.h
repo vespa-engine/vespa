@@ -78,11 +78,7 @@ protected:
     uint64_t _rangeEndOffset;     // End offset for word pair
     uint64_t _readAheadEndOffset; // Readahead end offset for word pair
     uint64_t _wordStart;          // last word header position
-    uint64_t _checkPointPos;      // file position when checkpointing
     uint32_t _residue;            // Number of unread documents after word header
-    uint32_t _checkPointChunkNo;  // _chunkNo when checkpointing
-    uint32_t _checkPointResidue;  // _residue when checkpointing
-    bool _checkPointHasMore;      // _hasMore when checkpointing
 public:
     Zc4PostingSeqRead(index::PostingListCountFileSeqRead *countFile);
 
@@ -98,8 +94,6 @@ public:
     virtual void readCommonWordDocIdAndFeatures(DocIdAndFeatures &features);
 
     void readDocIdAndFeatures(DocIdAndFeatures &features) override;
-    void checkPointWrite(vespalib::nbostream &out) override;
-    void checkPointRead(vespalib::nbostream &in) override;
     void readCounts(const PostingListCounts &counts) override; // Fill in for next word
     bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) override;
     bool close() override;
@@ -176,8 +170,6 @@ public:
 
     void writeDocIdAndFeatures(const DocIdAndFeatures &features) override;
     void flushWord() override;
-    void checkPointWrite(vespalib::nbostream &out) override;
-    void checkPointRead(vespalib::nbostream &in) override;
 
     bool open(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite,
               const search::common::FileHeaderContext &fileHeaderContext) override;

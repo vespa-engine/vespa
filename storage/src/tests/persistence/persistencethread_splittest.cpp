@@ -5,8 +5,10 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/persistence/spi/test.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <vespa/document/test/make_document_bucket.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace {
@@ -177,7 +179,7 @@ PersistenceThread_SplitTest::doTest(SplitCase splitCase)
     uint64_t splitMask = 1 << (splitLevelToDivide - 1);
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
-    spi::Bucket bucket(makeBucket(document::BucketId(currentSplitLevel, 1)));
+    spi::Bucket bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
     spi.deleteBucket(bucket, context);
     spi.createBucket(bucket, context);
@@ -201,7 +203,7 @@ PersistenceThread_SplitTest::doTest(SplitCase splitCase)
     getNode().getStateUpdater().setClusterState(
             lib::ClusterState::CSP(
                     new lib::ClusterState("distributor:1 storage:1")));
-    api::SplitBucketCommand cmd(document::BucketId(currentSplitLevel, 1));
+    api::SplitBucketCommand cmd(makeDocumentBucket(document::BucketId(currentSplitLevel, 1)));
     cmd.setMaxSplitBits(maxBits);
     cmd.setMinSplitBits(minBits);
     cmd.setMinByteSize(maxSize);

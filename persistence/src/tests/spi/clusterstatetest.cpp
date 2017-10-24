@@ -2,10 +2,13 @@
 
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
+
+using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 namespace spi {
@@ -169,7 +172,7 @@ ClusterStateTest::testReady()
 {
     lib::ClusterState s("version:1 storage:3 distributor:3");
 
-    Bucket b(document::Bucket(document::BucketSpace::placeHolder(), document::BucketId(16, 1)), PartitionId(0));
+    Bucket b(makeSpiBucket(document::BucketId(16, 1)));
 
     // With 3 copies, this bucket has ideal state 0, 2, 1
 

@@ -17,16 +17,13 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.AthensDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -36,6 +33,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -138,7 +137,7 @@ public class ControllerTest {
 
         // system and staging test job - succeeding
         applications.notifyJobCompletion(mockReport(app1, component, true));
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, revision, false, tester.clock().instant())
                               .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
@@ -260,16 +259,19 @@ public class ControllerTest {
         Version systemVersion = controller.versionStatus().systemVersion().get().versionNumber();
         Version newSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor()+1, 0);
         VespaVersion newSystemVespaVersion = new VespaVersion(DeploymentStatistics.empty(newSystemVersion),
-                                                              "commit1", 
+                                                              "commit1",
                                                               Instant.now(),
                                                               true,
                                                               Collections.emptyList(),
-                                                              controller);
+                                                              VespaVersion.Confidence.low
+        );
         List<VespaVersion> versions = new ArrayList<>(controller.versionStatus().versions());
         for (int i = 0; i < versions.size(); i++) {
             VespaVersion c = versions.get(i);
             if (c.isCurrentSystemVersion())
-                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.releasedAt(), false, c.configServerHostnames(), controller));
+                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.releasedAt(),
+                                                 false, c.configServerHostnames(),
+                                                 c.confidence()));
         }
         versions.add(newSystemVespaVersion);
         controller.updateVersionStatus(new VersionStatus(versions));
@@ -355,13 +357,13 @@ public class ControllerTest {
     }
     
     @Test
-    public void testMigratingTenantToAthensWillModifyAthensDomainsCorrectly() {
+    public void testMigratingTenantToAthenzWillModifyAthenzDomainsCorrectly() {
         ControllerTester tester = new ControllerTester();
 
         // Create Athens domain mock
-        AthensDomain athensDomain = new AthensDomain("vespa.john");
-        AthensDbMock.Domain mockDomain = new AthensDbMock.Domain(athensDomain);
-        tester.athensDb().addDomain(mockDomain);
+        AthenzDomain athensDomain = new AthenzDomain("vespa.john");
+        AthenzDbMock.Domain mockDomain = new AthenzDbMock.Domain(athensDomain);
+        tester.athenzDb().addDomain(mockDomain);
 
         // Create OpsDb tenant
         TenantId tenantId = new TenantId("mytenant");
@@ -378,8 +380,8 @@ public class ControllerTest {
         assertFalse(mockDomain.isVespaTenant);
 
         // Migrate tenant to Athens
-        NToken nToken = new NTokenMock("token");
-        tester.controller().tenants().migrateTenantToAthens(
+        NToken nToken = TestIdentities.userNToken;
+        tester.controller().tenants().migrateTenantToAthenz(
                 tenantId, athensDomain, new PropertyId("1567"), new Property("vespa_dev.no"), nToken);
 
         // Verify that tenant is migrated
@@ -433,7 +435,7 @@ public class ControllerTest {
         // out of capacity retry mechanism
         tester.clock().advance(Duration.ofMinutes(15));
         tester.notifyJobCompletion(component, app1, true);
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         tester.deploy(stagingTest, app1, applicationPackage);
         assertEquals(1, buildSystem.takeJobsToRun().size());
         tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));
@@ -518,7 +520,8 @@ public class ControllerTest {
     @Test
     public void testDeployUntestedChangeFails() {
         ControllerTester tester = new ControllerTester();
-        ApplicationController applications = tester.controller().applications();TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
+        ApplicationController applications = tester.controller().applications();
+        TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
         app = app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
@@ -527,7 +530,7 @@ public class ControllerTest {
             tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as pending version change to 6.3 is untested", e.getMessage());
+            assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
         }
     }
 
@@ -541,7 +544,7 @@ public class ControllerTest {
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");
-        tester.configServer().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
@@ -571,7 +574,7 @@ public class ControllerTest {
 
         // New version is released
         version = Version.fromString("6.142.1");
-        tester.configServer().setDefaultConfigServerVersion(version);
+        tester.configServer().setDefaultVersion(version);
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();

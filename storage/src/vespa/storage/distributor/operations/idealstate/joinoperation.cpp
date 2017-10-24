@@ -74,7 +74,7 @@ JoinOperation::enqueueJoinMessagePerTargetNode(
     }
     for (const auto& node : nodeToBuckets) {
         std::shared_ptr<api::JoinBucketsCommand> msg(
-                new api::JoinBucketsCommand(getBucketId()));
+                new api::JoinBucketsCommand(getBucket()));
         msg->getSourceBuckets() = node.second;
         msg->setTimeout(INT_MAX);
         setCommandMeta(*msg);

@@ -16,8 +16,6 @@ import java.util.List;
  */
 public class FailureRedeployer extends Maintainer {
 
-    private final static Duration jobTimeout = Duration.ofHours(12);
-    
     public FailureRedeployer(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl);
     }
@@ -27,11 +25,11 @@ public class FailureRedeployer extends Maintainer {
         List<Application> applications = ApplicationList.from(controller().applications().asList())
                 .notPullRequest()
                 .asList();
-        applications.forEach(application -> triggerFailing(application, jobTimeout));
+        applications.forEach(application -> triggerFailing(application));
     }
 
-    private void triggerFailing(Application application, Duration timeout) {
-        controller().applications().deploymentTrigger().triggerFailing(application.id(), timeout);
+    private void triggerFailing(Application application) {
+        controller().applications().deploymentTrigger().triggerFailing(application.id());
     }
 
 }

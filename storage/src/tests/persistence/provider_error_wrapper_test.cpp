@@ -5,7 +5,7 @@
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 
@@ -64,7 +64,7 @@ struct Fixture {
     ~Fixture() {}
 
     void perform_spi_operation() {
-        errorWrapper.getBucketInfo(makeBucket(document::BucketId(16, 1234)));
+        errorWrapper.getBucketInfo(makeSpiBucket(document::BucketId(16, 1234)));
     }
 
     void check_no_listener_invoked_for_error(MockErrorListener& listener, spi::Result::ErrorType error) {

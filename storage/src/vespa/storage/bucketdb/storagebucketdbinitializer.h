@@ -179,7 +179,7 @@ public:
     bool handleBadLocation(const document::BucketId&,
                            std::vector<uint32_t>& path);
     /** Register a bucket in the bucket database. */
-    void registerBucket(const document::BucketId&,
+    void registerBucket(const document::Bucket &bucket,
                         spi::PartitionId,
                         api::BucketInfo bucketInfo);
     /**

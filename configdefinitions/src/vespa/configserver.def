@@ -13,6 +13,7 @@ zookeeperserver[].port int default=2181
 zookeeper.barrierTimeout long default=120
 configModelPluginDir[] string
 configServerDBDir string default="var/db/vespa/config_server/serverdb/"
+configDefinitionsDir string default="share/vespa/configdefinitions/"
 maxgetconfigclients int default=1000000
 maxoutputbuffersize int default=65536
 # in seconds
@@ -24,7 +25,7 @@ numDelayedResponseThreads int default=1
 payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 serverId string default="localhost"
 hostedVespa bool default=false
-numParallelTenantLoaders int default=1
+numParallelTenantLoaders int default=4
 
 # Zone information
 environment string default="prod"
@@ -40,3 +41,6 @@ useVespaVersionInRequest bool default=false
 # Docker config
 dockerRegistry string default=""
 dockerVespaBaseImage string default=""
+
+# Athenz config
+loadBalancerAddress string default=""

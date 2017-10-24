@@ -13,6 +13,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/document/test/make_document_bucket.h>
 
 using document::DataType;
 using document::DocIdString;
@@ -20,6 +21,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -50,8 +52,6 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testCreateVisitorReplyLastBucket();
     void testDestroyVisitor();
     void testVisitorInfo();
-    void testDocBlock();
-    void testDocBlockWithKeepTimeStamps();
     void testMultiOperation();
     void testBatchDocumentUpdate();
 
@@ -66,8 +66,6 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testCreateVisitorReplyLastBucket);
     CPPUNIT_TEST(testDestroyVisitor);
     CPPUNIT_TEST(testVisitorInfo);
-    CPPUNIT_TEST(testDocBlock);
-    CPPUNIT_TEST(testDocBlockWithKeepTimeStamps);
     CPPUNIT_TEST(testMultiOperation);
     CPPUNIT_TEST(testBatchDocumentUpdate);
     CPPUNIT_TEST_SUITE_END();
@@ -268,74 +266,6 @@ DocumentApiConverterTest::testVisitorInfo()
 }
 
 void
-DocumentApiConverterTest::testDocBlock()
-{
-    Document::SP doc(new Document(_html_type, DocumentId(DocIdString("test", "test"))));
-
-    char buffer[10000];
-    vdslib::WritableDocumentList docBlock(_repo, buffer, sizeof(buffer));
-    docBlock.addPut(*doc, 100);
-
-    document::BucketIdFactory fac;
-    document::BucketId bucketId = fac.getBucketId(doc->getId());
-    bucketId.setUsedBits(32);
-
-    api::DocBlockCommand dbcmd(bucketId, docBlock, std::shared_ptr<void>());
-    dbcmd.setTimeout(123456);
-
-    std::unique_ptr<mbus::Message> mbusmsg = _converter->toDocumentAPI(dbcmd, _repo);
-
-    documentapi::MultiOperationMessage* mbusdb = dynamic_cast<documentapi::MultiOperationMessage*>(mbusmsg.get());
-    CPPUNIT_ASSERT(mbusdb);
-
-    CPPUNIT_ASSERT_EQUAL((uint64_t)123456, mbusdb->getTimeRemaining());
-
-    const vdslib::DocumentList& list = mbusdb->getOperations();
-    CPPUNIT_ASSERT_EQUAL((uint32_t)1, list.size());
-    CPPUNIT_ASSERT_EQUAL(*doc, *dynamic_cast<document::Document*>(list.begin()->getDocument().get()));
-
-    std::unique_ptr<mbus::Reply> reply = mbusdb->createReply();
-    CPPUNIT_ASSERT(reply.get());
-
-    std::unique_ptr<storage::api::StorageReply> rep =
-        _converter->toStorageAPI(static_cast<documentapi::DocumentReply&>(*reply), dbcmd);
-    api::DocBlockReply* pr = dynamic_cast<api::DocBlockReply*>(rep.get());
-    CPPUNIT_ASSERT(pr);
-}
-
-
-void
-DocumentApiConverterTest::testDocBlockWithKeepTimeStamps()
-{
-    char buffer[10000];
-    vdslib::WritableDocumentList docBlock(_repo, buffer, sizeof(buffer));
-    api::DocBlockCommand dbcmd(document::BucketId(0), docBlock, std::shared_ptr<void>());
-
-    {
-	CPPUNIT_ASSERT_EQUAL(dbcmd.keepTimeStamps(), false);
-	
-	std::unique_ptr<mbus::Message> mbusmsg = _converter->toDocumentAPI(dbcmd, _repo);
-	
-	documentapi::MultiOperationMessage* mbusdb = dynamic_cast<documentapi::MultiOperationMessage*>(mbusmsg.get());
-	CPPUNIT_ASSERT(mbusdb);
-	CPPUNIT_ASSERT_EQUAL(mbusdb->keepTimeStamps(), false);
-    }
-
-    {
-	dbcmd.keepTimeStamps(true);
-	CPPUNIT_ASSERT_EQUAL(dbcmd.keepTimeStamps(), true);
-	
-	std::unique_ptr<mbus::Message> mbusmsg = _converter->toDocumentAPI(dbcmd, _repo);
-	
-	documentapi::MultiOperationMessage* mbusdb = dynamic_cast<documentapi::MultiOperationMessage*>(mbusmsg.get());
-	CPPUNIT_ASSERT(mbusdb);
-	CPPUNIT_ASSERT_EQUAL(mbusdb->keepTimeStamps(), true);
-    }
-
-}
-
-
-void
 DocumentApiConverterTest::testMultiOperation()
 {
     //create a document
@@ -374,7 +304,7 @@ DocumentApiConverterTest::testMultiOperation()
     }
 
     {
-        api::MultiOperationCommand mocmd(_repo, bucketId, 10000, false);
+        api::MultiOperationCommand mocmd(_repo, makeDocumentBucket(bucketId), 10000, false);
         mocmd.getOperations().addPut(*doc, 100);
 
         // Convert it to documentapi

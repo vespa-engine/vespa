@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,13 +69,13 @@ public class Upgrader extends Maintainer {
     
     private void upgrade(ApplicationList applications, Version version) {
         Change.VersionChange change = new Change.VersionChange(version);
-        Instant startOfUpgradePeriod = controller().clock().instant().minus(upgradeTimeout);
         cancelUpgradesOf(applications.upgradingToLowerThan(version));
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
+        applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.notDeployingApplication(); // wait with applications deploying an application change
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
-        applications = applications.notCurrentlyUpgrading(change, startOfUpgradePeriod); // do not trigger again if currently upgrading
+        applications = applications.notCurrentlyUpgrading(change, controller().applications().deploymentTrigger().jobTimeoutLimit());
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
@@ -108,6 +107,20 @@ public class Upgrader extends Maintainer {
     /** Sets the number upgrades per minute */
     public void setUpgradesPerMinute(double n) {
         curator.writeUpgradesPerMinute(n);
+    }
+
+    /**
+     * Returns whether to ignore confidence calculations when upgrading
+     */
+    public boolean ignoreConfidence() {
+        return curator.readIgnoreConfidence();
+    }
+
+    /**
+     * Controls whether to ignore confidence calculations or not
+     */
+    public void ignoreConfidence(boolean value) {
+        curator.writeIgnoreConfidence(value);
     }
 
 }

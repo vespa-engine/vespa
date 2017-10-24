@@ -11,12 +11,12 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,31 +60,31 @@ public class ServiceMonitorStub implements ServiceMonitor {
         this.statusIsKnown = statusIsKnown;
     }
 
-    private ServiceMonitorStatus getHostStatus(String hostname) {
-        if (!statusIsKnown) return ServiceMonitorStatus.NOT_CHECKED;
-        if (downHosts.contains(hostname)) return ServiceMonitorStatus.DOWN;
-        return ServiceMonitorStatus.UP;
+    private ServiceStatus getHostStatus(String hostname) {
+        if (!statusIsKnown) return ServiceStatus.NOT_CHECKED;
+        if (downHosts.contains(hostname)) return ServiceStatus.DOWN;
+        return ServiceStatus.UP;
     }
 
     @Override
-    public Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> queryStatusOfAllApplicationInstances() {
+    public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         // Convert apps information to the response payload to return
-        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> status = new HashMap<>();
+        Map<ApplicationInstanceReference, ApplicationInstance> status = new HashMap<>();
         for (Map.Entry<ApplicationId, MockDeployer.ApplicationContext> app : apps.entrySet()) {
-            Set<ServiceInstance<ServiceMonitorStatus>> serviceInstances = new HashSet<>();
+            Set<ServiceInstance> serviceInstances = new HashSet<>();
             for (Node node : nodeRepository.getNodes(app.getValue().id(), Node.State.active)) {
-                serviceInstances.add(new ServiceInstance<>(new ConfigId("configid"),
-                                                           new HostName(node.hostname()),
-                                                           getHostStatus(node.hostname())));
+                serviceInstances.add(new ServiceInstance(new ConfigId("configid"),
+							 new HostName(node.hostname()),
+							 getHostStatus(node.hostname())));
             }
-            Set<ServiceCluster<ServiceMonitorStatus>> serviceClusters = new HashSet<>();
-            serviceClusters.add(new ServiceCluster<>(new ClusterId(app.getValue().clusterContexts().get(0).cluster().id().value()),
-                                                     new ServiceType("serviceType"),
-                                                     serviceInstances));
+            Set<ServiceCluster> serviceClusters = new HashSet<>();
+            serviceClusters.add(new ServiceCluster(new ClusterId(app.getValue().clusterContexts().get(0).cluster().id().value()),
+						   new ServiceType("serviceType"),
+						   serviceInstances));
             TenantId tenantId = new TenantId(app.getKey().tenant().value());
             ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId(app.getKey().application().value());
             status.put(new ApplicationInstanceReference(tenantId, applicationInstanceId),
-                       new ApplicationInstance<>(tenantId, applicationInstanceId, serviceClusters));
+                       new ApplicationInstance(tenantId, applicationInstanceId, serviceClusters));
         }
         return status;
     }

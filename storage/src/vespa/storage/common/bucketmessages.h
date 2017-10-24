@@ -3,7 +3,7 @@
 
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/internal.h>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vector>
 #include <set>
@@ -17,14 +17,16 @@ namespace storage {
  * @brief List buckets existing on a partition.
  */
 class ReadBucketList : public api::InternalCommand {
+    document::BucketSpace _bucketSpace;
     spi::PartitionId _partition;
 
 public:
     typedef std::unique_ptr<ReadBucketList> UP;
     static const uint32_t ID = 2003;
 
-    ReadBucketList(spi::PartitionId partition);
+    ReadBucketList(document::BucketSpace bucketSpace, spi::PartitionId partition);
     ~ReadBucketList();
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     spi::PartitionId getPartition() const { return _partition; }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
@@ -38,6 +40,7 @@ public:
  * @ingroup common
  */
 class ReadBucketListReply : public api::InternalReply {
+    document::BucketSpace _bucketSpace;
     spi::PartitionId _partition;
     spi::BucketIdListResult::List _buckets;
 
@@ -49,6 +52,7 @@ public:
     ReadBucketListReply(const ReadBucketList& cmd);
     ~ReadBucketListReply();
 
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     spi::PartitionId getPartition() const { return _partition; }
 
     spi::BucketIdListResult::List& getBuckets() { return _buckets; }
@@ -70,15 +74,15 @@ public:
  * used to retrieve such information.
  */
 class ReadBucketInfo : public api::InternalCommand {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
 
 public:
     static const uint32_t ID = 2005;
 
-    ReadBucketInfo(const document::BucketId& bucketId);
+    ReadBucketInfo(const document::Bucket &bucket);
     ~ReadBucketInfo();
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
@@ -94,7 +98,7 @@ private:
  * @ingroup common
  */
 class ReadBucketInfoReply : public api::InternalReply {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
 
 public:
     static const uint32_t ID = 2006;
@@ -102,7 +106,7 @@ public:
     ReadBucketInfoReply(const ReadBucketInfo& cmd);
     ~ReadBucketInfoReply();
 
-    document::BucketId getBucketId() const override { return _bucketId; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -119,7 +123,7 @@ public:
  * Errors found are reported back.
  */
 class RepairBucketCommand : public api::InternalCommand {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     uint16_t _disk;
     bool _verifyBody; // Optional as it is expensive
     bool _moveToIdealDisk; // Optional as it is expensive
@@ -129,17 +133,17 @@ public:
 
     static const uint32_t ID = 2007;
 
-    RepairBucketCommand(const document::BucketId& bucket, uint16_t disk);
+    RepairBucketCommand(const document::Bucket &bucket, uint16_t disk);
     ~RepairBucketCommand();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
 
     uint16_t getDisk() const { return _disk; }
     bool verifyBody() const { return _verifyBody; }
     bool moveToIdealDisk() const { return _moveToIdealDisk; }
 
-    void setBucketId(const document::BucketId& id) { _bucket = id; }
+    void setBucketId(const document::BucketId& id);
     void verifyBody(bool doIt) { _verifyBody = doIt; }
     void moveToIdealDisk(bool doIt) { _moveToIdealDisk = doIt; }
 
@@ -155,7 +159,7 @@ private:
  * @ingroup common
  */
 class RepairBucketReply : public api::InternalReply {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     api::BucketInfo _bucketInfo;
     uint16_t _disk;
     bool _altered;
@@ -166,7 +170,7 @@ public:
 
     RepairBucketReply(const RepairBucketCommand& cmd, const api::BucketInfo& bucketInfo = api::BucketInfo());
     ~RepairBucketReply();
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
@@ -188,7 +192,7 @@ public:
  * Size of the bucket moved is reported back.
  */
 class BucketDiskMoveCommand : public api::InternalCommand {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     uint16_t _srcDisk;
     uint16_t _dstDisk;
 
@@ -196,16 +200,16 @@ public:
     typedef std::shared_ptr<BucketDiskMoveCommand> SP;
     static const uint32_t ID = 2012;
 
-    BucketDiskMoveCommand(const document::BucketId& bucket, uint16_t srcDisk, uint16_t dstDisk);
+    BucketDiskMoveCommand(const document::Bucket &bucket, uint16_t srcDisk, uint16_t dstDisk);
     ~BucketDiskMoveCommand();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     uint16_t getSrcDisk() const { return _srcDisk; }
     uint16_t getDstDisk() const { return _dstDisk; }
 
-    void setBucketId(const document::BucketId& id) { _bucket = id; }
+    void setBucketId(const document::BucketId& id);
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
@@ -217,7 +221,7 @@ public:
  * @ingroup common
  */
 class BucketDiskMoveReply : public api::InternalReply {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     api::BucketInfo _bucketInfo;
     uint64_t _fileSizeOnSrc;
     uint64_t _fileSizeOnDst;
@@ -234,7 +238,7 @@ public:
                         uint32_t destinationFileSize = 0);
     ~BucketDiskMoveReply();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
@@ -260,17 +264,17 @@ public:
  * while storage is running.
  */
 class InternalBucketJoinCommand : public api::InternalCommand {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     uint16_t _keepOnDisk;
     uint16_t _joinFromDisk;
 
 public:
     static const uint32_t ID = 2015;
 
-    InternalBucketJoinCommand(const document::BucketId& bucket, uint16_t keepOnDisk, uint16_t joinFromDisk);
+    InternalBucketJoinCommand(const document::Bucket &bucket, uint16_t keepOnDisk, uint16_t joinFromDisk);
     ~InternalBucketJoinCommand();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     uint16_t getDiskOfInstanceToKeep() const { return _keepOnDisk; }
@@ -286,7 +290,7 @@ public:
  * @ingroup common
  */
 class InternalBucketJoinReply : public api::InternalReply {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     api::BucketInfo _bucketInfo;
 
 public:
@@ -296,7 +300,7 @@ public:
                             const api::BucketInfo& info = api::BucketInfo());
     ~InternalBucketJoinReply();
 
-    document::BucketId getBucketId() const override { return _bucket; }
+    document::Bucket getBucket() const override { return _bucket; }
     bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }

@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filealign.h"
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
 
 namespace search {
-
-using vespalib::nbostream;
 
 namespace {
 
@@ -42,8 +39,7 @@ FileAlign::FileAlign()
       _minAlignedSize(1),
       _elemSize(1),
       _directIOMemAlign(1),
-      _directio(false),
-      _checkPointResumed(false)
+      _directio(false)
 { }
 
 
@@ -115,25 +111,5 @@ FileAlign::setupAlign(size_t elements,
     _elemSize = elemSize;
     return elements;
 }
-
-
-void
-FileAlign::checkPointWrite(nbostream &out)
-{
-    out << _directIOFileAlign << _preferredFileAlign <<
-        _minDirectIOSize << _minAlignedSize << _elemSize <<
-        _directIOMemAlign << _directio;
-}
-
-
-void
-FileAlign::checkPointRead(nbostream &in)
-{
-    in >> _directIOFileAlign >> _preferredFileAlign >>
-        _minDirectIOSize >> _minAlignedSize >> _elemSize >>
-        _directIOMemAlign >> _directio;
-    _checkPointResumed = true;
-}
-
 
 }

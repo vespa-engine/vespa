@@ -112,6 +112,10 @@ public interface Tensor {
                                                     Collections.singletonList(toDimension)).evaluate();
     }
 
+    default Tensor concat(double argument, String dimension) {
+        return concat(Tensor.Builder.of(TensorType.empty).cell(argument).build(), dimension);
+    }
+
     default Tensor concat(Tensor argument, String dimension) {
         return new Concat(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
     }
@@ -174,11 +178,17 @@ public interface Tensor {
     default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
 
+    default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
     default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
+    default Tensor count(String dimension) { return count(Collections.singletonList(dimension)); }
     default Tensor count(List<String> dimensions) { return reduce(Reduce.Aggregator.count, dimensions); }
+    default Tensor max(String dimension) { return max(Collections.singletonList(dimension)); }
     default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
+    default Tensor min(String dimension) { return min(Collections.singletonList(dimension)); }
     default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
+    default Tensor prod(String dimension) { return prod(Collections.singletonList(dimension)); }
     default Tensor prod(List<String> dimensions) { return reduce(Reduce.Aggregator.prod, dimensions); }
+    default Tensor sum(String dimension) { return sum(Collections.singletonList(dimension)); }
     default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 
     // ----------------- serialization

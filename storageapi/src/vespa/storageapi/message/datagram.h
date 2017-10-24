@@ -10,53 +10,6 @@
 namespace storage::api {
 
 /**
- * @class DocBlockCommand
- * @ingroup message
- *
- * @brief Sends a docblock to a visitor or subscriber.
- */
-class DocBlockCommand : public StorageCommand {
-    document::BucketId _bucketId;
-    vdslib::DocumentList _docBlock;
-    std::shared_ptr<void> _buffer; // Owns data in docblock
-    bool _keepTimeStamps; // Used for recovery/synchronization where we want to
-                          // keep the timestamps of the origin.
-
-public:
-    DocBlockCommand(const document::BucketId& bucketId,
-                    const vdslib::DocumentList& block,
-                    const std::shared_ptr<void>& buffer);
-    ~DocBlockCommand();
-
-    vdslib::DocumentList& getDocumentBlock()
-        { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
-    const vdslib::DocumentList& getDocumentBlock() const
-        { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
-    void setDocumentBlock(vdslib::DocumentList& block) { _docBlock = block; }
-
-    document::BucketId getBucketId() const override { return _bucketId; }
-    bool hasSingleBucketId() const override { return true; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool keepTimeStamps() const { return _keepTimeStamps; }
-    void keepTimeStamps(bool keepTime) { _keepTimeStamps = keepTime; }
-
-    DECLARE_STORAGECOMMAND(DocBlockCommand, onDocBlock)
-};
-
-/**
- * @class DocBlockReply
- * @ingroup message
- *
- * @brief Confirm that a given docblock have been received.
- */
-class DocBlockReply : public StorageReply {
-public:
-    explicit DocBlockReply(const DocBlockCommand&);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGEREPLY(DocBlockReply, onDocBlockReply)
-};
-
-/**
  * @class MapStorageCommand
  * @ingroup message
  *
@@ -87,58 +40,6 @@ public:
     explicit MapVisitorReply(const MapVisitorCommand&);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(MapVisitorReply, onMapVisitorReply)
-};
-
-/**
- * @class DocumentListCommand
- * @ingroup message
- *
- * @brief Sends a list of documents to the visitor data handler.
- *
- * This is used in synchronization in order to transfer minimal amount of data
- * to the synchronization agent.
- */
-class DocumentListCommand : public StorageCommand {
-public:
-    struct Entry {
-        document::Document::SP _doc;
-        int64_t _lastModified;
-        bool _removeEntry;
-
-        Entry() : _doc(), _lastModified(0), _removeEntry(false) {}
-        Entry(const document::Document::SP& doc, int64_t lastModified,
-              bool removeEntry)
-            : _doc(doc),
-              _lastModified(lastModified),
-              _removeEntry(removeEntry)
-        { }
-    };
-
-private:
-    document::BucketId _bucketId;
-    std::vector<Entry> _documents;
-public:
-    DocumentListCommand(const document::BucketId& bid);
-    const document::BucketId& getBucketId() { return _bucketId; }
-    std::vector<Entry>& getDocuments() { return _documents; }
-    const std::vector<Entry>& getDocuments() const { return _documents; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGECOMMAND(DocumentListCommand, onDocumentList)
-};
-
-std::ostream& operator<<(std::ostream& out, const DocumentListCommand::Entry& e);
-
-/**
- * @class DocumentListReply
- * @ingroup message
- *
- * @brief Confirm that a given visitorstatisticscommand has been received.
- */
-class DocumentListReply : public StorageReply {
-public:
-    explicit DocumentListReply(const DocumentListCommand&);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGEREPLY(DocumentListReply, onDocumentListReply)
 };
 
 /**

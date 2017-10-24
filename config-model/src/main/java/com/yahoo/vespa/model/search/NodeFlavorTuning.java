@@ -27,14 +27,15 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         setHwInfo(builder);
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder.summary.log);
-        tuneDocumentStoreNumThreads(builder.background);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
+        tuneSummaryReadIo(builder.summary.read);
     }
 
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.size((long)nodeFlavor.getMinDiskAvailableGb() * GB);
         builder.hwinfo.memory.size((long)nodeFlavor.getMinMainMemoryAvailableGb() * GB);
+        builder.hwinfo.cpu.cores((int)nodeFlavor.getMinCpuCores());
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
@@ -56,10 +57,6 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         builder.maxfilesize(fileSizeBytes);
     }
 
-    private void tuneDocumentStoreNumThreads(ProtonConfig.Background.Builder builder) {
-        builder.threads(max(8, (int)nodeFlavor.getMinCpuCores()/2));
-    }
-
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
         long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() / 8) * GB);
         builder.maxmemory(memoryLimitBytes);
@@ -70,6 +67,12 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         long tlsSizeBytes = (long) ((nodeFlavor.getMinDiskAvailableGb() * 0.07) * GB);
         tlsSizeBytes = min(tlsSizeBytes, 100 * GB);
         builder.maxtlssize(tlsSizeBytes);
+    }
+
+    private void tuneSummaryReadIo(ProtonConfig.Summary.Read.Builder builder) {
+        if (nodeFlavor.hasFastDisk()) {
+            builder.io(ProtonConfig.Summary.Read.Io.DIRECTIO);
+        }
     }
 
 }

@@ -30,7 +30,7 @@ RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
             getBucketId().toString().c_str(),
             node);
         std::shared_ptr<api::DeleteBucketCommand> msg(
-                new api::DeleteBucketCommand(getBucketId()));
+                new api::DeleteBucketCommand(getBucket()));
         setCommandMeta(*msg);
         msg->setBucketInfo(copy->getBucketInfo());
         msgs.push_back(std::make_pair(node, msg));

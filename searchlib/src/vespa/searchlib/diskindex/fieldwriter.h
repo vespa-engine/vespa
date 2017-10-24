@@ -8,8 +8,6 @@
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 namespace diskindex {
@@ -73,24 +71,13 @@ public:
 
     uint64_t getSparseWordNum() const { return _wordNum; }
 
-    void earlyOpen(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
-                   bool dynamicKPosOccFormat, const Schema &schema, uint32_t indexId,
-                   const TuneFileSeqWrite &tuneFileWrite);
-
-    bool lateOpen(const TuneFileSeqWrite &tuneFileWrite,
-                  const search::common::FileHeaderContext &fileHeaderContext);
+    bool open(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
+              bool dynamicKPosOccFormat, const Schema &schema, uint32_t indexId,
+              const TuneFileSeqWrite &tuneFileWrite,
+              const search::common::FileHeaderContext &fileHeaderContext);
 
     bool close();
 
-    /*
-     * To be called between words, not in the middle of one.
-     */
-    void checkPointWrite(vespalib::nbostream &out);
-
-    /*
-     * To be called after earlyOpen() but before afterOpen().
-     */
-    void checkPointRead(vespalib::nbostream &in);
     void setFeatureParams(const PostingListParams &params);
     void getFeatureParams(PostingListParams &params);
     static void remove(const vespalib::string &prefix);

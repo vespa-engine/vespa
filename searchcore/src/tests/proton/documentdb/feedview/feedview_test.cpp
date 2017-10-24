@@ -1,18 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
-#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 #include <vespa/searchcore/proton/server/matchview.h>
 #include <vespa/searchcore/proton/server/searchable_feed_view.h>
@@ -26,13 +20,8 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/docstore/cachestats.h>
-#include <vespa/searchlib/docstore/idocumentstore.h>
+
 #include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <mutex>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");
@@ -41,8 +30,6 @@ using document::BucketId;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
-using documentapi::DocumentProtocol;
-using documentapi::RemoveDocumentReply;
 using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
@@ -66,7 +53,6 @@ using namespace search::index;
 
 typedef SearchableFeedView::SerialNum SerialNum;
 typedef search::DocumentIdT DocumentIdT;
-typedef DocumentProtocol::MessageType MessageType;
 
 struct MyLidVector : public std::vector<DocumentIdT>
 {
@@ -132,8 +118,6 @@ struct MyTracer
 struct ParamsContext
 {
     DocTypeName                          _docTypeName;
-    FeedMetrics                          _feedMetrics;
-    PerDocTypeFeedMetrics                _metrics;
     SearchableFeedView::PersistentParams _params;
 
     ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir);
@@ -143,9 +127,7 @@ struct ParamsContext
 
 ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir)
     : _docTypeName(docType),
-      _feedMetrics(),
-      _metrics(&_feedMetrics),
-      _params(0, 0, _docTypeName, _metrics, subdb_id, SubDbType::READY)
+      _params(0, 0, _docTypeName, subdb_id, SubDbType::READY)
 {
     (void) baseDir;
 }
@@ -243,7 +225,8 @@ struct MyDocumentStore : public test::DummyDocumentStore
           _lastSyncToken(0),
           _compactLidSpaceLidLimit(0)
     {}
-    virtual Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const override {
+    ~MyDocumentStore() override;
+    Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const override {
         DocMap::const_iterator itr = _docs.find(lid);
         if (itr != _docs.end()) {
             Document::UP retval(itr->second->clone());
@@ -251,26 +234,28 @@ struct MyDocumentStore : public test::DummyDocumentStore
         }
         return Document::UP();
     }
-    virtual void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) override {
+    void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) override {
         _lastSyncToken = syncToken;
         _docs[lid] = Document::SP(doc.clone());
     }
-    virtual void write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & os) override {
+    void write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & os) override {
         _lastSyncToken = syncToken;
         _docs[lid] = std::make_shared<Document>(_repo, const_cast<vespalib::nbostream &>(os));
     }
-    virtual void remove(uint64_t syncToken, DocumentIdT lid) override {
+    void remove(uint64_t syncToken, DocumentIdT lid) override {
         _lastSyncToken = syncToken;
         _docs.erase(lid);
     }
-    virtual uint64_t initFlush(uint64_t syncToken) override {
+    uint64_t initFlush(uint64_t syncToken) override {
         return syncToken;
     }
-    virtual uint64_t lastSyncToken() const override { return _lastSyncToken; }
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override {
+    uint64_t lastSyncToken() const override { return _lastSyncToken; }
+    void compactLidSpace(uint32_t wantedDocLidLimit) override {
         _compactLidSpaceLidLimit = wantedDocLidLimit;
     }
 };
+
+MyDocumentStore::~MyDocumentStore() = default;
 
 struct MySummaryManager : public test::DummySummaryManager
 {
@@ -413,18 +398,14 @@ MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)
 }
 MyAttributeWriter::~MyAttributeWriter() {}
 
-struct MyTransport : public FeedToken::ITransport
+struct MyTransport : public feedtoken::ITransport
 {
     ResultUP lastResult;
     vespalib::Gate _gate;
     MyTracer &_tracer;
     MyTransport(MyTracer &tracer);
     ~MyTransport();
-    virtual void send(mbus::Reply::UP reply,
-                      ResultUP result,
-                      bool documentWasFound,
-                      double latency_ms) override {
-        (void) reply; (void) documentWasFound, (void) latency_ms;
+    void send(ResultUP result, bool ) override {
         lastResult = std::move(result);
         _tracer.traceAck(lastResult);
         _gate.countDown();
@@ -433,7 +414,7 @@ struct MyTransport : public FeedToken::ITransport
 };
 
 MyTransport::MyTransport(MyTracer &tracer) : lastResult(), _gate(), _tracer(tracer) {}
-MyTransport::~MyTransport() {}
+MyTransport::~MyTransport() = default;
 
 struct MyResultHandler : public IGenericResultHandler
 {
@@ -492,36 +473,20 @@ DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timesta
 {}
 DocumentContext::~DocumentContext() {}
 
-namespace {
-
-mbus::Reply::UP
-createReply(MessageType mtype)
-{
-    if (mtype == DocumentProtocol::REPLY_UPDATEDOCUMENT) {
-        return mbus::Reply::UP(new documentapi::UpdateDocumentReply);
-    } else if (mtype == DocumentProtocol::REPLY_REMOVEDOCUMENT) {
-        return mbus::Reply::UP(new documentapi::RemoveDocumentReply);
-    } else {
-        return mbus::Reply::UP(new documentapi::DocumentReply(mtype));
-    }
-}
-
-}  // namespace
-
 struct FeedTokenContext
 {
     MyTransport mt;
     FeedToken   ft;
     typedef std::shared_ptr<FeedTokenContext> SP;
     typedef std::vector<SP> List;
-    FeedTokenContext(MyTracer &tracer, MessageType mtype);
+    FeedTokenContext(MyTracer &tracer);
     ~FeedTokenContext();
 };
 
-FeedTokenContext::FeedTokenContext(MyTracer &tracer, MessageType mtype)
-    : mt(tracer), ft(mt, createReply(mtype))
+FeedTokenContext::FeedTokenContext(MyTracer &tracer)
+    : mt(tracer), ft(feedtoken::make(mt))
 {}
-FeedTokenContext::~FeedTokenContext() {}
+FeedTokenContext::~FeedTokenContext() = default;
 
 struct FixtureBase
 {
@@ -599,7 +564,7 @@ struct FixtureBase
         return doc("doc:test:1", timestamp);
     }
 
-    void performPut(FeedToken *token, PutOperation &op) {
+    void performPut(FeedToken token, PutOperation &op) {
         getFeedView().preparePut(op);
         op.setSerialNum(++serial);
         getFeedView().handlePut(token, op);
@@ -612,39 +577,35 @@ struct FixtureBase
     }
 
     void putAndWait(const DocumentContext &docCtx) {
-        FeedTokenContext token(_tracer, DocumentProtocol::REPLY_PUTDOCUMENT);
+        FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([&] () { performPut(&token.ft, op); });
+        runInMaster([&] () { performPut(token.ft, op); });
     }
 
-    void performUpdate(FeedToken *token, UpdateOperation &op) {
+    void performUpdate(FeedToken token, UpdateOperation &op) {
         getFeedView().prepareUpdate(op);
         op.setSerialNum(++serial);
         getFeedView().handleUpdate(token, op);
     }
 
     void updateAndWait(const DocumentContext &docCtx) {
-        FeedTokenContext token(_tracer, DocumentProtocol::REPLY_UPDATEDOCUMENT);
+        FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([&] () { performUpdate(&token.ft, op); });
+        runInMaster([&] () { performUpdate(token.ft, op); });
     }
 
-    void performRemove(FeedToken *token, RemoveOperation &op) {
+    void performRemove(FeedToken token, RemoveOperation &op) {
         getFeedView().prepareRemove(op);
         if (op.getValidNewOrPrevDbdId()) {
             op.setSerialNum(++serial);
-            getFeedView().handleRemove(token, op);
-        } else {
-            if (token != NULL) {
-                token->ack(op.getType(), pc._metrics);
-            }
+            getFeedView().handleRemove(std::move(token), op);
         }
     }
 
     void removeAndWait(const DocumentContext &docCtx) {
-        FeedTokenContext token(_tracer, DocumentProtocol::REPLY_REMOVEDOCUMENT);
+        FeedTokenContext token(_tracer);
         RemoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([&] () { performRemove(&token.ft, op); });
+        runInMaster([&] () { performRemove(token.ft, op); });
     }
 
     void removeAndWait(const DocumentContext::List &docs) {
@@ -1239,12 +1200,12 @@ TEST_F("require that commit is not called when inside a commit interval",
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
                   "ack(Result(0, )),"
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0)");
+                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
+                  "ack(Result(0, ))");
 }
 
 TEST_F("require that commit is called when crossing a commit interval",
@@ -1260,19 +1221,18 @@ TEST_F("require that commit is called when crossing a commit interval",
     f.removeAndWait(dc);
     EXPECT_EQUAL(2u, f.miw._commitCount);
     EXPECT_EQUAL(2u, f.maw._commitCount);
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=1),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=1),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
                   "commit(adapter=index,serialNum=1),"
                   "ack(Result(0, )),"
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=1),"
                   "remove(adapter=index,serialNum=2,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=2)");
+                  "commit(adapter=index,serialNum=2),"
+                  "ack(Result(0, ))");
 }
 
 
-TEST_F("require that commit is not implicitly called after "
-       "handover to maintenance job",
+TEST_F("require that commit is not implicitly called after handover to maintenance job",
        SearchableFeedViewFixture(SHORT_DELAY))
 {
     f._commitTimeTracker.setReplayDone();
@@ -1287,12 +1247,12 @@ TEST_F("require that commit is not implicitly called after "
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
                   "ack(Result(0, )),"
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0)");
+                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
+                  "ack(Result(0, ))");
 }
 
 TEST_F("require that forceCommit updates docid limit",
@@ -1308,15 +1268,14 @@ TEST_F("require that forceCommit updates docid limit",
     EXPECT_EQUAL(1u, f.miw._commitCount);
     EXPECT_EQUAL(1u, f.maw._commitCount);
     EXPECT_EQUAL(2u, f._docIdLimit.get());
-    f.assertTrace("ack(Result(0, )),"
-                  "put(adapter=attribute,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
                   "put(adapter=index,serialNum=1,lid=1,commit=0),"
+                  "ack(Result(0, )),"
                   "commit(adapter=attribute,serialNum=1),"
                   "commit(adapter=index,serialNum=1)");
 }
 
-TEST_F("require that forceCommit updates docid limit during shrink",
-       SearchableFeedViewFixture(LONG_DELAY))
+TEST_F("require that forceCommit updates docid limit during shrink", SearchableFeedViewFixture(LONG_DELAY))
 {
     f._commitTimeTracker.setReplayDone();
     f.putAndWait(f.makeDummyDocs(0, 3, 1000));

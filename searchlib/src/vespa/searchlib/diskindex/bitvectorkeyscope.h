@@ -3,14 +3,6 @@
 #pragma once
 
 
-namespace vespalib
-{
-
-class nbostream;
-
-}
-
-
 namespace search
 {
 
@@ -26,18 +18,5 @@ enum class BitVectorKeyScope
 const char *getBitVectorKeyScopeSuffix(BitVectorKeyScope scope);
 
 }
-
-}
-
-namespace vespalib
-{
-
-nbostream &
-operator<<(nbostream &stream,
-           const search::diskindex::BitVectorKeyScope &scope);
-
-nbostream &
-operator>>(nbostream &stream,
-           search::diskindex::BitVectorKeyScope &scope);
 
 }

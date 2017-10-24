@@ -27,7 +27,7 @@
       </consumer>
     </metrics>
     <logforwarding>
-      <splunk deployment-server="foo:8989" client-name="foobar"/>
+      <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk"/>
     </logforwarding>
   </admin>
 
@@ -36,6 +36,10 @@
   </config>
 
   <jdisc id='qrsCluster_1' version='1.0'>
+    <identity>
+      <domain>mydomain</domain>
+      <service>myservice</service>
+    </identity>
     <rest-api path="jersey1">
       <components bundle="my-bundle" />
       <components bundle="other-bundle">

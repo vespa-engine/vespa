@@ -6,7 +6,6 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.DummyInstanceLookupService;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,7 +23,7 @@ import java.util.Set;
 public class ClusterControllerClientFactoryMock implements ClusterControllerClientFactory {
     Map<String, ClusterControllerNodeState> nodes = new HashMap<>();
 
-    public boolean isInMaintenance(ApplicationInstance<ServiceMonitorStatus> appInstance, HostName hostName) {
+    public boolean isInMaintenance(ApplicationInstance appInstance, HostName hostName) {
         try {
             ClusterId clusterName = VespaModelUtil.getContentClusterName(appInstance, hostName);
             int storageNodeIndex = VespaModelUtil.getStorageNodeIndex(appInstance, hostName);
@@ -37,7 +36,7 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
     }
 
     public void setAllDummyNodesAsUp() {
-        for (ApplicationInstance<ServiceMonitorStatus> app : DummyInstanceLookupService.getApplications()) {
+        for (ApplicationInstance app : DummyInstanceLookupService.getApplications()) {
             Set<HostName> hosts = DummyInstanceLookupService.getContentHosts(app.reference());
             for (HostName host : hosts) {
                 ClusterId clusterName = VespaModelUtil.getContentClusterName(app, host);

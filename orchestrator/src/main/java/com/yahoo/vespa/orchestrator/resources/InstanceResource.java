@@ -9,7 +9,6 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -64,7 +63,7 @@ public class InstanceResource {
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).build());
         }
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance
+        ApplicationInstance applicationInstance
                 = instanceLookupService.findInstanceById(instanceId)
                 .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
 

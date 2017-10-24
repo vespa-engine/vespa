@@ -10,6 +10,7 @@
 using vespalib::nbostream;
 using std::make_unique;
 using std::make_shared;
+using document::BucketSpace;
 
 namespace documentapi {
 
@@ -270,36 +271,6 @@ RoutableFactories50::DestroyVisitorReplyFactory::doEncode(const DocumentReply &o
 }
 
 DocumentMessage::UP
-RoutableFactories50::DocBlockMessageFactory::doDecode(document::ByteBuffer &buf) const
-{
-    (void)buf;
-    return DocumentMessage::UP(); // TODO: remove message type
-}
-
-bool
-RoutableFactories50::DocBlockMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    (void)obj;
-    (void)buf;
-    return false;
-}
-
-DocumentReply::UP
-RoutableFactories50::DocBlockReplyFactory::doDecode(document::ByteBuffer &buf) const
-{
-    (void)buf;
-    return DocumentReply::UP(); // TODO: remove reply type
-}
-
-bool
-RoutableFactories50::DocBlockReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    (void)obj;
-    (void)buf;
-    return false;
-}
-
-DocumentMessage::UP
 RoutableFactories50::DocumentListMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
     DocumentMessage::UP ret(new DocumentListMessage());
@@ -437,19 +408,16 @@ RoutableFactories50::EmptyBucketsReplyFactory::doEncode(const DocumentReply &obj
 DocumentMessage::UP
 RoutableFactories50::GetBucketListMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    DocumentMessage::UP ret(new GetBucketListMessage());
-    GetBucketListMessage &msg = static_cast<GetBucketListMessage&>(*ret);
-
-    msg.setBucketId(document::BucketId(decodeLong(buf)));
-
-    return ret;
+    document::BucketId bucketId(decodeLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    return std::make_unique<GetBucketListMessage>(bucket);
 }
 
 bool
 RoutableFactories50::GetBucketListMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
     const GetBucketListMessage &msg = static_cast<const GetBucketListMessage&>(obj);
-    buf.putLong(msg.getBucketId().getRawId());
+    buf.putLong(msg.getBucket().getBucketId().getRawId());
     return true;
 }
 
@@ -869,7 +837,8 @@ RoutableFactories50::StatBucketMessageFactory::doDecode(document::ByteBuffer &bu
     DocumentMessage::UP ret(new StatBucketMessage());
     StatBucketMessage &msg = static_cast<StatBucketMessage&>(*ret);
 
-    msg.setBucketId(document::BucketId(decodeLong(buf)));
+    document::Bucket bucket(BucketSpace::placeHolder(), document::BucketId(decodeLong(buf)));
+    msg.setBucket(bucket);
     msg.setDocumentSelection(decodeString(buf));
 
     return ret;
@@ -880,7 +849,7 @@ RoutableFactories50::StatBucketMessageFactory::doEncode(const DocumentMessage &o
 {
     const StatBucketMessage &msg = static_cast<const StatBucketMessage&>(obj);
 
-    buf.putLong(msg.getBucketId().getRawId());
+    buf.putLong(msg.getBucket().getBucketId().getRawId());
     buf.putString(msg.getDocumentSelection());
 
     return true;

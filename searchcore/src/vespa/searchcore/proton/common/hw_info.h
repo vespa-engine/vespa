@@ -33,26 +33,39 @@ public:
         uint64_t sizeBytes() const { return _sizeBytes; }
     };
 
+    class Cpu {
+    private:
+        uint32_t _cores;
+    public:
+        Cpu(uint32_t cores_) : _cores(cores_) {}
+        uint32_t cores() const { return _cores; }
+    };
+
 private:
     Disk _disk;
     Memory _memory;
+    Cpu _cpu;
 
 public:
     HwInfo()
         : _disk(0, false, false),
-          _memory(0)
+          _memory(0),
+          _cpu(0)
     {
     }
 
     HwInfo(const Disk &disk_,
-           const Memory &memory_)
+           const Memory &memory_,
+           const Cpu &cpu_)
         : _disk(disk_),
-          _memory(memory_)
+          _memory(memory_),
+          _cpu(cpu_)
     {
     }
 
     const Disk &disk() const { return _disk; }
     const Memory &memory() const { return _memory; }
+    const Cpu &cpu() const { return _cpu; }
 };
 
 }

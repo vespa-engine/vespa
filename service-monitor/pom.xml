@@ -16,22 +16,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.reactivex</groupId>
-            <artifactId>rxjava</artifactId>
-            <version>1.0.7</version>
-        </dependency>
-        <dependency>
-            <groupId>io.reactivex</groupId>
-            <artifactId>rxscala_${scala.major-version}</artifactId>
-            <version>0.23.1</version>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>config</artifactId>
+            <artifactId>jdisc_core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -51,7 +43,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>application-model</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -64,17 +56,6 @@
             <artifactId>config-provisioning</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_${scala.major-version}</artifactId>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.scala-lang</groupId>
-                    <artifactId>scalap</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -106,32 +87,9 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>add-source</goal>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-		    <execution>
-		      <id>compile-scala-classes-for-use-in-java-classes</id>
-		      <phase>process-resources</phase>
-		      <goals>
-			<goal>compile</goal>
-		      </goals>
-		    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
-                <configuration>
-                    <Import-Package>sun.misc</Import-Package> <!-- needed by rx.internal.util.unsafe.UnsafeAccess -->
-                </configuration>
             </plugin>
 
             <plugin>

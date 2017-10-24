@@ -6,7 +6,7 @@
 #include <tests/spi/memfiletestutils.h>
 #include <vespa/persistence/spi/test.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 namespace memfile {
@@ -226,7 +226,7 @@ MemFileAutoRepairTest::testRepairFailureInMaintainEvictsBucketFromCache()
     prepareBucket(*this, *_file);
     corruptBodyBlock();
     spi::Result result(getPersistenceProvider().maintain(
-            makeBucket(_bucket), spi::HIGH));
+            makeSpiBucket(_bucket), spi::HIGH));
     // File being successfully repaired does not constitute a failure of
     // the maintain() call.
     CPPUNIT_ASSERT_EQUAL(spi::Result::NONE, result.getErrorCode());
@@ -243,7 +243,7 @@ MemFileAutoRepairTest::testZeroLengthFileIsDeleted()
 
     // No way to deal with zero-length files aside from deleting them.
     spi::Result result(getPersistenceProvider().maintain(
-            makeBucket(_bucket), spi::HIGH));
+            makeSpiBucket(_bucket), spi::HIGH));
     CPPUNIT_ASSERT_EQUAL(spi::Result::NONE, result.getErrorCode());
     CPPUNIT_ASSERT(!env()._cache.contains(_bucket));
     CPPUNIT_ASSERT(!vespalib::fileExists(_file->getPath()));
@@ -275,7 +275,7 @@ MemFileAutoRepairTest::assertDocumentIsSilentlyRemoved(
 {
     // Corrupted (truncated) slot should be transparently removed during
     // loadFile and it should be as if it was never there!
-    spi::Bucket spiBucket(makeBucket(bucket));
+    spi::Bucket spiBucket(makeSpiBucket(bucket));
     spi::GetResult res(doGet(spiBucket, docId, document::AllFields()));
     CPPUNIT_ASSERT_EQUAL(spi::Result::NONE, res.getErrorCode());
     CPPUNIT_ASSERT(!res.hasDocument());

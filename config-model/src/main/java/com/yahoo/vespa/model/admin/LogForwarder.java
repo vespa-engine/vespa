@@ -13,16 +13,21 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     public static class Config {
         public final String deploymentServer;
         public final String clientName;
+        public final String splunkHome;
 
-        private Config(String ds, String cn) {
+        private Config(String ds, String cn, String sh) {
             this.deploymentServer = ds;
             this.clientName = cn;
+            this.splunkHome = sh;
         }
         public Config withDeploymentServer(String ds) {
-            return new Config(ds, clientName);
+            return new Config(ds, clientName, splunkHome);
         }
         public Config withClientName(String cn) {
-            return new Config(deploymentServer, cn);
+            return new Config(deploymentServer, cn, splunkHome);
+        }
+        public Config withSplunkHome(String sh) {
+            return new Config(deploymentServer, clientName, sh);
         }
     }
 
@@ -40,7 +45,7 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     }
 
     public static Config cfg() {
-        return new Config(null, null);
+        return new Config(null, null, null);
     }
 
     /**
@@ -59,6 +64,9 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     public void getConfig(LogforwarderConfig.Builder builder) {
         builder.deploymentServer(config.deploymentServer);
         builder.clientName(config.clientName);
+        if (config.splunkHome != null) {
+            builder.splunkHome(config.splunkHome);
+        }
     }
 
 }

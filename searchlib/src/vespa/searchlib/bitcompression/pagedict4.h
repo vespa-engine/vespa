@@ -160,13 +160,6 @@ public:
 
     void
     flush();
-
-
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    void
-    checkPointRead(vespalib::nbostream &in);
 };
 
 
@@ -307,12 +300,6 @@ public:
     {
         _ssWriter.addOverflowCounts(word, counts, startOffset, wordNum);
     }
-
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    void
-    checkPointRead(vespalib::nbostream &in);
 };
 
 /*
@@ -447,12 +434,6 @@ public:
     {
         return _wordNum - 1;
     }
-
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    void
-    checkPointRead(vespalib::nbostream &in);
 };
 
 
@@ -534,12 +515,6 @@ public:
         {
             return _l7Word < word;
         }
-
-        friend vespalib::nbostream &
-        operator<<(vespalib::nbostream &stream, const L7Entry &l7Entry);
-
-        friend vespalib::nbostream &
-        operator>>(vespalib::nbostream &stream, L7Entry &l7Entry);
     };
 
     class OverflowRef
@@ -565,12 +540,6 @@ public:
         {
             return _wordNum < wordNum;
         }
-
-        friend vespalib::nbostream &
-        operator<<(vespalib::nbostream &stream, const OverflowRef &oref);
-
-        friend vespalib::nbostream &
-        operator>>(vespalib::nbostream &stream, OverflowRef &oref);
     };
 
     ComprBuffer _cb;
@@ -617,12 +586,6 @@ public:
     {
         return _ssd;
     }
-
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    void
-    checkPointRead(vespalib::nbostream &in);
 };
 
 
@@ -752,12 +715,6 @@ public:
     void
     readOverflowCounts(vespalib::string &word,
                        Counts &counts);
-
-    void
-    checkPointWrite(vespalib::nbostream &out);
-
-    void
-    checkPointRead(vespalib::nbostream &in);
 };
 
 } // namespace bitcompression

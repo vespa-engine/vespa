@@ -3,10 +3,14 @@
 #include "bucketmessages.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
+using document::BucketSpace;
+
 namespace storage {
 
-ReadBucketList::ReadBucketList(spi::PartitionId partition)
-    : api::InternalCommand(ID), _partition(partition)
+ReadBucketList::ReadBucketList(BucketSpace bucketSpace, spi::PartitionId partition)
+    : api::InternalCommand(ID),
+      _bucketSpace(bucketSpace),
+      _partition(partition)
 { }
 
 ReadBucketList::~ReadBucketList() { }
@@ -23,6 +27,7 @@ ReadBucketList::print(std::ostream& out, bool verbose, const std::string& indent
 
 ReadBucketListReply::ReadBucketListReply(const ReadBucketList& cmd)
     : api::InternalReply(ID, cmd),
+      _bucketSpace(cmd.getBucketSpace()),
       _partition(cmd.getPartition())
 { }
 
@@ -43,8 +48,9 @@ ReadBucketList::makeReply() {
     return std::make_unique<ReadBucketListReply>(*this);
 }
 
-ReadBucketInfo::ReadBucketInfo(const document::BucketId& bucketId)
-    : api::InternalCommand(ID), _bucketId(bucketId)
+ReadBucketInfo::ReadBucketInfo(const document::Bucket &bucket)
+    : api::InternalCommand(ID),
+      _bucket(bucket)
 { }
 
 ReadBucketInfo::~ReadBucketInfo() { }
@@ -52,7 +58,7 @@ ReadBucketInfo::~ReadBucketInfo() { }
 void
 ReadBucketInfo::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "ReadBucketInfo(" << _bucketId << ")";
+    out << "ReadBucketInfo(" << _bucket.getBucketId() << ")";
 
     if (verbose) {
         out << " : ";
@@ -63,14 +69,14 @@ ReadBucketInfo::print(std::ostream& out, bool verbose, const std::string& indent
 vespalib::string
 ReadBucketInfo::getSummary() const {
     vespalib::string s("ReadBucketInfo(");
-    s.append(_bucketId.toString());
+    s.append(_bucket.toString());
     s.append(')');
     return s;
 }
 
 ReadBucketInfoReply::ReadBucketInfoReply(const ReadBucketInfo& cmd)
     : api::InternalReply(ID, cmd),
-     _bucketId(cmd.getBucketId())
+     _bucket(cmd.getBucket())
 { }
 
 ReadBucketInfoReply::~ReadBucketInfoReply() { }
@@ -88,7 +94,7 @@ std::unique_ptr<api::StorageReply> ReadBucketInfo::makeReply() {
 }
 
 
-RepairBucketCommand::RepairBucketCommand(const document::BucketId& bucket, uint16_t disk)
+RepairBucketCommand::RepairBucketCommand(const document::Bucket &bucket, uint16_t disk)
     : api::InternalCommand(ID),
       _bucket(bucket),
       _disk(disk),
@@ -109,6 +115,13 @@ RepairBucketCommand::print(std::ostream& out, bool verbose, const std::string& i
     }
 }
     
+void
+RepairBucketCommand::setBucketId(const document::BucketId& id)
+{
+    document::Bucket newBucket(_bucket.getBucketSpace(), id);
+    _bucket = newBucket;
+}
+
 vespalib::string
 RepairBucketCommand::getSummary() const {
     vespalib::asciistream s;
@@ -121,7 +134,7 @@ RepairBucketCommand::getSummary() const {
 
 RepairBucketReply::RepairBucketReply(const RepairBucketCommand& cmd, const api::BucketInfo& bucketInfo)
     : api::InternalReply(ID, cmd),
-      _bucket(cmd.getBucketId()),
+      _bucket(cmd.getBucket()),
       _bucketInfo(bucketInfo),
       _disk(cmd.getDisk()),
       _altered(false)
@@ -144,7 +157,7 @@ RepairBucketCommand::makeReply() {
     return std::make_unique<RepairBucketReply>(*this);
 }
 
-BucketDiskMoveCommand::BucketDiskMoveCommand(const document::BucketId& bucket,
+BucketDiskMoveCommand::BucketDiskMoveCommand(const document::Bucket &bucket,
                                              uint16_t srcDisk, uint16_t dstDisk)
     : api::InternalCommand(ID),
       _bucket(bucket),
@@ -157,8 +170,15 @@ BucketDiskMoveCommand::BucketDiskMoveCommand(const document::BucketId& bucket,
 BucketDiskMoveCommand::~BucketDiskMoveCommand() { }
 
 void
+BucketDiskMoveCommand::setBucketId(const document::BucketId& id)
+{
+    document::Bucket newBucket(_bucket.getBucketSpace(), id);
+    _bucket = newBucket;
+}
+
+void
 BucketDiskMoveCommand::print(std::ostream& out, bool, const std::string&) const {
-    out << "BucketDiskMoveCommand(" << _bucket << ", source " << _srcDisk
+    out << "BucketDiskMoveCommand(" << _bucket.getBucketId() << ", source " << _srcDisk
         << ", target " << _dstDisk << ")";
 }
 
@@ -167,7 +187,7 @@ BucketDiskMoveReply::BucketDiskMoveReply(const BucketDiskMoveCommand& cmd,
                                         uint32_t sourceFileSize,
                                         uint32_t destinationFileSize)
     : api::InternalReply(ID, cmd),
-      _bucket(cmd.getBucketId()),
+      _bucket(cmd.getBucket()),
       _bucketInfo(bucketInfo),
       _fileSizeOnSrc(sourceFileSize),
       _fileSizeOnDst(destinationFileSize),
@@ -180,7 +200,7 @@ BucketDiskMoveReply::~BucketDiskMoveReply() { }
 void
 BucketDiskMoveReply::print(std::ostream& out, bool, const std::string&) const
 {
-    out << "BucketDiskMoveReply(" << _bucket << ", source " << _srcDisk
+    out << "BucketDiskMoveReply(" << _bucket.getBucketId() << ", source " << _srcDisk
         << ", target " << _dstDisk << ", " << _bucketInfo << ", "
         << getResult() << ")";
 }
@@ -192,7 +212,7 @@ BucketDiskMoveCommand::makeReply()
 }
 
 
-InternalBucketJoinCommand::InternalBucketJoinCommand(const document::BucketId& bucket,
+InternalBucketJoinCommand::InternalBucketJoinCommand(const document::Bucket &bucket,
                                                      uint16_t keepOnDisk, uint16_t joinFromDisk)
     : api::InternalCommand(ID),
       _bucket(bucket),
@@ -218,7 +238,7 @@ InternalBucketJoinCommand::print(std::ostream& out, bool verbose, const std::str
 InternalBucketJoinReply::InternalBucketJoinReply(const InternalBucketJoinCommand& cmd,
                                                  const api::BucketInfo& info)
     : api::InternalReply(ID, cmd),
-      _bucket(cmd.getBucketId()),
+      _bucket(cmd.getBucket()),
       _bucketInfo(info)
 { }
 

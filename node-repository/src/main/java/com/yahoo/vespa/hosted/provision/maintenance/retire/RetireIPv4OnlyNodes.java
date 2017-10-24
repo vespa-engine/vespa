@@ -35,6 +35,14 @@ public class RetireIPv4OnlyNodes implements RetirementPolicy {
                 return zone.environment() == Environment.prod;
             } else if (zone.region().equals(RegionName.from("us-central-1"))) {
                 return zone.environment() == Environment.prod;
+            } else if (zone.region().equals(RegionName.from("ap-southeast-1"))) {
+                return zone.environment() == Environment.prod;
+            } else if (zone.region().equals(RegionName.from("ap-northeast-1"))) {
+                return zone.environment() == Environment.prod;
+            } else if (zone.region().equals(RegionName.from("ap-northeast-2"))) {
+                return zone.environment() == Environment.prod;
+            } else if (zone.region().equals(RegionName.from("eu-west-1"))) {
+                return zone.environment() == Environment.prod;
             }
         }
 

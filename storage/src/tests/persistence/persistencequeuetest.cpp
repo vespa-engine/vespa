@@ -7,8 +7,11 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
+#include <vespa/document/test/make_document_bucket.h>
 
 LOG_SETUP(".persistencequeuetest");
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -53,7 +56,7 @@ PersistenceQueueTest::createPut(uint64_t bucket, uint64_t docIdx)
     document::Document::SP doc(
             _node->getTestDocMan().createDocument("foobar", id.str()));
     std::shared_ptr<api::PutCommand> cmd(
-            new api::PutCommand(document::BucketId(16, bucket), doc, 1234));
+            new api::PutCommand(makeDocumentBucket(document::BucketId(16, bucket)), doc, 1234));
     cmd->setAddress(api::StorageMessageAddress(
             "storage", lib::NodeType::STORAGE, 0));
     return cmd;

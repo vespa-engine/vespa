@@ -130,6 +130,17 @@
       <scope>provided</scope>
     </dependency>
     <!-- end WARNING -->
+    <!-- Athenz -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <properties>
     <!-- These versions must be the ones used by the current jersey version (see vespa_jersey2/target/dependency).
@@ -168,7 +179,6 @@
                 container-search-and-docproc-jar-with-dependencies.jar,
                 docprocs-jar-with-dependencies.jar,
                 jdisc_http_service-jar-with-dependencies.jar,
-                persistence-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 simplemetrics-jar-with-dependencies.jar,
                 defaults-jar-with-dependencies.jar,

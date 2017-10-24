@@ -102,8 +102,15 @@ public class DeploymentJobs {
     }
 
     /** Returns whether any job is currently in progress */
-    public boolean inProgress() {
-        return status.values().stream().anyMatch(JobStatus::inProgress);
+    public boolean isRunning(Instant timeoutLimit) {
+        return status.values().stream().anyMatch(job -> job.isRunning(timeoutLimit));
+    }
+
+    /** Returns whether the given job type is currently running and was started after timeoutLimit */
+    public boolean isRunning(JobType jobType, Instant timeoutLimit) {
+        JobStatus jobStatus = status.get(jobType);
+        if ( jobStatus == null) return false;
+        return jobStatus.isRunning(timeoutLimit);
     }
 
     /** Returns whether change can be deployed to the given environment */
@@ -119,14 +126,11 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
-    /** Returns whether change has been deployed completely */
-    public boolean isDeployed(Optional<Change> change) {
-        if (!change.isPresent()) {
-            return true;
-        }
+    /** Returns whether the given change has been deployed completely */
+    public boolean isDeployed(Change change) {
         return status.values().stream()
                 .filter(status -> status.type().isProduction())
-                .allMatch(status -> isSuccessful(change.get(), status.type()));
+                .allMatch(status -> isSuccessful(change, status.type()));
     }
 
     /** Returns whether job has completed successfully */

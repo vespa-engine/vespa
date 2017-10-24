@@ -7,7 +7,7 @@
 
 ## Create dev environment
 
-#### 1. Change working directory to <vespa-source>/vagrant
+#### 1. Change working directory to &lt;vespa-source&gt;/vagrant
 
     cd <vespa-source>/vagrant
 
@@ -50,7 +50,7 @@ Open a terminal inside the virtual CentOS desktop and run:
     clion
 
 #### 3. Open the Vespa Project
-Go to *File* -> *Open* and choose <vespa-source>/CMakeLists.txt.
+Go to *File* -> *Open* and choose &lt;vespa-source>&gt;/CMakeLists.txt.
 
 #### 4. Set compiler threads
 Go to *File* -> *Settings* -> *Build, Execution, Deployment* -> *CMake*.

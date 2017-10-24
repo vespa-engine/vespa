@@ -118,19 +118,19 @@ public class IdentifierTest {
     }
 
     @Test
-    public void athens_parent_domain_is_without_name_suffix() {
-        assertEquals(new AthensDomain("yby.john"), new AthensDomain("yby.john.myapp").getParent());
+    public void athenz_parent_domain_is_without_name_suffix() {
+        assertEquals(new AthenzDomain("yby.john"), new AthenzDomain("yby.john.myapp").getParent());
     }
 
     @Test
-    public void athens_domain_name_is_last_suffix() {
-        assertEquals("myapp", new AthensDomain("yby.john.myapp").getName());
+    public void athenz_domain_name_is_last_suffix() {
+        assertEquals("myapp", new AthenzDomain("yby.john.myapp").getNameSuffix());
     }
 
     @Test
     public void domain_without_dot_is_toplevel() {
-        assertTrue(new AthensDomain("toplevel").isTopLevelDomain());
-        assertFalse(new AthensDomain("not.toplevel").isTopLevelDomain());
+        assertTrue(new AthenzDomain("toplevel").isTopLevelDomain());
+        assertFalse(new AthenzDomain("not.toplevel").isTopLevelDomain());
     }
 
     @Test

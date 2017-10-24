@@ -67,6 +67,7 @@ public:
     static SignalHandler HUP;
     static SignalHandler INT;
     static SignalHandler TERM;
+    static SignalHandler CHLD;
     static SignalHandler PIPE;
     static SignalHandler SEGV;
     static SignalHandler ABRT;

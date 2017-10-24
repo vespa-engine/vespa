@@ -20,6 +20,7 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -57,7 +58,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
                 new MemoryTenantApplications(),
                 tenantFileSystemDirs, new HostRegistry<>(),
                 tenantName);
-        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, new MemoryTenantApplications(), clock, 5);
+        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5);
     }
 
     @Test

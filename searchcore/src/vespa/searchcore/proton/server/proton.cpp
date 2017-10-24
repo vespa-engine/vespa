@@ -32,7 +32,6 @@
 #include <vespa/searchlib/expression/forcelink.hpp>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".proton.server.proton");
 
 using document::DocumentTypeRepo;
@@ -86,12 +85,10 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 }
 
 size_t
-deriveBackgroundThreads(const ProtonConfig & proton) {
-    size_t threads = std::thread::hardware_concurrency();
-    if (proton.background.threads != 0) {
-        threads = proton.background.threads;
-    }
-    threads = std::max(threads, size_t(proton.summary.log.numthreads));
+deriveCompactionCompressionThreads(const ProtonConfig &proton,
+                                   const HwInfo::Cpu &cpuInfo) {
+    size_t scaledCores = (size_t)std::ceil(cpuInfo.cores() * proton.feeding.concurrency);
+    size_t threads = std::max(scaledCores, size_t(proton.summary.log.numthreads));
 
     // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
     // but we will not be cheap and give #documentsdbs * 2
@@ -239,13 +236,15 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const auto &hwDiskCfg = protonConfig.hwinfo.disk;
     const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
+    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
     // TODO: Forward disk size when performance impact of disk usage sampling is verified
     HwInfoSampler::Config samplerCfg(0,
                                      hwDiskCfg.writespeed,
                                      hwDiskCfg.slowwritespeedlimit,
                                      hwDiskCfg.samplewritesize,
                                      hwDiskCfg.shared,
-                                     hwMemoryCfg.size);
+                                     hwMemoryCfg.size,
+                                     hwCpuCfg.cores);
     _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir, samplerCfg);
     _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);
@@ -301,7 +300,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::string fileConfigId;
     _warmupExecutor.reset(new vespalib::ThreadStackExecutor(4, 128*1024));
 
-    const size_t summaryThreads = deriveBackgroundThreads(protonConfig);
+    const size_t summaryThreads = deriveCompactionCompressionThreads(protonConfig, _hwInfo.cpu());
     _summaryExecutor.reset(new vespalib::BlockingThreadStackExecutor(summaryThreads, 128*1024, summaryThreads*16));
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
@@ -436,7 +435,7 @@ Proton::~Proton()
         _summaryExecutor->sync();
     }
     LOG(debug, "Shutting down fs4 interface");
-    if (_metricsEngine) {
+    if (_metricsEngine && _fs4Server) {
         _metricsEngine->removeExternalMetrics(_fs4Server->getMetrics());
     }
     if (_fs4Server) {

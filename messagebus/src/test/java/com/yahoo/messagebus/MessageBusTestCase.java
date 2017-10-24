@@ -56,18 +56,18 @@ public class MessageBusTestCase {
         Slobrok slobrok = new Slobrok();
         List<TestServer> servers = new ArrayList<>();
 
-        TestServer srcServer = new TestServer("feeder", null, slobrok, null, null);
+        TestServer srcServer = new TestServer("feeder", null, slobrok, null);
         servers.add(srcServer);
         SourceSession src = servers.get(0).mb.createSourceSession(new Receptor());
 
         List<IntermediateSession> sessions = new ArrayList<>();
         for (int i = 0; i < 10; ++i) {
-            TestServer server = new TestServer("intermediate/" + i, null, slobrok, null, null);
+            TestServer server = new TestServer("intermediate/" + i, null, slobrok, null);
             servers.add(server);
             sessions.add(server.mb.createIntermediateSession("session", true, new Receptor(), new Receptor()));
         }
 
-        TestServer dstServer = new TestServer("destination", null, slobrok, null, null);
+        TestServer dstServer = new TestServer("destination", null, slobrok, null);
         DestinationSession dst = dstServer.mb.createDestinationSession("session", true, new Receptor());
 
         assertTrue(srcServer.waitSlobrok("intermediate/*/session", sessions.size()));

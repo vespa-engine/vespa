@@ -5,9 +5,10 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -45,7 +46,7 @@ public class VersionStatus {
 
     private final ImmutableList<VespaVersion> versions;
     
-    /** Create a version status. DO NOT USE: Public for testing only */
+    /** Create a version status. DO NOT USE: Public for testing and serialization only */
     public VersionStatus(List<VespaVersion> versions) {
         this.versions = ImmutableList.copyOf(versions);
     }
@@ -132,7 +133,7 @@ public class VersionStatus {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        for (Application application : applications) {
+        for (Application application : ApplicationList.from(applications).notPullRequest().asList()) {
             DeploymentJobs jobs = application.deploymentJobs();
 
             // Note that each version deployed on this application exists
@@ -174,11 +175,30 @@ public class VersionStatus {
                                               Collection<String> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
+        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
+        VespaVersion.Confidence confidence;
+        // Always compute confidence for system version
+        if (isSystemVersion) {
+            confidence = VespaVersion.confidenceFrom(statistics, controller, releasedAt);
+        } else {
+            // Keep existing confidence for non-system versions if already computed
+            confidence = confidenceFor(statistics.version(), controller)
+                    .orElse(VespaVersion.confidenceFrom(statistics, controller, releasedAt));
+        }
         return new VespaVersion(statistics,
-                                gitSha.sha, Instant.ofEpochMilli(gitSha.commit.author.date.getTime()),
+                                gitSha.sha, releasedAt,
                                 isSystemVersion,
                                 configServerHostnames,
-                                controller);
+                                confidence
+        );
+    }
+
+    /** Returns the current confidence for the given version */
+    private static Optional<VespaVersion.Confidence> confidenceFor(Version version, Controller controller) {
+        return controller.versionStatus().versions().stream()
+                .filter(v -> version.equals(v.versionNumber()))
+                .map(VespaVersion::confidence)
+                .findFirst();
     }
 
 }

@@ -17,15 +17,6 @@ namespace search {
 namespace fakedata {
 
 
-class CheckPointCallback
-{
-public:
-    CheckPointCallback() {}
-    virtual ~CheckPointCallback() {}
-
-    virtual void checkPoint() = 0;
-};
-
 /*
  * General representation of a faked word, containing all features used
  * by any of the candidate posting list formats.
@@ -254,23 +245,17 @@ public:
     bool validate(search::queryeval::SearchIterator *iterator, bool verbose) const;
 
     bool
-    validate(std::shared_ptr<search::diskindex::FieldReader> &fieldReader,
+    validate(search::diskindex::FieldReader &fieldReader,
              uint32_t wordNum,
              const fef::TermFieldMatchDataArray &matchData,
-             bool verbose,
-             uint32_t &checkPointCheck,
-             uint32_t checkPointInterval,
-             CheckPointCallback *const checkPointCallback) const;
+             bool verbose) const;
 
     void validate(const std::vector<uint32_t> &docIds) const;
     void validate(const BitVector &bv) const;
 
     bool
-    dump(std::shared_ptr<search::diskindex::FieldWriter> &fieldWriter,
-         bool verbose,
-         uint32_t &checkPointCheck,
-         uint32_t checkPointInterval,
-         CheckPointCallback *checkPointCallback) const;
+    dump(search::diskindex::FieldWriter &fieldWriter,
+         bool verbose) const;
 
     const std::string &getName() const { return _name; }
     uint32_t getDocIdLimit() const { return _docIdLimit; }

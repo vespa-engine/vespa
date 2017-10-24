@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.util;
 
 import javax.ws.rs.core.Response;
+import java.util.Optional;
 
 @SuppressWarnings("serial")
 public class HttpException extends RuntimeException {
@@ -12,17 +13,33 @@ public class HttpException extends RuntimeException {
         }
     }
 
-    static void throwOnFailure(int statusCode, String message) {
+    /**
+     * Returns empty on success.
+     * Returns an exception if the error is retriable.
+     * Throws an exception on a non-retriable error, like 404 Not Found.
+     */
+    static Optional<HttpException> handleStatusCode(int statusCode, String message) {
         Response.Status status = Response.Status.fromStatusCode(statusCode);
         if (status == null) {
-            throw new HttpException(statusCode, message);
+            return Optional.of(new HttpException(statusCode, message));
         }
 
-        if (status == Response.Status.NOT_FOUND) {
-            throw new NotFoundException(message);
-        } else if (status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-            throw new HttpException(status, message);
+        switch (status.getFamily()) {
+            case SUCCESSFUL: return Optional.empty();
+            case CLIENT_ERROR:
+                switch (status) {
+                    case NOT_FOUND:
+                        throw new NotFoundException(message);
+                    case CONFLICT:
+                        // A response body is assumed to be present, and
+                        // will later be interpreted as an error.
+                        return Optional.empty();
+                }
+                throw new HttpException(statusCode, message);
         }
+
+        // Other errors like server-side errors are assumed to be retryable.
+        return Optional.of(new HttpException(status, message));
     }
 
     private HttpException(int statusCode, String message) {

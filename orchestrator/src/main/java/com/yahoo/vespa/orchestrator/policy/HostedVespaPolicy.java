@@ -14,7 +14,6 @@ import com.yahoo.vespa.orchestrator.model.StorageNode;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.logging.Logger;
 
@@ -107,7 +106,7 @@ public class HostedVespaPolicy implements Policy {
 
     // TODO: Remove later - currently used for backward compatibility testing
     @Override
-    public void grantSuspensionRequest(ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+    public void grantSuspensionRequest(ApplicationInstance applicationInstance,
                                        HostName hostName,
                                        MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance);
@@ -119,7 +118,7 @@ public class HostedVespaPolicy implements Policy {
     // TODO: Remove later - currently used for backward compatibility testing
     @Override
     public void releaseSuspensionGrant(
-            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            ApplicationInstance applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostName);

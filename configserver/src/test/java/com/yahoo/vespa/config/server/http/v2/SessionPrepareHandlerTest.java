@@ -77,7 +77,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void setupRepo() throws Exception {
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
-        localRepo = new LocalSessionRepo(applicationRepo, Clock.systemUTC());
+        localRepo = new LocalSessionRepo(Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
@@ -238,8 +238,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
         // Need different repos for 'default' tenant as opposed to the 'test' tenant
-        TenantApplications applicationRepoDefault = new MemoryTenantApplications();
-        LocalSessionRepo localRepoDefault = new LocalSessionRepo(applicationRepoDefault, Clock.systemUTC());
+        LocalSessionRepo localRepoDefault = new LocalSessionRepo(Clock.systemUTC());
         final TenantName tenantName = TenantName.defaultName();
         addTenant(tenantName, localRepoDefault, new RemoteSessionRepo(), new MockSessionFactory());
         addTestTenant();

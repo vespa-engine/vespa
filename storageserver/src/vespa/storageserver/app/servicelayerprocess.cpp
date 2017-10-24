@@ -17,7 +17,7 @@ void
 ServiceLayerProcess::shutdown()
 {
     Process::shutdown();
-    _node.reset(0);
+    _node.reset();
 }
 
 void
@@ -25,7 +25,7 @@ ServiceLayerProcess::createNode()
 {
     _externalVisitors["searchvisitor"].reset(new SearchVisitorFactory(_configUri));
     setupProvider();
-    _node.reset(new ServiceLayerNode(_configUri, _context, *this, getProvider(), _externalVisitors));
+    _node = std::make_unique<ServiceLayerNode>(_configUri, _context, *this, getProvider(), _externalVisitors);
     _node->init();
 }
 

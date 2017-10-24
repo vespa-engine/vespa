@@ -8,8 +8,6 @@
 
 class FastOS_FileInterface;
 
-namespace vespalib { class nbostream; }
-
 namespace search {
 
 namespace common { class FileHeaderContext; }
@@ -36,19 +34,6 @@ public:
      * Read document id and features.
      */
     virtual void readDocIdAndFeatures(DocIdAndFeatures &features) = 0;
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
     /**
      * Read counts for a word.
@@ -133,19 +118,6 @@ public:
      * prepare for next word, but not for application crash.
      */
     virtual void flushWord() = 0;
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
     /**
      * Open posting list file for sequential write.

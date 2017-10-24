@@ -25,10 +25,9 @@ public class DocumentId extends Identifiable implements Serializable {
     }
 
     /**
-     * Constructor. This constructor is used if the DocumentId is used outside of a Document object, but we have the
-     * URI.
+     * Creates a document id based on the given document id URI string.
      *
-     * @param id Associate with this URI, storage address etc. is not applicable.
+     * The document id string can only contain text characters.
      */
     public DocumentId(String id) {
         if (id == null) {
@@ -41,6 +40,17 @@ public class DocumentId extends Identifiable implements Serializable {
     public DocumentId(IdString id) {
         this.id = id;
         globalId = null;
+    }
+
+    /**
+     * Creates a document id based on a serialized document id URI string.
+     *
+     * The document id string is not allowed to contain 0x0 byte characters.
+     * Otherwise all characters are allowed to ensure that document ids
+     * already stored can be de-serialized.
+     */
+    public static DocumentId createFromSerialized(String id) {
+        return new DocumentId(IdString.createFromSerialized(id));
     }
 
     @Override
@@ -95,7 +105,7 @@ public class DocumentId extends Identifiable implements Serializable {
         if (data instanceof DocumentReader) {
             id = ((DocumentReader)data).readDocumentId().getScheme();
         } else {
-            id = IdString.createIdString(data.getString(null));
+            id = IdString.createFromSerialized(data.getString(null));
         }
     }
 

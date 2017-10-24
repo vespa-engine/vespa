@@ -15,7 +15,7 @@ import java.util.TreeMap;
 /**
  * Parameters for creating or opening a visitor session
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class VisitorParameters extends Parameters {
 

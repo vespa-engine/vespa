@@ -400,12 +400,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private void failAllVersionDependentTasks() {
         tasksPendingStateRecompute.forEach(task -> {
-            task.handleLeadershipLost();
+            task.handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
             task.notifyCompleted();
         });
         tasksPendingStateRecompute.clear();
         taskCompletionQueue.forEach(task -> {
-            task.getTask().handleLeadershipLost();
+            task.getTask().handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
             task.getTask().notifyCompleted();
         });
         taskCompletionQueue.clear();
@@ -550,7 +550,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isRunning()) { return; }
             if (masterElectionHandler.isMaster()) {
                 didWork |= broadcastClusterStateToEligibleNodes();
-                didWork |= systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
+                systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
             }
 
             if ( ! isRunning()) { return; }
@@ -665,8 +665,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             final RemoteClusterControllerTask task = remoteTasks.poll();
             log.finest(() -> String.format("Processing remote task of type '%s'", task.getClass().getName()));
             task.doRemoteFleetControllerTask(context);
-            // We cannot introduce a version barrier for tasks when we're not the master (and therefore will not publish new versions).
-            if (!isMaster() || !task.hasVersionAckDependency()) {
+            if (taskMayBeCompletedImmediately(task)) {
                 log.finest(() -> String.format("Done processing remote task of type '%s'", task.getClass().getName()));
                 task.notifyCompleted();
             } else {
@@ -676,6 +675,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             return true;
         }
         return false;
+    }
+
+    private boolean taskMayBeCompletedImmediately(RemoteClusterControllerTask task) {
+        // We cannot introduce a version barrier for tasks when we're not the master (and therefore will not publish new versions).
+        return (!task.hasVersionAckDependency() || task.isFailed() || !masterElectionHandler.isMaster());
     }
 
     private RemoteClusterControllerTask.Context createRemoteTaskProcessingContext() {
@@ -691,11 +695,25 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean completeSatisfiedVersionDependentTasks() {
         int publishedVersion = systemStateBroadcaster.lastClusterStateVersionInSync();
         long queueSizeBefore = taskCompletionQueue.size();
+        // Note: although version monotonicity of tasks in queue always should hold,
+        // deadline monotonicity is not guaranteed to do so due to reconfigs of task
+        // timeout durations. Means that tasks enqueued with shorter deadline duration
+        // might be observed as having at least the same timeout as tasks enqueued during
+        // a previous configuration. Current clock implementation is also susceptible to
+        // skewing.
+        final long now = timer.getCurrentTimeInMillis();
         while (!taskCompletionQueue.isEmpty()) {
             VersionDependentTaskCompletion taskCompletion = taskCompletionQueue.peek();
+            // TODO expose and use monotonic clock instead of system clock
             if (publishedVersion >= taskCompletion.getMinimumVersion()) {
                 log.fine(() -> String.format("Deferred task of type '%s' has minimum version %d, published is %d; completing",
                         taskCompletion.getTask().getClass().getName(), taskCompletion.getMinimumVersion(), publishedVersion));
+                taskCompletion.getTask().notifyCompleted();
+                taskCompletionQueue.remove();
+            } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
+                log.fine(() -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure",
+                        taskCompletion.getTask().getClass().getName()));
+                taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED);
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
             } else {
@@ -792,10 +810,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      * has been ACKed by all distributors in the system, those tasks will be marked as completed.
      */
     private void scheduleVersionDependentTasksForFutureCompletion(int completeAtVersion) {
+        // TODO expose and use monotonic clock instead of system clock
+        final long deadlineTimePointMs = timer.getCurrentTimeInMillis() + options.getMaxDeferredTaskVersionWaitTime().toMillis();
         for (RemoteClusterControllerTask task : tasksPendingStateRecompute) {
             log.finest(() -> String.format("Adding task of type '%s' to be completed at version %d",
                     task.getClass().getName(), completeAtVersion));
-            taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task));
+            taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task, deadlineTimePointMs));
         }
         tasksPendingStateRecompute.clear();
     }

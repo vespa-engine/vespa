@@ -1,31 +1,43 @@
 {
-  "jobs":[
+  "jobs": [
     {
-      "name":"DelayedDeployer"
+      "name": "DelayedDeployer"
     },
     {
-      "name":"Upgrader"
+      "name": "BlockedChangeDeployer"
     },
     {
-      "name":"FailureRedeployer"
+      "name": "Upgrader"
     },
     {
-      "name":"DeploymentExpirer"
+      "name": "FailureRedeployer"
     },
     {
-      "name":"MetricsReporter"
+      "name": "VersionStatusUpdater"
     },
     {
-      "name":"VersionStatusUpdater"
+      "name": "DeploymentIssueReporter"
     },
     {
-      "name":"DeploymentIssueReporter"
+      "name": "DeploymentMetricsMaintainer"
     },
     {
-      "name":"OutstandingChangeDeployer"
+      "name": "OutstandingChangeDeployer"
+    },
+    {
+      "name": "ClusterUtilizationMaintainer"
+    },
+    {
+      "name": "ClusterInfoMaintainer"
+    },
+    {
+      "name": "DeploymentExpirer"
+    },
+    {
+      "name": "MetricsReporter"
     }
   ],
-  "inactive":[
+  "inactive": [
     "DeploymentExpirer"
   ]
 }

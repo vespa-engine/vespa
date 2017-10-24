@@ -5,8 +5,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.yahoo.vespa.config.server.NotFoundException;
@@ -73,6 +75,10 @@ public final class ApplicationMapper {
      */
     public int numApplications() {
         return requestHandlers.size();
+    }
+
+    public Set<ApplicationId> listApplicationIds() {
+        return Collections.unmodifiableSet(requestHandlers.keySet());
     }
 
 }

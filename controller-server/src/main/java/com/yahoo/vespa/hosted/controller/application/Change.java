@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -13,6 +15,9 @@ import java.util.Optional;
  */
 public abstract class Change {
 
+    /** Returns true if this change is blocked by the given spec at the given instant */
+    public abstract boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant);
+    
     /** A change to the application package revision of an application */
     public static class ApplicationChange extends Change {
         
@@ -25,6 +30,11 @@ public abstract class Change {
         
         /** The revision this changes to, or empty if not known yet */
         public Optional<ApplicationRevision> revision() { return revision; }
+
+        @Override
+        public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
+            return  ! deploymentSpec.canChangeRevisionAt(instant);
+        }
 
         @Override
         public int hashCode() { return revision.hashCode(); }
@@ -69,6 +79,11 @@ public abstract class Change {
 
         /** The Vespa version this changes to */
         public Version version() { return version; }
+
+        @Override
+        public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
+            return ! deploymentSpec.canUpgradeAt(instant);
+        }
 
         @Override
         public int hashCode() { return version.hashCode(); }

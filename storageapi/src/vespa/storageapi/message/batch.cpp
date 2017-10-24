@@ -6,6 +6,7 @@
 #include <algorithm>
 
 using namespace storage::api;
+using document::BucketSpace;
 
 IMPLEMENT_COMMAND(BatchPutRemoveCommand, BatchPutRemoveReply)
 IMPLEMENT_REPLY(BatchPutRemoveReply)
@@ -38,8 +39,8 @@ BatchPutRemoveCommand::RemoveOperation::RemoveOperation(const document::Document
 {
 }
 
-BatchPutRemoveCommand::BatchPutRemoveCommand(const document::BucketId& bucketId)
-    : BucketInfoCommand(MessageType::BATCHPUTREMOVE, bucketId),
+BatchPutRemoveCommand::BatchPutRemoveCommand(const document::Bucket &bucket)
+    : BucketInfoCommand(MessageType::BATCHPUTREMOVE, bucket),
       _approxSize(0)
 {
 }
@@ -135,10 +136,11 @@ BatchPutRemoveReply::print(std::ostream& out, bool verbose,
 
 BatchDocumentUpdateCommand::BatchDocumentUpdateCommand(const UpdateList& updates)
     : StorageCommand(MessageType::BATCHDOCUMENTUPDATE),
-      _updates(updates)
+      _updates(updates),
+      _bucket(BucketSpace::placeHolder(), document::BucketId())
 {
     document::BucketIdFactory factory;
-    _bucketId = factory.getBucketId(updates[0]->getId());
+    _bucket = document::Bucket(BucketSpace::placeHolder(), factory.getBucketId(updates[0]->getId()));
 }
 
 void

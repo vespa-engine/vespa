@@ -3,12 +3,16 @@ package com.yahoo.document;
 
 import com.yahoo.document.*;
 import com.yahoo.document.idstring.*;
+import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.math.BigInteger;
 
 import java.io.*;
 import java.util.regex.Pattern;
 import java.util.Arrays;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
 
 public class DocumentIdTestCase extends junit.framework.TestCase {
     DocumentTypeManager manager = new DocumentTypeManager();
@@ -289,6 +293,49 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
 
         //Arrays.hashCode() works better...
         assertEquals(Arrays.hashCode(docId0Gid), Arrays.hashCode(docId0CopyGid));
+    }
+
+    public void testDocumentIdCanOnlyContainTextCharacters() throws UnsupportedEncodingException {
+        assertExceptionWhenConstructing(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}, // "id:a:b::0x0c"
+                "illegal code point 0x0");
+        assertExceptionWhenConstructing(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}, // "id:a:b::0x7c"
+                "illegal code point 0x7");
+    }
+
+    private void assertExceptionWhenConstructing(byte[] rawId,
+                                                 String exceptionMsg) throws UnsupportedEncodingException {
+        String strId = new String(rawId, "UTF-8");
+        try {
+            new DocumentId(strId);
+            fail("Expected an IllegalArgumentException to be thrown");
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage(), containsString(exceptionMsg));
+        }
+    }
+
+    public void testSerializedDocumentIdCanContainNonTextCharacter() throws UnsupportedEncodingException {
+        String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}); // "id:a:b::0x7c"
+        DocumentId docId = DocumentId.createFromSerialized(strId);
+        {
+            assertEquals(strId, docId.toString());
+        }
+        {
+            BufferSerializer buf = new BufferSerializer();
+            docId.serialize(buf);
+            buf.flip();
+            DocumentId deserializedId = new DocumentId(buf);
+            assertEquals(strId, deserializedId.toString());
+        }
+    }
+
+    public void testSerializedDocumentIdCannotContainZeroByte() throws UnsupportedEncodingException {
+        String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}); // "id:a:b::0x0c"
+        try {
+            DocumentId.createFromSerialized(strId);
+            fail("Expected an IllegalArgumentException to be thrown");
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage(), containsString("illegal zero byte code point"));
+        }
     }
 
 }

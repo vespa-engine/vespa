@@ -50,8 +50,6 @@ class PageDict4FileSeqRead : public index::DictionaryFileSeqRead
 
     uint64_t _wordNum;
 
-    std::unique_ptr<vespalib::nbostream> _checkPointData;
-
     void
     readSSHeader();
 
@@ -84,21 +82,6 @@ public:
      * Close dictionary file.
      */
     virtual bool close() override;
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out) override;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void
-    checkPointRead(vespalib::nbostream &in) override;
 
     /*
      * Get current parameters.
@@ -141,8 +124,6 @@ class PageDict4FileSeqWrite : public index::DictionaryFileSeqWrite
     uint32_t _pHeaderLen;  // Length of header for page file (bytes)
     uint32_t _spHeaderLen; // Length of header for sparse page file (bytes)
     uint32_t _ssHeaderLen; // Length of header for sparse sparse file (bytes)
-
-    std::unique_ptr<vespalib::nbostream> _checkPointData;
 
     void
     writeIndexNames(vespalib::GenericHeader &header);
@@ -195,21 +176,6 @@ public:
      */
     virtual bool
     close() override;
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out) override;
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void
-    checkPointRead(vespalib::nbostream &in) override;
 
     /*
      * Set parameters.

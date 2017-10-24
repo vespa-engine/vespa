@@ -75,17 +75,6 @@ DocumentType::~DocumentType()
 DocumentType &
 DocumentType::addFieldSet(const vespalib::string & name, const FieldSet::Fields & fields)
 {
-    for (FieldSet::Fields::const_iterator it(fields.begin()), mt(fields.end()); it != mt; it++) {
-        if ( ! _fields->hasField(*it) ) {
-            FieldPath fieldPath;
-            try {
-                _fields->buildFieldPath(fieldPath, *it);
-            } catch (FieldNotFoundException & e) {
-                throw IllegalArgumentException("Fieldset '" + name + "': No field with name '" + *it +
-                                               "' in document type '" + getName() + "'.", VESPA_STRLOC);
-            }
-        }
-    }
     _fieldSets[name] = FieldSet(name, fields);
     return *this;
 }

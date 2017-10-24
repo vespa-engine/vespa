@@ -16,6 +16,8 @@ install(CODE "execute_process(COMMAND mkdir -p \$ENV{DESTDIR}/\${CMAKE_INSTALL_P
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/config-model-fat.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/config-model-fat.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/configserver-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/configserver.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/orchestrator-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/orchestrator.jar)")
+install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/service-monitor-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/service-monitor.jar)")
+install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/application-model-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/application-model.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/node-repository-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/node-repository.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/zkfacade-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/zkfacade.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/lib/jars/config-models)")

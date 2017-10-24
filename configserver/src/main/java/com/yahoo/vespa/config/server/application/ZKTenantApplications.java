@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -48,7 +50,6 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         this.applicationsPath = applicationsPath;
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
-        rewriteApplicationIds();
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
@@ -62,43 +63,12 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         }
     }
 
-    private void rewriteApplicationIds() {
-        try {
-            List<String> appNodes = curator.framework().getChildren().forPath(applicationsPath.getAbsolute());
-            for (String appNode : appNodes) {
-                Optional<ApplicationId> appId = parseApplication(appNode);
-                appId.filter(id -> shouldBeRewritten(appNode, id))
-                     .ifPresent(id -> rewriteApplicationId(id, appNode, readSessionId(id, appNode)));
-            }
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Error rewriting application ids on upgrade", e);
-        }
-    }
-
     private long readSessionId(ApplicationId appId, String appNode) {
         String path = applicationsPath.append(appNode).getAbsolute();
         try {
             return Long.parseLong(Utf8.toString(curator.framework().getData().forPath(path)));
         } catch (Exception e) {
             throw new IllegalArgumentException(Tenants.logPre(appId) + "Unable to read the session id from '" + path + "'", e);
-        }
-    }
-
-    private boolean shouldBeRewritten(String appNode, ApplicationId appId) {
-        return !appNode.equals(appId.serializedForm());
-    }
-
-    private void rewriteApplicationId(ApplicationId appId, String origNode, long sessionId) {
-        String newPath = applicationsPath.append(appId.serializedForm()).getAbsolute();
-        String oldPath = applicationsPath.append(origNode).getAbsolute();
-        try (CuratorTransaction transaction = new CuratorTransaction(curator)) {
-            if (curator.framework().checkExists().forPath(newPath) == null) {
-                transaction.add(CuratorOperations.create(newPath, Utf8.toAsciiBytes(sessionId)));
-            }
-            transaction.add(CuratorOperations.delete(oldPath));
-            transaction.commit();
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Error rewriting application id from " + origNode + " to " + appId.serializedForm());
         }
     }
 
@@ -161,6 +131,14 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
             case CHILD_REMOVED:
                 applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;
+            case CHILD_UPDATED:
+                // do nothing, application just got redeployed
+                break;
+            default:
+                // We don't know if applications have been added or removed so possibly need to remove some of them
+                // (new applications are not added here)
+                removeApplications(event.getType());
+                break;
         }
     }
 
@@ -171,6 +149,13 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void applicationAdded(ApplicationId applicationId) {
         log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application added: " + applicationId);
-    }    
+    }
+
+    private void removeApplications(PathChildrenCacheEvent.Type eventType) {
+        ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
+        log.log(Level.INFO, "Got " + eventType + " event for tenant '" + tenant +
+                "', removing applications except these active applications: " + activeApplications);
+        reloadHandler.removeApplicationsExcept(activeApplications);
+    }
 
 }

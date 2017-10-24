@@ -62,6 +62,10 @@ public class DedicatedAdminV4Test {
                 "        <metric name='nginx.upstreams.down.last' output-name='nginx.upstreams.down'/>" +
                 "      </consumer>" +
                 "    </metric-consumers>" +
+                "    <identity>" +
+                "        <domain>mydomain</domain>" +
+                "        <service>myservice</service>" +
+                "    </identity>" +
                 "  </admin>" +
                 "</services>";
 
@@ -176,6 +180,7 @@ public class DedicatedAdminV4Test {
 
             assertEquals("foo:123", config.deploymentServer());
             assertEquals("foocli", config.clientName());
+            assertEquals("/opt/splunkforwarder", config.splunkHome());
         }
 
         // Other host's forwarder

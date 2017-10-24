@@ -14,6 +14,7 @@ vespa_add_library(document
     $<TARGET_OBJECTS:document_repo>
     $<TARGET_OBJECTS:document_serialization>
     $<TARGET_OBJECTS:document_predicate>
+    $<TARGET_OBJECTS:document_test>
     INSTALL lib64
     DEPENDS
 )

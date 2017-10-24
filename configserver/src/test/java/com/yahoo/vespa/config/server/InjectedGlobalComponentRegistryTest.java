@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.http.v2.SessionActiveHandlerTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -36,7 +35,6 @@ import static org.junit.Assert.assertTrue;
 public class InjectedGlobalComponentRegistryTest {
 
     private Curator curator;
-    private ConfigCurator configCurator;
     private Metrics metrics;
     private ConfigServerDB serverDB;
     private SessionPreparer sessionPreparer;
@@ -48,16 +46,18 @@ public class InjectedGlobalComponentRegistryTest {
     private HostRegistries hostRegistries;
     private GlobalComponentRegistry globalComponentRegistry;
     private ModelFactoryRegistry modelFactoryRegistry;
-    private HostProvisionerProvider hostProvisionerProvider;
     private Zone zone;
 
     @Before
     public void setupRegistry() {
         curator = new MockCurator();
-        configCurator = ConfigCurator.create(curator);
+        ConfigCurator configCurator = ConfigCurator.create(curator);
         metrics = Metrics.createTestMetrics();
         modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
-        configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder().configServerDBDir(Files.createTempDir().getAbsolutePath()));
+        configserverConfig = new ConfigserverConfig(
+                new ConfigserverConfig.Builder()
+                        .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                        .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
         serverDB = new ConfigServerDB(configserverConfig);
         sessionPreparer = new SessionTest.MockSessionPreparer();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), 
@@ -66,7 +66,7 @@ public class InjectedGlobalComponentRegistryTest {
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         hostRegistries = new HostRegistries();
-        hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner());
+        HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry = new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, serverDB, sessionPreparer, rpcServer, configserverConfig, generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
     }

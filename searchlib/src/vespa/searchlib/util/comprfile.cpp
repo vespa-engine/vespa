@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "comprfile.h"
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <cstring>
 
 namespace search {
-
-using vespalib::nbostream;
 
 void
 ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
@@ -292,9 +290,7 @@ ComprFileReadContext(ComprFileDecodeContext &decodeContext)
       _bitOffset(0),
       _stopOffset(0),
       _readAll(true),
-      _checkPointOffsetValid(false),
-      _file(NULL),
-      _checkPointOffset(0)
+      _file(NULL)
 {
 }
 
@@ -308,9 +304,7 @@ ComprFileReadContext(uint32_t unitSize)
       _bitOffset(0),
       _stopOffset(0),
       _readAll(true),
-      _checkPointOffsetValid(false),
-      _file(NULL),
-      _checkPointOffset(0)
+      _file(NULL)
 {
 }
 
@@ -497,28 +491,6 @@ ComprFileReadContext::copyReadContext(const ComprFileReadContext &rhs)
     }
 }
 
-
-void
-ComprFileReadContext::checkPointWrite(nbostream &out)
-{
-    ComprBuffer::checkPointWrite(out);
-    ComprFileDecodeContext &d = *_decodeContext;
-    d.checkPointWrite(out);
-    uint64_t bitOffset = d.getBitPosV();
-    out << bitOffset;
-}
-
-
-void
-ComprFileReadContext::checkPointRead(nbostream &in)
-{
-    ComprBuffer::checkPointRead(in);
-    ComprFileDecodeContext &d = *_decodeContext;
-    d.checkPointRead(in);
-    in >> _checkPointOffset;    // Cannot seek until file is opened
-    _checkPointOffsetValid = true;
-}
-
 ComprFileWriteContext::
 ComprFileWriteContext(ComprFileEncodeContext &encodeContext)
     : ComprBuffer(encodeContext.getUnitByteSize()),
@@ -597,48 +569,5 @@ ComprFileWriteContext::allocComprBuf()
 {
     allocComprBuf(32768, 32768);
 }
-
-
-void
-ComprFileWriteContext::checkPointWrite(nbostream &out)
-{
-    ComprBuffer::checkPointWrite(out);
-    ComprFileEncodeContext &e = *_encodeContext;
-    uint64_t bufferStartFilePos = getBufferStartFilePos();
-    uint64_t usedSize = e.getUsedUnits(_comprBuf) *
-                        e.getUnitByteSize();
-    out << bufferStartFilePos << usedSize;
-    e.checkPointWrite(out);
-    if (usedSize != 0) {
-        out.write(_comprBuf, usedSize);
-    }
-    uint64_t bitOffset = e.getBitPosV();
-    out << bitOffset;
-}
-
-
-void
-ComprFileWriteContext::checkPointRead(nbostream &in)
-{
-    ComprBuffer::checkPointRead(in);
-    ComprFileEncodeContext &e = *_encodeContext;
-    uint64_t bufferStartFilePos = 0;
-    uint64_t usedSize = 0;
-    in >> bufferStartFilePos >> usedSize;
-    e.checkPointRead(in);
-    if (usedSize != 0) {
-        assert((usedSize % e.getUnitByteSize()) == 0);
-        assert(_comprBufSize >= usedSize / e.getUnitByteSize());
-        in.read(_comprBuf, usedSize);
-    }
-    setBufferStartFilePos(bufferStartFilePos);
-    e.afterWrite(*this, usedSize / e.getUnitByteSize(), bufferStartFilePos);
-    uint64_t bitOffset = 0;
-    in >> bitOffset;
-    uint64_t writeOffset = e.getBitPosV();
-    assert(bitOffset == writeOffset);
-    (void) writeOffset;
-}
-
 
 }

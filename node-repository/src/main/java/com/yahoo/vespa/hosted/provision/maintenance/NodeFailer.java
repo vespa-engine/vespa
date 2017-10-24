@@ -10,6 +10,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -18,7 +19,6 @@ import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -88,6 +88,10 @@ public class NodeFailer extends Maintainer {
             if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
                                                          Agent.system, "Node has hardware failure");
 
+        for (Node node: readyNodesWithHardwareDivergence())
+            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
+                                                         Agent.system, "Node hardware diverges from spec");
+
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
@@ -127,6 +131,12 @@ public class NodeFailer extends Maintainer {
         return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
                 .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
+                .collect(Collectors.toList());
+    }
+
+    private List<Node> readyNodesWithHardwareDivergence() {
+        return nodeRepository().getNodes(Node.State.ready).stream()
+                .filter(node -> node.status().hardwareDivergence().isPresent())
                 .collect(Collectors.toList());
     }
 
@@ -177,15 +187,15 @@ public class NodeFailer extends Maintainer {
      */
     private List<Node> determineActiveNodeDownStatus() {
         List<Node> downNodes = new ArrayList<>();
-        for (ApplicationInstance<ServiceMonitorStatus> application : serviceMonitor.queryStatusOfAllApplicationInstances().values()) {
-            for (ServiceCluster<ServiceMonitorStatus> cluster : application.serviceClusters()) {
-                for (ServiceInstance<ServiceMonitorStatus> service : cluster.serviceInstances()) {
+        for (ApplicationInstance application : serviceMonitor.getAllApplicationInstances().values()) {
+            for (ServiceCluster cluster : application.serviceClusters()) {
+                for (ServiceInstance service : cluster.serviceInstances()) {
                     Optional<Node> node = nodeRepository().getNode(service.hostName().s(), Node.State.active);
                     if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo. TODO: remove when proxy nodes are in node repo everywhere
 
-                    if (service.serviceStatus().equals(ServiceMonitorStatus.DOWN))
+                    if (service.serviceStatus().equals(ServiceStatus.DOWN))
                         downNodes.add(recordAsDown(node.get()));
-                    else if (service.serviceStatus().equals(ServiceMonitorStatus.UP))
+                    else if (service.serviceStatus().equals(ServiceStatus.UP))
                         clearDownRecord(node.get());
                     // else: we don't know current status; don't take any action until we have positive information
                 }

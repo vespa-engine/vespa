@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "errhandle.h"
-#include "sigterm.h"
 #include "service.h"
 #include "forward.h"
 #include "conf.h"
@@ -13,6 +12,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <vespa/vespalib/util/sig_catch.h>
 
 LOG_SETUP("");
 
@@ -196,6 +196,7 @@ Watcher::watchfile()
 
     _forwarder.sendMode();
 
+    vespalib::SigCatch catcher;
     int sleepcount = 0;
     time_t created = 0;
 
@@ -342,11 +343,11 @@ Watcher::watchfile()
             }
         }
 
-        if (gotSignaled()) {
+        if (catcher.receivedStopSignal()) {
             throw SigTermException("caught signal");
         }
         snooze(tickStart);
-        if (gotSignaled()) {
+        if (catcher.receivedStopSignal()) {
             throw SigTermException("caught signal");
         }
         if (++sleepcount > 99) {

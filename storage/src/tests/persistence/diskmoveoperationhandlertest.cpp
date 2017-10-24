@@ -4,6 +4,9 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/messages.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -43,7 +46,7 @@ DiskMoveOperationHandlerTest::testSimple()
     DiskMoveOperationHandler diskMoveHandler(
             getEnv(3),
             getPersistenceProvider());
-    BucketDiskMoveCommand move(document::BucketId(16, 4), 3, 4);
+    BucketDiskMoveCommand move(makeDocumentBucket(document::BucketId(16, 4)), 3, 4);
 
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     diskMoveHandler.handleBucketDiskMove(move, context);

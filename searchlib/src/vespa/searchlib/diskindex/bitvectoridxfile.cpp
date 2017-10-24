@@ -4,12 +4,10 @@
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/fileheader.h>
 
 namespace search::diskindex {
 
-using vespalib::nbostream;
 using search::index::BitVectorWordSingleKey;
 using search::common::FileHeaderContext;
 
@@ -51,35 +49,6 @@ BitVectorIdxFileWrite::idxSize() const
 {
     return _idxHeaderLen +
         static_cast<int64_t>(_numKeys) * sizeof(BitVectorWordSingleKey);
-}
-
-
-void
-BitVectorIdxFileWrite::checkPointWriteCommon(nbostream &out)
-{
-    out << _scope;
-    out << _docIdLimit << _numKeys;
-    out << _idxHeaderLen;
-}
-
-
-void
-BitVectorIdxFileWrite::checkPointWrite(nbostream &out)
-{
-    flush();
-    checkPointWriteCommon(out);
-    sync();
-}
-
-
-void
-BitVectorIdxFileWrite::checkPointRead(nbostream &in)
-{
-    BitVectorKeyScope checkScope;
-    in >> checkScope;
-    assert(checkScope == _scope);
-    in >> _docIdLimit >> _numKeys;
-    in >> _idxHeaderLen;
 }
 
 

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.google.common.base.Joiner;
+import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -37,7 +38,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBui
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthensDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
@@ -50,22 +51,24 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.AthensPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
-import com.yahoo.vespa.hosted.controller.api.integration.cost.CostJsonModelAdapter;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.ClusterCost;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.common.NotFoundCheckedException;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -105,11 +108,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final Authorizer authorizer;
+    private final AthenzClientFactory athenzClientFactory;
 
-    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer) {
+    @Inject
+    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer,
+                                 AthenzClientFactory athenzClientFactory) {
         super(executor, accessLog);
         this.controller = controller;
         this.authorizer = authorizer;
+        this.athenzClientFactory = athenzClientFactory;
     }
 
     @Override
@@ -153,7 +160,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
-        if (path.matches("/application/v4/athensDomain")) return athensDomains(request);
+        if (path.matches("/application/v4/athensDomain")) return athenzDomains(request);
         if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/cookiefreshness")) return cookieFreshness(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
@@ -173,6 +180,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/application/v4/user")) return createUser(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/migrateTenantToAthens")) return migrateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
             return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
@@ -180,7 +188,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePOST(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/application/v4/tenant/{tenant}/migrateTenantToAthens")) return migrateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"));
@@ -262,12 +269,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
     
-    private HttpResponse athensDomains(HttpRequest request) {
+    private HttpResponse athenzDomains(HttpRequest request) {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor array = response.setArray("data");
-        for (AthensDomain athensDomain : controller.getDomainList(request.getProperty("prefix"))) {
-            array.addString(athensDomain.id());
+        for (AthenzDomain athenzDomain : controller.getDomainList(request.getProperty("prefix"))) {
+            array.addString(athenzDomain.id());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -427,31 +434,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentJobs().projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.revision().source(), response);
 
-        com.yahoo.config.provision.ApplicationId applicationId = com.yahoo.config.provision.ApplicationId.from(tenantName, applicationName, instanceName);
-        Zone zoneId = new Zone(Environment.from(environment), RegionName.from(region));
-
         // Cost
-        try {
-            ApplicationCost appCost = controller.getApplicationCost(applicationId, zoneId);
-            Cursor costObject = response.setObject("cost");
-            CostJsonModelAdapter.toSlime(appCost, costObject);
-        } catch (NotFoundCheckedException nfce) {
-            log.log(Level.FINE, "Application cost data not found. " + nfce.getMessage());
-        }
+        DeploymentCost appCost = deployment.calculateCost();
+        Cursor costObject = response.setObject("cost");
+        toSlime(appCost, costObject);
 
         // Metrics
-        try {
-            MetricsService.DeploymentMetrics metrics = controller.metricsService().getDeploymentMetrics(applicationId, zoneId);
-            Cursor metricsObject = response.setObject("metrics");
-            metricsObject.setDouble("queriesPerSecond", metrics.queriesPerSecond());
-            metricsObject.setDouble("writesPerSecond", metrics.writesPerSecond());
-            metricsObject.setDouble("documentCount", metrics.documentCount());
-            metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
-            metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed getting Yamas metrics", Exceptions.toMessageString(e));
-        }
+        DeploymentMetrics metrics = deployment.metrics();
+        Cursor metricsObject = response.setObject("metrics");
+        metricsObject.setDouble("queriesPerSecond", metrics.queriesPerSecond());
+        metricsObject.setDouble("writesPerSecond", metrics.writesPerSecond());
+        metricsObject.setDouble("documentCount", metrics.documentCount());
+        metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
+        metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
 
         return new SlimeJsonResponse(slime);
     }
@@ -616,7 +611,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 if (requestData.field("userGroup").valid())
                     throw new BadRequestException("Cannot set OpsDB user group to Athens tenant");
                 updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName), 
-                                                          new AthensDomain(mandatory("athensDomain", requestData).asString()),
+                                                          new AthenzDomain(mandatory("athensDomain", requestData).asString()),
                                                           new Property(mandatory("property", requestData).asString()),
                                                           optional("propertyId", requestData).map(PropertyId::new));
                 controller.tenants().updateTenant(updatedTenant, authorizer.getNToken(request));
@@ -638,12 +633,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Tenant tenant = new Tenant(new TenantId(tenantName),
                                    optional("userGroup", requestData).map(UserGroup::new),
                                    optional("property", requestData).map(Property::new),
-                                   optional("athensDomain", requestData).map(AthensDomain::new),
+                                   optional("athensDomain", requestData).map(AthenzDomain::new),
                                    optional("propertyId", requestData).map(PropertyId::new));
         if (tenant.isOpsDbTenant())
             throwIfNotSuperUserOrPartOfOpsDbGroup(new UserGroup(mandatory("userGroup", requestData).asString()), request);
         if (tenant.isAthensTenant())
-            throwIfNotAthensDomainAdmin(new AthensDomain(mandatory("athensDomain", requestData).asString()), request);
+            throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
  
         controller.tenants().addTenant(tenant, authorizer.getNToken(request));
         return new SlimeJsonResponse(toSlime(tenant, request, true));
@@ -652,16 +647,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse migrateTenant(String tenantName, HttpRequest request) {
         TenantId tenantid = new TenantId(tenantName);
         Inspector requestData = toSlime(request.getData()).get();
-        AthensDomain tenantDomain = new AthensDomain(mandatory("athensDomain", requestData).asString());
+        AthenzDomain tenantDomain = new AthenzDomain(mandatory("athensDomain", requestData).asString());
         Property property = new Property(mandatory("property", requestData).asString());
         PropertyId propertyId = new PropertyId(mandatory("propertyId", requestData).asString());
 
         authorizer.throwIfUnauthorized(tenantid, request);
-        throwIfNotAthensDomainAdmin(tenantDomain, request);
+        throwIfNotAthenzDomainAdmin(tenantDomain, request);
         NToken nToken = authorizer.getNToken(request)
                 .orElseThrow(() ->
                         new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
-        Tenant tenant = controller.tenants().migrateTenantToAthens(tenantid, tenantDomain, propertyId, property, nToken);
+        Tenant tenant = controller.tenants().migrateTenantToAthenz(tenantid, tenantDomain, propertyId, property, nToken);
         return new SlimeJsonResponse(toSlime(tenant, request, true));
     }
 
@@ -765,15 +760,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
-        DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.athens(), controller.zoneRegistry());
+        DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         Principal principal = authorizer.getPrincipal(request);
-        if (principal instanceof AthensPrincipal) {
+        if (principal instanceof AthenzPrincipal) {
             deployAuthorizer.throwIfUnauthorizedForDeploy(principal,
                                                           Environment.from(environment),
                                                           tenant,
                                                           applicationId);
         } else { // In case of host-based principal
+            // TODO What about other user type principals like Bouncer?
+            log.log(LogLevel.WARNING,
+                    "Using deprecated DeployAuthorizer.throwIfUnauthorizedForDeploy. Principal=" + principal);
             UserId userId = new UserId(principal.getName());
             deployAuthorizer.throwIfUnauthorizedForDeploy(
                     Environment.from(environment),
@@ -964,11 +962,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void throwIfNotAthensDomainAdmin(AthensDomain tenantDomain, HttpRequest request) {
+    private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
         UserId userId = authorizer.getUserId(request);
-        if ( ! authorizer.isAthensDomainAdmin(userId, tenantDomain)) {
+        if ( ! authorizer.isAthenzDomainAdmin(userId, tenantDomain)) {
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athens domain '%s'", userId.id(), tenantDomain.id()));
+                    String.format("The user '%s' is not admin in Athenz domain '%s'", userId.id(), tenantDomain.id()));
         }
     }
 
@@ -1087,4 +1085,54 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return controller.systemVersion();
     }
 
+    public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
+        object.setLong("tco", (long)deploymentCost.getTco());
+        object.setLong("waste", (long)deploymentCost.getWaste());
+        object.setDouble("utilization", deploymentCost.getUtilization());
+        Cursor clustersObject = object.setObject("cluster");
+        for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
+            toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
+    }
+
+    private static void toSlime(ClusterCost clusterCost, Cursor object) {
+        object.setLong("count", clusterCost.getClusterInfo().getHostnames().size());
+        object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
+        object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
+        object.setLong("tco", (int)clusterCost.getTco());
+        object.setLong("waste", (int)clusterCost.getWaste());
+        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
+        object.setDouble("flavorCost", clusterCost.getClusterInfo().getFlavorCost());
+        object.setDouble("flavorCpu", clusterCost.getClusterInfo().getFlavorCPU());
+        object.setDouble("flavorMem", clusterCost.getClusterInfo().getFlavorMem());
+        object.setDouble("flavorDisk", clusterCost.getClusterInfo().getFlavorDisk());
+        object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
+        Cursor utilObject = object.setObject("util");
+        utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());
+        utilObject.setDouble("mem", clusterCost.getResultUtilization().getMemory());
+        utilObject.setDouble("disk", clusterCost.getResultUtilization().getDisk());
+        utilObject.setDouble("diskBusy", clusterCost.getResultUtilization().getDiskBusy());
+        Cursor usageObject = object.setObject("usage");
+        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu());
+        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory());
+        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk());
+        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy());
+        Cursor hostnamesArray = object.setArray("hostnames");
+        for (String hostname : clusterCost.getClusterInfo().getHostnames())
+            hostnamesArray.addString(hostname);
+    }
+
+    private static String getResourceName(ClusterUtilization utilization) {
+        String name = "cpu";
+        double max = utilization.getMaxUtilization();
+
+        if (utilization.getMemory() == max) {
+            name = "mem";
+        } else if (utilization.getDisk() == max) {
+            name = "disk";
+        } else if (utilization.getDiskBusy() == max) {
+            name = "diskbusy";
+        }
+
+        return name;
+    }
 }

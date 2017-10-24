@@ -30,7 +30,6 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
  * a set of applications belonging to a tenant.
  *
  * @author Harald Musum
- * @since 5.1
  */
 public class TenantRequestHandler implements RequestHandler, ReloadHandler, HostValidator<ApplicationId> {
 
@@ -101,6 +100,16 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
             reloadListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
+        }
+    }
+
+    @Override
+    public void removeApplicationsExcept(Set<ApplicationId> applications) {
+        for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
+            if (! applications.contains(activeApplication)) {
+                log.log(LogLevel.INFO, "Will remove deleted application " + activeApplication.toShortString());
+                removeApplication(activeApplication);
+            }
         }
     }
 

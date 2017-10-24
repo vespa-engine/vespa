@@ -28,7 +28,6 @@ public:
         public:
             virtual ~Callback() { }
             virtual RPC::Result receive(const Packet & packet) = 0;
-            virtual void inSync() { }
             virtual void eof() { }
         };
     public:
@@ -46,7 +45,6 @@ public:
         bool sync(const SerialNum &syncTo, SerialNum &syncedTo);
 
         virtual RPC::Result visit(const Packet & ) { return RPC::OK; }
-        virtual void inSync() { }
         virtual void eof()    { }
         bool close();
         void clear();
@@ -60,23 +58,7 @@ public:
         int              _sessionId;
     };
     /// Here you connect to the incomming data getting everything from <from>
-    class Subscriber : public Session
-    {
-    public:
-        typedef std::unique_ptr<Subscriber> UP;
-        typedef std::shared_ptr<Subscriber> SP;
-
-        Subscriber(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack);
-        bool subscribe(const SerialNum & from);
-        ~Subscriber();
-        RPC::Result visit(const Packet & packet) override { return _callback.receive(packet); }
-        void inSync() override { _callback.inSync(); }
-        void eof() override    { _callback.eof(); }
-    private:
-        Callback & _callback;
-    };
-    /// Here you read the incomming data getting everything from <from>
-    class Visitor : public Subscriber
+    class Visitor : public Session
     {
     public:
         typedef std::unique_ptr<Visitor> UP;
@@ -85,7 +67,13 @@ public:
         Visitor(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack);
         bool visit(const SerialNum & from, const SerialNum & to);
         virtual ~Visitor();
+        RPC::Result visit(const Packet & packet) override { return _callback.receive(packet); }
+        void eof() override    { _callback.eof(); }
+    private:
+        Callback & _callback;
     };
+    /// Here you read the incomming data getting everything from <from>
+
 public:
     typedef std::unique_ptr<TransLogClient> UP;
 
@@ -100,8 +88,6 @@ public:
     Session::UP open(const vespalib::string & domain);
     /// Here you can get a list of available domains.
     bool listDomains(std::vector<vespalib::string> & dir);
-    /// Here you get a subscriber
-    Subscriber::UP createSubscriber(const vespalib::string & domain, Session::Callback & callBack);
     Visitor::UP createVisitor(const vespalib::string & domain, Session::Callback & callBack);
 
     bool isConnected() const;
@@ -111,7 +97,6 @@ public:
 private:
     void exportRPC(FRT_Supervisor & supervisor);
     void visitCallbackRPC(FRT_RPCRequest *req);
-    void syncCallbackRPC(FRT_RPCRequest *req);
     void eofCallbackRPC(FRT_RPCRequest *req);
     int32_t rpc(FRT_RPCRequest * req);
     Session * findSession(const vespalib::string & domain, int sessionId);

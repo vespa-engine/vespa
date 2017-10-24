@@ -44,11 +44,11 @@ public class RedeployTest {
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
         assertTrue(deployment.isPresent());
-        long activeSessionIdBefore = tester.tenant().getLocalSessionRepo().getActiveSession(tester.applicationId()).getSessionId();
+        long activeSessionIdBefore = tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
         assertEquals(tester.applicationId(), tester.tenant().getLocalSessionRepo().getSession(activeSessionIdBefore).getApplicationId());
         deployment.get().prepare();
         deployment.get().activate();
-        long activeSessionIdAfter =  tester.tenant().getLocalSessionRepo().getActiveSession(tester.applicationId()).getSessionId();
+        long activeSessionIdAfter =  tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
         assertEquals(activeSessionIdAfter, activeSessionIdBefore + 1);
         assertEquals(tester.applicationId(), tester.tenant().getLocalSessionRepo().getSession(activeSessionIdAfter).getApplicationId());
     }
@@ -72,6 +72,8 @@ public class RedeployTest {
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                                .configServerDBDir(Files.createTempDir()
                                                                                                        .getAbsolutePath())
+                                                                               .configDefinitionsDir(Files.createTempDir()
+                                                                                                          .getAbsolutePath())
                                                                                .sessionLifetime(60));
         DeployTester tester = new DeployTester("src/test/apps/app", configserverConfig, clock);
         tester.deployApp("myapp", Instant.now()); // session 2 (numbering starts at 2)
@@ -81,7 +83,7 @@ public class RedeployTest {
 
         assertTrue(deployment2.isPresent());
         deployment2.get().activate(); // session 3
-        long activeSessionId = tester.tenant().getLocalSessionRepo().getActiveSession(tester.applicationId()).getSessionId();
+        long activeSessionId = tester.tenant().getApplicationRepo().getSessionIdForApplication(tester.applicationId());
 
         clock.advance(Duration.ofSeconds(10));
         Optional<com.yahoo.config.provision.Deployment> deployment3 = tester.redeployFromLocalActive();
@@ -91,7 +93,7 @@ public class RedeployTest {
         LocalSession deployment3session = ((Deployment) deployment3.get()).session();
         assertNotEquals(activeSessionId, deployment3session);
         // No change to active session id
-        assertEquals(activeSessionId, tester.tenant().getLocalSessionRepo().getActiveSession(tester.applicationId()).getSessionId());
+        assertEquals(activeSessionId, tester.tenant().getApplicationRepo().getSessionIdForApplication(tester.applicationId()));
         assertEquals(3, tester.tenant().getLocalSessionRepo().listSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
@@ -103,6 +105,7 @@ public class RedeployTest {
 
         // Both session 2 (deactivated) and session 4 (never activated) should have been removed
         final Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
+        System.out.println(sessions);
         assertEquals(2, sessions.size());
         final Set<Long> sessionIds = sessions.stream().map(Session::getSessionId).collect(Collectors.toSet());
         assertTrue(sessionIds.contains(3L));

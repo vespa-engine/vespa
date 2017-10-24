@@ -3,6 +3,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -11,7 +12,8 @@
 
 using document::DocumentType;
 using storage::framework::defaultimplementation::AllocationLogic;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -80,7 +82,7 @@ PersistenceTestUtils::~PersistenceTestUtils()
 std::string
 PersistenceTestUtils::dumpBucket(const document::BucketId& bid,
                                  uint16_t disk) {
-    return dynamic_cast<spi::dummy::DummyPersistence&>(_env->_node.getPersistenceProvider()).dumpBucket(makeBucket(bid, spi::PartitionId(disk)));
+    return dynamic_cast<spi::dummy::DummyPersistence&>(_env->_node.getPersistenceProvider()).dumpBucket(makeSpiBucket(bid, spi::PartitionId(disk)));
 }
 
 void
@@ -98,8 +100,7 @@ PersistenceTestUtils::createPersistenceThread(uint32_t disk)
                               getEnv()._fileStorHandler,
                               getEnv()._metrics,
                               disk,
-                              255,
-                              false));
+                              255));
 }
 
 document::Document::SP
@@ -114,7 +115,7 @@ PersistenceTestUtils::schedulePut(
             location, timestamp, minSize, maxSize));
     std::shared_ptr<api::StorageMessage> msg(
             new api::PutCommand(
-                document::BucketId(16, location), doc, timestamp));
+                makeDocumentBucket(document::BucketId(16, location)), doc, timestamp));
     fsHandler().schedule(msg, disk);
     return doc;
 }
@@ -168,7 +169,7 @@ PersistenceTestUtils::doPutOnDisk(
 {
     document::Document::SP doc(createRandomDocumentAtLocation(
                              location, timestamp, minSize, maxSize));
-    spi::Bucket b(makeBucket(document::BucketId(16, location), spi::PartitionId(disk)));
+    spi::Bucket b(makeSpiBucket(document::BucketId(16, location), spi::PartitionId(disk)));
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
 
@@ -192,12 +193,12 @@ PersistenceTestUtils::doRemoveOnDisk(
                          spi::Trace::TraceLevel(0));
     if (persistRemove) {
         spi::RemoveResult result = getPersistenceProvider().removeIfFound(
-            makeBucket(bucketId, spi::PartitionId(disk)),
+            makeSpiBucket(bucketId, spi::PartitionId(disk)),
             timestamp, docId, context);
         return result.wasFound();
     }
     spi::RemoveResult result = getPersistenceProvider().remove(
-            makeBucket(bucketId, spi::PartitionId(disk)),
+            makeSpiBucket(bucketId, spi::PartitionId(disk)),
             timestamp, docId, context);
 
     return result.wasFound();
@@ -213,7 +214,7 @@ PersistenceTestUtils::doUnrevertableRemoveOnDisk(
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     spi::RemoveResult result = getPersistenceProvider().remove(
-            makeBucket(bucketId, spi::PartitionId(disk)),
+            makeSpiBucket(bucketId, spi::PartitionId(disk)),
             timestamp, docId, context);
     return result.wasFound();
 }
@@ -231,7 +232,7 @@ PersistenceTestUtils::doGetOnDisk(
     if (headerOnly) {
         fieldSet.reset(new document::HeaderFields());
     }
-    return getPersistenceProvider().get(makeBucket(
+    return getPersistenceProvider().get(makeSpiBucket(
             bucketId, spi::PartitionId(disk)), *fieldSet, docId, context);
 }
 
@@ -307,7 +308,7 @@ PersistenceTestUtils::doPut(const document::Document::SP& doc,
                             spi::Timestamp time,
                             uint16_t disk)
 {
-    spi::Bucket b(makeBucket(bid, spi::PartitionId(disk)));
+    spi::Bucket b(makeSpiBucket(bid, spi::PartitionId(disk)));
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     getPersistenceProvider().createBucket(b, context);
@@ -323,7 +324,7 @@ PersistenceTestUtils::doUpdate(document::BucketId bid,
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     return getPersistenceProvider().update(
-            makeBucket(bid, spi::PartitionId(disk)), time, update, context);
+            makeSpiBucket(bid, spi::PartitionId(disk)), time, update, context);
 }
 
 void
@@ -339,10 +340,10 @@ PersistenceTestUtils::doRemove(const document::DocumentId& id, spi::Timestamp ti
                          spi::Trace::TraceLevel(0));
     if (unrevertableRemove) {
         getPersistenceProvider().remove(
-                makeBucket(bucket, spi::PartitionId(disk)), time, id, context);
+                makeSpiBucket(bucket, spi::PartitionId(disk)), time, id, context);
     } else {
         spi::RemoveResult result = getPersistenceProvider().removeIfFound(
-                makeBucket(bucket, spi::PartitionId(disk)), time, id, context);
+                makeSpiBucket(bucket, spi::PartitionId(disk)), time, id, context);
         if (!result.wasFound()) {
             throw vespalib::IllegalStateException(
                     "Attempted to remove non-existing doc " + id.toString(),

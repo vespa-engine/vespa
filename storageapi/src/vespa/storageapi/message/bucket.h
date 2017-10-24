@@ -31,7 +31,7 @@ class CreateBucketCommand : public MaintenanceCommand {
     bool _active;
 
 public:
-    explicit CreateBucketCommand(const document::BucketId& id);
+    explicit CreateBucketCommand(const document::Bucket &bucket);
     void setActive(bool active) { _active = active; }
     bool getActive() const { return _active; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -60,7 +60,7 @@ public:
 class DeleteBucketCommand : public MaintenanceCommand {
     BucketInfo _info;
 public:
-    explicit DeleteBucketCommand(const document::BucketId& id);
+    explicit DeleteBucketCommand(const document::Bucket &bucket);
 
     const BucketInfo& getBucketInfo() const { return _info; }
     void setBucketInfo(const BucketInfo& info) { _info = info; }
@@ -118,7 +118,7 @@ private:
     std::vector<uint16_t> _chain;
 
 public:
-    MergeBucketCommand(const document::BucketId&,
+    MergeBucketCommand(const document::Bucket &bucket,
                        const std::vector<Node>&,
                        Timestamp maxTimestamp,
                        uint32_t clusterStateVersion = 0,
@@ -196,7 +196,7 @@ private:
     std::vector<Entry> _diff;
 
 public:
-    GetBucketDiffCommand(const document::BucketId&,
+    GetBucketDiffCommand(const document::Bucket &bucket,
                          const std::vector<Node>&,
                          Timestamp maxTimestamp);
     ~GetBucketDiffCommand();
@@ -279,7 +279,7 @@ private:
     uint32_t _maxBufferSize;
 
 public:
-    ApplyBucketDiffCommand(const document::BucketId& id,
+    ApplyBucketDiffCommand(const document::Bucket &bucket,
                            const std::vector<Node>& nodes,
                            uint32_t maxBufferSize);
     ~ApplyBucketDiffCommand();
@@ -336,6 +336,7 @@ public:
  * the buckets that belong to the given distributor should be returned.
  */
 class RequestBucketInfoCommand : public StorageCommand {
+    document::BucketSpace _bucketSpace;
     std::vector<document::BucketId> _buckets;
     std::unique_ptr<lib::ClusterState> _state;
     uint16_t _distributor;
@@ -343,12 +344,15 @@ class RequestBucketInfoCommand : public StorageCommand {
 
 public:
     explicit RequestBucketInfoCommand(
+            document::BucketSpace bucketSpace,
             const std::vector<document::BucketId>& buckets);
-    RequestBucketInfoCommand(uint16_t distributor,
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
+                             uint16_t distributor,
                              const lib::ClusterState& state,
                              const vespalib::stringref & _distributionHash);
 
-    RequestBucketInfoCommand(uint16_t distributor,
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
+                             uint16_t distributor,
                              const lib::ClusterState& state);
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
@@ -413,7 +417,7 @@ public:
 class NotifyBucketChangeCommand : public BucketCommand {
     BucketInfo _info;
 public:
-    NotifyBucketChangeCommand(const document::BucketId& bucket,
+    NotifyBucketChangeCommand(const document::Bucket &bucket,
                               const BucketInfo& bucketInfo);
     const BucketInfo& getBucketInfo() const { return _info; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -454,7 +458,7 @@ public:
 private:
     BUCKET_STATE _state;
 public:
-    SetBucketStateCommand(const document::BucketId& bucket, BUCKET_STATE state);
+    SetBucketStateCommand(const document::Bucket &bucket, BUCKET_STATE state);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     BUCKET_STATE getState() const { return _state; }
     DECLARE_STORAGECOMMAND(SetBucketStateCommand, onSetBucketState)

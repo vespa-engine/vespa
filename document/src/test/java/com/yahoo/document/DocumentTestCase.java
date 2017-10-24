@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -30,7 +31,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1402,6 +1402,35 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         assertEquals(doc1Before, doc1After);
         assertEquals(doc2Before, doc2After);
+    }
+
+    private static class DocumentIdFixture {
+        private final DocumentTypeManager docMan = new DocumentTypeManager();
+        private final DocumentType docType = new DocumentType("b");
+        private final GrowableByteBuffer buffer = new GrowableByteBuffer();
+        public DocumentIdFixture() {
+            docMan.register(docType);
+        }
+        public void serialize(String docId) {
+            new Document(docType, DocumentId.createFromSerialized(docId))
+                    .serialize(DocumentSerializerFactory.createHead(buffer));
+            buffer.flip();
+        }
+        public Document deserialize() {
+            return new Document(DocumentDeserializerFactory.createHead(docMan, buffer));
+        }
+    }
+
+    @Test
+    public void testDocumentIdWithNonTextCharacterCanBeDeserialized() throws UnsupportedEncodingException {
+        DocumentIdFixture f = new DocumentIdFixture();
+
+        // Document id = "id:a:b::0x7c"
+        String docId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}, "UTF-8");
+        f.serialize(docId);
+
+        Document result = f.deserialize();
+        assertEquals(docId, result.getId().toString());
     }
 
 }

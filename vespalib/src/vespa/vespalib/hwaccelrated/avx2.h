@@ -4,9 +4,7 @@
 
 #include "avx.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 /**
  * Avx-512 implementation.
@@ -18,5 +16,4 @@ public:
     double dotProduct(const double * a, const double * b, size_t sz) const override;
 };
 
-}
 }

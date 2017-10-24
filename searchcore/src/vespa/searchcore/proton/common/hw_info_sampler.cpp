@@ -9,6 +9,7 @@
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <experimental/filesystem>
+#include <thread>
 
 using config::ConfigHandle;
 using config::ConfigSubscriber;
@@ -41,6 +42,15 @@ sampleMemorySizeBytes(const HwInfoSampler::Config &cfg)
         return cfg.memorySizeBytes;
     }
     return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+}
+
+uint32_t
+sampleCpuCores(const HwInfoSampler::Config &cfg)
+{
+    if (cfg.cpuCores != 0) {
+        return cfg.cpuCores;
+    }
+    return std::thread::hardware_concurrency();
 }
 
 std::unique_ptr<HwinfoConfig> readConfig(const vespalib::string &path) {
@@ -105,8 +115,8 @@ HwInfoSampler::HwInfoSampler(const vespalib::string &path,
     setup(HwInfo::Disk(sampleDiskSizeBytes(path, config),
                        (_diskWriteSpeed < config.slowWriteSpeedLimit),
                        config.diskShared),
-          HwInfo::Memory(sampleMemorySizeBytes(config)));
-
+          HwInfo::Memory(sampleMemorySizeBytes(config)),
+          HwInfo::Cpu(sampleCpuCores(config)));
 }
 
 HwInfoSampler::~HwInfoSampler()
@@ -114,9 +124,9 @@ HwInfoSampler::~HwInfoSampler()
 }
 
 void
-HwInfoSampler::setup(const HwInfo::Disk &disk, const HwInfo::Memory &memory)
+HwInfoSampler::setup(const HwInfo::Disk &disk, const HwInfo::Memory &memory, const HwInfo::Cpu &cpu)
 {
-    _hwInfo = HwInfo(disk, memory);
+    _hwInfo = HwInfo(disk, memory, cpu);
 }
 
 void

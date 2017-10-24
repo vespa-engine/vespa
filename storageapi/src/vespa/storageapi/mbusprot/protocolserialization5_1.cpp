@@ -17,6 +17,8 @@
 #include <vespa/document/select/orderingspecification.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 
+using document::BucketSpace;
+
 namespace storage {
 namespace mbusprot {
 
@@ -70,7 +72,8 @@ void ProtocolSerialization5_1::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeSetBucketStateCommand(BBuf& buf) const
 {
-    document::BucketId bucket(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     api::SetBucketStateCommand::BUCKET_STATE state(
             static_cast<api::SetBucketStateCommand::BUCKET_STATE>(
                     SH::getByte(buf)));
@@ -110,7 +113,8 @@ api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeGetCommand(BBuf& buf) const
 {
     document::DocumentId did(SH::getString(buf));
-    document::BucketId bucket(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
     std::string fieldSet(SH::getString(buf));
     api::GetCommand::UP msg(
@@ -157,11 +161,12 @@ ProtocolSerialization5_1::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeCreateVisitorCommand(BBuf& buf) const
 {
+    BucketSpace bucketSpace(BucketSpace::placeHolder());
     vespalib::stringref libraryName = SH::getString(buf);
     vespalib::stringref instanceId = SH::getString(buf);
     vespalib::stringref selection = SH::getString(buf);
     api::CreateVisitorCommand::UP msg(
-            new api::CreateVisitorCommand(libraryName, instanceId, selection));
+            new api::CreateVisitorCommand(bucketSpace, libraryName, instanceId, selection));
     msg->setVisitorCmdId(SH::getInt(buf));
     msg->setControlDestination(SH::getString(buf));
     msg->setDataDestination(SH::getString(buf));
@@ -211,9 +216,10 @@ void ProtocolSerialization5_1::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeCreateBucketCommand(BBuf& buf) const
 {
-    document::BucketId bid(SH::getLong(buf));
+    document::BucketId bucketId(SH::getLong(buf));
+    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
     bool setActive = SH::getBoolean(buf);
-    api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bid));
+    api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bucket));
     msg->setActive(setActive);
     onDecodeBucketInfoCommand(buf, *msg);
     return api::StorageCommand::UP(msg.release());

@@ -2,19 +2,17 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <memory>
 
 namespace document { class DocumentTypeRepo; }
 
 namespace search { class IDestructorCallback; }
 
-namespace proton
-{
+namespace proton {
 
 class CompactLidSpaceOperation;
 class DeleteBucketOperation;
-class FeedToken;
 class ISimpleDocumentMetaStore;
 class MoveOperation;
 class PruneRemovedDocumentsOperation;
@@ -49,11 +47,11 @@ public:
      */
 
     virtual void preparePut(PutOperation &putOp) = 0;
-    virtual void handlePut(FeedToken *token, const PutOperation &putOp) = 0;
+    virtual void handlePut(FeedToken token, const PutOperation &putOp) = 0;
     virtual void prepareUpdate(UpdateOperation &updOp) = 0;
-    virtual void handleUpdate(FeedToken *token, const UpdateOperation &updOp) = 0;
+    virtual void handleUpdate(FeedToken token, const UpdateOperation &updOp) = 0;
     virtual void prepareRemove(RemoveOperation &rmOp) = 0;
-    virtual void handleRemove(FeedToken *token, const RemoveOperation &rmOp) = 0;
+    virtual void handleRemove(FeedToken token, const RemoveOperation &rmOp) = 0;
     virtual void prepareDeleteBucket(DeleteBucketOperation &delOp) = 0;
     virtual void handleDeleteBucket(const DeleteBucketOperation &delOp) = 0;
     virtual void prepareMove(MoveOperation &putOp) = 0;

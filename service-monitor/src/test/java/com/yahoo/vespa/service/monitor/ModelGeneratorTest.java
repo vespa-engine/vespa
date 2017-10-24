@@ -9,6 +9,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -41,28 +42,29 @@ public class ModelGeneratorTest {
         List<String> configServerHosts = Stream.of("cfg1", "cfg2", "cfg3")
                 .collect(Collectors.toList());
 
-        SlobrokMonitor2 slobrokMonitor = mock(SlobrokMonitor2.class);
-        when(slobrokMonitor.getStatus(any(), any())).thenReturn(ServiceMonitorStatus.UP);
+        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
+        when(slobrokMonitorManager.getStatus(any(), any(), any()))
+                .thenReturn(ServiceStatus.UP);
 
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(
                         superModel,
                         zone,
                         configServerHosts,
-                        slobrokMonitor);
+                        slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,
-                ApplicationInstance<ServiceMonitorStatus>> applicationInstances =
+                ApplicationInstance> applicationInstances =
                 serviceModel.getAllApplicationInstances();
 
         assertEquals(2, applicationInstances.size());
 
         Iterator<Map.Entry<ApplicationInstanceReference,
-                ApplicationInstance<ServiceMonitorStatus>>> iterator =
+                ApplicationInstance>> iterator =
                 applicationInstances.entrySet().iterator();
 
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance1 = iterator.next().getValue();
-        ApplicationInstance<ServiceMonitorStatus> applicationInstance2 = iterator.next().getValue();
+        ApplicationInstance applicationInstance1 = iterator.next().getValue();
+        ApplicationInstance applicationInstance2 = iterator.next().getValue();
 
         if (applicationInstance1.applicationInstanceId().equals(
                 ConfigServerApplication.APPLICATION_INSTANCE_ID)) {
@@ -84,25 +86,26 @@ public class ModelGeneratorTest {
 
         List<String> configServerHosts = Collections.emptyList();
 
-        SlobrokMonitor2 slobrokMonitor = mock(SlobrokMonitor2.class);
-        when(slobrokMonitor.getStatus(any(), any())).thenReturn(ServiceMonitorStatus.UP);
+        SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
+        when(slobrokMonitorManager.getStatus(any(), any(), any()))
+                .thenReturn(ServiceStatus.UP);
 
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(
                         superModel,
                         zone,
                         configServerHosts,
-                        slobrokMonitor);
+                        slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,
-                ApplicationInstance<ServiceMonitorStatus>> applicationInstances =
+                ApplicationInstance> applicationInstances =
                 serviceModel.getAllApplicationInstances();
 
         assertEquals(1, applicationInstances.size());
         verifyOtherApplication(applicationInstances.values().iterator().next());
     }
 
-    private void verifyOtherApplication(ApplicationInstance<ServiceMonitorStatus> applicationInstance) {
+    private void verifyOtherApplication(ApplicationInstance applicationInstance) {
         assertEquals(String.format("%s:%s:%s:%s:%s",
                 ExampleModel.TENANT,
                 ExampleModel.APPLICATION_NAME,
@@ -112,23 +115,23 @@ public class ModelGeneratorTest {
                 applicationInstance.reference().toString());
 
         assertEquals(ExampleModel.TENANT, applicationInstance.tenantId().toString());
-        Set<ServiceCluster<ServiceMonitorStatus>> serviceClusters =
+        Set<ServiceCluster> serviceClusters =
                 applicationInstance.serviceClusters();
         assertEquals(1, serviceClusters.size());
-        ServiceCluster<ServiceMonitorStatus> serviceCluster = serviceClusters.iterator().next();
+        ServiceCluster serviceCluster = serviceClusters.iterator().next();
         assertEquals(ExampleModel.CLUSTER_ID, serviceCluster.clusterId().toString());
         assertEquals(ExampleModel.SERVICE_TYPE, serviceCluster.serviceType().toString());
-        Set<ServiceInstance<ServiceMonitorStatus>> serviceInstances =
+        Set<ServiceInstance> serviceInstances =
                 serviceCluster.serviceInstances();
         assertEquals(1, serviceClusters.size());
-        ServiceInstance<ServiceMonitorStatus> serviceInstance = serviceInstances.iterator().next();
+        ServiceInstance serviceInstance = serviceInstances.iterator().next();
         assertEquals(HOSTNAME, serviceInstance.hostName().toString());
         assertEquals(ExampleModel.CONFIG_ID, serviceInstance.configId().toString());
-        assertEquals(ServiceMonitorStatus.UP, serviceInstance.serviceStatus());
+        assertEquals(ServiceStatus.UP, serviceInstance.serviceStatus());
     }
 
     private void verifyConfigServerApplication(
-            ApplicationInstance<ServiceMonitorStatus> applicationInstance) {
+            ApplicationInstance applicationInstance) {
         assertEquals(ConfigServerApplication.APPLICATION_INSTANCE_ID,
                 applicationInstance.applicationInstanceId());
     }

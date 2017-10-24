@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
@@ -111,6 +112,12 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> ! a.id().instance().value().startsWith("default-pr")));
     }
 
+    /** Returns the subset of applications which have at least one production deployment */
+    public ApplicationList hasProductionDeployment() {
+        return listOf(list.stream().filter(a -> a.deployments().keySet().stream()
+                .anyMatch(zone -> zone.environment() == Environment.prod)));
+    }
+
     /** Returns the subset of applications that are allowed to upgrade at the given time */
     public ApplicationList canUpgradeAt(Instant instant) {
         return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
@@ -133,9 +140,9 @@ public class ApplicationList {
         return listOf(list.stream().sorted(Comparator.comparing(application -> application.deployedVersion().orElse(Version.emptyVersion))));
     }
 
-    /** Returns the subset of applications that are not upgrading or started upgrading before the grace period */
-    public ApplicationList notCurrentlyUpgrading(Change.VersionChange change, Instant startOfGracePeriod) {
-        return listOf(list.stream().filter(a -> !currentlyUpgrading(change, a, startOfGracePeriod)));
+    /** Returns the subset of applications that are not currently upgrading */
+    public ApplicationList notCurrentlyUpgrading(Change.VersionChange change, Instant jobTimeoutLimit) {
+        return listOf(list.stream().filter(a -> !currentlyUpgrading(change, a, jobTimeoutLimit)));
     }
 
     // ----------------------------------- Internal helpers
@@ -163,12 +170,11 @@ public class ApplicationList {
         return false;
     }
 
-    private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant instant) {
+    private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant jobTimeoutLimit) {
         return application.deploymentJobs().jobStatus().values().stream()
-                .filter(JobStatus::inProgress)
+                .filter(status -> status.isRunning(jobTimeoutLimit))
                 .filter(status -> status.lastTriggered().isPresent())
                 .map(status -> status.lastTriggered().get())
-                .filter(jobRun -> jobRun.at().isAfter(instant))
                 .anyMatch(jobRun -> jobRun.version().equals(change.version()));
     }
     

@@ -2,20 +2,16 @@
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.io.IOUtils;
-import com.yahoo.text.XML;
-import org.w3c.dom.Element;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -48,28 +44,28 @@ public class DeploymentSpec {
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
-    private final List<TimeWindow> blockUpgrades;
+    private final List<ChangeBlocker> changeBlockers;
     private final List<Step> steps;
     private final String xmlForm;
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                          List<TimeWindow> blockUpgrades, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, blockUpgrades, steps, null);
+                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
+        this(globalServiceId, upgradePolicy, changeBlockers, steps, null);
     }
 
-    private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                           List<TimeWindow> blockUpgrades, List<Step> steps, String xmlForm) {
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
+                          List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
-        this.blockUpgrades = blockUpgrades;
+        this.changeBlockers = changeBlockers;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
         validateZones(this.steps);
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
-    private static void validateTotalDelay(List<Step> steps) {
+    private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().filter(step -> step instanceof Delay)
                                                .mapToLong(delay -> ((Delay)delay).duration().getSeconds())
                                                .sum();
@@ -123,7 +119,6 @@ public class DeploymentSpec {
     /** 
      * Removes the first occurrence of a deployment step to the given environment and returns it.
      * 
-     * @param environment
      * @return the removed step, or null if it is not present
      */
     private static DeclaredZone remove(Environment environment, List<Step> steps) {
@@ -144,11 +139,18 @@ public class DeploymentSpec {
 
     /** Returns whether upgrade can occur at the given instant */
     public boolean canUpgradeAt(Instant instant) {
-        return blockUpgrades.stream().noneMatch(timeWindow -> timeWindow.includes(instant));
+        return changeBlockers.stream().filter(block -> block.blocksVersions())
+                                      .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns time windows where upgrade is disallowed */
-    public List<TimeWindow> blockUpgrades() { return blockUpgrades; }
+    /** Returns whether an application revision change can occur at the given instant */
+    public boolean canChangeRevisionAt(Instant instant) {
+        return changeBlockers.stream().filter(block -> block.blocksRevisions())
+                                      .noneMatch(block -> block.window().includes(instant));
+    }
+
+    /** Returns time windows where upgrades are disallowed */
+    public List<ChangeBlocker> changeBlocker() { return changeBlockers; }
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() { return steps; }
@@ -176,12 +178,7 @@ public class DeploymentSpec {
      * @throws IllegalArgumentException if the XML is invalid
      */
     public static DeploymentSpec fromXml(Reader reader) {
-        try {
-            return fromXml(IOUtils.readAll(reader));
-        }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not read deployment spec", e);
-        }
+        return new DeploymentSpecXmlReader().read(reader);
     }
 
     /**
@@ -190,112 +187,16 @@ public class DeploymentSpec {
      * @throws IllegalArgumentException if the XML is invalid
      */
     public static DeploymentSpec fromXml(String xmlForm) {
-        List<Step> steps = new ArrayList<>();
-        Optional<String> globalServiceId = Optional.empty();
-        Element root = XML.getDocument(xmlForm).getDocumentElement();
-        for (Element environmentTag : XML.getChildren(root)) {
-            if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
-
-            Environment environment = Environment.from(environmentTag.getTagName());
-
-            if (environment == Environment.prod) {
-                for (Element stepTag : XML.getChildren(environmentTag)) {
-                    if (stepTag.getTagName().equals("delay")) {
-                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
-                                                               longAttribute("minutes", stepTag) * 60 +
-                                                               longAttribute("seconds", stepTag))));
-                    } else if (stepTag.getTagName().equals("parallel")) {
-                        List<DeclaredZone> zones = new ArrayList<>();
-                        for (Element regionTag : XML.getChildren(stepTag)) {
-                            zones.add(readDeclaredZone(environment, regionTag));
-                        }
-                        steps.add(new ParallelZones(zones));
-                    } else { // a region: deploy step
-                        steps.add(readDeclaredZone(environment, stepTag));
-                    }
-                }
-            } else {
-                steps.add(new DeclaredZone(environment));
-            }
-
-            if (environment == Environment.prod)
-                globalServiceId = readGlobalServiceId(environmentTag);
-            else if (readGlobalServiceId(environmentTag).isPresent())
-                throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
-        }
-        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readBlockUpgradeWindows(root), steps,
-                                  xmlForm);
-    }
-    
-    /** Returns the given attribute as an integer, or 0 if it is not present */
-    private static long longAttribute(String attributeName, Element tag) {
-        String value = tag.getAttribute(attributeName);
-        if (value == null || value.isEmpty()) return 0;
-        try {
-            return Long.parseLong(value);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Expected an integer for attribute '" + attributeName + 
-                                               "' but got '" + value + "'");
-        }
+        return fromXml(xmlForm, true);
     }
 
-    private static boolean isEnvironmentName(String tagName) {
-        return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
-    }
-
-    private static DeclaredZone readDeclaredZone(Environment environment, Element regionTag) {
-        return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                readActive(regionTag));
-    }
-
-    private static Optional<String> readGlobalServiceId(Element environmentTag) {
-        String globalServiceId = environmentTag.getAttribute("global-service-id");
-        if (globalServiceId == null || globalServiceId.isEmpty()) {
-            return Optional.empty();
-        }
-        else {
-            return Optional.of(globalServiceId);
-        }
-    }
-
-    private static List<TimeWindow> readBlockUpgradeWindows(Element root) {
-        List<TimeWindow> timeWindows = new ArrayList<>();
-        for (Element tag : XML.getChildren(root)) {
-            if (!"block-upgrade".equals(tag.getTagName())) {
-                continue;
-            }
-            String daySpec = tag.getAttribute("days");
-            String hourSpec = tag.getAttribute("hours");
-            String zoneSpec = tag.getAttribute("time-zone");
-            if (zoneSpec.isEmpty()) { // Default to UTC time zone
-                zoneSpec = "UTC";
-            }
-            timeWindows.add(TimeWindow.from(daySpec, hourSpec, zoneSpec));
-        }
-        return Collections.unmodifiableList(timeWindows);
-    }
-    
-    private static UpgradePolicy readUpgradePolicy(Element root) {
-        Element upgradeElement = XML.getChild(root, "upgrade");
-        if (upgradeElement == null) return UpgradePolicy.defaultPolicy;
-
-        String policy = upgradeElement.getAttribute("policy");
-        switch (policy) {
-            case "canary" : return UpgradePolicy.canary;
-            case "default" : return UpgradePolicy.defaultPolicy;
-            case "conservative" : return UpgradePolicy.conservative;
-            default : throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
-                                                         "Must be one of " + Arrays.toString(UpgradePolicy.values()));
-        }
-    }
-
-    private static boolean readActive(Element regionTag) {
-        String activeValue = regionTag.getAttribute("active");
-        if ("true".equals(activeValue)) return true;
-        if ("false".equals(activeValue)) return false;
-        throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
-                                           "to control whether the region should receive production traffic");
+    /**
+     * Creates a deployment spec from XML.
+     *
+     * @throws IllegalArgumentException if the XML is invalid
+     */
+    public static DeploymentSpec fromXml(String xmlForm, boolean validate) {
+        return new DeploymentSpecXmlReader(validate).read(xmlForm);
     }
 
     public static String toMessageString(Throwable t) {
@@ -338,7 +239,7 @@ public class DeploymentSpec {
         }
     }
 
-    /** A delpoyment step */
+    /** A deployment step */
     public abstract static class Step {
         
         /** Returns whether this step deploys to the given region */
@@ -472,6 +373,25 @@ public class DeploymentSpec {
         defaultPolicy,
         /** Will upgrade after most default applications upgraded successfully */
         conservative
+    }
+
+    /** A blocking of changes in a given time window */
+    public static class ChangeBlocker {
+        
+        private final boolean revision;
+        private final boolean version;
+        private final TimeWindow window;
+        
+        public ChangeBlocker(boolean revision, boolean version, TimeWindow window) {
+            this.revision = revision;
+            this.version = version;
+            this.window = window;
+        }
+        
+        public boolean blocksRevisions() { return revision; }
+        public boolean blocksVersions() { return version; }
+        public TimeWindow window() { return window; }
+        
     }
 
 }

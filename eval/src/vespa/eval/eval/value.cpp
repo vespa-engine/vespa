@@ -19,6 +19,8 @@ Value::apply(const BinaryOperation &, const Value &, Stash &stash) const
     return stash.create<ErrorValue>();
 }
 
+ErrorValue ErrorValue::instance;
+
 bool
 TensorValue::equal(const Value &rhs) const
 {

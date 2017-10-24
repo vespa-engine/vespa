@@ -138,7 +138,7 @@ struct MyStorer : public IOperationStorer
         : _moveCnt(0),
           _compactCnt(0)
     {}
-    virtual void storeOperation(FeedOperation &op) override {
+    void storeOperation(const FeedOperation &op, DoneCallback) override {
         if (op.getType() == FeedOperation::MOVE) {
             ++ _moveCnt;
         } else if (op.getType() == FeedOperation::COMPACT_LID_SPACE) {

@@ -315,7 +315,6 @@ public:
         }
         return RPC::OK;
     }
-    virtual void inSync() override { }
     virtual void eof() override { _eof = true; }
     bool isEof() const { return _eof; }
 };

@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
-#include <vespa/vespalib/hwaccelrated/generic.h>
-#include <vespa/vespalib/hwaccelrated/sse2.h>
-#include <vespa/vespalib/hwaccelrated/avx.h>
-#include <vespa/vespalib/hwaccelrated/avx2.h>
-#include <vespa/vespalib/hwaccelrated/avx512.h>
+#include "iaccelrated.h"
+#include "generic.h"
+#include "sse2.h"
+#include "avx.h"
+#include "avx2.h"
+#include "avx512.h"
 
-namespace vespalib {
-
-namespace hwaccelrated {
+namespace vespalib::hwaccelrated {
 
 namespace {
 
@@ -125,5 +123,4 @@ IAccelrated::getAccelrator()
     return _G_selector.create();
 }
 
-}
 }

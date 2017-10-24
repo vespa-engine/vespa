@@ -3,9 +3,9 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -29,15 +29,15 @@ public class ClusterApiImplTest {
         HostName hostName5 = modelUtils.createNode("host5", HostStatus.NO_REMARKS);
 
 
-        ServiceCluster<ServiceMonitorStatus> serviceCluster = modelUtils.createServiceCluster(
+        ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 new ServiceType("service-type"),
                 Arrays.asList(
-                        modelUtils.createServiceInstance("service-1", hostName1, ServiceMonitorStatus.UP),
-                        modelUtils.createServiceInstance("service-2", hostName2, ServiceMonitorStatus.DOWN),
-                        modelUtils.createServiceInstance("service-3", hostName3, ServiceMonitorStatus.UP),
-                        modelUtils.createServiceInstance("service-4", hostName4, ServiceMonitorStatus.DOWN),
-                        modelUtils.createServiceInstance("service-5", hostName5, ServiceMonitorStatus.UP)
+                        modelUtils.createServiceInstance("service-1", hostName1, ServiceStatus.UP),
+                        modelUtils.createServiceInstance("service-2", hostName2, ServiceStatus.DOWN),
+                        modelUtils.createServiceInstance("service-3", hostName3, ServiceStatus.UP),
+                        modelUtils.createServiceInstance("service-4", hostName4, ServiceStatus.DOWN),
+                        modelUtils.createServiceInstance("service-5", hostName5, ServiceStatus.UP)
                 )
         );
 
@@ -68,15 +68,15 @@ public class ClusterApiImplTest {
         HostName hostName5 = modelUtils.createNode("host5", HostStatus.NO_REMARKS);
 
 
-        ServiceCluster<ServiceMonitorStatus> serviceCluster = modelUtils.createServiceCluster(
+        ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 new ServiceType("service-type"),
                 Arrays.asList(
-                        modelUtils.createServiceInstance("service-1", hostName1, ServiceMonitorStatus.UP),
-                        modelUtils.createServiceInstance("service-2", hostName2, ServiceMonitorStatus.DOWN),
-                        modelUtils.createServiceInstance("service-3", hostName3, ServiceMonitorStatus.UP),
-                        modelUtils.createServiceInstance("service-4", hostName4, ServiceMonitorStatus.DOWN),
-                        modelUtils.createServiceInstance("service-5", hostName5, ServiceMonitorStatus.UP)
+                        modelUtils.createServiceInstance("service-1", hostName1, ServiceStatus.UP),
+                        modelUtils.createServiceInstance("service-2", hostName2, ServiceStatus.DOWN),
+                        modelUtils.createServiceInstance("service-3", hostName3, ServiceStatus.UP),
+                        modelUtils.createServiceInstance("service-4", hostName4, ServiceStatus.DOWN),
+                        modelUtils.createServiceInstance("service-5", hostName5, ServiceStatus.UP)
                 )
         );
 
@@ -92,7 +92,7 @@ public class ClusterApiImplTest {
         verifyNoServices(serviceCluster, false, true, hostName1, hostName2, hostName3, hostName4);
     }
 
-    private void verifyNoServices(ServiceCluster<ServiceMonitorStatus> serviceCluster,
+    private void verifyNoServices(ServiceCluster serviceCluster,
                                   boolean expectedNoServicesInGroupIsUp,
                                   boolean expectedNoServicesOutsideGroupIsDown,
                                   HostName... groupNodes) {
@@ -112,12 +112,12 @@ public class ClusterApiImplTest {
         HostName hostName2 = new HostName("host2");
         HostName hostName3 = new HostName("host3");
 
-        ServiceCluster<ServiceMonitorStatus> serviceCluster = modelUtils.createServiceCluster(
+        ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 VespaModelUtil.STORAGENODE_SERVICE_TYPE,
                 Arrays.asList(
-                        modelUtils.createServiceInstance("storage-1", hostName1, ServiceMonitorStatus.UP),
-                        modelUtils.createServiceInstance("storage-2", hostName2, ServiceMonitorStatus.DOWN)
+                        modelUtils.createServiceInstance("storage-1", hostName1, ServiceStatus.UP),
+                        modelUtils.createServiceInstance("storage-2", hostName2, ServiceStatus.DOWN)
                 )
         );
 

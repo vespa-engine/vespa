@@ -3,6 +3,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -13,7 +14,8 @@ using std::unique_ptr;
 using std::shared_ptr;
 
 using namespace std::string_literals;
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -44,7 +46,7 @@ public:
 
         createBucket(BUCKET_ID);
         getPersistenceProvider().createBucket(
-                makeBucket(BUCKET_ID),
+                makeSpiBucket(BUCKET_ID),
             context);
 
         thread = createPersistenceThread(0);
@@ -109,7 +111,7 @@ void TestAndSetTest::conditional_put_not_executed_on_condition_mismatch()
 
     // Conditionally replace document, but fail due to lack of woofy dog
     api::Timestamp timestampTwo = 1;
-    api::PutCommand putTwo(BUCKET_ID, testDoc, timestampTwo);
+    api::PutCommand putTwo(makeDocumentBucket(BUCKET_ID), testDoc, timestampTwo);
     setTestCondition(putTwo);
 
     CPPUNIT_ASSERT(thread->handlePut(putTwo)->getResult() == api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
@@ -129,7 +131,7 @@ void TestAndSetTest::conditional_put_executed_on_condition_match()
 
     // Conditionally replace document with updated version, succeed in doing so
     api::Timestamp timestampTwo = 1;
-    api::PutCommand putTwo(BUCKET_ID, testDoc, timestampTwo);
+    api::PutCommand putTwo(makeDocumentBucket(BUCKET_ID), testDoc, timestampTwo);
     setTestCondition(putTwo);
 
     CPPUNIT_ASSERT(thread->handlePut(putTwo)->getResult() == api::ReturnCode::Result::OK);
@@ -150,7 +152,7 @@ void TestAndSetTest::conditional_remove_not_executed_on_condition_mismatch()
 
     // Conditionally remove document, fail in doing so
     api::Timestamp timestampTwo = 1;
-    api::RemoveCommand remove(BUCKET_ID, testDocId, timestampTwo);
+    api::RemoveCommand remove(makeDocumentBucket(BUCKET_ID), testDocId, timestampTwo);
     setTestCondition(remove);
 
     CPPUNIT_ASSERT(thread->handleRemove(remove)->getResult() == api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
@@ -170,7 +172,7 @@ void TestAndSetTest::conditional_remove_executed_on_condition_match()
 
     // Conditionally remove document, succeed in doing so
     api::Timestamp timestampTwo = 1;
-    api::RemoveCommand remove(BUCKET_ID, testDocId, timestampTwo);
+    api::RemoveCommand remove(makeDocumentBucket(BUCKET_ID), testDocId, timestampTwo);
     setTestCondition(remove);
 
     CPPUNIT_ASSERT(thread->handleRemove(remove)->getResult() == api::ReturnCode::Result::OK);
@@ -191,7 +193,7 @@ std::unique_ptr<api::UpdateCommand> TestAndSetTest::conditional_update_test(
     fieldUpdate.addUpdate(document::AssignValueUpdate(NEW_CONTENT));
     docUpdate->addUpdate(fieldUpdate);
 
-    auto updateUp = std::make_unique<api::UpdateCommand>(BUCKET_ID, docUpdate, timestampTwo);
+    auto updateUp = std::make_unique<api::UpdateCommand>(makeDocumentBucket(BUCKET_ID), docUpdate, timestampTwo);
     setTestCondition(*updateUp);
     return updateUp;
 }
@@ -228,7 +230,7 @@ void TestAndSetTest::invalid_document_selection_should_fail()
     // Conditionally replace nonexisting document
     // Fail early since document selection is invalid 
     api::Timestamp timestamp = 0;
-    api::PutCommand put(BUCKET_ID, testDoc, timestamp);
+    api::PutCommand put(makeDocumentBucket(BUCKET_ID), testDoc, timestamp);
     put.setCondition(documentapi::TestAndSetCondition("bjarne"));
 
     CPPUNIT_ASSERT(thread->handlePut(put)->getResult() == api::ReturnCode::Result::ILLEGAL_PARAMETERS);
@@ -240,7 +242,7 @@ void TestAndSetTest::non_existing_document_should_fail()
     // Conditionally replace nonexisting document
     // Fail since no document exists to match with test and set
     api::Timestamp timestamp = 0;
-    api::PutCommand put(BUCKET_ID, testDoc, timestamp);
+    api::PutCommand put(makeDocumentBucket(BUCKET_ID), testDoc, timestamp);
     setTestCondition(put);
     thread->handlePut(put);
 
@@ -254,7 +256,7 @@ void TestAndSetTest::document_with_no_type_should_fail()
     // Fail since no document exists to match with test and set
     api::Timestamp timestamp = 0;
     document::DocumentId legacyDocId("doc:mail:3619.html");
-    api::RemoveCommand remove(BUCKET_ID, legacyDocId, timestamp);
+    api::RemoveCommand remove(makeDocumentBucket(BUCKET_ID), legacyDocId, timestamp);
     setTestCondition(remove);
 
     auto code = thread->handleRemove(remove)->getResult();
@@ -281,7 +283,7 @@ TestAndSetTest::createTestDocument()
 
 document::Document::SP TestAndSetTest::retrieveTestDocument()
 {
-    api::GetCommand get(BUCKET_ID, testDocId, "[all]"); 
+    api::GetCommand get(makeDocumentBucket(BUCKET_ID), testDocId, "[all]");
     auto tracker = thread->handleGet(get);
     CPPUNIT_ASSERT(tracker->getResult() == api::ReturnCode::Result::OK);
 
@@ -301,7 +303,7 @@ void TestAndSetTest::putTestDocument(bool matchingHeader, api::Timestamp timesta
         testDoc->setValue(testDoc->getField("hstringval"), MATCHING_HEADER);
     }
 
-    api::PutCommand put(BUCKET_ID, testDoc, timestamp);
+    api::PutCommand put(makeDocumentBucket(BUCKET_ID), testDoc, timestamp);
     thread->handlePut(put);
 }
 

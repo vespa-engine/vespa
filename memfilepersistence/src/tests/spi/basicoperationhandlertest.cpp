@@ -8,7 +8,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
-using storage::spi::test::makeBucket;
+using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 namespace memfile {
@@ -144,7 +144,7 @@ BasicOperationHandlerTest::testRemove()
                                         Timestamp(2),
                                         OperationHandler::PERSIST_REMOVE_IF_FOUND));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     env()._cache.clear();
 
@@ -178,7 +178,7 @@ BasicOperationHandlerTest::doTestRemoveWithNonMatchingTimestamp(
                                          Timestamp(1233),
                                          persistRemove));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     MemFilePtr file(getMemFile(bucketId));
     CPPUNIT_ASSERT_EQUAL(
@@ -241,7 +241,7 @@ BasicOperationHandlerTest::testRemoveForExistingRemoveSameTimestamp()
                                          Timestamp(1235),
                                          OperationHandler::PERSIST_REMOVE_IF_FOUND));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     // Should only be one remove entry still
     MemFilePtr file(getMemFile(bucketId));
@@ -271,7 +271,7 @@ BasicOperationHandlerTest::doTestRemoveForExistingRemoveNewTimestamp(
                                         Timestamp(1236),
                                         persistRemove));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     MemFilePtr file(getMemFile(bucketId));
     CPPUNIT_ASSERT_EQUAL(
@@ -325,14 +325,14 @@ BasicOperationHandlerTest::testRemoveExistingOlderDocumentVersion()
                                         Timestamp(1235),
                                         OperationHandler::ALWAYS_PERSIST_REMOVE));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     CPPUNIT_ASSERT_EQUAL(true, doRemove(bucketId,
                                         doc->getId(),
                                         Timestamp(1234),
                                         OperationHandler::ALWAYS_PERSIST_REMOVE));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     // Should now be two remove entries.
     MemFilePtr file(getMemFile(bucketId));
@@ -362,7 +362,7 @@ BasicOperationHandlerTest::doTestRemoveDocumentNotFound(
                                   Timestamp(1235),
                                   persistRemove));
 
-    getPersistenceProvider().flush(makeBucket(bucketId), context);
+    getPersistenceProvider().flush(makeSpiBucket(bucketId), context);
 
     MemFilePtr file(getMemFile(bucketId));
     CPPUNIT_ASSERT_EQUAL(
@@ -576,8 +576,8 @@ BasicOperationHandlerTest::testRemoveEntry()
     Document::SP doc = doPut(4, Timestamp(2345));
     doPut(4, Timestamp(3456));
 
-    getPersistenceProvider().removeEntry(makeBucket(bucketId), spi::Timestamp(1234), context);
-    getPersistenceProvider().removeEntry(makeBucket(bucketId), spi::Timestamp(3456), context);
+    getPersistenceProvider().removeEntry(makeSpiBucket(bucketId), spi::Timestamp(1234), context);
+    getPersistenceProvider().removeEntry(makeSpiBucket(bucketId), spi::Timestamp(3456), context);
     flush(bucketId);
 
     memfile::MemFilePtr file(getMemFile(bucketId));
@@ -674,7 +674,7 @@ BasicOperationHandlerTest::testEraseFromCacheOnMaintainException()
         std::unique_ptr<Environment::LazyFileFactory>(
                 new SimulatedFailureLazyFile::Factory);
 
-        spi::Result result = getPersistenceProvider().maintain(makeBucket(bucketId), spi::HIGH);
+        spi::Result result = getPersistenceProvider().maintain(makeSpiBucket(bucketId), spi::HIGH);
         CPPUNIT_ASSERT(result.hasError());
         CPPUNIT_ASSERT(result.getErrorMessage().find("A simulated I/O write")
                        != vespalib::string::npos);
@@ -709,7 +709,7 @@ BasicOperationHandlerTest::testEraseFromCacheOnDeleteBucketException()
         std::unique_ptr<Environment::LazyFileFactory>(factory);
 
     // loadFile will fail
-    spi::Result result = getPersistenceProvider().deleteBucket(makeBucket(bucketId), context);
+    spi::Result result = getPersistenceProvider().deleteBucket(makeSpiBucket(bucketId), context);
     CPPUNIT_ASSERT(result.hasError());
     CPPUNIT_ASSERT(result.getErrorMessage().find("A simulated I/O read")
                    != vespalib::string::npos);

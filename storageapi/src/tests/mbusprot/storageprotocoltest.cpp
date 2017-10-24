@@ -15,6 +15,8 @@
 #include <vespa/document/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -22,11 +24,14 @@
 #include <sstream>
 
 using std::shared_ptr;
+using document::BucketSpace;
 using document::ByteBuffer;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
+using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 using storage::lib::ClusterState;
 using vespalib::string;
 
@@ -37,7 +42,7 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     document::TestDocMan _docMan;
     document::Document::SP _testDoc;
     document::DocumentId _testDocId;
-    document::BucketId _bucket{16, 0x51};
+    document::Bucket  _bucket;
     vespalib::Version _version5_0{5, 0, 12};
     vespalib::Version _version5_1{5, 1, 0};
     vespalib::Version _version5_2{5, 93, 30};
@@ -52,6 +57,7 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
         : _docMan(),
           _testDoc(_docMan.createDocument()),
           _testDocId(_testDoc->getId()),
+          _bucket(makeDocumentBucket(document::BucketId(16, 0x51))),
           _protocol(_docMan.getTypeRepoSP(), _loadTypes)
     {
         _loadTypes.addLoadType(34, "foo", documentapi::Priority::PRI_NORMAL_2);
@@ -385,7 +391,7 @@ StorageProtocolTest::testRequestBucketInfo51()
         std::vector<document::BucketId> ids;
         ids.push_back(document::BucketId(3));
         ids.push_back(document::BucketId(7));
-        RequestBucketInfoCommand::SP cmd(new RequestBucketInfoCommand(ids));
+        RequestBucketInfoCommand::SP cmd(new RequestBucketInfoCommand(makeBucketSpace(), ids));
         RequestBucketInfoCommand::SP cmd2(copyCommand(cmd, _version5_1));
         CPPUNIT_ASSERT_EQUAL(ids, cmd2->getBuckets());
         CPPUNIT_ASSERT(!cmd2->hasSystemState());
@@ -395,6 +401,7 @@ StorageProtocolTest::testRequestBucketInfo51()
     {
         ClusterState state("distributor:3 .1.s:d");
         RequestBucketInfoCommand::SP cmd(new RequestBucketInfoCommand(
+                                                 makeBucketSpace(),
                                                  3, state, "14"));
         RequestBucketInfoCommand::SP cmd2(copyCommand(cmd, _version5_1));
         CPPUNIT_ASSERT(cmd2->hasSystemState());
@@ -427,8 +434,10 @@ StorageProtocolTest::testNotifyBucketChange51()
 {
     ScopedName test("testNotifyBucketChange51");
     BucketInfo info(2, 3, 4);
+    document::BucketId modifiedBucketId(20, 1000);
+    document::Bucket modifiedBucket(makeDocumentBucket(modifiedBucketId));
     NotifyBucketChangeCommand::SP cmd(new NotifyBucketChangeCommand(
-                                          document::BucketId(20, 1000), info));
+                                          modifiedBucket, info));
     NotifyBucketChangeCommand::SP cmd2(copyCommand(cmd, _version5_1));
     CPPUNIT_ASSERT_EQUAL(document::BucketId(20, 1000),
                          cmd2->getBucketId());
@@ -446,15 +455,16 @@ void
 StorageProtocolTest::testCreateBucket51()
 {
     ScopedName test("testCreateBucket51");
-    document::BucketId id(623);
+    document::BucketId bucketId(623);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
 
-    CreateBucketCommand::SP cmd(new CreateBucketCommand(id));
+    CreateBucketCommand::SP cmd(new CreateBucketCommand(bucket));
     CreateBucketCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(id, cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
 
     CreateBucketReply::SP reply(new CreateBucketReply(*cmd));
     CreateBucketReply::SP reply2(copyReply(reply));
-    CPPUNIT_ASSERT_EQUAL(id, reply2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, reply2->getBucketId());
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
@@ -465,20 +475,21 @@ void
 StorageProtocolTest::testDeleteBucket51()
 {
     ScopedName test("testDeleteBucket51");
-    document::BucketId id(623);
+    document::BucketId bucketId(623);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
 
-    DeleteBucketCommand::SP cmd(new DeleteBucketCommand(id));
+    DeleteBucketCommand::SP cmd(new DeleteBucketCommand(bucket));
     BucketInfo info(0x100, 200, 300);
     cmd->setBucketInfo(info);
     DeleteBucketCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(id, cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(info, cmd2->getBucketInfo());
 
     DeleteBucketReply::SP reply(new DeleteBucketReply(*cmd));
     // Not set automatically by constructor
     reply->setBucketInfo(cmd2->getBucketInfo());
     DeleteBucketReply::SP reply2(copyReply(reply));
-    CPPUNIT_ASSERT_EQUAL(id, reply2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, reply2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(info, reply2->getBucketInfo());
 
     recordOutput(*cmd2);
@@ -490,7 +501,8 @@ void
 StorageProtocolTest::testMergeBucket51()
 {
     ScopedName test("testMergeBucket51");
-    document::BucketId id(623);
+    document::BucketId bucketId(623);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
 
     typedef api::MergeBucketCommand::Node Node;
     std::vector<Node> nodes;
@@ -504,9 +516,9 @@ StorageProtocolTest::testMergeBucket51()
     chain.push_back(14);
 
     MergeBucketCommand::SP cmd(
-            new MergeBucketCommand(id, nodes, Timestamp(1234), 567, chain));
+            new MergeBucketCommand(bucket, nodes, Timestamp(1234), 567, chain));
     MergeBucketCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(id, cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(nodes, cmd2->getNodes());
     CPPUNIT_ASSERT_EQUAL(Timestamp(1234), cmd2->getMaxTimestamp());
     CPPUNIT_ASSERT_EQUAL(uint32_t(567), cmd2->getClusterStateVersion());
@@ -514,7 +526,7 @@ StorageProtocolTest::testMergeBucket51()
 
     MergeBucketReply::SP reply(new MergeBucketReply(*cmd));
     MergeBucketReply::SP reply2(copyReply(reply));
-    CPPUNIT_ASSERT_EQUAL(id, reply2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, reply2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(nodes, reply2->getNodes());
     CPPUNIT_ASSERT_EQUAL(Timestamp(1234), reply2->getMaxTimestamp());
     CPPUNIT_ASSERT_EQUAL(uint32_t(567), reply2->getClusterStateVersion());
@@ -530,7 +542,8 @@ StorageProtocolTest::testSplitBucket51()
 {
     ScopedName test("testSplitBucket51");
 
-    document::BucketId bucket(16, 0);
+    document::BucketId bucketId(16, 0);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
     SplitBucketCommand::SP cmd(new SplitBucketCommand(bucket));
     CPPUNIT_ASSERT_EQUAL(0u, (uint32_t) cmd->getMinSplitBits());
     CPPUNIT_ASSERT_EQUAL(58u, (uint32_t) cmd->getMaxSplitBits());
@@ -555,7 +568,7 @@ StorageProtocolTest::testSplitBucket51()
             document::BucketId(17, 1), BucketInfo(101, 1001, 10001, true, true)));
     SplitBucketReply::SP reply2(copyReply(reply));
 
-    CPPUNIT_ASSERT_EQUAL(bucket, reply2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, reply2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(size_t(2), reply2->getSplitInfo().size());
     CPPUNIT_ASSERT_EQUAL(document::BucketId(17, 0),
                          reply2->getSplitInfo()[0].first);
@@ -575,7 +588,8 @@ void
 StorageProtocolTest::testJoinBuckets51()
 {
     ScopedName test("testJoinBuckets51");
-    document::BucketId bucket(16, 0);
+    document::BucketId bucketId(16, 0);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
     std::vector<document::BucketId> sources;
     sources.push_back(document::BucketId(17, 0));
     sources.push_back(document::BucketId(17, 1));
@@ -591,7 +605,7 @@ StorageProtocolTest::testJoinBuckets51()
     CPPUNIT_ASSERT_EQUAL(sources, reply2->getSourceBuckets());
     CPPUNIT_ASSERT_EQUAL(3, (int)cmd2->getMinJoinBits());
     CPPUNIT_ASSERT_EQUAL(BucketInfo(3,4,5), reply2->getBucketInfo());
-    CPPUNIT_ASSERT_EQUAL(bucket, reply2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, reply2->getBucketId());
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
@@ -619,12 +633,14 @@ void
 StorageProtocolTest::testRemoveLocation51()
 {
     ScopedName test("testRemoveLocation51");
+    document::BucketId bucketId(16, 1234);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
 
     RemoveLocationCommand::SP cmd(
-            new RemoveLocationCommand("id.group == \"mygroup\"", document::BucketId(16, 1234)));
+            new RemoveLocationCommand("id.group == \"mygroup\"", bucket));
     RemoveLocationCommand::SP cmd2(copyCommand(cmd, _version5_1));
     CPPUNIT_ASSERT_EQUAL(vespalib::string("id.group == \"mygroup\""), cmd2->getDocumentSelection());
-    CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 1234), cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
 
     RemoveLocationReply::SP reply(new RemoveLocationReply(*cmd2));
     RemoveLocationReply::SP reply2(copyReply(reply));
@@ -644,7 +660,7 @@ StorageProtocolTest::testCreateVisitor51()
     buckets.push_back(document::BucketId(16, 2));
 
     CreateVisitorCommand::SP cmd(
-            new CreateVisitorCommand("library", "id", "doc selection"));
+            new CreateVisitorCommand(makeBucketSpace(), "library", "id", "doc selection"));
     cmd->setControlDestination("controldest");
     cmd->setDataDestination("datadest");
     cmd->setVisitorCmdId(1);
@@ -689,7 +705,8 @@ void
 StorageProtocolTest::testGetBucketDiff51()
 {
     ScopedName test("testGetBucketDiff51");
-    document::BucketId id(623);
+    document::BucketId bucketId(623);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
 
     std::vector<api::MergeBucketCommand::Node> nodes;
     nodes.push_back(4);
@@ -709,7 +726,7 @@ StorageProtocolTest::testGetBucketDiff51()
             "      header size: 100, body size: 65536, flags 0x1)"),
         entries.back().toString(true));
 
-    GetBucketDiffCommand::SP cmd(new GetBucketDiffCommand(id, nodes, 1056));
+    GetBucketDiffCommand::SP cmd(new GetBucketDiffCommand(bucket, nodes, 1056));
     cmd->getDiff() = entries;
     GetBucketDiffCommand::SP cmd2(copyCommand(cmd, _version5_1));
 
@@ -730,7 +747,8 @@ void
 StorageProtocolTest::testApplyBucketDiff51()
 {
     ScopedName test("testApplyBucketDiff51");
-    document::BucketId id(16, 623);
+    document::BucketId bucketId(16, 623);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
 
     std::vector<api::MergeBucketCommand::Node> nodes;
     nodes.push_back(4);
@@ -738,7 +756,7 @@ StorageProtocolTest::testApplyBucketDiff51()
     std::vector<ApplyBucketDiffCommand::Entry> entries;
     entries.push_back(ApplyBucketDiffCommand::Entry());
 
-    ApplyBucketDiffCommand::SP cmd(new ApplyBucketDiffCommand(id, nodes, 1234));
+    ApplyBucketDiffCommand::SP cmd(new ApplyBucketDiffCommand(bucket, nodes, 1234));
     cmd->getDiff() = entries;
     ApplyBucketDiffCommand::SP cmd2(copyCommand(cmd, _version5_1));
 
@@ -759,13 +777,14 @@ StorageProtocolTest::testMultiOperation51()
 {
     ScopedName test("testMultiOperation51");
 
-    document::BucketId bucket(20, 0xf1f1f1f1f1ull);
+    document::BucketId bucketId(20, 0xf1f1f1f1f1ull);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
     DocumentTypeRepo::SP repo(new DocumentTypeRepo);
     MultiOperationCommand::SP
         cmd(new MultiOperationCommand(repo, bucket, 10000));
     cmd->getOperations().addPut(*_testDoc);
     MultiOperationCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(bucket, cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(*_testDoc,
                          *cmd2->getOperations().begin()->getDocument());
 
@@ -782,14 +801,15 @@ StorageProtocolTest::testBatchPutRemove51()
 {
     ScopedName test("testBatchPutRemove51");
 
-    document::BucketId bucket(20, 0xf1f1f1f1f1ull);
+    document::BucketId bucketId(20, 0xf1f1f1f1f1ull);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
     BatchPutRemoveCommand::SP cmd(new BatchPutRemoveCommand(bucket));
     cmd->addPut(_testDoc, 100);
     cmd->addHeaderUpdate(_testDoc, 101, 1234);
     cmd->addRemove(_testDoc->getId(), 102);
     cmd->forceMsgId(556677);
     BatchPutRemoveCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(bucket, cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
     CPPUNIT_ASSERT_EQUAL(3, (int)cmd2->getOperationCount());
     CPPUNIT_ASSERT_EQUAL(*_testDoc, *(dynamic_cast<const BatchPutRemoveCommand::PutOperation&>(cmd2->getOperation(0)).document));
     CPPUNIT_ASSERT_EQUAL((uint64_t)100, cmd2->getOperation(0).timestamp);
@@ -872,7 +892,8 @@ void
 StorageProtocolTest::testSetBucketState51()
 {
     ScopedName test("testSetBucketState51");
-    document::BucketId bucket(16, 0);
+    document::BucketId bucketId(16, 0);
+    document::Bucket bucket(makeDocumentBucket(bucketId));
     SetBucketStateCommand::SP cmd(
             new SetBucketStateCommand(bucket, SetBucketStateCommand::ACTIVE));
     SetBucketStateCommand::SP cmd2(copyCommand(cmd, _version5_1));
@@ -881,8 +902,8 @@ StorageProtocolTest::testSetBucketState51()
     SetBucketStateReply::SP reply2(copyReply(reply));
 
     CPPUNIT_ASSERT_EQUAL(SetBucketStateCommand::ACTIVE, cmd2->getState());
-    CPPUNIT_ASSERT_EQUAL(bucket, cmd2->getBucketId());
-    CPPUNIT_ASSERT_EQUAL(bucket, reply2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(bucketId, reply2->getBucketId());
 
     recordOutput(*cmd2);
     recordOutput(*reply2);

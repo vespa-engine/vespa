@@ -13,7 +13,6 @@ class Identity;
 class RoutingTableSpec;
 class Slobrok;
 class SlobrokState;
-class OOSState;
 
 class VersionedRPCNetwork : public RPCNetwork {
 private:
@@ -36,20 +35,13 @@ public:
     VersionedRPCNetwork net;
     MessageBus mb;
 
-    TestServer(const Identity &ident,
-               const RoutingSpec &spec,
-               const Slobrok &slobrok,
-               const string &oosServerPattern = "",
+    TestServer(const Identity &ident, const RoutingSpec &spec, const Slobrok &slobrok,
                IProtocol::SP protocol = IProtocol::SP());
-    TestServer(const MessageBusParams &mbusParams,
-               const RPCNetworkParams &netParams);
+    TestServer(const MessageBusParams &mbusParams, const RPCNetworkParams &netParams);
     ~TestServer();
 
     bool waitSlobrok(const string &pattern, uint32_t cnt = 1);
-    bool waitOOS(const string &service);
-
     bool waitState(const SlobrokState &slobrokState);
-    bool waitState(const OOSState &oosState);
 };
 
 } // namespace mbus

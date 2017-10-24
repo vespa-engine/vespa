@@ -89,6 +89,12 @@ public class RestApiHandler implements HttpRequestHandler {
             result.setHttpCode(503, "Service Unavailable");
             result.setJson(jsonWriter.createErrorJson(exception.getMessage()));
             return result;
+        } catch (DeadlineExceededException exception) {
+            logRequestException(request, exception, Level.WARNING);
+            JsonHttpResult result = new JsonHttpResult();
+            result.setHttpCode(504, "Gateway Timeout");
+            result.setJson(jsonWriter.createErrorJson(exception.getMessage()));
+            return result;
         } catch (StateRestApiException exception) {
             logRequestException(request, exception, Level.WARNING);
             JsonHttpResult result = new JsonHttpResult();

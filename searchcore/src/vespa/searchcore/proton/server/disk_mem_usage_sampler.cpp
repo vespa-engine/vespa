@@ -67,7 +67,11 @@ sampleDiskUsageInDirectory(const fs::path &path)
     for (const auto &elem : fs::recursive_directory_iterator(path,
                                                              fs::directory_options::skip_permission_denied)) {
         if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
-            result += fs::file_size(elem.path());
+            try {
+                result += fs::file_size(elem.path());
+            } catch (const fs::filesystem_error &) {
+                // This typically happens when a file is removed while doing the directory scan. Ignoring.
+            }
         }
     }
     return result;

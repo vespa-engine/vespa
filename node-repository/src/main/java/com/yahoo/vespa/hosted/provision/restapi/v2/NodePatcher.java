@@ -125,7 +125,7 @@ public class NodePatcher {
             case "wantToDeprovision" :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
-                return node.with(node.status().withHardwareDivergence(asOptionalString(value)));
+                return node.with(node.status().withHardwareDivergence(removeQuotedNulls(asOptionalString(value))));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -168,6 +168,11 @@ public class NodePatcher {
 
     private Optional<String> asOptionalString(Inspector field) {
         return field.type().equals(Type.NIX) ? Optional.empty() : Optional.of(asString(field));
+    }
+
+    // Remove when we no longer have "null" strings for this field in the node repo
+    private Optional<String> removeQuotedNulls(Optional<String> value) {
+        return value.filter(v -> !v.equals("null"));
     }
 
     private boolean asBoolean(Inspector field) {

@@ -8,8 +8,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 
-namespace proton
-{
+namespace proton {
 
 class IDocumentMetaStore;
 
@@ -29,15 +28,9 @@ class RemoveDoneContext : public OperationDoneContext
     PendingNotifyRemoveDone _pendingNotifyRemoveDone;
 
 public:
-    RemoveDoneContext(std::unique_ptr<FeedToken> token,
-                      const FeedOperation::Type opType,
-                      PerDocTypeFeedMetrics &metrics,
-                      vespalib::Executor &executor,
-                      IDocumentMetaStore &documentMetaStore,
-                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
-                      uint32_t lid);
-
-    virtual ~RemoveDoneContext();
+    RemoveDoneContext(FeedToken token, vespalib::Executor &executor, IDocumentMetaStore &documentMetaStore,
+                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone, uint32_t lid);
+    ~RemoveDoneContext() override;
 };
 
 

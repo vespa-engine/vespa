@@ -8,6 +8,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.modifiedbucketchecker");
 
+using document::BucketSpace;
+
 namespace storage {
 
 ModifiedBucketChecker::ModifiedBucketChecker(
@@ -146,8 +148,8 @@ ModifiedBucketChecker::nextRecheckChunk(
     size_t n = std::min(_maxPendingChunkSize, _rechecksNotStarted.size());
 
     for (size_t i = 0; i < n; ++i) {
-        document::BucketId bid(_rechecksNotStarted.back());
-        commandsToSend.emplace_back(new RecheckBucketInfoCommand(bid));
+        document::Bucket bucket(BucketSpace::placeHolder(), _rechecksNotStarted.back());
+        commandsToSend.emplace_back(new RecheckBucketInfoCommand(bucket));
         _rechecksNotStarted.pop_back();
     }
     _pendingRequests = n;

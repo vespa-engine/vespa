@@ -7,26 +7,27 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,15 +39,11 @@ import java.util.UUID;
  */
 public class ConfigServerClientMock extends AbstractComponent implements ConfigServerClient {
 
-    private Map<ApplicationId, byte[]> applicationContent = new HashMap<>();
-    private Map<ApplicationId, String> applicationInstances = new HashMap<>();
-    private Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
-    private Set<ApplicationId> applicationRestarted = new HashSet<>();
-    private Set<String> hostsExplicitlyRestarted = new HashSet<>();
-    private Map<String, EndpointStatus> endpoints = new HashMap<>();
-
-    private Map<URI, Version> configServerVersions = new HashMap<>();
-    private Version defaultConfigServerVersion = new Version(6, 1, 0);
+    private final Map<ApplicationId, String> applicationInstances = new HashMap<>();
+    private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
+    private final Map<String, EndpointStatus> endpoints = new HashMap<>();
+    private final Map<URI, Version> versions = new HashMap<>();
+    private Version defaultVersion = new Version(6, 1, 0);
 
     /** The exception to throw on the next prepare run, or null to continue normally */
     private RuntimeException prepareException = null;
@@ -62,18 +59,27 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     public Map<ApplicationId, Boolean> activated() {
         return Collections.unmodifiableMap(applicationActivated);
     }
+
+    public void throwOnNextPrepare(RuntimeException prepareException) {
+        this.prepareException = prepareException;
+    }
+
+    /**
+     * Returns the (initially empty) mutable map of config server urls to versions.
+     * This API will return defaultVersion as response to any version(url) call for versions not added to the map.
+     */
+    public Map<URI, Version> versions() {
+        return versions;
+    }
     
     @Override
     public PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<Rotation> rotations, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::new);
-        
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
             this.prepareException = null;
             throw prepareException;
         }
-
-        applicationContent.put(deployment.applicationId(), content);
         applicationActivated.put(deployment.applicationId(), false);
         applicationInstances.put(deployment.applicationId(), UUID.randomUUID() + ":4080");
 
@@ -109,20 +115,8 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
         };
     }
 
-    public void throwOnNextPrepare(RuntimeException prepareException) {
-        this.prepareException = prepareException;
-    }
-
-    /**
-     * Returns the (initially empty) mutable map of config server urls to versions.
-     * This API will return defaultConfigserverVersion as response to any version(url) call for versions not added to the map.
-     */
-    public Map<URI, Version> configServerVersions() {
-        return configServerVersions;
-    }
-    
-    public Version getDefaultConfigServerVersion() { return defaultConfigServerVersion; }
-    public void setDefaultConfigServerVersion(Version version) { defaultConfigServerVersion = version; }
+    /** Set the default config server version */
+    public void setDefaultVersion(Version version) { this.defaultVersion = version; }
     
     @Override
     public List<String> getNodeQueryHost(DeploymentId deployment, String type) {
@@ -135,16 +129,11 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
 
     @Override
     public void restart(DeploymentId deployment, Optional<Hostname> hostname) {
-        applicationRestarted.add(deployment.applicationId());
-        if (hostname.isPresent()) {
-            hostsExplicitlyRestarted.add(hostname.get().id());
-        }
     }
 
     @Override
     public void deactivate(DeploymentId deployment) {
         applicationActivated.remove(deployment.applicationId());
-        applicationContent.remove(deployment.applicationId());
         applicationInstances.remove(deployment.applicationId());
     }
 
@@ -195,7 +184,7 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     
     @Override
     public Version version(URI configServerURI) {
-        return configServerVersions.getOrDefault(configServerURI, defaultConfigServerVersion);
+        return versions.getOrDefault(configServerURI, defaultVersion);
     }
 
     @Override
@@ -205,10 +194,32 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
 
     @Override
     public EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) {
-        EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757l);
-        return endpoints.containsKey(endpoint)
-                ? endpoints.get(endpoint)
-                : result;
+        EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757L);
+        return endpoints.getOrDefault(endpoint, result);
     }
 
+    @Override
+    public NodeList getNodeList(DeploymentId deployment) throws IOException {
+        NodeList list = new NodeList();
+        list.nodes = new ArrayList<>();
+        NodeList.Node hostA = new NodeList.Node();
+        hostA.hostname = "hostA";
+        hostA.cost = 10;
+        hostA.flavor = "C-2B/24/500";
+        hostA.membership = new NodeList.Node.Membership();
+        hostA.membership.clusterId = "clusterA";
+        hostA.membership.clusterType = "container";
+        list.nodes.add(hostA);
+
+        NodeList.Node hostB = new NodeList.Node();
+        hostB.hostname = "hostB";
+        hostB.cost = 20;
+        hostB.flavor = "C-2C/24/500";
+        hostB.membership = new NodeList.Node.Membership();
+        hostB.membership.clusterId = "clusterB";
+        hostB.membership.clusterType = "content";
+        list.nodes.add(hostB);
+
+        return list;
+    }
 }
