@@ -35,15 +35,13 @@ import java.security.NoSuchAlgorithmException;
  * @author mortent
  */
 @Beta
+// TODO Separate out into interface and "hidden" implementation
 public final class AthenzIdentityProvider extends AbstractComponent {
 
     private InstanceIdentity instanceIdentity;
 
-    private final String athenzUrl;
-
     private final String dnsSuffix;
     private final String providerUniqueId;
-    private final String providerServiceName;
 
     @Inject
     public AthenzIdentityProvider(IdentityConfig config, ConfigserverConfig configserverConfig) throws IOException {
@@ -54,10 +52,10 @@ public final class AthenzIdentityProvider extends AbstractComponent {
     public AthenzIdentityProvider(IdentityConfig config, ServiceProviderApi serviceProviderApi, AthenzService athenzService) throws IOException {
         KeyPair keyPair = createKeyPair();
         String signedIdentityDocument = serviceProviderApi.getSignedIdentityDocument();
-        this.athenzUrl = getZtsEndpoint(signedIdentityDocument);
+        String athenzUrl = getZtsEndpoint(signedIdentityDocument);
         dnsSuffix = getDnsSuffix(signedIdentityDocument);
         providerUniqueId = getProviderUniqueId(signedIdentityDocument);
-        providerServiceName = getProviderServiceName(signedIdentityDocument);
+        String providerServiceName = getProviderServiceName(signedIdentityDocument);
 
         InstanceRegisterInformation instanceRegisterInformation = new InstanceRegisterInformation(
                 providerServiceName,
@@ -70,29 +68,29 @@ public final class AthenzIdentityProvider extends AbstractComponent {
         instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation, athenzUrl);
     }
 
-    private String getProviderUniqueId(String signedIdentityDocument) throws IOException {
+    private static String getProviderUniqueId(String signedIdentityDocument) throws IOException {
         return getJsonNode(signedIdentityDocument, "provider-unique-id");
     }
 
-    private String getDnsSuffix(String signedIdentityDocument) throws IOException {
+    private static String getDnsSuffix(String signedIdentityDocument) throws IOException {
         return getJsonNode(signedIdentityDocument, "dns-suffix");
     }
 
-    private String getProviderServiceName(String signedIdentityDocument) throws IOException {
+    private static String getProviderServiceName(String signedIdentityDocument) throws IOException {
         return getJsonNode(signedIdentityDocument, "provider-service");
     }
 
-    private String getZtsEndpoint(String signedIdentityDocument) throws IOException {
+    private static String getZtsEndpoint(String signedIdentityDocument) throws IOException {
         return getJsonNode(signedIdentityDocument, "zts-endpoint");
     }
 
-    private String getJsonNode(String jsonString, String path) throws IOException {
+    private static String getJsonNode(String jsonString, String path) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(jsonString);
         return jsonNode.get(path).asText();
     }
 
-    private KeyPair createKeyPair() {
+    private static KeyPair createKeyPair() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             return kpg.generateKeyPair();
