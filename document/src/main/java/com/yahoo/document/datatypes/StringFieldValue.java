@@ -17,6 +17,7 @@ import com.yahoo.vespa.objects.Ids;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalInt;
 
 /**
  * A StringFieldValue is a wrapper class that holds a String in {@link com.yahoo.document.Document}s and
@@ -55,19 +56,16 @@ public class StringFieldValue extends FieldValue {
         setValue(value);
     }
 
-    private void setValue(String value) {
-        for (int i = 0; i < value.length(); i++) {
-            char theChar = value.charAt(i);
-            int codePoint = value.codePointAt(i);
-            if (Character.isHighSurrogate(theChar)) {
-                //skip one char ahead, since codePointAt() consumes one more char in this case
-                ++i;
-            }
-
-            if ( ! Text.isTextCharacter(codePoint))
-                throw new IllegalArgumentException("A string field value cannot contain code point 0x" + 
-                                                   Integer.toHexString(codePoint).toUpperCase());
+    private static void validateTextString(String value) {
+        OptionalInt illegalCodePoint = Text.validateTextString(value);
+        if (illegalCodePoint.isPresent()) {
+            throw new IllegalArgumentException("The string field value contains illegal code point 0x" +
+                    Integer.toHexString(illegalCodePoint.getAsInt()).toUpperCase());
         }
+    }
+
+    private void setValue(String value) {
+        validateTextString(value);
         this.value = value;
     }
 

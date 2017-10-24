@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.idstring;
 
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.OptionalInt;
 
 /**
  * To be used with DocumentId constructor.
@@ -75,7 +77,43 @@ public abstract class IdString {
         }
     }
 
+    /**
+     * Creates a IdString based on the given document id string.
+     *
+     * The document id string can only contain text characters.
+     */
     public static IdString createIdString(String id) {
+        validateTextString(id);
+        return parseAndCreate(id);
+    }
+
+    /**
+     * Creates a IdString based on the given serialized document id string.
+     *
+     * The document id string can not contain 0x0 byte characters.
+     */
+    public static IdString createFromSerialized(String id) {
+        validateNoZeroBytes(id);
+        return parseAndCreate(id);
+    }
+
+    private static void validateTextString(String id) {
+        OptionalInt illegalCodePoint = Text.validateTextString(id);
+        if (illegalCodePoint.isPresent()) {
+            throw new IllegalArgumentException("Unparseable id '" + id + "': Contains illegal code point 0x" +
+                    Integer.toHexString(illegalCodePoint.getAsInt()).toUpperCase());
+        }
+    }
+
+    private static void validateNoZeroBytes(String id) {
+        for (int i = 0; i < id.length(); i++) {
+            if (id.codePointAt(i) == 0) {
+                throw new IllegalArgumentException("Unparseable id '" + id + "': Contains illegal zero byte code point");
+            }
+        }
+    }
+
+    private static IdString parseAndCreate(String id) {
         String namespace;
         long userId;
         String group;
