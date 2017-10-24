@@ -54,18 +54,18 @@ PersistenceThread::~PersistenceThread()
 }
 
 spi::Bucket
-PersistenceThread::getBucket(const DocumentId& id, const BucketId& bucket) const
+PersistenceThread::getBucket(const DocumentId& id, const document::Bucket &bucket) const
 {
     BucketId docBucket(_env._bucketFactory.getBucketId(id));
-    docBucket.setUsedBits(bucket.getUsedBits());
-    if (bucket != docBucket) {
+    docBucket.setUsedBits(bucket.getBucketId().getUsedBits());
+    if (bucket.getBucketId() != docBucket) {
         docBucket = _env._bucketFactory.getBucketId(id);
         throw vespalib::IllegalStateException("Document " + id.toString()
                 + " (bucket " + docBucket.toString() + ") does not belong in "
-                + "bucket " + bucket.toString() + ".", VESPA_STRLOC);
+                + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);
     }
 
-    return spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), bucket), spi::PartitionId(_env._partition));
+    return spi::Bucket(bucket, spi::PartitionId(_env._partition));
 }
 
 bool
@@ -116,7 +116,7 @@ PersistenceThread::handlePut(api::PutCommand& cmd)
     }
 
     spi::Result response =
-        _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucketId()),
+        _spi.put(getBucket(cmd.getDocumentId(), cmd.getBucket()),
                  spi::Timestamp(cmd.getTimestamp()),
                  cmd.getDocument(),
                  _context);
@@ -136,7 +136,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd)
     }
 
     spi::RemoveResult response =
-        _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucketId()),
+        _spi.removeIfFound(getBucket(cmd.getDocumentId(), cmd.getBucket()),
                     spi::Timestamp(cmd.getTimestamp()),
                     cmd.getDocumentId(), _context);
     if (checkForError(response, *tracker)) {
@@ -162,7 +162,7 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd)
     }
     
     spi::UpdateResult response =
-        _spi.update(getBucket(cmd.getUpdate()->getId(), cmd.getBucketId()),
+        _spi.update(getBucket(cmd.getUpdate()->getId(), cmd.getBucket()),
                     spi::Timestamp(cmd.getTimestamp()),
                     cmd.getUpdate(), _context);
     if (checkForError(response, *tracker)) {
@@ -184,7 +184,7 @@ PersistenceThread::handleGet(api::GetCommand& cmd)
     document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(),
                                                  cmd.getFieldSet());
     spi::GetResult result =
-        _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucketId()),
+        _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()),
                  *fieldSet,
                  cmd.getDocumentId(),
                  _context);

@@ -81,7 +81,7 @@ private:
     // Thread main loop
     void run(framework::ThreadHandle&) override;
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
-    spi::Bucket getBucket(const DocumentId& id, const BucketId& bucket) const;
+    spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
 
     void flushAllReplies(const document::Bucket& bucket, std::vector<MessageTracker::UP>& trackers);
 
