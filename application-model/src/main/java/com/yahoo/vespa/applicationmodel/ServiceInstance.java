@@ -54,7 +54,6 @@ public class ServiceInstance {
                 "configId=" + configId +
                 ", hostName=" + hostName +
                 ", serviceStatus=" + serviceStatus +
-                (serviceCluster.isPresent() ? ", serviceCluster=" + serviceCluster.get() : "") +
                 '}';
     }
 

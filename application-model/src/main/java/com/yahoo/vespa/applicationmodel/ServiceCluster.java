@@ -57,9 +57,6 @@ public class ServiceCluster {
                 "clusterId=" + clusterId +
                 ", serviceType=" + serviceType +
                 ", serviceInstances=" + serviceInstances +
-                (applicationInstance.isPresent() ?
-                        ", applicationInstance=" + applicationInstance.get() :
-                        "") +
                 '}';
     }
 
