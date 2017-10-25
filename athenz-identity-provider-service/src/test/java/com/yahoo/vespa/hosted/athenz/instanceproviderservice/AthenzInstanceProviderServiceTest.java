@@ -99,6 +99,7 @@ public class AthenzInstanceProviderServiceTest {
 
     private static final Logger log = Logger.getLogger(AthenzInstanceProviderServiceTest.class.getName());
     private static final int PORT = 12345;
+    private static final Zone ZONE = new Zone(SystemName.cd, Environment.dev, RegionName.from("us-north-1"));
 
     @Test
     public void provider_service_hosts_endpoint_secured_with_tls() throws Exception {
@@ -114,11 +115,12 @@ public class AthenzInstanceProviderServiceTest {
                                                   keyProvider,
                                                   executor,
                                                   mock(NodeRepository.class),
-                                                  new Zone(SystemName.cd, Environment.dev, RegionName.from("us-north-1")),
+                                                  ZONE,
                                                   new SelfSignedCertificateClient(keyProvider.getKeyPair(), config));
 
         try (CloseableHttpClient client = createHttpClient(domain, service)) {
-            Runnable certificateRefreshCommand = executor.getCommand().orElseThrow(() -> new AssertionError("Command not present"));
+            Runnable certificateRefreshCommand = executor.getCommand()
+                    .orElseThrow(() -> new AssertionError("Command not present"));
             assertFalse(getStatus(client));
             certificateRefreshCommand.run();
             assertTrue(getStatus(client));
@@ -143,9 +145,8 @@ public class AthenzInstanceProviderServiceTest {
         Allocation allocation = new Allocation(appid, ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3")), Generation.inital(), false);        Flavor flavor = nodeFlavors.getFlavorOrThrow("default");
         Node n = Node.create("ostkid", ImmutableSet.of("127.0.0.1"), new HashSet<>(), hostname, Optional.empty(), flavor, NodeType.tenant).with(allocation);
         when(nodeRepository.getNode(eq(hostname))).thenReturn(Optional.of(n));
-        Zone zone = new Zone(Environment.dev, RegionName.from("us-north-1"));
 
-        IdentityDocumentGenerator identityDocumentGenerator = new IdentityDocumentGenerator(config, nodeRepository, zone, keyProvider);
+        IdentityDocumentGenerator identityDocumentGenerator = new IdentityDocumentGenerator(config, nodeRepository, ZONE, keyProvider);
         String rawSignedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(hostname);
 
 
