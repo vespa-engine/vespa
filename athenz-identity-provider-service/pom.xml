@@ -18,6 +18,11 @@
             <artifactId>athenz-zms-java-client</artifactId>
             <scope>compile</scope>
             <exclusions>
+                <!-- Provided by JDisc / container-dev -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
                 <!--Exclude all Jersey bundles provided by JDisc-->
                 <exclusion>
                     <groupId>org.glassfish.jersey.core</groupId>
@@ -33,6 +38,13 @@
             <groupId>com.yahoo.athenz</groupId>
             <artifactId>athenz-zts-java-client</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <!-- Provided by JDisc / container-dev -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
