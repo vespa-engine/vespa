@@ -142,7 +142,7 @@ private:
     bool validateApplyDiffCommandBucket(api::StorageMessage& msg, const StorBucketDatabase::WrappedEntry&);
     bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&, const document::Bucket&);
 
-    StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::BucketId&);
+    StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::Bucket&);
     StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(api::BucketCommand&, const document::DocumentId*);
     bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
 
