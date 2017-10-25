@@ -23,6 +23,9 @@ using slime::Cursor;
 using slime::Inspector;
 using slime::JsonFormat;
 
+using map_fun_t = TensorEngine::map_fun_t;
+using join_fun_t = TensorEngine::join_fun_t;
+
 double as_double(const TensorSpec &spec) {
     return spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
 }
@@ -273,19 +276,14 @@ struct ImmediateRename : Eval {
 
 const size_t tensor_id_a = 11;
 const size_t tensor_id_b = 12;
-const size_t map_operation_id = 22;
 
 // input used when evaluating in retained mode
 struct Input : TensorFunction::Input {
     std::vector<TensorValue> tensors;
-    const UnaryOperation *map_op;
-    Input(std::unique_ptr<Tensor> a) : tensors(), map_op(nullptr) {
+    Input(std::unique_ptr<Tensor> a) : tensors() {
         tensors.emplace_back(std::move(a));
     }
-    Input(std::unique_ptr<Tensor> a, const UnaryOperation &op) : tensors(), map_op(&op) {
-        tensors.emplace_back(std::move(a));
-    }
-    Input(std::unique_ptr<Tensor> a, std::unique_ptr<Tensor> b) : tensors(), map_op(nullptr) {
+    Input(std::unique_ptr<Tensor> a, std::unique_ptr<Tensor> b) : tensors() {
         tensors.emplace_back(std::move(a));
         tensors.emplace_back(std::move(b));
     }
@@ -294,23 +292,18 @@ struct Input : TensorFunction::Input {
         ASSERT_GREATER(tensors.size(), offset);
         return tensors[offset];
     }
-    const UnaryOperation &get_map_operation(size_t id) const override {
-        ASSERT_TRUE(map_op != nullptr);
-        ASSERT_EQUAL(id, map_operation_id);
-        return *map_op;
-    }
 };
 
 // evaluate tensor reduce operation using tensor engine retained api
 struct RetainedReduce : Eval {
-    const BinaryOperation &op;
+    Aggr aggr;
     std::vector<vespalib::string> dimensions;
-    RetainedReduce(const BinaryOperation &op_in) : op(op_in), dimensions() {}
-    RetainedReduce(const BinaryOperation &op_in, const vespalib::string &dimension)
-        : op(op_in), dimensions({dimension}) {}
+    RetainedReduce(Aggr aggr_in) : aggr(aggr_in), dimensions() {}
+    RetainedReduce(Aggr aggr_in, const vespalib::string &dimension)
+        : aggr(aggr_in), dimensions({dimension}) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         auto a_type = ValueType::from_spec(a.type());
-        auto ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a), op, dimensions);
+        auto ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a), aggr, dimensions);
         ValueType expect_type = ir->result_type;
         auto fun = engine.compile(std::move(ir));
         Input input(engine.create(a));
@@ -321,28 +314,29 @@ struct RetainedReduce : Eval {
 
 // evaluate tensor map operation using tensor engine retained api
 struct RetainedMap : Eval {
-    const UnaryOperation &op;
-    RetainedMap(const UnaryOperation &op_in) : op(op_in) {}
+    map_fun_t function;
+    RetainedMap(map_fun_t function_in) : function(function_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         auto a_type = ValueType::from_spec(a.type());
-        auto ir = tensor_function::map(map_operation_id, tensor_function::inject(a_type, tensor_id_a));
+        auto ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a), function);
         ValueType expect_type = ir->result_type;
         auto fun = engine.compile(std::move(ir));
-        Input input(engine.create(a), op);
+        Input input(engine.create(a));
         Stash stash;
         return Result(check_type(fun->eval(input, stash), expect_type));
     }
 };
 
-// evaluate tensor apply operation using tensor engine retained api
-struct RetainedApply : Eval {
-    const BinaryOperation &op;
-    RetainedApply(const BinaryOperation &op_in) : op(op_in) {}
+// evaluate tensor join operation using tensor engine retained api
+struct RetainedJoin : Eval {
+    join_fun_t function;
+    RetainedJoin(join_fun_t function_in) : function(function_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
         auto a_type = ValueType::from_spec(a.type());
         auto b_type = ValueType::from_spec(b.type());
-        auto ir = tensor_function::apply(op, tensor_function::inject(a_type, tensor_id_a),
-                                         tensor_function::inject(b_type, tensor_id_b));
+        auto ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a),
+                                        tensor_function::inject(b_type, tensor_id_b),
+                                        function);
         ValueType expect_type = ir->result_type;
         auto fun = engine.compile(std::move(ir));
         Input input(engine.create(a), engine.create(b));
@@ -519,7 +513,7 @@ struct TestContext {
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduceOld(op, domain.dimension), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
-                TEST_DO(verify_reduce_result(RetainedReduce(op, domain.dimension), input, expect));
+                TEST_DO(verify_reduce_result(RetainedReduce(aggr, domain.dimension), input, expect));
             }
             {
                 Eval::Result expect = ImmediateReduceOld(op).eval(ref_engine, input);
@@ -530,7 +524,7 @@ struct TestContext {
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduceOld(op), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
-                TEST_DO(verify_reduce_result(RetainedReduce(op), input, expect));
+                TEST_DO(verify_reduce_result(RetainedReduce(aggr), input, expect));
             }
         }
     }
@@ -556,6 +550,7 @@ struct TestContext {
                         AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
+                TEST_DO(verify_reduce_result(RetainedReduce(aggr, domain.dimension), input, expect));
             }
             {
                 Eval::Result expect = ImmediateReduce(aggr).eval(ref_engine, input);
@@ -564,6 +559,7 @@ struct TestContext {
                 vespalib::string expr = make_string("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
+                TEST_DO(verify_reduce_result(RetainedReduce(aggr), input, expect));
             }
         }
     }
@@ -598,8 +594,8 @@ struct TestContext {
 
     void test_map_op(const vespalib::string &expr, const UnaryOperation &op, const Sequence &seq) {
         TEST_DO(test_map_op(ImmediateMapOld(op), op, seq));
-        TEST_DO(test_map_op(ImmediateMap(UnaryOperationProxy(op)), op, seq));
-        TEST_DO(test_map_op(RetainedMap(op), op, seq));
+        TEST_DO(test_map_op(ImmediateMap(op.get_f()), op, seq));
+        TEST_DO(test_map_op(RetainedMap(op.get_f()), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
         TEST_DO(test_map_op(Expr_T(make_string("map(x,f(a)(%s))", expr.c_str())), op, seq));
     }
@@ -874,8 +870,8 @@ struct TestContext {
 
     void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {
         TEST_DO(test_apply_op(ImmediateApplyOld(op), op, seq));
-        TEST_DO(test_apply_op(ImmediateJoin(BinaryOperationProxy(op)), op, seq));
-        TEST_DO(test_apply_op(RetainedApply(op), op, seq));
+        TEST_DO(test_apply_op(ImmediateJoin(op.get_f()), op, seq));
+        TEST_DO(test_apply_op(RetainedJoin(op.get_f()), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
         TEST_DO(test_apply_op(Expr_TT(make_string("join(x,y,f(a,b)(%s))", expr.c_str())), op, seq));
     }

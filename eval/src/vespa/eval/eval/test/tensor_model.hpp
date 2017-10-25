@@ -106,7 +106,11 @@ struct Mask2Seq : Sequence {
 
 // custom op1
 struct MyOp : CustomUnaryOperation {
-    double eval(double a) const override { return ((a + 1) * 2); }
+    static double f(double a) {
+        return ((a + 1) * 2);
+    }
+    double eval(double a) const override { return f(a); }
+    op1_fun_t get_f() const override { return f; }
 };
 
 // A collection of labels for a single dimension

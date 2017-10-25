@@ -16,10 +16,10 @@ TensorFunction::UP
 compileDotProduct(const vespalib::string &lhsType,
                   const vespalib::string &rhsType)
 {
-    Node_UP reduceNode = reduce(apply(Mul(),
-                                      inject(ValueType::from_spec(lhsType), 1),
-                                      inject(ValueType::from_spec(rhsType), 3)),
-                                Add(), {});
+    Node_UP reduceNode = reduce(join(inject(ValueType::from_spec(lhsType), 1),
+                                     inject(ValueType::from_spec(rhsType), 3),
+                                     Mul::f),
+                                Aggr::SUM, {});
     return DenseTensorFunctionCompiler::compile(std::move(reduceNode));
 }
 

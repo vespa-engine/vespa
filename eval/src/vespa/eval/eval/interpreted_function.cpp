@@ -177,9 +177,6 @@ struct ArgArgInput : TensorFunction::Input {
         }
         return undef_cref<Value>();
     }
-    const UnaryOperation &get_map_operation(size_t) const override {
-        return undef_cref<UnaryOperation>();
-    }
 };
 
 void op_tensor_function_arg_arg(State &state, uint64_t param) {
@@ -293,9 +290,10 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             }
             auto a = as<Symbol>(node.get_child(0).get_child(0));
             auto b = as<Symbol>(node.get_child(0).get_child(1));
-            auto ir = tensor_function::reduce(tensor_function::apply(operation::Mul(),
+            auto ir = tensor_function::reduce(tensor_function::join(
                             tensor_function::inject(types.get_type(*a), 0),
-                            tensor_function::inject(types.get_type(*b), 1)), operation::Add(), dim_list);
+                            tensor_function::inject(types.get_type(*b), 1),
+                            operation::Mul::f), Aggr::SUM, dim_list);
             auto fun = tensor_engine.compile(std::move(ir));
             const auto &meta = stash.create<TensorFunctionArgArgMeta>(std::move(fun), a->id(), b->id());
             program.emplace_back(op_tensor_function_arg_arg, wrap_param<TensorFunctionArgArgMeta>(meta));
