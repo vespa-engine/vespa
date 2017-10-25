@@ -6,9 +6,6 @@ import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.jdisc.http.ssl.ReaderForPath;
-import com.yahoo.jdisc.http.ssl.pem.PemKeyStore;
-import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
@@ -26,8 +23,10 @@ import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import java.io.StringReader;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.concurrent.Executors;
@@ -137,15 +136,21 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         public void run() {
             try {
                 log.log(LogLevel.INFO, "Updating Athenz certificate through ZTS");
-                String privateKey = keyProvider.getPrivateKey(config.keyVersion());
-                String certificate = certificateClient.updateCertificate(Crypto.loadPrivateKey(privateKey), EXPIRY_TIME);
-                final KeyStore keyStore =
-                        new PemSslKeyStore(
-                                new PemKeyStore.KeyStoreLoadParameter(
-                                        new ReaderForPath(new StringReader(certificate), null),
-                                        new ReaderForPath(new StringReader(privateKey), null)))
-                                .loadJavaKeyStore();
-                sslContextFactory.reload(sslContextFactory -> sslContextFactory.setKeyStore(keyStore));
+                PrivateKey privateKey = Crypto.loadPrivateKey(keyProvider.getPrivateKey(config.keyVersion()));
+                X509Certificate certificate = Crypto.loadX509Certificate(certificateClient.updateCertificate(privateKey, EXPIRY_TIME));
+
+                String dummyPassword = "athenz";
+                KeyStore keyStore = KeyStore.getInstance("JKS");
+                keyStore.load(null);
+                keyStore.setKeyEntry("athenz",
+                                     privateKey,
+                                     dummyPassword.toCharArray(),
+                                     new Certificate[]{certificate});
+
+                sslContextFactory.reload(sslContextFactory -> {
+                    sslContextFactory.setKeyStore(keyStore);
+                    sslContextFactory.setKeyStorePassword(dummyPassword);
+                });
                 log.log(LogLevel.INFO, "Athenz certificate reload successfully completed");
             } catch (Throwable e) {
                 log.log(LogLevel.ERROR, "Failed to update certificate from ZTS: " + e.getMessage(), e);
