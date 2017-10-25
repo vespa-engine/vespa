@@ -177,34 +177,6 @@ public class SearchBuilder {
     }
 
     /**
-     * Registers the given search object to the internal list of objects to be processed during {@link #build()}. A
-     * {@link Search} object is considered to be "processed" if it has not already been processed. This is the case for most
-     * programmatically constructed search objects used in unit tests.
-     *
-     * @param processed The object to import.
-     * @return The name of the imported object.
-     * @throws IllegalArgumentException Thrown if the given search object has already been processed.
-     */
-    public String importProcessedSearch(Search processed) {
-        if (processed.getName() == null) {
-            throw new IllegalArgumentException("Search has no name.");
-        }
-        String rawName = processed.getName();
-        if (!processed.isProcessed()) {
-            throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
-                    "' has not been processed.");
-        }
-        for (Search search : searchList) {
-            if (rawName.equals(search.getName())) {
-                throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
-                        "' has already been added.");
-            }
-        }
-        searchList.add(processed);
-        return rawName;
-    }
-
-    /**
      * Only for testing.
      *
      * Processes and finalizes the imported search definitions so that they become available through the {@link
@@ -380,6 +352,8 @@ public class SearchBuilder {
         return builder;
     }
 
+    // TODO: The build methods below just call the create methods above - remove
+    
     /**
      * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
      *
