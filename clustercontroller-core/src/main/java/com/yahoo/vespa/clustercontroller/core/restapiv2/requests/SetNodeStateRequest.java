@@ -5,21 +5,24 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
-import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.MissingIdException;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.*;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class SetNodeStateRequest extends Request<SetResponse> {
@@ -77,7 +80,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             Node node,
             NodeStateOrHostInfoChangeHandler stateListener,
             ClusterState currentClusterState) throws StateRestApiException {
-        if ( ! cluster.getConfiguredNodes().containsKey(node.getIndex())) {
+        if ( ! cluster.hasConfiguredNode(node.getIndex())) {
             throw new MissingIdException(cluster.getName(), node);
         }
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
@@ -95,15 +98,95 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 " wanted-state=" + wantedState +
                 " new-wanted-state=" + newWantedState +
                 " change-check=" + result);
+
+        boolean success = setWantedStateAccordingToResult(
+                result,
+                newWantedState,
+                condition,
+                nodeInfo,
+                cluster,
+                stateListener);
+
+        // If the state was successfully set, just return an "ok" message back.
+        String reason = success ? "ok" : result.getReason();
+        return new SetResponse(reason, success);
+    }
+
+    /**
+     * Returns true if the current/old wanted state already matches the requested
+     * wanted state, or the requested state has been accepted as the new wanted state.
+     */
+    private static boolean setWantedStateAccordingToResult(
+            NodeStateChangeChecker.Result result,
+            NodeState newWantedState,
+            SetUnitStateRequest.Condition condition,
+            NodeInfo nodeInfo,
+            ContentCluster cluster,
+            NodeStateOrHostInfoChangeHandler stateListener) {
         if (result.settingWantedStateIsAllowed()) {
-            nodeInfo.setWantedState(newWantedState);
-            stateListener.handleNewWantedNodeState(nodeInfo, newWantedState);
+            setNewWantedState(nodeInfo, newWantedState, stateListener);
         }
 
-        // wasModified is true if the new/current State equals the wanted state in the request.
-        boolean wasModified = result.settingWantedStateIsAllowed() || result.wantedStateAlreadySet();
-        // If the state was successfully set, just return an "ok" message back.
-        String reason = wasModified ? "ok" : result.getReason();
-        return new SetResponse(reason, wasModified);
+        // True if the wanted state was or has just been set to newWantedState
+        boolean success = result.settingWantedStateIsAllowed() || result.wantedStateAlreadySet();
+
+        if (success && condition == SetUnitStateRequest.Condition.SAFE && nodeInfo.isStorage()) {
+            // In safe-mode, setting the storage node must be accompanied by changing the state
+            // of the distributor. E.g. setting the storage node to maintenance may cause
+            // feeding issues unless distributor is also set down.
+
+            setDistributorWantedState(cluster, nodeInfo.getNodeIndex(), newWantedState, stateListener);
+        }
+
+        return success;
+    }
+
+    /**
+     * Set the wanted state on the distributor to something appropriate given the storage is being
+     * set to (or is equal to) newStorageWantedState.
+     */
+    private static void setDistributorWantedState(ContentCluster cluster,
+                                                  int index,
+                                                  NodeState newStorageWantedState,
+                                                  NodeStateOrHostInfoChangeHandler stateListener) {
+        Node distributorNode = new Node(NodeType.DISTRIBUTOR, index);
+        NodeInfo nodeInfo = cluster.getNodeInfo(distributorNode);
+        if (nodeInfo == null) {
+            throw new IllegalStateException("Missing distributor at index " +
+                    distributorNode.getIndex());
+        }
+
+        State newState;
+        switch (newStorageWantedState.getState()) {
+            case MAINTENANCE:
+                newState = State.DOWN;
+                break;
+            case RETIRED:
+                newState = State.UP;
+                break;
+            default:
+                newState = newStorageWantedState.getState();
+                if (!newState.validWantedNodeState(distributorNode.getType())) {
+                    throw new IllegalStateException("Distributor cannot be set to wanted state " +
+                            newState);
+                }
+        }
+
+        NodeState newWantedState = new NodeState(distributorNode.getType(), newState);
+        newWantedState.setDescription(newStorageWantedState.getDescription());
+
+        NodeState currentWantedState = nodeInfo.getUserWantedState();
+        if (newWantedState.getState() != currentWantedState.getState() ||
+                !Objects.equals(newWantedState.getDescription(),
+                        currentWantedState.getDescription())) {
+            setNewWantedState(nodeInfo, newWantedState, stateListener);
+        }
+    }
+
+    private static void setNewWantedState(NodeInfo nodeInfo,
+                                          NodeState newWantedState,
+                                          NodeStateOrHostInfoChangeHandler stateListener) {
+        nodeInfo.setWantedState(newWantedState);
+        stateListener.handleNewWantedNodeState(nodeInfo, newWantedState);
     }
 }

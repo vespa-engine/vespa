@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -73,8 +72,8 @@ public class Controller extends AbstractComponent {
     private final ConfigServerClient configServerClient;
     private final MetricsService metricsService;
     private final Chef chefClient;
-    private final ZmsClient zmsClient;
     private final Organization organization;
+    private final AthenzClientFactory athenzClientFactory;
 
     /**
      * Creates a controller 
@@ -129,7 +128,7 @@ public class Controller extends AbstractComponent {
         this.metricsService = metricsService;
         this.chefClient = chefClient;
         this.clock = clock;
-        this.zmsClient = athenzClientFactory.createZmsClientWithServicePrincipal();
+        this.athenzClientFactory = athenzClientFactory;
 
         applicationController = new ApplicationController(this, db, curator, rotationRepository, athenzClientFactory,
                                                           nameService, configServerClient, routingGenerator, clock);
@@ -143,7 +142,7 @@ public class Controller extends AbstractComponent {
     public ApplicationController applications() { return applicationController; }
 
     public List<AthenzDomain> getDomainList(String prefix) {
-        return zmsClient.getDomainList(prefix);
+        return athenzClientFactory.createZmsClientWithServicePrincipal().getDomainList(prefix);
     }
 
     /**
