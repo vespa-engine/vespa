@@ -2,13 +2,13 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.time.temporal.TemporalAmount;
 
 /**
  * @author bjorncs
  */
-public interface KeyProvider {
-    PrivateKey getPrivateKey(int version);
-
-    PublicKey getPublicKey(int version);
+@FunctionalInterface
+public interface CertificateClient {
+    X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime);
 }

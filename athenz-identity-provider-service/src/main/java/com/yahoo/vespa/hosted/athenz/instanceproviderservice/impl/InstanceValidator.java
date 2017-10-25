@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
-import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.InstanceConfirmation;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;
@@ -34,7 +33,7 @@ public class InstanceValidator {
         SignedIdentityDocument signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
         ProviderUniqueId providerUniqueId = signedIdentityDocument.identityDocument.providerUniqueId;
         log.log(LogLevel.INFO, () -> String.format("Validating instance %s.", providerUniqueId));
-        PublicKey publicKey = Crypto.loadPublicKey(keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion));
+        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion);
         if (isSignatureValid(publicKey, signedIdentityDocument.rawIdentityDocument, signedIdentityDocument.signature)) {
             log.log(LogLevel.INFO, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
