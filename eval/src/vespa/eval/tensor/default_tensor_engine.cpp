@@ -130,12 +130,6 @@ DefaultTensorEngine::compile(eval::tensor_function::Node_UP expr) const
     return DenseTensorFunctionCompiler::compile(std::move(expr));
 }
 
-struct IsAddOperation : public eval::DefaultOperationVisitor {
-    bool result = false;
-    void visitDefault(const eval::Operation &) override {}
-    void visit(const eval::operation::Add &) override { result = true; }
-};
-
 std::unique_ptr<eval::Tensor>
 DefaultTensorEngine::create(const TensorSpec &spec) const
 {
@@ -183,41 +177,6 @@ DefaultTensorEngine::create(const TensorSpec &spec) const
     }
 }
 
-const eval::Value &
-DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const
-{
-    assert(&tensor.engine() == this);
-    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
-    if (!tensor::Tensor::supported({my_tensor.getType()})) {
-        return to_default(simple_engine().reduce(to_simple(my_tensor, stash), op, dimensions, stash), stash);
-    }
-    IsAddOperation check;
-    op.accept(check);
-    tensor::Tensor::UP result;
-    if (check.result) {
-        if (dimensions.empty()) { // sum
-            return stash.create<eval::DoubleValue>(my_tensor.sum());
-        } else { // dimension sum
-            for (const auto &dimension: dimensions) {
-                if (result) {
-                    result = result->sum(dimension);
-                } else {
-                    result = my_tensor.sum(dimension);
-                }
-            }
-        }
-    } else {
-        result = my_tensor.reduce(op, dimensions);
-    }
-    return to_value(std::move(result), stash);
-}
-
-struct CellFunctionOpAdapter : tensor::CellFunction {
-    const eval::UnaryOperation &op;
-    CellFunctionOpAdapter(const eval::UnaryOperation &op_in) : op(op_in) {}
-    virtual double apply(double value) const override { return op.eval(value); }
-};
-
 struct CellFunctionFunAdapter : tensor::CellFunction {
     map_fun_t fun;
     CellFunctionFunAdapter(map_fun_t fun_in) : fun(fun_in) {}
@@ -237,69 +196,6 @@ struct CellFunctionBindRightAdapter : tensor::CellFunction {
     CellFunctionBindRightAdapter(join_fun_t fun_in, double bound) : fun(fun_in), b(bound) {}
     virtual double apply(double a) const override { return fun(a, b); }
 };
-
-const eval::Value &
-DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash) const
-{
-    assert(&a.engine() == this);
-    const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
-    if (!tensor::Tensor::supported({my_a.getType()})) {
-        return to_default(simple_engine().map(op, to_simple(my_a, stash), stash), stash);
-    }
-    CellFunctionOpAdapter cell_function(op);
-    return to_value(my_a.apply(cell_function), stash);
-}
-
-struct TensorOperationOverride : eval::DefaultOperationVisitor {
-    const tensor::Tensor &lhs;
-    const tensor::Tensor &rhs;
-    tensor::Tensor::UP result;
-    TensorOperationOverride(const tensor::Tensor &lhs_in,
-                            const tensor::Tensor &rhs_in)
-        : lhs(lhs_in), rhs(rhs_in), result() {}
-    virtual void visitDefault(const eval::Operation &op) override {
-        // empty result indicates error
-        const eval::BinaryOperation *binaryOp =
-            dynamic_cast<const eval::BinaryOperation *>(&op);
-        if (binaryOp) {
-            result = lhs.apply(*binaryOp, rhs);
-        }
-    }
-    virtual void visit(const eval::operation::Add &) override {
-        result = lhs.add(rhs);
-    }
-    virtual void visit(const eval::operation::Sub &) override {
-        result = lhs.subtract(rhs);
-    }
-    virtual void visit(const eval::operation::Mul &) override {
-        if (lhs.getType() == rhs.getType()) {
-            result = lhs.match(rhs);
-        } else {
-            result = lhs.multiply(rhs);
-        }
-    }
-    virtual void visit(const eval::operation::Min &) override {
-        result = lhs.min(rhs);
-    }
-    virtual void visit(const eval::operation::Max &) override {
-        result = lhs.max(rhs);
-    }
-};
-
-const eval::Value &
-DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const
-{
-    assert(&a.engine() == this);
-    assert(&b.engine() == this);
-    const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
-    const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
-    if (!tensor::Tensor::supported({my_a.getType(), my_b.getType()})) {
-        return to_default(simple_engine().apply(op, to_simple(my_a, stash), to_simple(my_b, stash), stash), stash);
-    }
-    TensorOperationOverride tensor_override(my_a, my_b);
-    op.accept(tensor_override);
-    return to_value(std::move(tensor_override.result), stash);
-}
 
 //-----------------------------------------------------------------------------
 
@@ -371,8 +267,12 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
             if (!tensor::Tensor::supported({my_a.getType(), my_b.getType()})) {
                 return fallback_join(a, b, function, stash);
             }
-            if ((function == eval::operation::Mul::f) && (my_a.getType() == my_b.getType())) {
-                return to_value(my_a.match(my_b), stash);
+            if (function == eval::operation::Mul::f) {
+                if (my_a.getType() == my_b.getType()) {
+                    return to_value(my_a.match(my_b), stash);
+                } else {
+                    return to_value(my_a.multiply(my_b), stash);
+                }
             } else {
                 return to_value(my_a.join(function, my_b), stash);
             }

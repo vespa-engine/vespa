@@ -10,15 +10,6 @@ namespace eval {
 
 namespace {
 
-struct Op2Aggr : Aggregator {
-    double res = 0.0;
-    const BinaryOperation &op;
-    Op2Aggr(const BinaryOperation &op_in) : op(op_in) {}
-    void first(double value) override { res = value; }
-    void next(double value) override { res = op.eval(res, value); }
-    double result() const override { return res; }    
-};
-
 const SimpleTensor &to_simple(const Tensor &tensor) {
     assert(&tensor.engine() == &SimpleTensorEngine::ref());
     return static_cast<const SimpleTensor&>(tensor);
@@ -117,27 +108,6 @@ SimpleTensorEngine::create(const TensorSpec &spec) const
 
 //-----------------------------------------------------------------------------
 
-const Value &
-SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const
-{
-    Op2Aggr aggr(op);
-    return to_value(to_simple(tensor).reduce(aggr, dimensions), stash);
-}
-
-const Value &
-SimpleTensorEngine::map(const UnaryOperation &op, const eval::Tensor &a, Stash &stash) const
-{
-    return to_value(to_simple(a).map(UnaryOperationProxy(op)), stash);
-}
-
-const Value &
-SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, const eval::Tensor &b, Stash &stash) const
-{
-    return to_value(SimpleTensor::join(to_simple(a), to_simple(b), BinaryOperationProxy(op)), stash);
-}
-
-//-----------------------------------------------------------------------------
-
 void
 SimpleTensorEngine::encode(const Value &value, nbostream &output, Stash &stash) const
 {
@@ -155,12 +125,18 @@ SimpleTensorEngine::decode(nbostream &input, Stash &stash) const
 const Value &
 SimpleTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
+    if (a.is_double()) {
+        return stash.create<DoubleValue>(function(a.as_double()));
+    }
     return to_value(to_simple(a, stash).map(function), stash);
 }
 
 const Value &
 SimpleTensorEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
+    if (a.is_double() && b.is_double()) {
+        return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
+    }
     return to_value(SimpleTensor::join(to_simple(a, stash), to_simple(b, stash), function), stash);
 }
 

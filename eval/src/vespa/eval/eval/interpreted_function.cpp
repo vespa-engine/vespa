@@ -48,12 +48,12 @@ void op_load_let(State &state, uint64_t param) {
 
 template <typename OP1>
 void op_unary(State &state, uint64_t) {
-    state.replace(1, OP1().perform(state.peek(0), state.stash));
+    state.replace(1, state.engine.map(state.peek(0), OP1::f, state.stash));
 }
 
 template <typename OP2>
 void op_binary(State &state, uint64_t) {
-    state.replace(2, OP2().perform(state.peek(1), state.peek(0), state.stash));
+    state.replace(2, state.engine.join(state.peek(1), state.peek(0), OP2::f, state.stash));
 }
 
 //-----------------------------------------------------------------------------
@@ -102,20 +102,12 @@ void op_not_member(State &state, uint64_t) {
 //-----------------------------------------------------------------------------
 
 void op_tensor_sum(State &state, uint64_t) {
-    const eval::Tensor *tensor = state.peek(0).as_tensor();
-    if (tensor != nullptr) {
-        state.replace(1, tensor->engine().reduce(*tensor, operation::Add(), {}, state.stash));
-    }
+    state.replace(1, state.engine.reduce(state.peek(0), Aggr::SUM, {}, state.stash));
 }
 
 void op_tensor_sum_dimension(State &state, uint64_t param) {
-    const eval::Tensor *tensor = state.peek(0).as_tensor();
-    if (tensor != nullptr) {
-        const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
-        state.replace(1, tensor->engine().reduce(*tensor, operation::Add(), {dimension}, state.stash));
-    } else {
-        state.replace(1, state.stash.create<ErrorValue>());
-    }
+    const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
+    state.replace(1, state.engine.reduce(state.peek(0), Aggr::SUM, {dimension}, state.stash));
 }
 
 //-----------------------------------------------------------------------------
