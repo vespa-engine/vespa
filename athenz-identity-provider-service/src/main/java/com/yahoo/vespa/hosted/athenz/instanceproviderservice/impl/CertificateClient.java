@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.time.temporal.TemporalAmount;
 
 /**
@@ -9,5 +10,5 @@ import java.time.temporal.TemporalAmount;
  */
 @FunctionalInterface
 public interface CertificateClient {
-    String updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime);
+    X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime);
 }

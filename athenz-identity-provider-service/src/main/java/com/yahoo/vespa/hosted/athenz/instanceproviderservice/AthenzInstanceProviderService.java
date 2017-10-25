@@ -136,8 +136,8 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         public void run() {
             try {
                 log.log(LogLevel.INFO, "Updating Athenz certificate through ZTS");
-                PrivateKey privateKey = Crypto.loadPrivateKey(keyProvider.getPrivateKey(config.keyVersion()));
-                X509Certificate certificate = Crypto.loadX509Certificate(certificateClient.updateCertificate(privateKey, EXPIRY_TIME));
+                PrivateKey privateKey = keyProvider.getPrivateKey(config.keyVersion());
+                X509Certificate certificate = certificateClient.updateCertificate(privateKey, EXPIRY_TIME);
 
                 String dummyPassword = "athenz";
                 KeyStore keyStore = KeyStore.getInstance("JKS");

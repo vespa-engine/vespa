@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.yahoo.athenz.auth.impl.PrincipalAuthority;
 import com.yahoo.athenz.auth.impl.SimpleServiceIdentityProvider;
+import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zts.InstanceRefreshRequest;
 import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +28,7 @@ public class AthenzCertificateClient implements CertificateClient {
     }
 
     @Override
-    public String updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime) {
+    public X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime) {
         SimpleServiceIdentityProvider identityProvider = new SimpleServiceIdentityProvider(
                 authority, config.domain(), config.serviceName(),
                 privateKey, Integer.toString(config.keyVersion()), TimeUnit.MINUTES.toSeconds(10));
@@ -36,8 +38,9 @@ public class AthenzCertificateClient implements CertificateClient {
                 ZTSClient.generateInstanceRefreshRequest(
                         config.domain(), config.serviceName(), privateKey,
                         config.certDnsSuffix(), (int)expiryTime.get(ChronoUnit.SECONDS));
-        return ztsClient.postInstanceRefreshRequest(config.domain(), config.serviceName(), req)
+        String pemEncoded = ztsClient.postInstanceRefreshRequest(config.domain(), config.serviceName(), req)
                 .getCertificate();
+        return Crypto.loadX509Certificate(pemEncoded);
     }
 
     private static class AthenzPrincipalAuthority extends PrincipalAuthority {
