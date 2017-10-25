@@ -123,6 +123,8 @@ public class DeploymentTrigger {
         applications = applications.notPullRequest();
         for (Application application : applications.asList()) {
             try (Lock lock = applications().lock(application.id())) {
+                application = controller.applications().get(application.id()).orElse(null); // re-get with lock
+                if (application == null) continue; // application removed
                 triggerReadyJobs(application, lock);
             }
         }

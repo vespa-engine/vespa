@@ -87,6 +87,9 @@ public class ClusterInfoMaintainer extends Maintainer {
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
             try (Lock lock = controller().applications().lock(application.id())) {
+                application = controller.applications().get(application.id()).orElse(null); // re-get inside lock
+                if (application == null) continue; // application removed
+                
                 for (Deployment deployment : application.deployments().values()) {
                     DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                     try {

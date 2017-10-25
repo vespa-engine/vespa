@@ -307,7 +307,7 @@ public class ApplicationController {
 
                 // Delete zones not listed in DeploymentSpec, if allowed
                 // We do this at deployment time to be able to return a validation failure message when necessary
-                application = deleteRemovedDeployments(application);
+                application = deleteRemovedDeployments(application, lock);
 
                 // Clean up deployment jobs that are no longer referenced by deployment spec
                 application = deleteUnreferencedDeploymentJobs(application);
@@ -354,7 +354,7 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId(applicationPackage.hash()), prepareResponse);
     }
 
-    private Application deleteRemovedDeployments(Application application) {
+    private Application deleteRemovedDeployments(Application application, Lock lock) {
         List<Deployment> deploymentsToRemove = application.deployments().values().stream()
                 .filter(deployment -> deployment.zone().environment() == Environment.prod)
                 .filter(deployment -> ! application.deploymentSpec().includes(deployment.zone().environment(), 
@@ -375,7 +375,7 @@ public class ApplicationController {
         
         Application applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
-            applicationWithRemoval = deactivate(applicationWithRemoval, deployment, false);
+            applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone(), lock);
         return applicationWithRemoval;
     }
 
@@ -556,20 +556,30 @@ public class ApplicationController {
     private Application deactivate(Application application, Zone zone, Optional<Deployment> deployment,
                                    boolean requireThatDeploymentHasExpired) {
         try (Lock lock = lock(application.id())) {
-            if (deployment.isPresent() && requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(
-                    controller.zoneRegistry(), deployment.get(), clock.instant())) {
+            application = controller.applications().require(application.id()); // re-get with lock
+            if (deployment.isPresent() && requireThatDeploymentHasExpired && 
+                ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant())) {
                 return application;
             }
-
-            try { 
-                configserverClient.deactivate(new DeploymentId(application.id(), zone));
-            }  catch (NoInstanceException ignored) {
-                // ok; already gone
-            }
-            application = application.withoutDeploymentIn(zone);
+            application = deactivate(application, zone, lock);
             store(application, lock);
             return application;
         }
+    }
+
+    /** 
+     * Deactivates a locked application without storing it
+     * 
+     * @return the application with the deployment in the given zone removed
+     */
+    private Application deactivate(Application application, Zone zone, Lock lock) {
+        try {
+            configserverClient.deactivate(new DeploymentId(application.id(), zone));
+        }
+        catch (NoInstanceException ignored) {
+            // ok; already gone
+        }
+        return application.withoutDeploymentIn(zone);
     }
 
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
