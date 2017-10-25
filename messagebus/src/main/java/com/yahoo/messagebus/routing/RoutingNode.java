@@ -331,6 +331,8 @@ public class RoutingNode implements ReplyHandler {
                     if (errorCode != ErrorCode.NONE) {
                         if (errors == null) {
                             errors = new StringBuilder();
+                        } else {
+                            errors.append("\n");
                         }
                         errors.append(error.toString());
                         shouldRetry = resender != null && resender.canRetry(errorCode);
