@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
+import com.google.inject.Inject;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.net.URI;
@@ -19,6 +20,12 @@ public class MockOrganization implements Organization {
     private final AtomicLong counter;
     private final HashMap<IssueId, WrappedIssue> issues;
     private final HashMap<PropertyId, PropertyInfo> properties;
+
+    @Inject
+    @SuppressWarnings("unused")
+    public MockOrganization() {
+        this(Clock.systemUTC());
+    }
 
     public MockOrganization(Clock clock) {
         this.clock = clock;
@@ -82,17 +89,17 @@ public class MockOrganization implements Organization {
 
     @Override
     public URI issueCreationUri(PropertyId propertyId) {
-        return null;
+        return URI.create("www.issues.com/" + propertyId.id());
     }
 
     @Override
     public URI contactsUri(PropertyId propertyId) {
-        return null;
+        return URI.create("www.contacts.com/" + propertyId.id());
     }
 
     @Override
     public URI propertyUri(PropertyId propertyId) {
-        return null;
+        return URI.create("www.properties.com/" + propertyId.id());
     }
 
     public void close(IssueId issueId) {

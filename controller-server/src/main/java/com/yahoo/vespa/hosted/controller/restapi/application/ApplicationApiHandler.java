@@ -53,6 +53,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -164,6 +165,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/cookiefreshness")) return cookieFreshness(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/property")) return property(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), path, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -304,6 +306,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if ( ! tenant.isPresent())
             return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
         return new SlimeJsonResponse(toSlime(tenant.get(), request, true));
+    }
+
+    private HttpResponse property(String tenantName) {
+        Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(tenantName));
+        if ( ! tenant.isPresent())
+            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        if ( ! tenant.get().getPropertyId().isPresent())
+            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not have the required property id");
+
+        PropertyId propertyId = tenant.get().getPropertyId().get();
+        return new SlimeJsonResponse(toSlime(controller.organization().propertyUri(propertyId),
+                                             controller.organization().contactsUri(propertyId),
+                                             controller.organization().issueCreationUri(propertyId),
+                                             controller.organization().contactsFor(propertyId)));
     }
     
     private HttpResponse applications(String tenantName, HttpRequest request) {
@@ -987,6 +1003,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private Slime toSlime(Tenant tenant, HttpRequest request, boolean listApplications) {
         Slime slime = new Slime();
         toSlime(tenant, slime.setObject(), request, listApplications);
+        return slime;
+    }
+
+    private Slime toSlime(URI propertyUri, URI contactsUri, URI issueCreationUri, List<? extends List<? extends User>> contacts) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("propertyUri", propertyUri.toString());
+        root.setString("contactsUri", contactsUri.toString());
+        root.setString("issueCreationUri", issueCreationUri.toString());
+        Cursor lists = root.setArray("contacts");
+        for (List<? extends User> contactList : contacts) {
+            Cursor list = lists.addArray();
+            for (User contact : contactList)
+                list.addString(contact.toString());
+        }
         return slime;
     }
 
