@@ -225,7 +225,7 @@ public:
     /**
      * Add a new merge state to the registry.
      */
-    void addMergeStatus(const document::BucketId&, MergeStatus::SP);
+    void addMergeStatus(const document::Bucket&, MergeStatus::SP);
 
     /**
      * Returns the reference to the current merge status for the given bucket.
@@ -234,7 +234,7 @@ public:
      *
      * @param bucket The bucket to start merging.
      */
-    MergeStatus& editMergeStatus(const document::BucketId& bucket);
+    MergeStatus& editMergeStatus(const document::Bucket& bucket);
 
     /**
      * Returns true if the bucket is currently being merged on this node.
@@ -242,7 +242,7 @@ public:
      * @param bucket The bucket to check merge status for
      * @return Returns true if the bucket is being merged.
      */
-    bool isMerging(const document::BucketId& bucket) const;
+    bool isMerging(const document::Bucket& bucket) const;
 
     /**
      * @return Returns the number of active merges on the node.
@@ -250,8 +250,8 @@ public:
     uint32_t getNumActiveMerges() const;
 
     /** Removes the merge status for the given bucket. */
-    void clearMergeStatus(const document::BucketId&);
-    void clearMergeStatus(const document::BucketId&, const api::ReturnCode&);
+    void clearMergeStatus(const document::Bucket&);
+    void clearMergeStatus(const document::Bucket&, const api::ReturnCode&);
 
     void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
 

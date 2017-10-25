@@ -149,20 +149,20 @@ FileStorHandler::getQueueSize(uint16_t disk) const
 }
 
 void
-FileStorHandler::addMergeStatus(const document::BucketId& bucket,
+FileStorHandler::addMergeStatus(const document::Bucket& bucket,
                                 MergeStatus::SP ms)
 {
     return _impl->addMergeStatus(bucket, ms);
 }
 
 MergeStatus&
-FileStorHandler::editMergeStatus(const document::BucketId& bucket)
+FileStorHandler::editMergeStatus(const document::Bucket& bucket)
 {
     return _impl->editMergeStatus(bucket);
 }
 
 bool
-FileStorHandler::isMerging(const document::BucketId& bucket) const
+FileStorHandler::isMerging(const document::Bucket& bucket) const
 {
     return _impl->isMerging(bucket);
 }
@@ -174,14 +174,14 @@ FileStorHandler::getNumActiveMerges() const
 }
 
 void
-FileStorHandler::clearMergeStatus(const document::BucketId& bucket,
+FileStorHandler::clearMergeStatus(const document::Bucket& bucket,
                                   const api::ReturnCode& code)
 {
     return _impl->clearMergeStatus(bucket, &code);
 }
 
 void
-FileStorHandler::clearMergeStatus(const document::BucketId& bucket)
+FileStorHandler::clearMergeStatus(const document::Bucket& bucket)
 {
     return _impl->clearMergeStatus(bucket, 0);
 }

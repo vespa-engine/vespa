@@ -182,11 +182,11 @@ public:
     std::shared_ptr<FileStorHandler::BucketLockInterface>
     lock(const document::Bucket&, uint16_t disk);
 
-    void addMergeStatus(const document::BucketId&, MergeStatus::SP);
-    MergeStatus& editMergeStatus(const document::BucketId&);
-    bool isMerging(const document::BucketId&) const;
+    void addMergeStatus(const document::Bucket&, MergeStatus::SP);
+    MergeStatus& editMergeStatus(const document::Bucket&);
+    bool isMerging(const document::Bucket&) const;
     uint32_t getNumActiveMerges() const;
-    void clearMergeStatus(const document::BucketId&, const api::ReturnCode*);
+    void clearMergeStatus(const document::Bucket&, const api::ReturnCode*);
 
     std::string dumpQueue(uint16_t disk) const;
     ResumeGuard pause();
@@ -202,7 +202,7 @@ private:
 
     vespalib::Lock _mergeStatesLock;
 
-    std::map<document::BucketId, MergeStatus::SP> _mergeStates;
+    std::map<document::Bucket, MergeStatus::SP> _mergeStates;
 
     uint8_t _maxPriorityToBlock;
     uint8_t _minPriorityToBeBlocking;
@@ -212,7 +212,6 @@ private:
     std::atomic<bool> _paused;
 
     void reply(api::StorageMessage&, DiskState state) const;
-    static document::BucketId getBucketId(const api::StorageMessage&);
 
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
     int calculateTargetBasedOnDocId(const api::StorageMessage& msg, std::vector<RemapInfo*>& targets);

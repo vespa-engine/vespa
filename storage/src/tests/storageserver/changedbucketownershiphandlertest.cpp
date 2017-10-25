@@ -197,7 +197,7 @@ bool
 hasAbortedAllOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
 {
     for (auto& b : v) {
-        if (!cmd->shouldAbort(b)) {
+        if (!cmd->shouldAbort(makeDocumentBucket(b))) {
             return false;
         }
     }
@@ -209,7 +209,7 @@ bool
 hasAbortedNoneOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
 {
     for (auto& b : v) {
-        if (cmd->shouldAbort(b)) {
+        if (cmd->shouldAbort(makeDocumentBucket(b))) {
             return false;
         }
     }

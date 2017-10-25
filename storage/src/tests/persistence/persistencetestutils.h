@@ -188,7 +188,7 @@ public:
      *
      * @disk If set, use this disk, otherwise lookup in bucket db.
      */
-    void createTestBucket(const document::BucketId&, uint16_t disk = 0xffff);
+    void createTestBucket(const document::Bucket&, uint16_t disk = 0xffff);
 
     /**
      * Create a new persistence thread.

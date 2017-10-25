@@ -927,11 +927,11 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
 class MergeStateDeleter {
 public:
     FileStorHandler& _handler;
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     bool _active;
 
     MergeStateDeleter(FileStorHandler& handler,
-                      const document::BucketId& bucket)
+                      const document::Bucket& bucket)
         : _handler(handler),
           _bucket(bucket),
           _active(true)
@@ -956,7 +956,6 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
                                        _env._component.getClock()));
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    const document::BucketId id(bucket.getBucketId());
     LOG(debug, "MergeBucket(%s) with max timestamp %" PRIu64 ".",
         bucket.toString().c_str(), cmd.getMaxTimestamp());
 
@@ -989,7 +988,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
         }
     }
 
-    if (_env._fileStorHandler.isMerging(id)) {
+    if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         const char* err = "A merge is already running on this bucket.";
         LOG(debug, "%s", err);
         tracker->fail(ReturnCode::BUSY, err);
@@ -997,11 +996,11 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
     }
     checkResult(_spi.createBucket(bucket, context), bucket, "create bucket");
 
-    MergeStateDeleter stateGuard(_env._fileStorHandler, id);
+    MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
     MergeStatus::SP s = MergeStatus::SP(new MergeStatus(
             _env._component.getClock(), cmd.getLoadType(),
             cmd.getPriority(), cmd.getTrace().getLevel()));
-    _env._fileStorHandler.addMergeStatus(id, s);
+    _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
     s->nodeList = cmd.getNodes();
     s->maxTimestamp = Timestamp(cmd.getMaxTimestamp());
     s->timeout = cmd.getTimeout();
@@ -1182,11 +1181,10 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
                                        _env._metrics.getBucketDiff,
                                        _env._component.getClock()));
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    const document::BucketId id(bucket.getBucketId());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
     checkResult(_spi.createBucket(bucket, context), bucket, "create bucket");
 
-    if (_env._fileStorHandler.isMerging(id)) {
+    if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         tracker->fail(ReturnCode::BUSY,
                      "A merge is already running on this bucket.");
         return tracker;
@@ -1239,11 +1237,11 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
-        MergeStateDeleter stateGuard(_env._fileStorHandler, id);
+        MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
         MergeStatus::SP s(new MergeStatus(_env._component.getClock(),
                                           cmd.getLoadType(), cmd.getPriority(),
                                           cmd.getTrace().getLevel()));
-        _env._fileStorHandler.addMergeStatus(id, s);
+        _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
 
         s->pendingGetDiff =
             api::GetBucketDiffReply::SP(new api::GetBucketDiffReply(cmd));
@@ -1305,23 +1303,22 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
 {
     ++_env._metrics.getBucketDiffReply;
     spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
-    document::BucketId id(bucket.getBucketId());
     LOG(debug, "GetBucketDiffReply(%s)", bucket.toString().c_str());
 
-    if (!_env._fileStorHandler.isMerging(id)) {
+    if (!_env._fileStorHandler.isMerging(bucket.getBucket())) {
         LOG(warning, "Got GetBucketDiffReply for %s which we have no "
                      "merge state for.",
             bucket.toString().c_str());
-        DUMP_LOGGED_BUCKET_OPERATIONS(id);
+        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
 
-    MergeStatus& s = _env._fileStorHandler.editMergeStatus(id);
+    MergeStatus& s = _env._fileStorHandler.editMergeStatus(bucket.getBucket());
     if (s.pendingId != reply.getMsgId()) {
         LOG(warning, "Got GetBucketDiffReply for %s which had message "
                      "id %" PRIu64 " when we expected %" PRIu64 ". Ignoring reply.",
             bucket.toString().c_str(), reply.getMsgId(), s.pendingId);
-        DUMP_LOGGED_BUCKET_OPERATIONS(id);
+        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
     api::StorageReply::SP replyToSend;
@@ -1363,7 +1360,7 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
         }
     } catch (std::exception& e) {
         _env._fileStorHandler.clearMergeStatus(
-                id,
+                bucket.getBucket(),
                 api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE,
                                 e.what()));
         throw;
@@ -1372,7 +1369,7 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
     }
 
     if (clearState) {
-        _env._fileStorHandler.clearMergeStatus(id);
+        _env._fileStorHandler.clearMergeStatus(bucket.getBucket());
     }
     if (replyToSend.get()) {
         replyToSend->setResult(reply.getResult());
@@ -1389,10 +1386,9 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
                                        _env._component.getClock()));
 
     spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    const document::BucketId id(bucket.getBucketId());
     LOG(debug, "%s", cmd.toString().c_str());
 
-    if (_env._fileStorHandler.isMerging(id)) {
+    if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         tracker->fail(ReturnCode::BUSY,
                       "A merge is already running on this bucket.");
         return tracker;
@@ -1451,11 +1447,11 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
-        MergeStateDeleter stateGuard(_env._fileStorHandler, id);
+        MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
         MergeStatus::SP s(new MergeStatus(_env._component.getClock(),
                                           cmd.getLoadType(), cmd.getPriority(),
                                           cmd.getTrace().getLevel()));
-        _env._fileStorHandler.addMergeStatus(id, s);
+        _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
         s->pendingApplyDiff =
             api::ApplyBucketDiffReply::SP(new api::ApplyBucketDiffReply(cmd));
 
@@ -1485,24 +1481,23 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
 {
     ++_env._metrics.applyBucketDiffReply;
     spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
-    document::BucketId id(bucket.getBucketId());
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 
-    if (!_env._fileStorHandler.isMerging(id)) {
+    if (!_env._fileStorHandler.isMerging(bucket.getBucket())) {
         LOG(warning, "Got ApplyBucketDiffReply for %s which we have no "
                      "merge state for.",
             bucket.toString().c_str());
-        DUMP_LOGGED_BUCKET_OPERATIONS(id);
+        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
 
-    MergeStatus& s = _env._fileStorHandler.editMergeStatus(id);
+    MergeStatus& s = _env._fileStorHandler.editMergeStatus(bucket.getBucket());
     if (s.pendingId != reply.getMsgId()) {
         LOG(warning, "Got ApplyBucketDiffReply for %s which had message "
                      "id %" PRIu64 " when we expected %" PRIu64 ". Ignoring reply.",
             bucket.toString().c_str(), reply.getMsgId(), s.pendingId);
-        DUMP_LOGGED_BUCKET_OPERATIONS(id);
+        DUMP_LOGGED_BUCKET_OPERATIONS(bucket.getBucketId());
         return;
     }
     bool clearState = true;
@@ -1587,7 +1582,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
         }
     } catch (std::exception& e) {
         _env._fileStorHandler.clearMergeStatus(
-                id,
+                bucket.getBucket(),
                 api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE,
                                 e.what()));
         throw;
@@ -1596,7 +1591,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
     }
 
     if (clearState) {
-        _env._fileStorHandler.clearMergeStatus(id);
+        _env._fileStorHandler.clearMergeStatus(bucket.getBucket());
     }
     if (replyToSend.get()) {
         // Send on

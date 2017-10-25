@@ -58,7 +58,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(
 FileStorHandlerImpl::~FileStorHandlerImpl() { }
 
 void
-FileStorHandlerImpl::addMergeStatus(const document::BucketId& bucket, MergeStatus::SP status)
+FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP status)
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
     if (_mergeStates.find(bucket) != _mergeStates.end()) {;
@@ -69,7 +69,7 @@ FileStorHandlerImpl::addMergeStatus(const document::BucketId& bucket, MergeStatu
 }
 
 MergeStatus&
-FileStorHandlerImpl::editMergeStatus(const document::BucketId& bucket)
+FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
     MergeStatus::SP status = _mergeStates[bucket];
@@ -81,7 +81,7 @@ FileStorHandlerImpl::editMergeStatus(const document::BucketId& bucket)
 }
 
 bool
-FileStorHandlerImpl::isMerging(const document::BucketId& bucket) const
+FileStorHandlerImpl::isMerging(const document::Bucket& bucket) const
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
     return (_mergeStates.find(bucket) != _mergeStates.end());
@@ -95,7 +95,7 @@ FileStorHandlerImpl::getNumActiveMerges() const
 }
 
 void
-FileStorHandlerImpl::clearMergeStatus(const document::BucketId& bucket,
+FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket,
                                       const api::ReturnCode* code)
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
@@ -154,7 +154,7 @@ FileStorHandlerImpl::flush(bool killPendingMerges)
     if (killPendingMerges) {
         api::ReturnCode code(api::ReturnCode::ABORTED,
                              "Storage node is shutting down");
-        for (std::map<document::BucketId, MergeStatus::SP>::iterator it
+        for (std::map<document::Bucket, MergeStatus::SP>::iterator it
                  = _mergeStates.begin(); it != _mergeStates.end(); ++it)
         {
             MergeStatus& s(*it->second);
@@ -337,7 +337,7 @@ FileStorHandlerImpl::abortQueuedCommandsForBuckets(
                                 "bucket operation was bound to");
     for (iter_t it(t.queue.begin()), e(t.queue.end()); it != e;) {
         api::StorageMessage& msg(*it->_command);
-        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket.getBucketId())) {
+        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
             LOG(debug,
                 "Aborting operation %s as it is bound for bucket %s",
                 msg.toString().c_str(),
@@ -360,7 +360,7 @@ FileStorHandlerImpl::diskHasActiveOperationForAbortedBucket(
         const AbortBucketOperationsCommand& cmd) const
 {
     for (auto& lockedBucket : disk.lockedBuckets) {
-        if (cmd.shouldAbort(lockedBucket.first.getBucketId())) {
+        if (cmd.shouldAbort(lockedBucket.first)) {
             LOG(spam,
                 "Disk had active operation for aborted bucket %s, "
                 "waiting for it to complete...",
@@ -868,7 +868,7 @@ FileStorHandlerImpl::remapMessage(
                     << ". Cannot remap merge, so aborting it";
                 api::ReturnCode code(api::ReturnCode::BUCKET_DELETED,
                                      ost.str());
-                clearMergeStatus(cmd.getBucketId(), &code);
+                clearMergeStatus(cmd.getBucket(), &code);
             }
         }
         // Follow onto next to move queue or fail
@@ -1373,7 +1373,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out,
         if (_mergeStates.size() == 0) {
             out << "None\n";
         }
-        for (std::map<document::BucketId, MergeStatus::SP>::const_iterator it
+        for (std::map<document::Bucket, MergeStatus::SP>::const_iterator it
                  = _mergeStates.begin(); it != _mergeStates.end(); ++it)
         {
             out << "<b>" << it->first.toString() << "</b><br>\n";

@@ -183,12 +183,12 @@ FileStorManager::replyWithBucketNotFound(api::StorageMessage& msg,
 
 StorBucketDatabase::WrappedEntry
 FileStorManager::mapOperationToDisk(api::StorageMessage& msg,
-                                    const document::BucketId& bucket)
+                                    const document::Bucket& bucket)
 {
     StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(
-            bucket, "FileStorManager::mapOperationToDisk"));
+            bucket.getBucketId(), "FileStorManager::mapOperationToDisk"));
     if (!entry.exist()) {
-        replyWithBucketNotFound(msg, bucket);
+        replyWithBucketNotFound(msg, bucket.getBucketId());
     }
     return entry;
 }
@@ -259,7 +259,7 @@ FileStorManager::handlePersistenceMessage(
             msg->getType().getName().c_str(), disk);
 
         LOG_BUCKET_OPERATION_NO_LOCK(
-                getStorageMessageBucketId(*msg).getBucketId(),
+                getStorageMessageBucket(*msg).getBucketId(),
                 vespalib::make_string("Attempting to queue %s to disk %u",
                                             msg->toString().c_str(), disk));
 
@@ -400,7 +400,7 @@ FileStorManager::onBatchPutRemove(const std::shared_ptr<api::BatchPutRemoveComma
 bool
 FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -410,7 +410,7 @@ FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationComma
 bool
 FileStorManager::onStatBucket(const std::shared_ptr<api::StatBucketCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -645,7 +645,7 @@ FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage& msg, const 
 
 bool
 FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry& entry,
-                                         const document::BucketId& bucket)
+                                         const document::Bucket& bucket)
 {
     if (!entry.exist()) {
         _filestorHandler->clearMergeStatus(bucket,
@@ -663,8 +663,8 @@ FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&
 bool
 FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>& reply)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*reply, reply->getBucketId()));
-    if (validateDiffReplyBucket(entry, reply->getBucketId())) {
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*reply, reply->getBucket()));
+    if (validateDiffReplyBucket(entry, reply->getBucket())) {
         handlePersistenceMessage(reply, entry->disk);
     }
     return true;
@@ -673,7 +673,7 @@ FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>&
 bool
 FileStorManager::onApplyBucketDiff(const shared_ptr<api::ApplyBucketDiffCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (validateApplyDiffCommandBucket(*cmd, entry)) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -684,8 +684,8 @@ bool
 FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffReply>& reply)
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
-                *reply, reply->getBucketId()));
-    if (validateDiffReplyBucket(entry, reply->getBucketId())) {
+                *reply, reply->getBucket()));
+    if (validateDiffReplyBucket(entry, reply->getBucket())) {
         handlePersistenceMessage(reply, entry->disk);
     }
     return true;
@@ -708,7 +708,7 @@ FileStorManager::onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>& c
 bool
 FileStorManager::onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -719,7 +719,7 @@ bool
 FileStorManager::onSetBucketState(
         const std::shared_ptr<api::SetBucketStateCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+    StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -733,7 +733,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case GetIterCommand::ID:
     {
         shared_ptr<GetIterCommand> cmd(std::static_pointer_cast<GetIterCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -742,7 +742,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case CreateIteratorCommand::ID:
     {
         shared_ptr<CreateIteratorCommand> cmd(std::static_pointer_cast<CreateIteratorCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -765,7 +765,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case ReadBucketInfo::ID:
     {
         shared_ptr<ReadBucketInfo> cmd(std::static_pointer_cast<ReadBucketInfo>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -774,7 +774,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case InternalBucketJoinCommand::ID:
     {
         shared_ptr<InternalBucketJoinCommand> cmd(std::static_pointer_cast<InternalBucketJoinCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -783,7 +783,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case RepairBucketCommand::ID:
     {
         shared_ptr<RepairBucketCommand> cmd(std::static_pointer_cast<RepairBucketCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -792,7 +792,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case BucketDiskMoveCommand::ID:
     {
         shared_ptr<BucketDiskMoveCommand> cmd(std::static_pointer_cast<BucketDiskMoveCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -801,7 +801,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case RecheckBucketInfoCommand::ID:
     {
         shared_ptr<RecheckBucketInfoCommand> cmd(std::static_pointer_cast<RecheckBucketInfoCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucketId()));
+        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd, entry->disk);
         }
@@ -939,7 +939,7 @@ FileStorManager::reportHtmlStatus(std::ostream& out,
 }
 
 bool
-FileStorManager::isMerging(const document::BucketId& bucket) const
+FileStorManager::isMerging(const document::Bucket& bucket) const
 {
     return _filestorHandler->isMerging(bucket);
 }
