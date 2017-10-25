@@ -367,7 +367,15 @@ public class DeploymentTrigger {
             return application;
         }
 
-        // Note: We could make a more fine-grained and more correct determination about whether to block 
+        // TODO: Remove when we can determine why this occurs
+        if (jobType != JobType.component && ! application.deploying().isPresent()) {
+            log.warning(String.format("Want to trigger %s for %s with reason %s, but this application is not " +
+                                      "currently deploying a change",
+                                      jobType, application, cause));
+            return application;
+        }
+
+        // Note: We could make a more fine-grained and more correct determination about whether to block
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
         //       fix to a version upgrade, so not doing it now
@@ -376,14 +384,6 @@ public class DeploymentTrigger {
         }
         
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) {
-            return application;
-        }
-
-        // TODO: Remove when we can determine why this occurs
-        if (jobType != JobType.component && ! application.deploying().isPresent()) {
-            log.warning(String.format("Want to trigger %s for %s with reason %s, but this application is not " +
-                                              "currently deploying a change",
-                                      jobType, application, cause));
             return application;
         }
 
