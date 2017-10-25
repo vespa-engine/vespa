@@ -3,7 +3,7 @@
 #include "changedbucketownershiphandler.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/storage/common/messagebucketid.h>
+#include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -323,8 +323,8 @@ ChangedBucketOwnershipHandler::sendingDistributorOwnsBucketInCurrentState(
     }
 
     try {
-        document::BucketId opBucket(getStorageMessageBucketId(cmd));
-        return (current->ownerOf(opBucket) == cmd.getSourceIndex());
+        document::Bucket opBucket(getStorageMessageBucket(cmd));
+        return (current->ownerOf(opBucket.getBucketId()) == cmd.getSourceIndex());
     } catch (vespalib::IllegalArgumentException& e) {
         LOG(error,
             "Precondition violation: unable to get bucket from "

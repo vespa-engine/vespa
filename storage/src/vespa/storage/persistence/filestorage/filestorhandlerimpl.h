@@ -47,10 +47,10 @@ public:
     struct MessageEntry {
         std::shared_ptr<api::StorageMessage> _command;
         metrics::MetricTimer _timer;
-        document::BucketId _bucketId;
+        document::Bucket _bucket;
         uint8_t _priority;
 
-        MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::BucketId& bId);
+        MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::Bucket &bId);
         MessageEntry(MessageEntry &&) noexcept ;
         MessageEntry(const MessageEntry &);
         MessageEntry & operator = (const MessageEntry &) = delete;
@@ -66,8 +66,8 @@ public:
 
     typedef boost::multi_index::ordered_non_unique<
         boost::multi_index::member<MessageEntry,
-                                   document::BucketId,
-                                   &MessageEntry::_bucketId> > BucketOrder;
+                                   document::Bucket,
+                                   &MessageEntry::_bucket> > BucketOrder;
 
     typedef boost::multi_index::multi_index_container<
         MessageEntry,
@@ -101,7 +101,7 @@ public:
             { }
         };
 
-        typedef vespalib::hash_map<document::BucketId, LockEntry, document::BucketId::hash> LockedBuckets;
+        typedef vespalib::hash_map<document::Bucket, LockEntry, document::Bucket::hash> LockedBuckets;
         LockedBuckets lockedBuckets;
         FileStorDiskMetrics* metrics;
 
@@ -123,7 +123,7 @@ public:
         Disk();
         ~Disk();
 
-        bool isLocked(const document::BucketId&) const noexcept;
+        bool isLocked(const document::Bucket&) const noexcept;
         uint32_t getQueueSize() const noexcept;
     private:
         std::atomic<DiskState> state;
@@ -131,15 +131,15 @@ public:
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
-        BucketLock(const vespalib::MonitorGuard & guard, Disk& disk, const document::BucketId& id, uint8_t priority,
+        BucketLock(const vespalib::MonitorGuard & guard, Disk& disk, const document::Bucket &bucket, uint8_t priority,
                    const vespalib::stringref & statusString);
         ~BucketLock();
 
-        const document::BucketId& getBucketId() const override { return _id; }
+        const document::Bucket &getBucket() const override { return _bucket; }
 
     private:
         Disk& _disk;
-        document::BucketId _id;
+        document::Bucket _bucket;
     };
 
     FileStorHandlerImpl(MessageSender&,
@@ -170,7 +170,7 @@ public:
 
     void remapQueue(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2, Operation op);
 
-    void failOperations(const document::BucketId&, uint16_t fromDisk, const api::ReturnCode&);
+    void failOperations(const document::Bucket&, uint16_t fromDisk, const api::ReturnCode&);
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
 
@@ -180,7 +180,7 @@ public:
     uint32_t getQueueSize(uint16_t disk) const;
 
     std::shared_ptr<FileStorHandler::BucketLockInterface>
-    lock(const document::BucketId&, uint16_t disk);
+    lock(const document::Bucket&, uint16_t disk);
 
     void addMergeStatus(const document::BucketId&, MergeStatus::SP);
     MergeStatus& editMergeStatus(const document::BucketId&);
@@ -255,7 +255,7 @@ private:
      */
     std::unique_ptr<FileStorHandler::BucketLockInterface>
     takeDiskBucketLockOwnership(const vespalib::MonitorGuard & guard,
-                                Disk& disk, const document::BucketId& id, const api::StorageMessage& msg);
+                                Disk& disk, const document::Bucket &bucket, const api::StorageMessage& msg);
 
     /**
      * Creates and returns a reply with api::TIMEOUT return code for msg.
@@ -271,12 +271,12 @@ private:
     // Update hook
     void updateMetrics(const MetricLockGuard &) override;
 
-    document::BucketId remapMessage(api::StorageMessage& msg,
-                                    const document::BucketId& source,
-                                    Operation op,
-                                    std::vector<RemapInfo*>& targets,
-                                    uint16_t& targetDisk,
-                                    api::ReturnCode& returnCode);
+    document::Bucket remapMessage(api::StorageMessage& msg,
+                                  const document::Bucket &source,
+                                  Operation op,
+                                  std::vector<RemapInfo*>& targets,
+                                  uint16_t& targetDisk,
+                                  api::ReturnCode& returnCode);
 
     void remapQueueNoLock(Disk& from, const RemapInfo& source, std::vector<RemapInfo*>& targets, Operation op);
 

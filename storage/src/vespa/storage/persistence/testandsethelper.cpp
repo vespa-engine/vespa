@@ -33,7 +33,7 @@ void TestAndSetHelper::parseDocumentSelection() {
 
 spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fieldSet) { 
     return _thread._spi.get(
-        _thread.getBucket(_docId, _cmd.getBucketId()),
+        _thread.getBucket(_docId, _cmd.getBucket()),
         fieldSet,
         _cmd.getDocumentId(),
         _thread._context);

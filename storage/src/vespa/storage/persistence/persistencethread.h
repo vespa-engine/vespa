@@ -61,11 +61,7 @@ private:
     vespalib::Monitor         _flushMonitor;
     bool                      _closed;
 
-    void setBucketInfo(MessageTracker& tracker, const document::BucketId& bucketId);
-
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
-
-    void updateBucketDatabase(const document::BucketId& id, const api::BucketInfo& info);
 
     /**
      * Sanity-checking of join command parameters. Invokes tracker.fail() with
@@ -85,9 +81,9 @@ private:
     // Thread main loop
     void run(framework::ThreadHandle&) override;
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
-    spi::Bucket getBucket(const DocumentId& id, const BucketId& bucket) const;
+    spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
 
-    void flushAllReplies(const document::BucketId& bucketId, std::vector<MessageTracker::UP>& trackers);
+    void flushAllReplies(const document::Bucket& bucket, std::vector<MessageTracker::UP>& trackers);
 
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);

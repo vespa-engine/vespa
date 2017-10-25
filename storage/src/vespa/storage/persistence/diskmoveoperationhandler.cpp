@@ -56,7 +56,7 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
         return tracker;
     }
 
-    api::BucketInfo bInfo = _env.getBucketInfo(to, targetDisk);
+    api::BucketInfo bInfo = _env.getBucketInfo(bucket, targetDisk);
     uint32_t sourceFileSize = bInfo.getUsedFileSize();
 
     {
@@ -72,7 +72,7 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
         // Move queued operations in bucket to new thread. Hold bucket lock
         // while doing it, so filestor manager can't put in other operations
         // first, such that operations change order.
-        _env._fileStorHandler.remapQueueAfterDiskMove(bucket.getBucketId(), deviceIndex, targetDisk);
+        _env._fileStorHandler.remapQueueAfterDiskMove(bucket, deviceIndex, targetDisk);
 
         if (entry.exist()) {
             entry->setBucketInfo(bInfo);

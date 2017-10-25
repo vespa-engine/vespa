@@ -5,7 +5,7 @@ vespa_add_library(storage_common OBJECT
     storagelink.cpp
     storagelinkqueued.cpp
     bucketoperationlogger.cpp
-    messagebucketid.cpp
+    messagebucket.cpp
     bucketmessages.cpp
     statusmessages.cpp
     messagesender.cpp

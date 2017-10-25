@@ -88,12 +88,12 @@ PersistenceUtil::~PersistenceUtil()
 }
 
 void
-PersistenceUtil::updateBucketDatabase(const document::BucketId& id,
+PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
                                       const api::BucketInfo& i)
 {
     // Update bucket database
     StorBucketDatabase::WrappedEntry entry(getBucketDatabase().get(
-                                                   id,
+                                                   bucket.getBucketId(),
                                                    "env::updatebucketdb"));
     if (entry.exist()) {
         api::BucketInfo info = i;
@@ -108,18 +108,18 @@ PersistenceUtil::updateBucketDatabase(const document::BucketId& id,
     } else {
         LOG(debug,
             "Bucket(%s).getBucketInfo: Bucket does not exist.",
-            id.toString().c_str());
+            bucket.getBucketId().toString().c_str());
     }
 }
 
 uint16_t
-PersistenceUtil::getPreferredAvailableDisk(const document::BucketId& id) const
+PersistenceUtil::getPreferredAvailableDisk(const document::Bucket &bucket) const
 {
-    return _component.getPreferredAvailablePartition(id);
+    return _component.getPreferredAvailablePartition(bucket.getBucketId());
 }
 
 PersistenceUtil::LockResult
-PersistenceUtil::lockAndGetDisk(const document::BucketId& bucket,
+PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
                                 StorBucketDatabase::Flag flags)
 {
     // To lock the bucket, we need to ensure that we don't conflict with
@@ -135,7 +135,7 @@ PersistenceUtil::lockAndGetDisk(const document::BucketId& bucket,
                 _fileStorHandler.lock(bucket, result.disk));
 
         StorBucketDatabase::WrappedEntry entry(getBucketDatabase().get(
-                bucket, "join-lockAndGetDisk-1", flags));
+                bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
         if (entry.exist() && entry->disk != result.disk) {
             result.disk = entry->disk;
             continue;
@@ -147,26 +147,25 @@ PersistenceUtil::lockAndGetDisk(const document::BucketId& bucket,
 }
 
 void
-PersistenceUtil::setBucketInfo(MessageTracker& tracker,
-                               const document::BucketId& bucketId)
+PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket)
 {
-    api::BucketInfo info = getBucketInfo(bucketId, _partition);
+    api::BucketInfo info = getBucketInfo(bucket, _partition);
 
     static_cast<api::BucketInfoReply&>(*tracker.getReply()).
         setBucketInfo(info);
 
-    updateBucketDatabase(bucketId, info);
+    updateBucketDatabase(bucket, info);
 }
 
 api::BucketInfo
-PersistenceUtil::getBucketInfo(const document::BucketId& bId, int disk) const
+PersistenceUtil::getBucketInfo(const document::Bucket &bucket, int disk) const
 {
     if (disk == -1) {
         disk = _partition;
     }
 
     spi::BucketInfoResult response =
-        _spi.getBucketInfo(spi::Bucket(document::Bucket(document::BucketSpace::placeHolder(), bId), spi::PartitionId(disk)));
+        _spi.getBucketInfo(spi::Bucket(bucket, spi::PartitionId(disk)));
 
     return convertBucketInfo(response.getBucketInfo());
 }

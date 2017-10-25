@@ -728,7 +728,7 @@ MergeHandler::applyDiffLocally(
                                  tmpInfo.isReady(),
                                  tmpInfo.isActive());
 
-    _env.updateBucketDatabase(bucket.getBucketId(), providerInfo);
+    _env.updateBucketDatabase(bucket.getBucket(), providerInfo);
     return providerInfo;
 }
 

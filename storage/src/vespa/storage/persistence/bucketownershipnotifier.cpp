@@ -16,11 +16,11 @@ namespace storage {
 
 uint16_t
 BucketOwnershipNotifier::getOwnerDistributorForBucket(
-        const document::BucketId& bucket) const
+        const document::Bucket &bucket) const
 {
     try {
         return (_component.getDistribution()->getIdealDistributorNode(
-                        *_component.getStateUpdater().getSystemState(), bucket));
+                        *_component.getStateUpdater().getSystemState(), bucket.getBucketId()));
         // If we get exceptions there aren't any distributors, so they'll have
         // to explicitly fetch all bucket info eventually anyway.
     } catch (lib::TooFewBucketBitsInUseException& e) {
@@ -41,7 +41,7 @@ BucketOwnershipNotifier::getOwnerDistributorForBucket(
 
 bool
 BucketOwnershipNotifier::distributorOwns(uint16_t distributor,
-                                         const document::BucketId& bucket) const
+                                         const document::Bucket &bucket) const
 {
     return (distributor == getOwnerDistributorForBucket(bucket));
 }
@@ -49,7 +49,7 @@ BucketOwnershipNotifier::distributorOwns(uint16_t distributor,
 void
 BucketOwnershipNotifier::sendNotifyBucketToDistributor(
         uint16_t distributorIndex,
-        const document::BucketId& bucket,
+        const document::Bucket &bucket,
         const api::BucketInfo& infoToSend)
 {
     if (!infoToSend.valid()) {
@@ -61,7 +61,7 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
         return;
     }
     api::NotifyBucketChangeCommand::SP notifyCmd(
-                new api::NotifyBucketChangeCommand(document::Bucket(BucketSpace::placeHolder(), bucket), infoToSend));
+                new api::NotifyBucketChangeCommand(bucket, infoToSend));
 
     notifyCmd->setAddress(api::StorageMessageAddress(
                                   _component.getClusterName(),
@@ -76,7 +76,7 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
 }
 
 void
-BucketOwnershipNotifier::logNotification(const document::BucketId& bucket,
+BucketOwnershipNotifier::logNotification(const document::Bucket &bucket,
                                          uint16_t sourceIndex,
                                          uint16_t currentOwnerIndex,
                                          const api::BucketInfo& newInfo)
@@ -85,7 +85,7 @@ BucketOwnershipNotifier::logNotification(const document::BucketId& bucket,
         "%s now owned by distributor %u, but reply for operation is scheduled "
         "to go to distributor %u. Sending NotifyBucketChange with %s to ensure "
         "new owner knows bucket exists",
-        bucket.toString().c_str(),
+        bucket.getBucketId().toString().c_str(),
         currentOwnerIndex,
         sourceIndex,
         newInfo.toString().c_str());
@@ -99,7 +99,7 @@ BucketOwnershipNotifier::logNotification(const document::BucketId& bucket,
 
 void
 BucketOwnershipNotifier::notifyIfOwnershipChanged(
-        const document::BucketId& bucket,
+        const document::Bucket &bucket,
         uint16_t sourceIndex,
         const api::BucketInfo& infoToSend)
 {
@@ -122,7 +122,7 @@ BucketOwnershipNotifier::notifyIfOwnershipChanged(
 
 void
 BucketOwnershipNotifier::sendNotifyBucketToCurrentOwner(
-        const document::BucketId& bucket,
+        const document::Bucket &bucket,
         const api::BucketInfo& infoToSend)
 {
     uint16_t distributor(getOwnerDistributorForBucket(bucket));
@@ -145,7 +145,7 @@ NotificationGuard::~NotificationGuard()
 }
 
 void
-NotificationGuard::notifyIfOwnershipChanged(const document::BucketId& bucket,
+NotificationGuard::notifyIfOwnershipChanged(const document::Bucket &bucket,
                                             uint16_t sourceIndex,
                                             const api::BucketInfo& infoToSend)
 {
@@ -153,7 +153,7 @@ NotificationGuard::notifyIfOwnershipChanged(const document::BucketId& bucket,
 }
 
 void
-NotificationGuard::notifyAlways(const document::BucketId& bucket,
+NotificationGuard::notifyAlways(const document::Bucket &bucket,
                                 const api::BucketInfo& infoToSend)
 {
     BucketToCheck bc(bucket, 0xffff, infoToSend);

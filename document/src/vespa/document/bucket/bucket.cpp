@@ -5,6 +5,12 @@
 
 namespace document {
 
+Bucket::Bucket() noexcept
+    : _bucketSpace(BucketSpace::placeHolder()),
+      _bucketId()
+{
+}
+
 vespalib::string Bucket::toString() const
 {
     vespalib::asciistream os;

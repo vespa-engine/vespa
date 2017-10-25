@@ -10,7 +10,7 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storage/common/messagebucketid.h>
+#include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/batch.h>
@@ -19,6 +19,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.handler.impl");
+
+using document::BucketSpace;
 
 namespace storage {
 
@@ -248,7 +250,7 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg,
 {
     assert(disk < _diskInfo.size());
     Disk& t(_diskInfo[disk]);
-    MessageEntry messageEntry(msg, getStorageMessageBucketId(*msg));
+    MessageEntry messageEntry(msg, getStorageMessageBucket(*msg));
     vespalib::MonitorGuard lockGuard(t.lock);
 
     if (t.getState() == FileStorHandler::AVAILABLE) {
@@ -335,11 +337,11 @@ FileStorHandlerImpl::abortQueuedCommandsForBuckets(
                                 "bucket operation was bound to");
     for (iter_t it(t.queue.begin()), e(t.queue.end()); it != e;) {
         api::StorageMessage& msg(*it->_command);
-        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucketId)) {
+        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket.getBucketId())) {
             LOG(debug,
                 "Aborting operation %s as it is bound for bucket %s",
                 msg.toString().c_str(),
-                it->_bucketId.toString().c_str());
+                it->_bucket.getBucketId().toString().c_str());
             std::shared_ptr<api::StorageReply> msgReply(
                     static_cast<api::StorageCommand&>(msg).makeReply().release());
             msgReply->setResult(abortedCode);
@@ -358,7 +360,7 @@ FileStorHandlerImpl::diskHasActiveOperationForAbortedBucket(
         const AbortBucketOperationsCommand& cmd) const
 {
     for (auto& lockedBucket : disk.lockedBuckets) {
-        if (cmd.shouldAbort(lockedBucket.first)) {
+        if (cmd.shouldAbort(lockedBucket.first.getBucketId())) {
             LOG(spam,
                 "Disk had active operation for aborted bucket %s, "
                 "waiting for it to complete...",
@@ -423,12 +425,12 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
                                     FileStorHandler::LockedMessage& lck,
                                     uint8_t maxPriority)
 {
-    document::BucketId id(lck.first->getBucketId());
+    document::Bucket bucket(lck.first->getBucket());
 
     LOG(spam,
         "Disk %d retrieving message for buffered bucket %s",
         disk,
-        id.toString().c_str());
+        bucket.getBucketId().toString().c_str());
 
     assert(disk < _diskInfo.size());
     Disk& t(_diskInfo[disk]);
@@ -440,7 +442,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
 
     vespalib::MonitorGuard lockGuard(t.lock);
     BucketIdx& idx = boost::multi_index::get<2>(t.queue);
-    std::pair<BucketIdx::iterator, BucketIdx::iterator> range = idx.equal_range(id);
+    std::pair<BucketIdx::iterator, BucketIdx::iterator> range = idx.equal_range(bucket);
 
     // No more for this bucket.
     if (range.first == range.second) {
@@ -467,7 +469,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
 
     LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue (bucket %s), "
                "timeout %d",
-        m.toString().c_str(), waitTime, id.toString().c_str(),
+        m.toString().c_str(), waitTime, bucket.getBucketId().toString().c_str(),
         static_cast<api::StorageCommand&>(m).getTimeout());
 
     if (m.getType().isReply() ||
@@ -540,11 +542,11 @@ std::unique_ptr<FileStorHandler::BucketLockInterface>
 FileStorHandlerImpl::takeDiskBucketLockOwnership(
         const vespalib::MonitorGuard & guard,
         Disk& disk,
-        const document::BucketId& id,
+        const document::Bucket &bucket,
         const api::StorageMessage& msg)
 {
     return std::unique_ptr<FileStorHandler::BucketLockInterface>(
-            new BucketLock(guard, disk, id, msg.getPriority(), msg.getSummary()));
+            new BucketLock(guard, disk, bucket, msg.getPriority(), msg.getSummary()));
 }
 
 std::unique_ptr<api::StorageReply>
@@ -561,8 +563,8 @@ FileStorHandlerImpl::makeQueueTimeoutReply(api::StorageMessage& msg) const
 
 namespace {
     bool
-    bucketIsLockedOnDisk(const document::BucketId &id, const FileStorHandlerImpl::Disk &t) {
-        return (id.getRawId() != 0 && t.isLocked(id));
+    bucketIsLockedOnDisk(const document::Bucket &id, const FileStorHandlerImpl::Disk &t) {
+        return (id.getBucketId().getRawId() != 0 && t.isLocked(id));
     }
 
     /**
@@ -598,7 +600,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
         PriorityIdx& idx(boost::multi_index::get<1>(t.queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
-        while (iter != end && bucketIsLockedOnDisk(iter->_bucketId, t)) {
+        while (iter != end && bucketIsLockedOnDisk(iter->_bucket, t)) {
             iter++;
         }
         if (iter != end) {
@@ -632,11 +634,11 @@ FileStorHandlerImpl::getMessage(vespalib::MonitorGuard & guard, Disk & t, Priori
         m.toString().c_str(), waitTime, static_cast<api::StorageCommand &>(m).getTimeout());
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
-    document::BucketId bucketId(iter->_bucketId);
+    document::Bucket bucket(iter->_bucket);
     idx.erase(iter); // iter not used after this point.
 
     if (!messageTimedOutInQueue(*msg, waitTime)) {
-        auto locker = takeDiskBucketLockOwnership(guard, t, bucketId, *msg);
+        auto locker = takeDiskBucketLockOwnership(guard, t, bucket, *msg);
         guard.unlock();
         MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
         return std::move(FileStorHandler::LockedMessage(std::move(locker), std::move(msg)));
@@ -650,22 +652,22 @@ FileStorHandlerImpl::getMessage(vespalib::MonitorGuard & guard, Disk & t, Priori
 }
 
 std::shared_ptr<FileStorHandler::BucketLockInterface>
-FileStorHandlerImpl::lock(const document::BucketId& bucket, uint16_t disk)
+FileStorHandlerImpl::lock(const document::Bucket &bucket, uint16_t disk)
 {
     assert(disk < _diskInfo.size());
 
     Disk& t(_diskInfo[disk]);
     LOG(spam,
         "Acquiring filestor lock for %s on disk %d",
-        bucket.toString().c_str(),
+        bucket.getBucketId().toString().c_str(),
         disk);
 
     vespalib::MonitorGuard lockGuard(t.lock);
 
-    while (bucket.getRawId() != 0 && t.isLocked(bucket)) {
+    while (bucket.getBucketId().getRawId() != 0 && t.isLocked(bucket)) {
         LOG(spam,
             "Contending for filestor lock for %s",
-            bucket.toString().c_str());
+            bucket.getBucketId().toString().c_str());
         lockGuard.wait(100);
     }
 
@@ -740,10 +742,12 @@ FileStorHandlerImpl::calculateTargetBasedOnDocId(
         std::vector<RemapInfo*>& targets)
 {
     document::DocumentId id(getDocId(msg));
-    document::BucketId bucket(_bucketIdFactory.getBucketId(id));
+    document::Bucket bucket(BucketSpace::placeHolder(), _bucketIdFactory.getBucketId(id));
 
     for (uint32_t i = 0; i < targets.size(); i++) {
-        if (targets[i]->bid.getRawId() != 0 && targets[i]->bid.contains(bucket)) {
+        if (targets[i]->bucket.getBucketId().getRawId() != 0 &&
+            targets[i]->bucket.getBucketSpace() == bucket.getBucketSpace() &&
+            targets[i]->bucket.getBucketId().contains(bucket.getBucketId())) {
             return i;
         }
     }
@@ -751,15 +755,15 @@ FileStorHandlerImpl::calculateTargetBasedOnDocId(
     return -1;
 }
 
-document::BucketId
+document::Bucket
 FileStorHandlerImpl::remapMessage(
         api::StorageMessage& msg,
-        const document::BucketId& source,
+        const document::Bucket& source,
         Operation op,
         std::vector<RemapInfo*>& targets,
         uint16_t& targetDisk, api::ReturnCode& returnCode)
 {
-    document::BucketId newBucketId = source;
+    document::Bucket newBucket = source;
 
     switch (msg.getType().getId()) {
     case api::MessageType::GET_ID:
@@ -771,12 +775,12 @@ FileStorHandlerImpl::remapMessage(
         api::BucketCommand& cmd(
                 static_cast<api::BucketCommand&>(msg));
 
-        if (cmd.getBucketId() == source) {
+        if (cmd.getBucket() == source) {
             if (op == SPLIT) {
                 int idx = calculateTargetBasedOnDocId(msg, targets);
 
                 if (idx > -1) {
-                    cmd.remapBucketId(targets[idx]->bid);
+                    cmd.remapBucketId(targets[idx]->bucket.getBucketId());
                     targets[idx]->foundInQueue = true;
                     targetDisk = targets[idx]->diskIndex;
 #if defined(ENABLE_BUCKET_OPERATION_LOGGING)
@@ -789,19 +793,19 @@ FileStorHandlerImpl::remapMessage(
                         LOG_BUCKET_OPERATION_NO_LOCK(targets[idx]->bid, desc);
                     }
 #endif
-                    newBucketId = targets[idx]->bid;
+                    newBucket = targets[idx]->bucket;
                 } else {
                     document::DocumentId did(getDocId(msg));
                     document::BucketId bucket = _bucketIdFactory.getBucketId(did);
                     uint32_t commonBits(
-                            findCommonBits(targets[0]->bid, bucket));
-                    if (commonBits < source.getUsedBits()) {
+                            findCommonBits(targets[0]->bucket.getBucketId(), bucket));
+                    if (commonBits < source.getBucketId().getUsedBits()) {
                         std::ostringstream ost;
                         ost << bucket << " belongs in neither "
-                            << targets[0]->bid << " nor " << targets[1]->bid
+                            << targets[0]->bucket.getBucketId() << " nor " << targets[1]->bucket.getBucketId()
                             << ". Cannot remap it after split. It "
                             << "did not belong in the original "
-                            << "bucket " << source;
+                            << "bucket " << source.getBucketId();
                         LOG(error, "Error remapping %s after split %s",
                             cmd.getType().toString().c_str(),
                             ost.str().c_str());
@@ -810,9 +814,9 @@ FileStorHandlerImpl::remapMessage(
                     } else {
                         std::ostringstream ost;
                         assert(targets.size() == 2);
-                        ost << "Bucket " << source << " was split and "
-                            << "neither bucket " << targets[0]->bid << " nor "
-                            << targets[1]->bid << " fit for this operation. "
+                        ost << "Bucket " << source.getBucketId() << " was split and "
+                            << "neither bucket " << targets[0]->bucket.getBucketId() << " nor "
+                            << targets[1]->bucket.getBucketId() << " fit for this operation. "
                             << "Failing operation so distributor can create "
                             << "bucket on correct node.";
                         LOG(debug, "%s", ost.str().c_str());
@@ -823,9 +827,9 @@ FileStorHandlerImpl::remapMessage(
                 }
             } else {
                 LOG(debug, "Remapping %s operation to bucket %s",
-                    cmd.toString().c_str(), targets[0]->bid.toString().c_str());
-                cmd.remapBucketId(targets[0]->bid);
-                newBucketId = targets[0]->bid;
+                    cmd.toString().c_str(), targets[0]->bucket.getBucketId().toString().c_str());
+                cmd.remapBucketId(targets[0]->bucket.getBucketId());
+                newBucket = targets[0]->bucket;
                 targetDisk = targets[0]->diskIndex;
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
                 {
@@ -857,7 +861,7 @@ FileStorHandlerImpl::remapMessage(
     {
         api::BucketCommand& cmd(
                 static_cast<api::BucketCommand&>(msg));
-        if (cmd.getBucketId() == source) {
+        if (cmd.getBucket() == source) {
             if (op != MOVE) {
                 std::ostringstream ost;
                 ost << "Bucket " << (op == SPLIT ? "split" : "joined")
@@ -877,7 +881,7 @@ FileStorHandlerImpl::remapMessage(
     {
         api::BucketCommand& cmd(
                 static_cast<api::BucketCommand&>(msg));
-        if (cmd.getBucketId() == source) {
+        if (cmd.getBucket() == source) {
             if (op == MOVE) {
                 targetDisk = targets[0]->diskIndex;
             } else if (op == SPLIT) {
@@ -903,7 +907,7 @@ FileStorHandlerImpl::remapMessage(
         // Fail with bucket not found if op != MOVE
         api::BucketCommand& cmd(
                 static_cast<api::BucketCommand&>(msg));
-        if (cmd.getBucketId() == source) {
+        if (cmd.getBucket() == source) {
             if (op == MOVE) {
                 targetDisk = targets[0]->diskIndex;
             } else {
@@ -922,7 +926,7 @@ FileStorHandlerImpl::remapMessage(
     {
         api::BucketCommand& cmd(
                 static_cast<api::BucketCommand&>(msg));
-        if (cmd.getBucketId() == source) {
+        if (cmd.getBucket() == source) {
             if (op == MOVE) {
                 targetDisk = targets[0]->diskIndex;
             }
@@ -933,13 +937,13 @@ FileStorHandlerImpl::remapMessage(
     {
         const api::InternalCommand& icmd(
                 static_cast<const api::InternalCommand&>(msg));
-        document::BucketId bucket;
+        document::Bucket bucket;
         switch(icmd.getType()) {
         case RequestStatusPage::ID:
             // Ignore
             break;
         case CreateIteratorCommand::ID:
-            bucket = static_cast<CreateIteratorCommand&>(msg).getBucketId();
+            bucket = static_cast<CreateIteratorCommand&>(msg).getBucket();
             // Move to correct queue if op == MOVE
             // Fail with bucket not found if op != MOVE
             if (bucket == source) {
@@ -955,12 +959,12 @@ FileStorHandlerImpl::remapMessage(
             }
             break;
         case GetIterCommand::ID:
-            bucket = static_cast<GetIterCommand&>(msg).getBucketId();
+            bucket = static_cast<GetIterCommand&>(msg).getBucket();
             //@fallthrough@
         case RepairBucketCommand::ID:
-            if (bucket.getRawId() == 0) {
+            if (bucket.getBucketId().getRawId() == 0) {
                 bucket = static_cast<RepairBucketCommand&>(msg)
-                            .getBucketId();
+                            .getBucket();
             }
             // Move to correct queue if op == MOVE
             // Fail with bucket not found if op != MOVE
@@ -982,7 +986,7 @@ FileStorHandlerImpl::remapMessage(
         {
             api::BucketCommand& cmd(
                     static_cast<api::BucketCommand&>(msg));
-            if (cmd.getBucketId() == source) {
+            if (cmd.getBucket() == source) {
                 if (op == MOVE) {
                     returnCode = api::ReturnCode(
                             api::ReturnCode::INTERNAL_FAILURE,
@@ -1005,7 +1009,7 @@ FileStorHandlerImpl::remapMessage(
         {
             LOG(debug, "While remapping load for bucket %s for reason %u, "
                        "we abort read bucket info request for this bucket.",
-                source.toString().c_str(), op);
+                source.getBucketId().toString().c_str(), op);
             break;
         }
         case InternalBucketJoinCommand::ID:
@@ -1035,7 +1039,7 @@ FileStorHandlerImpl::remapMessage(
     }
     } // End of switch
 
-    return newBucketId;
+    return newBucket;
 }
 
 void
@@ -1047,13 +1051,13 @@ FileStorHandlerImpl::remapQueueNoLock(
 {
     BucketIdx& idx(boost::multi_index::get<2>(from.queue));
     std::pair<BucketIdx::iterator, BucketIdx::iterator> range(
-            idx.equal_range(source.bid));
+            idx.equal_range(source.bucket));
 
     std::vector<MessageEntry> entriesFound;
 
     // Find all the messages for the given bucket.
     for (BucketIdx::iterator i = range.first; i != range.second; ++i) {
-        assert(i->_bucketId == source.bid);
+        assert(i->_bucket == source.bucket);
 
         entriesFound.push_back(std::move(*i));
     }
@@ -1071,14 +1075,14 @@ FileStorHandlerImpl::remapQueueNoLock(
         // If not OK, reply to this message with the following message
         api::ReturnCode returnCode(api::ReturnCode::OK);
         api::StorageMessage& msg(*entry._command);
-        assert(entry._bucketId == source.bid);
+        assert(entry._bucket == source.bucket);
 
-        document::BucketId bid = remapMessage(msg,
-                                              source.bid,
-                                              op,
-                                              targets,
-                                              targetDisk,
-                                              returnCode);
+        document::Bucket bucket = remapMessage(msg,
+                                               source.bucket,
+                                               op,
+                                               targets,
+                                               targetDisk,
+                                               returnCode);
 
         if (returnCode.getResult() != api::ReturnCode::OK) {
             // Fail message if errorcode set
@@ -1094,7 +1098,7 @@ FileStorHandlerImpl::remapQueueNoLock(
                 _messageSender.sendReply(rep);
             }
         } else {
-            entry._bucketId = bid;
+            entry._bucket = bucket;
             // Move to correct disk queue if needed
             _diskInfo[targetDisk].queue.emplace_back(std::move(entry));
         }
@@ -1115,7 +1119,7 @@ FileStorHandlerImpl::remapQueue(
     guard.addLock(from.lock, source.diskIndex);
 
     Disk& to1(_diskInfo[target.diskIndex]);
-    if (target.bid.getRawId() != 0) {
+    if (target.bucket.getBucketId().getRawId() != 0) {
         guard.addLock(to1.lock, target.diskIndex);
     }
 
@@ -1142,12 +1146,12 @@ FileStorHandlerImpl::remapQueue(
     guard.addLock(from.lock, source.diskIndex);
 
     Disk& to1(_diskInfo[target1.diskIndex]);
-    if (target1.bid.getRawId() != 0) {
+    if (target1.bucket.getBucketId().getRawId() != 0) {
         guard.addLock(to1.lock, target1.diskIndex);
     }
 
     Disk& to2(_diskInfo[target2.diskIndex]);
-    if (target2.bid.getRawId() != 0) {
+    if (target2.bucket.getBucketId().getRawId() != 0) {
         guard.addLock(to2.lock, target2.diskIndex);
     }
 
@@ -1162,7 +1166,7 @@ FileStorHandlerImpl::remapQueue(
 
 void
 FileStorHandlerImpl::failOperations(
-        const document::BucketId& bucket, uint16_t fromDisk,
+        const document::Bucket &bucket, uint16_t fromDisk,
         const api::ReturnCode& err)
 {
     Disk& from(_diskInfo[fromDisk]);
@@ -1204,10 +1208,10 @@ FileStorHandlerImpl::sendReply(const std::shared_ptr<api::StorageReply>& msg)
 }
 
 FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
-                                                const document::BucketId& bId)
+                                                const document::Bucket &bucket)
     : _command(cmd),
       _timer(),
-      _bucketId(bId),
+      _bucket(bucket),
       _priority(cmd->getPriority())
 { }
 
@@ -1215,7 +1219,7 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::Stora
 FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
     : _command(entry._command),
       _timer(entry._timer),
-      _bucketId(entry._bucketId),
+      _bucket(entry._bucket),
       _priority(entry._priority)
 { }
 
@@ -1223,7 +1227,7 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
 FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry) noexcept
         : _command(std::move(entry._command)),
           _timer(entry._timer),
-          _bucketId(entry._bucketId),
+          _bucket(entry._bucket),
           _priority(entry._priority)
 { }
 
@@ -1240,7 +1244,7 @@ FileStorHandlerImpl::Disk::Disk()
 FileStorHandlerImpl::Disk::~Disk() { }
 
 bool
-FileStorHandlerImpl::Disk::isLocked(const document::BucketId& bucket) const noexcept
+FileStorHandlerImpl::Disk::isLocked(const document::Bucket& bucket) const noexcept
 {
     return (lockedBuckets.find(bucket) != lockedBuckets.end());
 }
@@ -1262,25 +1266,25 @@ FileStorHandlerImpl::getQueueSize(uint16_t disk) const
 FileStorHandlerImpl::BucketLock::BucketLock(
         const vespalib::MonitorGuard & guard,
         Disk& disk,
-        const document::BucketId& id,
+        const document::Bucket &bucket,
         uint8_t priority,
         const vespalib::stringref & statusString)
     : _disk(disk),
-      _id(id)
+      _bucket(bucket)
 {
     (void) guard;
-    if (_id.getRawId() != 0) {
+    if (_bucket.getBucketId().getRawId() != 0) {
         // Lock the bucket and wait until it is not the current operation for
         // the disk itself.
         _disk.lockedBuckets.insert(
-                std::make_pair(_id, Disk::LockEntry(priority, statusString)));
+                std::make_pair(_bucket, Disk::LockEntry(priority, statusString)));
         LOG(debug,
             "Locked bucket %s with priority %u",
-            id.toString().c_str(),
+            bucket.getBucketId().toString().c_str(),
             priority);
 
         LOG_BUCKET_OPERATION_SET_LOCK_STATE(
-                _id, "acquired filestor lock", false,
+                _bucket.getBucketId(), "acquired filestor lock", false,
                 debug::BucketOperationLogger::State::BUCKET_LOCKED);
     }
 }
@@ -1288,12 +1292,12 @@ FileStorHandlerImpl::BucketLock::BucketLock(
 
 FileStorHandlerImpl::BucketLock::~BucketLock()
 {
-    if (_id.getRawId() != 0) {
+    if (_bucket.getBucketId().getRawId() != 0) {
         vespalib::MonitorGuard lockGuard(_disk.lock);
-        _disk.lockedBuckets.erase(_id);
-        LOG(debug, "Unlocked bucket %s", _id.toString().c_str());
+        _disk.lockedBuckets.erase(_bucket);
+        LOG(debug, "Unlocked bucket %s", _bucket.getBucketId().toString().c_str());
         LOG_BUCKET_OPERATION_SET_LOCK_STATE(
-                _id, "released filestor lock", true,
+                _bucket.getBucketId(), "released filestor lock", true,
                 debug::BucketOperationLogger::State::BUCKET_UNLOCKED);
         lockGuard.broadcast();
     }
@@ -1312,7 +1316,7 @@ FileStorHandlerImpl::dumpQueue(uint16_t disk) const
          it != idx.end();
          it++)
     {
-        ost << it->_bucketId << ": " << it->_command->toString() << " (priority: "
+        ost << it->_bucket.getBucketId() << ": " << it->_command->toString() << " (priority: "
             << (int)it->_command->getPriority() << ")\n";
     }
 
@@ -1339,7 +1343,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out,
         out << "<h4>Active operations</h4>\n";
         for (const auto& lockedBucket : t.lockedBuckets) {
             out << lockedBucket.second.statusString
-                << " (" << lockedBucket.first
+                << " (" << lockedBucket.first.getBucketId()
                 << ") Running for "
                 << (_component.getClock().getTimeInSeconds().getTime()
                     - lockedBucket.second.timestamp)

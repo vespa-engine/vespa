@@ -11,7 +11,7 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/storageutil/log.h>
-#include <vespa/storage/common/messagebucketid.h>
+#include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
@@ -259,7 +259,7 @@ FileStorManager::handlePersistenceMessage(
             msg->getType().getName().c_str(), disk);
 
         LOG_BUCKET_OPERATION_NO_LOCK(
-                getStorageMessageBucketId(*msg),
+                getStorageMessageBucketId(*msg).getBucketId(),
                 vespalib::make_string("Attempting to queue %s to disk %u",
                                             msg->toString().c_str(), disk));
 
@@ -514,7 +514,7 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
         disk = entry->disk;
         entry.remove();
     }
-    _filestorHandler->failOperations(cmd->getBucketId(), disk,
+    _filestorHandler->failOperations(cmd->getBucket(), disk,
                                      api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
                                                      vespalib::make_string("Bucket %s about to be deleted anyway",
                                                                            cmd->getBucketId().toString().c_str())));
