@@ -23,6 +23,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
+import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
@@ -134,7 +135,8 @@ public final class ContainerCluster
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer
+        ThreadpoolConfig.Producer,
+        IdentityConfig.Producer
 {
 
     /**
@@ -840,13 +842,21 @@ public final class ContainerCluster
      */
     public Optional<Integer> getMemoryPercentage() { return memoryPercentage; }
 
-    public Optional<Identity> getIdentity() {
+    private Optional<Identity> getIdentity() {
         return Optional.ofNullable(identity);
     }
 
     public void setIdentity(Identity identity) {
         this.identity = identity;
         addSimpleComponent("com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl");
+    }
+
+    @Override
+    public void getConfig(IdentityConfig.Builder builder) {
+        getIdentity().ifPresent(id -> {
+            builder.service(id.getService());
+            builder.domain(id.getDomain());
+        });
     }
 
     @Override
