@@ -32,6 +32,12 @@ import java.util.Set;
 public interface Orchestrator {
 
     /**
+     * Get orchestrator information related to a host.
+     * @throws HostNameNotFoundException
+     */
+    Host getHost(HostName hostName) throws HostNameNotFoundException;
+
+    /**
      * Get the status of a given node. If no state is recorded
      * then this will return the status 'No Remarks'
      *

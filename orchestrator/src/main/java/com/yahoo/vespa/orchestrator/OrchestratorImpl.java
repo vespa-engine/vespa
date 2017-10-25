@@ -9,6 +9,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
@@ -75,6 +76,20 @@ public class OrchestratorImpl implements Orchestrator {
         this.serviceMonitorConvergenceLatencySeconds = serviceMonitorConvergenceLatencySeconds;
         this.instanceLookupService = instanceLookupService;
 
+    }
+
+    @Override
+    public Host getHost(HostName hostName) throws HostNameNotFoundException {
+        ApplicationInstance applicationInstance = getApplicationInstance(hostName);
+        List<ServiceInstance> serviceInstances = applicationInstance
+                .serviceClusters().stream()
+                .flatMap(cluster -> cluster.serviceInstances().stream())
+                .filter(serviceInstance -> hostName.equals(serviceInstance.hostName()))
+                .collect(Collectors.toList());
+
+        HostStatus hostStatus = getNodeStatus(applicationInstance.reference(), hostName);
+
+        return new Host(hostName, hostStatus, applicationInstance.reference(), serviceInstances);
     }
 
     @Override

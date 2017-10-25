@@ -14,7 +14,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * Definition of Orchestrator's REST API for hosts.
@@ -38,7 +40,8 @@ public interface HostApi {
     @GET
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
-    GetHostResponse getHost(@PathParam("hostname") String hostNameString);
+    GetHostResponse getHost(@Context UriInfo uriInfo,
+                            @PathParam("hostname") String hostNameString);
 
     /**
      * Tweak internal Orchestrator state for host.
