@@ -23,6 +23,7 @@
 LOG_SETUP(".persistence.filestor.manager");
 
 using std::shared_ptr;
+using document::BucketSpace;
 
 namespace storage {
 
@@ -155,7 +156,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
 
 void
 FileStorManager::replyDroppedOperation(api::StorageMessage& msg,
-                                       const document::BucketId& bucket,
+                                       const document::Bucket& bucket,
                                        api::ReturnCode::Result returnCode,
                                        vespalib::stringref reason)
 {
@@ -173,7 +174,7 @@ FileStorManager::replyDroppedOperation(api::StorageMessage& msg,
 
 void
 FileStorManager::replyWithBucketNotFound(api::StorageMessage& msg,
-                                         const document::BucketId& bucket)
+                                         const document::Bucket& bucket)
 {
     replyDroppedOperation(msg,
                           bucket,
@@ -185,10 +186,10 @@ StorBucketDatabase::WrappedEntry
 FileStorManager::mapOperationToDisk(api::StorageMessage& msg,
                                     const document::Bucket& bucket)
 {
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
             bucket.getBucketId(), "FileStorManager::mapOperationToDisk"));
     if (!entry.exist()) {
-        replyWithBucketNotFound(msg, bucket.getBucketId());
+        replyWithBucketNotFound(msg, bucket);
     }
     return entry;
 }
@@ -197,7 +198,7 @@ StorBucketDatabase::WrappedEntry
 FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd,
                                              const document::DocumentId* docId)
 {
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(BucketSpace::placeHolder()).get(
             cmd.getBucketId(), "FileStorManager::mapOperationToBucketAndDisk"));
     if (!entry.exist()) {
         document::BucketId specific(cmd.getBucketId());
@@ -209,7 +210,7 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd,
         std::shared_ptr<api::StorageReply> reply;
         {
             BucketMap results(
-                    _component.getBucketDatabase().getContained(
+                    _component.getBucketDatabase(BucketSpace::placeHolder()).getContained(
                             specific, "FileStorManager::mapOperationToBucketAndDisk-2"));
             if (results.size() == 1) {
                 LOG(debug,
@@ -423,9 +424,10 @@ FileStorManager::onCreateBucket(
 {
     api::ReturnCode code(api::ReturnCode::OK);
     {
+        document::Bucket bucket(cmd->getBucket());
         StorBucketDatabase::WrappedEntry entry(
-                _component.getBucketDatabase().get(
-                    cmd->getBucketId(), "FileStorManager::onCreateBucket",
+                _component.getBucketDatabase(bucket.getBucketSpace()).get(
+                    bucket.getBucketId(), "FileStorManager::onCreateBucket",
                     StorBucketDatabase::CREATE_IF_NONEXISTING));
         if (entry.preExisted()) {
             LOG(debug,
@@ -435,7 +437,7 @@ FileStorManager::onCreateBucket(
             code = api::ReturnCode(api::ReturnCode::EXISTS,
                                    "Bucket already exist");
         } else {
-            entry->disk = _component.getIdealPartition(cmd->getBucketId());
+            entry->disk = _component.getIdealPartition(cmd->getBucket());
             if (_partitions[entry->disk].isUp()) {
                 // Newly created buckets are ready but not active, unless
                 // explicitly marked as such by the distributor.
@@ -471,7 +473,8 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
 {
     uint16_t disk;
     {
-        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(cmd->getBucketId(),
+        document::Bucket bucket(cmd->getBucket());
+        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),
                                                                                   "FileStorManager::onDeleteBucket"));
         if (!entry.exist()) {
             LOG(debug, "%s was already deleted", cmd->getBucketId().toString().c_str());
@@ -525,14 +528,14 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
 
 StorBucketDatabase::WrappedEntry
 FileStorManager::ensureConsistentBucket(
-        const document::BucketId& bucket,
+        const document::Bucket& bucket,
         api::StorageMessage& msg,
         const char* callerId)
 {
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(
-                    bucket, callerId, StorBucketDatabase::CREATE_IF_NONEXISTING));
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
+                    bucket.getBucketId(), callerId, StorBucketDatabase::CREATE_IF_NONEXISTING));
     assert(entry.exist());
-    if (!_component.getBucketDatabase().isConsistent(entry)) {
+    if (!_component.getBucketDatabase(bucket.getBucketSpace()).isConsistent(entry)) {
         if (!entry.preExisted()) {
             // Don't create empty bucket if merge isn't allowed to continue.
             entry.remove();
@@ -547,14 +550,14 @@ FileStorManager::ensureConsistentBucket(
 bool
 FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(ensureConsistentBucket(cmd->getBucketId(), *cmd,
+    StorBucketDatabase::WrappedEntry entry(ensureConsistentBucket(cmd->getBucket(), *cmd,
                                                                   "FileStorManager::onMergeBucket"));
     if (!entry.exist()) {
         return true;
     }
 
     if (!entry.preExisted()) {
-        entry->disk = _component.getIdealPartition(cmd->getBucketId());
+        entry->disk = _component.getIdealPartition(cmd->getBucket());
         if (_partitions[entry->disk].isUp()) {
             entry->info = api::BucketInfo(0, 0, 0, 0, 0, true, false);
             LOG(debug, "Created bucket %s on disk %d (node index is %d) due to merge being received.",
@@ -587,14 +590,14 @@ FileStorManager::onGetBucketDiff(
         const shared_ptr<api::GetBucketDiffCommand>& cmd)
 {
     StorBucketDatabase::WrappedEntry entry(
-            ensureConsistentBucket(cmd->getBucketId(),
+            ensureConsistentBucket(cmd->getBucket(),
                                    *cmd,
                                    "FileStorManager::onGetBucketDiff"));
     if (!entry.exist()) {
         return true;
     }
     if (!entry.preExisted()) {
-        entry->disk = _component.getIdealPartition(cmd->getBucketId());
+        entry->disk = _component.getIdealPartition(cmd->getBucket());
         if (_partitions[entry->disk].isUp()) {
             LOG(debug, "Created bucket %s on disk %d (node index is %d) due "
                        "to get bucket diff being received.",
@@ -635,8 +638,10 @@ FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage& msg, const 
     if (!entry.exist()) {
         return false;
     }
-    if (!_component.getBucketDatabase().isConsistent(entry)) {
-        replyDroppedOperation(msg, entry.getBucketId(), api::ReturnCode::ABORTED,
+    BucketSpace bucketSpace(msg.getBucket().getBucketSpace());
+    if (!_component.getBucketDatabase(bucketSpace).isConsistent(entry)) {
+        document::Bucket bucket(bucketSpace, entry.getBucketId());
+        replyDroppedOperation(msg, bucket, api::ReturnCode::ABORTED,
                               "bucket became inconsistent during merging");
         return false;
     }
@@ -652,7 +657,7 @@ FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&
                 api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND, "Bucket removed during merge"));
         return false;
     }
-    if (!_component.getBucketDatabase().isConsistent(entry)) {
+    if (!_component.getBucketDatabase(bucket.getBucketSpace()).isConsistent(entry)) {
         _filestorHandler->clearMergeStatus(bucket,
                 api::ReturnCode(api::ReturnCode::ABORTED, "Bucket became inconsistent during merging"));
         return false;
@@ -694,13 +699,14 @@ FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffRep
 bool
 FileStorManager::onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase().get(
-                cmd->getBucketId(), "FileStorManager::onJoinBuckets"));
+    document::Bucket bucket(cmd->getBucket());
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
+                bucket.getBucketId(), "FileStorManager::onJoinBuckets"));
     uint16_t disk;
     if (entry.exist()) {
         disk = entry->disk;
     } else {
-        disk = _component.getPreferredAvailablePartition(cmd->getBucketId());
+        disk = _component.getPreferredAvailablePartition(bucket);
     }
     return handlePersistenceMessage(cmd, disk);
 }
@@ -967,7 +973,7 @@ FileStorManager::updateState()
     if (_nodeUpInLastNodeStateSeenByProvider && !nodeUp) {
         LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database");
         Deactivator deactivator;
-        _component.getBucketDatabase().all(deactivator, "FileStorManager::updateState");
+        _component.getBucketDatabase(BucketSpace::placeHolder()).all(deactivator, "FileStorManager::updateState");
     }
     _provider->setClusterState(spiState);
     _nodeUpInLastNodeStateSeenByProvider = nodeUp;

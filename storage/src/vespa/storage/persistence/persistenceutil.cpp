@@ -115,7 +115,7 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
 uint16_t
 PersistenceUtil::getPreferredAvailableDisk(const document::Bucket &bucket) const
 {
-    return _component.getPreferredAvailablePartition(bucket.getBucketId());
+    return _component.getPreferredAvailablePartition(bucket);
 }
 
 PersistenceUtil::LockResult

@@ -3,12 +3,17 @@
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/bucketmover/bucketmover.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
 
 bool debug = false;
+
+using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace bucketmover {
@@ -66,14 +71,14 @@ BucketMoverTest::addBucket(const document::BucketId& id,
                            uint16_t idealDiff)
 {
     StorBucketDatabase::WrappedEntry entry(
-            _component->getBucketDatabase().get(
+            _component->getBucketDatabase(makeBucketSpace()).get(
                     id,
                     "",
                     StorBucketDatabase::CREATE_IF_NONEXISTING));
 
     entry->setBucketInfo(api::BucketInfo(1,1,1));
 
-    uint16_t idealDisk = _component->getIdealPartition(id);
+    uint16_t idealDisk = _component->getIdealPartition(makeDocumentBucket(id));
     entry->disk = (idealDisk + idealDiff) % _component->getDiskCount();
     entry.write();
 }

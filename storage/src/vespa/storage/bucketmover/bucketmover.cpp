@@ -112,7 +112,7 @@ BucketMover::startNewRun()
     LOG(debug, "Starting new move cycle at time %s.",
         _component.getClock().getTimeInSeconds().toString().c_str());
     _currentRun.reset(new bucketmover::Run(
-            _component.getBucketDatabase(),
+            _component.getBucketDatabase(BucketSpace::placeHolder()),
             _component.getDistribution(),
             *_component.getStateUpdater().getReportedNodeState(),
             _component.getIndex(),

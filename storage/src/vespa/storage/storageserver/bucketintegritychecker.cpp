@@ -567,7 +567,7 @@ BucketIntegrityChecker::run(framework::ThreadHandle& thread)
                 LOG(info, "Starting new verification/repair cycle at time %s.",
                            currentTime.toString().c_str());
                 _lastCycleStart = currentTime;
-                _cycleStartBucketCount = _component.getBucketDatabase().size();
+                _cycleStartBucketCount = _component.getBucketDatabase(BucketSpace::placeHolder()).size();
                 _lastCycleCompleted = false;
                 _currentRunWithFullVerification
                         = (state == SchedulingOptions::RUN_FULL);
@@ -578,7 +578,7 @@ BucketIntegrityChecker::run(framework::ThreadHandle& thread)
                             < _scheduleOptions._maxPendingCount)
                 {
                     document::BucketId bid(_status[i].iterate(
-                            _component.getBucketDatabase()));
+                            _component.getBucketDatabase(BucketSpace::placeHolder())));
                     if (bid == document::BucketId(0, 0)) {
                         LOG(debug, "Completed repair cycle for disk %u.", i);
                         // If there is no next bucket, we might have completed

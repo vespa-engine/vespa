@@ -127,15 +127,15 @@ public:
 private:
     void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
 
-    void replyWithBucketNotFound(api::StorageMessage&, const document::BucketId&);
+    void replyWithBucketNotFound(api::StorageMessage&, const document::Bucket&);
 
     void replyDroppedOperation(api::StorageMessage& msg,
-                               const document::BucketId& bucket,
+                               const document::Bucket& bucket,
                                api::ReturnCode::Result returnCode,
                                vespalib::stringref reason);
 
     StorBucketDatabase::WrappedEntry ensureConsistentBucket(
-            const document::BucketId& bucket,
+            const document::Bucket& bucket,
             api::StorageMessage& msg,
             const char* callerId);
 
