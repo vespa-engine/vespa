@@ -7,6 +7,7 @@ import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
+import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -27,6 +28,11 @@ import java.util.Set;
 public class OrchestratorMock implements Orchestrator {
 
     Set<ApplicationId> suspendedApplications = new HashSet<>();
+
+    @Override
+    public Host getHost(HostName hostName) throws HostNameNotFoundException {
+        return null;
+    }
 
     @Override
     public HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException {
