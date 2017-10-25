@@ -154,7 +154,7 @@ public:
             const document::DocumentId& id,
             const document::FieldValue& updateValue);
 
-    uint16_t getDiskFromBucketDatabaseIfUnset(const document::BucketId&,
+    uint16_t getDiskFromBucketDatabaseIfUnset(const document::Bucket &,
                                               uint16_t disk = 0xffff);
 
     /**

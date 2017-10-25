@@ -65,7 +65,7 @@ DiskMoveOperationHandler::handleBucketDiskMove(BucketDiskMoveCommand& cmd,
         // delete bucket command. If so, it'll be deleted when delete bucket
         // is executed. moving queue should move delete command to correct disk
         StorBucketDatabase::WrappedEntry entry(
-                _env.getBucketDatabase().get(
+                _env.getBucketDatabase(bucket.getBucketSpace()).get(
                     bucket.getBucketId(), "FileStorThread::onBucketDiskMove",
                     StorBucketDatabase::LOCK_IF_NONEXISTING_AND_NOT_CREATING));
 

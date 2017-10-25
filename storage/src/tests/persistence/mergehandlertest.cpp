@@ -241,7 +241,7 @@ MergeHandlerTest::setUp() {
     LOG(info, "Creating %s in bucket database", _bucket.toString().c_str());
     bucketdb::StorageBucketInfo bucketDBEntry;
     bucketDBEntry.disk = 0;
-    getEnv().getBucketDatabase().insert(_bucket.getBucketId(), bucketDBEntry, "mergetestsetup");
+    getEnv().getBucketDatabase(_bucket.getBucketSpace()).insert(_bucket.getBucketId(), bucketDBEntry, "mergetestsetup");
 
     LOG(info, "Creating bucket to merge");
     createTestBucket(_bucket);
