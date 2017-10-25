@@ -373,10 +373,10 @@ PersistenceTestUtils::createRandomDocumentAtLocation(
 }
 
 void
-PersistenceTestUtils::createTestBucket(const document::BucketId& bucket,
+PersistenceTestUtils::createTestBucket(const document::Bucket& bucket,
                                        uint16_t disk)
 {
-
+    document::BucketId bucketId(bucket.getBucketId());
     uint32_t opsPerType = 2;
     uint32_t numberOfLocations = 2;
     uint32_t minDocSize = 0;
@@ -388,27 +388,27 @@ PersistenceTestUtils::createTestBucket(const document::BucketId& bucket,
                 uint32_t seed = useHeaderOnly * 10000 + optype * 1000 + i + 1;
                 uint64_t location = (seed % numberOfLocations);
                 location <<= 32;
-                location += (bucket.getRawId() & 0xffffffff);
+                location += (bucketId.getRawId() & 0xffffffff);
                 document::Document::SP doc(
                         createRandomDocumentAtLocation(
                             location, seed, minDocSize, maxDocSize));
                 if (headerOnly) {
                     clearBody(*doc);
                 }
-                doPut(doc, spi::Timestamp(seed), disk, bucket.getUsedBits());
+                doPut(doc, spi::Timestamp(seed), disk, bucketId.getUsedBits());
                 if (optype == 0) { // Regular put
                 } else if (optype == 1) { // Overwritten later in time
                     document::Document::SP doc2(new document::Document(*doc));
                     doc2->setValue(doc2->getField("content"),
                                    document::StringFieldValue("overwritten"));
                     doPut(doc2, spi::Timestamp(seed + 500),
-                          disk, bucket.getUsedBits());
+                          disk, bucketId.getUsedBits());
                 } else if (optype == 2) { // Removed
                     doRemove(doc->getId(), spi::Timestamp(seed + 500), disk, false,
-                             bucket.getUsedBits());
+                             bucketId.getUsedBits());
                 } else if (optype == 3) { // Unrevertable removed
                     doRemove(doc->getId(), spi::Timestamp(seed), disk, true,
-                             bucket.getUsedBits());
+                             bucketId.getUsedBits());
                 }
             }
         }

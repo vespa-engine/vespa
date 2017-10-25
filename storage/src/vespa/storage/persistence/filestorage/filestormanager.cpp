@@ -645,7 +645,7 @@ FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage& msg, const 
 
 bool
 FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry& entry,
-                                         const document::BucketId& bucket)
+                                         const document::Bucket& bucket)
 {
     if (!entry.exist()) {
         _filestorHandler->clearMergeStatus(bucket,
@@ -664,7 +664,7 @@ bool
 FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>& reply)
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*reply, reply->getBucketId()));
-    if (validateDiffReplyBucket(entry, reply->getBucketId())) {
+    if (validateDiffReplyBucket(entry, reply->getBucket())) {
         handlePersistenceMessage(reply, entry->disk);
     }
     return true;
@@ -685,7 +685,7 @@ FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffRep
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(
                 *reply, reply->getBucketId()));
-    if (validateDiffReplyBucket(entry, reply->getBucketId())) {
+    if (validateDiffReplyBucket(entry, reply->getBucket())) {
         handlePersistenceMessage(reply, entry->disk);
     }
     return true;
@@ -939,7 +939,7 @@ FileStorManager::reportHtmlStatus(std::ostream& out,
 }
 
 bool
-FileStorManager::isMerging(const document::BucketId& bucket) const
+FileStorManager::isMerging(const document::Bucket& bucket) const
 {
     return _filestorHandler->isMerging(bucket);
 }

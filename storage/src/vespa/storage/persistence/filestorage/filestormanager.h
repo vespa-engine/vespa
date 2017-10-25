@@ -109,7 +109,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // Return true if we are currently merging the given bucket.
-    bool isMerging(const document::BucketId& bucket) const;
+    bool isMerging(const document::Bucket& bucket) const;
 
     FileStorHandler& getFileStorHandler() {
         return *_filestorHandler;
@@ -140,7 +140,7 @@ private:
             const char* callerId);
 
     bool validateApplyDiffCommandBucket(api::StorageMessage& msg, const StorBucketDatabase::WrappedEntry&);
-    bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&, const document::BucketId&);
+    bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&, const document::Bucket&);
 
     StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::BucketId&);
     StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(api::BucketCommand&, const document::DocumentId*);
