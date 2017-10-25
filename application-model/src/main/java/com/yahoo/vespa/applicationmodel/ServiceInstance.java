@@ -65,12 +65,11 @@ public class ServiceInstance {
         ServiceInstance that = (ServiceInstance) o;
         return Objects.equals(configId, that.configId) &&
                 Objects.equals(hostName, that.hostName) &&
-                serviceStatus == that.serviceStatus &&
-                Objects.equals(serviceCluster, that.serviceCluster);
+                serviceStatus == that.serviceStatus;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(configId, hostName, serviceStatus, serviceCluster);
+        return Objects.hash(configId, hostName, serviceStatus);
     }
 }

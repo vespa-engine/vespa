@@ -70,12 +70,11 @@ public class ServiceCluster {
         ServiceCluster that = (ServiceCluster) o;
         return Objects.equals(clusterId, that.clusterId) &&
                 Objects.equals(serviceType, that.serviceType) &&
-                Objects.equals(serviceInstances, that.serviceInstances) &&
-                Objects.equals(applicationInstance, that.applicationInstance);
+                Objects.equals(serviceInstances, that.serviceInstances);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterId, serviceType, serviceInstances, applicationInstance);
+        return Objects.hash(clusterId, serviceType, serviceInstances);
     }
 }
