@@ -400,33 +400,33 @@ writefilter.sampleinterval double default = 60.0
 ## The size of the disk partition (in bytes) on which proton basedir is located.
 ## If set to 0, the disk size is sampled by looking at the filesystem space info.
 ## The disk size is used when determining if feed should be blocked in writefilter.
-hwinfo.disk.size long default = 0
+hwinfo.disk.size long default = 0 restart
 
 ## Whether the disk partition is shared among several instances of proton (e.g. when using docker).
 ## If shared, disk usage is sampled by doing a recursive directory scan in proton basedir.
 ## If not, disk usage is sampled by looking at the filesystem space info.
-hwinfo.disk.shared bool default = false
+hwinfo.disk.shared bool default = false restart
 
 ## Override for disk write speed, measured in MiB/s. When zero, the
 ## actual disk write speed is sampled by writing data to a temporary file.
-hwinfo.disk.writespeed double default = 200.0
+hwinfo.disk.writespeed double default = 200.0 restart
 
 ## Amount of data to write to temporary file when sampling disk write speed.
 ## Default is 1 GiB.
-hwinfo.disk.samplewritesize long default = 1073741824
+hwinfo.disk.samplewritesize long default = 1073741824 restart
 
 ## Minimun write speed needed to avoid disk being considered slow.
 ## Unit is MiB/s, default is 100.0 MiB/s.
-hwinfo.disk.slowwritespeedlimit double default = 100.0
+hwinfo.disk.slowwritespeedlimit double default = 100.0 restart
 
 ## The size of physical memory (in bytes) available to proton.
 ## If set to 0, the memory size is sampled as _SC_PHYS_PAGES * _SC_PAGESIZE by using sysconf to do the lookup.
 ## The memory size is used when determining if feed should be blocked in writefilter.
-hwinfo.memory.size long default = 0
+hwinfo.memory.size long default = 0 restart
 
 ## The number of cores on the cpu.
 ## If set to 0, this is sampled by using std::thread::hardware_concurrency().
-hwinfo.cpu.cores int default = 0
+hwinfo.cpu.cores int default = 0 restart
 
 ## A number between 0.0 and 1.0 that specifies the concurrency when handling feed operations.
 ## When set to 1.0 all cores on the cpu is utilized.
