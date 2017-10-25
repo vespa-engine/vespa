@@ -9,62 +9,6 @@
 namespace vespalib {
 namespace eval {
 
-const Value &
-UnaryOperation::perform(const Value &lhs, Stash &stash) const {
-    if (lhs.is_error()) {
-        return stash.create<ErrorValue>();
-    } else if (lhs.is_double()) {
-        return stash.create<DoubleValue>(eval(lhs.as_double()));
-    } else {
-        return lhs.apply(*this, stash);
-    }
-}
-
-const Value &
-BinaryOperation::perform(const Value &lhs, const Value &rhs, Stash &stash) const {
-    if (lhs.is_error() || rhs.is_error()) {
-        return stash.create<ErrorValue>();
-    } else if (lhs.is_double() && rhs.is_double()) {
-        return stash.create<DoubleValue>(eval(lhs.as_double(), rhs.as_double()));
-    } else if (lhs.is_double()) {
-        BindLeft unary_op(*this, lhs.as_double());
-        return rhs.apply(unary_op, stash);
-    } else if (rhs.is_double()) {
-        BindRight unary_op(*this, rhs.as_double());
-        return lhs.apply(unary_op, stash);
-    } else {
-        return lhs.apply(*this, rhs, stash);
-    }
-}
-
-__thread const UnaryOperation *UnaryOperationProxy::_ctx = nullptr;
-double UnaryOperationProxy::eval_proxy(double a) { return _ctx->eval(a); }
-UnaryOperationProxy::UnaryOperationProxy(const UnaryOperation &op)
-    : _my_ctx(&op),
-      _old_ctx(_ctx)
-{
-    _ctx = _my_ctx;
-}
-UnaryOperationProxy::~UnaryOperationProxy()
-{
-    assert(_ctx == _my_ctx);
-    _ctx = _old_ctx;
-}
-
-__thread const BinaryOperation *BinaryOperationProxy::_ctx = nullptr;
-double BinaryOperationProxy::eval_proxy(double a, double b) { return _ctx->eval(a, b); }
-BinaryOperationProxy::BinaryOperationProxy(const BinaryOperation &op)
-    : _my_ctx(&op),
-      _old_ctx(_ctx)
-{
-    _ctx = _my_ctx;
-}
-BinaryOperationProxy::~BinaryOperationProxy()
-{
-    assert(_ctx == _my_ctx);
-    _ctx = _old_ctx;
-}
-
 template <typename T> void Op1<T>::accept(OperationVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));
 }
@@ -176,6 +120,7 @@ template struct Op2<operation::Max>;
 template struct Op1<operation::IsNan>;
 template struct Op1<operation::Relu>;
 template struct Op1<operation::Sigmoid>;
+template struct Op1<CustomUnaryOperation>;
 
 } // namespace vespalib::eval
 } // namespace vespalib

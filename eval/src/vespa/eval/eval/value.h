@@ -15,12 +15,8 @@ class Tensor;
 
 constexpr double error_value = 31212.0;
 
-struct UnaryOperation;
-struct BinaryOperation;
-
 /**
- * An abstract Value. Calculation using abstract values should be done
- * using the perform function on the appropriate Operation.
+ * An abstract Value.
  **/
 struct Value {
     typedef std::unique_ptr<Value> UP;
@@ -32,8 +28,6 @@ struct Value {
     virtual bool as_bool() const { return false; }
     virtual const Tensor *as_tensor() const { return nullptr; }
     virtual bool equal(const Value &rhs) const = 0;
-    virtual const Value &apply(const UnaryOperation &op, Stash &stash) const;
-    virtual const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const;
     virtual ValueType type() const = 0;
     virtual ~Value() {}
 };
@@ -72,8 +66,6 @@ public:
     bool is_tensor() const override { return true; }
     const Tensor *as_tensor() const override { return _tensor; }
     bool equal(const Value &rhs) const override;
-    const Value &apply(const UnaryOperation &op, Stash &stash) const override;
-    const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const override;
     ValueType type() const override;
 };
 

@@ -20,8 +20,6 @@ namespace eval {
 class Value;
 class Tensor;
 class TensorSpec;
-struct UnaryOperation;
-struct BinaryOperation;
 
 /**
  * Top-level API for a tensor implementation. All Tensor operations
@@ -40,8 +38,6 @@ struct TensorEngine
     using Value = eval::Value;
     using map_fun_t = double (*)(double);
     using join_fun_t = double (*)(double, double);
-    using BinaryOperation = eval::BinaryOperation;
-    using UnaryOperation = eval::UnaryOperation;
     using Aggr = eval::Aggr;
 
     virtual ValueType type_of(const Tensor &tensor) const = 0;
@@ -52,9 +48,6 @@ struct TensorEngine
     virtual TensorFunction::UP compile(tensor_function::Node_UP expr) const { return std::move(expr); }
 
     virtual std::unique_ptr<Tensor> create(const TensorSpec &spec) const = 0;
-    virtual const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;
-    virtual const Value &map(const UnaryOperation &op, const Tensor &a, Stash &stash) const = 0;
-    virtual const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const = 0;
 
     // havardpe: new API, WIP
     virtual void encode(const Value &value, nbostream &output, Stash &stash) const = 0;

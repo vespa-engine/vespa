@@ -94,7 +94,7 @@ TEST("require that simple tensors can have their values negated") {
     auto result = tensor->map([](double a){ return -a; });
     EXPECT_EQUAL(*expect, *result);
     Stash stash;
-    const Value &result2 = SimpleTensorEngine::ref().map(operation::Neg(), *tensor, stash);
+    const Value &result2 = SimpleTensorEngine::ref().map(TensorValue(*tensor), operation::Neg::f, stash);
     EXPECT_EQUAL(*expect, unwrap(result2));    
 }
 
@@ -119,7 +119,7 @@ TEST("require that simple tensors can be multiplied with each other") {
     auto result = SimpleTensor::join(*lhs, *rhs, [](double a, double b){ return (a * b); });
     EXPECT_EQUAL(*expect, *result);
     Stash stash;
-    const Value &result2 = SimpleTensorEngine::ref().apply(operation::Mul(), *lhs, *rhs, stash);
+    const Value &result2 = SimpleTensorEngine::ref().join(TensorValue(*lhs), TensorValue(*rhs), operation::Mul::f, stash);
     EXPECT_EQUAL(*expect, unwrap(result2));
 }
 
@@ -150,10 +150,10 @@ TEST("require that simple tensors support dimension reduction") {
     EXPECT_EQUAL(*expect_sum_y, *result_sum_y);
     EXPECT_EQUAL(*expect_sum_x, *result_sum_x);
     EXPECT_EQUAL(*expect_sum_all, *result_sum_all);
-    const Value &result_sum_y_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"y"}, stash);
-    const Value &result_sum_x_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"x"}, stash);
-    const Value &result_sum_all_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"x", "y"}, stash); 
-    const Value &result_sum_all_3 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {}, stash);
+    const Value &result_sum_y_2 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {"y"}, stash);
+    const Value &result_sum_x_2 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {"x"}, stash);
+    const Value &result_sum_all_2 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {"x", "y"}, stash); 
+    const Value &result_sum_all_3 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {}, stash);
     EXPECT_EQUAL(*expect_sum_y, unwrap(result_sum_y_2));
     EXPECT_EQUAL(*expect_sum_x, unwrap(result_sum_x_2));
     EXPECT_TRUE(result_sum_all_2.is_double());

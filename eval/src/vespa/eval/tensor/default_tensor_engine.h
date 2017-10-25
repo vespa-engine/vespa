@@ -27,9 +27,6 @@ public:
     virtual eval::TensorFunction::UP compile(eval::tensor_function::Node_UP expr) const override;
 
     std::unique_ptr<Tensor> create(const TensorSpec &spec) const override;
-    const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;
-    const Value &map(const UnaryOperation &op, const Tensor &a, Stash &stash) const override;
-    const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const override;
 
     void encode(const Value &value, nbostream &output, Stash &stash) const override;
     const Value &decode(nbostream &input, Stash &stash) const override;

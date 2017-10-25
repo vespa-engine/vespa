@@ -39,7 +39,6 @@ const T *as(const Operation &op) { return dynamic_cast<const T *>(&op); }
  * value.
  **/
 struct UnaryOperation : Operation {
-    const Value &perform(const Value &a, Stash &stash) const;
     virtual double eval(double a) const = 0;
     virtual op1_fun_t get_f() const = 0;
 };
@@ -48,46 +47,9 @@ struct UnaryOperation : Operation {
  * An Operation performing a calculation based on two input values.
  **/
 struct BinaryOperation : Operation {
-    const Value &perform(const Value &a, const Value &b, Stash &stash) const;
     virtual double eval(double a, double b) const = 0;
     virtual std::unique_ptr<BinaryOperation> clone() const = 0;
     virtual op2_fun_t get_f() const = 0;
-};
-
-//-----------------------------------------------------------------------------
-
-/**
- * Utility class used to adapt stateless function pointers to stateful
- * functors by using thread-local bindings.
- **/
-class UnaryOperationProxy {
-private:
-    static __thread const UnaryOperation *_ctx;
-    static double eval_proxy(double a);
-    const UnaryOperation *_my_ctx;
-    const UnaryOperation *_old_ctx;
-public:
-    using fun_t = double (*)(double);
-    UnaryOperationProxy(const UnaryOperation &op);
-    operator fun_t() const { return eval_proxy; }
-    ~UnaryOperationProxy();
-};
-
-/**
- * Utility class used to adapt stateless function pointers to stateful
- * functors by using thread-local bindings.
- **/
-class BinaryOperationProxy {
-private:
-    static __thread const BinaryOperation *_ctx;
-    static double eval_proxy(double a, double b);
-    const BinaryOperation *_my_ctx;
-    const BinaryOperation *_old_ctx;
-public:
-    using fun_t = double (*)(double, double);
-    BinaryOperationProxy(const BinaryOperation &op);
-    operator fun_t() const { return eval_proxy; }
-    ~BinaryOperationProxy();
 };
 
 //-----------------------------------------------------------------------------
@@ -115,36 +77,6 @@ struct Op2 : BinaryOperation {
  **/
 struct CustomUnaryOperation : Op1<CustomUnaryOperation> {
     static double f(double) { return error_value; }
-};
-
-//-----------------------------------------------------------------------------
-
-/**
- * This class binds the first parameter of a binary operation to a
- * numeric value, acting as a custom unary operation.
- **/
-class BindLeft : public CustomUnaryOperation
-{
-private:
-    const BinaryOperation &_op;
-    double _a;
-public:
-    BindLeft(const BinaryOperation &op, double a) : _op(op), _a(a) {}
-    double eval(double b) const override { return _op.eval(_a, b); }
-};
-
-/**
- * This class binds the second parameter of a binary operation to a
- * numeric value, acting as a custom unary operation.
- **/
-class BindRight : public CustomUnaryOperation
-{
-private:
-    const BinaryOperation &_op;
-    double _b;
-public:
-    BindRight(const BinaryOperation &op, double b) : _op(op), _b(b) {}
-    double eval(double a) const override { return _op.eval(a, _b); }
 };
 
 //-----------------------------------------------------------------------------
