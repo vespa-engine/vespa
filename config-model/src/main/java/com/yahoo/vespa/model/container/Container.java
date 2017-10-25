@@ -7,7 +7,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
-import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.search.config.QrStartConfig;
@@ -49,8 +48,7 @@ public class Container extends AbstractService implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
         ContainerHttpConfig.Producer,
-        ContainerMbusConfig.Producer,
-        IdentityConfig.Producer {
+        ContainerMbusConfig.Producer {
 
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
@@ -396,17 +394,6 @@ public class Container extends AbstractService implements
         this.httpServerEnabled = httpServerEnabled;
     }
 
-    @Override
-    public void getConfig(IdentityConfig.Builder builder) {
-        if(parent instanceof ContainerCluster) {
-            ContainerCluster containerCluster = (ContainerCluster) parent;
-            Optional<Identity> identity = containerCluster.getIdentity();
-            identity.ifPresent(id -> {
-                builder.service(id.getService());
-                builder.domain(id.getDomain());
-            });
-        }
-    }
 
     public static final class PortOverride {
         public final ComponentSpecification serverId;
