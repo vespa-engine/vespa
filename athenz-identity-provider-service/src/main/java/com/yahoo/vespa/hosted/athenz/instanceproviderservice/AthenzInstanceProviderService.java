@@ -139,7 +139,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                                 .loadJavaKeyStore();
                 sslContextFactory.reload(sslContextFactory -> sslContextFactory.setKeyStore(keyStore));
                 log.log(LogLevel.INFO, "Athenz certificate reload successfully completed");
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.log(LogLevel.ERROR, "Failed to update certificate from ZTS: " + e.getMessage(), e);
             }
         }
