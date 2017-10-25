@@ -514,6 +514,13 @@ public class ApplicationController {
     @SuppressWarnings("unused") // lock is part of the signature to remind people to acquire it, not needed internally
     public void store(Application application, Lock lock) {
         db.store(application);
+        // TODO: Remove this pill when Sherpa is out.
+        try {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void notifyJobCompletion(JobReport report) {
