@@ -1,0 +1,13 @@
+{
+    "propertyUri": "www.properties.com/1234",
+    "contactsUri": "www.contacts.com/1234",
+    "issueCreationUri": "www.issues.com/1234",
+    "contacts": [
+        [
+            "alice"
+        ],
+        [
+            "bob"
+        ]
+    ]
+}
