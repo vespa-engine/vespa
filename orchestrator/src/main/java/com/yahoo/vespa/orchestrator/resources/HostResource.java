@@ -4,12 +4,14 @@ package com.yahoo.vespa.orchestrator.resources;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
+import com.yahoo.vespa.orchestrator.restapi.wire.HostService;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
@@ -24,7 +26,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author oyving
@@ -41,11 +47,29 @@ public class HostResource implements HostApi {
     }
 
     @Override
-    public GetHostResponse getHost(String hostNameString) {
+    public GetHostResponse getHost(UriInfo uriInfo, String hostNameString) {
         HostName hostName = new HostName(hostNameString);
         try {
-            HostStatus status = orchestrator.getNodeStatus(hostName);
-            return new GetHostResponse(hostName.s(), status.name());
+            Host host = orchestrator.getHost(hostName);
+
+            URI applicationUri = uriInfo.getBaseUriBuilder()
+                    .path(InstanceResource.class)
+                    .path(host.getApplicationInstanceReference().asString())
+                    .build();
+
+            List<HostService> hostServices = host.getServiceInstances().stream()
+                    .map(serviceInstance -> new HostService(
+                            serviceInstance.getServiceCluster().clusterId().s(),
+                            serviceInstance.getServiceCluster().serviceType().s(),
+                            serviceInstance.configId().s(),
+                            serviceInstance.serviceStatus().name()))
+                    .collect(Collectors.toList());
+
+            return new GetHostResponse(
+                    host.getHostName().s(),
+                    host.getHostStatus().name(),
+                    applicationUri.toString(),
+                    hostServices);
         } catch (HostNameNotFoundException e) {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);

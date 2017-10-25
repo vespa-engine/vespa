@@ -101,6 +101,14 @@ public class ModelGenerator {
                 toApplicationInstanceId(applicationInfo, zone),
                 serviceClusters);
 
+        // Fill back-references
+        for (ServiceCluster serviceCluster : applicationInstance.serviceClusters()) {
+            serviceCluster.setApplicationInstance(applicationInstance);
+            for (ServiceInstance serviceInstance : serviceCluster.serviceInstances()) {
+                serviceInstance.setServiceCluster(serviceCluster);
+            }
+        }
+
         return applicationInstance;
     }
 
