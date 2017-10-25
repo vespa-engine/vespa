@@ -151,17 +151,6 @@ RecheckBucketInfoCommand::makeReply() {
     return std::make_unique<RecheckBucketInfoReply>(*this);
 }
 
-bool
-AbortBucketOperationsCommand::ExplicitBucketSetPredicate::doShouldAbort(const document::BucketId& bid) const {
-    return _bucketsToAbort.find(bid) != _bucketsToAbort.end();
-}
-
-AbortBucketOperationsCommand::ExplicitBucketSetPredicate::ExplicitBucketSetPredicate(const BucketSet& bucketsToAbort)
-    : _bucketsToAbort(bucketsToAbort)
-{ }
-
-AbortBucketOperationsCommand::ExplicitBucketSetPredicate::~ExplicitBucketSetPredicate() { }
-
 AbortBucketOperationsCommand::AbortBucketOperationsCommand(std::unique_ptr<AbortPredicate> predicate)
     : api::InternalCommand(ID),
     _predicate(std::move(predicate))

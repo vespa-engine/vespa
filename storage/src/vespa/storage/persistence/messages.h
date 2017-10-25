@@ -206,33 +206,11 @@ class AbortBucketOperationsCommand : public api::InternalCommand
 {
 public:
     class AbortPredicate {
-        virtual bool doShouldAbort(const document::BucketId&) const = 0;
+        virtual bool doShouldAbort(const document::Bucket&) const = 0;
     public:
         virtual ~AbortPredicate() {}
-        bool shouldAbort(const document::BucketId& bid) const {
-            return doShouldAbort(bid);
-        }
-    };
-
-    using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
-
-    // Primarily for unit test mocking; actual predicate impl should do lazy
-    // evaluations based on previous and current cluster states.
-    class ExplicitBucketSetPredicate : public AbortPredicate {
-        BucketSet _bucketsToAbort;
-
-        bool doShouldAbort(const document::BucketId& bid) const override;
-    public:
-        explicit ExplicitBucketSetPredicate(const BucketSet& bucketsToAbort);
-        ~ExplicitBucketSetPredicate();
-
-        template <typename Iterator>
-        ExplicitBucketSetPredicate(Iterator first, Iterator last)
-            : _bucketsToAbort(first, last)
-        { }
-
-        const BucketSet& getBucketsToAbort() const {
-            return _bucketsToAbort;
+        bool shouldAbort(const document::Bucket &bucket) const {
+            return doShouldAbort(bucket);
         }
     };
 
@@ -245,8 +223,8 @@ public:
     AbortBucketOperationsCommand(std::unique_ptr<AbortPredicate> predicate);
     ~AbortBucketOperationsCommand();
 
-    bool shouldAbort(const document::BucketId& bid) const {
-        return _predicate->shouldAbort(bid);
+    bool shouldAbort(const document::Bucket &bucket) const {
+        return _predicate->shouldAbort(bucket);
     }
 
     std::unique_ptr<api::StorageReply> makeReply() override;

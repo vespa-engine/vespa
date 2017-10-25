@@ -337,7 +337,7 @@ FileStorHandlerImpl::abortQueuedCommandsForBuckets(
                                 "bucket operation was bound to");
     for (iter_t it(t.queue.begin()), e(t.queue.end()); it != e;) {
         api::StorageMessage& msg(*it->_command);
-        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket.getBucketId())) {
+        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
             LOG(debug,
                 "Aborting operation %s as it is bound for bucket %s",
                 msg.toString().c_str(),
@@ -360,7 +360,7 @@ FileStorHandlerImpl::diskHasActiveOperationForAbortedBucket(
         const AbortBucketOperationsCommand& cmd) const
 {
     for (auto& lockedBucket : disk.lockedBuckets) {
-        if (cmd.shouldAbort(lockedBucket.first.getBucketId())) {
+        if (cmd.shouldAbort(lockedBucket.first)) {
             LOG(spam,
                 "Disk had active operation for aborted bucket %s, "
                 "waiting for it to complete...",

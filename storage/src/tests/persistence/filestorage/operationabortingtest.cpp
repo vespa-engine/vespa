@@ -193,13 +193,37 @@ OperationAbortingTest::validateReplies(
 
 namespace {
 
+class ExplicitBucketSetPredicate : public AbortBucketOperationsCommand::AbortPredicate {
+    using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
+    BucketSet _bucketsToAbort;
+
+    bool doShouldAbort(const document::Bucket &bucket) const override;
+public:
+    ~ExplicitBucketSetPredicate();
+
+    template <typename Iterator>
+    ExplicitBucketSetPredicate(Iterator first, Iterator last)
+        : _bucketsToAbort(first, last)
+    { }
+
+    const BucketSet& getBucketsToAbort() const {
+        return _bucketsToAbort;
+    }
+};
+
+bool
+ExplicitBucketSetPredicate::doShouldAbort(const document::Bucket &bucket) const {
+    return _bucketsToAbort.find(bucket.getBucketId()) != _bucketsToAbort.end();
+}
+
+ExplicitBucketSetPredicate::~ExplicitBucketSetPredicate() { }
+
 template <typename Container>
 AbortBucketOperationsCommand::SP
 makeAbortCmd(const Container& buckets)
 {
     std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate> pred(
-            new AbortBucketOperationsCommand::ExplicitBucketSetPredicate(
-                    buckets.begin(), buckets.end()));
+            new ExplicitBucketSetPredicate(buckets.begin(), buckets.end()));
     AbortBucketOperationsCommand::SP cmd(
             new AbortBucketOperationsCommand(std::move(pred)));
     return cmd;

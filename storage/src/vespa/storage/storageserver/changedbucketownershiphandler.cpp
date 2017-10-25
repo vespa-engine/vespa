@@ -155,15 +155,15 @@ class StateDiffLazyAbortPredicate
     // where all distributors are down.
     bool _allDistributorsHaveGoneDown;
 
-    bool doShouldAbort(const document::BucketId& b) const override {
+    bool doShouldAbort(const document::Bucket &bucket) const override {
         if (_allDistributorsHaveGoneDown) {
             return true;
         }
-        uint16_t oldOwner(_oldState.ownerOf(b));
-        uint16_t newOwner(_newState.ownerOf(b));
+        uint16_t oldOwner(_oldState.ownerOf(bucket.getBucketId()));
+        uint16_t newOwner(_newState.ownerOf(bucket.getBucketId()));
         if (oldOwner != newOwner) {
             LOG(spam, "Owner of %s was %u, now %u. Operation should be aborted",
-                b.toString().c_str(), oldOwner, newOwner);
+                bucket.toString().c_str(), oldOwner, newOwner);
             return true;
         }
         return false;
