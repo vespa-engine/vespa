@@ -64,7 +64,6 @@ import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -242,16 +241,8 @@ public class AthenzInstanceProviderServiceTest {
             KeyPairGenerator rsa = KeyPairGenerator.getInstance("RSA");
             rsa.initialize(2048);
             keyPair = rsa.genKeyPair();
-            publicKey = pemEncode(keyPair.getPublic());
-            privateKey = pemEncode(keyPair.getPrivate());
-        }
-
-        private static String pemEncode(Key key) throws IOException {
-            StringWriter stringWriter = new StringWriter();
-            JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter);
-            pemWriter.writeObject(key);
-            pemWriter.flush();
-            return stringWriter.toString();
+            publicKey = toPemString(keyPair.getPublic());
+            privateKey = toPemString(keyPair.getPrivate());
         }
 
         @Override
@@ -291,19 +282,26 @@ public class AthenzInstanceProviderServiceTest {
                         dnName, BigInteger.ONE, new Date(), endDate, dnName, keyPair.getPublic());
                 certBuilder.addExtension(new ASN1ObjectIdentifier("2.5.29.19"), true, new BasicConstraints(true));
 
-                X509Certificate certificate = new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider())
+                X509Certificate certificate = new JcaX509CertificateConverter()
+                        .setProvider(new BouncyCastleProvider())
                         .getCertificate(certBuilder.build(contentSigner));
-                try (StringWriter stringWriter = new StringWriter();
-                     JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
-                    pemWriter.writeObject(certificate);
-                    pemWriter.flush();
-                    return stringWriter.toString();
-                }
+                return toPemString(certificate);
             } catch (CertificateException | CertIOException | OperatorCreationException e) {
                 throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
+        }
+    }
+
+    private static String toPemString(Object keyOrCertificate) {
+        try (StringWriter stringWriter = new StringWriter();
+             JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+            pemWriter.writeObject(keyOrCertificate);
+            pemWriter.flush();
+            return stringWriter.toString();
+        } catch (CertIOException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }
