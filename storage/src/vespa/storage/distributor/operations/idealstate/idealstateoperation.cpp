@@ -11,6 +11,7 @@ LOG_SETUP(".distributor.operation");
 
 using namespace storage;
 using namespace storage::distributor;
+using document::BucketSpace;
 
 const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
 {
@@ -184,21 +185,29 @@ public:
 }
 
 bool
-IdealStateOperation::checkBlock(const document::BucketId& bId,
+IdealStateOperation::checkBlock(const document::Bucket &bucket,
                                 const PendingMessageTracker& tracker) const
 {
     IdealStateOpChecker ichk(*this);
     RequestBucketInfoChecker rchk;
     const std::vector<uint16_t>& nodes(getNodes());
     for (size_t i = 0; i < nodes.size(); ++i) {
-        tracker.checkPendingMessages(nodes[i], bId, ichk);
+        tracker.checkPendingMessages(nodes[i], bucket, ichk);
         if (ichk.blocked) {
             return true;
         }
         // Check messages sent to null-bucket (i.e. any bucket) for the node.
-        tracker.checkPendingMessages(nodes[i], document::BucketId(), rchk);
+        document::Bucket nullBucket(bucket.getBucketSpace(), document::BucketId());
+        tracker.checkPendingMessages(nodes[i], nullBucket, rchk);
         if (rchk.blocked) {
             return true;
+        }
+        if (bucket.getBucketSpace() != BucketSpace::placeHolder()) {
+            nullBucket = document::Bucket(BucketSpace::placeHolder(), document::BucketId());
+            tracker.checkPendingMessages(nodes[i], nullBucket, rchk);
+            if (rchk.blocked) {
+                return true;
+            }
         }
     }
     return false;
@@ -206,12 +215,12 @@ IdealStateOperation::checkBlock(const document::BucketId& bId,
 
 bool
 IdealStateOperation::checkBlockForAllNodes(
-        const document::BucketId& bid,
+        const document::Bucket &bucket,
         const PendingMessageTracker& tracker) const
 {
     IdealStateOpChecker ichk(*this);
     // Check messages sent to _any node_ for _this_ particular bucket.
-    tracker.checkPendingMessages(bid, ichk);
+    tracker.checkPendingMessages(bucket, ichk);
     if (ichk.blocked) {
         return true;
     }
@@ -219,9 +228,17 @@ IdealStateOperation::checkBlockForAllNodes(
     // Check messages sent to null-bucket (i.e. _any bucket_) for the node.
     const std::vector<uint16_t>& nodes(getNodes());
     for (size_t i = 0; i < nodes.size(); ++i) {
-        tracker.checkPendingMessages(nodes[i], document::BucketId(), rchk);
+        document::Bucket nullBucket(bucket.getBucketSpace(), document::BucketId());
+        tracker.checkPendingMessages(nodes[i], nullBucket, rchk);
         if (rchk.blocked) {
             return true;
+        }
+        if (bucket.getBucketSpace() != BucketSpace::placeHolder()) {
+            nullBucket = document::Bucket(BucketSpace::placeHolder(), document::BucketId());
+            tracker.checkPendingMessages(nodes[i], nullBucket, rchk);
+            if (rchk.blocked) {
+                return true;
+            }
         }
     }
     return false;
@@ -231,7 +248,7 @@ IdealStateOperation::checkBlockForAllNodes(
 bool
 IdealStateOperation::isBlocked(const PendingMessageTracker& tracker) const
 {
-    return checkBlock(getBucketId(), tracker);
+    return checkBlock(getBucket(), tracker);
 }
 
 std::string

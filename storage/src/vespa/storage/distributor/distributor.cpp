@@ -518,7 +518,7 @@ Distributor::checkBucketForSplit(const BucketDatabase::Entry& e,
     SplitChecker checker(priority);
     for (uint32_t i = 0; i < e->getNodeCount(); ++i) {
         _pendingMessageTracker.checkPendingMessages(e->getNodeRef(i).getNode(),
-                                                    e.getBucketId(),
+                                                    document::Bucket(document::BucketSpace::placeHolder(), e.getBucketId()),
                                                     checker);
         if (checker.found) {
             return;

@@ -237,8 +237,8 @@ protected:
      * operations to other nodes for this bucket, these will not be part of
      * the set of messages checked.
      */
-    bool checkBlock(const document::BucketId& bId, const PendingMessageTracker& tracker) const;
-    bool checkBlockForAllNodes(const document::BucketId& bId, const PendingMessageTracker& tracker) const;
+    bool checkBlock(const document::Bucket &bucket, const PendingMessageTracker& tracker) const;
+    bool checkBlockForAllNodes(const document::Bucket &bucket, const PendingMessageTracker& tracker) const;
 
 };
 

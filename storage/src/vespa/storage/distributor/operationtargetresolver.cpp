@@ -6,6 +6,12 @@
 namespace storage {
 namespace distributor {
 
+document::Bucket
+OperationTarget::getBucket() const
+{
+    return document::Bucket(document::BucketSpace::placeHolder(), _bucket);
+}
+
 void
 OperationTarget::print(vespalib::asciistream& out, const PrintProperties&) const {
     out << "OperationTarget(" << _bucket << ", " << _node

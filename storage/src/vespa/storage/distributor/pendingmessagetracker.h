@@ -75,7 +75,7 @@ public:
      * Breaks when the checker returns false.
      */
     void checkPendingMessages(uint16_t node,
-                              const document::BucketId& bid,
+                              const document::Bucket &bucket,
                               Checker& checker) const;
 
     /**
@@ -83,7 +83,7 @@ public:
      * and invokes the given checker with the node, message type and priority.
      * Breaks when the checker returns false.
      */
-    void checkPendingMessages(const document::BucketId& bid,
+    void checkPendingMessages(const document::Bucket &bucket,
                               Checker& checker) const;
 
     /**
@@ -91,7 +91,7 @@ public:
      * messageType pending to bucket bid on the given node.
      */
     bool hasPendingMessage(uint16_t node,
-                           const document::BucketId& bid,
+                           const document::Bucket &bucket,
                            uint32_t messageType) const;
 
     /**

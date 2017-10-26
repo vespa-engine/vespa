@@ -253,9 +253,9 @@ IdealStateManagerTest::testBlockCheckForAllOperationsToSpecificBucket()
         RemoveBucketOperation op("storage",
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(7)));
         // Not blocked for exact node match.
-        CPPUNIT_ASSERT(!op.checkBlock(bid, tracker));
+        CPPUNIT_ASSERT(!op.checkBlock(makeDocumentBucket(bid), tracker));
         // But blocked for bucket match!
-        CPPUNIT_ASSERT(op.checkBlockForAllNodes(bid, tracker));
+        CPPUNIT_ASSERT(op.checkBlockForAllNodes(makeDocumentBucket(bid), tracker));
     }
 }
 
