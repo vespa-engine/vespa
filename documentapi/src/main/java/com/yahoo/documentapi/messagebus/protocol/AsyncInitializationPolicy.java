@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.*;
 import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -105,7 +106,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         try {
             init();
         } catch (Exception e) {
-            log.warning("Init threw exception" + exceptionMessageWithTrace(e));
+            log.log(LogLevel.WARNING,"Init threw exception",e);
             initException = e;
         }
 
