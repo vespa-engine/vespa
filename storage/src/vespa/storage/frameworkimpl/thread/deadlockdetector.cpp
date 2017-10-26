@@ -8,6 +8,8 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".deadlock.detector");
 
+using document::BucketSpace;
+
 namespace storage {
 
 DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg,
@@ -128,8 +130,8 @@ DeadLockDetector::getBucketLockInfo() const
     if (_dComponent.get() != nullptr) {
         ost << "No bucket lock information available for distributor\n";
     } else {
-        if (_slComponent->getBucketDatabase().size() > 0) {
-            _slComponent->getBucketDatabase().showLockClients(ost);
+        if (_slComponent->getBucketDatabase(BucketSpace::placeHolder()).size() > 0) {
+            _slComponent->getBucketDatabase(BucketSpace::placeHolder()).showLockClients(ost);
         }
     }
     return ost.str();

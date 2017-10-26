@@ -86,7 +86,7 @@ struct PersistenceUtil {
     ~PersistenceUtil();
 
     StorBucketDatabase& getBucketDatabase()
-        { return _component.getBucketDatabase(); }
+        { return _component.getBucketDatabase(document::BucketSpace::placeHolder()); }
 
     void updateBucketDatabase(const document::Bucket &bucket,
                               const api::BucketInfo& info);

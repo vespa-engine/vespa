@@ -65,7 +65,7 @@ StorageBucketDBInitializer::System::System(
     : _doneInitializeHandler(doneInitializeHandler),
       _component(compReg, "storagebucketdbinitializer"),
       _partitions(partitions),
-      _bucketDatabase(_component.getBucketDatabase()),
+      _bucketDatabase(_component.getBucketDatabase(BucketSpace::placeHolder())),
       _nodeIndex(_component.getIndex()),
       _distribution(*_component.getDistribution()),
       _nodeState()

@@ -868,7 +868,7 @@ PersistenceThread::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd)
     {
         // Update bucket database
         StorBucketDatabase::WrappedEntry entry(
-                _component->getBucketDatabase().get(
+                _component->getBucketDatabase(bucket.getBucketSpace()).get(
                         bucket.getBucketId(),
                         "handleRecheckBucketInfo"));
 

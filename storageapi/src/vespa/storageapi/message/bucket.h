@@ -362,6 +362,7 @@ public:
     const lib::ClusterState& getSystemState() const { return *_state; }
 
     const vespalib::string& getDistributionHash() const { return _distributionHash; }
+    document::BucketSpace getBucketSpace() const { return _bucketSpace; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 

@@ -106,7 +106,7 @@ public:
     void dump(std::ostream& out) const;
 
     /** Get info for given bucket (Used for whitebox testing) */
-    StorBucketDatabase::Entry getBucketInfo(const document::BucketId& id) const;
+    StorBucketDatabase::Entry getBucketInfo(const document::Bucket &id) const;
 
 private:
     friend class BucketManagerTest;
@@ -227,7 +227,7 @@ private:
            const std::shared_ptr<api::NotifyBucketChangeReply>&) override;
 
     bool verifyAndUpdateLastModified(api::StorageCommand& cmd,
-                                     const document::BucketId& bucketId,
+                                     const document::Bucket& bucket,
                                      uint64_t lastModified);
     bool onSplitBucketReply(
             const std::shared_ptr<api::SplitBucketReply>&) override;

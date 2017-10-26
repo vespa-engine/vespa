@@ -23,6 +23,8 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.manager");
 
+using document::BucketSpace;
+
 namespace storage {
 
 BucketManager::BucketManager(const config::ConfigUri & configUri,
@@ -205,10 +207,10 @@ namespace {
 }   // End of anonymous namespace
 
 StorBucketDatabase::Entry
-BucketManager::getBucketInfo(const document::BucketId& id) const
+BucketManager::getBucketInfo(const document::Bucket &bucket) const
 {
     StorBucketDatabase::WrappedEntry entry(
-            _component.getBucketDatabase().get(id, "BucketManager::getBucketInfo"));
+            _component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::getBucketInfo"));
     return *entry;
 }
 
@@ -218,13 +220,13 @@ BucketManager::updateMetrics(bool updateDocCount)
     LOG(debug, "Iterating bucket database to update metrics%s%s",
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
-    uint64_t dbMemSize = _component.getBucketDatabase().getMemoryUsage();
+    uint64_t dbMemSize = _component.getBucketDatabase(BucketSpace::placeHolder()).getMemoryUsage();
     _bucketDBMemoryToken->resize(dbMemSize, dbMemSize);
 
     uint32_t diskCount = _component.getDiskCount();
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater m(diskCount);
-        _component.getBucketDatabase().chunkedAll(
+        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(
                 m, "BucketManager::updateMetrics");
         if (updateDocCount) {
             for (uint16_t i = 0; i< diskCount; i++) {
@@ -241,7 +243,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 void BucketManager::updateMinUsedBits()
 {
     MetricsUpdater m(_component.getDiskCount());
-    _component.getBucketDatabase().chunkedAll(
+    _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(
             m, "BucketManager::updateMetrics");
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
@@ -340,7 +342,7 @@ BucketManager::reportStatus(std::ostream& out,
         framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
         xmlReporter << vespalib::xml::XmlTag("buckets");
         BucketDBDumper dumper(xmlReporter.getStream());
-        _component.getBucketDatabase().chunkedAll(
+        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(
                 dumper, "BucketManager::getStatus");
         xmlReporter << vespalib::xml::XmlEndTag();
     } else {
@@ -359,7 +361,7 @@ BucketManager::dump(std::ostream& out) const
 {
     vespalib::XmlOutputStream xos(out);
     BucketDBDumper dumper(xos);
-    _component.getBucketDatabase().chunkedAll(dumper, 0);
+    _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(dumper, 0);
 }
 
 
@@ -399,12 +401,13 @@ bool BucketManager::onRequestBucketInfo(
 
     ScopedQueueDispatchGuard queueGuard(*this);
 
+    BucketSpace bucketSpace(cmd->getBucketSpace());
     api::RequestBucketInfoReply::EntryVector info;
     if (cmd->getBuckets().size()) {
         typedef std::map<document::BucketId,
                          StorBucketDatabase::WrappedEntry> BucketMap;
         for (uint32_t i = 0; i < cmd->getBuckets().size(); i++) {
-            BucketMap entries(_component.getBucketDatabase().getAll(
+            BucketMap entries(_component.getBucketDatabase(bucketSpace).getAll(
                                     cmd->getBuckets()[i],
                                     "BucketManager::onRequestBucketInfo"));
             for (BucketMap::iterator it = entries.begin();
@@ -598,12 +601,12 @@ BucketManager::processRequestBucketInfoCommands(BIList& reqs)
     if (LOG_WOULD_LOG(spam)) {
         DistributorInfoGatherer<true> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase().chunkedAll(builder,
+        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
         DistributorInfoGatherer<false> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase().chunkedAll(builder,
+        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(
@@ -639,7 +642,7 @@ BucketManager::onUp(const std::shared_ptr<api::StorageMessage>& msg)
 
 bool
 BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
-                                           const document::BucketId& bucketId,
+                                           const document::Bucket &bucket,
                                            uint64_t lastModified)
 {
     LOG(spam, "Received operation %s with modification timestamp %zu",
@@ -650,7 +653,7 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
 
     {
         StorBucketDatabase::WrappedEntry entry(
-                _component.getBucketDatabase().get(bucketId, "BucketManager::verify"));
+                _component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::verify"));
 
         if (entry.exist()) {
             prevLastModified = entry->info.getLastModified();
@@ -674,7 +677,7 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
                                      "bucket %s, with timestamp %zu",
                                      cmd.toString().c_str(),
                                      lastModified,
-                                     bucketId.toString().c_str(),
+                                     bucket.toString().c_str(),
                                      prevLastModified)));
 
 
@@ -735,7 +738,7 @@ bool
 BucketManager::onRemove(const api::RemoveCommand::SP& cmd)
 {
     if (!verifyAndUpdateLastModified(*cmd,
-                                     cmd->getBucketId(),
+                                     cmd->getBucket(),
                                      cmd->getTimestamp())) {
         return true;
     }
@@ -753,7 +756,7 @@ bool
 BucketManager::onPut(const api::PutCommand::SP& cmd)
 {
     if (!verifyAndUpdateLastModified(*cmd,
-                                     cmd->getBucketId(),
+                                     cmd->getBucket(),
                                      cmd->getTimestamp())) {
         return true;
     }
@@ -771,7 +774,7 @@ bool
 BucketManager::onUpdate(const api::UpdateCommand::SP& cmd)
 {
     if (!verifyAndUpdateLastModified(*cmd,
-                                     cmd->getBucketId(),
+                                     cmd->getBucket(),
                                      cmd->getTimestamp())) {
         return true;
     }

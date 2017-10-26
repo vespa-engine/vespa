@@ -26,6 +26,7 @@
 #pragma once
 
 #include "storagecomponent.h"
+#include <vespa/document/bucket/bucket.h>
 
 namespace storage {
 
@@ -74,8 +75,7 @@ public:
     }
 
     uint16_t getDiskCount() const { return _diskCount; }
-    StorBucketDatabase& getBucketDatabase() const
-        { assert(_bucketDatabase != 0); return *_bucketDatabase; }
+    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const;
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
         assert(_minUsedBitsTracker != 0);
         return *_minUsedBitsTracker;
@@ -84,8 +84,8 @@ public:
         assert(_minUsedBitsTracker != 0);
         return *_minUsedBitsTracker;
     }
-    uint16_t getIdealPartition(const document::BucketId&) const;
-    uint16_t getPreferredAvailablePartition(const document::BucketId&) const;
+    uint16_t getIdealPartition(const document::Bucket&) const;
+    uint16_t getPreferredAvailablePartition(const document::Bucket&) const;
 };
 
 } // storage
