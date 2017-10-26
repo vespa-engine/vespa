@@ -12,7 +12,7 @@ import java.util.OptionalInt;
 /**
  * To be used with DocumentId constructor.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public abstract class IdString {
 

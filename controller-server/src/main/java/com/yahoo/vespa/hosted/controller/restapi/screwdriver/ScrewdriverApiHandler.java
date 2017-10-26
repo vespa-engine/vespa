@@ -113,6 +113,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 .orElse(JobType.component);
         // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
         // front of the queue
+        // TODO: This does not record the triggering event
         controller.applications().deploymentTrigger().buildSystem().addJob(application.get().id(), jobType, true);
 
         Slime slime = new Slime();

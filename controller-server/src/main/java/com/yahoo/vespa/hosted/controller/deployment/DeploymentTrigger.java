@@ -381,14 +381,6 @@ public class DeploymentTrigger {
             return application;
         }
 
-        // TODO: Remove when we can determine why this occurs
-        if (jobType != JobType.component && ! application.deploying().isPresent()) {
-            log.warning(String.format("Want to trigger %s for %s with reason %s, but this application is not " +
-                                              "currently deploying a change",
-                                      jobType, application, cause));
-            return application;
-        }
-
         if  ( ! deploysTo(application, jobType)) {
             return application;
         }

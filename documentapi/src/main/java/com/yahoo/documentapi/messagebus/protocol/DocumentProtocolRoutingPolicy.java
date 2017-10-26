@@ -12,5 +12,7 @@ import java.util.TreeMap;
  * @author thomasg
  */
 public interface DocumentProtocolRoutingPolicy extends RoutingPolicy {
-    public MetricSet getMetrics();
+
+    MetricSet getMetrics();
+
 }
