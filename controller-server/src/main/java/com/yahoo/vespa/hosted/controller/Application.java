@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -93,7 +95,17 @@ public class Application {
     
     /** Returns an immutable map of the current deployments of this */
     public Map<Zone, Deployment> deployments() { return deployments; }
-    
+
+    /** 
+     * Returns an immutable map of the current *production* deployments of this
+     * (deployments also includes manually deployed environments)
+     */
+    public Map<Zone, Deployment> productionDeployments() {
+        return deployments.values().stream()
+                                  .filter(deployment -> deployment.zone().environment() == Environment.prod)
+                                   .collect(Collectors.toMap(Deployment::zone, Function.identity()));
+    }
+
     public DeploymentJobs deploymentJobs() { return deploymentJobs; }
 
     /**
@@ -113,11 +125,10 @@ public class Application {
      * or empty version if it is not deployed anywhere
      */
     public Optional<Version> deployedVersion() {
-        return deployments().values().stream()
-                                     .filter(deployment -> isPermanent(deployment.zone().environment()))
-                                     .sorted(Comparator.comparing(Deployment::version))
-                                     .findFirst()
-                                     .map(Deployment::version);
+        return productionDeployments().values().stream()
+                                               .sorted(Comparator.comparing(Deployment::version))
+                                               .findFirst()
+                                               .map(Deployment::version);
     }
 
     /** The version that should be used to compile this application */
@@ -268,14 +279,6 @@ public class Application {
         return "application '" + id + "'";
     }
 
-    private boolean isPermanent(Environment environment) {
-        if (environment == Environment.dev) return false;
-        if (environment == Environment.perf) return false;
-        if (environment == Environment.test) return false;
-        if (environment == Environment.staging) return false;
-        return true;
-    }
-    
     /** Returns true if there is no current change to deploy - i.e deploying is empty or completely deployed */
     public boolean deployingCompleted() { 
         if ( ! deploying.isPresent()) return true;
