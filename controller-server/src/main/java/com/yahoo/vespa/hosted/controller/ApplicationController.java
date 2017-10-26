@@ -382,9 +382,10 @@ public class ApplicationController {
     private Application deleteUnreferencedDeploymentJobs(Application application) {
         for (DeploymentJobs.JobType job : application.deploymentJobs().jobStatus().keySet()) {
             Optional<Zone> zone = job.zone(controller.system());
-            if ( ! job.isProduction() || (zone.isPresent() && application.deploymentSpec().includes(zone.get().environment(), zone.map(Zone::region))))
-                continue;
-            application = application.withoutDeploymentJob(job);
+            if ( ! zone.isPresent()) continue;
+
+            if ( ! application.deploymentSpec().includes(zone.get().environment(), zone.map(Zone::region)))
+                application = application.withoutDeploymentJob(job);
         }
         return application;
     }
