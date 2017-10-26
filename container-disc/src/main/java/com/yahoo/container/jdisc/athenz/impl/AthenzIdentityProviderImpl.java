@@ -4,7 +4,6 @@ package com.yahoo.container.jdisc.athenz.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
@@ -41,8 +40,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final String service;
 
     @Inject
-    public AthenzIdentityProviderImpl(IdentityConfig config, ConfigserverConfig configserverConfig) throws IOException {
-        this(config, new ServiceProviderApi(configserverConfig.loadBalancerAddress()), new AthenzService());
+    public AthenzIdentityProviderImpl(IdentityConfig config) throws IOException {
+        this(config, new ServiceProviderApi(config.loadBalancerAddress()), new AthenzService());
     }
 
     // Test only
