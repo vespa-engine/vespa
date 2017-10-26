@@ -216,10 +216,10 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    void visit(const Number&node) override {
+    void visit(const Number &node) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(node.value())));
     }
-    void visit(const Symbol&node) override {
+    void visit(const Symbol &node) override {
         if (node.id() >= 0) { // param value
             program.emplace_back(op_load_param, node.id());
         } else { // let binding
@@ -227,10 +227,10 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             program.emplace_back(op_load_let, let_offset);
         }
     }
-    void visit(const String&node) override {
+    void visit(const String &node) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(node.hash())));
     }
-    void visit(const Array&node) override {
+    void visit(const Array &node) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(node.size())));
     }
     void visit(const Neg &) override {
@@ -239,7 +239,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Not &) override {
         program.emplace_back(op_unary<operation::Not>);
     }
-    void visit(const If&node) override {
+    void visit(const If &node) override {
         node.cond().traverse(*this);
         size_t after_cond = program.size();
         program.emplace_back(op_skip_if_false);
@@ -250,7 +250,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         program[after_cond].update_param(after_true - after_cond);
         program[after_true].update_param(program.size() - after_true - 1);
     }
-    void visit(const Let&node) override {
+    void visit(const Let &node) override {
         node.value().traverse(*this);
         program.emplace_back(op_store_let);
         node.expr().traverse(*this);
@@ -259,15 +259,15 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Error &) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));
     }
-    void visit(const TensorMap&node) override {
+    void visit(const TensorMap &node) override {
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
         program.emplace_back(op_tensor_map, wrap_param<CompiledFunction>(token.get()->get()));
     }
-    void visit(const TensorJoin&node) override {
+    void visit(const TensorJoin &node) override {
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
         program.emplace_back(op_tensor_join, wrap_param<CompiledFunction>(token.get()->get()));
     }
-    void visit(const TensorReduce&node) override {
+    void visit(const TensorReduce &node) override {
         if ((node.aggr() == Aggr::SUM) && is_typed(node) && is_typed_tensor_product_of_params(node.get_child(0))) {
             assert(program.size() >= 3); // load,load,mul
             program.pop_back(); // mul
@@ -287,11 +287,11 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             program.emplace_back(op_tensor_reduce, wrap_param<ReduceParams>(params));
         }
     }
-    void visit(const TensorRename&node) override {
+    void visit(const TensorRename &node) override {
         RenameParams &params = stash.create<RenameParams>(node.from(), node.to());
         program.emplace_back(op_tensor_rename, wrap_param<RenameParams>(params));
     }
-    void visit(const TensorLambda&node) override {
+    void visit(const TensorLambda &node) override {
         const auto &type = node.type();
         TensorSpec spec(type.to_spec());
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::ARRAY));
@@ -308,7 +308,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         auto tensor = tensor_engine.create(spec);
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<TensorValue>(std::move(tensor))));
     }
-    void visit(const TensorConcat&node) override {
+    void visit(const TensorConcat &node) override {
         vespalib::string &dimension = stash.create<vespalib::string>(node.dimension());
         program.emplace_back(op_tensor_concat, wrap_param<vespalib::string>(dimension));
     }
@@ -351,7 +351,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const GreaterEqual &) override {
         program.emplace_back(op_binary<operation::GreaterEqual>);
     }
-    void visit(const In&node) override {
+    void visit(const In &node) override {
         std::vector<size_t> checks;
         node.lhs().traverse(*this);
         auto array = as<Array>(node.rhs());
@@ -455,7 +455,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    bool open(const Node&node) override {
+    bool open(const Node &node) override {
         if (check_type<Array, If, Let, In>(node)) {
             node.accept(*this);
             return false;
@@ -463,7 +463,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         return true;
     }
 
-    void close(const Node&node) override {
+    void close(const Node &node) override {
         node.accept(*this);
     }
 };
