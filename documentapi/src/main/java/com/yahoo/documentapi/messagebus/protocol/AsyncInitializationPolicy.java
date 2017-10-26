@@ -1,14 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.*;
 import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingContext;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.logging.Logger;
 
 /**
  * Abstract class for routing policies that need asynchronous initialization.
@@ -23,6 +27,8 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         RUNNING,
         DONE
     };
+
+    private static final Logger log = Logger.getLogger(AsyncInitializationPolicy.class.getName());
 
     InitState initState;
     ScheduledThreadPoolExecutor executor;
@@ -78,7 +84,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         synchronized (this) {
             if (initException != null) {
                 Reply reply = new EmptyReply();
-                reply.addError(new com.yahoo.messagebus.Error(ErrorCode.POLICY_ERROR, initException.getMessage()));
+                reply.addError(new com.yahoo.messagebus.Error(ErrorCode.POLICY_ERROR, "Policy threw exception during init:" + exceptionMessageWithTrace(initException)));
                 routingContext.setReply(reply);
                 return;
             }
@@ -100,6 +106,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         try {
             init();
         } catch (Exception e) {
+            log.log(LogLevel.WARNING,"Init threw exception",e);
             initException = e;
         }
 
@@ -115,4 +122,18 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
             executor.shutdownNow();
         }
     }
+
+
+    private static String exceptionMessageWithTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            e.printStackTrace(pw);
+            pw.flush();
+        }
+        return sw.toString();
+
+    }
+
+
+
 }
