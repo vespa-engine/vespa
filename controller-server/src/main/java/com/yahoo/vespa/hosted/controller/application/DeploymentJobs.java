@@ -83,7 +83,7 @@ public class DeploymentJobs {
         return new DeploymentJobs(Optional.of(projectId), status, issueId);
     }
 
-    public DeploymentJobs withIssueId(IssueId issueId) {
+    public DeploymentJobs with(IssueId issueId) {
         return new DeploymentJobs(projectId, status, Optional.ofNullable(issueId));
     }
 

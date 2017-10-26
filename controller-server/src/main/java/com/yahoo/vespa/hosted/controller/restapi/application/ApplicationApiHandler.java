@@ -1009,9 +1009,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private Slime toSlime(URI propertyUri, URI contactsUri, URI issueCreationUri, List<? extends List<? extends User>> contacts) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        root.setString("propertyUri", propertyUri.toString());
-        root.setString("contactsUri", contactsUri.toString());
-        root.setString("issueCreationUri", issueCreationUri.toString());
+        root.setString("propertyUrl", propertyUri.toString());
+        root.setString("contactsUrl", contactsUri.toString());
+        root.setString("issueCreationUrl", issueCreationUri.toString());
         Cursor lists = root.setArray("contacts");
         for (List<? extends User> contactList : contacts) {
             Cursor list = lists.addArray();

@@ -130,8 +130,8 @@ public class Application {
         return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs.withProjectId(projectId), deploying, outstandingChange);
     }
 
-    public Application withIssueId(IssueId issueId) {
-        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs.withIssueId(issueId), deploying, outstandingChange);
+    public Application with(IssueId issueId) {
+        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs.with(issueId), deploying, outstandingChange);
     }
 
     public Application withJobCompletion(JobReport report, Instant notificationTime, Controller controller) {

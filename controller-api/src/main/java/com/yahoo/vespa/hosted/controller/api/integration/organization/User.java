@@ -3,6 +3,11 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import java.util.Objects;
 
+/**
+ * Represents a human computer user, typically by UNIX account name.
+ *
+ * @author jvenstad
+ */
 public class User {
 
     private final String username;
@@ -12,6 +17,10 @@ public class User {
     }
 
     public String username() {
+        return username;
+    }
+
+    public String displayName() {
         return username;
     }
 

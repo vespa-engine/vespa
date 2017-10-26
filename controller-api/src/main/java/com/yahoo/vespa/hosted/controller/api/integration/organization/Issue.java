@@ -6,6 +6,12 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Represents an issue which needs to reported, typically from the controller, to a responsible party,
+ * the identity of which is determined by the propertyId and, possibly, assignee fields.
+ *
+ * @author jvenstad
+ */
 public class Issue {
 
     private final String summary;
@@ -37,6 +43,7 @@ public class Issue {
     public Issue withLabel(String label) {
         return new Issue(summary, description, label, assignee, propertyId);
     }
+
     public Issue withAssignee(User assignee) {
         return new Issue(summary, description, label, assignee, propertyId);
     }

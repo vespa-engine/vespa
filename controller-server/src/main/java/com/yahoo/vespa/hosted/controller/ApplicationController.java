@@ -502,7 +502,7 @@ public class ApplicationController {
 
     public void setIssueId(ApplicationId id, IssueId issueId) {
         try (Lock lock = lock(id)) {
-            get(id).ifPresent(application -> store(application.withIssueId(issueId), lock));
+            get(id).ifPresent(application -> store(application.with(issueId), lock));
         }
     }
 

@@ -90,17 +90,17 @@ public class MockOrganization implements Organization {
 
     @Override
     public URI issueCreationUri(PropertyId propertyId) {
-        return URI.create("www.issues.com/" + propertyId.id());
+        return URI.create("www.issues.tld/" + propertyId.id());
     }
 
     @Override
     public URI contactsUri(PropertyId propertyId) {
-        return URI.create("www.contacts.com/" + propertyId.id());
+        return URI.create("www.contacts.tld/" + propertyId.id());
     }
 
     @Override
     public URI propertyUri(PropertyId propertyId) {
-        return URI.create("www.properties.com/" + propertyId.id());
+        return URI.create("www.properties.tld/" + propertyId.id());
     }
 
     public void close(IssueId issueId) {

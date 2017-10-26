@@ -2,11 +2,6 @@
 package com.yahoo.data.access.slime;
 
 
-import com.yahoo.data.access.Inspector;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.ObjectTraverser;
-
-import java.util.Iterator;
 import java.util.Map;
 import java.util.AbstractMap;
 import java.util.List;
@@ -131,27 +126,31 @@ public final class SlimeAdapter implements com.yahoo.data.access.Inspector {
         return inspector.asData();
     }
     public void traverse(final com.yahoo.data.access.ArrayTraverser at) {
-        inspector.traverse((ArrayTraverser) (idx, inspector) -> at.entry(idx, new SlimeAdapter(inspector)));
+        inspector.traverse(new com.yahoo.slime.ArrayTraverser() {
+                public void entry(int idx, com.yahoo.slime.Inspector inspector) { at.entry(idx, new SlimeAdapter(inspector)); }
+            });
     }
     public void traverse(final com.yahoo.data.access.ObjectTraverser ot) {
-        inspector.traverse((ObjectTraverser) (name, inspector) -> ot.field(name, new SlimeAdapter(inspector)));
+        inspector.traverse(new com.yahoo.slime.ObjectTraverser() {
+                public void field(String name, com.yahoo.slime.Inspector inspector) { ot.field(name, new SlimeAdapter(inspector)); }
+            });
     }
     public com.yahoo.data.access.Inspector entry(int idx) { return new SlimeAdapter(inspector.entry(idx)); }
     public com.yahoo.data.access.Inspector field(String name) { return new SlimeAdapter(inspector.field(name)); }
     public Iterable<com.yahoo.data.access.Inspector> entries() {
-        return () -> new Iterator<Inspector>() {
-            int i = 0;
-            @Override public boolean hasNext() {
-                return i < inspector.entries();
-            }
-            @Override public Inspector next() {
-                return new SlimeAdapter(inspector.entry(i++));
-            }
-        };
+        final List<com.yahoo.data.access.Inspector> list = new ArrayList<>();
+        inspector.traverse(new com.yahoo.slime.ArrayTraverser() {
+                public void entry(int idx, com.yahoo.slime.Inspector inspector) { list.add(new SlimeAdapter(inspector)); }
+            });
+        return list;
     }
     public Iterable<Map.Entry<String,com.yahoo.data.access.Inspector>> fields() {
-        List<Map.Entry<String,com.yahoo.data.access.Inspector>> list = new ArrayList<>();
-        inspector.traverse((ObjectTraverser) (name, inspector) -> list.add(new AbstractMap.SimpleImmutableEntry<>(name, new SlimeAdapter(inspector))));
+        final List<Map.Entry<String,com.yahoo.data.access.Inspector>> list = new ArrayList<>();
+        inspector.traverse(new com.yahoo.slime.ObjectTraverser() {
+                public void field(String name, com.yahoo.slime.Inspector inspector) {
+                    list.add(new AbstractMap.SimpleImmutableEntry<String,com.yahoo.data.access.Inspector>(name, new SlimeAdapter(inspector)));
+                }
+            });
         return list;
     }
 }
