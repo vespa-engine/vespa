@@ -356,6 +356,7 @@ double
 LogDataStore::getMaxBucketSpread() const
 {
     double maxSpread(1.0);
+    LockGuard guard(_updateLock);
     for (const FileChunk::UP & fc : _fileChunks) {
         if (fc) {
             if (_bucketizer && fc->frozen()) {
@@ -1000,6 +1001,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
 void
 LogDataStore::verify(bool reportOnly) const
 {
+    LockGuard guard(_updateLock);
     for (const FileChunk::UP & fc : _fileChunks) {
         if (fc) {
             fc->verify(reportOnly);
@@ -1107,6 +1109,7 @@ double
 LogDataStore::getVisitCost() const
 {
     uint32_t totalChunks = 0;
+    LockGuard guard(_updateLock);
     for (auto &fc : _fileChunks) {
         totalChunks += fc->getNumChunks();
     }
