@@ -7,6 +7,8 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -14,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,27 +33,34 @@ public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
     private final Orchestrator orchestrator;
+    private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
 
     public MetricsReporter(NodeRepository nodeRepository,
                            Metric metric,
                            Orchestrator orchestrator,
+                           ServiceMonitor serviceMonitor,
                            Duration interval,
                            JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
         this.metric = metric;
         this.orchestrator = orchestrator;
+        this.serviceMonitor = serviceMonitor;
     }
 
     @Override
     public void maintain() {
         List<Node> nodes = nodeRepository().getNodes();
-        nodes.forEach(this::updateNodeMetrics);
+
+        Map<HostName, List<ServiceInstance>> servicesByHost =
+                serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName();
+
+        nodes.forEach(node -> updateNodeMetrics(node, servicesByHost));
         updateStateMetrics(nodes);
         updateDockerMetrics(nodes);
     }
 
-    private void updateNodeMetrics(Node node) {
+    private void updateNodeMetrics(Node node, Map<HostName, List<ServiceInstance>> servicesByHost) {
         Metric.Context context;
 
         Optional<Allocation> allocation = node.allocation();
@@ -117,7 +127,27 @@ public class MetricsReporter extends Maintainer {
             // Ignore
         }
 
-        // TODO: Also add metric on whether some services are down on node?
+        long numberOfServices = 0;
+        HostName hostName = new HostName(node.hostname());
+        List<ServiceInstance> services = servicesByHost.get(hostName);
+        if (services != null) {
+            Map<ServiceStatus, Long> servicesCount = services.stream().collect(
+                    Collectors.groupingBy(ServiceInstance::serviceStatus, Collectors.counting()));
+
+            metric.set(
+                    "numberOfServicesUp",
+                    servicesCount.getOrDefault(ServiceStatus.UP, 0L), context);
+
+            metric.set(
+                    "numberOfServicesNotChecked",
+                    servicesCount.getOrDefault(ServiceStatus.NOT_CHECKED, 0L), context);
+
+            metric.set(
+                    "numberOfServicesDown",
+                    servicesCount.getOrDefault(ServiceStatus.DOWN, 0L), context);
+        }
+
+        metric.set("numberOfServices", numberOfServices, context);
     }
 
     private static String toApp(ApplicationId applicationId) {
