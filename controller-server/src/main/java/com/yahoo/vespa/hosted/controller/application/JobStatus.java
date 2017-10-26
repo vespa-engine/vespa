@@ -44,7 +44,7 @@ public class JobStatus {
         this.type = type;
         this.jobError = jobError;
         
-        // Nwever say we triggered component because we don't:
+        // Never say we triggered component because we don't:
         this.lastTriggered = type == DeploymentJobs.JobType.component ? Optional.empty() : lastTriggered;
         this.lastCompleted = lastCompleted;
         this.firstFailing = firstFailing;
