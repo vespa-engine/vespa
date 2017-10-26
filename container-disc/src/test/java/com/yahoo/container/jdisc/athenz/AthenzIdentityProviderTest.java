@@ -23,7 +23,7 @@ public class AthenzIdentityProviderTest {
 
     @Test
     public void ntoken_fetched_on_init() throws IOException {
-        IdentityConfig config = new IdentityConfig(new IdentityConfig.Builder().service("tenantService").domain("tenantDomain"));
+        IdentityConfig config = new IdentityConfig(new IdentityConfig.Builder().service("tenantService").domain("tenantDomain").loadBalancerAddress("cfg"));
         ServiceProviderApi serviceProviderApi = mock(ServiceProviderApi.class);
         AthenzService athenzService = mock(AthenzService.class);
 
