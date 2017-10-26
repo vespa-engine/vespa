@@ -266,8 +266,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     switch (flush.strategy) {
     case ProtonConfig::Flush::MEMORY: {
         auto memoryFlush = std::make_shared<MemoryFlush>(
-                MemoryFlushConfigUpdater::convertConfig(flush.memory), fastos::ClockSystem::now());
-        _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory);
+                MemoryFlushConfigUpdater::convertConfig(flush.memory, _hwInfo.memory()), fastos::ClockSystem::now());
+        _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory, _hwInfo.memory());
         _diskMemUsageSampler->notifier().addDiskMemUsageListener(_memoryFlushConfigUpdater.get());
         strategy = memoryFlush;
         break;

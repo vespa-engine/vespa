@@ -41,13 +41,15 @@ belowLimit()
     return ResourceUsageState(0.7, 0.6);
 }
 
+const HwInfo::Memory defaultMemory(8ul * 1024ul * 1024ul * 1024ul);
+
 struct Fixture
 {
     MemoryFlush::SP strategy;
     MemoryFlushConfigUpdater updater;
     Fixture()
-        : strategy(std::make_shared<MemoryFlush>(MemoryFlushConfigUpdater::convertConfig(getDefaultConfig()))),
-          updater(strategy, getDefaultConfig())
+        : strategy(std::make_shared<MemoryFlush>(MemoryFlushConfigUpdater::convertConfig(getDefaultConfig(), defaultMemory))),
+          updater(strategy, getDefaultConfig(), defaultMemory)
     {}
     void assertStrategyConfig(uint64_t expMaxGlobalMemory, int64_t expMaxEachMemory, uint64_t expMaxGlobalTlsSize) {
         EXPECT_EQUAL(expMaxGlobalMemory, strategy->getConfig().maxGlobalMemory);
