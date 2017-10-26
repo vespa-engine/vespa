@@ -4,6 +4,9 @@
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -48,7 +51,7 @@ JoinOperationTest::testSimple()
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:1"));
 
     JoinOperation op("storage",
-                     BucketAndNodes(document::BucketId(32, 0),
+                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
                                     toVector<uint16_t>(0)),
                      toVector(document::BucketId(33, 1),
                               document::BucketId(33, 0x100000001)));
@@ -109,7 +112,7 @@ JoinOperationTest::sendSparseJoinsToNodesWithoutBothSourceBuckets()
             lib::ClusterState("distributor:1 storage:2"));
 
     JoinOperation op("storage",
-                     BucketAndNodes(document::BucketId(32, 0),
+                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
                                     toVector<uint16_t>(0, 1)),
                      toVector(document::BucketId(33, 1),
                               document::BucketId(33, 0x100000001)));

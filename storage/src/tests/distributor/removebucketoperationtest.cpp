@@ -7,6 +7,9 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -48,7 +51,7 @@ RemoveBucketOperationTest::testSimple()
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
 
     RemoveBucketOperation op("storage",
-                             BucketAndNodes(document::BucketId(16, 1),
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1,2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -85,7 +88,7 @@ RemoveBucketOperationTest::testBucketInfoMismatchFailure()
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
 
     RemoveBucketOperation op("storage",
-                             BucketAndNodes(document::BucketId(16, 1),
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -126,7 +129,7 @@ RemoveBucketOperationTest::testFailWithInvalidBucketInfo()
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
 
     RemoveBucketOperation op("storage",
-                             BucketAndNodes(document::BucketId(16, 1),
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));

@@ -15,6 +15,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.checkers");
 
+using document::BucketSpace;
+
 namespace storage {
 namespace distributor {
 
@@ -84,7 +86,7 @@ SplitBucketStateChecker::generateMinimumBucketSplitOperation(
 {
     IdealStateOperation::UP so(new SplitOperation(
                 c.component.getClusterName(),
-                BucketAndNodes(c.bucketId, c.entry->getNodes()),
+                BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 c.distributorConfig.getMinimalBucketSplit(),
                 0,
                 0));
@@ -103,7 +105,7 @@ SplitBucketStateChecker::generateMaxSizeExceededSplitOperation(
 {
     IdealStateOperation::UP so(new SplitOperation(                
                 c.component.getClusterName(),
-                BucketAndNodes(c.bucketId, c.entry->getNodes()),
+                BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 58,
                 c.distributorConfig.getSplitCount(),
                 c.distributorConfig.getSplitSize()));
@@ -420,7 +422,7 @@ bucketHasMultipleChildren(const document::BucketId& bucket,
 
 }
 
-document::BucketId
+document::Bucket
 JoinBucketsStateChecker::computeJoinBucket(const Context& c) const
 {
     // Always decrease by at least 1 bit, as we could not get here unless this
@@ -443,7 +445,7 @@ JoinBucketsStateChecker::computeJoinBucket(const Context& c) const
         --level;
         target = candidate;
     }
-    return target;
+    return document::Bucket(BucketSpace::placeHolder(), target);
 }
 
 StateChecker::Result
@@ -455,8 +457,8 @@ JoinBucketsStateChecker::check(StateChecker::Context& c)
         return Result::noMaintenanceNeeded();
     }
     
-    document::BucketId joinedBucket(computeJoinBucket(c));
-    assert(joinedBucket.getUsedBits() < c.bucketId.getUsedBits());
+    document::Bucket joinedBucket(computeJoinBucket(c));
+    assert(joinedBucket.getBucketId().getUsedBits() < c.bucketId.getUsedBits());
 
     std::vector<document::BucketId> sourceBuckets;
     if (c.getSiblingEntry().valid()) {
@@ -572,7 +574,7 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
     
     IdealStateOperation::UP op(new SplitOperation(
             c.component.getClusterName(),
-            BucketAndNodes(c.bucketId, c.entry->getNodes()),
+            BucketAndNodes(c.getBucket(), c.entry->getNodes()),
             getHighestUsedBits(c.entries),
             0,
             0));
@@ -842,7 +844,7 @@ SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
 
     if (result.shouldMerge()) {
         IdealStateOperation::UP op(
-                new MergeOperation(BucketAndNodes(c.bucketId, result.nodes()),
+                new MergeOperation(BucketAndNodes(c.getBucket(), result.nodes()),
                                    c.distributorConfig.getMaxNodesPerMerge()));
         op->setPriority(result.priority());
         op->setDetailedReason(result.reason());
@@ -986,7 +988,7 @@ DeleteExtraCopiesStateChecker::check(StateChecker::Context& c)
     if (!removedCopies.empty()) {
         IdealStateOperation::UP ro(new RemoveBucketOperation(
                 c.component.getClusterName(),
-                BucketAndNodes(c.bucketId, removedCopies)));
+                BucketAndNodes(c.getBucket(), removedCopies)));
 
         ro->setPriority(c.distributorConfig.getMaintenancePriorities()
                         .deleteBucketCopy);
@@ -1087,7 +1089,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
     }
     auto op = std::make_unique<SetBucketStateOperation>(
             c.component.getClusterName(),
-            BucketAndNodes(c.bucketId, operationNodes),
+            BucketAndNodes(c.getBucket(), operationNodes),
             activeNodeIndexes);
 
     // If activeNodes > 1, we're dealing with a active-per-leaf group case and
@@ -1127,7 +1129,7 @@ GarbageCollectionStateChecker::check(Context& c)
         IdealStateOperation::UP op(
                 new GarbageCollectionOperation(
                         c.component.getClusterName(),
-                        BucketAndNodes(c.bucketId, c.entry->getNodes())));
+                        BucketAndNodes(c.getBucket(), c.entry->getNodes())));
 
         vespalib::asciistream reason;
         reason << "[Needs garbage collection: Last check at "

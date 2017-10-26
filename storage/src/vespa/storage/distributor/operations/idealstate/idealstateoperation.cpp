@@ -35,19 +35,26 @@ IdealStateOperation::~IdealStateOperation()
 {
 }
 
-BucketAndNodes::BucketAndNodes(const document::BucketId& id, uint16_t node)
-    : _id(id)
+BucketAndNodes::BucketAndNodes(const document::Bucket &bucket, uint16_t node)
+    : _bucket(bucket)
 {
     _nodes.push_back(node);
 }
 
-BucketAndNodes::BucketAndNodes(const document::BucketId& id,
+BucketAndNodes::BucketAndNodes(const document::Bucket &bucket,
                                const std::vector<uint16_t>& nodes)
-    : _id(id),
+    : _bucket(bucket),
       _nodes(nodes)
 {
     assert(!nodes.empty());
     std::sort(_nodes.begin(), _nodes.end());
+}
+
+void
+BucketAndNodes::setBucketId(const document::BucketId &id)
+{
+    document::Bucket newBucket(_bucket.getBucketSpace(), id);
+    _bucket = newBucket;
 }
 
 std::string
@@ -65,7 +72,7 @@ BucketAndNodes::toString() const
     }
 
     ost <<  "] ";
-    ost <<  _id;
+    ost <<  _bucket.toString();
     return ost.str();
 }
 

@@ -32,7 +32,7 @@ public:
        @param id Target bucket
        @param node Target node
     */
-    BucketAndNodes(const document::BucketId& id, uint16_t node);
+    BucketAndNodes(const document::Bucket &id, uint16_t node);
 
     /**
        Constructor for operations with multiple target nodes.
@@ -40,7 +40,7 @@ public:
        @param id Target bucket
        @param nodes Target nodes
     */
-    BucketAndNodes(const document::BucketId& id,
+    BucketAndNodes(const document::Bucket &id,
                    const std::vector<uint16_t>& nodes);
 
     /**
@@ -48,16 +48,16 @@ public:
 
        @param id The new target bucket
     */
-    void setBucketId(const document::BucketId& id) { _id = id; }
+    void setBucketId(const document::BucketId &id);
 
     /**
        Returns the target bucket.
 
        @return Returns the target bucket.
     */
-    const document::BucketId& getBucketId() const { return _id; }
+    document::BucketId getBucketId() const { return _bucket.getBucketId(); }
 
-    document::Bucket getBucket() const { return document::Bucket(document::BucketSpace::placeHolder(), _id); }
+    document::Bucket getBucket() const { return _bucket; }
 
     /**
        Returns the target nodes
@@ -81,7 +81,7 @@ public:
     std::string toString() const;
 
 private:
-    document::BucketId _id;
+    document::Bucket      _bucket;
     std::vector<uint16_t> _nodes;
 };
 
@@ -142,7 +142,7 @@ public:
 
        @return The target bucket.
     */
-    const document::BucketId& getBucketId() const { return _bucketAndNodes.getBucketId(); }
+    document::BucketId getBucketId() const { return _bucketAndNodes.getBucketId(); }
 
     document::Bucket getBucket() const { return _bucketAndNodes.getBucket(); }
 
