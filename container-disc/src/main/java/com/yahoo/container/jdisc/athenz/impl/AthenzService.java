@@ -34,7 +34,8 @@ public class AthenzService {
                 return objectMapper.readValue(response.getEntity().getContent(), InstanceIdentity.class);
             } else {
                 String message = EntityUtils.toString(response.getEntity());
-                throw new RuntimeException(String.format("Unable to get identity. http code/message: %d/%s" + response.getStatusLine().getStatusCode(), message));
+                throw new RuntimeException(String.format("Unable to get identity. http code/message: %d/%s",
+                                                         response.getStatusLine().getStatusCode(), message));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
