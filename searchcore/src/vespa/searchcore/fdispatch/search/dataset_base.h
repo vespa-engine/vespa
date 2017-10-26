@@ -9,6 +9,7 @@
 #include <vespa/fastos/time.h>
 #include <vespa/fastos/cond.h>
 #include <mutex>
+#include <condition_variable>
 
 class FastS_TimeKeeper;
 
@@ -85,14 +86,16 @@ public:
         queryQueued_t(const queryQueued_t &);
         queryQueued_t& operator=(const queryQueued_t &);
 
-        FastOS_Cond _queueCond;
+        std::mutex _queuedLock;
+        std::condition_variable _queuedCond;
         queryQueued_t *_next;
         bool _isAborted;
         bool _isQueued;
         FNET_Task *const _deQueuedTask;
     public:
         queryQueued_t(FNET_Task *const deQueuedTask)
-            : _queueCond(),
+            : _queuedLock(),
+              _queuedCond(),
               _next(NULL),
               _isAborted(false),
               _isQueued(false),
@@ -105,20 +108,18 @@ public:
             FastS_assert(!_isQueued);
         }
         void Wait() {
-            _queueCond.Lock();
+            std::unique_lock<std::mutex> queuedGuard(_queuedLock);
             while (_isQueued) {
-                _queueCond.Wait();
+                _queuedCond.wait(queuedGuard);
             }
-            _queueCond.Unlock();
         }
         bool IsAborted() const { return _isAborted; }
         void MarkAbort() { _isAborted = true; }
         void MarkQueued() { _isQueued = true; }
         void UnmarkQueued() { _isQueued = false; }
         bool IsQueued() const { return _isQueued; }
-        void LockCond() { _queueCond.Lock(); }
-        void UnlockCond() { _queueCond.Unlock(); }
-        void SignalCond() { _queueCond.Signal(); }
+        std::unique_lock<std::mutex> getQueuedGuard() { return std::unique_lock<std::mutex>(_queuedLock); }
+        void SignalCond() { _queuedCond.notify_one(); }
 
         FNET_Task *
         getDequeuedTask() const

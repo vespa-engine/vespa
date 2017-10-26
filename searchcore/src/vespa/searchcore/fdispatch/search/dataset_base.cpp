@@ -117,7 +117,7 @@ FastS_DataSetBase::DeQueueHeadWakeup_HasLock()
     queryQueued_t *queued;
     queued = _queryQueue.GetFirst();
     FastS_assert(queued->IsQueued());
-    queued->LockCond();
+    auto queuedGuard(queued->getQueuedGuard());
     //SetNowFromMonitor();
     _queryQueue.DeQueueHead();
     queued->UnmarkQueued();
@@ -127,7 +127,6 @@ FastS_DataSetBase::DeQueueHeadWakeup_HasLock()
     } else {
         queued->SignalCond();
     }
-    queued->UnlockCond();
 }
 
 
