@@ -7,7 +7,6 @@
 #include <vespa/searchcore/util/log.h>
 #include <atomic>
 #include <vespa/fastos/time.h>
-#include <vespa/fastos/cond.h>
 #include <mutex>
 #include <condition_variable>
 

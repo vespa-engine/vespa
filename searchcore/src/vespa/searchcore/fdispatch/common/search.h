@@ -8,7 +8,6 @@
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/fastos/cond.h>
 #include <limits>
 #include <mutex>
 #include <condition_variable>
