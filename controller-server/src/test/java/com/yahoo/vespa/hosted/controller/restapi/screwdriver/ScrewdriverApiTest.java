@@ -156,7 +156,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         // Unknown application
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/foo/application/bar",
                                    new byte[0], Request.Method.POST),
-                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application 'foo.bar'\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"foo.bar not found\"}");
 
         // Invalid job
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +

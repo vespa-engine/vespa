@@ -242,7 +242,8 @@ public class DeploymentTrigger {
         try (Lock lock = applications().lock(applicationId)) {
             Application application = applications().require(applicationId);
             if (application.deploying().isPresent()  && ! application.deploymentJobs().hasFailures())
-                throw new IllegalArgumentException("Could not upgrade " + application + ": A change is already in progress");
+                throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " + 
+                                                   application.deploying() + " is already in progress");
             application = application.withDeploying(Optional.of(change));
             if (change instanceof Change.ApplicationChange)
                 application = application.withOutstandingChange(false);
@@ -345,74 +346,60 @@ public class DeploymentTrigger {
      */
     private Application trigger(JobType jobType, Application application, boolean first, String cause, Lock lock) {
         if (isRunningProductionJob(application)) return application;
-        return triggerAllowParallel(jobType, application, first, cause, lock);
+        return triggerAllowParallel(jobType, application, first, false, cause, lock);
     }
 
     private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
         if (isRunningProductionJob(application)) return application;
         for (JobType job : jobs)
-            application = triggerAllowParallel(job, application, false, cause, lock);
+            application = triggerAllowParallel(job, application, false, false, cause, lock);
         return application;
     }
 
     /**
-     * Trigger a job for an application 
+     * Trigger a job for an application, if allowed
      * 
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
      * @param first whether to trigger the job before other jobs
+     * @param force true to diable checks which should normally prevent this triggering from happening
      * @param cause describes why the job is triggered
-     * @return the application in the triggered state, which *must* be stored by the caller
+     * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
      */
-    private Application triggerAllowParallel(JobType jobType, Application application, boolean first, String cause, Lock lock) {
-        if (jobType == null) { // previous was last job
-            return application;
-        }
-
-        // Note: We could make a more fine-grained and more correct determination about whether to block 
-        //       by instead basing the decision on what is currently deployed in the zone. However,
-        //       this leads to some additional corner cases, and the possibility of blocking an application
-        //       fix to a version upgrade, so not doing it now
-        if (jobType.isProduction() && application.deployingBlocked(clock.instant())) {
-            return application;
-        }
-        
-        if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) {
-            return application;
-        }
-
-        // TODO: Remove when we can determine why this occurs
-        if (jobType != JobType.component && ! application.deploying().isPresent()) {
-            log.warning(String.format("Want to trigger %s for %s with reason %s, but this application is not " +
-                                              "currently deploying a change",
-                                      jobType, application, cause));
-            return application;
-        }
-
-        if  ( ! deploysTo(application, jobType)) {
-            return application;
-        }
-
-        // Note that this allows a new change to catch up and prevent an older one from continuing
+    public Application triggerAllowParallel(JobType jobType, Application application, 
+                                            boolean first, boolean force, String cause, Lock lock) {
+        if (jobType == null) return application; // we are passed null when the last job has been reached
+        // Never allow untested changes to go through
+        // Note that this may happen because a new change catches up and prevents an older one from continuing
         if ( ! application.deploymentJobs().isDeployableTo(jobType.environment(), application.deploying())) {
             log.warning(String.format("Want to trigger %s for %s with reason %s, but change is untested", jobType,
                                       application, cause));
             return application;
         }
 
-        // Ignore applications that are not associated with a project
-        if ( ! application.deploymentJobs().projectId().isPresent()) {
-            return application;
-        }
-
+        if ( ! force && ! allowedTriggering(jobType, application)) return application;
         log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                cause));
         buildSystem.addJob(application.id(), jobType, first);
-
         return application.withJobTriggering(jobType, application.deploying(), clock.instant(), controller);
     }
 
+    /** Returns true if the given proposed job triggering should be effected */
+    private boolean allowedTriggering(JobType jobType, Application application) {
+        // Note: We could make a more fine-grained and more correct determination about whether to block 
+        //       by instead basing the decision on what is currently deployed in the zone. However,
+        //       this leads to some additional corner cases, and the possibility of blocking an application
+        //       fix to a version upgrade, so not doing it now
+        if (jobType.isProduction() && application.deployingBlocked(clock.instant())) return false;
+        if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
+        if  ( ! deploysTo(application, jobType)) return false;
+        // Ignore applications that are not associated with a project
+        if ( ! application.deploymentJobs().projectId().isPresent()) return false;
+        
+        return true;
+    }
+    
     private boolean isRunningProductionJob(Application application) {
         return application.deploymentJobs().jobStatus().entrySet().stream()
                 .anyMatch(entry -> entry.getKey().isProduction() && entry.getValue().isRunning(jobTimeoutLimit()));
