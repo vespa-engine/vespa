@@ -108,7 +108,7 @@ FastS_FNET_DataSet::Free()
 bool
 FastS_FNET_DataSet::isGoodRow(uint32_t rowId)
 {
-    LockDataset();
+    auto dsGuard(getDsGuard());
     uint64_t rowBit = 1ul << rowId;
     bool wasBad = ((_failedRowsBitmask & rowBit) != 0);
     bool isBad = false;
@@ -146,6 +146,5 @@ FastS_FNET_DataSet::isGoodRow(uint32_t rowId)
         LOG(info, "Row %d is now good again (%lu/%g active docs, coverage %ld/%ld)",
             rowId, candDocs, restAvg, nodesUp, configuredParts);
     }
-    UnlockDataset();
     return !isBad;
 }

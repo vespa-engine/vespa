@@ -337,28 +337,29 @@ FastS_EngineBase::HandlePingResponse(uint32_t partid,
         }
     }
 
-    _dataset->LockDataset();
-    if (changed)
-        _dataset->LinkOutPart_HasLock(this);
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        if (changed)
+            _dataset->LinkOutPart_HasLock(this);
 
-    _partid             = partid;
-    if (docstamp != _reported._docstamp) {
-        _reported._docstamp = docstamp;
+        _partid             = partid;
+        if (docstamp != _reported._docstamp) {
+            _reported._docstamp = docstamp;
+        }
+        _reported._mld      = mld;
+        _reported._maxNodes = maxnodes;
+        _reported._actNodes = nodes;
+        _reported._maxParts = maxparts;
+        _reported._actParts = parts;
+        if (_reported._activeDocs != activeDocs) {
+            _dataset->updateActiveDocs_HasLock(GetConfRowID(), activeDocs, _reported._activeDocs);
+            _reported._activeDocs = activeDocs;
+        }
+        _isUp               = true;
+
+        _dataset->LinkInPart_HasLock(this);
+
     }
-    _reported._mld      = mld;
-    _reported._maxNodes = maxnodes;
-    _reported._actNodes = nodes;
-    _reported._maxParts = maxparts;
-    _reported._actParts = parts;
-    if (_reported._activeDocs != activeDocs) {
-        _dataset->updateActiveDocs_HasLock(GetConfRowID(), activeDocs, _reported._activeDocs);
-        _reported._activeDocs = activeDocs;
-    }
-    _isUp               = true;
-
-    _dataset->LinkInPart_HasLock(this);
-
-    _dataset->UnlockDataset();
     _dataset->ScheduleCheckTempFail();
 
     if (onlined) {
@@ -383,13 +384,14 @@ FastS_EngineBase::HandleLostConnection()
         _stats._floptime.SetNow();
         LOG(warning, "Search node %s down", _config._name);
 
-        _dataset->LockDataset();
-        _dataset->LinkOutPart_HasLock(this);
-        PossCount noDocs;
-        noDocs.valid = true;
-        _dataset->updateActiveDocs_HasLock(GetConfRowID(), noDocs, _reported._activeDocs);
-        _reported._activeDocs = noDocs;
-        _dataset->UnlockDataset();
+        {
+            auto dsGuard(_dataset->getDsGuard());
+            _dataset->LinkOutPart_HasLock(this);
+            PossCount noDocs;
+            noDocs.valid = true;
+            _dataset->updateActiveDocs_HasLock(GetConfRowID(), noDocs, _reported._activeDocs);
+            _reported._activeDocs = noDocs;
+        }
         _dataset->ScheduleCheckTempFail();
         HandleDown(); // classic: NotifyVirtualConnsDown
     }

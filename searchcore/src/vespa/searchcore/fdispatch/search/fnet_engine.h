@@ -95,8 +95,7 @@ public:
                       FastS_FNET_DataSet *dataset);
     virtual ~FastS_FNET_Engine();
 
-    void LockDataSet()   { _dataset->LockDataset();   }
-    void UnlockDataSet() { _dataset->UnlockDataset(); }
+    std::unique_lock<std::mutex> getDsGuard() { return _dataset->getDsGuard(); }
 
     void StartWarnTimer();
     void ScheduleConnect(double delay);

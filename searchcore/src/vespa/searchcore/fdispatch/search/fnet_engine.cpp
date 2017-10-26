@@ -64,10 +64,12 @@ FastS_FNET_Engine::Connect()
             _transport->Connect(_spec.c_str(),
                                 &FS4PersistentPacketStreamer::Instance,
                                 this);
-        LockDataSet();
-        FNET_Connection *oldConn = _conn;
-        _conn = newConn;
-        UnlockDataSet();
+        FNET_Connection *oldConn;
+        {
+            auto dsGuard(getDsGuard());
+            oldConn = _conn;
+            _conn = newConn;
+        }
         if (oldConn != NULL)
             oldConn->SubRef();
         if (newConn == NULL && !IsRealBad())
@@ -81,10 +83,12 @@ FastS_FNET_Engine::Disconnect()
 {
     if (_conn != NULL) {
         _conn->CloseAdminChannel();
-        LockDataSet();
-        FNET_Connection *conn = _conn;
-        _conn = NULL;
-        UnlockDataSet();
+        FNET_Connection *conn;
+        {
+            auto dsGuard(getDsGuard());
+            conn = _conn;
+            _conn = NULL;
+        }
         _transport->Close(conn, /* needref = */ false);
     }
 }
@@ -116,9 +120,8 @@ FastS_FNET_Engine::~FastS_FNET_Engine()
     _connectTask.Kill();
     Disconnect();
     if (IsUp()) {
-        LockDataSet();
+        auto dsGuard(getDsGuard());
         _dataset->LinkOutPart_HasLock(this);
-        UnlockDataSet();
     }
     if (_monitorQuery != NULL) {
         _monitorQuery->Free();

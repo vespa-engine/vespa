@@ -229,9 +229,10 @@ FastS_DataSetCollection::CreateSearch(uint32_t dataSetID,
         ret = new FastS_FailedSearch(dataSetID, false,
                                      search::engine::ECODE_ILLEGAL_DATASET, NULL);
     } else {
-        dataset->LockDataset();
-        dataset->SetActiveQuery_HasLock();
-        dataset->UnlockDataset();
+        {
+            auto dsGuard(dataset->getDsGuard());
+            dataset->SetActiveQuery_HasLock();
+        }
         /* XXX: Semantic change: precounted as active in dataset */
         ret = dataset->CreateSearch(this, timeKeeper, /* async = */ false);
     }
@@ -247,9 +248,8 @@ FastS_DataSetCollection::CheckQueryQueues(FastS_TimeKeeper *timeKeeper)
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);
 
         if (dataset != NULL) {
-            dataset->LockDataset();
+            auto dsGuard(dataset->getDsGuard());
             dataset->CheckQueryQueue_HasLock(timeKeeper);
-            dataset->UnlockDataset();
         }
     }
 }
@@ -262,9 +262,8 @@ FastS_DataSetCollection::AbortQueryQueues()
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);
 
         if (dataset != NULL) {
-            dataset->LockDataset();
+            auto dsGuard(dataset->getDsGuard());
             dataset->AbortQueryQueue_HasLock();
-            dataset->UnlockDataset();
         }
     }
 }

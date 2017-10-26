@@ -174,13 +174,13 @@ public:
     PossCount getActiveDocs() const { return _stateOfRows.getActiveDocs(); }
     uint32_t getRandomWeightedRow() const;
 
-    FastS_EngineBase * getPartition(const FastOS_Mutex & lock, uint32_t partid);
-    FastS_EngineBase * getPartition(const FastOS_Mutex & lock, uint32_t partid, uint32_t rowid);
+    FastS_EngineBase * getPartition(const std::unique_lock<std::mutex> &dsGuard, uint32_t partid);
+    FastS_EngineBase * getPartition(const std::unique_lock<std::mutex> &dsGuard, uint32_t partid, uint32_t rowid);
 
     size_t countNodesUpInRow_HasLock(uint32_t rowid);
 
-    FastS_EngineBase * getPartitionMLD(const FastOS_Mutex & lock, uint32_t partid, bool mld);
-    FastS_EngineBase * getPartitionMLD(const FastOS_Mutex & lock, uint32_t partid, bool mld, uint32_t rowid);
+    FastS_EngineBase * getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partid, bool mld);
+    FastS_EngineBase * getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partid, bool mld, uint32_t rowid);
 
     std::vector<FastS_EngineBase *> getPartEngines(uint32_t partition);
 

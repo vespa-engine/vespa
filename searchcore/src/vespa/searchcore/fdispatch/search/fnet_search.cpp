@@ -103,11 +103,11 @@ FastS_FNET_SearchNode::NT_InitMerge(uint32_t *numDocs,
 
 
 FastS_EngineBase *
-FastS_FNET_SearchNode::getPartition(const FastOS_Mutex & dsMutex, bool userow, FastS_FNET_DataSet *dataset)
+FastS_FNET_SearchNode::getPartition(const std::unique_lock<std::mutex> &dsGuard, bool userow, FastS_FNET_DataSet *dataset)
 {
     return ((userow)
-        ? dataset->getPartitionMLD(dsMutex, getPartID(), _flags._docsumMld, _docsumRow)
-        : dataset->getPartitionMLD(dsMutex, getPartID(), _flags._docsumMld));
+        ? dataset->getPartitionMLD(dsGuard, getPartID(), _flags._docsumMld, _docsumRow)
+        : dataset->getPartitionMLD(dsGuard, getPartID(), _flags._docsumMld));
 }
 
 
@@ -335,26 +335,26 @@ FastS_FNET_Search::ConnectQueryNodes()
     }
     EngineNodeMap engines;
     engines.reserve(_nodes.size());
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        FastS_EngineBase *engine = NULL;
-        if (_dataset->useFixedRowDistribution()) {
-            engine = _dataset->getPartition(dsLock, i, fixedRow);
-            LOG(debug, "FixedRow: getPartition(part=%u, row=%u) -> engine(%s)", i, fixedRow, (engine != nullptr ? engine->GetName() : "null"));
-        } else {
-            engine = _dataset->getPartition(dsLock, i);
-        }
-        if (engine != nullptr) {
-            LOG(debug, "Wanted part=%d, engine={name=%s, row=%d, partid=%d}", i, engine->GetName(), engine->GetConfRowID(), engine->GetPartID());
-            if (engine != nullptr) {
-                engines.emplace_back(engine, getNode(i));
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        for (uint32_t i = 0; i < _nodes.size(); i++) {
+            FastS_EngineBase *engine = NULL;
+            if (_dataset->useFixedRowDistribution()) {
+                engine = _dataset->getPartition(dsGuard, i, fixedRow);
+                LOG(debug, "FixedRow: getPartition(part=%u, row=%u) -> engine(%s)", i, fixedRow, (engine != nullptr ? engine->GetName() : "null"));
+            } else {
+                engine = _dataset->getPartition(dsGuard, i);
             }
-        } else {
-            LOG(debug, "No engine for part %d", i);
+            if (engine != nullptr) {
+                LOG(debug, "Wanted part=%d, engine={name=%s, row=%d, partid=%d}", i, engine->GetName(), engine->GetConfRowID(), engine->GetPartID());
+                if (engine != nullptr) {
+                    engines.emplace_back(engine, getNode(i));
+                }
+            } else {
+                LOG(debug, "No engine for part %d", i);
+            }
         }
     }
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -370,19 +370,19 @@ FastS_FNET_Search::ConnectEstimateNodes()
     uint32_t partcnt = 0;
 
     EngineNodeMap engines;
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    while (partcnt < _dataset->GetEstimateParts() && trycnt < _estPartCutoff) {
-        FastS_EngineBase *engine = _dataset->getPartition(dsLock, partid);
-        if (engine != NULL) {
-            engines.emplace_back(engine, getNode(partid));
-            partcnt++;
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        while (partcnt < _dataset->GetEstimateParts() && trycnt < _estPartCutoff) {
+            FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partid);
+            if (engine != NULL) {
+                engines.emplace_back(engine, getNode(partid));
+                partcnt++;
+            }
+            trycnt++;
+            partid = (partid + 1) % _estPartCutoff;
         }
-        trycnt++;
-        partid = (partid + 1) % _estPartCutoff;
+        _estParts = partcnt;
     }
-    _estParts = partcnt;
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -394,11 +394,10 @@ void FastS_FNET_SearchNode::Connect(FastS_FNET_Engine *engine)
 
     _engine = engine;
     _flags._needSubCost = true;
-    _engine->LockDataSet();
+    auto dsGuard(_engine->getDsGuard());
     _channel = _engine->OpenChannel_HasDSLock(this);
     _rowid   = _engine->GetConfRowID();
     _stamp   = _engine->GetTimeStamp();
-    _engine->UnlockDataSet();
 }
 
 void FastS_FNET_SearchNode::Connect_HasDSLock(FastS_FNET_Engine *engine)
@@ -434,30 +433,30 @@ void FastS_FNET_Search::connectSearchPath(const SearchPath::Element &elem,
                                           uint32_t dispatchLevel)
 {
     EngineNodeMap engines;
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    if (!elem.hasRow()) {
-        for (size_t partId : elem.nodes()) {
-            if (partId < _nodes.size()) {
-                FastS_EngineBase *engine = _dataset->getPartition(dsLock, partId);
-                LOG(debug, "searchpath='%s', partId=%ld, dispatchLevel=%u", spec.c_str(), partId, dispatchLevel);
-                if (engine != NULL) {
-                    engines.emplace_back(engine, getNode(partId));
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        if (!elem.hasRow()) {
+            for (size_t partId : elem.nodes()) {
+                if (partId < _nodes.size()) {
+                    FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partId);
+                    LOG(debug, "searchpath='%s', partId=%ld, dispatchLevel=%u", spec.c_str(), partId, dispatchLevel);
+                    if (engine != NULL) {
+                        engines.emplace_back(engine, getNode(partId));
+                    }
                 }
             }
-        }
-    } else {
-        for (size_t partId : elem.nodes()) {
-            if (partId < _nodes.size()) {
-                FastS_EngineBase *engine = _dataset->getPartition(dsLock, partId, elem.row());
-                LOG(debug, "searchpath='%s', partId=%ld, row=%ld, dispatchLevel=%u", spec.c_str(), partId, elem.row(), dispatchLevel);
-                if (engine != NULL) {
-                    engines.emplace_back(engine, getNode(partId));
+        } else {
+            for (size_t partId : elem.nodes()) {
+                if (partId < _nodes.size()) {
+                    FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partId, elem.row());
+                    LOG(debug, "searchpath='%s', partId=%ld, row=%ld, dispatchLevel=%u", spec.c_str(), partId, elem.row(), dispatchLevel);
+                    if (engine != NULL) {
+                        engines.emplace_back(engine, getNode(partId));
+                    }
                 }
             }
         }
     }
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -471,26 +470,26 @@ FastS_FNET_Search::ConnectDocsumNodes(bool ignoreRow)
     bool userow = (_dataset->GetRowBits() > 0) && !ignoreRow;
 
     EngineNodeMap engines;
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    for (auto & node : _nodes) {
-        if (node._gdx != NULL) {
-            FastS_EngineBase *engine = node.getPartition(dsLock, userow, _dataset);
-            if (engine != nullptr) {
-                engines.emplace_back(engine, &node);
-            }
-        }
-        for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
-            FastS_FNET_SearchNode *eNode = *iter;
-            if (eNode->_gdx != NULL) {
-                FastS_EngineBase *engine = eNode->getPartition(dsLock, userow, _dataset);
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        for (auto & node : _nodes) {
+            if (node._gdx != NULL) {
+                FastS_EngineBase *engine = node.getPartition(dsGuard, userow, _dataset);
                 if (engine != nullptr) {
-                    engines.emplace_back(engine, eNode);
+                    engines.emplace_back(engine, &node);
+                }
+            }
+            for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
+                FastS_FNET_SearchNode *eNode = *iter;
+                if (eNode->_gdx != NULL) {
+                    FastS_EngineBase *engine = eNode->getPartition(dsGuard, userow, _dataset);
+                    if (engine != nullptr) {
+                        engines.emplace_back(engine, eNode);
+                    }
                 }
             }
         }
     }
-    dsLock.Unlock();
     connectNodes(engines);
 }
 

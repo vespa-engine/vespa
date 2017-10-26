@@ -141,9 +141,8 @@ FastS_DataSetBase::SetActiveQuery_HasLock()
 void
 FastS_DataSetBase::SetActiveQuery()
 {
-    LockDataset();
+    auto dsGuard(getDsGuard());
     SetActiveQuery_HasLock();
-    UnlockDataset();
 }
 
 
@@ -160,9 +159,8 @@ FastS_DataSetBase::ClearActiveQuery_HasLock(FastS_TimeKeeper *timeKeeper)
 void
 FastS_DataSetBase::ClearActiveQuery(FastS_TimeKeeper *timeKeeper)
 {
-    LockDataset();
+    auto dsGuard(getDsGuard());
     ClearActiveQuery_HasLock(timeKeeper);
-    UnlockDataset();
 }
 
 
@@ -272,7 +270,7 @@ FastS_DataSetBase::UpdateSearchTime(double tnow,
                                     double elapsed, bool timedout)
 {
     int slot;
-    LockDataset();
+    auto dsGuard(getDsGuard());
     slot = (int) (elapsed * 10);
     if (slot >= _total._timestatslots)
         slot = _total._timestatslots - 1;
@@ -280,7 +278,6 @@ FastS_DataSetBase::UpdateSearchTime(double tnow,
         slot = 0;
     _total._timestats[slot]++;
     _total._normalTimeStat.Update(tnow, elapsed, timedout);
-    UnlockDataset();
 }
 
 
@@ -302,7 +299,7 @@ void
 FastS_DataSetBase::addPerformance(FastS_QueryPerf &qp)
 {
     FastS_TimeStatTotals totals;
-    LockDataset();
+    auto dsGuard(getDsGuard());
     _total._normalTimeStat.AddTotal(&totals);
     qp.queueLen   += _queryQueue.GetQueueLen();
     qp.activeCnt  += _queryQueue.GetActiveQueries();
@@ -310,7 +307,6 @@ FastS_DataSetBase::addPerformance(FastS_QueryPerf &qp)
     qp.queryTime  += totals._totalAccTime;
     qp.dropCnt    += _total._nOverload;
     qp.timeoutCnt += _total._nTimedOut;
-    UnlockDataset();
 }
 
 

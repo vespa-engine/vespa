@@ -8,6 +8,7 @@
 #include <atomic>
 #include <vespa/fastos/time.h>
 #include <vespa/fastos/cond.h>
+#include <mutex>
 
 class FastS_TimeKeeper;
 
@@ -164,7 +165,7 @@ public:
 
 protected:
     FastS_AppContext *_appCtx;
-    FastOS_Mutex  _lock;
+    std::mutex   _lock;
     FastOS_Time  _createtime;
     queryQueue_t _queryQueue;
     total_t      _total;
@@ -182,9 +183,7 @@ public:
 
     // locking stuff
     //--------------
-    void LockDataset()   { _lock.Lock();   }
-    void UnlockDataset() { _lock.Unlock(); }
-    FastOS_Mutex & getMutex() { return _lock; }
+    std::unique_lock<std::mutex> getDsGuard() { return std::unique_lock<std::mutex>(_lock); }
 
     // query queue related methods
     //----------------------------
