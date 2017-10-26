@@ -214,7 +214,7 @@ public:
     };
 
 private:
-    FastOS_Mutex             _lock;
+    std::mutex               _lock;
     FastS_TimeKeeper        *_timeKeeper;
     double                   _startTime;
     Timeout                  _timeout;
@@ -272,11 +272,8 @@ private:
     uint32_t getFixedRowCandidate();
     uint32_t getHashedRow() const;
 
-    void Lock()   { _lock.Lock();   }
-    void Unlock() { _lock.Unlock(); }
-
-    bool BeginFNETWork();
-    void EndFNETWork();
+    std::unique_lock<std::mutex> BeginFNETWork();
+    void EndFNETWork(std::unique_lock<std::mutex> searchGuard);
 
     void EncodePartIDs(uint32_t partid, uint32_t rowid, bool mld,
                        FS4Packet_QUERYRESULTX::FS4_hit *pt,
