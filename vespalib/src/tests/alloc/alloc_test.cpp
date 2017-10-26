@@ -127,6 +127,9 @@ TEST("auto alloced heap alloc can not be extended, even if resize will be mmappe
     EXPECT_EQUAL(100ul, buf.size());
 }
 
+// Temporary disable test as it depends on sysctl setting vm.legacy_va_layout = 0
+// Setting it too true change the order address space is used by OS.
+#if 0
 TEST("auto alloced mmap alloc can be extended if room") {
     static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE*2;
     Alloc reserved = Alloc::alloc(SZ);
@@ -202,6 +205,8 @@ TEST("mmap alloc can not be extended if no room") {
     EXPECT_EQUAL(oldPtr, buf.get());
     EXPECT_EQUAL(4096ul, buf.size());
 }
+
+#endif
 
 TEST("heap alloc can not be shrinked") {
     Alloc buf = Alloc::allocHeap(101);
