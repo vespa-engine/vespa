@@ -129,6 +129,10 @@ TEST("require that interpreted function instructions have expected size") {
     EXPECT_EQUAL(sizeof(InterpretedFunction::Instruction), 16u);
 }
 
+TEST("require that function pointers can be passed as instruction parameters") {
+    EXPECT_EQUAL(sizeof(&operation::Add::f), sizeof(uint64_t));
+}
+
 TEST("require that basic addition works") {
     Function function = Function::parse("a+10");
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
