@@ -7,6 +7,7 @@ import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -22,7 +23,6 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.container.Identity;
 import com.yahoo.vespa.model.builder.xml.dom.DomClientProviderBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomFilterBuilder;
@@ -38,6 +38,7 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.Identity;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -161,7 +162,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         // Athenz copper argos
-        addIdentity(spec, cluster);
+        addIdentity(spec, cluster, context.getDeployState().getProperties().configServerSpecs());
 
         //TODO: overview handler, see DomQrserverClusterBuilder
     }
@@ -689,12 +690,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentity(Element element, ContainerCluster cluster) {
+    private void addIdentity(Element element, ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs) {
         Element identityElement = XML.getChild(element, "identity");
         if(identityElement != null) {
             String domain = XML.getValue(XML.getChild(identityElement, "domain"));
             String service = XML.getValue(XML.getChild(identityElement, "service"));
-            Identity identity = new Identity(domain.trim(), service.trim());
+
+            // TODO: Inject the load balancer address. For now only add first configserver
+            String cfgHostName = configServerSpecs.stream().findFirst().map(ConfigServerSpec::getHostName)
+                    .orElse(""); // How to test this?
+
+            Identity identity = new Identity(domain.trim(), service.trim(), cfgHostName);
             cluster.setIdentity(identity);
         }
     }
