@@ -184,8 +184,8 @@ public class AthenzInstanceProviderServiceTest {
                                 .keyPathPrefix("dummy-path")
                                 .certDnsSuffix("dnsSuffix")
                                 .ztsUrl("localhost/zts")
-                                .athenzPrincipalHeaderName("Yahoo-Principal-Auth")
-                                .apiPath("/"));
+                                .athenzPrincipalHeaderName("Athenz-Principal-Auth")
+                                .apiPath(""));
 
     }
     private static boolean getStatus(HttpClient client) {
@@ -199,7 +199,7 @@ public class AthenzInstanceProviderServiceTest {
     }
 
     private static void assertInstanceConfirmationSucceeds(HttpClient client, PrivateKey privateKey) throws IOException {
-        HttpPost httpPost = new HttpPost("https://localhost:" + PORT + "/");
+        HttpPost httpPost = new HttpPost("https://localhost:" + PORT + "/instance");
         httpPost.setEntity(createInstanceConfirmation(privateKey));
         HttpResponse response = client.execute(httpPost);
         assertThat(response.getStatusLine().getStatusCode(), equalTo(200));

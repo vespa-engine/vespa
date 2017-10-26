@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
-import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -12,9 +11,10 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertific
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.CertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.FileBackedKeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentGenerator;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentServlet;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceConfirmationServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceValidator;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.ProviderServiceServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.StatusServlet;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.eclipse.jetty.server.Server;
@@ -89,11 +89,14 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         server.addConnector(connector);
 
         ServletHandler handler = new ServletHandler();
-        ProviderServiceServlet providerServiceServlet =
-                new ProviderServiceServlet(
-                        new InstanceValidator(keyProvider),
-                        new IdentityDocumentGenerator(config, nodeRepository, zone, keyProvider));
-        handler.addServletWithMapping(new ServletHolder(providerServiceServlet), config.apiPath());
+        InstanceConfirmationServlet instanceConfirmationServlet =
+                new InstanceConfirmationServlet(new InstanceValidator(keyProvider));
+        handler.addServletWithMapping(new ServletHolder(instanceConfirmationServlet), config.apiPath() + "/instance");
+
+        IdentityDocumentServlet identityDocumentServlet =
+                new IdentityDocumentServlet(new IdentityDocumentGenerator(config, nodeRepository, zone, keyProvider));
+        handler.addServletWithMapping(new ServletHolder(identityDocumentServlet), config.apiPath() + "/identity-document");
+
         handler.addServletWithMapping(StatusServlet.class, "/status.html");
         server.setHandler(handler);
         return server;
