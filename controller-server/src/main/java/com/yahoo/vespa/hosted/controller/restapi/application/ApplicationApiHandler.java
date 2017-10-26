@@ -1016,7 +1016,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (List<? extends User> contactList : contacts) {
             Cursor list = lists.addArray();
             for (User contact : contactList)
-                list.addString(contact.toString());
+                list.addString(contact.displayName());
         }
         return slime;
     }
