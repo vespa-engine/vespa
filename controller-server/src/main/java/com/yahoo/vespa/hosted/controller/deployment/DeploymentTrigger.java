@@ -368,9 +368,10 @@ public class DeploymentTrigger {
      */
     public Application triggerAllowParallel(JobType jobType, Application application, 
                                             boolean first, boolean force, String cause, Lock lock) {
+        if (jobType == null) return application; // we are passed null when the last job has been reached
         // Never allow untested changes to go through
         // Note that this may happen because a new change catches up and prevents an older one from continuing
-        if ( jobType!= null && ! application.deploymentJobs().isDeployableTo(jobType.environment(), application.deploying())) {
+        if ( ! application.deploymentJobs().isDeployableTo(jobType.environment(), application.deploying())) {
             log.warning(String.format("Want to trigger %s for %s with reason %s, but change is untested", jobType,
                                       application, cause));
             return application;
@@ -386,7 +387,6 @@ public class DeploymentTrigger {
 
     /** Returns true if the given proposed job triggering should be effected */
     private boolean allowedTriggering(JobType jobType, Application application) {
-        if (jobType == null) return false; // we are passed null when the last job has been reached
         // Note: We could make a more fine-grained and more correct determination about whether to block 
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
