@@ -2,6 +2,7 @@
 
 #include "memory_flush_config_updater.h"
 #include <vespa/log/log.h>
+
 LOG_SETUP(".proton.server.memory_flush_config_updater");
 
 namespace proton {
@@ -50,17 +51,19 @@ MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &,
 void
 MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard)
 {
-    MemoryFlush::Config newConfig = convertConfig(_currConfig);
+    MemoryFlush::Config newConfig = convertConfig(_currConfig, _memory);
     considerUseConservativeDiskMode(guard, newConfig);
     considerUseConservativeMemoryMode(guard, newConfig);
     _flushStrategy->setConfig(newConfig);
 }
 
 MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
-                                                   const ProtonConfig::Flush::Memory &config)
+                                                   const ProtonConfig::Flush::Memory &config,
+                                                   const HwInfo::Memory &memory)
     : _mutex(),
       _flushStrategy(flushStrategy),
       _currConfig(config),
+      _memory(memory),
       _currState(),
       _useConservativeDiskMode(false),
       _useConservativeMemoryMode(false)
@@ -85,29 +88,35 @@ MemoryFlushConfigUpdater::notifyDiskMemUsage(DiskMemUsageState newState)
 
 namespace {
 
-static constexpr size_t TOTAL_HARD_MEMORY_LIMIT = 16 * 1024 * 1024 * 1024ul;
-static constexpr size_t EACH_HARD_MEMORY_LIMIT = 12 * 1024 * 1024 * 1024ul;
+size_t
+getHardMemoryLimit(const HwInfo::Memory &memory)
+{
+    return std::max((size_t) memory.sizeBytes() / 4,
+                    (size_t) 16ul * 1024ul * 1024ul * 1024ul);
+}
 
 }
 
 MemoryFlush::Config
-MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config)
+MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config,
+                                        const HwInfo::Memory &memory)
 {
+    const size_t hardMemoryLimit = getHardMemoryLimit(memory);
     size_t totalMaxMemory = config.maxmemory;
-    if (totalMaxMemory > TOTAL_HARD_MEMORY_LIMIT) {
+    if (totalMaxMemory > hardMemoryLimit) {
         LOG(info, "flush.memory.maxmemory=%ld cannot"
-            " be set above the hard limit of %ld (16GB) so we cap it to the hard limit",
+            " be set above the hard limit of %ld so we cap it to the hard limit",
             config.maxmemory,
-            TOTAL_HARD_MEMORY_LIMIT);
-        totalMaxMemory = TOTAL_HARD_MEMORY_LIMIT;
+            hardMemoryLimit);
+        totalMaxMemory = hardMemoryLimit;
     }
     size_t eachMaxMemory = config.each.maxmemory;
-    if (eachMaxMemory > EACH_HARD_MEMORY_LIMIT) {
+    if (eachMaxMemory > hardMemoryLimit) {
         LOG(info, "flush.memory.each.maxmemory=%ld cannot"
-            " be set above the hard limit of %ld (12GB) so we cap it to the hard limit",
+            " be set above the hard limit of %ld so we cap it to the hard limit",
             config.maxmemory,
-            EACH_HARD_MEMORY_LIMIT);
-        eachMaxMemory = EACH_HARD_MEMORY_LIMIT;
+            hardMemoryLimit);
+        eachMaxMemory = hardMemoryLimit;
     }
     return MemoryFlush::Config(totalMaxMemory,
                                config.maxtlssize,
