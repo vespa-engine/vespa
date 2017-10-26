@@ -13,6 +13,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.Rotation;
@@ -872,6 +873,11 @@ public final class ContainerCluster
     @Override
     public void getConfig(IdentityConfig.Builder builder) {
         if (identity != null) {
+            // TODO: Inject the load balancer address. For now only add first configserver
+            String cfgHostName = getRoot().getDeployState().getProperties()
+                    .configServerSpecs().stream().findFirst().map(ConfigServerSpec::getHostName)
+                    .orElse(""); // How to test this?
+            builder.loadBalancerAddress(cfgHostName);
             identity.getConfig(builder);
         }
     }

@@ -2,3 +2,4 @@ namespace=container.core.identity
 
 domain string
 service string
+loadBalancerAddress string
