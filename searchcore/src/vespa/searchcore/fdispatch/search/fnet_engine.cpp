@@ -14,19 +14,14 @@ using namespace search::fs4transport;
 void
 FastS_StaticMonitorQuery::Free()
 {
-    _lock.Lock();
-    _refcnt--;
-    if (_refcnt == 0) {
-        _lock.Unlock();
+    if (_refcnt-- == 1) {
         delete this;
-    } else
-        _lock.Unlock();
+    }
 }
 
 
 FastS_StaticMonitorQuery::FastS_StaticMonitorQuery()
     : FS4Packet_MONITORQUERYX(),
-      _lock(),
       _refcnt(1)
 { }
 
