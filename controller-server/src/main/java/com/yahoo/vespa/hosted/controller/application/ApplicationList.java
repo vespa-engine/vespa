@@ -80,7 +80,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which have at least one deployment */
     public ApplicationList hasDeployment() {
-        return listOf(list.stream().filter(a -> !a.deployments().isEmpty()));
+        return listOf(list.stream().filter(a -> !a.productionDeployments().isEmpty()));
     }
 
     /** Returns the subset of applications which started failing after the given instant */
@@ -101,7 +101,8 @@ public class ApplicationList {
     /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
     public ApplicationList onLowerVersionThan(Version version) {
         return listOf(list.stream()
-                          .filter(a -> a.deployments().values().stream().anyMatch(d -> d.version().isBefore(version))));
+                          .filter(a -> a.productionDeployments().values().stream()
+                                                                         .anyMatch(d -> d.version().isBefore(version))));
     }
 
     /**
@@ -114,8 +115,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which have at least one production deployment */
     public ApplicationList hasProductionDeployment() {
-        return listOf(list.stream().filter(a -> a.deployments().keySet().stream()
-                .anyMatch(zone -> zone.environment() == Environment.prod)));
+        return listOf(list.stream().filter(a -> ! a.productionDeployments().isEmpty()));
     }
 
     /** Returns the subset of applications that are allowed to upgrade at the given time */

@@ -355,8 +355,7 @@ public class ApplicationController {
     }
 
     private Application deleteRemovedDeployments(Application application, Lock lock) {
-        List<Deployment> deploymentsToRemove = application.deployments().values().stream()
-                .filter(deployment -> deployment.zone().environment() == Environment.prod)
+        List<Deployment> deploymentsToRemove = application.productionDeployments().values().stream()
                 .filter(deployment -> ! application.deploymentSpec().includes(deployment.zone().environment(), 
                                                                               Optional.of(deployment.zone().region())))
                 .collect(Collectors.toList());
@@ -482,7 +481,7 @@ public class ApplicationController {
         try (Lock lock = lock(id)) {
             Optional<Application> application = get(id);
             if ( ! application.isPresent()) return null;
-            if ( ! application.get().deployments().isEmpty())
+            if ( ! application.get().productionDeployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
             
             Tenant tenant = controller.tenants().tenant(new TenantId(id.tenant().value())).get();
