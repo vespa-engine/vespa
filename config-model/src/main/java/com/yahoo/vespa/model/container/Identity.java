@@ -10,16 +10,19 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 public class Identity extends SimpleComponent implements IdentityConfig.Producer {
     private final String domain;
     private final String service;
+    private final String loadBalancerAddress;
 
-    public Identity(String domain, String service) {
+    public Identity(String domain, String service, String loadBalancerAddress) {
         super("com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl");
         this.domain = domain;
         this.service = service;
+        this.loadBalancerAddress = loadBalancerAddress;
     }
 
     @Override
     public void getConfig(IdentityConfig.Builder builder) {
         builder.domain(domain);
         builder.service(service);
+        builder.loadBalancerAddress(loadBalancerAddress);
     }
 }
