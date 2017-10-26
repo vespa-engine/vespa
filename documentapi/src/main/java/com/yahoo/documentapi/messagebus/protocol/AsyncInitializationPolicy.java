@@ -5,6 +5,8 @@ import com.yahoo.messagebus.*;
 import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingContext;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -78,7 +80,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         synchronized (this) {
             if (initException != null) {
                 Reply reply = new EmptyReply();
-                reply.addError(new com.yahoo.messagebus.Error(ErrorCode.POLICY_ERROR, initException.getMessage()));
+                reply.addError(new com.yahoo.messagebus.Error(ErrorCode.POLICY_ERROR, "Policy threw exception during init:" + exceptionMessageWithTrace(initException)));
                 routingContext.setReply(reply);
                 return;
             }
@@ -100,6 +102,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         try {
             init();
         } catch (Exception e) {
+            e.printStackTrace();
             initException = e;
         }
 
@@ -115,4 +118,18 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
             executor.shutdownNow();
         }
     }
+
+
+    private static String exceptionMessageWithTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            e.printStackTrace(pw);
+            pw.flush();
+        }
+        return sw.toString();
+
+    }
+
+
+
 }
