@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.logging.Logger;
 
 /**
  * Abstract class for routing policies that need asynchronous initialization.
@@ -25,6 +26,8 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         RUNNING,
         DONE
     };
+
+    private static final Logger log = Logger.getLogger(AsyncInitializationPolicy.class.getName());
 
     InitState initState;
     ScheduledThreadPoolExecutor executor;
@@ -102,7 +105,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         try {
             init();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warning("Init threw exception" + exceptionMessageWithTrace(e));
             initException = e;
         }
 
