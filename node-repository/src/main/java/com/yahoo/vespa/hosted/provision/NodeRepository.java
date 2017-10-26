@@ -386,8 +386,9 @@ public class NodeRepository extends AbstractComponent {
         Node nodeToDirty = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked).orElseThrow(() ->
                 new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state"));
 
-        if (nodeToDirty.status().hardwareFailureDescription().isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
+        if (nodeToDirty.status().hardwareFailureDescription().isPresent() || nodeToDirty.status().hardwareDivergence().isPresent())
+            throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure/spec divergence");
+
         return setDirty(nodeToDirty);
     }
 
