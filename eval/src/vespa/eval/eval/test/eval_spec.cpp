@@ -166,7 +166,6 @@ EvalSpec::add_function_call_cases() {
 
 void
 EvalSpec::add_tensor_operation_cases() {
-    add_rule({"a", -1.0, 1.0}, "sum(a)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "map(a,f(x)(sin(x)))", [](double x){ return std::sin(x); });
     add_rule({"a", -1.0, 1.0}, "map(a,f(x)(x+x*3))", [](double x){ return (x + (x * 3)); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y))", [](double x, double y){ return (x + y); });

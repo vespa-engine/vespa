@@ -1837,7 +1837,7 @@ Test::testRankingExpression()
         }
         {
             // test interpreted expression
-            vespalib::string my_expr("3.0 + value(4.0) + sum(tensorFromWeightedSet(query(my_tensor)))");
+            vespalib::string my_expr("3.0 + value(4.0) + reduce(tensorFromWeightedSet(query(my_tensor)),sum)");
             FtFeatureTest ft(_factory, getExpression(my_expr));
             ft.getQueryEnv().getProperties().add("my_tensor", "{a:1,b:2,c:3}");
             ASSERT_TRUE(ft.setup());

@@ -415,9 +415,6 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     // tensor nodes (not supported in compiled expressions)
 
-    void visit(const TensorSum &node) override {
-        make_error(node.num_children());
-    }
     void visit(const TensorMap &node) override {
         make_error(node.num_children());
     }

@@ -30,7 +30,6 @@ struct NodeVisitor {
     virtual void visit(const nodes::Error        &) = 0;
 
     // tensor nodes
-    virtual void visit(const nodes::TensorSum    &) = 0;
     virtual void visit(const nodes::TensorMap    &) = 0;
     virtual void visit(const nodes::TensorJoin   &) = 0;
     virtual void visit(const nodes::TensorReduce &) = 0;
@@ -91,16 +90,15 @@ struct NodeVisitor {
  * of all types not specifically handled.
  **/
 struct EmptyNodeVisitor : NodeVisitor {
-    virtual void visit(const nodes::Number       &) override {}
-    virtual void visit(const nodes::Symbol       &) override {}
-    virtual void visit(const nodes::String       &) override {}
-    virtual void visit(const nodes::Array        &) override {}
-    virtual void visit(const nodes::Neg          &) override {}
-    virtual void visit(const nodes::Not          &) override {}
-    virtual void visit(const nodes::If           &) override {}
-    virtual void visit(const nodes::Let          &) override {}
+    void visit(const nodes::Number       &) override {}
+    void visit(const nodes::Symbol       &) override {}
+    void visit(const nodes::String       &) override {}
+    void visit(const nodes::Array        &) override {}
+    void visit(const nodes::Neg          &) override {}
+    void visit(const nodes::Not          &) override {}
+    void visit(const nodes::If           &) override {}
+    void visit(const nodes::Let          &) override {}
     void visit(const nodes::Error        &) override {}
-    void visit(const nodes::TensorSum    &) override {}
     void visit(const nodes::TensorMap    &) override {}
     void visit(const nodes::TensorJoin   &) override {}
     void visit(const nodes::TensorReduce &) override {}

@@ -12,38 +12,6 @@ namespace vespalib {
 namespace eval {
 namespace nodes {
 
-class TensorSum : public Node {
-private:
-    Node_UP _child;
-    vespalib::string _dimension;
-public:
-    TensorSum(Node_UP child) : _child(std::move(child)), _dimension() {}
-    TensorSum(Node_UP child, const vespalib::string &dimension_in)
-        : _child(std::move(child)), _dimension(dimension_in) {}
-    const vespalib::string &dimension() const { return _dimension; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "sum(";
-        str += _child->dump(ctx);
-        if (!_dimension.empty()) {
-            str += ",";
-            str += _dimension;
-        }
-        str += ")";
-        return str;
-    }
-    void accept(NodeVisitor &visitor) const override;
-    size_t num_children() const override { return 1; }
-    const Node &get_child(size_t idx) const override {
-        (void) idx;
-        assert(idx == 0);
-        return *_child;
-    }
-    void detach_children(NodeHandler &handler) override {
-        handler.handle(std::move(_child));
-    }
-};
-
 class TensorMap : public Node {
 private:
     Node_UP  _child;

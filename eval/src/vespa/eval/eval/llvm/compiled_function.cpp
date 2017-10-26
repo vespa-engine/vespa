@@ -123,8 +123,7 @@ CompiledFunction::detect_issues(const Function &function)
         std::vector<vespalib::string> issues;
         bool open(const nodes::Node &) override { return true; }
         void close(const nodes::Node &node) override {
-            if (nodes::check_type<nodes::TensorSum,
-                                  nodes::TensorMap,
+            if (nodes::check_type<nodes::TensorMap,
                                   nodes::TensorJoin,
                                   nodes::TensorReduce,
                                   nodes::TensorRename,

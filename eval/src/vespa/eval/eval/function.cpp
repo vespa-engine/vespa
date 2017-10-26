@@ -587,13 +587,7 @@ void parse_tensor_reduce(ParseContext &ctx) {
         return;
     }
     auto dimensions = get_ident_list(ctx, false);
-    if ((*maybe_aggr == Aggr::SUM) && dimensions.empty()) {
-        ctx.push_expression(std::make_unique<nodes::TensorSum>(std::move(child)));
-    } else if ((*maybe_aggr == Aggr::SUM) && (dimensions.size() == 1)) {
-        ctx.push_expression(std::make_unique<nodes::TensorSum>(std::move(child), dimensions[0]));
-    } else {
-        ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
-    }
+    ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
 }
 
 void parse_tensor_rename(ParseContext &ctx) {
@@ -648,20 +642,6 @@ void parse_tensor_concat(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorConcat>(std::move(lhs), std::move(rhs), dimension));
 }
 
-// to be replaced with more generic 'reduce'
-void parse_tensor_sum(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP child = ctx.pop_expression();
-    if (ctx.get() == ',') {
-        ctx.next();
-        vespalib::string dimension = get_ident(ctx, false);
-        ctx.skip_spaces();
-        ctx.push_expression(Node_UP(new nodes::TensorSum(std::move(child), dimension)));
-    } else {
-        ctx.push_expression(Node_UP(new nodes::TensorSum(std::move(child))));
-    }
-}
-
 bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
     ctx.skip_spaces();
     if (ctx.get() == '(') {
@@ -686,8 +666,6 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_lambda(ctx);
             } else if (name == "concat") {
                 parse_tensor_concat(ctx);
-            } else if (name == "sum") {
-                parse_tensor_sum(ctx);
             } else {
                 ctx.fail(make_string("unknown function: '%s'", name.c_str()));
                 return false;

@@ -101,17 +101,6 @@ void op_not_member(State &state, uint64_t) {
 
 //-----------------------------------------------------------------------------
 
-void op_tensor_sum(State &state, uint64_t) {
-    state.replace(1, state.engine.reduce(state.peek(0), Aggr::SUM, {}, state.stash));
-}
-
-void op_tensor_sum_dimension(State &state, uint64_t param) {
-    const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
-    state.replace(1, state.engine.reduce(state.peek(0), Aggr::SUM, {dimension}, state.stash));
-}
-
-//-----------------------------------------------------------------------------
-
 void op_tensor_map(State &state, uint64_t param) {
     const CompiledFunction &cfun = unwrap_param<CompiledFunction>(param);
     state.replace(1, state.engine.map(state.peek(0), cfun.get_function<1>(), state.stash));
@@ -270,32 +259,6 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Error &) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));
     }
-    void visit(const TensorSum&node) override {
-        if (is_typed(node) && is_typed_tensor_product_of_params(node.get_child(0))) {
-            assert(program.size() >= 3); // load,load,mul
-            program.pop_back(); // mul
-            program.pop_back(); // load
-            program.pop_back(); // load
-            std::vector<vespalib::string> dim_list;
-            if (!node.dimension().empty()) {
-                dim_list.push_back(node.dimension());
-            }
-            auto a = as<Symbol>(node.get_child(0).get_child(0));
-            auto b = as<Symbol>(node.get_child(0).get_child(1));
-            auto ir = tensor_function::reduce(tensor_function::join(
-                            tensor_function::inject(types.get_type(*a), 0),
-                            tensor_function::inject(types.get_type(*b), 1),
-                            operation::Mul::f), Aggr::SUM, dim_list);
-            auto fun = tensor_engine.compile(std::move(ir));
-            const auto &meta = stash.create<TensorFunctionArgArgMeta>(std::move(fun), a->id(), b->id());
-            program.emplace_back(op_tensor_function_arg_arg, wrap_param<TensorFunctionArgArgMeta>(meta));
-        } else if (node.dimension().empty()) {
-            program.emplace_back(op_tensor_sum);
-        } else {
-            program.emplace_back(op_tensor_sum_dimension,
-                                 wrap_param<vespalib::string>(stash.create<vespalib::string>(node.dimension())));
-        }
-    }
     void visit(const TensorMap&node) override {
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
         program.emplace_back(op_tensor_map, wrap_param<CompiledFunction>(token.get()->get()));
@@ -305,8 +268,24 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         program.emplace_back(op_tensor_join, wrap_param<CompiledFunction>(token.get()->get()));
     }
     void visit(const TensorReduce&node) override {
-        ReduceParams &params = stash.create<ReduceParams>(node.aggr(), node.dimensions());
-        program.emplace_back(op_tensor_reduce, wrap_param<ReduceParams>(params));
+        if ((node.aggr() == Aggr::SUM) && is_typed(node) && is_typed_tensor_product_of_params(node.get_child(0))) {
+            assert(program.size() >= 3); // load,load,mul
+            program.pop_back(); // mul
+            program.pop_back(); // load
+            program.pop_back(); // load
+            auto a = as<Symbol>(node.get_child(0).get_child(0));
+            auto b = as<Symbol>(node.get_child(0).get_child(1));
+            auto ir = tensor_function::reduce(tensor_function::join(
+                            tensor_function::inject(types.get_type(*a), 0),
+                            tensor_function::inject(types.get_type(*b), 1),
+                            operation::Mul::f), node.aggr(), node.dimensions());
+            auto fun = tensor_engine.compile(std::move(ir));
+            const auto &meta = stash.create<TensorFunctionArgArgMeta>(std::move(fun), a->id(), b->id());
+            program.emplace_back(op_tensor_function_arg_arg, wrap_param<TensorFunctionArgArgMeta>(meta));
+        } else {
+            ReduceParams &params = stash.create<ReduceParams>(node.aggr(), node.dimensions());
+            program.emplace_back(op_tensor_reduce, wrap_param<ReduceParams>(params));
+        }
     }
     void visit(const TensorRename&node) override {
         RenameParams &params = stash.create<RenameParams>(node.from(), node.to());

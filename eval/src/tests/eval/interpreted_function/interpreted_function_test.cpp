@@ -143,7 +143,7 @@ TEST("require that basic addition works") {
 
 TEST("require that dot product like expression is not optimized for unknown types") {
     const TensorEngine &engine = SimpleTensorEngine::ref();
-    Function function = Function::parse("sum(a*b)");
+    Function function = Function::parse("reduce(a*b,sum)");
     DoubleValue a(2.0);
     DoubleValue b(3.0);
     double expect = (2.0 * 3.0);
@@ -158,7 +158,7 @@ TEST("require that dot product like expression is not optimized for unknown type
 
 TEST("require that dot product works with tensor function") {
     const TensorEngine &engine = SimpleTensorEngine::ref();
-    Function function = Function::parse("sum(a*b)");
+    Function function = Function::parse("reduce(a*b,sum)");
     auto a = TensorSpec("tensor(x[3])")
              .add({{"x", 0}}, 5.0)
              .add({{"x", 1}}, 3.0)
@@ -182,7 +182,7 @@ TEST("require that dot product works with tensor function") {
 
 TEST("require that matrix multiplication works with tensor function") {
     const TensorEngine &engine = SimpleTensorEngine::ref();
-    Function function = Function::parse("sum(a*b,y)");
+    Function function = Function::parse("reduce(a*b,sum,y)");
     auto a = TensorSpec("tensor(x[2],y[2])")
              .add({{"x", 0},{"y", 0}},  1.0)
              .add({{"x", 0},{"y", 1}},  2.0)
