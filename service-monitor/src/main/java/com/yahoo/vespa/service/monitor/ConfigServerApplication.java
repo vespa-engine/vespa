@@ -48,6 +48,12 @@ public class ConfigServerApplication {
                 APPLICATION_INSTANCE_ID,
                 serviceClusters);
 
+        // Fill back-references
+        serviceCluster.setApplicationInstance(applicationInstance);
+        for (ServiceInstance serviceInstance : serviceCluster.serviceInstances()) {
+            serviceInstance.setServiceCluster(serviceCluster);
+        }
+
         return applicationInstance;
     }
 }

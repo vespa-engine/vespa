@@ -3,14 +3,25 @@ package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.applicationmodel.ClusterId;
+import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.ServiceCluster;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.InMemoryStatusService;
+import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.StatusService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,6 +29,9 @@ import org.mockito.InOrder;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.NO_REMARKS;
@@ -31,7 +45,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * Test Orchestrator with a mock backend (the InMemoryStatusService)
@@ -138,7 +154,6 @@ public class OrchestratorImplTest {
         assertThat(orchestrator.getApplicationInstanceStatus(app1), is(NO_REMARKS));
         assertThat(orchestrator.getApplicationInstanceStatus(app2), is(ALLOWED_TO_BE_DOWN));
     }
-
 
     @Test
     public void application_suspend_sets_application_nodes_in_maintenance_and_allowed_to_be_down() throws Exception {
@@ -279,6 +294,63 @@ public class OrchestratorImplTest {
         order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
         order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
         order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void testGetHost() throws Exception {
+        ClusterControllerClientFactory clusterControllerClientFactory =
+                mock(ClusterControllerClientFactory.class);
+        StatusService statusService = mock(StatusService.class);
+        InstanceLookupService lookupService = mock(InstanceLookupService.class);
+
+        orchestrator = new OrchestratorImpl(
+                clusterControllerClientFactory,
+                statusService,
+                new OrchestratorConfig(new OrchestratorConfig.Builder()),
+                lookupService);
+
+        HostName hostName = new HostName("host.yahoo.com");
+        TenantId tenantId = new TenantId("tenant");
+        ApplicationInstanceId applicationInstanceId =
+                new ApplicationInstanceId("applicationInstanceId");
+        ApplicationInstanceReference reference = new ApplicationInstanceReference(
+                tenantId,
+                applicationInstanceId);
+
+        ApplicationInstance applicationInstance =
+                new ApplicationInstance(
+                        tenantId,
+                        applicationInstanceId,
+                        Stream.of(new ServiceCluster(
+                                new ClusterId("clusterId"),
+                                new ServiceType("serviceType"),
+                                Stream.of(
+                                        new ServiceInstance(
+                                                new ConfigId("configId1"),
+                                                hostName,
+                                                ServiceStatus.UP),
+                                new ServiceInstance(
+                                        new ConfigId("configId2"),
+                                        hostName,
+                                        ServiceStatus.NOT_CHECKED))
+                                        .collect(Collectors.toSet())))
+                        .collect(Collectors.toSet()));
+
+        when(lookupService.findInstanceByHost(hostName))
+                .thenReturn(Optional.of(applicationInstance));
+
+        ReadOnlyStatusRegistry readOnlyStatusRegistry = mock(ReadOnlyStatusRegistry.class);
+        when(statusService.forApplicationInstance(reference))
+                .thenReturn(readOnlyStatusRegistry);
+        when(readOnlyStatusRegistry.getHostStatus(hostName))
+                .thenReturn(HostStatus.ALLOWED_TO_BE_DOWN);
+
+        Host host = orchestrator.getHost(hostName);
+
+        assertEquals(reference, host.getApplicationInstanceReference());
+        assertEquals(hostName, host.getHostName());
+        assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostStatus());
+        assertEquals(2, host.getServiceInstances().size());
     }
 
     private boolean isInMaintenance(ApplicationId appId, HostName hostName) throws ApplicationIdNotFoundException {
