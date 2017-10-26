@@ -481,7 +481,7 @@ public class ApplicationController {
         try (Lock lock = lock(id)) {
             Optional<Application> application = get(id);
             if ( ! application.isPresent()) return null;
-            if ( ! application.get().productionDeployments().isEmpty())
+            if ( ! application.get().deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
             
             Tenant tenant = controller.tenants().tenant(new TenantId(id.tenant().value())).get();
