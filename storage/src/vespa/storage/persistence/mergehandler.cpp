@@ -220,7 +220,7 @@ MergeHandler::buildBucketInfoList(
     // fixed, but by making merge fix it, distributors will stop and spin
     // on merge, never getting their problems fixed.
     {
-        StorBucketDatabase& db(_env.getBucketDatabase());
+        StorBucketDatabase& db(_env.getBucketDatabase(bucket.getBucketSpace()));
         StorBucketDatabase::WrappedEntry entry(
                 db.get(bucket.getBucketId(), "MergeHandler::buildBucketInfoList"));
         if (entry.exist()) {

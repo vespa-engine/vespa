@@ -92,7 +92,7 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
                                       const api::BucketInfo& i)
 {
     // Update bucket database
-    StorBucketDatabase::WrappedEntry entry(getBucketDatabase().get(
+    StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
                                                    bucket.getBucketId(),
                                                    "env::updatebucketdb"));
     if (entry.exist()) {
@@ -134,7 +134,7 @@ PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(
                 _fileStorHandler.lock(bucket, result.disk));
 
-        StorBucketDatabase::WrappedEntry entry(getBucketDatabase().get(
+        StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
                 bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
         if (entry.exist() && entry->disk != result.disk) {
             result.disk = entry->disk;

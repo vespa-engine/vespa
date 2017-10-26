@@ -271,17 +271,17 @@ PersistenceTestUtils::createHeaderUpdate(
 }
 
 uint16_t
-PersistenceTestUtils::getDiskFromBucketDatabaseIfUnset(const document::BucketId& bucket,
+PersistenceTestUtils::getDiskFromBucketDatabaseIfUnset(const document::Bucket& bucket,
                                                        uint16_t disk)
 {
     if (disk == 0xffff) {
         StorBucketDatabase::WrappedEntry entry(
-                getEnv().getBucketDatabase().get(bucket, "createTestBucket"));
+                getEnv().getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "createTestBucket"));
         if (entry.exist()) {
             return entry->disk;
         } else {
             std::ostringstream error;
-            error << bucket << " not in db and disk unset";
+            error << bucket.toString() << " not in db and disk unset";
             throw vespalib::IllegalStateException(error.str(), VESPA_STRLOC);
         }
     }
@@ -297,7 +297,7 @@ PersistenceTestUtils::doPut(const document::Document::SP& doc,
     document::BucketId bucket(
             _env->_component.getBucketIdFactory().getBucketId(doc->getId()));
     bucket.setUsedBits(usedBits);
-    disk = getDiskFromBucketDatabaseIfUnset(bucket, disk);
+    disk = getDiskFromBucketDatabaseIfUnset(makeDocumentBucket(bucket), disk);
 
     doPut(doc, bucket, time, disk);
 }
@@ -335,7 +335,7 @@ PersistenceTestUtils::doRemove(const document::DocumentId& id, spi::Timestamp ti
     document::BucketId bucket(
             _env->_component.getBucketIdFactory().getBucketId(id));
     bucket.setUsedBits(usedBits);
-    disk = getDiskFromBucketDatabaseIfUnset(bucket, disk);
+    disk = getDiskFromBucketDatabaseIfUnset(makeDocumentBucket(bucket), disk);
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     if (unrevertableRemove) {

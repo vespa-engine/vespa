@@ -395,7 +395,7 @@ PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd)
            return tracker;
     }
     _spi.deleteBucket(bucket, _context);
-    StorBucketDatabase& db(_env.getBucketDatabase());
+    StorBucketDatabase& db(_env.getBucketDatabase(cmd.getBucket().getBucketSpace()));
     {
         StorBucketDatabase::WrappedEntry entry(db.get(
                     cmd.getBucketId(), "FileStorThread::onDeleteBucket"));
@@ -574,7 +574,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
     }
         // After split we need to take all bucket db locks to update them.
         // Ensure to take them in rising order.
-    StorBucketDatabase::WrappedEntry sourceEntry(_env.getBucketDatabase().get(
+    StorBucketDatabase::WrappedEntry sourceEntry(_env.getBucketDatabase(spiBucket.getBucket().getBucketSpace()).get(
             cmd.getBucketId(), "PersistenceThread::handleSplitBucket-source"));
     api::SplitBucketReply* splitReply(new api::SplitBucketReply(cmd));
     tracker->setReply(api::StorageReply::SP(splitReply));
@@ -587,7 +587,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
         uint16_t disk(i == 0 ? lock1.disk : lock2.disk);
         assert(target.getBucketId().getRawId() != 0);
         targets.push_back(TargetInfo(
-                _env.getBucketDatabase().get(
+                _env.getBucketDatabase(target.getBucketSpace()).get(
                     target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
                     StorBucketDatabase::CREATE_IF_NONEXISTING),
                 FileStorHandler::RemapInfo(target, disk)));
@@ -698,6 +698,7 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
     if (!validateJoinCommand(cmd, *tracker)) {
         return tracker;
     }
+    document::Bucket destBucket = cmd.getBucket();
     // To avoid a potential deadlock all operations locking multiple
     // buckets must lock their buckets in the same order (sort order of
     // bucket id, lowest countbits, lowest location first).
@@ -706,8 +707,8 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
     {
         // Create empty bucket for target.
         StorBucketDatabase::WrappedEntry entry =
-        _env.getBucketDatabase().get(
-                cmd.getBucketId(),
+        _env.getBucketDatabase(destBucket.getBucketSpace()).get(
+                destBucket.getBucketId(),
                 "join",
                 StorBucketDatabase::CREATE_IF_NONEXISTING);
 
@@ -715,7 +716,6 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
         entry.write();
     }
 
-    document::Bucket destBucket = cmd.getBucket();
     document::Bucket firstBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[0]);
     document::Bucket secondBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[1]);
 
@@ -763,7 +763,7 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
                 target);
         // Remove source from bucket db.
         StorBucketDatabase::WrappedEntry entry(
-                _env.getBucketDatabase().get(
+                _env.getBucketDatabase(srcBucket.getBucketSpace()).get(
                         srcBucket.getBucketId(), "join-remove-source"));
         if (entry.exist()) {
             lastModified = std::max(lastModified,
@@ -773,8 +773,8 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
     }
     {
         StorBucketDatabase::WrappedEntry entry =
-            _env.getBucketDatabase().get(
-                    cmd.getBucketId(),
+            _env.getBucketDatabase(destBucket.getBucketSpace()).get(
+                    destBucket.getBucketId(),
                     "join",
                     StorBucketDatabase::CREATE_IF_NONEXISTING);
         if (entry->info.getLastModified() == 0) {
@@ -804,7 +804,7 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd)
 
     spi::Result result(_spi.setActiveState(bucket, newState));
     if (checkForError(result, *tracker)) {
-        StorBucketDatabase::WrappedEntry entry(_env.getBucketDatabase().get(
+        StorBucketDatabase::WrappedEntry entry(_env.getBucketDatabase(bucket.getBucket().getBucketSpace()).get(
                 cmd.getBucketId(), "handleSetBucketState"));
         if (entry.exist()) {
             entry->info.setActive(newState == spi::BucketInfo::ACTIVE);
@@ -831,18 +831,18 @@ PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd)
     MessageTracker::UP tracker(new MessageTracker(
                                        _env._metrics.internalJoin,
                                        _env._component.getClock()));
+    document::Bucket destBucket = cmd.getBucket();
     {
         // Create empty bucket for target.
         StorBucketDatabase::WrappedEntry entry =
-            _env.getBucketDatabase().get(
-                    cmd.getBucketId(),
+            _env.getBucketDatabase(destBucket.getBucketSpace()).get(
+                    destBucket.getBucketId(),
                     "join",
                     StorBucketDatabase::CREATE_IF_NONEXISTING);
 
         entry->disk = _env._partition;
         entry.write();
     }
-    document::Bucket destBucket = cmd.getBucket();
     spi::Result result =
         _spi.join(spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
                   spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
