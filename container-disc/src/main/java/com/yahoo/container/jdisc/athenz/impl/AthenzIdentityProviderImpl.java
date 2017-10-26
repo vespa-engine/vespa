@@ -29,7 +29,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     // Test only
-    public AthenzIdentityProviderImpl(IdentityConfig config, ServiceProviderApi serviceProviderApi, AthenzService athenzService) throws IOException {
+    AthenzIdentityProviderImpl(IdentityConfig config, ServiceProviderApi serviceProviderApi, AthenzService athenzService) throws IOException {
         KeyPair keyPair = CryptoUtils.createKeyPair();
         this.domain = config.domain();
         this.service = config.service();
