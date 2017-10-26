@@ -1,7 +1,7 @@
 {
-    "propertyUri": "www.properties.tld/1234",
-    "contactsUri": "www.contacts.tld/1234",
-    "issueCreationUri": "www.issues.tld/1234",
+    "propertyUrl": "www.properties.tld/1234",
+    "contactsUrl": "www.contacts.tld/1234",
+    "issueCreationUrl": "www.issues.tld/1234",
     "contacts": [
         [
             "alice"
