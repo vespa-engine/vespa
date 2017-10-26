@@ -5,6 +5,9 @@ import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.document.BucketId;
 import com.yahoo.vdslib.state.NodeType;
+import org.junit.After;
+import org.junit.Test;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -23,7 +26,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 
-public class DistributionTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class DistributionTestCase {
     private DistributionTestFactory test;
     /** Build a set of buckets to test that should represent the entire bucket space well. */
     private static List<BucketId> getTestBuckets() { return getTestBuckets(16); }
@@ -48,13 +54,16 @@ public class DistributionTestCase extends junit.framework.TestCase {
         }
         return Collections.unmodifiableList(buckets);
     }
-    @Override
+
+    @After
     public void tearDown() throws Exception {
         if (test != null) {
             System.err.println("Verified " + test.getVerifiedTests() + " test results for test " + test.getName());
             test.recordTestResults();
         }
     }
+
+    @Test
     public void testSimple() {
         test = new DistributionTestFactory("simple");
         List<BucketId> buckets = getTestBuckets();
@@ -65,6 +74,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
             if (i < nodes.length) t.assertNodeUsed(nodes[i]);
         }
     }
+
+    @Test
     public void testDown() throws Exception {
         test = new DistributionTestFactory("down")
                 .setUpStates("u")
@@ -122,7 +133,7 @@ public class DistributionTestCase extends junit.framework.TestCase {
         Files.move(tempFilePath, filePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
     }
 
-
+    @Test
     public void testWriteDistribution() throws IOException, ParseException, Distribution.TooFewBucketBitsInUseException, Distribution.NoDistributorsAvailableException {
         String clusterState = "distributor:9";
         String distributionConfig =
@@ -215,6 +226,7 @@ public class DistributionTestCase extends junit.framework.TestCase {
         writeDistributionTest("retired", clusterState, complexDistributionConfig);
     }
 
+    @Test
     public void testSplitBeyondSplitBitDoesntAffectDistribution() throws Exception {
         Random randomized = new Random(7123161);
         long val = randomized.nextLong();
@@ -223,6 +235,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
             test.recordResult(new BucketId(i, val)).assertNodeUsed(2);
         }
     }
+
+    @Test
     public void testMinimalMovement() throws Exception {
         test = new DistributionTestFactory("minimal-movement")
                 .setClusterState(new ClusterState("distributor:4 .2.s:d"));
@@ -244,6 +258,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
         assertEquals(63, moved);
         assertEquals(81, staying);
     }
+
+    @Test
     public void testAllDistributionBits() throws Exception {
         for (int distbits=0; distbits<=32; ++distbits) {
             test = new DistributionTestFactory("distbit" + distbits)
@@ -305,6 +321,7 @@ public class DistributionTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testHierarchicalDistribution() throws Exception {
         test = new DistributionTestFactory("hierarchical-grouping")
                 .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3));
@@ -312,6 +329,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
             test.recordResult(bucket).assertNodeCount(1);
         }
     }
+
+    @Test
     public void testDistributorGroupTakeover() throws Exception {
         test = new DistributionTestFactory("hierarchical-grouping-distributor-takeover")
                 .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3).distributor_auto_ownership_transfer_on_whole_group_down(true))
@@ -321,6 +340,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
             test.recordResult(bucket).assertNodeCount(1);
         }
     }
+
+    @Test
     public void testDistributorNoGroupTakeover() throws Exception {
         test = new DistributionTestFactory("hierarchical-grouping-distributor-notakeover")
                 .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3).distributor_auto_ownership_transfer_on_whole_group_down(false))
@@ -349,6 +370,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
         }
         assertEquals(15, noneExisting);
     }
+
+    @Test
     public void testHierarchicalDistributionDeep() throws Exception {
         System.out.println(new StorDistributionConfig(buildHierarchicalConfig(8, 5, 3, "*|*", 3)));
         test = new DistributionTestFactory("hierarchical-grouping-deep")
@@ -362,6 +385,8 @@ public class DistributionTestCase extends junit.framework.TestCase {
         // itself only has 375 actual leaf nodes.
         assertEquals(375, nodes.size());
     }
+
+    @Test
     public void testHierarchicalDistributionCapacity() throws Exception {
         StorDistributionConfig.Builder config = buildHierarchicalConfig(6, 3, 1, "1|*", 3);
         config.group.get(1).capacity(3);
@@ -383,5 +408,14 @@ public class DistributionTestCase extends junit.framework.TestCase {
         double diff = 1.0 * avg3 / avg1;
         assertTrue(Arrays.toString(counts) + ": Too large diff" + diff, diff < 3.1);
         assertTrue(Arrays.toString(counts) + ": Too small diff" + diff, diff > 2.9);
+    }
+
+    @Test(expected = Distribution.NoDistributorsAvailableException.class)
+    public void clusterDownInHierarchicSetupThrowsNoDistributorsAvailableException() throws Exception {
+        ClusterState clusterState = new ClusterState("cluster:d");
+
+        StorDistributionConfig.Builder config = buildHierarchicalConfig(4, 4, 1, "1|1|1|*", 1);
+        Distribution distr = new Distribution(new StorDistributionConfig(config));
+        distr.getIdealDistributorNode(clusterState, new BucketId(16, 0), "uim");
     }
 }
