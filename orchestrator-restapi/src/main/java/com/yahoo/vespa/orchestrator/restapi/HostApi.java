@@ -40,8 +40,7 @@ public interface HostApi {
     @GET
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
-    GetHostResponse getHost(@Context UriInfo uriInfo,
-                            @PathParam("hostname") String hostNameString);
+    GetHostResponse getHost(@PathParam("hostname") String hostNameString);
 
     /**
      * Tweak internal Orchestrator state for host.

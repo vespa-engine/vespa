@@ -24,6 +24,7 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -40,14 +41,16 @@ public class HostResource implements HostApi {
     private static final Logger log = Logger.getLogger(HostResource.class.getName());
 
     private final Orchestrator orchestrator;
+    private final UriInfo uriInfo;
 
     @Inject
-    public HostResource(@Component Orchestrator orchestrator) {
+    public HostResource(@Component Orchestrator orchestrator, @Context UriInfo uriInfo) {
         this.orchestrator = orchestrator;
+        this.uriInfo = uriInfo;
     }
 
     @Override
-    public GetHostResponse getHost(UriInfo uriInfo, String hostNameString) {
+    public GetHostResponse getHost(String hostNameString) {
         HostName hostName = new HostName(hostNameString);
         try {
             Host host = orchestrator.getHost(hostName);
