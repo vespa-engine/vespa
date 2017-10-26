@@ -842,23 +842,6 @@ public final class ContainerCluster
      */
     public Optional<Integer> getMemoryPercentage() { return memoryPercentage; }
 
-    private Optional<Identity> getIdentity() {
-        return Optional.ofNullable(identity);
-    }
-
-    public void setIdentity(Identity identity) {
-        this.identity = identity;
-        addSimpleComponent("com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl");
-    }
-
-    @Override
-    public void getConfig(IdentityConfig.Builder builder) {
-        getIdentity().ifPresent(id -> {
-            builder.service(id.getService());
-            builder.domain(id.getDomain());
-        });
-    }
-
     @Override
     public String toString() {
         return "container cluster '" + getName() + "'";
@@ -881,4 +864,15 @@ public final class ContainerCluster
         }
     }
 
+    public void setIdentity(Identity identity) {
+        this.identity = identity;
+        addComponent(identity);
+    }
+
+    @Override
+    public void getConfig(IdentityConfig.Builder builder) {
+        if (identity != null) {
+            identity.getConfig(builder);
+        }
+    }
 }
