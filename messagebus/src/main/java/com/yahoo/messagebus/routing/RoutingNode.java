@@ -106,10 +106,13 @@ public class RoutingNode implements ReplyHandler {
     public void send() {
         if (!resolve(0)) {
             notifyAbort("Route resolution failed.");
-        } else if (hasUnconsumedErrors()) {
-            notifyAbort("Errors found while resolving route.");
         } else {
-            notifyTransmit();
+            String errors = getUnconsumedErrors();
+            if (errors != null) {
+                notifyAbort("Errors found while resolving route: " + errors);
+            } else {
+                notifyTransmit();
+            }
         }
     }
 
@@ -300,14 +303,14 @@ public class RoutingNode implements ReplyHandler {
     }
 
     /**
-     * Returns whether or not transmitting along this routing tree can possibly succeed. This evaluates to false if
+     * Return any errors preventing transmitting along this routing tree to possibly succeed. This might happen if
      * either a) there are no leaf nodes to send to, or b) some leaf node contains a fatal error that is not masked by a
      * routing policy above it in the tree. If only transient errors would reach this, the resend flag is set to true.
      *
-     * @return True if no error reaches this.
+     * @return The errors concatenated or null.
      */
-    private boolean hasUnconsumedErrors() {
-        boolean hasError = false;
+    private String getUnconsumedErrors() {
+        StringBuilder errors = null;
 
         Deque<RoutingNode> stack = new ArrayDeque<>();
         stack.push(this);
@@ -315,7 +318,8 @@ public class RoutingNode implements ReplyHandler {
             RoutingNode node = stack.pop();
             if (node.reply != null) {
                 for (int i = 0; i < node.reply.getNumErrors(); ++i) {
-                    int errorCode = node.reply.getError(i).getCode();
+                    Error error = node.reply.getError(i);
+                    int errorCode = error.getCode();
                     RoutingNode it = node;
                     while (it != null) {
                         if (it.routingContext != null && it.routingContext.isConsumableError(errorCode)) {
@@ -325,11 +329,16 @@ public class RoutingNode implements ReplyHandler {
                         it = it.parent;
                     }
                     if (errorCode != ErrorCode.NONE) {
+                        if (errors == null) {
+                            errors = new StringBuilder();
+                        } else {
+                            errors.append("\n");
+                        }
+                        errors.append(error.toString());
                         shouldRetry = resender != null && resender.canRetry(errorCode);
                         if (!shouldRetry) {
-                            return true; // no need to continue
+                            return errors.toString(); // no need to continue
                         }
-                        hasError = true;
                     }
                 }
             } else {
@@ -339,7 +348,7 @@ public class RoutingNode implements ReplyHandler {
             }
         }
 
-        return hasError;
+        return errors != null ? errors.toString() : null;
     }
 
     /**
