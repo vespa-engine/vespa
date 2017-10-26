@@ -200,6 +200,8 @@ public class TenantController {
         try (Lock lock = lock(tenantId)) {
             Tenant existing = tenant(tenantId).orElseThrow(() -> new NotExistsException(tenantId));
             if (existing.isAthensTenant()) return existing; // nothing to do
+            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.id() +
+                             " using " + nToken.getPrincipal());
             if (tenantHaving(tenantDomain).isPresent())
                 throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
                                                    "This domain is already used by " + tenantHaving(tenantDomain).get());
@@ -221,11 +223,11 @@ public class TenantController {
             db.deleteTenant(tenantId);
             Tenant tenant = Tenant.createAthensTenant(tenantId, tenantDomain, property, Optional.of(propertyId));
             db.createTenant(tenant);
-            log.info("Migrated " + existing + " to Athens using " + tenantDomain);
+            log.info("Migration of " + existing + " to Athenz completed.");
             return tenant;
         }
         catch (PersistenceException e) {
-            throw new RuntimeException("Failed migrating " + tenantId + " to Athens", e);
+            throw new RuntimeException("Failed migrating " + tenantId + " to Athenz", e);
         }
     }
 
