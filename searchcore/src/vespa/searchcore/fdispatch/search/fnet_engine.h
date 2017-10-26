@@ -67,7 +67,6 @@ public:
     friend class FastS_FNET_Engine::ConnectTask;
 
 private:
-    FastOS_Mutex      _lock;
     std::string   _hostName;
     int           _portNumber;
     std::string   _spec;
@@ -97,8 +96,6 @@ public:
 
     // common engine API
     //------------------
-    virtual void LockEngine()   override { _lock.Lock();   }
-    virtual void UnlockEngine() override { _lock.Unlock(); }
     virtual void Ping() override;
     virtual void HandleClearedBad() override;
     virtual void HandleUp() override;

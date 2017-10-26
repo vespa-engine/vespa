@@ -92,7 +92,6 @@ FastS_FNET_Engine::Disconnect()
 FastS_FNET_Engine::FastS_FNET_Engine(FastS_EngineDesc *desc,
                                      FastS_FNET_DataSet *dataset)
     : FastS_EngineBase(desc, dataset),
-      _lock(),
       _spec(),
       _transport(dataset->GetTransport()),
       _conn(NULL),

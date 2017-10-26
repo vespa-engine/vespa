@@ -91,7 +91,8 @@ FastS_EngineBase::FastS_EngineBase(FastS_EngineDesc *desc,
       _dataset(dataset),
       _nextds(NULL),
       _prevpart(NULL),
-      _nextpart(NULL)
+      _nextpart(NULL),
+      _lock()
 {
     FastS_assert(_dataset != NULL);
 }
@@ -110,10 +111,11 @@ FastS_EngineBase::~FastS_EngineBase()
 void
 FastS_EngineBase::SlowQuery(double limit, double secs, bool silent)
 {
-    LockEngine();
-    _stats._slowQueryCnt++;
-    _stats._slowQuerySecs += secs;
-    UnlockEngine();
+    {
+        std::unique_lock<std::mutex> engineGuard(_lock);
+        _stats._slowQueryCnt++;
+        _stats._slowQuerySecs += secs;
+    }
     if (!silent)
         LOG(warning,
             "engine %s query slow by %.3fs + %.3fs",
@@ -124,10 +126,11 @@ FastS_EngineBase::SlowQuery(double limit, double secs, bool silent)
 void
 FastS_EngineBase::SlowDocsum(double limit, double secs)
 {
-    LockEngine();
-    _stats._slowDocsumCnt++;
-    _stats._slowDocsumSecs += secs;
-    UnlockEngine();
+    {
+        std::unique_lock<std::mutex> engineGuard(_lock);
+        _stats._slowDocsumCnt++;
+        _stats._slowDocsumSecs += secs;
+    }
     LOG(warning,
         "engine %s docsum slow by %.3fs + %.3fs",
         _config._name, limit, secs);
@@ -170,7 +173,7 @@ FastS_EngineBase::SampleQueueLens()
     double queueLen;
     double activecnt;
 
-    LockEngine();
+    std::unique_lock<std::mutex> engineGuard(_lock);
     if (_stats._queueLenSampleCnt > 0)
         queueLen = (double) _stats._queueLenSampleAcc / (double) _stats._queueLenSampleCnt;
     else
@@ -198,7 +201,6 @@ FastS_EngineBase::SampleQueueLens()
         _stats._queueLenIdx = 0;
     if (_stats._queueLenValid < _stats._queuestatsize)
         _stats._queueLenValid++;
-    UnlockEngine();
 }
 
 void
@@ -214,12 +216,13 @@ FastS_EngineBase::MarkBad(uint32_t badness)
 {
     bool worse = false;
 
-    LockEngine();
-    if (badness > _badness) {
-        _badness = badness;
-        worse = true;
+    {
+        std::unique_lock<std::mutex> engineGuard(_lock);
+        if (badness > _badness) {
+            _badness = badness;
+            worse = true;
+        }
     }
-    UnlockEngine();
 
     if (worse) {
         if (badness <= BAD_NOT) {
@@ -233,16 +236,17 @@ FastS_EngineBase::MarkBad(uint32_t badness)
 void
 FastS_EngineBase::ClearBad()
 {
-    LockEngine();
-    if (_badness >= BAD_CONFIG) {
-        UnlockEngine();
-        LOG(warning,
-            "engine %s still bad due to illegal config",
-            _config._name);
-        return;
+    {
+        std::unique_lock<std::mutex> engineGuard(_lock);
+        if (_badness >= BAD_CONFIG) {
+            engineGuard.unlock();
+            LOG(warning,
+                "engine %s still bad due to illegal config",
+                _config._name);
+            return;
+        }
+        _badness = BAD_NOT;
     }
-    _badness = BAD_NOT;
-    UnlockEngine();
     HandleClearedBad();
 }
 

@@ -138,6 +138,7 @@ protected:
     FastS_EngineBase *_nextds;    // list of engines in dataset
     FastS_EngineBase *_prevpart;  // list of engines in partition
     FastS_EngineBase *_nextpart;  // list of engines in partition
+    std::mutex        _lock;
 
 public:
     FastS_EngineBase(FastS_EngineDesc *desc, FastS_PlainDataSet *dataset);
@@ -181,8 +182,6 @@ public:
 
     // common engine API
     //------------------
-    virtual void LockEngine() = 0;
-    virtual void UnlockEngine() = 0;
     virtual void Ping();
     virtual void HandleClearedBad() {}
     virtual void HandleUp() {}
