@@ -173,7 +173,9 @@ public class Distribution {
         return true;
     }
     private Group getIdealDistributorGroup(BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
-        if (parent.isLeafGroup()) return parent;
+        if (parent.isLeafGroup()) {
+            return parent;
+        }
         int[] redundancyArray = parent.getDistribution().getRedundancyArray(redundancy);
         TreeSet<ScoredGroup> results = new TreeSet<>();
         int seed = getGroupSeed(bucket, clusterState, parent);
@@ -192,7 +194,9 @@ public class Distribution {
                 results.remove(results.first());
             }
         }
-        if (results.isEmpty()) return null;
+        if (results.isEmpty()) {
+            return null;
+        }
         return getIdealDistributorGroup(bucket, clusterState, results.first().group, redundancyArray[0]);
     }
     private class ResultGroup implements Comparable<ResultGroup> {
@@ -411,6 +415,9 @@ public class Distribution {
         }
 
         Group idealGroup = getIdealDistributorGroup(bucket, state, nodeGraph, redundancy);
+        if (idealGroup == null) {
+            throw new NoDistributorsAvailableException("No distributors available in cluster state version " + state.getVersion());
+        }
         int seed = getDistributorSeed(bucket, state);
         RandomGen random = new RandomGen(seed);
         int randomIndex = 0;
