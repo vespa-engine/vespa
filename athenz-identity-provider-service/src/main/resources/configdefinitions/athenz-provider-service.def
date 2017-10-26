@@ -17,7 +17,7 @@ port                              int           default=8443
 keyPathPrefix                     string
 
 # InstanceConfirmation API path
-apiPath                           string        default="/athenz/v1/provider/instance"
+apiPath                           string        default="/athenz/v1/provider"
 
 # Athenz principal authority header name
 athenzPrincipalHeaderName         string        default="Athenz-Principal-Auth"

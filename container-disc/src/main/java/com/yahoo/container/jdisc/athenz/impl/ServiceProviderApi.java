@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.athenz.impl;
 
+import com.yahoo.vespa.defaults.Defaults;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContextBuilder;
@@ -13,6 +15,7 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -33,12 +36,19 @@ public class ServiceProviderApi {
      */
     public String getSignedIdentityDocument() {
         try (CloseableHttpClient httpClient = createHttpClient()) {
-            CloseableHttpResponse idDocResponse = httpClient.execute(RequestBuilder.get().setUri(providerUri + "/identity-document").build());
+            // TODO Figure out a proper way of determining the hostname matching what's registred in node-repository
+            String uri = providerUri + "/identity-document?hostname=" + URLEncoder.encode(
+                    Defaults.getDefaults().vespaHostname(), "UTF-8");
+            HttpUriRequest request = RequestBuilder.get().setUri(uri).build();
+            CloseableHttpResponse idDocResponse = httpClient.execute(request);
+            String responseContent = EntityUtils.toString(idDocResponse.getEntity());
             if (HttpStatus.isSuccess(idDocResponse.getStatusLine().getStatusCode())) {
-                return EntityUtils.toString(idDocResponse.getEntity());
+                return responseContent;
             } else {
-                // make sure we have retried a few times (AND logged) before giving up
-                throw new RuntimeException("Failed to initialize Athenz instance provider");
+                // TODO make sure we have retried a few times (AND logged) before giving up
+                throw new RuntimeException(
+                        "Failed to initialize Athenz instance provider: " +
+                                idDocResponse.getStatusLine() + ": " + responseContent);
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed getting signed identity document", e);
