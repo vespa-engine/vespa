@@ -288,9 +288,13 @@ const Value &
 DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
     if (a.is_double()) {
-        Aggregator &aggregator = Aggregator::create(aggr, stash);
-        aggregator.first(a.as_double());
-        return stash.create<DoubleValue>(aggregator.result());
+        if (dimensions.empty()) {
+            Aggregator &aggregator = Aggregator::create(aggr, stash);
+            aggregator.first(a.as_double());
+            return stash.create<DoubleValue>(aggregator.result());
+        } else {
+            return ErrorValue::instance;
+        }
     } else if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
