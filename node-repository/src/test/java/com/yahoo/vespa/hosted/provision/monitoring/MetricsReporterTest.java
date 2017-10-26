@@ -90,7 +90,7 @@ public class MetricsReporterTest {
         when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.EMPTY_MAP);
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(
@@ -138,7 +138,7 @@ public class MetricsReporterTest {
         when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.EMPTY_MAP);
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
