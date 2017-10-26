@@ -174,7 +174,7 @@ Test::testHandle()
     SystemStateHandle handle(*state);
     ASSERT_TRUE(handle.isValid());
 
-    SystemStateHandle hoe(handle);
+    SystemStateHandle hoe(std::move(handle));
     ASSERT_TRUE(!handle.isValid());
     ASSERT_TRUE(hoe.isValid());
 }

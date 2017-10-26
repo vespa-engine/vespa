@@ -156,7 +156,7 @@ Test::Main()
         TryLock a(lock);
         CHECK_LOCKED(lock);
         if (a.hasLock()) {
-            LockGuard guard(a);
+            LockGuard guard(std::move(a));
             CHECK_LOCKED(lock);
         }
         CHECK_UNLOCKED(lock);
@@ -167,7 +167,7 @@ Test::Main()
         TryLock a(mon);
         CHECK_LOCKED(mon);
         if (a.hasLock()) {
-            LockGuard guard(a);
+            LockGuard guard(std::move(a));
             CHECK_LOCKED(mon);
         }
         CHECK_UNLOCKED(mon);
@@ -178,7 +178,7 @@ Test::Main()
         TryLock a(mon);
         CHECK_LOCKED(mon);
         if (a.hasLock()) {
-            MonitorGuard guard(a);
+            MonitorGuard guard(std::move(a));
             CHECK_LOCKED(mon);
         }
         CHECK_UNLOCKED(mon);
@@ -197,7 +197,7 @@ Test::Main()
         {
             CHECK_LOCKED(lock);
             EXPECT_TRUE(a.hasLock());
-            LockGuard guard(a);
+            LockGuard guard(std::move(a));
             EXPECT_TRUE(!a.hasLock());
             CHECK_LOCKED(lock);
         }
@@ -240,7 +240,7 @@ Test::Main()
         tl.unlock();
         EXPECT_FALSE(tl.hasLock());
     }
-    // LockGuard/MonitorGuard have destructive copy
+    // LockGuard/MonitorGuard have destructive move
     {
         Lock lock;
         CHECK_UNLOCKED(lock);
@@ -248,7 +248,7 @@ Test::Main()
         CHECK_LOCKED(lock);
         {
             CHECK_LOCKED(lock);
-            LockGuard b(a);
+            LockGuard b(std::move(a));
             CHECK_LOCKED(lock);
         }
         CHECK_UNLOCKED(lock);
@@ -260,7 +260,7 @@ Test::Main()
         CHECK_LOCKED(mon);
         {
             CHECK_LOCKED(mon);
-            MonitorGuard b(a);
+            MonitorGuard b(std::move(a));
             CHECK_LOCKED(mon);
         }
         CHECK_UNLOCKED(mon);
