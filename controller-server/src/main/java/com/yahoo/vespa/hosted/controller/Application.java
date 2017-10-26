@@ -102,7 +102,7 @@ public class Application {
      */
     public Map<Zone, Deployment> productionDeployments() {
         return deployments.values().stream()
-                                  .filter(deployment -> deployment.zone().environment() == Environment.prod)
+                                   .filter(deployment -> deployment.zone().environment() == Environment.prod)
                                    .collect(Collectors.toMap(Deployment::zone, Function.identity()));
     }
 
