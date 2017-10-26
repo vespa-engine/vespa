@@ -12,6 +12,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
@@ -103,23 +104,27 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     private HttpResponse trigger(HttpRequest request, String tenantName, String applicationName) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        Optional<Application> application = controller.applications().get(applicationId);
-        if (!application.isPresent()) {
-            return ErrorResponse.notFoundError("No such application '" + applicationId.toShortString() + "'");
-        }
-        JobType jobType = Optional.of(asString(request.getData()))
-                .filter(s -> !s.isEmpty())
-                .map(JobType::fromId)
-                .orElse(JobType.component);
-        // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
-        // front of the queue
-        // TODO: This does not record the triggering event
-        controller.applications().deploymentTrigger().buildSystem().addJob(application.get().id(), jobType, true);
+        try (Lock lock = controller.applications().lock(applicationId)) {
+            Application application = controller.applications().require(applicationId);
+            JobType jobType = Optional.of(asString(request.getData()))
+                    .filter(s -> !s.isEmpty())
+                    .map(JobType::fromId)
+                    .orElse(JobType.component);
+            // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
+            // front of the queue
+            application = controller.applications().deploymentTrigger().triggerAllowParallel(jobType,
+                                                                                             application,
+                                                                                             true,
+                                                                                             true,
+                                                                                            "Triggered from the screwdriver/v1 web service",
+                                                                                             lock);
+            controller.applications().store(application, lock);
 
-        Slime slime = new Slime();
-        Cursor cursor = slime.setObject();
-        cursor.setString("message", "Triggered " + jobType.id() + " for " + application.get().id());
-        return new SlimeJsonResponse(slime);
+            Slime slime = new Slime();
+            Cursor cursor = slime.setObject();
+            cursor.setString("message", "Triggered " + jobType.id() + " for " + application.id());
+            return new SlimeJsonResponse(slime);
+        }
     }
 
     private HttpResponse vespaVersion() {

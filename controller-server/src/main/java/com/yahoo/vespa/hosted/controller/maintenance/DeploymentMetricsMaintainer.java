@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
@@ -28,6 +29,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
+        boolean hasWarned = false;
         for (Application application : controller().applications().asList()) {
             for (Deployment deployment : application.deployments().values()) {
                 try {
@@ -51,8 +53,10 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     }
                 }
                 catch (UncheckedIOException e) {
-                    log.log(Level.WARNING, "Failed talking to YAMAS: " + e.getMessage() +
-                            ", retrying in " + maintenanceInterval());
+                    if ( ! hasWarned) // produce only one warning per maintenance interval
+                        log.log(Level.WARNING, "Failed talking to YAMAS: " + Exceptions.toMessageString(e) +
+                                               ". Retrying in " + maintenanceInterval());
+                    hasWarned = true;
                 }
             }
         }
