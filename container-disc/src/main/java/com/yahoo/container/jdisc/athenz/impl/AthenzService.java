@@ -26,7 +26,7 @@ public class AthenzService {
         try(CloseableHttpClient client = HttpClientBuilder.create().build()) {
             ObjectMapper objectMapper = new ObjectMapper();
             HttpUriRequest postRequest = RequestBuilder.post()
-                    .setUri(athenzUrl + "/instance")
+                    .setUri(athenzUrl + "zts/v1/instance")
                     .setEntity(new StringEntity(objectMapper.writeValueAsString(instanceRegisterInformation), ContentType.APPLICATION_JSON))
                     .build();
             CloseableHttpResponse response = client.execute(postRequest);

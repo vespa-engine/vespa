@@ -50,7 +50,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.domain = config.domain();
         this.service = config.service();
         String signedIdentityDocument = serviceProviderApi.getSignedIdentityDocument();
-        String athenzUrl = getZtsEndpoint(signedIdentityDocument);
+        String ztsEndpoint = getZtsEndpoint(signedIdentityDocument);
         this.dnsSuffix = getDnsSuffix(signedIdentityDocument);
         this.providerUniqueId = getProviderUniqueId(signedIdentityDocument);
         String providerServiceName = getProviderServiceName(signedIdentityDocument);
@@ -63,7 +63,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 createCSR(keyPair),
                 true
         );
-        instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation, athenzUrl);
+        instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation, ztsEndpoint);
     }
 
     private static String getProviderUniqueId(String signedIdentityDocument) throws IOException {
