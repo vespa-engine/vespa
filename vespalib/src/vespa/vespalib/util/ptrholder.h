@@ -38,7 +38,7 @@ public:
      * @brief Create an empty PtrHolder with both current and new
      * pointers set to 0
      **/
-    PtrHolder() : _current(), _next(), _lock("PtrHolder", false) {}
+    PtrHolder() : _current(), _next(), _lock() {}
 
     /**
      * @brief Empty destructor

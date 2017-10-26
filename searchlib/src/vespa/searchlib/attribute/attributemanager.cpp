@@ -19,7 +19,7 @@ using search::attribute::IAttributeContext;
 
 namespace {
 
-vespalib::Monitor baseDirMonitor("attributemanagerbasedir", false);
+vespalib::Monitor baseDirMonitor;
 typedef std::set<string> BaseDirSet;
 BaseDirSet baseDirSet;
 
