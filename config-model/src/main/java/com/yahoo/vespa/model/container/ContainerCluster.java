@@ -23,7 +23,6 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
-import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
@@ -135,8 +134,7 @@ public final class ContainerCluster
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer,
-        IdentityConfig.Producer
+        ThreadpoolConfig.Producer
 {
 
     /**
@@ -187,8 +185,6 @@ public final class ContainerCluster
     
     private Optional<String> hostClusterId = Optional.empty();
     private Optional<Integer> memoryPercentage = Optional.empty();
-
-    private Identity identity;
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
         @Override
@@ -861,18 +857,6 @@ public final class ContainerCluster
             this.maxConcurrentFactor = maxConcurrentFactor;
             this.documentExpansionFactor = documentExpansionFactor;
             this.containerCoreMemory = containerCoreMemory;
-        }
-    }
-
-    public void setIdentity(Identity identity) {
-        this.identity = identity;
-        addComponent(identity);
-    }
-
-    @Override
-    public void getConfig(IdentityConfig.Builder builder) {
-        if (identity != null) {
-            identity.getConfig(builder);
         }
     }
 }

@@ -701,7 +701,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .orElse(""); // How to test this?
 
             Identity identity = new Identity(domain.trim(), service.trim(), cfgHostName);
-            cluster.setIdentity(identity);
+            cluster.addComponent(identity);
+
+
         }
     }
 
