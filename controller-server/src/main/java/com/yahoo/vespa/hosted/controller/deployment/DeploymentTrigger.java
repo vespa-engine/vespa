@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
@@ -119,13 +118,12 @@ public class DeploymentTrigger {
      * Find jobs that can and should run but are currently not.
      */
     public void triggerReadyJobs() {
-        ApplicationList applications = ApplicationList.from(applications().asList());
-        applications = applications.notPullRequest();
-        for (Application application : applications.asList()) {
-            try (Lock lock = applications().lock(application.id())) {
-                application = controller.applications().get(application.id()).orElse(null); // re-get with lock
-                if (application == null) continue; // application removed
-                triggerReadyJobs(application, lock);
+        ApplicationList applications = applications().list().notPullRequest();
+        for (ApplicationList.Entry entry : applications.asList()) {
+            try (Lock lock = applications().lock(entry.id())) {
+                Optional<Application> application = controller.applications().get(entry.id());
+                if (!application.isPresent()) continue; // application removed
+                triggerReadyJobs(application.get(), lock);
             }
         }
     }
@@ -207,15 +205,15 @@ public class DeploymentTrigger {
 
     /** Triggers jobs that have been delayed according to deployment spec */
     public void triggerDelayed() {
-        for (Application application : applications().asList()) {
-            if ( ! application.deploying().isPresent() ) continue;
-            if (application.deploymentJobs().hasFailures()) continue;
-            if (application.deploymentJobs().isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit())) continue;
-            if (application.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
+        for (ApplicationList.Entry entry : applications().list().asList()) {
+            if ( ! entry.deploying().isPresent() ) continue;
+            if (entry.deploymentJobs().hasFailures()) continue;
+            if (entry.deploymentJobs().isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit())) continue;
+            if (entry.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
                 continue; // Application does not have any delayed deployments
             }
 
-            Optional<JobStatus> lastSuccessfulJob = application.deploymentJobs().jobStatus().values()
+            Optional<JobStatus> lastSuccessfulJob = entry.deploymentJobs().jobStatus().values()
                     .stream()
                     .filter(j -> j.lastSuccess().isPresent())
                     .sorted(Comparator.<JobStatus, Instant>comparing(j -> j.lastSuccess().get().at()).reversed())
@@ -223,8 +221,9 @@ public class DeploymentTrigger {
             if ( ! lastSuccessfulJob.isPresent() ) continue;
 
             // Trigger next
-            try (Lock lock = applications().lock(application.id())) {
-                application = applications().require(application.id());
+            try (Lock lock = applications().lock(entry.id())) {
+                Application application = applications().get(entry.id()).orElse(null);
+                if (application == null) continue; // Application was removed
                 application = trigger(order.nextAfter(lastSuccessfulJob.get().type(), application), application,
                                       "Resuming delayed deployment", lock);
                 applications().store(application, lock);

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 
 import java.time.Duration;
@@ -41,8 +41,8 @@ public class DeploymentIssueReporter extends Maintainer {
 
     @Override
     protected void maintain() {
-        maintainDeploymentIssues(controller().applications().asList());
-        escalateInactiveDeploymentIssues(controller().applications().asList());
+        maintainDeploymentIssues(controller().applications().list().asList());
+        escalateInactiveDeploymentIssues(controller().applications().list().asList());
     }
 
     /**
@@ -50,13 +50,13 @@ public class DeploymentIssueReporter extends Maintainer {
      * and store the issue id for the filed issues. Also, clear the issueIds of applications
      * where deployment has not failed for this amount of time.
      */
-    private void maintainDeploymentIssues(List<Application> applications) {
+    private void maintainDeploymentIssues(List<ApplicationList.Entry> applications) {
         List<ApplicationId> failingApplications = new ArrayList<>();
-        for (Application application : applications)
-            if (hasFailuresOlderThanThreshold(application.deploymentJobs()))
-                failingApplications.add(application.id());
+        for (ApplicationList.Entry entry : applications)
+            if (hasFailuresOlderThanThreshold(entry.deploymentJobs()))
+                failingApplications.add(entry.id());
             else
-                controller().applications().setIssueId(application.id(), null);
+                controller().applications().setIssueId(entry.id(), null);
 
         // TODO: Change this logic, depending on the controller's definition of BROKEN, whether it updates applications
         // TODO: to an older version when the system version is BROKEN, etc..
@@ -102,7 +102,7 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** Escalate issues for which there has been no activity for a certain amount of time. */
-    private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
+    private void escalateInactiveDeploymentIssues(Collection<ApplicationList.Entry> applications) {
         applications.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
             try {
                 deploymentIssues.escalateIfInactive(issueId, ownerOf(application.id()).getPropertyId(), maxInactivity);

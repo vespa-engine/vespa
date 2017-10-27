@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
 import java.time.Clock;
@@ -33,22 +34,22 @@ public class DeploymentExpirer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : controller().applications().asList()) {
-            for (Deployment deployment : application.deployments().values()) {
+        for (ApplicationList.Entry entry : controller().applications().list().asList()) {
+            for (Deployment deployment : entry.deployments().values()) {
                 if (deployment.zone().environment().equals(Environment.prod)) continue;
 
                 if (hasExpired(controller().zoneRegistry(), deployment, clock.instant()))
-                    deactivate(application, deployment);
+                    deactivate(entry.id(), deployment);
             }
         }
     }
 
-    private void deactivate(Application application, Deployment deployment) {
+    private void deactivate(ApplicationId id, Deployment deployment) {
         try {
-            controller().applications().deactivate(application, deployment, true);
+            controller().applications().deactivate(id, deployment, true);
         }
         catch (Exception e) {
-            log.log(Level.WARNING, "Could not expire " + deployment + " of " + application, e);
+            log.log(Level.WARNING, "Could not expire " + deployment + " of " + id, e);
         }
     }
 

@@ -5,12 +5,14 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,26 +33,26 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         boolean hasWarned = false;
-        for (Application application : controller().applications().asList()) {
-            for (Deployment deployment : application.deployments().values()) {
+        for (ApplicationList.Entry entry : controller().applications().list().asList()) {
+            for (Deployment deployment : entry.deployments().values()) {
                 try {
                     MetricsService.DeploymentMetrics metrics = controller().metricsService()
-                            .getDeploymentMetrics(application.id(), deployment.zone());
+                            .getDeploymentMetrics(entry.id(), deployment.zone());
                     DeploymentMetrics appMetrics = new DeploymentMetrics(metrics.queriesPerSecond(), metrics.writesPerSecond(),
                                                                          metrics.documentCount(), metrics.queryLatencyMillis(), metrics.writeLatencyMillis());
 
-                    try (Lock lock = controller().applications().lock(application.id())) {
+                    try (Lock lock = controller().applications().lock(entry.id())) {
 
                         // Deployment or application may have changed (or be gone) now:
-                        application = controller().applications().get(application.id()).orElse(null);
-                        if (application == null)
+                        Optional<Application> application = controller().applications().get(entry.id());
+                        if (!application.isPresent())
                             break;
 
-                        deployment = application.deployments().get(deployment.zone());
+                        deployment = application.get().deployments().get(deployment.zone());
                         if (deployment == null)
                             continue;
 
-                        controller().applications().store(application.with(deployment.withMetrics(appMetrics)), lock);
+                        controller().applications().store(application.get().with(deployment.withMetrics(appMetrics)), lock);
                     }
                 }
                 catch (UncheckedIOException e) {

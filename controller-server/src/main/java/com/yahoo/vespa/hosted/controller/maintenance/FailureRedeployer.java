@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 
@@ -22,14 +22,14 @@ public class FailureRedeployer extends Maintainer {
 
     @Override
     public void maintain() {
-        List<Application> applications = ApplicationList.from(controller().applications().asList())
+        List<ApplicationList.Entry> applications = controller().applications().list()
                 .notPullRequest()
                 .asList();
-        applications.forEach(application -> triggerFailing(application));
+        applications.forEach(application -> triggerFailing(application.id()));
     }
 
-    private void triggerFailing(Application application) {
-        controller().applications().deploymentTrigger().triggerFailing(application.id());
+    private void triggerFailing(ApplicationId id) {
+        controller().applications().deploymentTrigger().triggerFailing(id);
     }
 
 }

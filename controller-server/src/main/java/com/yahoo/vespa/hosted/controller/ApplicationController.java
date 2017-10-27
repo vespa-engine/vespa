@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -134,13 +135,13 @@ public class ApplicationController {
     }
 
     /** Returns a snapshot of all applications */
-    public List<Application> asList() { 
-        return db.listApplications();
+    public ApplicationList list() {
+        return ApplicationList.from(db.listApplications());
     }
 
     /** Returns all applications of a tenant */
-    public List<Application> asList(TenantName tenant) {
-        return db.listApplications(new TenantId(tenant.value()));
+    public ApplicationList list(TenantName tenant) {
+        return ApplicationList.from(db.listApplications(new TenantId(tenant.value())));
     }
 
     /**
@@ -545,19 +546,19 @@ public class ApplicationController {
     }
 
     /** Deactivate application in the given zone */
-    public Application deactivate(Application application, Zone zone) {
-        return deactivate(application, zone, Optional.empty(), false);
+    public Application deactivate(ApplicationId id, Zone zone) {
+        return deactivate(id, zone, Optional.empty(), false);
     }
 
     /** Deactivate a known deployment of the given application */
-    public Application deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
-        return deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
+    public Application deactivate(ApplicationId id, Deployment deployment, boolean requireThatDeploymentHasExpired) {
+        return deactivate(id, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
     }
 
-    private Application deactivate(Application application, Zone zone, Optional<Deployment> deployment,
+    private Application deactivate(ApplicationId id, Zone zone, Optional<Deployment> deployment,
                                    boolean requireThatDeploymentHasExpired) {
-        try (Lock lock = lock(application.id())) {
-            application = controller.applications().require(application.id()); // re-get with lock
+        try (Lock lock = lock(id)) {
+            Application application = controller.applications().require(id);
             if (deployment.isPresent() && requireThatDeploymentHasExpired && 
                 ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant())) {
                 return application;

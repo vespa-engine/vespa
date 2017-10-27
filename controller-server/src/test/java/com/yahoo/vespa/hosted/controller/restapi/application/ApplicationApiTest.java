@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -751,9 +752,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * @param controllerTester
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
-        for (Application application : controllerTester.controller().applications().asList()) {
-            try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
-                for (Deployment deployment : application.deployments().values()) {
+        for (ApplicationList.Entry entry : controllerTester.controller().applications().list().asList()) {
+            try (Lock lock = controllerTester.controller().applications().lock(entry.id())) {
+                Application application = controllerTester.controller().applications().require(entry.id());
+                for (Deployment deployment : entry.deployments().values()) {
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
                     List<String> hostnames = new ArrayList<>();
                     hostnames.add("host1");
@@ -764,8 +766,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     deployment = deployment.withClusterInfo(clusterInfo);
                     deployment = deployment.withClusterUtils(clusterUtils);
                     deployment = deployment.withMetrics(new DeploymentMetrics(1,2,3,4,5));
-                    application = application.with(deployment);
-                    controllerTester.controller().applications().store(application, lock);
+                    controllerTester.controller().applications().store(application.with(deployment), lock);
                 }
             }
         }

@@ -55,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -257,14 +258,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor pipelinesArray = response.setArray("tenantPipelines");
-        for (Application application : controller.applications().asList()) {
-            if ( ! application.deploymentJobs().projectId().isPresent()) continue;
+        for (ApplicationList.Entry entry : controller.applications().list().asList()) {
+            if ( ! entry.deploymentJobs().projectId().isPresent()) continue;
 
             Cursor pipelineObject = pipelinesArray.addObject();
-            pipelineObject.setString("screwdriverId", String.valueOf(application.deploymentJobs().projectId().get()));
-            pipelineObject.setString("tenant", application.id().tenant().value());
-            pipelineObject.setString("application", application.id().application().value());
-            pipelineObject.setString("instance", application.id().instance().value());
+            pipelineObject.setString("screwdriverId", String.valueOf(entry.deploymentJobs().projectId().get()));
+            pipelineObject.setString("tenant", entry.id().tenant().value());
+            pipelineObject.setString("application", entry.id().application().value());
+            pipelineObject.setString("instance", entry.id().instance().value());
         }
         response.setArray("brokenTenantPipelines"); // not used but may need to be present
         return new SlimeJsonResponse(slime);
@@ -327,8 +328,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
         Cursor array = slime.setArray();
-        for (Application application : controller.applications().asList(tenant))
-            toSlime(application, array.addObject(), request);
+        for (ApplicationList.Entry entry : controller.applications().list(tenant).asList())
+            toSlime(entry.id(), array.addObject(), request);
         return new SlimeJsonResponse(slime);
     }
     
@@ -691,7 +692,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         Slime slime = new Slime();
-        toSlime(application, slime.setObject(), request);
+        toSlime(application.id(), slime.setObject(), request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -839,9 +840,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Deployment deployment = application.deployments().get(zone);
         if (deployment == null) {
             // Attempt to deactivate application even if the deployment is not known by the controller
-            controller.applications().deactivate(application, zone);
+            controller.applications().deactivate(application.id(), zone);
         } else {
-            controller.applications().deactivate(application, deployment, false);
+            controller.applications().deactivate(application.id(), deployment, false);
         }
 
         // TODO: Change to return JSON
@@ -896,9 +897,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         tenant.getUserGroup().ifPresent(g -> object.setString("userGroup", g.id()));
         Cursor applicationArray = object.setArray("applications");
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
-            for (Application application : controller.applications().asList(TenantName.from(tenant.getId().id()))) {
-                if (application.id().instance().isDefault()) // TODO: Skip non-default applications until supported properly
-                    toSlime(application, applicationArray.addObject(), request);
+            for (ApplicationList.Entry entry : controller.applications().list(TenantName.from(tenant.getId().id())).asList()) {
+                if (entry.id().instance().isDefault()) // TODO: Skip non-default applications until supported properly
+                    toSlime(entry.id(), applicationArray.addObject(), request);
             }
         }
     }
@@ -1024,6 +1025,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("instance", application.id().instance().value());
         object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +
                                          "/application/" + application.id().application().value(), request.getUri()).toString());
+    }
+
+    private void toSlime(ApplicationId application, Cursor object, HttpRequest request) {
+        object.setString("application", application.application().value());
+        object.setString("instance", application.instance().value());
+        object.setString("url", withPath("/application/v4/tenant/" + application.tenant().value() +
+                                         "/application/" + application.application().value(), request.getUri()).toString());
     }
 
     private Slime toSlime(ActivateResult result, long applicationZipSizeBytes) {

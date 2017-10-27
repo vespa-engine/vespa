@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
@@ -162,7 +163,7 @@ public class TenantController {
 
         ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
         zmsClient.createTenant(newDomain);
-        List<Application> applications = controller.applications().asList(TenantName.from(existingTenant.getId().id()));
+        List<ApplicationList.Entry> applications = controller.applications().list(TenantName.from(existingTenant.getId().id())).asList();
         applications.forEach(a -> zmsClient.addApplication(newDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value())));
         applications.forEach(a -> zmsClient.deleteApplication(existingDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value())));
         zmsClient.deleteTenant(existingDomain);
@@ -173,7 +174,7 @@ public class TenantController {
         try (Lock lock = lock(id)) {
             if ( ! tenant(id).isPresent())
                 throw new NotExistsException(id); // TODO: Change exception and message
-            if ( ! controller.applications().asList(TenantName.from(id.id())).isEmpty())
+            if ( ! controller.applications().list(TenantName.from(id.id())).isEmpty())
                 throw new IllegalArgumentException("Could not delete tenant '" + id + "': This tenant has active applications");
 
             Tenant tenant = tenant(id).get();
@@ -214,7 +215,8 @@ public class TenantController {
 
             // Create resource group in Athenz for each application name
             controller.applications()
-                    .asList(TenantName.from(existing.getId().id()))
+                    .list(TenantName.from(existing.getId().id()))
+                    .asList()
                     .stream()
                     .map(name -> new ApplicationId(name.id().application().value()))
                     .distinct()

@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
@@ -85,17 +86,17 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : controller().applications().asList()) {
-            try (Lock lock = controller().applications().lock(application.id())) {
-                application = controller.applications().get(application.id()).orElse(null); // re-get inside lock
-                if (application == null) continue; // application removed
+        for (ApplicationList.Entry entry : controller().applications().list().asList()) {
+            try (Lock lock = controller().applications().lock(entry.id())) {
+                Optional<Application> application = controller.applications().get(entry.id());
+                if (!application.isPresent()) continue; // application removed
                 
-                for (Deployment deployment : application.deployments().values()) {
-                    DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
+                for (Deployment deployment : entry.deployments().values()) {
+                    DeploymentId deploymentId = new DeploymentId(entry.id(), deployment.zone());
                     try {
                         NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
                         Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
-                        Application app = application.with(deployment.withClusterInfo(clusterInfo));
+                        Application app = application.get().with(deployment.withClusterInfo(clusterInfo));
                         controller.applications().store(app, lock);
                     } 
                     catch (IOException | IllegalArgumentException e) {

@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -92,7 +91,7 @@ public class VersionStatus {
         Version systemVersion = infrastructureVersions.stream().sorted().findFirst().get();
 
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
-                                                                                            controller.applications().asList());
+                                                                                            controller.applications().list());
         List<VespaVersion> versions = new ArrayList<>();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
@@ -126,19 +125,19 @@ public class VersionStatus {
     }
     
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                List<Application> applications) {
+                                                                                ApplicationList applications) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
         for (Version infrastructureVersion : infrastructureVersions) {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        for (Application application : ApplicationList.from(applications).notPullRequest().asList()) {
-            DeploymentJobs jobs = application.deploymentJobs();
+        for (ApplicationList.Entry entry : applications.notPullRequest().asList()) {
+            DeploymentJobs jobs = entry.deploymentJobs();
 
             // Note that each version deployed on this application in production exists
             // (ignore non-production versions)
-            for (Deployment deployment : application.productionDeployments().values()) {
+            for (Deployment deployment : entry.productionDeployments().values()) {
                 versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
             }
 
@@ -152,7 +151,7 @@ public class VersionStatus {
                     .filter(jobStatus -> jobStatus.jobError().get() != DeploymentJobs.JobError.outOfCapacity)
                     .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastCompleted().get().version()));
             for (Version v : failingJobsByVersion.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withFailing(application.id()));
+                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withFailing(entry.id()));
             }
 
             // Succeeding versions
@@ -161,7 +160,7 @@ public class VersionStatus {
                     .filter(jobStatus -> jobStatus.type().isProduction())
                     .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastSuccess().get().version()));
             for (Version v : succeedingJobsByVersions.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withProduction(application.id()));
+                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withProduction(entry.id()));
             }
         }
         return versionMap.values();
