@@ -379,7 +379,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 Zone.defaultZone(),
                 new ApplicationRepository(testTenantBuilder.createTenants(),
                                           hostProvisioner,
-                                          curator,
                                           Clock.systemUTC()));
     }
 

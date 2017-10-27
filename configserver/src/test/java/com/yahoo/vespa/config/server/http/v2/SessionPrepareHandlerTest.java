@@ -375,7 +375,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         return new SessionPrepareHandler(Runnable::run, AccessLog.voidAccessLog(), builder.createTenants(), configserverConfig,
                                          new ApplicationRepository(builder.createTenants(),
                                                                    new MockProvisioner(),
-                                                                   curator,
                                                                    Clock.systemUTC()));
     }
 
