@@ -81,21 +81,14 @@ private:
         pid_t _pid;
 
     public:
-        ProtonFileHeaderContext(const Proton &proton_,
-                                const vespalib::string &creator);
-        ~ProtonFileHeaderContext();
+        ProtonFileHeaderContext(const Proton &proton_, const vespalib::string &creator);
+        ~ProtonFileHeaderContext() override;
 
-        virtual void
-        addTags(vespalib::GenericHeader &header,
-                const vespalib::string &name) const override;
-
-        void
-        setClusterName(const vespalib::string &clusterName,
-                       const vespalib::string &baseDir);
+        void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
+        void setClusterName(const vespalib::string &clusterName, const vespalib::string &baseDir);
     };
 
     const config::ConfigUri         _configUri;
-    vespalib::string                _dbFile;
     mutable std::shared_timed_mutex _mutex;
     MetricsUpdateHook               _metricsHook;
     MetricsEngine::UP               _metricsEngine;
@@ -103,7 +96,7 @@ private:
     TLS::UP                         _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
-     DocumentDBMap                   _documentDBMap;
+    DocumentDBMap                   _documentDBMap;
     MatchEngine::UP                 _matchEngine;
     SummaryEngine::UP               _summaryEngine;
     DocsumBySlime::UP               _docsumBySlime;

@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/valuemetric.h>
+#include <map>
 
 namespace proton {
 
@@ -27,7 +29,7 @@ struct LegacyAttributeMetrics : metrics::MetricSet {
 
         // per attribute metrics will be wired in here (by the metrics engine)
         List(metrics::MetricSet *parent);
-        ~List();
+        ~List() override;
 
     private:
         std::map<std::string, Entry::UP> metrics;
