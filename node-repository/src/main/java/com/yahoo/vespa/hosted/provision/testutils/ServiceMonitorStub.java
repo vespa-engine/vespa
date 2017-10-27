@@ -92,6 +92,6 @@ public class ServiceMonitorStub implements ServiceMonitor {
 
     @Override
     public ServiceModel getServiceModelSnapshot() {
-        throw new IllegalStateException("getServicemodelSnapshot has not been implemented");
+        throw new UnsupportedOperationException("getServicemodelSnapshot has not been implemented");
     }
 }

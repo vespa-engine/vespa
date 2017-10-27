@@ -140,11 +140,13 @@ public class MetricsReporter extends Maintainer {
 
             metric.set(
                     "numberOfServicesUp",
-                    servicesCount.getOrDefault(ServiceStatus.UP, 0L), context);
+                    servicesCount.getOrDefault(ServiceStatus.UP, 0L),
+                    context);
 
             metric.set(
                     "numberOfServicesNotChecked",
-                    servicesCount.getOrDefault(ServiceStatus.NOT_CHECKED, 0L), context);
+                    servicesCount.getOrDefault(ServiceStatus.NOT_CHECKED, 0L),
+                    context);
 
             long numberOfServicesDown = servicesCount.getOrDefault(ServiceStatus.DOWN, 0L);
             metric.set("numberOfServicesDown", numberOfServicesDown, context);
