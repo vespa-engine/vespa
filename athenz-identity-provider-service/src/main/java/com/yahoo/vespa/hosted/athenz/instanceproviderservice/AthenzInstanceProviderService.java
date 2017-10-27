@@ -66,6 +66,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                     config, keyProvider, sslContextFactory, nodeRepository, zone);
             AthenzCertificateUpdater reloader =
                     new AthenzCertificateUpdater(certificateClient, sslContextFactory, keyProvider, config);
+            // TODO Configurable update frequency
             scheduler.scheduleAtFixedRate(reloader, 0, 1, TimeUnit.DAYS);
             try {
                 jetty.start();
@@ -117,6 +118,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
     private static class AthenzCertificateUpdater implements Runnable {
 
+        // TODO Make expiry a configuration parameter
         private static final TemporalAmount EXPIRY_TIME = Duration.ofDays(30);
         private static final Logger log = Logger.getLogger(AthenzCertificateUpdater.class.getName());
 
