@@ -56,20 +56,22 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()); 
     }
 
-    public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision, boolean upgrade,
-                                    Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(version, revision, upgrade, triggerTime)),
+    public JobStatus withTriggering(long runId, Version version, Optional<ApplicationRevision> revision,
+                                    boolean upgrade, String reason, Instant triggerTime) {
+        return new JobStatus(type, jobError, Optional.of(new JobRun(runId, version, revision, upgrade, reason, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
-    public JobStatus withCompletion(Optional<DeploymentJobs.JobError> jobError, Instant completionTime, Controller controller) {
+    public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime, Controller controller) {
         Version version;
         Optional<ApplicationRevision> revision;
         boolean upgrade;
+        String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion();
             revision = Optional.empty();
             upgrade = false;
+            reason = "Application commit";
         }
         else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
@@ -80,9 +82,10 @@ public class JobStatus {
             version = lastTriggered.get().version();
             revision = lastTriggered.get().revision();
             upgrade = lastTriggered.get().upgrade();
+            reason = lastTriggered.get().reason();
         }
 
-        JobRun thisCompletion = new JobRun(version, revision, upgrade, completionTime);
+        JobRun thisCompletion = new JobRun(runId, version, revision, upgrade, reason, completionTime);
 
         Optional<JobRun> firstFailing = this.firstFailing;
         if (jobError.isPresent() &&  ! this.firstFailing.isPresent())
@@ -168,31 +171,43 @@ public class JobStatus {
     /** Information about a particular triggering or completion of a run of a job. This is immutable. */
     public static class JobRun {
         
+        private final long id;
         private final Version version;
         private final Optional<ApplicationRevision> revision;
-        private final Instant at;
         private final boolean upgrade;
+        private final String reason;
+        private final Instant at;
         
-        public JobRun(Version version, Optional<ApplicationRevision> revision, boolean upgrade, Instant at) {
+        public JobRun(long id, Version version, Optional<ApplicationRevision> revision, 
+                      boolean upgrade, String reason, Instant at) {
             Objects.requireNonNull(version, "version cannot be null");
             Objects.requireNonNull(revision, "revision cannot be null");
+            Objects.requireNonNull(reason, "Reason cannot be null");
             Objects.requireNonNull(at, "at cannot be null");
+            this.id = id;
             this.version = version;
             this.revision = revision;
             this.upgrade = upgrade;
+            this.reason = reason;
             this.at = at;
         }
+        
+        /** Returns the id of this run of this job, or -1 if not known */
+        public long id() { return id; }
 
         /** Returns whether this job run was a Vespa upgrade */
         public boolean upgrade() { return upgrade; }
         
-        /** The Vespa version used on this run */
+        /** Returns the Vespa version used on this run */
         public Version version() { return version; }
         
-        /** The application revision used for this run, or empty when not known */
+        /** Returns the application revision used for this run, or empty when not known */
         public Optional<ApplicationRevision> revision() { return revision; }
         
-        /** The time if this triggering or completion */
+        /** Returns a human-readable reason for this particular job run */
+        public String reason() { return reason; }
+        
+        /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
         @Override
@@ -203,16 +218,17 @@ public class JobStatus {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof JobRun)) return false;
+            if ( ! (o instanceof JobRun)) return false;
             JobRun jobRun = (JobRun) o;
-            return upgrade == jobRun.upgrade &&
+            return id == id &&
                    Objects.equals(version, jobRun.version) &&
                    Objects.equals(revision, jobRun.revision) &&
+                   upgrade == jobRun.upgrade &&
                    Objects.equals(at, jobRun.at);
         }
 
         @Override
-        public String toString() { return "job run of version " + (upgrade() ? "upgrade " : "") + version + " "
+        public String toString() { return "job run " + id + " of version " + (upgrade() ? "upgrade " : "") + version + " "
                                           + revision + " at " + at; }
         
     }

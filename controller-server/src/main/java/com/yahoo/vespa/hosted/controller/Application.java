@@ -155,15 +155,18 @@ public class Application {
                                outstandingChange);
     }
     
-    public Application withJobTriggering(JobType type, Optional<Change> change, Instant triggerTime, Controller controller) {
+    public Application withJobTriggering(long runId, JobType type, Optional<Change> change, String reason, 
+                                         Instant triggerTime, Controller controller) {
         return new Application(id, 
                                deploymentSpec,
                                validationOverrides,
                                deployments, 
                                deploymentJobs.withTriggering(type,
                                                              change,
+                                                             runId,
                                                              determineTriggerVersion(type, controller),
                                                              determineTriggerRevision(type, controller),
+                                                             reason,
                                                              triggerTime),
                                deploying, 
                                outstandingChange);

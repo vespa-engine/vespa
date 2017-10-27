@@ -59,21 +59,26 @@ public class DeploymentJobs {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(report.jobType(), (type, job) -> {
             if (job == null) job = JobStatus.initial(report.jobType());
-            return job.withCompletion(report.jobError(), notificationTime, controller);
+            return job.withCompletion(report.buildNumber(), report.jobError(), notificationTime, controller);
         });
         return new DeploymentJobs(Optional.of(report.projectId()), status, issueId);
     }
 
     public DeploymentJobs withTriggering(JobType jobType,
                                          Optional<Change> change,
+                                         long runId,
                                          Version version,
                                          Optional<ApplicationRevision> revision,
+                                         String reason,
                                          Instant triggerTime) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(jobType, (type, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
-            return job.withTriggering(version, revision,
+            return job.withTriggering(runId,
+                                      version,
+                                      revision,
                                       change.isPresent() && change.get() instanceof Change.VersionChange,
+                                      reason,
                                       triggerTime);
         });
         return new DeploymentJobs(projectId, status, issueId);

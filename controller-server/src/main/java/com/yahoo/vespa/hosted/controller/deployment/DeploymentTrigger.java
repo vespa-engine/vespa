@@ -362,27 +362,27 @@ public class DeploymentTrigger {
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
      * @param first whether to trigger the job before other jobs
-     * @param force true to diable checks which should normally prevent this triggering from happening
-     * @param cause describes why the job is triggered
+     * @param force true to disable checks which should normally prevent this triggering from happening
+     * @param reason describes why the job is triggered
      * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
      */
     public Application triggerAllowParallel(JobType jobType, Application application, 
-                                            boolean first, boolean force, String cause, Lock lock) {
+                                            boolean first, boolean force, String reason, Lock lock) {
         if (jobType == null) return application; // we are passed null when the last job has been reached
         // Never allow untested changes to go through
         // Note that this may happen because a new change catches up and prevents an older one from continuing
         if ( ! application.deploymentJobs().isDeployableTo(jobType.environment(), application.deploying())) {
             log.warning(String.format("Want to trigger %s for %s with reason %s, but change is untested", jobType,
-                                      application, cause));
+                                      application, reason));
             return application;
         }
 
         if ( ! force && ! allowedTriggering(jobType, application)) return application;
         log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
-                               cause));
+                               reason));
         buildSystem.addJob(application.id(), jobType, first);
-        return application.withJobTriggering(jobType, application.deploying(), clock.instant(), controller);
+        return application.withJobTriggering(-1, jobType, application.deploying(), reason, clock.instant(), controller);
     }
 
     /** Returns true if the given proposed job triggering should be effected */

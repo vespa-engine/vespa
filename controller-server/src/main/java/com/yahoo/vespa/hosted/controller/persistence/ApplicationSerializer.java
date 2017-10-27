@@ -78,10 +78,12 @@ public class ApplicationSerializer {
     private final String lastSuccessField = "lastSuccess";
     
     // JobRun fields
+    private final String jobRunIdField = "id";
     private final String versionField = "version";
     private final String revisionField = "revision";
-    private final String atField = "at";
     private final String upgradeField = "upgrade";
+    private final String reasonField = "reason";
+    private final String atField = "at";
 
     // ClusterInfo fields
     private final String clusterInfoField = "clusterInfo";
@@ -226,10 +228,12 @@ public class ApplicationSerializer {
     private void jobRunToSlime(Optional<JobStatus.JobRun> jobRun, Cursor parent, String jobRunObjectName) {
         if ( ! jobRun.isPresent()) return;
         Cursor object = parent.setObject(jobRunObjectName);
+        object.setLong(jobRunIdField, jobRun.get().id());
         object.setString(versionField, jobRun.get().version().toString());
         if ( jobRun.get().revision().isPresent())
             toSlime(jobRun.get().revision().get(), object.setObject(revisionField));
         object.setBool(upgradeField, jobRun.get().upgrade());
+        object.setString(reasonField, jobRun.get().reason());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
     }
     
@@ -384,9 +388,11 @@ public class ApplicationSerializer {
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new JobStatus.JobRun(new Version(object.field(versionField).asString()),
+        return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017
+                                                new Version(object.field(versionField).asString()),
                                                 applicationRevisionFromSlime(object.field(revisionField)),
                                                 object.field(upgradeField).asBool(),
+                                                optionalString(object.field(reasonField)).orElse(""), // TODO: Make non-optional after November 2017
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
 
