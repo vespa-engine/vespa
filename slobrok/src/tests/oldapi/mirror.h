@@ -111,7 +111,7 @@ private:
     void RequestDone(FRT_RPCRequest *req) override;
 
     FRT_Supervisor          &_orb;
-    mutable FastOS_Mutex     _lock;
+    mutable std::mutex       _lock;
     bool                     _reqDone;
     SpecList                 _specs;
     vespalib::GenCnt         _specsGen;

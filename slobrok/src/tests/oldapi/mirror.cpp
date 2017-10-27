@@ -54,14 +54,13 @@ MirrorOld::SpecList
 MirrorOld::lookup(const std::string & pattern) const
 {
     SpecList ret;
-    _lock.Lock();
+    std::lock_guard<std::mutex> guard(_lock);
     SpecList::const_iterator end = _specs.end();
     for (SpecList::const_iterator it = _specs.begin(); it != end; ++it) {
         if (match(it->first.c_str(), pattern.c_str())) {
             ret.push_back(*it);
         }
     }
-    _lock.Unlock();
     return ret;    
 }
 
@@ -119,10 +118,11 @@ MirrorOld::PerformTask()
                                                std::string(s[idx]._str)));
             }
 
-            _lock.Lock();
-            std::swap(specs, _specs);
-            _updates.add();
-            _lock.Unlock();
+            {
+                std::lock_guard<std::mutex> guard(_lock);
+                std::swap(specs, _specs);
+                _updates.add();
+            }
             _specsGen.setFromInt(answer[2]._intval32);
         }
         _backOff.reset();

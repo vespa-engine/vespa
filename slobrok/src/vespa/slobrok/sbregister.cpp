@@ -96,10 +96,9 @@ RegisterAPI::~RegisterAPI()
 void
 RegisterAPI::registerName(const vespalib::stringref & name)
 {
-    _lock.Lock();
+    std::lock_guard<std::mutex> guard(_lock);
     for (uint32_t i = 0; i < _names.size(); ++i) {
         if (_names[i] == name) {
-            _lock.Unlock();
             return;
         }
     }
@@ -108,20 +107,18 @@ RegisterAPI::registerName(const vespalib::stringref & name)
     _pending.push_back(name);
     discard(_unreg, name);
     ScheduleNow();
-    _lock.Unlock();
 }
 
 
 void
 RegisterAPI::unregisterName(const vespalib::stringref & name)
 {
-    _lock.Lock();
+    std::lock_guard<std::mutex> guard(_lock);
     _busy = true;
     discard(_names, name);
     discard(_pending, name);
     _unreg.push_back(name);
     ScheduleNow();
-    _lock.Unlock();
 }
 
 // handle any request that completed
@@ -176,11 +173,12 @@ RegisterAPI::handleReconnect()
             // try next possible server.
             _target = _orb.GetTarget(_currSlobrok.c_str());
         }
-        _lock.Lock();
-        // now that we have a new connection, we need to
-        // immediately re-register everything.
-        _pending = _names;
-        _lock.Unlock();
+        {
+            std::lock_guard<std::mutex> guard(_lock);
+            // now that we have a new connection, we need to
+            // immediately re-register everything.
+            _pending = _names;
+        }
         if (_target == 0) {
             // we have tried all possible servers.
             // start from the top after a delay,
@@ -206,18 +204,19 @@ RegisterAPI::handlePending()
     bool unreg = false;
     bool reg   = false;
     vespalib::string name;
-    _lock.Lock();
-    // pop off the todo stack, unregister has priority
-    if (_unreg.size() > 0) {
-        name = _unreg.back();
-        _unreg.pop_back();
-        unreg = true;
-    } else if (_pending.size() > 0) {
-        name = _pending.back();
-        _pending.pop_back();
-        reg = true;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        // pop off the todo stack, unregister has priority
+        if (_unreg.size() > 0) {
+            name = _unreg.back();
+            _unreg.pop_back();
+            unreg = true;
+        } else if (_pending.size() > 0) {
+            name = _pending.back();
+            _pending.pop_back();
+            reg = true;
+        }
     }
-    _lock.Unlock();
 
     if (unreg) {
         // start a new unregister request
@@ -239,12 +238,11 @@ RegisterAPI::handlePending()
     } else {
         // nothing more to do right now; schedule to re-register all
         // names after a long delay.
-        _lock.Lock();
+        std::lock_guard<std::mutex> guard(_lock);
         _pending = _names;
         LOG(debug, "done, reschedule in 30s");
         _busy = false;
         Schedule(30.0);
-        _lock.Unlock();
     }
 }
 
@@ -301,12 +299,11 @@ void
 RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
 {
     FRT_Values &dst = *req->GetReturn();
-    _owner._lock.Lock();
+    std::lock_guard<std::mutex> guard(_owner._lock);
     FRT_StringValue *names = dst.AddStringArray(_owner._names.size());
     for (uint32_t i = 0; i < _owner._names.size(); ++i) {
         dst.SetString(&names[i], _owner._names[i].c_str());
     }
-    _owner._lock.Unlock();
 }
 
 
