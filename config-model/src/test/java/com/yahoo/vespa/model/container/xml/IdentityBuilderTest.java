@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.vespa.model.container.Identity;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -26,7 +27,7 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
                 "</jdisc>");
 
         createModel(root, clusterElem);
-        IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default");
+        IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default/component/" + Identity.CLASS);
         assertEquals("domain", identityConfig.domain());
         assertEquals("service", identityConfig.service());
     }

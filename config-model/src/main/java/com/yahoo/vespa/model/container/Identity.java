@@ -2,18 +2,21 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 /**
  * @author mortent
  */
 public class Identity extends SimpleComponent implements IdentityConfig.Producer {
+    public static final String CLASS = AthenzIdentityProviderImpl.class.getName();
+
     private final String domain;
     private final String service;
     private final String loadBalancerAddress;
 
     public Identity(String domain, String service, String loadBalancerAddress) {
-        super("com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl");
+        super(CLASS);
         this.domain = domain;
         this.service = service;
         this.loadBalancerAddress = loadBalancerAddress;
