@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -16,11 +17,13 @@ import org.bouncycastle.util.io.pem.PemObject;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 
 /**
  * @author bjorncs
@@ -75,6 +78,18 @@ class CryptoUtils {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
             pemWriter.writeObject(new PemObject("CERTIFICATE REQUEST", csr.getEncoded()));
             return stringWriter.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    static X509Certificate parseCertificate(String pemEncodedCertificate) {
+        try (PEMParser parser = new PEMParser(new StringReader(pemEncodedCertificate))) {
+            Object pemObject = parser.readObject();
+            if (!(pemObject instanceof X509Certificate)) {
+                throw new IllegalArgumentException("Expeceted X509Certificate instance, got " + pemObject);
+            }
+            return (X509Certificate) pemObject;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
