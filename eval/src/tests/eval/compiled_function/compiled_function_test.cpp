@@ -49,7 +49,6 @@ TEST("require that lazy parameter passing works") {
 //-----------------------------------------------------------------------------
 
 std::vector<vespalib::string> unsupported = {
-    "sum(",
     "map(",
     "join(",
     "reduce(",

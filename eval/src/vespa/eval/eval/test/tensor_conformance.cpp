@@ -833,7 +833,7 @@ struct TestContext {
                           const TensorSpec &lhs,
                           const TensorSpec &rhs)
     {
-        Expr_TT eval("sum(a*b)");
+        Expr_TT eval("reduce(a*b,sum)");
         TEST_DO(verify_result(safe(eval).eval(engine, lhs, rhs), spec(expect)));
     }
 

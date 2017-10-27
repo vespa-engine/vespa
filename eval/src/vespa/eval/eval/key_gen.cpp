@@ -31,7 +31,6 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const If       &node) override { add_byte( 7); add_double(node.p_true()); }
     void visit(const Let          &) override { add_byte( 8); }
     void visit(const Error        &) override { add_byte( 9); }
-    void visit(const TensorSum    &) override { add_byte(10); } // dimensions should be part of key
     void visit(const TensorMap    &) override { add_byte(11); } // lambda should be part of key
     void visit(const TensorJoin   &) override { add_byte(12); } // lambda should be part of key
     void visit(const TensorReduce &) override { add_byte(13); } // aggr/dimensions should be part of key

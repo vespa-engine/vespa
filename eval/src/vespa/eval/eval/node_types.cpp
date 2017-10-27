@@ -152,14 +152,6 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const Error &node) override {
         bind_type(ValueType::error_type(), node);
     }
-    void visit(const TensorSum &node) override {
-        const ValueType &child = state.peek(0);        
-        if (node.dimension().empty()) {
-            bind_type(child.reduce({}), node);
-        } else {
-            bind_type(child.reduce({node.dimension()}), node);
-        }
-    }
     void visit(const TensorMap &node) override { resolve_op1(node); }
     void visit(const TensorJoin &node) override { resolve_op2(node); }
     void visit(const TensorReduce &node) override {

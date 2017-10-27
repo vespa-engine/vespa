@@ -7,7 +7,6 @@ namespace vespalib {
 namespace eval {
 namespace nodes {
 
-void TensorSum   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorMap   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorJoin  ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorReduce::accept(NodeVisitor &visitor) const { visitor.visit(*this); }

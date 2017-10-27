@@ -18,10 +18,10 @@ using namespace vespalib::tensor;
 
 //-----------------------------------------------------------------------------
 
-const vespalib::string dot_product_match_expr    = "sum(query*document)";
-const vespalib::string dot_product_multiply_expr = "sum(query*document)";
-const vespalib::string model_match_expr          = "sum((query*document)*model)";
-const vespalib::string matrix_product_expr       = "sum(sum((query+document)*model,x))";
+const vespalib::string dot_product_match_expr    = "reduce(query*document,sum)";
+const vespalib::string dot_product_multiply_expr = "reduce(query*document,sum)";
+const vespalib::string model_match_expr          = "reduce((query*document)*model,sum)";
+const vespalib::string matrix_product_expr       = "reduce(reduce((query+document)*model,sum,x),sum)";
 
 //-----------------------------------------------------------------------------
 
