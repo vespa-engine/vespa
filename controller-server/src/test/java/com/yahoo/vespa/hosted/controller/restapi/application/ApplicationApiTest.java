@@ -9,8 +9,11 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -37,6 +40,8 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +84,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("cookiefreshness.json"));
         // POST (add) a tenant without property ID
         tester.assertResponse(request("/application/v4/tenant/tenant1",
-                                 "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}", 
+                                 "{\"athensDomain\":\"domain1\", \"property\":\"property1\"}",
                                        Request.Method.POST),
                               new File("tenant-without-applications.json"));
         // PUT (modify) a tenant
@@ -101,6 +106,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", "", Request.Method.GET),
                               new File("tenant-with-application.json"));
+
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", "", Request.Method.GET),
                               new File("application-list.json"));
@@ -236,6 +242,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Add another Athens domain, so we can try to create more tenants
         addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
+        // Add property info for that property id, as well, in the mock organization.
+        addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2",
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
@@ -284,6 +292,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
 
         controllerTester.controller().deconstruct();
+    }
+
+    private void addPropertyData(MockOrganization organization, String propertyIdValue) {
+        PropertyId propertyId = new PropertyId(propertyIdValue);
+        organization.addProperty(propertyId);
+        organization.setContactsFor(propertyId, Arrays.asList(Collections.singletonList(User.from("alice")),
+                                                              Collections.singletonList(User.from("bob"))));
     }
 
     @Test
@@ -755,4 +770,5 @@ public class ApplicationApiTest extends ControllerContainerTest {
             }
         }
     }
+
 }

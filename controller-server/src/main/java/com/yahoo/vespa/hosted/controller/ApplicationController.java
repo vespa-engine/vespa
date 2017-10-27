@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -499,9 +500,9 @@ public class ApplicationController {
         }
     }
 
-    public void setJiraIssueId(ApplicationId id, Optional<String> jiraIssueId) {
+    public void setIssueId(ApplicationId id, IssueId issueId) {
         try (Lock lock = lock(id)) {
-            get(id).ifPresent(application -> store(application.withJiraIssueId(jiraIssueId), lock));
+            get(id).ifPresent(application -> store(application.with(issueId), lock));
         }
     }
 

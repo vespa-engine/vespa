@@ -29,24 +29,25 @@ public class Tenant {
 
     public Tenant(TenantId id, Optional<UserGroup> userGroup, Optional<Property> property, Optional<AthenzDomain> athenzDomain, Optional<PropertyId> propertyId) {
         if (id.isUser()) {
-            require(!userGroup.isPresent(), "User tenant '%s' cannot have a user group.", id);
-            require(!property.isPresent(), "User tenant '%s' cannot have a property.", id);
-            require(!propertyId.isPresent(), "User tenant '%s' cannot have a property ID.", id);
-            require(!athenzDomain.isPresent(), "User tenant '%s' cannot have an athens domain.", id);
+            require( ! userGroup.isPresent(), "User tenant '%s' cannot have a user group.", id);
+            require( ! property.isPresent(), "User tenant '%s' cannot have a property.", id);
+            require( ! propertyId.isPresent(), "User tenant '%s' cannot have a property ID.", id);
+            require( ! athenzDomain.isPresent(), "User tenant '%s' cannot have an athens domain.", id);
         } else if (athenzDomain.isPresent()) {
-            require(property.isPresent(), "Athens tenant '%s' must have a property.", id);
-            require(!userGroup.isPresent(), "Athens tenant '%s' cannot have a user group.", id);
-            require(athenzDomain.isPresent(), "Athens tenant '%s' must have an athens domain.", id);
+            require(   property.isPresent(), "Athens tenant '%s' must have a property.", id);
+            require( ! userGroup.isPresent(), "Athens tenant '%s' cannot have a user group.", id);
+            require(   athenzDomain.isPresent(), "Athens tenant '%s' must have an athens domain.", id);
         } else {
-            require(property.isPresent(), "OpsDB tenant '%s' must have a property.", id);
-            require(userGroup.isPresent(), "OpsDb tenant '%s' must have a user group.", id);
-            require(!athenzDomain.isPresent(), "OpsDb tenant '%s' cannot have an athens domain.", id);
+            require(   property.isPresent(), "OpsDB tenant '%s' must have a property.", id);
+            require(   userGroup.isPresent(), "OpsDb tenant '%s' must have a user group.", id);
+            require( ! athenzDomain.isPresent(), "OpsDb tenant '%s' cannot have an athens domain.", id);
         }
         this.id = id;
         this.userGroup = userGroup;
         this.property = property;
         this.athenzDomain = athenzDomain;
         this.propertyId = propertyId; // TODO: Check validity after TODO@14. OpsDb tenants have this set in Sherpa, while athens tenants do not.
+        // TODO: Require PropertyId for non-users, and fetch Property from EntityService (which will be moved to Organization) in the controller.
     }
 
     public boolean isAthensTenant() { return athenzDomain.isPresent(); }
