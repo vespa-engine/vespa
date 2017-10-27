@@ -2,28 +2,27 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/frt/frt.h>
+#include <mutex>
 
 
 class Session
 {
 private:
-  static FastOS_Mutex _lock;
+  static std::mutex _lock;
   static int        _cnt;
   int               _val;
 
 public:
   Session() : _val(0)
   {
-    _lock.Lock();
-    ++_cnt;
-    _lock.Unlock();
+      std::lock_guard<std::mutex> guard(_lock);
+      ++_cnt;
   }
 
   ~Session()
   {
-    _lock.Lock();
-    --_cnt;
-    _lock.Unlock();
+      std::lock_guard<std::mutex> guard(_lock);
+      --_cnt;
   }
 
   void SetValue(int val) { _val = val; }
@@ -31,7 +30,7 @@ public:
   static int GetCnt() { return _cnt; }
 };
 
-FastOS_Mutex Session::_lock;
+std::mutex Session::_lock;
 int Session::_cnt(0);
 
 

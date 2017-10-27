@@ -7,7 +7,7 @@ TEST("lock speed") {
   FastOS_Time      start;
   FastOS_Time       stop;
   DummyLock        dummy;
-  FastOS_Mutex     lock;
+  std::mutex        lock;
   double       dummyTime;
   double      actualTime;
   double        overhead;
@@ -46,26 +46,26 @@ TEST("lock speed") {
 
   start.SetNow();
   for (i = 0; i < 1000000; i++) {
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
-    lock.Lock();
-    lock.Unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
+    lock.lock();
+    lock.unlock();
   }
   stop.SetNow();
   stop -= start;
@@ -85,16 +85,16 @@ TEST("lock speed") {
 
   start.SetNow();
   for (i = 0; i < 1000000; i++) {
-      FastOS_Mutex lock0;
-      FastOS_Mutex lock1;
-      FastOS_Mutex lock2;
-      FastOS_Mutex lock3;
-      FastOS_Mutex lock4;
-      FastOS_Mutex lock5;
-      FastOS_Mutex lock6;
-      FastOS_Mutex lock7;
-      FastOS_Mutex lock8;
-      FastOS_Mutex lock9;
+      std::mutex lock0;
+      std::mutex lock1;
+      std::mutex lock2;
+      std::mutex lock3;
+      std::mutex lock4;
+      std::mutex lock5;
+      std::mutex lock6;
+      std::mutex lock7;
+      std::mutex lock8;
+      std::mutex lock9;
   }
   stop.SetNow();
   stop -= start;
@@ -105,16 +105,16 @@ TEST("lock speed") {
 
   start.SetNow();
   for (i = 0; i < 1000000; i++) {
-      FastOS_Cond cond0;
-      FastOS_Cond cond1;
-      FastOS_Cond cond2;
-      FastOS_Cond cond3;
-      FastOS_Cond cond4;
-      FastOS_Cond cond5;
-      FastOS_Cond cond6;
-      FastOS_Cond cond7;
-      FastOS_Cond cond8;
-      FastOS_Cond cond9;
+      std::condition_variable cond0;
+      std::condition_variable cond1;
+      std::condition_variable cond2;
+      std::condition_variable cond3;
+      std::condition_variable cond4;
+      std::condition_variable cond5;
+      std::condition_variable cond6;
+      std::condition_variable cond7;
+      std::condition_variable cond8;
+      std::condition_variable cond9;
   }
   stop.SetNow();
   stop -= start;
