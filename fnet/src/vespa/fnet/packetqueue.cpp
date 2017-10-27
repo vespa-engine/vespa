@@ -238,8 +238,7 @@ FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
         bool timeout = false;
 
         _waitCnt++;
-        while ((_bufused == 0) && !timeout
-               && (waitTime = (int)(maxwait - startTime.MilliSecsToNow())) > 0) {
+        while ((_bufused == 0) && !timeout && (waitTime = (int)(maxwait - startTime.MilliSecsToNow())) > 0) {
             timeout = _cond.wait_for(guard, std::chrono::milliseconds(waitTime)) == std::cv_status::timeout;
         }
         _waitCnt--;

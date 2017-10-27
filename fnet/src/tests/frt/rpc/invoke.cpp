@@ -45,8 +45,7 @@ struct LockedReqWait : public FRT_IRequestWait
 
     bool isLocked() {
         std::lock_guard<std::mutex> guard(_lockLock);
-        bool ret = _lock;
-        return ret;
+        return _lock;
     }
 
     void RequestDone(FRT_RPCRequest *) override {

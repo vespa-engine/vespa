@@ -571,11 +571,9 @@ FNET_Connection::OpenChannel()
 bool
 FNET_Connection::CloseChannel(FNET_Channel *channel)
 {
-    bool ret;
     std::unique_lock<std::mutex> guard(_ioc_lock);
     WaitCallback(guard, channel);
-    ret = _channels.Unregister(channel);
-    return ret;
+    return _channels.Unregister(channel);
 }
 
 
@@ -583,8 +581,7 @@ void
 FNET_Connection::FreeChannel(FNET_Channel *channel)
 {
     delete channel;
-    std::unique_lock<std::mutex> guard(_ioc_lock);
-    SubRef_HasLock(std::move(guard));
+    SubRef_HasLock(std::unique_lock<std::mutex>(_ioc_lock));
 }
 
 
@@ -656,9 +653,7 @@ uint32_t
 FNET_Connection::GetQueueLen()
 {
     std::unique_lock<std::mutex> guard(_ioc_lock);
-    uint32_t ret = _queue.GetPacketCnt_NoLock()
-                   + _myQueue.GetPacketCnt_NoLock();
-    return ret;
+    return _queue.GetPacketCnt_NoLock() + _myQueue.GetPacketCnt_NoLock();
 }
 
 
@@ -713,6 +708,16 @@ FNET_Connection::HandleReadEvent()
 
 
 bool
+FNET_Connection::enterConnectedState()
+{
+    std::unique_lock<std::mutex> guard(_ioc_lock);
+    _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
+    LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
+        GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
+    return (_writeWork > 0);
+}
+
+bool
 FNET_Connection::HandleWriteEvent()
 {
     int  error;           // socket error code
@@ -722,16 +727,9 @@ FNET_Connection::HandleWriteEvent()
     case FNET_CONNECTING:
         error = _socket.get_so_error();
         if (error == 0) { // connect ok
-            bool writePending;
-            {
-                std::unique_lock<std::mutex> guard(_ioc_lock);
-                _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
-                LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
-                    GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
-                writePending = (_writeWork > 0);
-            }
-            if (!writePending)
+            if (!enterConnectedState()) {
                 EnableWriteEvent(false);
+            }
         } else {
             LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
 
@@ -740,7 +738,6 @@ FNET_Connection::HandleWriteEvent()
         }
         break;
     case FNET_CONNECTED:
-    {
         {
             std::unique_lock<std::mutex> guard(_ioc_lock);
             if (_flags._writeLock) {
@@ -753,7 +750,6 @@ FNET_Connection::HandleWriteEvent()
         }
         broken = !Write(false);
         break;
-    }
     case FNET_CLOSING:
     case FNET_CLOSED:
     default:
