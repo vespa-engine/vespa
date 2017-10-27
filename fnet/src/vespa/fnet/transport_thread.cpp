@@ -169,9 +169,8 @@ FNET_TransportThread::UpdateStats()
     for (FNET_IOComponent *comp = _componentsHead;
          comp != nullptr; comp = comp->_ioc_next)
     {
-        comp->Lock();
+        auto guard(comp->getGuard());
         comp->FlushDirectWriteStats();
-        comp->Unlock();
     }
     {
         std::unique_lock<std::mutex> guard(_lock);
