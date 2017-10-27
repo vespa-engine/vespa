@@ -708,7 +708,7 @@ FNET_Connection::HandleReadEvent()
 
 
 bool
-FNET_Connection::enterConnectedState()
+FNET_Connection::writePendingAfterConnect()
 {
     std::unique_lock<std::mutex> guard(_ioc_lock);
     _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
@@ -727,7 +727,7 @@ FNET_Connection::HandleWriteEvent()
     case FNET_CONNECTING:
         error = _socket.get_so_error();
         if (error == 0) { // connect ok
-            if (!enterConnectedState()) {
+            if (!writePendingAfterConnect()) {
                 EnableWriteEvent(false);
             }
         } else {

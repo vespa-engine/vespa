@@ -215,7 +215,7 @@ private:
      **/
     bool Write(bool direct);
 
-    bool enterConnectedState();
+    bool writePendingAfterConnect();
 public:
 
     /**
