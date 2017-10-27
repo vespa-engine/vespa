@@ -1,3 +1,4 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Node Admin Maintenance
 
 Executes maintenance jobs, such as deleting old logs, processing and reporting coredumps, on behalf of node-admin. 

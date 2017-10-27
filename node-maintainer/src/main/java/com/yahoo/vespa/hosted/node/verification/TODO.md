@@ -1,3 +1,4 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 #TODO
 Here we have listed things we did not have time to do during the summer, but that we think can be implemented later.
 
