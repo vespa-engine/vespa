@@ -14,8 +14,9 @@
 #include <vespa/fastlib/util/bag.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/fastos/thread.h>
-#include <vespa/fastos/cond.h>
 #include <vespa/fastos/serversocket.h>
+#include <mutex>
+#include <condition_variable>
 
 class FastOS_FileInterface;
 class Fast_HTTPServer;
@@ -128,7 +129,8 @@ private:
     Fast_HTTPServer& operator=(const Fast_HTTPServer&);
 
     Fast_Bag<Fast_HTTPConnection*> _connections;
-    FastOS_Cond _connectionCond;
+    std::mutex              _connectionLock;
+    std::condition_variable _connectionCond;
 
 protected:
     typedef vespalib::string string;
@@ -143,7 +145,7 @@ protected:
     bool         _isRunning;
     bool         _isListening;
     bool         _stopSignalled;
-    FastOS_Mutex _runningMutex;
+    std::mutex   _runningMutex;
 
     /** Max number of concurrent threads */
     int _maxThreads;

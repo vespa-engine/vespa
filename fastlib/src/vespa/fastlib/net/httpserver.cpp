@@ -338,6 +338,7 @@ Fast_HTTPServer::Fast_HTTPServer(int portNumber,
                                  int stackSize, int maxThreads,
 				 int clientReadTimeout /* = -1 no timeout */)
   : _connections(10),
+    _connectionLock(),
     _connectionCond(),
     _threadPool(NULL),
     _acceptThread(NULL),
@@ -365,22 +366,23 @@ int Fast_HTTPServer::Start(void)
 {
     int retCode = FASTLIB_SUCCESS;
 
-    _runningMutex.Lock();
-    if (!_isRunning) {
-        // Try listening
-        retCode = Listen();
+    {
+        std::unique_lock<std::mutex> runningGuard(_runningMutex);
+        if (!_isRunning) {
+            // Try listening
+            retCode = Listen();
 
-        // Start worker thread
-        if (retCode == FASTLIB_SUCCESS) {
-            _acceptThread = static_cast<FastOS_Thread *>(_threadPool->NewThread(this));
-            if (_acceptThread == NULL) {
-                retCode = FASTLIB_HTTPSERVER_NEWTHREADFAILED;
+            // Start worker thread
+            if (retCode == FASTLIB_SUCCESS) {
+                _acceptThread = static_cast<FastOS_Thread *>(_threadPool->NewThread(this));
+                if (_acceptThread == NULL) {
+                    retCode = FASTLIB_HTTPSERVER_NEWTHREADFAILED;
+                }
             }
+        } else {
+            retCode = FASTLIB_HTTPSERVER_ALREADYSTARTED;
         }
-    } else {
-        retCode = FASTLIB_HTTPSERVER_ALREADYSTARTED;
     }
-    _runningMutex.Unlock();
 
     return retCode;
 }
@@ -388,12 +390,13 @@ int Fast_HTTPServer::Start(void)
 
 void
 Fast_HTTPServer::Stop(void) {
-    _runningMutex.Lock();
-    _stopSignalled = true;
-    if (_acceptThread) {
-        _acceptThread->SetBreakFlag();
+    {
+        std::unique_lock<std::mutex> runningGuard(_runningMutex);
+        _stopSignalled = true;
+        if (_acceptThread) {
+            _acceptThread->SetBreakFlag();
+        }
     }
-    _runningMutex.Unlock();
     if (_acceptThread) {
         _acceptThread->Join();
     }
@@ -404,9 +407,8 @@ Fast_HTTPServer::Stop(void) {
 bool Fast_HTTPServer::StopSignalled(void)
 {
     bool retVal;
-    _runningMutex.Lock();
+    std::unique_lock<std::mutex> runningGuard(_runningMutex);
     retVal = _stopSignalled;
-    _runningMutex.Unlock();
     return retVal;
 }
 
@@ -416,15 +418,16 @@ Fast_HTTPServer::~Fast_HTTPServer(void)
 {
     Stop();
 
-    _connectionCond.Lock();
+    {
+        std::unique_lock<std::mutex> connectionGuard(_connectionLock);
 
-    for (Fast_BagIterator<Fast_HTTPConnection*> i(_connections); !i.End(); i.Next())
-        i.GetCurrent()->Interrupt();
+        for (Fast_BagIterator<Fast_HTTPConnection*> i(_connections); !i.End(); i.Next())
+            i.GetCurrent()->Interrupt();
 
-    while (_connections.NumberOfElements() > 0)
-        _connectionCond.Wait();
-
-    _connectionCond.Unlock();
+        while (_connections.NumberOfElements() > 0) {
+            _connectionCond.wait(connectionGuard);
+        }
+    }
     delete _threadPool;
 }
 
@@ -454,11 +457,11 @@ void Fast_HTTPServer::Run(FastOS_ThreadInterface *thisThread, void *params)
     (void) params;
     Fast_Socket *mySocket;
 
-
-    _runningMutex.Lock();
-    _isRunning = true;
-    _stopSignalled = false;
-    _runningMutex.Unlock();
+    {
+        std::unique_lock<std::mutex> runningGuard(_runningMutex);
+        _isRunning = true;
+        _stopSignalled = false;
+    }
 
     if (Listen() == FASTLIB_SUCCESS) {
         FastOS_SocketEvent socketEvent;
@@ -513,9 +516,8 @@ void Fast_HTTPServer::Run(FastOS_ThreadInterface *thisThread, void *params)
         _serverSocket.SetSocketEvent(NULL);
     }
 
-    _runningMutex.Lock();
+    std::unique_lock<std::mutex> runningGuard(_runningMutex);
     _isRunning = false;
-    _runningMutex.Unlock();
 }
 
 void Fast_HTTPConnection::Run(FastOS_ThreadInterface *thisThread, void *params)
@@ -1038,7 +1040,7 @@ void Fast_HTTPServer::HandleFileRequest(const string & url, Fast_HTTPConnection&
 
 void Fast_HTTPServer::SetBaseDir(const char *baseDir)
 {
-    _runningMutex.Lock();
+    std::unique_lock<std::mutex> runningGuard(_runningMutex);
     if (!_isRunning) {
         _baseDir = baseDir;
 
@@ -1051,7 +1053,6 @@ void Fast_HTTPServer::SetBaseDir(const char *baseDir)
     } else {
         fprintf(stderr, "HTTPServer: Tried to set base dir after the server had been started. Request denied.\r\n");
     }
-    _runningMutex.Unlock();
 }
 
 void
@@ -1177,19 +1178,17 @@ void Fast_HTTPServer::OutputNotFound(Fast_HTTPConnection& conn,
 void
 Fast_HTTPServer::AddConnection(Fast_HTTPConnection* connection)
 {
-    _connectionCond.Lock();
+    std::unique_lock<std::mutex> connectionGuard(_connectionLock);
     _connections.Insert(connection);
-    _connectionCond.Unlock();
 }
 
 void
 Fast_HTTPServer::RemoveConnection(Fast_HTTPConnection* connection)
 {
-    _connectionCond.Lock();
+    std::unique_lock<std::mutex> connectionGuard(_connectionLock);
     _connections.RemoveElement(connection);
-    _connectionCond.Signal();
-    _connectionCond.Unlock();
-}
+    _connectionCond.notify_one();
+ }
 
 void
 Fast_HTTPConnection::Interrupt()
