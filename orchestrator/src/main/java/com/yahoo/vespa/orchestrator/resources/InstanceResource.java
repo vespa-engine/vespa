@@ -1,26 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
+import com.yahoo.jrt.slobrok.api.Mirror;
+import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import com.yahoo.vespa.applicationmodel.ApplicationInstance;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
-import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.service.monitor.SlobrokMonitorManager;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostStatusMap;
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
@@ -37,13 +42,16 @@ import static com.yahoo.vespa.orchestrator.OrchestratorUtil.parseAppInstanceRefe
 public class InstanceResource {
 
     private final StatusService statusService;
+    private final SlobrokMonitorManager slobrokMonitorManager;
     private final InstanceLookupService instanceLookupService;
 
     @Inject
     public InstanceResource(@Component InstanceLookupService instanceLookupService,
-                            @Component StatusService statusService) {
+                            @Component StatusService statusService,
+                            @Component SlobrokMonitorManager slobrokMonitorManager) {
         this.instanceLookupService = instanceLookupService;
         this.statusService = statusService;
+        this.slobrokMonitorManager = slobrokMonitorManager;
     }
 
     @GET
@@ -56,12 +64,7 @@ public class InstanceResource {
     @Path("/{instanceId}")
     @Produces(MediaType.APPLICATION_JSON)
     public InstanceStatusResponse getInstance(@PathParam("instanceId") String instanceIdString) {
-        ApplicationInstanceReference instanceId;
-        try {
-            instanceId = parseAppInstanceReference(instanceIdString);
-        } catch (IllegalArgumentException e) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).build());
-        }
+        ApplicationInstanceReference instanceId = parseInstanceId(instanceIdString);
 
         ApplicationInstance applicationInstance
                 = instanceLookupService.findInstanceById(instanceId)
@@ -72,5 +75,33 @@ public class InstanceResource {
                                                                    statusService.forApplicationInstance(instanceId));
         Map<HostName, String> hostStatusStringMap = OrchestratorUtil.mapValues(hostStatusMap, HostStatus::name);
         return InstanceStatusResponse.create(applicationInstance, hostStatusStringMap);
+    }
+
+    @GET
+    @Path("/{instanceId}/slobrok")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<SlobrokEntryResponse> getSlobrokEntries(
+            @PathParam("instanceId") String instanceId,
+            @QueryParam("pattern") String pattern) {
+        ApplicationInstanceReference reference = parseInstanceId(instanceId);
+        ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
+
+        if (pattern == null) {
+            pattern = "**";
+        }
+
+        List<Mirror.Entry> entries = slobrokMonitorManager.lookup(applicationId, pattern);
+        return entries.stream().map(SlobrokEntryResponse::fromMirrorEntry)
+                .collect(Collectors.toList());
+    }
+
+    private ApplicationInstanceReference parseInstanceId(@PathParam("instanceId") String instanceIdString) {
+        ApplicationInstanceReference instanceId;
+        try {
+            instanceId = parseAppInstanceReference(instanceIdString);
+        } catch (IllegalArgumentException e) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).build());
+        }
+        return instanceId;
     }
 }
