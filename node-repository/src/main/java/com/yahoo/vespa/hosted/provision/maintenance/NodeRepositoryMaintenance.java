@@ -76,7 +76,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
-        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
+        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
 
         RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));
         FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(

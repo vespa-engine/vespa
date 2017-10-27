@@ -21,6 +21,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -81,12 +83,23 @@ public class MetricsReporterTest {
         expectedMetrics.put("hardwareFailure", 0);
         expectedMetrics.put("hardwareDivergence", 0);
         expectedMetrics.put("allowedToBeDown", 0);
+        expectedMetrics.put("numberOfServices", 0L);
 
         Orchestrator orchestrator = mock(Orchestrator.class);
+        ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
         when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
+        ServiceModel serviceModel = mock(ServiceModel.class);
+        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
 
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
+        MetricsReporter metricsReporter = new MetricsReporter(
+                nodeRepository,
+                metric,
+                orchestrator,
+                serviceMonitor,
+                Duration.ofMinutes(1),
+                new JobControl(nodeRepository.database()));
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);
@@ -121,10 +134,14 @@ public class MetricsReporterTest {
         nodeRepository.addDockerNodes(Collections.singletonList(container2));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
+        ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
         when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
+        ServiceModel serviceModel = mock(ServiceModel.class);
+        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
 
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
         metricsReporter.maintain();
 
         assertEquals(0L, metric.values.get("hostedVespa.readyHosts")); /** Only tenants counts **/

@@ -20,4 +20,5 @@ public interface ServiceMonitor {
      */
     Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances();
 
+    ServiceModel getServiceModelSnapshot();
 }

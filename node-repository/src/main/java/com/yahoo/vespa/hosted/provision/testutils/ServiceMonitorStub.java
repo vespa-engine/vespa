@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.util.Collections;
@@ -89,4 +90,8 @@ public class ServiceMonitorStub implements ServiceMonitor {
         return status;
     }
 
+    @Override
+    public ServiceModel getServiceModelSnapshot() {
+        throw new IllegalStateException("getServicemodelSnapshot has not been implemented");
+    }
 }

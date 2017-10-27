@@ -61,4 +61,9 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         return serviceModelCache.get().getAllApplicationInstances();
     }
+
+    @Override
+    public ServiceModel getServiceModelSnapshot() {
+        return serviceModelCache.get();
+    }
 }
