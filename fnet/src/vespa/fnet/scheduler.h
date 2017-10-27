@@ -3,7 +3,8 @@
 #pragma once
 
 #include <vespa/fastos/time.h>
-#include <vespa/fastos/cond.h>
+#include <mutex>
+#include <condition_variable>
 
 class FNET_Task;
 
@@ -27,7 +28,8 @@ public:
     };
 
 private:
-    FastOS_Cond    _cond;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     FNET_Task   *_slots[NUM_SLOTS + 1];
     FastOS_Time  _next;
     FastOS_Time  _now;
@@ -42,11 +44,6 @@ private:
     FNET_Scheduler(const FNET_Scheduler &);
     FNET_Scheduler &operator=(const FNET_Scheduler &);
 
-    void Lock()      { _cond.Lock();      }
-    void Unlock()    { _cond.Unlock();    }
-    void Wait()      { _cond.Wait();      }
-    void Broadcast() { _cond.Broadcast(); }
-
     FNET_Task *GetTask() { return _currPt; }
 
     void FirstTask(uint32_t slot);
@@ -56,10 +53,10 @@ private:
     void LinkIn(FNET_Task *task);
     void LinkOut(FNET_Task *task);
     bool IsPerforming(FNET_Task *task) { return task == _performing; }
-    void BeforeTask(FNET_Task *task);
-    void AfterTask();
-    void WaitTask(FNET_Task *task);
-    void PerformTasks(uint32_t slot, uint32_t iter);
+    void BeforeTask(std::unique_lock<std::mutex> &guard, FNET_Task *task);
+    void AfterTask(std::unique_lock<std::mutex> &guard);
+    void WaitTask(std::unique_lock<std::mutex> &guard, FNET_Task *task);
+    void PerformTasks(std::unique_lock<std::mutex> &guard, uint32_t slot, uint32_t iter);
     bool IsActive(FNET_Task *task);
 
 public:
