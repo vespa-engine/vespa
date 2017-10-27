@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/fastos/thread.h>
-#include <vespa/fastos/cond.h>
 #include <vespa/fastos/timestamp.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace vespalib {
 
@@ -21,7 +22,8 @@ private:
 
     mutable fastos::TimeStamp _timeNS;
     int               _timePeriodMS;
-    FastOS_Cond       _cond;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     bool              _stop;
     bool              _running;
 

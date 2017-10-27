@@ -2,6 +2,7 @@
 
 #include "clock.h"
 #include <cassert>
+#include <chrono>
 
 using namespace fastos;
 
@@ -11,6 +12,7 @@ namespace vespalib {
 Clock::Clock(double timePeriod) :
      _timeNS(0u),
      _timePeriodMS(static_cast<uint32_t>(timePeriod*1000)),
+     _lock(),
      _cond(),
      _stop(false),
      _running(false)
@@ -32,22 +34,20 @@ void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
 {
     (void) arguments;
     _running = true;
-    _cond.Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     while ( ! thread->GetBreakFlag() && !_stop) {
         setTime();
-        _cond.TimedWait(_timePeriodMS);
+        _cond.wait_for(guard, std::chrono::milliseconds(_timePeriodMS));
     }
-    _cond.Unlock();
     _running = false;
 }
 
 void
 Clock::stop(void)
 {
-    _cond.Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _stop = true;
-    _cond.Broadcast();
-    _cond.Unlock();
+    _cond.notify_all();
 }
 
 }
