@@ -26,14 +26,6 @@ public class GetHostResponse {
     private final String applicationUrl;
     private final List<HostService> services;
 
-    // Deprecated - kept for backwards compatibility until clients have migrated away
-    public GetHostResponse(String hostname, String state) {
-        this.hostname = hostname;
-        this.state = state;
-        this.applicationUrl = null;
-        this.services = null;
-    }
-
     @JsonCreator
     public GetHostResponse(
             @JsonProperty(FIELD_NAME_HOSTNAME) String hostname,
