@@ -81,6 +81,7 @@ import com.yahoo.yolean.Exceptions;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -138,6 +139,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         catch (ForbiddenException e) {
             return ErrorResponse.forbidden(Exceptions.toMessageString(e));
+        }
+        catch (NotAuthorizedException e) {
+            return ErrorResponse.unauthorized(Exceptions.toMessageString(e));
         }
         catch (NotExistsException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
