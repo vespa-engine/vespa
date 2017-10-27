@@ -6,10 +6,16 @@ package com.yahoo.jdisc.http;
  * Implementations can be plugged in to provide passwords for various keys.
  *
  * @author bratseth
+ * @author bjorncs
  */
 public interface SecretStore {
 
     /** Returns the secret for this key */
     String getSecret(String key);
+
+    /** Returns the secret for this key and version */
+    default String getSecret(String key, int version) {
+        throw new UnsupportedOperationException("SecretStore implementation does not support versioned secrets");
+    }
 
 }
