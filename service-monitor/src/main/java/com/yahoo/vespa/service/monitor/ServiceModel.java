@@ -21,15 +21,15 @@ import java.util.stream.Collectors;
 public class ServiceModel {
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications;
 
-    public ServiceModel(Map<ApplicationInstanceReference, ApplicationInstance> applications) {
+    ServiceModel(Map<ApplicationInstanceReference, ApplicationInstance> applications) {
         this.applications = Collections.unmodifiableMap(applications);
     }
 
-    public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
+    Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         return applications;
     }
 
-    public Optional<ApplicationInstance> getApplicationInstance(ApplicationInstanceReference reference) {
+    Optional<ApplicationInstance> getApplicationInstance(ApplicationInstanceReference reference) {
         return Optional.ofNullable(applications.get(reference));
     }
 
