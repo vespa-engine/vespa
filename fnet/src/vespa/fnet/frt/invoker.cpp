@@ -8,7 +8,8 @@
 LOG_SETUP(".fnet.frt.invoker");
 
 FRT_SingleReqWait::FRT_SingleReqWait()
-    : _cond(),
+    : _lock(),
+      _cond(),
       _done(false),
       _waiting(false)
 { }
@@ -18,12 +19,12 @@ FRT_SingleReqWait::~FRT_SingleReqWait() {}
 void
 FRT_SingleReqWait::WaitReq()
 {
-    _cond.Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _waiting = true;
-    while(!_done)
-        _cond.Wait();
+    while(!_done) {
+        _cond.wait(guard);
+    }
     _waiting = false;
-    _cond.Unlock();
 }
 
 
@@ -31,11 +32,11 @@ void
 FRT_SingleReqWait::RequestDone(FRT_RPCRequest *req)
 {
     (void) req;
-    _cond.Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _done = true;
-    if (_waiting)
-        _cond.Signal();
-    _cond.Unlock();
+    if (_waiting) {
+        _cond.notify_one();
+    }
 }
 
 
