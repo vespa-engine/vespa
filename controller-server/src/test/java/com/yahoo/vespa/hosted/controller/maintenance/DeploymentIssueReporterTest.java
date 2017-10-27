@@ -64,14 +64,11 @@ public class DeploymentIssueReporterTest {
         Long projectId2 = 20L;
         Long projectId3 = 30L;
 
-        // Only the first two have propertyIds set now.
         Long propertyId1 = 1L;
         Long propertyId2 = 2L;
         Long propertyId3 = 3L;
 
-        // Bump system version to 5.1 to upgrade canary app2 -- apps 1 and 3 have application changes.
         tester.updateVersionStatus(Version.fromString("5.1"));
-
 
         // Create and deploy one application for each of three tenants.
         Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
@@ -80,11 +77,12 @@ public class DeploymentIssueReporterTest {
 
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 
-        // app1 and app3 has one failure each.
+        // apps 1 and 3 have one failure each.
         tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, false, stagingTest);
 
+        // app2 is successful, but will fail later.
         tester.deployCompletely(app2, canaryPackage);
 
         tester.notifyJobCompletion(component, app3, true);
@@ -121,10 +119,6 @@ public class DeploymentIssueReporterTest {
 
         reporter.maintain();
         reporter.maintain();
-        System.err.println(tester.controller().versionStatus().version(tester.controller().systemVersion()).statistics().failing());
-        System.err.println(tester.controller().systemVersion());
-        System.err.println(tester.controller().applications().require(app1.id()).deploymentJobs().jobStatus().get(component).lastCompleted().get().version());
-        System.err.println(tester.controller().applications().require(app1.id()).deploying().get() instanceof Change.ApplicationChange);
         assertEquals("The issue for app1 is escalated once.", 1, issues.escalationLevelFor(app1.id()));
 
 
@@ -150,7 +144,6 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         assertTrue("A new issue is filed for app3.", issues.isOpenFor(app3.id()));
 
-        System.err.println(tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Bump system version to 5.2 to upgrade canary app2.
         Version version = Version.fromString("5.2");
@@ -166,6 +159,7 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         reporter.maintain();
         assertTrue("We get a platform issue when confidence is broken", issues.platformIssue());
+        assertFalse("No deployment issue is filed for app2, which has a version upgrade failure.", issues.isOpenFor(app2.id()));
 
     }
 
