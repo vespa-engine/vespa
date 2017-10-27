@@ -82,6 +82,8 @@ public:
             return siblingEntry;
         }
 
+        document::Bucket getBucket() const { return document::Bucket(document::BucketSpace::placeHolder(), bucketId); }
+
         std::string toString() const;
     };
 

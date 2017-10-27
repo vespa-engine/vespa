@@ -142,11 +142,17 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
     }
 }
 
+document::Bucket
+JoinOperation::getJoinBucket(size_t idx) const
+{
+    return document::Bucket(getBucket().getBucketSpace(), _bucketsToJoin[idx]);
+}
+
 bool
 JoinOperation::isBlocked(const PendingMessageTracker& tracker) const
 {
-    return (checkBlock(getBucketId(), tracker) ||
-            checkBlock(_bucketsToJoin[0], tracker) ||
-            (_bucketsToJoin.size() > 1 && checkBlock(_bucketsToJoin[1], tracker)));
+    return (checkBlock(getBucket(), tracker) ||
+            checkBlock(getJoinBucket(0), tracker) ||
+            (_bucketsToJoin.size() > 1 && checkBlock(getJoinBucket(1), tracker)));
 }
 

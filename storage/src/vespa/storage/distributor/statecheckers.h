@@ -56,7 +56,7 @@ private:
     bool smallEnoughToJoin(const Context& c) const;
     bool singleBucketJoinIsEnabled(const Context&) const;
     bool singleBucketJoinIsConsistent(const Context& c) const;
-    document::BucketId computeJoinBucket(const Context& c) const;
+    document::Bucket computeJoinBucket(const Context& c) const;
 };
 
 class SplitBucketStateChecker : public StateChecker

@@ -6,6 +6,9 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -39,7 +42,7 @@ GarbageCollectionOperationTest::testSimple()
     getConfig().setGarbageCollection("music.date < 34", 3600);
 
     GarbageCollectionOperation op("storage",
-                                  BucketAndNodes(document::BucketId(16, 1),
+                                  BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                           toVector<uint16_t>(0, 1)));
 
     op.setIdealStateManager(&getIdealStateManager());

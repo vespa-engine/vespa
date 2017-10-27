@@ -55,6 +55,8 @@ protected:
      */
     bool enqueueJoinMessagePerTargetNode(const NodeToBuckets& nodeToBuckets);
 
+    document::Bucket getJoinBucket(size_t idx) const;
+
     MessageTracker _tracker;
     std::vector<document::BucketId> _bucketsToJoin;
 };

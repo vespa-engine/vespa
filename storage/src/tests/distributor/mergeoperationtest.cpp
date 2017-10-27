@@ -72,7 +72,7 @@ MergeOperationTest::testSimple()
 
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
 
-    MergeOperation op(BucketAndNodes(document::BucketId(16, 1),
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -105,7 +105,7 @@ MergeOperationTest::testFailIfSourceOnlyCopiesChanged()
 
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
 
-    MergeOperation op(BucketAndNodes(document::BucketId(16, 1),
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -307,7 +307,7 @@ MergeOperationTest::doNotRemoveCopiesWithPendingMessages() {
                        "1=20/1/1,"
                        "2=10/1/1/t");
 
-    MergeOperation op(BucketAndNodes(bucket,
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -369,7 +369,7 @@ MergeOperationTest::allow_deleting_active_source_only_replica()
 
     _distributor->enableClusterState(
             lib::ClusterState("distributor:1 storage:3"));
-    MergeOperation op(BucketAndNodes(document::BucketId(16, 1),
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -486,7 +486,7 @@ void MergeOperationTest::merge_operation_is_blocked_by_any_busy_target_node() {
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
     _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
-    MergeOperation op(BucketAndNodes(document::BucketId(16, 1), toVector<uint16_t>(0, 1, 2)));
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
     // Should not block on nodes _not_ included in operation node set

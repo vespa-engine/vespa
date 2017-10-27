@@ -202,36 +202,36 @@ runCheckerOnRange(PendingMessageTracker::Checker& checker, const Range& range)
 
 void
 PendingMessageTracker::checkPendingMessages(uint16_t node,
-                                            const document::BucketId& bid,
+                                            const document::Bucket &bucket,
                                             Checker& checker) const
 {
     vespalib::LockGuard guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
-    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bid)));
+    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bucket.getBucketId())));
     runCheckerOnRange(checker, range);
 }
 
 void
-PendingMessageTracker::checkPendingMessages(const document::BucketId& bid,
+PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket,
                                             Checker& checker) const
 {
     vespalib::LockGuard guard(_lock);
     const MessagesByBucketAndType& msgs(boost::multi_index::get<2>(_messages));
 
-    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bid)));
+    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bucket.getBucketId())));
     runCheckerOnRange(checker, range);
 }
 
 bool
 PendingMessageTracker::hasPendingMessage(uint16_t node,
-                                         const document::BucketId& bid,
+                                         const document::Bucket &bucket,
                                          uint32_t messageType) const
 {
     vespalib::LockGuard guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
-    auto range = msgs.equal_range(boost::make_tuple(node, bid, messageType));
+    auto range = msgs.equal_range(boost::make_tuple(node, bucket.getBucketId(), messageType));
     return (range.first != range.second);
 }
 

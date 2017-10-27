@@ -4,6 +4,9 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -59,7 +62,7 @@ BucketStateOperationTest::testActivateSingleNode()
     document::BucketId bid(16, 1);
     insertBucketInfo(bid, 0, 0xabc, 10, 1100, true, false);
 
-    BucketAndNodes bucketAndNodes(bid, toVector<uint16_t>(0));
+    BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
     std::vector<uint16_t> active;
     active.push_back(0);
     SetBucketStateOperation op("storage", bucketAndNodes, active);
@@ -100,7 +103,7 @@ BucketStateOperationTest::testActivateAndDeactivateNodes()
     insertBucketInfo(bid, 0, 0xabc, 10, 1100, false, true);
     insertBucketInfo(bid, 1, 0xdef, 15, 1500, false, false);
 
-    BucketAndNodes bucketAndNodes(bid, toVector<uint16_t>(0, 1));
+    BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0, 1));
     std::vector<uint16_t> active;
     active.push_back(1);
     SetBucketStateOperation op("storage", bucketAndNodes, active);
@@ -165,7 +168,7 @@ BucketStateOperationTest::testDoNotDeactivateIfActivateFails()
     insertBucketInfo(bid, 0, 0xabc, 10, 1100, false, true);
     insertBucketInfo(bid, 1, 0xdef, 15, 1500, false, false);
 
-    BucketAndNodes bucketAndNodes(bid, toVector<uint16_t>(0, 1));
+    BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0, 1));
     std::vector<uint16_t> active;
     active.push_back(1);
     SetBucketStateOperation op("storage", bucketAndNodes, active);
@@ -214,7 +217,7 @@ BucketStateOperationTest::testBucketDbNotUpdatedOnFailure()
     document::BucketId bid(16, 1);
     insertBucketInfo(bid, 0, 0xabc, 10, 1100, true, false);
 
-    BucketAndNodes bucketAndNodes(bid, toVector<uint16_t>(0));
+    BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
     std::vector<uint16_t> active;
     active.push_back(0);
     SetBucketStateOperation op("storage", bucketAndNodes, active);

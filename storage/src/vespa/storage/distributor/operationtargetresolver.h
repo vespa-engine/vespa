@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vespalib/util/printable.h>
 
@@ -25,6 +25,7 @@ public:
         : _bucket(id), _node(node), _newCopy(newCopy) {}
 
     const document::BucketId& getBucketId() const { return _bucket; }
+    document::Bucket getBucket() const;
     const lib::Node& getNode() const { return _node; }
     bool isNewCopy() const { return _newCopy; }
 

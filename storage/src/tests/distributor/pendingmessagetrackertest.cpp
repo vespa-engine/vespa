@@ -445,19 +445,19 @@ PendingMessageTrackerTest::testGetPendingMessageTypes()
 
     {
         TestChecker checker;
-        tracker.checkPendingMessages(0, bid, checker);
+        tracker.checkPendingMessages(0, makeDocumentBucket(bid), checker);
         CPPUNIT_ASSERT_EQUAL(127, (int)checker.pri);
     }
 
     {
         TestChecker checker;
-        tracker.checkPendingMessages(0, document::BucketId(16, 1235), checker);
+        tracker.checkPendingMessages(0, makeDocumentBucket(document::BucketId(16, 1235)), checker);
         CPPUNIT_ASSERT_EQUAL(255, (int)checker.pri);
     }
 
     {
         TestChecker checker;
-        tracker.checkPendingMessages(1, bid, checker);
+        tracker.checkPendingMessages(1, makeDocumentBucket(bid), checker);
         CPPUNIT_ASSERT_EQUAL(255, (int)checker.pri);
     }
 }
@@ -472,7 +472,7 @@ PendingMessageTrackerTest::testHasPendingMessage()
     PendingMessageTracker tracker(compReg);
     document::BucketId bid(16, 1234);
 
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, bid, api::MessageType::REMOVE_ID));
+    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
 
     {
         std::shared_ptr<api::RemoveCommand> remove(
@@ -484,13 +484,13 @@ PendingMessageTrackerTest::testHasPendingMessage()
         tracker.insert(remove);
     }
 
-    CPPUNIT_ASSERT(tracker.hasPendingMessage(1, bid, api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(0, bid, api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(2, bid, api::MessageType::REMOVE_ID));
+    CPPUNIT_ASSERT(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
+    CPPUNIT_ASSERT(!tracker.hasPendingMessage(0, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
+    CPPUNIT_ASSERT(!tracker.hasPendingMessage(2, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
     CPPUNIT_ASSERT(!tracker.hasPendingMessage(1,
-                                              document::BucketId(16, 1233),
+                                              makeDocumentBucket(document::BucketId(16, 1233)),
                                               api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, bid, api::MessageType::DELETEBUCKET_ID));
+    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::DELETEBUCKET_ID));
 }
 
 namespace {
@@ -527,7 +527,7 @@ PendingMessageTrackerTest::testGetAllMessagesForSingleBucket()
 
     {
         OperationEnumerator enumerator;
-        tracker.checkPendingMessages(document::BucketId(16, 1234), enumerator);
+        tracker.checkPendingMessages(makeDocumentBucket(document::BucketId(16, 1234)), enumerator);
         CPPUNIT_ASSERT_EQUAL(std::string("Remove -> 0\n"
                     "Remove -> 0\n"
                     "Remove -> 1\n"
@@ -536,7 +536,7 @@ PendingMessageTrackerTest::testGetAllMessagesForSingleBucket()
     }
     {
         OperationEnumerator enumerator;
-        tracker.checkPendingMessages(document::BucketId(16, 9876), enumerator);
+        tracker.checkPendingMessages(makeDocumentBucket(document::BucketId(16, 9876)), enumerator);
         CPPUNIT_ASSERT_EQUAL(std::string(""), enumerator.str());
     }
 }

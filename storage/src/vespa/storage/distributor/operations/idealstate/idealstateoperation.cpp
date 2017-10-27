@@ -11,6 +11,7 @@ LOG_SETUP(".distributor.operation");
 
 using namespace storage;
 using namespace storage::distributor;
+using document::BucketSpace;
 
 const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
 {
@@ -35,19 +36,26 @@ IdealStateOperation::~IdealStateOperation()
 {
 }
 
-BucketAndNodes::BucketAndNodes(const document::BucketId& id, uint16_t node)
-    : _id(id)
+BucketAndNodes::BucketAndNodes(const document::Bucket &bucket, uint16_t node)
+    : _bucket(bucket)
 {
     _nodes.push_back(node);
 }
 
-BucketAndNodes::BucketAndNodes(const document::BucketId& id,
+BucketAndNodes::BucketAndNodes(const document::Bucket &bucket,
                                const std::vector<uint16_t>& nodes)
-    : _id(id),
+    : _bucket(bucket),
       _nodes(nodes)
 {
     assert(!nodes.empty());
     std::sort(_nodes.begin(), _nodes.end());
+}
+
+void
+BucketAndNodes::setBucketId(const document::BucketId &id)
+{
+    document::Bucket newBucket(_bucket.getBucketSpace(), id);
+    _bucket = newBucket;
 }
 
 std::string
@@ -65,7 +73,7 @@ BucketAndNodes::toString() const
     }
 
     ost <<  "] ";
-    ost <<  _id;
+    ost <<  _bucket.toString();
     return ost.str();
 }
 
@@ -174,23 +182,41 @@ public:
     }
 };
 
+bool
+checkNullBucketRequestBucketInfoMessage(uint16_t node,
+                                        document::BucketSpace bucketSpace,
+                                        const PendingMessageTracker& tracker)
+{
+    RequestBucketInfoChecker rchk;
+    for (;;) {
+        // Check messages sent to null-bucket (i.e. any bucket) for the node.
+        document::Bucket nullBucket(bucketSpace, document::BucketId());
+        tracker.checkPendingMessages(node, nullBucket, rchk);
+        if (rchk.blocked) {
+            return true;
+        }
+        if (bucketSpace == BucketSpace::placeHolder()) {
+            break;
+        }
+        bucketSpace = BucketSpace::placeHolder();
+    }
+    return false;
+}
+
 }
 
 bool
-IdealStateOperation::checkBlock(const document::BucketId& bId,
+IdealStateOperation::checkBlock(const document::Bucket &bucket,
                                 const PendingMessageTracker& tracker) const
 {
     IdealStateOpChecker ichk(*this);
-    RequestBucketInfoChecker rchk;
     const std::vector<uint16_t>& nodes(getNodes());
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        tracker.checkPendingMessages(nodes[i], bId, ichk);
+    for (auto node : nodes) {
+        tracker.checkPendingMessages(node, bucket, ichk);
         if (ichk.blocked) {
             return true;
         }
-        // Check messages sent to null-bucket (i.e. any bucket) for the node.
-        tracker.checkPendingMessages(nodes[i], document::BucketId(), rchk);
-        if (rchk.blocked) {
+        if (checkNullBucketRequestBucketInfoMessage(node, bucket.getBucketSpace(), tracker)) {
             return true;
         }
     }
@@ -199,21 +225,18 @@ IdealStateOperation::checkBlock(const document::BucketId& bId,
 
 bool
 IdealStateOperation::checkBlockForAllNodes(
-        const document::BucketId& bid,
+        const document::Bucket &bucket,
         const PendingMessageTracker& tracker) const
 {
     IdealStateOpChecker ichk(*this);
     // Check messages sent to _any node_ for _this_ particular bucket.
-    tracker.checkPendingMessages(bid, ichk);
+    tracker.checkPendingMessages(bucket, ichk);
     if (ichk.blocked) {
         return true;
     }
-    RequestBucketInfoChecker rchk;
-    // Check messages sent to null-bucket (i.e. _any bucket_) for the node.
     const std::vector<uint16_t>& nodes(getNodes());
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        tracker.checkPendingMessages(nodes[i], document::BucketId(), rchk);
-        if (rchk.blocked) {
+    for (auto node : nodes) {
+        if (checkNullBucketRequestBucketInfoMessage(node, bucket.getBucketSpace(), tracker)) {
             return true;
         }
     }
@@ -224,7 +247,7 @@ IdealStateOperation::checkBlockForAllNodes(
 bool
 IdealStateOperation::isBlocked(const PendingMessageTracker& tracker) const
 {
-    return checkBlock(getBucketId(), tracker);
+    return checkBlock(getBucket(), tracker);
 }
 
 std::string

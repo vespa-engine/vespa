@@ -286,7 +286,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
         for (size_t i = 0; i < targets.size(); ++i) {
             if (_manager.getDistributor().getPendingMessageTracker().
                 hasPendingMessage(targets[i].getNode().getIndex(),
-                                  targets[i].getBucketId(),
+                                  targets[i].getBucket(),
                                   api::MessageType::DELETEBUCKET_ID))
             {
                 _tracker.fail(sender, api::ReturnCode(api::ReturnCode::BUCKET_DELETED,

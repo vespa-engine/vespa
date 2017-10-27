@@ -76,7 +76,7 @@ SplitOperationTest::testSimple()
                      tooLargeBucketSize, 250);
 
     SplitOperation op("storage",
-                      BucketAndNodes(document::BucketId(16, 1),
+                      BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0)),
                       maxSplitBits,
                       splitCount,
@@ -156,7 +156,7 @@ SplitOperationTest::testMultiNodeFailure()
 
 
     SplitOperation op("storage",
-                      BucketAndNodes(document::BucketId(16, 1),
+                      BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0,1)),
                       maxSplitBits,
                       splitCount,
@@ -256,7 +256,7 @@ SplitOperationTest::testCopyTrustedStatusNotCarriedOverAfterSplit()
                                      "2=550/60/70000");
 
     SplitOperation op("storage",
-                      BucketAndNodes(sourceBucket, toVector<uint16_t>(0, 1)),
+                      BucketAndNodes(makeDocumentBucket(sourceBucket), toVector<uint16_t>(0, 1)),
                       maxSplitBits,
                       splitCount,
                       splitByteSize);
@@ -329,7 +329,7 @@ SplitOperationTest::testOperationBlockedByPendingJoin()
     insertBucketInfo(joinTarget, 0, 0xabc, 1000, 1234, 250);
 
     SplitOperation op("storage",
-                      BucketAndNodes(joinTarget, toVector<uint16_t>(0)),
+                      BucketAndNodes(makeDocumentBucket(joinTarget), toVector<uint16_t>(0)),
                       maxSplitBits,
                       splitCount,
                       splitByteSize);
