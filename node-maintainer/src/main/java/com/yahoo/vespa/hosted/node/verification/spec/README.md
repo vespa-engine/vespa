@@ -1,3 +1,4 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Spec Verification
 Verifies that the spec information in node repo coincides with what found on the node and reports back to node repo. 
 

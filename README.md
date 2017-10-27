@@ -1,3 +1,4 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Vespa
 Vespa is an engine for low-latency computation over large data sets.
 It stores and indexes your data such that queries, selection and processing over the

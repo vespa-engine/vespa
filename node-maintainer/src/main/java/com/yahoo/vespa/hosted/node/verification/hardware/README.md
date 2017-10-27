@@ -1,3 +1,4 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Hardware Verification
 Verification of behaviour and performance of hardware. Benchmarks cpu frequency, disk write speed and memory write/read speed.
 A report is sent to the node repository if any of the results are below an accepted threshold.
