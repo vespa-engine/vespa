@@ -127,12 +127,16 @@ public class MetricsReporter extends Maintainer {
             // Ignore
         }
 
-        long numberOfServices = 0;
+        long numberOfServices;
         HostName hostName = new HostName(node.hostname());
         List<ServiceInstance> services = servicesByHost.get(hostName);
-        if (services != null) {
+        if (services == null) {
+            numberOfServices = 0;
+        } else {
             Map<ServiceStatus, Long> servicesCount = services.stream().collect(
                     Collectors.groupingBy(ServiceInstance::serviceStatus, Collectors.counting()));
+
+            numberOfServices = servicesCount.values().stream().mapToLong(Long::longValue).sum();
 
             metric.set(
                     "numberOfServicesUp",
@@ -142,9 +146,10 @@ public class MetricsReporter extends Maintainer {
                     "numberOfServicesNotChecked",
                     servicesCount.getOrDefault(ServiceStatus.NOT_CHECKED, 0L), context);
 
-            metric.set(
-                    "numberOfServicesDown",
-                    servicesCount.getOrDefault(ServiceStatus.DOWN, 0L), context);
+            long numberOfServicesDown = servicesCount.getOrDefault(ServiceStatus.DOWN, 0L);
+            metric.set("numberOfServicesDown", numberOfServicesDown, context);
+
+            metric.set("someServicesDown", (numberOfServicesDown > 0 ? 1 : 0), context);
         }
 
         metric.set("numberOfServices", numberOfServices, context);
