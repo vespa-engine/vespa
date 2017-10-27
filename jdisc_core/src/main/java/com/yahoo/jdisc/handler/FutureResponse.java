@@ -5,10 +5,10 @@ import com.google.common.util.concurrent.AbstractFuture;
 import com.yahoo.jdisc.Response;
 
 /**
- * <p>This class provides an implementation of {@link ResponseHandler} that allows you to wait for a {@link Response} to
- * be returned.</p>
+ * This class provides an implementation of {@link ResponseHandler} that allows you to wait for a {@link Response} to
+ * be returned.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class FutureResponse extends AbstractFuture<Response> implements ResponseHandler {
 
@@ -63,4 +63,5 @@ public final class FutureResponse extends AbstractFuture<Response> implements Re
     public final boolean isCancelled() {
         return false;
     }
+
 }

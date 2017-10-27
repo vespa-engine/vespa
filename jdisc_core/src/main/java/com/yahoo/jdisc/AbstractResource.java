@@ -14,9 +14,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * <p>This class provides a thread-safe implementation of the {@link SharedResource} interface, and should be used for
+ * This class provides a thread-safe implementation of the {@link SharedResource} interface, and should be used for
  * all subclasses of {@link RequestHandler}, {@link ClientProvider} and {@link ServerProvider}. Once the reference count
- * of this resource reaches zero, the {@link #destroy()} method is called.</p>
+ * of this resource reaches zero, the {@link #destroy()} method is called.
  *
  * @author Simon Thoresen
  */

@@ -8,16 +8,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>The component that is annotated with this must be placed earlier than the components or phases providing names
- * contained in the given list.</p>
+ * The component that is annotated with this must be placed earlier than the components or phases providing names
+ * contained in the given list.
  *
  * @author tonytv
- * @since 5.1.18
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
 public @interface Before {
 
-    public abstract String[] value() default { };
+    String[] value() default { };
+
 }

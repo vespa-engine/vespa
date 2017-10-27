@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
  * requirement is regardless of any errors that may occur while calling any of its other methods or its derived {@link
  * CompletionHandler}s.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface ContentChannel {
 
@@ -33,7 +33,7 @@ public interface ContentChannel {
      * @param buf     The {@link ByteBuffer} to schedule for write. No further calls can be made to this buffer.
      * @param handler The {@link CompletionHandler} to call after the write has been executed.
      */
-    public void write(ByteBuffer buf, CompletionHandler handler);
+    void write(ByteBuffer buf, CompletionHandler handler);
 
     /**
      * Closes this ContentChannel. After a channel is closed, any further attempt to invoke {@link #write(ByteBuffer,
@@ -45,5 +45,6 @@ public interface ContentChannel {
      *
      * @param handler The {@link CompletionHandler} to call after the close has been executed.
      */
-    public void close(CompletionHandler handler);
+    void close(CompletionHandler handler);
+
 }

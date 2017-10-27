@@ -6,12 +6,12 @@ import com.yahoo.jdisc.Response;
 import java.util.concurrent.Callable;
 
 /**
- * <p>This is a convenient subclass of {@link RequestDispatch} that implements the {@link Callable} interface. This
+ * This is a convenient subclass of {@link RequestDispatch} that implements the {@link Callable} interface. This
  * should be used in place of {@link RequestDispatch} if you intend to schedule its execution. Because {@link #call()}
  * does not return until a {@link Response} becomes available, you can use the <tt>Future</tt> return value of
- * <tt>ExecutorService.submit(Callable)</tt> to wait for it.</p>
+ * <tt>ExecutorService.submit(Callable)</tt> to wait for it.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class CallableRequestDispatch extends RequestDispatch implements Callable<Response> {
 
@@ -19,4 +19,5 @@ public abstract class CallableRequestDispatch extends RequestDispatch implements
     public final Response call() throws Exception {
         return dispatch().get();
     }
+
 }

@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * <p>This class implements an unlimited, non-blocking content queue. All {@link ContentChannel} methods are implemented
+ * This class implements an unlimited, non-blocking content queue. All {@link ContentChannel} methods are implemented
  * by pushing to a thread-safe internal queue. All of the queued calls are forwarded to another ContentChannel when
  * {@link #connectTo(ContentChannel)} is called. Once connected, this class becomes a non-buffering proxy for the
- * connected ContentChannel.</p>
+ * connected ContentChannel.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class BufferedContentChannel implements ContentChannel {
 
@@ -153,4 +153,5 @@ public final class BufferedContentChannel implements ContentChannel {
             this.buf = buf;
         }
     }
+
 }

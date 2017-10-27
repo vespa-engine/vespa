@@ -26,23 +26,23 @@ import java.net.URI;
  * <p>The only way to <u>create</u> a new instance of this class is to 1) create and configure a {@link
  * ContainerBuilder}, and 2) pass that to the {@link ContainerActivator#activateContainer(ContainerBuilder)} method.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface Container extends SharedResource, Timer {
 
     /**
-     * <p>Attempts to find a {@link RequestHandler} in the current server- (if {@link Request#isServerRequest()} is
+     * Attempts to find a {@link RequestHandler} in the current server- (if {@link Request#isServerRequest()} is
      * <em>true</em>) or client- (if {@link Request#isServerRequest()} is <em>false</em>) {@link BindingSet} that
-     * matches the given {@link URI}. If no match can be found, this method returns null.</p>
+     * matches the given {@link URI}. If no match can be found, this method returns null.
      *
      * @param request The Request to match against the bound {@link RequestHandler}s.
      * @return The matching RequestHandler, or null if there is no match.
      */
-    public RequestHandler resolveHandler(Request request);
+    RequestHandler resolveHandler(Request request);
 
     /**
-     * <p>Returns the appropriate instance for the given injection key. When feasible, avoid using this method in favor
-     * of having Guice inject your dependencies ahead of time.</p>
+     * Returns the appropriate instance for the given injection key. When feasible, avoid using this method in favor
+     * of having Guice inject your dependencies ahead of time.
      *
      * @param key  The key of the instance to return.
      * @param <T>  The class of the instance to return.
@@ -50,11 +50,11 @@ public interface Container extends SharedResource, Timer {
      * @throws ConfigurationException If this injector cannot find or create the provider.
      * @throws ProvisionException     If there was a runtime failure while providing an instance.
      */
-    public <T> T getInstance(Key<T> key);
+    <T> T getInstance(Key<T> key);
 
     /**
-     * <p>Returns the appropriate instance for the given injection type. When feasible, avoid using this method in
-     * favor of having Guice inject your dependencies ahead of time.</p>
+     * Returns the appropriate instance for the given injection type. When feasible, avoid using this method in
+     * favor of having Guice inject your dependencies ahead of time.
      *
      * @param type The class object of the instance to return.
      * @param <T>  The class of the instance to return.
@@ -62,5 +62,6 @@ public interface Container extends SharedResource, Timer {
      * @throws ConfigurationException If this injector cannot find or create the provider.
      * @throws ProvisionException     If there was a runtime failure while providing an instance.
      */
-    public <T> T getInstance(Class<T> type);
+    <T> T getInstance(Class<T> type);
+
 }

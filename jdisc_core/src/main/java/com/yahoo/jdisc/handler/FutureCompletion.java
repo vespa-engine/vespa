@@ -11,7 +11,7 @@ import com.google.common.util.concurrent.AbstractFuture;
  *
  * <p>Notice that calling {@link #cancel(boolean)} throws an UnsupportedOperationException.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class FutureCompletion extends AbstractFuture<Boolean> implements CompletionHandler {
 

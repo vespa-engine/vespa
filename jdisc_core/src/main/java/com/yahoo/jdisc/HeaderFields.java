@@ -6,11 +6,11 @@ import com.google.common.collect.ImmutableList;
 import java.util.*;
 
 /**
- * <p>This is an encapsulation of the header fields that belong to either a {@link Request} or a {@link Response}. It is
+ * This is an encapsulation of the header fields that belong to either a {@link Request} or a {@link Response}. It is
  * a multimap from String to String, with some additional methods for convenience. The keys of this map are compared by
- * ignoring their case, so that <tt>get("foo")</tt> returns the same entry as <tt>get("FOO")</tt>.</p>
+ * ignoring their case, so that <tt>get("foo")</tt> returns the same entry as <tt>get("FOO")</tt>.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class HeaderFields implements Map<String, List<String>> {
 
@@ -302,4 +302,5 @@ public class HeaderFields implements Map<String, List<String>> {
             throw new UnsupportedOperationException();
         }
     }
+
 }

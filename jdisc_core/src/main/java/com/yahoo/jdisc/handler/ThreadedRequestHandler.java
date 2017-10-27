@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * }
  * </pre>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 

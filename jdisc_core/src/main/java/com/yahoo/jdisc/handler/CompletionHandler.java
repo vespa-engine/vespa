@@ -18,7 +18,7 @@ import com.yahoo.jdisc.Container;
  * throughout its lifetime. This also means that the either {@link #completed()} or {@link #failed(Throwable)} MUST be
  * called in order to release that reference. Failure to do so will prevent the Container from ever shutting down.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface CompletionHandler {
 
@@ -27,7 +27,7 @@ public interface CompletionHandler {
      * release the internal {@link Container} reference. Failure to do so will prevent the Container from ever shutting
      * down.
      */
-    public void completed();
+    void completed();
 
     /**
      * Invoked when an operation fails. Notice that you MUST call either this or {@link #completed()} to release the
@@ -35,5 +35,6 @@ public interface CompletionHandler {
      *
      * @param t The exception to indicate why the I/O operation failed.
      */
-    public void failed(Throwable t);
+    void failed(Throwable t);
+
 }

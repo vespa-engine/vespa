@@ -15,7 +15,7 @@ import java.util.concurrent.*;
  * simply create an instance of it and add operands to it using the {@link #addOperand(ListenableFuture)} method.</p>
  * TODO: consider rewriting usage of FutureConjunction to use CompletableFuture instead.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class FutureConjunction implements ListenableFuture<Boolean> {
 
@@ -94,4 +94,5 @@ public final class FutureConjunction implements ListenableFuture<Boolean> {
         }
         return ret;
     }
+
 }

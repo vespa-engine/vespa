@@ -11,7 +11,7 @@ import java.net.URI;
  * or {@link RequestHandler}. There is no automation in throwing an instance of this class, but all RequestHandlers are
  * encouraged to use this where appropriate.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class RequestDeniedException extends RuntimeException {
 

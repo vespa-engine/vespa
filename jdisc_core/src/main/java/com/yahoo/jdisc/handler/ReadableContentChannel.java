@@ -15,7 +15,7 @@ import java.util.Queue;
  * a {@link BufferedContentChannel} up front, and {@link BufferedContentChannel#connectTo(ContentChannel) connect} that
  * to a ReadableContentChannel at the point where you decide to consume the data.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class ReadableContentChannel implements ContentChannel, Iterable<ByteBuffer> {
 
