@@ -12,7 +12,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -171,7 +170,6 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
         }, AccessLog.voidAccessLog(), testTenantBuilder.createTenants(),
                                          new ApplicationRepository(testTenantBuilder.createTenants(),
                                                                    new SessionHandlerTest.MockProvisioner(),
-                                                                   new MockCurator(),
                                                                    Clock.systemUTC()));
     }
 }

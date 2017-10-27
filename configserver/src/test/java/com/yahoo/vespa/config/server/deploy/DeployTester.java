@@ -110,7 +110,6 @@ public class DeployTester {
         }
         applicationRepository = new ApplicationRepository(tenants,
                                                           createHostProvisioner(),
-                                                          curator,
                                                           clock);
     }
 

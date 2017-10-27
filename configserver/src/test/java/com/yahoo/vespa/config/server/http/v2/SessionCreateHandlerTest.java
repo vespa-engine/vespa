@@ -238,7 +238,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         return new SessionCreateHandler(Runnable::run, AccessLog.voidAccessLog(), tenants, configserverConfig,
                                         new ApplicationRepository(testTenantBuilder.createTenants(),
                                                                   new SessionHandlerTest.MockProvisioner(),
-                                                                  new MockCurator(),
                                                                   Clock.systemUTC()));
     }
 
