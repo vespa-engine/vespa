@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/frt/frt.h>
+#include <mutex>
+#include <condition_variable>
 
 //-------------------------------------------------------------
 
-FastOS_Mutex _delayedReturnCntLock;
+std::mutex   _delayedReturnCntLock;
 uint32_t     _delayedReturnCnt = 0;
 
 uint32_t _phase_simple_cnt   = 0;
@@ -20,10 +22,11 @@ uint32_t _phase_echo_cnt     = 0;
 
 struct LockedReqWait : public FRT_IRequestWait
 {
-    FastOS_Cond _cond;      // cond used to signal req done
+    std::mutex  _condLock;  // cond used to signal req done
+    std::condition_variable _cond;      // cond used to signal req done
     bool        _done;      // flag indicating req done
 
-    FastOS_Mutex _lockLock;  // lock protecting virtual lock
+    std::mutex   _lockLock;  // lock protecting virtual lock
     bool         _lock;      // virtual lock
     bool         _wasLocked; // was 'locked' when req done
 
@@ -31,38 +34,32 @@ struct LockedReqWait : public FRT_IRequestWait
     ~LockedReqWait() {}
 
     void lock() {
-        _lockLock.Lock();
+        std::lock_guard<std::mutex> guard(_lockLock);
         _lock = true;
-        _lockLock.Unlock();
     }
 
     void unlock() {
-        _lockLock.Lock();
+        std::lock_guard<std::mutex> guard(_lockLock);
         _lock = false;
-        _lockLock.Unlock();
     }
 
     bool isLocked() {
-        _lockLock.Lock();
-        bool ret = _lock;
-        _lockLock.Unlock();
-        return ret;
+        std::lock_guard<std::mutex> guard(_lockLock);
+        return _lock;
     }
 
     void RequestDone(FRT_RPCRequest *) override {
         _wasLocked = isLocked();
-        _cond.Lock();
+        std::lock_guard<std::mutex> guard(_condLock);
         _done = true;
-        _cond.Signal();
-        _cond.Unlock();
+        _cond.notify_one();
     }
 
     void waitReq() {
-        _cond.Lock();
+        std::unique_lock<std::mutex> guard(_condLock);
         while(!_done) {
-            _cond.Wait();
+            _cond.wait(guard);
         }
-        _cond.Unlock();
     }
 };
 
@@ -81,18 +78,18 @@ public:
         : FNET_Task(sched),
           _req(req)
     {
-        _delayedReturnCntLock.Lock();
-        _delayedReturnCnt++;
-        _delayedReturnCntLock.Unlock();
+        {
+            std::lock_guard<std::mutex> guard(_delayedReturnCntLock);
+            _delayedReturnCnt++;
+        }
         Schedule(delay);
     }
 
     void PerformTask() override
     {
         _req->Return();
-        _delayedReturnCntLock.Lock();
+        std::lock_guard<std::mutex> guard(_delayedReturnCntLock);
         _delayedReturnCnt--;
-        _delayedReturnCntLock.Unlock();
     }
 };
 
@@ -547,9 +544,11 @@ State::WaitForDelayedReturnCount(uint32_t wantedCount, double timeout)
     FastOS_Time timer;
     timer.SetNow();
     for (;;) {
-        _delayedReturnCntLock.Lock();
-        uint32_t delayedReturnCnt = _delayedReturnCnt;
-        _delayedReturnCntLock.Unlock();
+        uint32_t delayedReturnCnt;
+        {
+            std::lock_guard<std::mutex> guard(_delayedReturnCntLock);
+            delayedReturnCnt = _delayedReturnCnt;
+        }
         if (delayedReturnCnt == wantedCount) {
             return true;
         }

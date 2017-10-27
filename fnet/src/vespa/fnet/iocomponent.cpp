@@ -18,6 +18,7 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
       _ioc_spec(nullptr),
       _flags(shouldTimeOut),
       _ioc_timestamp(fastos::ClockSystem::now()),
+      _ioc_lock(),
       _ioc_cond(),
       _ioc_refcnt(1),
       _ioc_directPacketWriteCnt(0),
@@ -47,10 +48,9 @@ FNET_IOComponent::UpdateTimeOut() {
 void
 FNET_IOComponent::AddRef()
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     assert(_ioc_refcnt > 0);
     _ioc_refcnt++;
-    Unlock();
 }
 
 
@@ -65,27 +65,26 @@ FNET_IOComponent::AddRef_NoLock()
 void
 FNET_IOComponent::SubRef()
 {
-    Lock();
-    assert(_ioc_refcnt > 0);
-    if (--_ioc_refcnt > 0) {
-        Unlock();
-        return;
+    {
+        std::unique_lock<std::mutex> guard(_ioc_lock);
+        assert(_ioc_refcnt > 0);
+        if (--_ioc_refcnt > 0) {
+            return;
+        }
     }
-    Unlock();
     CleanupHook();
     delete this;
 }
 
 
 void
-FNET_IOComponent::SubRef_HasLock()
+FNET_IOComponent::SubRef_HasLock(std::unique_lock<std::mutex> guard)
 {
     assert(_ioc_refcnt > 0);
     if (--_ioc_refcnt > 0) {
-        Unlock();
         return;
     }
-    Unlock();
+    guard.unlock();
     CleanupHook();
     delete this;
 }

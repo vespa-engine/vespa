@@ -3,7 +3,8 @@
 #pragma once
 
 #include "ipackethandler.h"
-#include <vespa/fastos/cond.h>
+#include <mutex>
+#include <condition_variable>
 
 /**
  * This class implements a queue of packets. Being in a queue does not
@@ -174,8 +175,9 @@ private:
 
 
 protected:
-    FastOS_Cond  _cond;
-    uint32_t     _waitCnt;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    uint32_t                _waitCnt;
 
 
 public:
@@ -189,41 +191,6 @@ public:
      **/
     FNET_PacketQueue(uint32_t len = 64, HP_RetCode hpRetCode = FNET_KEEP_CHANNEL);
     ~FNET_PacketQueue();
-
-
-    /**
-     * Lock this queue to gain exclusive access.
-     **/
-    void Lock()             { _cond.Lock();   }
-
-
-    /**
-     * Unlock this queue to yield exclusive access.
-     **/
-    void Unlock()           { _cond.Unlock(); }
-
-
-    /**
-     * Wait for a signal on this queue.
-     **/
-    void Wait()             { _cond.Wait();   }
-
-
-    /**
-     * Wait for a signal on this queue, but time out after ms
-     * milliseconds.
-     *
-     * @return true(got signal)/false(timeout).
-     * @param ms number of milliseconds to wait before timing out.
-     **/
-    bool TimedWait(int ms)  { return _cond.TimedWait(ms); }
-
-
-    /**
-     * Signal one thread waiting on this queue.
-     **/
-    void Signal()           { _cond.Signal(); }
-
 
     /**
      * Handle incoming packet by putting it on the queue. This method

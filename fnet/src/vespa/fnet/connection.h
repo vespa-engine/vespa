@@ -138,12 +138,12 @@ private:
      *                control packets all channels are callback
      *                targets at the same time.
      **/
-    void WaitCallback(FNET_Channel *channel)
+    void WaitCallback(std::unique_lock<std::mutex> &guard, FNET_Channel *channel)
     {
         while (_flags._inCallback
                && (_callbackTarget == channel || _callbackTarget == nullptr)) {
             _flags._callbackWait = true;
-            Wait();
+            _ioc_cond.wait(guard);
         }
     }
 
@@ -153,11 +153,11 @@ private:
      * called. When this method returns the object will be in callback
      * mode, but not locked.
      **/
-    void BeforeCallback(FNET_Channel *channel)
+    void BeforeCallback(std::unique_lock<std::mutex> &guard, FNET_Channel *channel)
     {
         _flags._inCallback     = true;
         _callbackTarget = channel;
-        Unlock();
+        guard.unlock();
     }
 
     /**
@@ -166,13 +166,13 @@ private:
      * called, but not locked. When this method returns the object is no
      * longer in callback mode, but locked.
      **/
-    void AfterCallback()
+    void AfterCallback(std::unique_lock<std::mutex> &guard)
     {
-        Lock();
+        guard.lock();
         _flags._inCallback = false;
         if (_flags._callbackWait) {
             _flags._callbackWait = false;
-            Broadcast();
+            _ioc_cond.notify_all();
         }
     }
 
@@ -215,6 +215,7 @@ private:
      **/
     bool Write(bool direct);
 
+    bool writePendingAfterConnect();
 public:
 
     /**

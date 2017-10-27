@@ -3,9 +3,10 @@
 #pragma once
 
 #include "stats.h"
-#include <vespa/fastos/cond.h>
 #include <vespa/fastos/timestamp.h>
 #include <vespa/vespalib/net/selector.h>
+#include <mutex>
+#include <condition_variable>
 
 class FNET_TransportThread;
 class FNET_StatCounters;
@@ -50,7 +51,8 @@ protected:
     char                    *_ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
     fastos::TimeStamp        _ioc_timestamp;     // last I/O activity
-    FastOS_Cond              _ioc_cond;          // synchronization
+    std::mutex               _ioc_lock;          // synchronization
+    std::condition_variable  _ioc_cond;          // synchronization
     uint32_t                 _ioc_refcnt;        // reference counter
 
     // direct write stats kept locally
@@ -86,38 +88,10 @@ public:
      **/
     const char *GetSpec() const { return _ioc_spec; }
 
-
-    /**
-     * Lock object to gain exclusive access.
-     **/
-    void Lock()       { _ioc_cond.Lock();   }
-
-
-    /**
-     * Unlock object to yield exclusive access.
-     **/
-    void Unlock()     { _ioc_cond.Unlock(); }
-
-
-    /**
-     * Wait on this object. Caller should have lock on object.
-     **/
-    void Wait()       { _ioc_cond.Wait();   }
-
-
-    /**
-     * Signal one thread waiting on this object. Caller should have
-     * lock.
-     **/
-    void Signal()     { _ioc_cond.Signal(); }
-
-
-    /**
-     * Signal all thread waiting on this object. Caller should have
-     * lock.
-     **/
-    void Broadcast()  { _ioc_cond.Broadcast(); }
-
+    /*
+     * Get a guard to gain exclusive access.
+     */
+    std::unique_lock<std::mutex> getGuard() { return std::unique_lock<std::mutex>(_ioc_lock); }
 
     /**
      * Allocate a reference to this component. This method locks the
@@ -145,7 +119,7 @@ public:
      * protect the reference counter, but assumes that the lock has
      * already been obtained when this method is called.
      **/
-    void SubRef_HasLock();
+    void SubRef_HasLock(std::unique_lock<std::mutex> guard);
 
 
     /**

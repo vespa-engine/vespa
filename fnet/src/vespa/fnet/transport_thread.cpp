@@ -123,15 +123,16 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
                                 FNET_Context context)
 {
     bool wasEmpty;
-    Lock();
-    if (_shutdown) {
-        Unlock();
-        DiscardEvent(cpacket, context);
-        return false;
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        if (_shutdown) {
+            guard.unlock();
+            DiscardEvent(cpacket, context);
+            return false;
+        }
+        wasEmpty = _queue.IsEmpty_NoLock();
+        _queue.QueuePacket_NoLock(cpacket, context);
     }
-    wasEmpty = _queue.IsEmpty_NoLock();
-    _queue.QueuePacket_NoLock(cpacket, context);
-    Unlock();
     if (wasEmpty) {
         _selector.wakeup();
     }
@@ -168,13 +169,13 @@ FNET_TransportThread::UpdateStats()
     for (FNET_IOComponent *comp = _componentsHead;
          comp != nullptr; comp = comp->_ioc_next)
     {
-        comp->Lock();
+        auto guard(comp->getGuard());
         comp->FlushDirectWriteStats();
-        comp->Unlock();
     }
-    Lock();
-    _stats.Update(&_counters, ms / 1000.0);
-    Unlock();
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        _stats.Update(&_counters, ms / 1000.0);
+    }
     _counters.Clear();
 
     if (_config._logStats)
@@ -221,6 +222,7 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _selector(),
       _queue(),
       _myQueue(),
+      _lock(),
       _cond(),
       _started(false),
       _shutdown(false),
@@ -235,9 +237,10 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
 
 FNET_TransportThread::~FNET_TransportThread()
 {
-    Lock();
-    _deleted = true;
-    Unlock();
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        _deleted = true;
+    }
     if (_started && !_finished) {
         LOG(error, "Transport: delete called on active object!");
     }
@@ -375,12 +378,13 @@ void
 FNET_TransportThread::ShutDown(bool waitFinished)
 {
     bool wasEmpty = false;
-    Lock();
-    if (!_shutdown) {
-        _shutdown = true;
-        wasEmpty  = _queue.IsEmpty_NoLock();
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        if (!_shutdown) {
+            _shutdown = true;
+            wasEmpty  = _queue.IsEmpty_NoLock();
+        }
     }
-    Unlock();
     if (wasEmpty) {
         _selector.wakeup();
     }
@@ -396,11 +400,10 @@ FNET_TransportThread::WaitFinished()
     if (_finished)
         return;
 
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _waitFinished = true;
     while (!_finished)
-        Wait();
-    Unlock();
+        _cond.wait(guard);
 }
 
 
@@ -409,13 +412,14 @@ FNET_TransportThread::InitEventLoop()
 {
     bool wasStarted;
     bool wasDeleted;
-    Lock();
-    wasStarted = _started;
-    wasDeleted = _deleted;
-    if (!_started && !_deleted) {
-        _started = true;
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        wasStarted = _started;
+        wasDeleted = _deleted;
+        if (!_started && !_deleted) {
+            _started = true;
+        }
     }
-    Unlock();
     if (wasStarted) {
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
@@ -435,9 +439,10 @@ FNET_TransportThread::InitEventLoop()
 void
 FNET_TransportThread::handle_wakeup()
 {
-    Lock();
-    CountEvent(_queue.FlushPackets_NoLock(&_myQueue));
-    Unlock();
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        CountEvent(_queue.FlushPackets_NoLock(&_myQueue));
+    }
 
     FNET_Context context;
     FNET_Packet *packet = nullptr;
@@ -584,9 +589,10 @@ FNET_TransportThread::EventLoopIteration()
     _statsTask.Kill();
 
     // flush event queue
-    Lock();
-    _queue.FlushPackets_NoLock(&_myQueue);
-    Unlock();
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        _queue.FlushPackets_NoLock(&_myQueue);
+    }
 
     // discard remaining events
     FNET_Context context;
@@ -616,11 +622,13 @@ FNET_TransportThread::EventLoopIteration()
            _queue.IsEmpty_NoLock() &&
            _myQueue.IsEmpty_NoLock());
 
-    Lock();
-    _finished = true;
-    if (_waitFinished)
-        Broadcast();
-    Unlock();
+    {
+        std::unique_lock<std::mutex> guard(_lock);
+        _finished = true;
+        if (_waitFinished) {
+            _cond.notify_all();
+        }
+    }
 
     LOG(spam, "Transport: event loop finished.");
 

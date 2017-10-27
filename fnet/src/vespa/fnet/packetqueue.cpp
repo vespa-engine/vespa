@@ -4,6 +4,7 @@
 #include "packet.h"
 #include <vespa/fastos/time.h>
 #include <cassert>
+#include <chrono>
 
 void
 FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)
@@ -166,6 +167,7 @@ FNET_PacketQueue_NoLock::Print(uint32_t indent)
 FNET_PacketQueue::FNET_PacketQueue(uint32_t len,
                                    HP_RetCode hpRetCode)
     : FNET_PacketQueue_NoLock(len, hpRetCode),
+      _lock(),
       _cond(),
       _waitCnt(0)
 {
@@ -190,16 +192,16 @@ void
 FNET_PacketQueue::QueuePacket(FNET_Packet *packet, FNET_Context context)
 {
     assert(packet != nullptr);
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     EnsureFree();
     _buf[_in_pos]._packet = packet;  // insert packet ref.
     _buf[_in_pos]._context = context;
     if (++_in_pos == _bufsize)
         _in_pos = 0;                   // wrap around.
     _bufused++;
-    if (_waitCnt >= _bufused)        // signal waiting thread(s)
-        Signal();
-    Unlock();
+    if (_waitCnt >= _bufused) {        // signal waiting thread(s)
+        _cond.notify_one();
+    }
 }
 
 
@@ -207,17 +209,17 @@ FNET_Packet*
 FNET_PacketQueue::DequeuePacket(FNET_Context *context)
 {
     FNET_Packet *packet = nullptr;
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _waitCnt++;
-    while (_bufused == 0)
-        Wait();
+    while (_bufused == 0) {
+        _cond.wait(guard);
+    }
     _waitCnt--;
     packet = _buf[_out_pos]._packet;
     *context = _buf[_out_pos]._context;
     if (++_out_pos == _bufsize)
         _out_pos = 0;                   // wrap around
     _bufused--;
-    Unlock();
     return packet;
 }
 
@@ -231,14 +233,14 @@ FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
 
     if (maxwait > 0)
         startTime.SetNow();
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     if (maxwait > 0) {
         bool timeout = false;
 
         _waitCnt++;
-        while ((_bufused == 0) && !timeout
-               && (waitTime = (int)(maxwait - startTime.MilliSecsToNow())) > 0)
-            timeout = !TimedWait(waitTime);
+        while ((_bufused == 0) && !timeout && (waitTime = (int)(maxwait - startTime.MilliSecsToNow())) > 0) {
+            timeout = _cond.wait_for(guard, std::chrono::milliseconds(waitTime)) == std::cv_status::timeout;
+        }
         _waitCnt--;
     }
     if (_bufused > 0) {
@@ -248,7 +250,6 @@ FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
             _out_pos = 0;                   // wrap around
         _bufused--;
     }
-    Unlock();
     return packet;
 }
 
@@ -256,7 +257,7 @@ FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
 void
 FNET_PacketQueue::Print(uint32_t indent)
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     uint32_t i   = _out_pos;
     uint32_t cnt = _bufused;
 
@@ -273,5 +274,4 @@ FNET_PacketQueue::Print(uint32_t indent)
         _buf[i]._context.Print(indent + 2);
     }
     printf("%*s}\n", indent, "");
-    Unlock();
 }

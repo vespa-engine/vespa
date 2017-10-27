@@ -39,23 +39,24 @@ FNET_Scheduler::~FNET_Scheduler()
     if (LOG_WOULD_LOG(debug)) {
         bool empty = true;
         std::stringstream dump;
-        Lock();
-        dump << "FNET_Scheduler {" << std::endl;
-        dump << "  [slot=" << _currSlot << "][iter=" << _currIter << "]" << std::endl;
-        for (int i = 0; i <= NUM_SLOTS; i++) {
-            FNET_Task *pt = _slots[i];
-            if (pt != nullptr) {
-                empty = false;
-                FNET_Task *end = pt;
-                do {
-                    dump << "  FNET_Task { slot=" << pt->_task_slot;
-                    dump << ", iter=" << pt->_task_iter << " }" << std::endl;
-                    pt = pt->_task_next;
-                } while (pt != end);
+        {
+            std::unique_lock<std::mutex> guard(_lock);
+            dump << "FNET_Scheduler {" << std::endl;
+            dump << "  [slot=" << _currSlot << "][iter=" << _currIter << "]" << std::endl;
+            for (int i = 0; i <= NUM_SLOTS; i++) {
+                FNET_Task *pt = _slots[i];
+                if (pt != nullptr) {
+                    empty = false;
+                    FNET_Task *end = pt;
+                    do {
+                        dump << "  FNET_Task { slot=" << pt->_task_slot;
+                        dump << ", iter=" << pt->_task_iter << " }" << std::endl;
+                        pt = pt->_task_next;
+                    } while (pt != end);
+                }
             }
+            dump << "}" << std::endl;
         }
-        dump << "}" << std::endl;
-        Unlock();
         if (!empty) {
             LOG(debug, "~FNET_Scheduler(): tasks still pending when deleted"
                 "\n%s", dump.str().c_str());
@@ -69,7 +70,7 @@ FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
 {
     uint32_t ticks = 1 + (uint32_t) (seconds * (1000 / SLOT_TICK) + 0.5);
 
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     if (!task->_killed) {
         if (IsActive(task))
             LinkOut(task);
@@ -77,14 +78,13 @@ FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
         task->_task_iter = _currIter + ((ticks + _currSlot) >> SLOTS_SHIFT);
         LinkIn(task);
     }
-    Unlock();
 }
 
 
 void
 FNET_Scheduler::ScheduleNow(FNET_Task *task)
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     if (!task->_killed) {
         if (IsActive(task))
             LinkOut(task);
@@ -92,37 +92,34 @@ FNET_Scheduler::ScheduleNow(FNET_Task *task)
         task->_task_iter = 0;
         LinkIn(task);
     }
-    Unlock();
 }
 
 
 void
 FNET_Scheduler::Unschedule(FNET_Task *task)
 {
-    Lock();
-    WaitTask(task);
+    std::unique_lock<std::mutex> guard(_lock);
+    WaitTask(guard, task);
     if (IsActive(task))
         LinkOut(task);
-    Unlock();
 }
 
 
 void
 FNET_Scheduler::Kill(FNET_Task *task)
 {
-    Lock();
-    WaitTask(task);
+    std::unique_lock<std::mutex> guard(_lock);
+    WaitTask(guard, task);
     if (IsActive(task))
         LinkOut(task);
     task->_killed = true;
-    Unlock();
 }
 
 
 void
 FNET_Scheduler::Print(FILE *dst)
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     fprintf(dst, "FNET_Scheduler {\n");
     fprintf(dst, "  [slot=%d][iter=%d]\n", _currSlot, _currIter);
     for (int i = 0; i <= NUM_SLOTS; i++) {
@@ -137,7 +134,6 @@ FNET_Scheduler::Print(FILE *dst)
         }
     }
     fprintf(dst, "}\n");
-    Unlock();
 }
 
 
@@ -155,11 +151,11 @@ FNET_Scheduler::CheckTasks()
     if (_slots[NUM_SLOTS] == nullptr && _now < _next)
         return;
 
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
 
     // perform urgent tasks
 
-    PerformTasks(NUM_SLOTS, 0);
+    PerformTasks(guard, NUM_SLOTS, 0);
 
     // handle bucket timeout(s)
 
@@ -169,10 +165,9 @@ FNET_Scheduler::CheckTasks()
                 _currSlot = 0;
                 _currIter++;
             }
-            PerformTasks(_currSlot, _currIter);
+            PerformTasks(guard, _currSlot, _currIter);
         }
     }
-    Unlock();
 }
 
 void
@@ -237,40 +232,40 @@ FNET_Scheduler::LinkOut(FNET_Task *task) {
 }
 
 void
-FNET_Scheduler::BeforeTask(FNET_Task *task) {
+FNET_Scheduler::BeforeTask(std::unique_lock<std::mutex> &guard, FNET_Task *task) {
     _performing = task;
-    Unlock();
+    guard.unlock();
 }
 
 void
-FNET_Scheduler::AfterTask() {
-    Lock();
+FNET_Scheduler::AfterTask(std::unique_lock<std::mutex> &guard) {
+    guard.lock();
     _performing = nullptr;
     if (_waitTask) {
         _waitTask = false;
-        Broadcast();
+        _cond.notify_all();
     }
 }
 
 void
-FNET_Scheduler::WaitTask(FNET_Task *task) {
+FNET_Scheduler::WaitTask(std::unique_lock<std::mutex> &guard, FNET_Task *task) {
     while (IsPerforming(task)) {
         _waitTask = true;
-        Wait();
+        _cond.wait(guard);
     }
 }
 
 void
-FNET_Scheduler::PerformTasks(uint32_t slot, uint32_t iter) {
+FNET_Scheduler::PerformTasks(std::unique_lock<std::mutex> &guard, uint32_t slot, uint32_t iter) {
     FirstTask(slot);
     for (FNET_Task *task; (task = GetTask()) != nullptr; ) {
         NextTask();
 
         if (task->_task_iter == iter) {
             LinkOut(task);
-            BeforeTask(task);
+            BeforeTask(guard, task);
             task->PerformTask(); // PERFORM TASK
-            AfterTask();
+            AfterTask(guard);
         }
     }
 }

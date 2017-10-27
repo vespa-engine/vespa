@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
+#include <mutex>
 
 class MyPacket : public FNET_Packet
 {
@@ -16,7 +17,7 @@ TEST("drain packets") {
   FastOS_Time     start;
   FastOS_Time     stop;
 
-  FastOS_Mutex    lock;
+  std::mutex      lock;
 
   FNET_PacketQueue   q1(512);
   FNET_PacketQueue   q2(512);
@@ -39,25 +40,23 @@ TEST("drain packets") {
     FNET_Packet  *packet;
     FNET_Context  context;
 
-    lock.Lock();
-
-    while (!q1.IsEmpty_NoLock()) {
-      packet = q1.DequeuePacket_NoLock(&context);
-      q3.QueuePacket_NoLock(packet, context);
+    {
+        std::lock_guard<std::mutex> guard(lock);
+        while (!q1.IsEmpty_NoLock()) {
+            packet = q1.DequeuePacket_NoLock(&context);
+            q3.QueuePacket_NoLock(packet, context);
+        }
     }
-
-    lock.Unlock();
 
     //------------------------
 
-    lock.Lock();
-
-    while (!q3.IsEmpty_NoLock()) {
-      packet = q3.DequeuePacket_NoLock(&context);
-      q1.QueuePacket_NoLock(packet, context);
+    {
+        std::lock_guard<std::mutex> guard(lock);
+        while (!q3.IsEmpty_NoLock()) {
+            packet = q3.DequeuePacket_NoLock(&context);
+            q1.QueuePacket_NoLock(packet, context);
+        }
     }
-
-    lock.Unlock();
   }
 
   stop.SetNow();
@@ -74,9 +73,10 @@ TEST("drain packets") {
     FNET_Packet  *packet;
     FNET_Context  context;
 
-    lock.Lock();
-    q1.FlushPackets_NoLock(&q2);
-    lock.Unlock();
+    {
+        std::lock_guard<std::mutex> guard(lock);
+        q1.FlushPackets_NoLock(&q2);
+    }
 
     while (!q2.IsEmpty_NoLock()) {
       packet = q2.DequeuePacket_NoLock(&context);
@@ -85,9 +85,10 @@ TEST("drain packets") {
 
     //------------------------
 
-    lock.Lock();
-    q3.FlushPackets_NoLock(&q2);
-    lock.Unlock();
+    {
+        std::lock_guard<std::mutex> guard(lock);
+        q3.FlushPackets_NoLock(&q2);
+    }
 
     while (!q2.IsEmpty_NoLock()) {
       packet = q2.DequeuePacket_NoLock(&context);

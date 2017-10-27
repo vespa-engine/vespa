@@ -16,25 +16,26 @@ LOG_SETUP(".fnet");
 namespace {
 class SyncPacket : public FNET_DummyPacket {
 private:
-    FastOS_Cond _cond;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     bool _done;
     bool _waiting;
 
 public:
     SyncPacket()
-            : _cond(),
+            : _lock(),
+              _cond(),
               _done(false),
               _waiting(false) {}
 
     ~SyncPacket() {}
 
     void WaitFree() {
-        _cond.Lock();
+        std::unique_lock<std::mutex> guard(_lock);
         _waiting = true;
         while (!_done)
-            _cond.Wait();
+            _cond.wait(guard);
         _waiting = false;
-        _cond.Unlock();
     }
 
     void Free() override;
@@ -44,11 +45,11 @@ public:
 void
 SyncPacket::Free()
 {
-    _cond.Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _done = true;
-    if (_waiting)
-        _cond.Signal();
-    _cond.Unlock();
+    if (_waiting) {
+        _cond.notify_one();
+    }
 }
 }
 
@@ -100,7 +101,7 @@ FNET_Connection::SetState(State state)
     State         oldstate;
 
     std::vector<FNET_Channel::UP> toDelete;
-    Lock();
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     oldstate = _state;
     _state = state;
     if (LOG_WOULD_LOG(debug) && state != oldstate) {
@@ -112,22 +113,22 @@ FNET_Connection::SetState(State state)
         if (_flags._writeLock) {
             _flags._discarding = true;
             while (_flags._writeLock)
-                Wait();
+                _ioc_cond.wait(guard);
             _flags._discarding = false;
         }
 
         while (!_queue.IsEmpty_NoLock() || !_myQueue.IsEmpty_NoLock()) {
             _flags._discarding = true;
             _queue.FlushPackets_NoLock(&_myQueue);
-            Unlock();
+            guard.unlock();
             _myQueue.DiscardPackets_NoLock();
-            Lock();
+            guard.lock();
             _flags._discarding = false;
         }
 
-        BeforeCallback(nullptr);
+        BeforeCallback(guard, nullptr);
         toDelete = _channels.Broadcast(&FNET_ControlPacket::ChannelLost);
-        AfterCallback();
+        AfterCallback(guard);
     }
 
     if ( ! toDelete.empty() ) {
@@ -141,7 +142,6 @@ FNET_Connection::SetState(State state)
             }
         }
     }
-    Unlock();
 }
 
 
@@ -153,7 +153,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
     FNET_Channel *channel;
     FNET_IPacketHandler::HP_RetCode hp_rc;
 
-    Lock();
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     channel = _channels.Lookup(chid);
 
     if (channel != nullptr) { // deliver packet on open channel
@@ -161,12 +161,12 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
         __builtin_prefetch(&_streamer);
         __builtin_prefetch(&_input);
 
-        BeforeCallback(channel);
+        BeforeCallback(guard, channel);
         __builtin_prefetch(channel->GetHandler(), 0);  // Prefetch the handler while packet is being decoded.
         packet = _streamer->Decode(&_input, plen, pcode, channel->GetContext());
         hp_rc = (packet != nullptr) ? channel->Receive(packet)
                 : channel->Receive(&FNET_ControlPacket::BadPacket);
-        AfterCallback();
+        AfterCallback(guard);
 
         FNET_Channel::UP toDelete;
         if (hp_rc > FNET_IPacketHandler::FNET_KEEP_CHANNEL) {
@@ -181,21 +181,18 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
                 toDelete.reset(channel);
             }
         }
-
-        Unlock();
-
     } else if (CanAcceptChannels() && IsFromPeer(chid)) { // open new channel
         FNET_Channel::UP newChannel(new FNET_Channel(chid, this));
         channel = newChannel.get();
         AddRef_NoLock();
-        BeforeCallback(channel);
+        BeforeCallback(guard, channel);
 
         if (_serverAdapter->InitChannel(channel, pcode)) {
 
             packet = _streamer->Decode(&_input, plen, pcode, channel->GetContext());
             hp_rc = (packet != nullptr) ? channel->Receive(packet)
                     : channel->Receive(&FNET_ControlPacket::BadPacket);
-            AfterCallback();
+            AfterCallback(guard);
 
             if (hp_rc == FNET_IPacketHandler::FNET_FREE_CHANNEL) {
                 SubRef_NoLock();
@@ -204,14 +201,11 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
             } else {
                 newChannel.release(); // It has already been taken care of, so we should not free it here.
             }
-
-            Unlock();
-
         } else {
 
-            AfterCallback();
+            AfterCallback(guard);
             SubRef_NoLock();
-            Unlock();
+            guard.unlock();
 
             LOG(debug, "Connection(%s): channel init failed", GetSpec());
             _input.DataToDead(plen);
@@ -219,7 +213,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
 
     } else { // skip unhandled packet
 
-        Unlock();
+        guard.unlock();
         LOG(spam, "Connection(%s): skipping unhandled packet", GetSpec());
         _input.DataToDead(plen);
     }
@@ -362,13 +356,14 @@ FNET_Connection::Write(bool direct)
         }
     }
 
-    Lock();
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     _writeWork = _queue.GetPacketCnt_NoLock()
                  + _myQueue.GetPacketCnt_NoLock()
                  + ((_output.GetDataLen() > 0) ? 1 : 0);
     _flags._writeLock = false;
-    if (_flags._discarding)
-        Broadcast();
+    if (_flags._discarding) {
+        _ioc_cond.notify_all();
+    }
     bool writePending = (_writeWork > 0);
 
     if (direct) { // direct write (from post packet)
@@ -378,17 +373,15 @@ FNET_Connection::Write(bool direct)
         }
         if (writePending) {
             AddRef_NoLock();
-            Unlock();
+            guard.unlock();
             if (broken) {
                 Owner()->Close(this, /* needRef = */ false);
             } else {
                 Owner()->EnableWrite(this, /* needRef = */ false);
             }
-        } else {
-            Unlock();
         }
     } else {      // normal write (from event loop)
-        Unlock();
+        guard.unlock();
         if (writtenData > 0) {
             CountDataWrite(writtenData);
             CountPacketWrite(writtenPackets);
@@ -546,18 +539,17 @@ FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
     FNET_Channel::UP newChannel(new FNET_Channel(FNET_NOID, this, handler, context));
     FNET_Channel * ret = nullptr;
 
-    Lock();
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     if (__builtin_expect(_state < FNET_CLOSING, true)) {
         newChannel->SetID(GetNextID());
         if (chid != nullptr) {
             *chid = newChannel->GetID();
         }
-        WaitCallback(nullptr);
+        WaitCallback(guard, nullptr);
         AddRef_NoLock();
         ret = newChannel.release();
         _channels.Register(ret);
     }
-    Unlock();
     return ret;
 }
 
@@ -566,10 +558,12 @@ FNET_Channel*
 FNET_Connection::OpenChannel()
 {
 
-    Lock();
-    uint32_t chid = GetNextID();
-    AddRef_NoLock();
-    Unlock();
+    uint32_t chid;
+    {
+        std::unique_lock<std::mutex> guard(_ioc_lock);
+        chid = GetNextID();
+        AddRef_NoLock();
+    }
     return new FNET_Channel(chid, this);
 }
 
@@ -577,12 +571,9 @@ FNET_Connection::OpenChannel()
 bool
 FNET_Connection::CloseChannel(FNET_Channel *channel)
 {
-    bool ret;
-    Lock();
-    WaitCallback(channel);
-    ret = _channels.Unregister(channel);
-    Unlock();
-    return ret;
+    std::unique_lock<std::mutex> guard(_ioc_lock);
+    WaitCallback(guard, channel);
+    return _channels.Unregister(channel);
 }
 
 
@@ -590,18 +581,17 @@ void
 FNET_Connection::FreeChannel(FNET_Channel *channel)
 {
     delete channel;
-    Lock();
-    SubRef_HasLock();
+    SubRef_HasLock(std::unique_lock<std::mutex>(_ioc_lock));
 }
 
 
 void
 FNET_Connection::CloseAndFreeChannel(FNET_Channel *channel)
 {
-    Lock();
-    WaitCallback(channel);
+    std::unique_lock<std::mutex> guard(_ioc_lock);
+    WaitCallback(guard, channel);
     _channels.Unregister(channel);
-    SubRef_HasLock();
+    SubRef_HasLock(std::move(guard));
     delete channel;
 }
 
@@ -609,17 +599,16 @@ FNET_Connection::CloseAndFreeChannel(FNET_Channel *channel)
 void
 FNET_Connection::CloseAdminChannel()
 {
-    Lock();
     FNET_Channel::UP toDelete;
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     if (_adminChannel != nullptr) {
-        WaitCallback(_adminChannel);
+        WaitCallback(guard, _adminChannel);
         if (_adminChannel != nullptr) {
             _channels.Unregister(_adminChannel);
             toDelete.reset(_adminChannel);
             _adminChannel = nullptr;
         }
     }
-    Unlock();
 }
 
 
@@ -629,13 +618,12 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     uint32_t writeWork;
 
     assert(packet != nullptr);
-    Lock();
+    std::unique_lock<std::mutex> guard(_ioc_lock);
     if (_state >= FNET_CLOSING) {
         if (_flags._discarding) {
             _queue.QueuePacket_NoLock(packet, FNET_Context(chid));
-            Unlock();
         } else {
-            Unlock();
+            guard.unlock();
             packet->Free(); // discard packet
         }
         return false;     // connection is down
@@ -649,15 +637,13 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
         if (GetConfig()->_directWrite) {
             _flags._writeLock = true;
             _queue.FlushPackets_NoLock(&_myQueue);
-            Unlock();
+            guard.unlock();
             Write(true);
         } else {
             AddRef_NoLock();
-            Unlock();
+            guard.unlock();
             Owner()->EnableWrite(this, /* needRef = */ false);
         }
-    } else {
-        Unlock();
     }
     return true;
 }
@@ -666,11 +652,8 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
 uint32_t
 FNET_Connection::GetQueueLen()
 {
-    Lock();
-    uint32_t ret = _queue.GetPacketCnt_NoLock()
-                   + _myQueue.GetPacketCnt_NoLock();
-    Unlock();
-    return ret;
+    std::unique_lock<std::mutex> guard(_ioc_lock);
+    return _queue.GetPacketCnt_NoLock() + _myQueue.GetPacketCnt_NoLock();
 }
 
 
@@ -725,6 +708,16 @@ FNET_Connection::HandleReadEvent()
 
 
 bool
+FNET_Connection::writePendingAfterConnect()
+{
+    std::unique_lock<std::mutex> guard(_ioc_lock);
+    _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
+    LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
+        GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
+    return (_writeWork > 0);
+}
+
+bool
 FNET_Connection::HandleWriteEvent()
 {
     int  error;           // socket error code
@@ -734,14 +727,9 @@ FNET_Connection::HandleWriteEvent()
     case FNET_CONNECTING:
         error = _socket.get_so_error();
         if (error == 0) { // connect ok
-            Lock();
-            _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
-            LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
-                GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
-            bool writePending = (_writeWork > 0);
-            Unlock();
-            if (!writePending)
+            if (!writePendingAfterConnect()) {
                 EnableWriteEvent(false);
+            }
         } else {
             LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
 
@@ -750,15 +738,16 @@ FNET_Connection::HandleWriteEvent()
         }
         break;
     case FNET_CONNECTED:
-        Lock();
-        if (_flags._writeLock) {
-            Unlock();
-            EnableWriteEvent(false);
-            return true;
+        {
+            std::unique_lock<std::mutex> guard(_ioc_lock);
+            if (_flags._writeLock) {
+                guard.unlock();
+                EnableWriteEvent(false);
+                return true;
+            }
+            _flags._writeLock = true;
+            _queue.FlushPackets_NoLock(&_myQueue);
         }
-        _flags._writeLock = true;
-        _queue.FlushPackets_NoLock(&_myQueue);
-        Unlock();
         broken = !Write(false);
         break;
     case FNET_CLOSING:

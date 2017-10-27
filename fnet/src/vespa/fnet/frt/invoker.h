@@ -5,8 +5,9 @@
 #include "rpcrequest.h"
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/ipackethandler.h>
-#include <vespa/fastos/cond.h>
 #include <vespa/fastos/thread.h>
+#include <mutex>
+#include <condition_variable>
 
 class FRT_Method;
 class FRT_Supervisor;
@@ -29,7 +30,8 @@ public:
 class FRT_SingleReqWait : public FRT_IRequestWait
 {
 private:
-    FastOS_Cond     _cond;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     bool            _done;
     bool            _waiting;
 
