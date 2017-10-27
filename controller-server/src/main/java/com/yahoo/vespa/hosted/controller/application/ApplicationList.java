@@ -3,44 +3,50 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * A list of applications which can be filtered in various ways.
  * 
  * @author bratseth
+ * @author mpolden
  */
 public class ApplicationList {
 
-    private final ImmutableList<Application> list;
+    private final ImmutableList<Entry> list;
 
-    private ApplicationList(List<Application> applications) {
+    private ApplicationList(List<Entry> applications) {
         this.list = ImmutableList.copyOf(applications);
     }
     
     // ----------------------------------- Factories
     
     public static ApplicationList from(List<Application> applications) {
-        return new ApplicationList(applications);
+        return new ApplicationList(applications.stream().map(Entry::new).collect(Collectors.toList()));
     }
 
     public static ApplicationList from(List<ApplicationId> ids, ApplicationController applications) {
-        return listOf(ids.stream().map(applications::require));
+        return listOf(ids.stream().map(applications::require).map(Entry::new));
     }
 
     // ----------------------------------- Accessors
 
     /** Returns the applications in this as an immutable list */
-    public List<Application> asList() { return list; }
+    public List<Entry> asList() { return list; }
 
     public boolean isEmpty() { return list.isEmpty(); }
 
@@ -147,30 +153,30 @@ public class ApplicationList {
 
     // ----------------------------------- Internal helpers
     
-    private static boolean isUpgradingTo(Version version, Application application) {
+    private static boolean isUpgradingTo(Version version, Entry application) {
         if ( ! (application.deploying().isPresent()) ) return false;
         if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;
         return ((Change.VersionChange)application.deploying().get()).version().equals(version);
     }
 
-    private static boolean isUpgradingToLowerThan(Version version, Application application) {
+    private static boolean isUpgradingToLowerThan(Version version, Entry application) {
         if ( ! application.deploying().isPresent()) return false;
         if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;
         return ((Change.VersionChange)application.deploying().get()).version().isBefore(version);
     }
 
-    private static boolean isDeployingApplicationChange(Application application) {
+    private static boolean isDeployingApplicationChange(Entry application) {
         if ( ! application.deploying().isPresent()) return false;
         return application.deploying().get() instanceof Change.ApplicationChange;
     }
     
-    private static boolean failingOn(Version version, Application application) {
+    private static boolean failingOn(Version version, Entry application) {
         for (JobStatus jobStatus : application.deploymentJobs().jobStatus().values())
             if ( ! jobStatus.isSuccess() && jobStatus.lastCompleted().get().version().equals(version)) return true;
         return false;
     }
 
-    private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant jobTimeoutLimit) {
+    private static boolean currentlyUpgrading(Change.VersionChange change, Entry application, Instant jobTimeoutLimit) {
         return application.deploymentJobs().jobStatus().values().stream()
                 .filter(status -> status.isRunning(jobTimeoutLimit))
                 .filter(status -> status.lastTriggered().isPresent())
@@ -179,10 +185,58 @@ public class ApplicationList {
     }
     
     /** Convenience converter from a stream to an ApplicationList */
-    private static ApplicationList listOf(Stream<Application> applications) {
-        ImmutableList.Builder<Application> b = new ImmutableList.Builder<>();
+    private static ApplicationList listOf(Stream<Entry> applications) {
+        ImmutableList.Builder<Entry> b = new ImmutableList.Builder<>();
         applications.forEach(b::add);
         return new ApplicationList(b.build());
+    }
+
+    /** A read only ApplicationList entry. This wraps Application and provides only read methods to discourage using
+     * ApplicationList as basis for modification and persistence. This should never expose Application directly. */
+    public static class Entry {
+
+        private final Application application;
+
+        private Entry(Application application) {
+            this.application = application;
+        }
+
+        public ApplicationId id() {
+            return application.id();
+        }
+
+        public DeploymentSpec deploymentSpec() {
+            return application.deploymentSpec();
+        }
+
+        public ValidationOverrides validationOverrides() {
+            return application.validationOverrides();
+        }
+
+        public Map<Zone, Deployment> deployments() {
+            return application.deployments();
+        }
+
+        public Map<Zone, Deployment> productionDeployments() {
+            return application.productionDeployments();
+        }
+
+        public DeploymentJobs deploymentJobs() {
+            return application.deploymentJobs();
+        }
+
+        public Optional<Change> deploying() {
+            return application.deploying();
+        }
+
+        public boolean hasOutstandingChange() {
+            return application.hasOutstandingChange();
+        }
+
+        public Optional<Version> deployedVersion() {
+            return application.deployedVersion();
+        }
+
     }
 
 }

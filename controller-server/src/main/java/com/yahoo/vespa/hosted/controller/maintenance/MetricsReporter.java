@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.AttributeMapping;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -102,7 +102,7 @@ public class MetricsReporter extends Maintainer {
     }
     
     private double deploymentFailRatio() {
-        List<Application> applications = controller().applications().asList();
+        List<ApplicationList.Entry> applications = controller().applications().list().asList();
         if (applications.isEmpty()) return 0;
         
         return (double)applications.stream().filter(a -> a.deploymentJobs().hasFailures()).count() / 

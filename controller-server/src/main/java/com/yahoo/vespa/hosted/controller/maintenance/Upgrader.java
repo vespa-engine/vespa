@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -22,8 +21,6 @@ import java.util.logging.Logger;
  * @author mpolden
  */
 public class Upgrader extends Maintainer {
-
-    private static final Duration upgradeTimeout = Duration.ofHours(12);
 
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
@@ -65,7 +62,7 @@ public class Upgrader extends Maintainer {
     }
     
     /** Returns a list of all applications */
-    private ApplicationList applications() { return ApplicationList.from(controller().applications().asList()); }
+    private ApplicationList applications() { return controller().applications().list(); }
     
     private void upgrade(ApplicationList applications, Version version) {
         Change.VersionChange change = new Change.VersionChange(version);
@@ -79,9 +76,9 @@ public class Upgrader extends Maintainer {
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
-        for (Application application : applications.asList()) {
+        for (ApplicationList.Entry entry : applications.asList()) {
             try {
-                controller().applications().deploymentTrigger().triggerChange(application.id(), change);
+                controller().applications().deploymentTrigger().triggerChange(entry.id(), change);
             } catch (IllegalArgumentException e) {
                 log.log(Level.INFO, "Could not trigger change: " + Exceptions.toMessageString(e));
             }
@@ -89,8 +86,8 @@ public class Upgrader extends Maintainer {
     }
 
     private void cancelUpgradesOf(ApplicationList applications) {
-        for (Application application : applications.asList()) {
-            controller().applications().deploymentTrigger().cancelChange(application.id());
+        for (ApplicationList.Entry entry : applications.asList()) {
+            controller().applications().deploymentTrigger().cancelChange(entry.id());
         }
     }
 
