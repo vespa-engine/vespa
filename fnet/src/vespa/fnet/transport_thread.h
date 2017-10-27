@@ -11,6 +11,8 @@
 #include <vespa/fastos/time.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/selector.h>
+#include <mutex>
+#include <condition_variable>
 
 class FNET_Transport;
 class FNET_ControlPacket;
@@ -63,7 +65,8 @@ private:
     Selector                 _selector;       // I/O event generator
     FNET_PacketQueue_NoLock  _queue;          // outer event queue
     FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
-    FastOS_Cond              _cond;           // used for synchronization
+    std::mutex               _lock;           // used for synchronization
+    std::condition_variable  _cond;           // used for synchronization
     bool                     _started;        // event loop started ?
     bool                     _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
@@ -73,30 +76,6 @@ private:
 
     FNET_TransportThread(const FNET_TransportThread &);
     FNET_TransportThread &operator=(const FNET_TransportThread &);
-
-
-    /**
-     * Lock this object.
-     **/
-    void Lock() { _cond.Lock(); }
-
-
-    /**
-     * Unlock this object.
-     **/
-    void Unlock() { _cond.Unlock(); }
-
-
-    /**
-     * Wait on this object.
-     **/
-    void Wait() { _cond.Wait(); }
-
-
-    /**
-     * Wake all waiting on this object.
-     **/
-    void Broadcast() { _cond.Broadcast(); }
 
 
     /**
