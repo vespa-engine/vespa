@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.monitor;
+package com.yahoo.vespa.service.monitor.internal;
 
-import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.Zone;
@@ -9,8 +8,8 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
-import com.yahoo.vespa.service.monitor.internal.ServiceModelCache;
-import com.yahoo.vespa.service.monitor.internal.ServiceMonitorMetrics;
+import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +24,6 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     private final List<String> configServerHosts;
     private final ServiceModelCache serviceModelCache;
 
-    @Inject
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
                               ConfigserverConfig configserverConfig,
                               SlobrokMonitorManagerImpl slobrokMonitorManager,
