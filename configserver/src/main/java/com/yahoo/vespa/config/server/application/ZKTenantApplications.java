@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -135,11 +134,11 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
                 // do nothing, application just got redeployed
                 break;
             default:
-                // We don't know if applications have been added or removed so possibly need to remove some of them
-                // (new applications are not added here)
-                removeApplications(event.getType());
                 break;
         }
+        // We might have lost events and might need to remove applications (new applications are
+        // not added by listening for events here, they are added when session is added, see RemoteSessionRepo)
+        removeApplications(event.getType());
     }
 
     private void applicationRemoved(ApplicationId applicationId) {
@@ -153,7 +152,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void removeApplications(PathChildrenCacheEvent.Type eventType) {
         ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
-        log.log(Level.INFO, "Got " + eventType + " event for tenant '" + tenant +
+        log.log(LogLevel.DEBUG, "Got " + eventType + " event for tenant '" + tenant +
                 "', removing applications except these active applications: " + activeApplications);
         reloadHandler.removeApplicationsExcept(activeApplications);
     }
