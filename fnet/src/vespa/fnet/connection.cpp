@@ -16,25 +16,26 @@ LOG_SETUP(".fnet");
 namespace {
 class SyncPacket : public FNET_DummyPacket {
 private:
-    FastOS_Cond _cond;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     bool _done;
     bool _waiting;
 
 public:
     SyncPacket()
-            : _cond(),
+            : _lock(),
+              _cond(),
               _done(false),
               _waiting(false) {}
 
     ~SyncPacket() {}
 
     void WaitFree() {
-        _cond.Lock();
+        std::unique_lock<std::mutex> guard(_lock);
         _waiting = true;
         while (!_done)
-            _cond.Wait();
+            _cond.wait(guard);
         _waiting = false;
-        _cond.Unlock();
     }
 
     void Free() override;
@@ -44,11 +45,11 @@ public:
 void
 SyncPacket::Free()
 {
-    _cond.Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _done = true;
-    if (_waiting)
-        _cond.Signal();
-    _cond.Unlock();
+    if (_waiting) {
+        _cond.notify_one();
+    }
 }
 }
 
