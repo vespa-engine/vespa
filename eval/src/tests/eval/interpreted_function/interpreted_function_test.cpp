@@ -51,18 +51,23 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         if (is_supported && !has_issues) {
             vespalib::string desc = as_string(param_names, param_values, expression);
             InterpretedFunction::SimpleParams params(param_values);
-            verify_result(SimpleTensorEngine::ref(), function, "[simple] "+desc, params, expected_result);
-            verify_result(DefaultTensorEngine::ref(), function, "  [prod] "+desc, params, expected_result);
+            verify_result(SimpleTensorEngine::ref(), function, false,  "[untyped simple] "+desc, params, expected_result);
+            verify_result(DefaultTensorEngine::ref(), function, false, "[untyped prod]   "+desc, params, expected_result);
+            verify_result(DefaultTensorEngine::ref(), function, true,  "[typed prod]     "+desc, params, expected_result);
         }
     }
 
     void verify_result(const TensorEngine& engine,
                        const Function &function,
+                       bool typed,
                        const vespalib::string &description,
                        const InterpretedFunction::SimpleParams &params,
                        double expected_result)
     {
-        InterpretedFunction ifun(engine, function, NodeTypes());
+        NodeTypes node_types = typed
+                               ? NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()))
+                               : NodeTypes();
+        InterpretedFunction ifun(engine, function, node_types);
         ASSERT_EQUAL(ifun.num_params(), params.params.size());
         InterpretedFunction::Context ictx(ifun);
         const Value &result_value = ifun.eval(ictx, params);
