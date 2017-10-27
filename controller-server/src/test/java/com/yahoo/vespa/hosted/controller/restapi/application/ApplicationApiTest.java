@@ -577,7 +577,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       entity,
                                       Request.Method.POST,
                                       athenzUserDomain, "mytenant"),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Principal 'mytenant' is not a screwdriver principal, and does not have deploy access to application 'tenant1.application1'\"}", 
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Principal 'mytenant' is not a Screwdriver principal. Excepted principal with Athenz domain 'cd.screwdriver.project', got 'domain1'.\"}",
                               403);
 
         // Deleting an application for an Athens domain the user is not admin for is disallowed

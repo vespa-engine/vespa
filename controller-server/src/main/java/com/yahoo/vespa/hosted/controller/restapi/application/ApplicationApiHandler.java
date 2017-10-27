@@ -67,7 +67,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -780,25 +779,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         Principal principal = authorizer.getPrincipal(request);
-        if (principal instanceof AthenzPrincipal) {
-            deployAuthorizer.throwIfUnauthorizedForDeploy(principal,
-                                                          Environment.from(environment),
-                                                          tenant,
-                                                          applicationId);
-        } else { // In case of host-based principal
-            // TODO What about other user type principals like Bouncer?
-            log.log(LogLevel.WARNING,
-                    "Using deprecated DeployAuthorizer.throwIfUnauthorizedForDeploy. Principal=" + principal);
-            UserId userId = new UserId(principal.getName());
-            deployAuthorizer.throwIfUnauthorizedForDeploy(
-                    Environment.from(environment),
-                    userId,
-                    tenant,
-                    applicationId,
-                    optional("screwdriverBuildJob", deployOptions).map(ScrewdriverId::new));
-        }
+        deployAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, applicationId);
 
-        
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
