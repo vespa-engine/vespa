@@ -242,6 +242,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Add another Athens domain, so we can try to create more tenants
         addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
+        // Add property info for that property id, as well, in the mock organization.
+        addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2",
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
@@ -255,11 +257,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", "", Request.Method.GET),
                               new File("tenant-without-applications-with-id.json"));
-
-        // GET property info for a tenant with property ID
-        addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
-        tester.assertResponse(request("/application/v4/tenant/tenant2/property", "", Request.Method.GET),
-                              new File("property-info.json"));
 
         // Test legacy OpsDB tenants
         // POST (add) an OpsDB tenant with property ID

@@ -165,7 +165,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/cookiefreshness")) return cookieFreshness(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/property")) return property(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), path, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -302,26 +301,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse tenant(String tenantName, HttpRequest request) {
-        Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(tenantName));
-        if ( ! tenant.isPresent())
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
-        return new SlimeJsonResponse(toSlime(tenant.get(), request, true));
+        return controller.tenants().tenant(new TenantId((tenantName)))
+                .map(tenant -> tenant(tenant, request, true))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
 
-    private HttpResponse property(String tenantName) {
-        Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(tenantName));
-        if ( ! tenant.isPresent())
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
-        if ( ! tenant.get().getPropertyId().isPresent())
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not have the required property id");
-
-        PropertyId propertyId = tenant.get().getPropertyId().get();
-        return new SlimeJsonResponse(toSlime(controller.organization().propertyUri(propertyId),
-                                             controller.organization().contactsUri(propertyId),
-                                             controller.organization().issueCreationUri(propertyId),
-                                             controller.organization().contactsFor(propertyId)));
+    private HttpResponse tenant(Tenant tenant, HttpRequest request, boolean listApplications) {
+        Slime tenantSlime = toSlime(tenant, request, listApplications);
+        tenant.getPropertyId().ifPresent(propertyId -> {
+            try {
+                toSlime(tenantSlime.get(),
+                        controller.organization().propertyUri(propertyId),
+                        controller.organization().contactsUri(propertyId),
+                        controller.organization().issueCreationUri(propertyId),
+                        controller.organization().contactsFor(propertyId));
+            }
+            catch (RuntimeException e) {
+                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + propertyId, e);
+            }
+        });
+        return new SlimeJsonResponse(tenantSlime);
     }
-    
+
     private HttpResponse applications(String tenantName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
@@ -637,7 +638,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 throw new BadRequestException("Unknown tenant type: " + existingTenant.get().tenantType());
             }
         }
-        return new SlimeJsonResponse(toSlime(updatedTenant, request, true));
+        return tenant(updatedTenant, request, true);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
@@ -657,7 +658,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
  
         controller.tenants().addTenant(tenant, authorizer.getNToken(request));
-        return new SlimeJsonResponse(toSlime(tenant, request, true));
+        return tenant(tenant, request, true);
     }
 
     private HttpResponse migrateTenant(String tenantName, HttpRequest request) {
@@ -673,7 +674,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .orElseThrow(() ->
                         new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
         Tenant tenant = controller.tenants().migrateTenantToAthenz(tenantid, tenantDomain, propertyId, property, nToken);
-        return new SlimeJsonResponse(toSlime(tenant, request, true));
+        return tenant(tenant, request, true);
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
@@ -818,7 +819,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.tenants().deleteTenant(new TenantId(tenantName), authorizer.getNToken(request));
 
         // TODO: Change to a message response saying the tenant was deleted
-        return new SlimeJsonResponse(toSlime(tenant.get(), request, false));
+        return tenant(tenant.get(), request, false);
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
@@ -1006,9 +1007,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return slime;
     }
 
-    private Slime toSlime(URI propertyUri, URI contactsUri, URI issueCreationUri, List<? extends List<? extends User>> contacts) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
+    private void toSlime(Cursor root, URI propertyUri, URI contactsUri, URI issueCreationUri, List<? extends List<? extends User>> contacts) {
         root.setString("propertyUrl", propertyUri.toString());
         root.setString("contactsUrl", contactsUri.toString());
         root.setString("issueCreationUrl", issueCreationUri.toString());
@@ -1018,7 +1017,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             for (User contact : contactList)
                 list.addString(contact.displayName());
         }
-        return slime;
     }
 
     private void toSlime(Application application, Cursor object, HttpRequest request) {
