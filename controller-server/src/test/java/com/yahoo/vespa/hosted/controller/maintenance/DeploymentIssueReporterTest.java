@@ -1,15 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +39,12 @@ public class DeploymentIssueReporterTest {
             .environment(Environment.prod)
             .region("corp-us-east-1")
             .build();
+    private final static ApplicationPackage canaryPackage = new ApplicationPackageBuilder()
+            .environment(Environment.prod)
+            .region("corp-us-east-1")
+            .upgradePolicy("canary")
+            .build();
+
 
     private DeploymentTester tester;
     private DeploymentIssueReporter reporter;
@@ -55,36 +64,26 @@ public class DeploymentIssueReporterTest {
         Long projectId2 = 20L;
         Long projectId3 = 30L;
 
-        // Only the first two have propertyIds set now.
         Long propertyId1 = 1L;
         Long propertyId2 = 2L;
         Long propertyId3 = 3L;
+
+        tester.updateVersionStatus(Version.fromString("5.1"));
 
         // Create and deploy one application for each of three tenants.
         Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
         Application app2 = tester.createApplication("application2", "tenant2", projectId2, propertyId2);
         Application app3 = tester.createApplication("application3", "tenant3", projectId3, propertyId3);
 
-        // And then we need lots of successful applications, so we won't assume we just have a faulty Vespa out.
-        for (long i = 4; i <= 10; i++) {
-            Application app = tester.createApplication("application" + i, "tenant" + i, 10 * i, i);
-            tester.notifyJobCompletion(component, app, true);
-            tester.deployAndNotify(app, applicationPackage, true, systemTest);
-            tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-            tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-        }
-        // end of setup.
-
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 
-        // app1 and app3 has one failure each.
+        // apps 1 and 3 have one failure each.
         tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, false, stagingTest);
 
-        tester.notifyJobCompletion(component, app2, true);
-        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
+        // app2 is successful, but will fail later.
+        tester.deployCompletely(app2, canaryPackage);
 
         tester.notifyJobCompletion(component, app3, true);
         tester.deployAndNotify(app3, applicationPackage, true, systemTest);
@@ -114,23 +113,16 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         assertTrue("Issue is re-filed for app3.", issues.isOpenFor(app3.id()));
 
-
         // Some time passes; tenant1 leaves her issue unattended, while tenant3 starts work and updates the issue.
-        // app2 also has an intermittent failure; see that we detect this as a Vespa problem, and file an issue to ourselves.
-        tester.deployAndNotify(app2, applicationPackage, false, productionCorpUsEast1);
         tester.clock().advance(maxInactivity.plus(maxFailureAge));
         issues.touchFor(app3.id());
 
-        assertFalse("We have no platform issues initially.", issues.platformIssue());
         reporter.maintain();
         reporter.maintain();
         assertEquals("The issue for app1 is escalated once.", 1, issues.escalationLevelFor(app1.id()));
-        assertTrue("We get a platform issue when more than 20% of applications are failing.", issues.platformIssue());
-        assertFalse("No issue is filed for app2 while Vespa is considered broken.", issues.isOpenFor(app2.id()));
 
 
-        // app3 fixes its problem, but the ticket is left open; see the resolved ticket is not escalated when another escalation period has passed.
-        tester.deployAndNotify(app2, applicationPackage, true, productionCorpUsEast1);
+        // app3 fixes their problems, but the ticket for app3 is left open; see the resolved ticket is not escalated when another escalation period has passed.
         tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
         tester.clock().advance(maxInactivity.plus(Duration.ofDays(1)));
 
@@ -151,6 +143,24 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         reporter.maintain();
         assertTrue("A new issue is filed for app3.", issues.isOpenFor(app3.id()));
+
+
+        // Bump system version to 5.2 to upgrade canary app2.
+        Version version = Version.fromString("5.2");
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.upgrader().maintain();
+
+        tester.completeUpgradeWithError(app2, version, canaryPackage, systemTest);
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
+
+        assertFalse("We have no platform issues initially.", issues.platformIssue());
+        reporter.maintain();
+        reporter.maintain();
+        assertTrue("We get a platform issue when confidence is broken", issues.platformIssue());
+        assertFalse("No deployment issue is filed for app2, which has a version upgrade failure.", issues.isOpenFor(app2.id()));
+
     }
 
 

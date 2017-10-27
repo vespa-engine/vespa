@@ -11,15 +11,21 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Maintenance job which files issues for tenants when they have jobs which fails continuously
@@ -53,23 +59,38 @@ public class DeploymentIssueReporter extends Maintainer {
     private void maintainDeploymentIssues(List<Application> applications) {
         List<ApplicationId> failingApplications = new ArrayList<>();
         for (Application application : applications)
-            if (hasFailuresOlderThanThreshold(application.deploymentJobs()))
+            if (oldApplicationChangeFailuresIn(application.deploymentJobs()))
                 failingApplications.add(application.id());
             else
                 controller().applications().setIssueId(application.id(), null);
 
-        // TODO: Change this logic, depending on the controller's definition of BROKEN, whether it updates applications
-        // TODO: to an older version when the system version is BROKEN, etc..
-        if (failingApplications.size() > 0.2 * applications.size())
-            deploymentIssues.fileUnlessOpen(failingApplications);
-        else
-            failingApplications.forEach(this::fileDeploymentIssueFor);
+        failingApplications.forEach(this::fileDeploymentIssueFor);
+
+        if (controller().versionStatus().version(controller().systemVersion()).confidence() == VespaVersion.Confidence.broken)
+            deploymentIssues.fileUnlessOpen(ApplicationList.from(applications)
+                                                    .upgradingTo(controller().systemVersion())
+                                                    .asList().stream()
+                                                    .map(Application::id)
+                                                    .collect(Collectors.toList()));
     }
 
-    /** Returns whether deploymentJobs has a job which has been failing since before failureThreshold. */
-    private boolean hasFailuresOlderThanThreshold(DeploymentJobs deploymentJobs) {
-        return deploymentJobs.hasFailures()
-               && deploymentJobs.failingSince().isBefore(controller().clock().instant().minus(maxFailureAge));
+    private boolean oldApplicationChangeFailuresIn(DeploymentJobs jobs) {
+        if (!jobs.hasFailures()) return false;
+
+        Optional<Instant> oldestApplicationChangeFailure = jobs.jobStatus().values().stream()
+                .filter(job -> ! job.isSuccess() && failureCausedByApplicationChange(job))
+                .map(job -> job.firstFailing().get().at())
+                .min(Comparator.naturalOrder());
+
+        return oldestApplicationChangeFailure.isPresent()
+               && oldestApplicationChangeFailure.get().isBefore(controller().clock().instant().minus(maxFailureAge));
+    }
+
+    private boolean failureCausedByApplicationChange(JobStatus job) {
+        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
+        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
+        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
+        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {
