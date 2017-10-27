@@ -39,15 +39,16 @@ double big_gcc_function(double p, double o, double q, double f, double w) {
 
 struct Fixture {
     Function function;
-    InterpretedFunction interpreted;
     InterpretedFunction interpreted_simple;
+    InterpretedFunction interpreted;
     CompiledFunction separate;
     CompiledFunction array;
     CompiledFunction lazy;
     Fixture(const vespalib::string &expr)
         : function(Function::parse(expr)),
-          interpreted(DefaultTensorEngine::ref(), function, NodeTypes()),
           interpreted_simple(SimpleTensorEngine::ref(), function, NodeTypes()),
+          interpreted(DefaultTensorEngine::ref(), function,
+                      NodeTypes(function, std::vector<ValueType>(function.num_params(), ValueType::double_type()))),
           separate(function, PassParams::SEPARATE),
           array(function, PassParams::ARRAY),
           lazy(function, PassParams::LAZY) {}
@@ -76,18 +77,18 @@ TEST("measure small function eval/jit/gcc speed") {
     EXPECT_EQUAL(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
     EXPECT_EQUAL(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
 
-    double interpret_time = fixture.interpreted.estimate_cost_us(test_params, budget);
-    fprintf(stderr, "interpret: %g us\n", interpret_time);
     double interpret_simple_time = fixture.interpreted_simple.estimate_cost_us(test_params, budget);
     fprintf(stderr, "interpret (simple): %g us\n", interpret_simple_time);
+    double interpret_time = fixture.interpreted.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "interpret: %g us\n", interpret_time);
     double jit_time = estimate_cost_us(test_params, fixture.separate.get_function<5>());
     fprintf(stderr, "jit compiled: %g us\n", jit_time);
     double gcc_time = estimate_cost_us(test_params, fun);
     fprintf(stderr, "gcc compiled: %g us\n", gcc_time);
-    double simple_vs_default_speed = (1.0/interpret_simple_time)/(1.0/interpret_time);
+    double default_vs_simple_speed = (1.0/interpret_time)/(1.0/interpret_simple_time);
     double jit_vs_interpret_speed = (1.0/jit_time)/(1.0/interpret_time);
     double gcc_vs_jit_speed = (1.0/gcc_time)/(1.0/jit_time);
-    fprintf(stderr, "simple vs default interpret speed: %g\n", simple_vs_default_speed);
+    fprintf(stderr, "default typed vs simple untyped interpret speed: %g\n", default_vs_simple_speed);
     fprintf(stderr, "jit speed compared to interpret: %g\n", jit_vs_interpret_speed);
     fprintf(stderr, "gcc speed compared to jit: %g\n", gcc_vs_jit_speed);
 
@@ -110,18 +111,18 @@ TEST("measure big function eval/jit/gcc speed") {
     EXPECT_EQUAL(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
     EXPECT_EQUAL(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
 
+    double interpret_simple_time = fixture.interpreted_simple.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "interpret (simple): %g us\n", interpret_simple_time);
     double interpret_time = fixture.interpreted.estimate_cost_us(test_params, budget);
     fprintf(stderr, "interpret: %g us\n", interpret_time);
-    double interpret_simple_time = fixture.interpreted_simple.estimate_cost_us(test_params, budget);
-    fprintf(stderr, "interpret (simple): %g us\n", interpret_time);
     double jit_time = estimate_cost_us(test_params, fixture.separate.get_function<5>());
     fprintf(stderr, "jit compiled: %g us\n", jit_time);
     double gcc_time = estimate_cost_us(test_params, fun);
     fprintf(stderr, "gcc compiled: %g us\n", gcc_time);
-    double simple_vs_default_speed = (1.0/interpret_simple_time)/(1.0/interpret_time);
+    double default_vs_simple_speed = (1.0/interpret_time)/(1.0/interpret_simple_time);
     double jit_vs_interpret_speed = (1.0/jit_time)/(1.0/interpret_time);
     double gcc_vs_jit_speed = (1.0/gcc_time)/(1.0/jit_time);
-    fprintf(stderr, "simple vs default interpret speed: %g\n", simple_vs_default_speed);
+    fprintf(stderr, "default typed vs simple untyped interpret speed: %g\n", default_vs_simple_speed);
     fprintf(stderr, "jit speed compared to interpret: %g\n", jit_vs_interpret_speed);
     fprintf(stderr, "gcc speed compared to jit: %g\n", gcc_vs_jit_speed);
 
