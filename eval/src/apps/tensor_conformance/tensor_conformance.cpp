@@ -155,18 +155,22 @@ TensorSpec extract_value(const Inspector &inspector) {
 
 //-----------------------------------------------------------------------------
 
-TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine) {
+std::vector<ValueType> get_types(const std::vector<Value::CREF> &param_values) {
+    std::vector<ValueType> param_types;
+    for (size_t i = 0; i < param_values.size(); ++i) {
+        param_types.emplace_back(param_values[i].get().type());
+    }
+    return param_types;
+}
+
+TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typed) {
     Stash stash;
     Function fun = Function::parse(test["expression"].asString().make_string());
     std::vector<Value::CREF> param_values;
-    std::vector<ValueType> param_types;
     for (size_t i = 0; i < fun.num_params(); ++i) {
         param_values.emplace_back(to_value(extract_value(test["inputs"][fun.param_name(i)]), engine, stash));
     }
-    for (size_t i = 0; i < fun.num_params(); ++i) {
-        param_types.emplace_back(param_values[i].get().type());
-    }
-    NodeTypes types(fun, param_types);
+    NodeTypes types = typed ? NodeTypes(fun, get_types(param_values)) : NodeTypes();
     InterpretedFunction ifun(engine, fun, types);
     InterpretedFunction::Context ctx(ifun);
     InterpretedFunction::SimpleObjectParams params(param_values);
@@ -207,7 +211,7 @@ private:
             insert_value(test.setObject("result"), "expect", *expect);
         } else {
             insert_value(test.setObject("result"), "expect",
-                         eval_expr(slime.get(), SimpleTensorEngine::ref()));
+                         eval_expr(slime.get(), SimpleTensorEngine::ref(), false));
         }
         write_compact(slime, _out);
         ++_num_tests;
@@ -274,8 +278,12 @@ void for_each_test(Input &in,
 void evaluate(Input &in, Output &out) {
     auto handle_test = [&out](Slime &slime)
                        {
-                           insert_value(slime["result"], "prod_cpp",
-                                   eval_expr(slime.get(), DefaultTensorEngine::ref()));
+                           insert_value(slime["result"], "cpp_prod",
+                                   eval_expr(slime.get(), DefaultTensorEngine::ref(), true));
+                           insert_value(slime["result"], "cpp_prod_untyped",
+                                   eval_expr(slime.get(), DefaultTensorEngine::ref(), false));
+                           insert_value(slime["result"], "cpp_ref_typed",
+                                   eval_expr(slime.get(), SimpleTensorEngine::ref(), true));
                            write_compact(slime, out);
                        };
     auto handle_summary = [&out](Slime &slime)
@@ -299,7 +307,7 @@ void verify(Input &in, Output &out) {
     std::map<vespalib::string,size_t> result_map;
     auto handle_test = [&out,&result_map](Slime &slime)
                        {
-                           TensorSpec reference_result = eval_expr(slime.get(), SimpleTensorEngine::ref());
+                           TensorSpec reference_result = eval_expr(slime.get(), SimpleTensorEngine::ref(), false);
                            for (const auto &result: extract_fields(slime["result"])) {
                                ++result_map[result];
                                TEST_STATE(make_string("verifying result: '%s'", result.c_str()).c_str());
