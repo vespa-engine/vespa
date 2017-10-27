@@ -49,7 +49,7 @@ void generate_tensor_reduce(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_map_expr(const vespalib::string &expr, const UnaryOperation &ref_op, const Sequence &seq, TestBuilder &dst) {
+void generate_map_expr(const vespalib::string &expr, map_fun_t ref_op, const Sequence &seq, TestBuilder &dst) {
     std::vector<Layout> layouts = {
         {},
         {x(3)},
@@ -66,34 +66,34 @@ void generate_map_expr(const vespalib::string &expr, const UnaryOperation &ref_o
     }
 }
 
-void generate_op1_map(const vespalib::string &op1_expr, const UnaryOperation &ref_op, const Sequence &seq, TestBuilder &dst) {
+void generate_op1_map(const vespalib::string &op1_expr, map_fun_t ref_op, const Sequence &seq, TestBuilder &dst) {
     generate_map_expr(op1_expr, ref_op, seq, dst);
     generate_map_expr(vespalib::make_string("map(a,f(a)(%s))", op1_expr.c_str()), ref_op, seq, dst);
 }
 
 void generate_tensor_map(TestBuilder &dst) {
-    generate_op1_map("-a", operation::Neg(), Sub2(Div10(N())), dst);
-    generate_op1_map("!a", operation::Not(), Mask2Seq(SkipNth(3)), dst);
-    generate_op1_map("cos(a)", operation::Cos(), Div10(N()), dst);
-    generate_op1_map("sin(a)", operation::Sin(), Div10(N()), dst);
-    generate_op1_map("tan(a)", operation::Tan(), Div10(N()), dst);
-    generate_op1_map("cosh(a)", operation::Cosh(), Div10(N()), dst);
-    generate_op1_map("sinh(a)", operation::Sinh(), Div10(N()), dst);
-    generate_op1_map("tanh(a)", operation::Tanh(), Div10(N()), dst);
-    generate_op1_map("acos(a)", operation::Acos(), Sigmoid(Div10(N())), dst);
-    generate_op1_map("asin(a)", operation::Asin(), Sigmoid(Div10(N())), dst);
-    generate_op1_map("atan(a)", operation::Atan(), Div10(N()), dst);
-    generate_op1_map("exp(a)", operation::Exp(), Div10(N()), dst);
-    generate_op1_map("log10(a)", operation::Log10(), Div10(N()), dst);
-    generate_op1_map("log(a)", operation::Log(), Div10(N()), dst);
-    generate_op1_map("sqrt(a)", operation::Sqrt(), Div10(N()), dst);
-    generate_op1_map("ceil(a)", operation::Ceil(), Div10(N()), dst);
-    generate_op1_map("fabs(a)", operation::Fabs(), Div10(N()), dst);
-    generate_op1_map("floor(a)", operation::Floor(), Div10(N()), dst);
-    generate_op1_map("isNan(a)", operation::IsNan(), Mask2Seq(SkipNth(3), 1.0, my_nan), dst);
-    generate_op1_map("relu(a)", operation::Relu(), Sub2(Div10(N())), dst);
-    generate_op1_map("sigmoid(a)", operation::Sigmoid(), Sub2(Div10(N())), dst);
-    generate_map_expr("map(a,f(a)((a+1)*2))", MyOp(), Div10(N()), dst);
+    generate_op1_map("-a", operation::Neg::f, Sub2(Div10(N())), dst);
+    generate_op1_map("!a", operation::Not::f, Mask2Seq(SkipNth(3)), dst);
+    generate_op1_map("cos(a)", operation::Cos::f, Div10(N()), dst);
+    generate_op1_map("sin(a)", operation::Sin::f, Div10(N()), dst);
+    generate_op1_map("tan(a)", operation::Tan::f, Div10(N()), dst);
+    generate_op1_map("cosh(a)", operation::Cosh::f, Div10(N()), dst);
+    generate_op1_map("sinh(a)", operation::Sinh::f, Div10(N()), dst);
+    generate_op1_map("tanh(a)", operation::Tanh::f, Div10(N()), dst);
+    generate_op1_map("acos(a)", operation::Acos::f, Sigmoid(Div10(N())), dst);
+    generate_op1_map("asin(a)", operation::Asin::f, Sigmoid(Div10(N())), dst);
+    generate_op1_map("atan(a)", operation::Atan::f, Div10(N()), dst);
+    generate_op1_map("exp(a)", operation::Exp::f, Div10(N()), dst);
+    generate_op1_map("log10(a)", operation::Log10::f, Div10(N()), dst);
+    generate_op1_map("log(a)", operation::Log::f, Div10(N()), dst);
+    generate_op1_map("sqrt(a)", operation::Sqrt::f, Div10(N()), dst);
+    generate_op1_map("ceil(a)", operation::Ceil::f, Div10(N()), dst);
+    generate_op1_map("fabs(a)", operation::Fabs::f, Div10(N()), dst);
+    generate_op1_map("floor(a)", operation::Floor::f, Div10(N()), dst);
+    generate_op1_map("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan), dst);
+    generate_op1_map("relu(a)", operation::Relu::f, Sub2(Div10(N())), dst);
+    generate_op1_map("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N())), dst);
+    generate_map_expr("map(a,f(a)((a+1)*2))", MyOp::f, Div10(N()), dst);
 }
 
 //-----------------------------------------------------------------------------

@@ -2,40 +2,11 @@
 
 #include "operation.h"
 #include "value.h"
-#include "operation_visitor.h"
 #include <cmath>
 #include <assert.h>
 
 namespace vespalib {
 namespace eval {
-
-template <typename T> void Op1<T>::accept(OperationVisitor &visitor) const {
-    visitor.visit(static_cast<const T&>(*this));
-}
-
-template <typename T> double Op1<T>::eval(double a) const {
-    return T::f(a);
-}
-
-template <typename T> Operation::op1_fun_t Op1<T>::get_f() const {
-    return T::f;
-}
-
-template <typename T> void Op2<T>::accept(OperationVisitor &visitor) const {
-    visitor.visit(static_cast<const T&>(*this));
-}
-
-template <typename T> std::unique_ptr<BinaryOperation> Op2<T>::clone() const {
-    return std::make_unique<T>();
-}
-
-template <typename T> double Op2<T>::eval(double a, double b) const {
-    return T::f(a, b);
-}
-
-template <typename T> Operation::op2_fun_t Op2<T>::get_f() const {
-    return T::f;
-}
 
 namespace operation {
 double Neg::f(double a) { return -a; }
@@ -79,48 +50,6 @@ double IsNan::f(double a) { return std::isnan(a) ? 1.0 : 0.0; }
 double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 } // namespace vespalib::eval::operation
-
-template struct Op1<operation::Neg>;
-template struct Op1<operation::Not>;
-template struct Op2<operation::Add>;
-template struct Op2<operation::Sub>;
-template struct Op2<operation::Mul>;
-template struct Op2<operation::Div>;
-template struct Op2<operation::Mod>;
-template struct Op2<operation::Pow>;
-template struct Op2<operation::Equal>;
-template struct Op2<operation::NotEqual>;
-template struct Op2<operation::Approx>;
-template struct Op2<operation::Less>;
-template struct Op2<operation::LessEqual>;
-template struct Op2<operation::Greater>;
-template struct Op2<operation::GreaterEqual>;
-template struct Op2<operation::And>;
-template struct Op2<operation::Or>;
-template struct Op1<operation::Cos>;
-template struct Op1<operation::Sin>;
-template struct Op1<operation::Tan>;
-template struct Op1<operation::Cosh>;
-template struct Op1<operation::Sinh>;
-template struct Op1<operation::Tanh>;
-template struct Op1<operation::Acos>;
-template struct Op1<operation::Asin>;
-template struct Op1<operation::Atan>;
-template struct Op1<operation::Exp>;
-template struct Op1<operation::Log10>;
-template struct Op1<operation::Log>;
-template struct Op1<operation::Sqrt>;
-template struct Op1<operation::Ceil>;
-template struct Op1<operation::Fabs>;
-template struct Op1<operation::Floor>;
-template struct Op2<operation::Atan2>;
-template struct Op2<operation::Ldexp>;
-template struct Op2<operation::Min>;
-template struct Op2<operation::Max>;
-template struct Op1<operation::IsNan>;
-template struct Op1<operation::Relu>;
-template struct Op1<operation::Sigmoid>;
-template struct Op1<CustomUnaryOperation>;
 
 } // namespace vespalib::eval
 } // namespace vespalib

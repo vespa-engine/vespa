@@ -23,9 +23,6 @@ using slime::Cursor;
 using slime::Inspector;
 using slime::JsonFormat;
 
-using map_fun_t = TensorEngine::map_fun_t;
-using join_fun_t = TensorEngine::join_fun_t;
-
 double as_double(const TensorSpec &spec) {
     return spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
 }
@@ -504,7 +501,7 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
-    void test_map_op(const Eval &eval, const UnaryOperation &ref_op, const Sequence &seq) {
+    void test_map_op(const Eval &eval, map_fun_t ref_op, const Sequence &seq) {
         std::vector<Layout> layouts = {
             {},
             {x(3)},
@@ -521,36 +518,36 @@ struct TestContext {
         }
     }
 
-    void test_map_op(const vespalib::string &expr, const UnaryOperation &op, const Sequence &seq) {
-        TEST_DO(test_map_op(ImmediateMap(op.get_f()), op, seq));
-        TEST_DO(test_map_op(RetainedMap(op.get_f()), op, seq));
+    void test_map_op(const vespalib::string &expr, map_fun_t op, const Sequence &seq) {
+        TEST_DO(test_map_op(ImmediateMap(op), op, seq));
+        TEST_DO(test_map_op(RetainedMap(op), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
         TEST_DO(test_map_op(Expr_T(make_string("map(x,f(a)(%s))", expr.c_str())), op, seq));
     }
 
     void test_tensor_map() {
-        TEST_DO(test_map_op("-a", operation::Neg(), Sub2(Div10(N()))));
-        TEST_DO(test_map_op("!a", operation::Not(), Mask2Seq(SkipNth(3))));
-        TEST_DO(test_map_op("cos(a)", operation::Cos(), Div10(N())));
-        TEST_DO(test_map_op("sin(a)", operation::Sin(), Div10(N())));
-        TEST_DO(test_map_op("tan(a)", operation::Tan(), Div10(N())));
-        TEST_DO(test_map_op("cosh(a)", operation::Cosh(), Div10(N())));
-        TEST_DO(test_map_op("sinh(a)", operation::Sinh(), Div10(N())));
-        TEST_DO(test_map_op("tanh(a)", operation::Tanh(), Div10(N())));
-        TEST_DO(test_map_op("acos(a)", operation::Acos(), Sigmoid(Div10(N()))));
-        TEST_DO(test_map_op("asin(a)", operation::Asin(), Sigmoid(Div10(N()))));
-        TEST_DO(test_map_op("atan(a)", operation::Atan(), Div10(N())));
-        TEST_DO(test_map_op("exp(a)", operation::Exp(), Div10(N())));
-        TEST_DO(test_map_op("log10(a)", operation::Log10(), Div10(N())));
-        TEST_DO(test_map_op("log(a)", operation::Log(), Div10(N())));
-        TEST_DO(test_map_op("sqrt(a)", operation::Sqrt(), Div10(N())));
-        TEST_DO(test_map_op("ceil(a)", operation::Ceil(), Div10(N())));
-        TEST_DO(test_map_op("fabs(a)", operation::Fabs(), Div10(N())));
-        TEST_DO(test_map_op("floor(a)", operation::Floor(), Div10(N())));
-        TEST_DO(test_map_op("isNan(a)", operation::IsNan(), Mask2Seq(SkipNth(3), 1.0, my_nan)));
-        TEST_DO(test_map_op("relu(a)", operation::Relu(), Sub2(Div10(N()))));
-        TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid(), Sub2(Div10(N()))));
-        TEST_DO(test_map_op("(a+1)*2", MyOp(), Div10(N())));
+        TEST_DO(test_map_op("-a", operation::Neg::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("!a", operation::Not::f, Mask2Seq(SkipNth(3))));
+        TEST_DO(test_map_op("cos(a)", operation::Cos::f, Div10(N())));
+        TEST_DO(test_map_op("sin(a)", operation::Sin::f, Div10(N())));
+        TEST_DO(test_map_op("tan(a)", operation::Tan::f, Div10(N())));
+        TEST_DO(test_map_op("cosh(a)", operation::Cosh::f, Div10(N())));
+        TEST_DO(test_map_op("sinh(a)", operation::Sinh::f, Div10(N())));
+        TEST_DO(test_map_op("tanh(a)", operation::Tanh::f, Div10(N())));
+        TEST_DO(test_map_op("acos(a)", operation::Acos::f, Sigmoid(Div10(N()))));
+        TEST_DO(test_map_op("asin(a)", operation::Asin::f, Sigmoid(Div10(N()))));
+        TEST_DO(test_map_op("atan(a)", operation::Atan::f, Div10(N())));
+        TEST_DO(test_map_op("exp(a)", operation::Exp::f, Div10(N())));
+        TEST_DO(test_map_op("log10(a)", operation::Log10::f, Div10(N())));
+        TEST_DO(test_map_op("log(a)", operation::Log::f, Div10(N())));
+        TEST_DO(test_map_op("sqrt(a)", operation::Sqrt::f, Div10(N())));
+        TEST_DO(test_map_op("ceil(a)", operation::Ceil::f, Div10(N())));
+        TEST_DO(test_map_op("fabs(a)", operation::Fabs::f, Div10(N())));
+        TEST_DO(test_map_op("floor(a)", operation::Floor::f, Div10(N())));
+        TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan)));
+        TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("(a+1)*2", MyOp::f, Div10(N())));
     }
 
     //-------------------------------------------------------------------------
@@ -563,26 +560,26 @@ struct TestContext {
     }
 
     void test_fixed_sparse_cases_apply_op(const Eval &eval,
-                                          const BinaryOperation &op)
+                                          join_fun_t op)
     {
         TEST_DO(test_apply_op(eval,
                               spec("x{}", {}),
                               spec("x{}", { { {{"x","1"}}, 3 } }),
                               spec("x{}", { { {{"x","2"}}, 5 } })));
         TEST_DO(test_apply_op(eval,
-                              spec("x{}", { { {{"x","1"}}, op.eval(3,5) } }),
+                              spec("x{}", { { {{"x","1"}}, op(3,5) } }),
                               spec("x{}", { { {{"x","1"}}, 3 } }),
                               spec("x{}", { { {{"x","1"}}, 5 } })));
         TEST_DO(test_apply_op(eval,
-                              spec("x{}", { { {{"x","1"}}, op.eval(3,-5) } }),
+                              spec("x{}", { { {{"x","1"}}, op(3,-5) } }),
                               spec("x{}", { { {{"x","1"}},  3 } }),
                               spec("x{}", { { {{"x","1"}}, -5 } })));
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","-"},{"y","2"},{"z","-"}},
-                                               op.eval(5,7) },
+                                               op(5,7) },
                                        { {{"x","1"},{"y","-"},{"z","3"}},
-                                               op.eval(3,11) } }),
+                                               op(3,11) } }),
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","2"}},  5 },
                                        { {{"x","1"},{"y","-"}},  3 } }),
@@ -592,9 +589,9 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","-"},{"y","2"},{"z","-"}},
-                                               op.eval(7,5) },
+                                               op(7,5) },
                                        { {{"x","1"},{"y","-"},{"z","3"}},
-                                               op.eval(11,3) } }),
+                                               op(11,3) } }),
                               spec("y{},z{}",
                                    {   { {{"y","-"},{"z","3"}}, 11 },
                                        { {{"y","2"},{"z","-"}},  7 } }),
@@ -604,7 +601,7 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("y{},z{}",
                                    {   { {{"y","2"},{"z","-"}},
-                                               op.eval(5,7) } }),
+                                               op(5,7) } }),
                               spec("y{}", { { {{"y","2"}}, 5 } }),
                               spec("y{},z{}",
                                    {   { {{"y","-"},{"z","3"}}, 11 },
@@ -612,7 +609,7 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("y{},z{}",
                                    {   { {{"y","2"},{"z","-"}},
-                                               op.eval(7,5) } }),
+                                               op(7,5) } }),
                               spec("y{},z{}",
                                    {   { {{"y","-"},{"z","3"}}, 11 },
                                        { {{"y","2"},{"z","-"}},  7 } }),
@@ -620,7 +617,7 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","2"}},
-                                               op.eval(5,7) } }),
+                                               op(5,7) } }),
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","2"}}, 5 },
                                        { {{"x","1"},{"y","-"}}, 3 } }),
@@ -628,7 +625,7 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","2"}},
-                                               op.eval(7,5) } }),
+                                               op(7,5) } }),
                               spec("y{}", { { {{"y","2"}}, 7 } }),
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","2"}}, 5 },
@@ -636,21 +633,21 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},z{}",
                                    {   { {{"x","1"},{"z","3"}},
-                                               op.eval(3,11) } }),
+                                               op(3,11) } }),
                               spec("x{}", { { {{"x","1"}},  3 } }),
                               spec("z{}", { { {{"z","3"}}, 11 } })));
         TEST_DO(test_apply_op(eval,
                               spec("x{},z{}",
                                    {   { {{"x","1"},{"z","3"}},
-                                               op.eval(11,3) } }),
+                                               op(11,3) } }),
                               spec("z{}",{ { {{"z","3"}}, 11 } }),
                               spec("x{}",{ { {{"x","1"}},  3 } })));
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{}",
                                    {   { {{"x","1"},{"y","1"}},
-                                               op.eval(3,5) },
+                                               op(3,5) },
                                        { {{"x","2"},{"y","1"}},
-                                               op.eval(7,5) } }),
+                                               op(7,5) } }),
                               spec("x{}",
                                    {   { {{"x","1"}}, 3 },
                                        { {{"x","2"}}, 7 } }),
@@ -659,15 +656,15 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","1"},{"y","1"},{"z","1"}},
-                                               op.eval(1,7) },
+                                               op(1,7) },
                                        { {{"x","1"},{"y","1"},{"z","2"}},
-                                               op.eval(1,13) },
+                                               op(1,13) },
                                        { {{"x","1"},{"y","2"},{"z","1"}},
-                                               op.eval(5,11) },
+                                               op(5,11) },
                                        { {{"x","2"},{"y","1"},{"z","1"}},
-                                               op.eval(3,7) },
+                                               op(3,7) },
                                        { {{"x","2"},{"y","1"},{"z","2"}},
-                                               op.eval(3,13) } }),
+                                               op(3,13) } }),
                               spec("x{},y{}",
                                    {   { {{"x","1"},{"y","1"}},  1 },
                                        { {{"x","1"},{"y","2"}},  5 },
@@ -679,7 +676,7 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","1"},{"y","1"},{"z","1"}},
-                                               op.eval(1,7) } }),
+                                               op(1,7) } }),
                               spec("x{},y{}",
                                    {   { {{"x","1"},{"y","-"}},  5 },
                                        { {{"x","1"},{"y","1"}},  1 } }),
@@ -688,9 +685,9 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","1"},{"y","-"},{"z","1"}},
-                                               op.eval(5,11) },
+                                               op(5,11) },
                                        { {{"x","1"},{"y","1"},{"z","1"}},
-                                               op.eval(1,7) } }),
+                                               op(1,7) } }),
                               spec("x{},y{}",
                                    {   { {{"x","1"},{"y","-"}},  5 },
                                        { {{"x","1"},{"y","1"}},  1 } }),
@@ -700,7 +697,7 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","1"},{"y","1"},{"z","1"}},
-                                               op.eval(1,7) } }),
+                                               op(1,7) } }),
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","-"}},  5 },
                                        { {{"x","1"},{"y","1"}},  1 } }),
@@ -709,9 +706,9 @@ struct TestContext {
         TEST_DO(test_apply_op(eval,
                               spec("x{},y{},z{}",
                                    {   { {{"x","-"},{"y","-"},{"z", "-"}},
-                                               op.eval(5,11) },
+                                               op(5,11) },
                                        { {{"x","1"},{"y","1"},{"z","1"}},
-                                               op.eval(1,7) } }),
+                                               op(1,7) } }),
                               spec("x{},y{}",
                                    {   { {{"x","-"},{"y","-"}},  5 },
                                        { {{"x","1"},{"y","1"}},  1 } }),
@@ -721,40 +718,40 @@ struct TestContext {
     }
 
     void test_fixed_dense_cases_apply_op(const Eval &eval,
-                                         const BinaryOperation &op)
+                                         join_fun_t op)
     {
         TEST_DO(test_apply_op(eval,
-                              spec(op.eval(0.1,0.2)), spec(0.1), spec(0.2)));
+                              spec(op(0.1,0.2)), spec(0.1), spec(0.2)));
         TEST_DO(test_apply_op(eval,
-                              spec(x(1), Seq({ op.eval(3,5) })),
+                              spec(x(1), Seq({ op(3,5) })),
                               spec(x(1), Seq({ 3 })),
                               spec(x(1), Seq({ 5 }))));
         TEST_DO(test_apply_op(eval,
-                              spec(x(1), Seq({ op.eval(3,-5) })),
+                              spec(x(1), Seq({ op(3,-5) })),
                               spec(x(1), Seq({ 3 })),
                               spec(x(1), Seq({ -5 }))));
         TEST_DO(test_apply_op(eval,
-                              spec(x(2), Seq({ op.eval(3,7), op.eval(5,11) })),
+                              spec(x(2), Seq({ op(3,7), op(5,11) })),
                               spec(x(2), Seq({ 3, 5 })),
                               spec(x(2), Seq({ 7, 11 }))));
         TEST_DO(test_apply_op(eval,
-                              spec({x(1),y(1)}, Seq({ op.eval(3,5) })),
+                              spec({x(1),y(1)}, Seq({ op(3,5) })),
                               spec({x(1),y(1)}, Seq({ 3 })),
                               spec({x(1),y(1)}, Seq({ 5 }))));
         TEST_DO(test_apply_op(eval,
-                              spec(x(1), Seq({ op.eval(3, 0) })),
+                              spec(x(1), Seq({ op(3, 0) })),
                               spec(x(1), Seq({ 3 })),
                               spec(x(2), Seq({ 0, 7 }))));
         TEST_DO(test_apply_op(eval,
-                              spec(x(1), Seq({ op.eval(0, 5) })),
+                              spec(x(1), Seq({ op(0, 5) })),
                               spec(x(2), Seq({ 0, 3 })),
                               spec(x(1), Seq({ 5 }))));
         TEST_DO(test_apply_op(eval,
                               spec({x(2),y(2),z(2)},
-                                   Seq({        op.eval(1,  7), op.eval(1, 11),
-                                                op.eval(2, 13), op.eval(2, 17),
-                                                op.eval(3,  7), op.eval(3, 11),
-                                                op.eval(5, 13), op.eval(5, 17)
+                                   Seq({        op(1,  7), op(1, 11),
+                                                op(2, 13), op(2, 17),
+                                                op(3,  7), op(3, 11),
+                                                op(5, 13), op(5, 17)
                                                 })),
                               spec({x(2),y(2)},
                                    Seq({         1,  2,
@@ -764,7 +761,7 @@ struct TestContext {
                                                 13, 17 }))));
     }
 
-    void test_apply_op(const Eval &eval, const BinaryOperation &op, const Sequence &seq) {
+    void test_apply_op(const Eval &eval, join_fun_t op, const Sequence &seq) {
         std::vector<Layout> layouts = {
             {},                                    {},
             {x(5)},                                {x(5)},
@@ -789,42 +786,42 @@ struct TestContext {
             TEST_STATE(make_string("lhs shape: %s, rhs shape: %s",
                                    lhs_input.type().c_str(),
                                    rhs_input.type().c_str()).c_str());
-            Eval::Result expect = ImmediateJoin(op.get_f()).eval(ref_engine, lhs_input, rhs_input); 
+            Eval::Result expect = ImmediateJoin(op).eval(ref_engine, lhs_input, rhs_input); 
             TEST_DO(verify_result(safe(eval).eval(engine, lhs_input, rhs_input), expect));
         }
         TEST_DO(test_fixed_sparse_cases_apply_op(eval, op));
         TEST_DO(test_fixed_dense_cases_apply_op(eval, op));
     }
 
-    void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {
-        TEST_DO(test_apply_op(ImmediateJoin(op.get_f()), op, seq));
-        TEST_DO(test_apply_op(RetainedJoin(op.get_f()), op, seq));
+    void test_apply_op(const vespalib::string &expr, join_fun_t op, const Sequence &seq) {
+        TEST_DO(test_apply_op(ImmediateJoin(op), op, seq));
+        TEST_DO(test_apply_op(RetainedJoin(op), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
         TEST_DO(test_apply_op(Expr_TT(make_string("join(x,y,f(a,b)(%s))", expr.c_str())), op, seq));
     }
 
     void test_tensor_apply() {
-        TEST_DO(test_apply_op("a+b", operation::Add(), Div10(N())));
-        TEST_DO(test_apply_op("a-b", operation::Sub(), Div10(N())));
-        TEST_DO(test_apply_op("a*b", operation::Mul(), Div10(N())));
-        TEST_DO(test_apply_op("a/b", operation::Div(), Div10(N())));
-        TEST_DO(test_apply_op("a%b", operation::Mod(), Div10(N())));
-        TEST_DO(test_apply_op("a^b", operation::Pow(), Div10(N())));
-        TEST_DO(test_apply_op("pow(a,b)", operation::Pow(), Div10(N())));
-        TEST_DO(test_apply_op("a==b", operation::Equal(), Div10(N())));
-        TEST_DO(test_apply_op("a!=b", operation::NotEqual(), Div10(N())));
-        TEST_DO(test_apply_op("a~=b", operation::Approx(), Div10(N())));
-        TEST_DO(test_apply_op("a<b", operation::Less(), Div10(N())));
-        TEST_DO(test_apply_op("a<=b", operation::LessEqual(), Div10(N())));
-        TEST_DO(test_apply_op("a>b", operation::Greater(), Div10(N())));
-        TEST_DO(test_apply_op("a>=b", operation::GreaterEqual(), Div10(N())));
-        TEST_DO(test_apply_op("a&&b", operation::And(), Mask2Seq(SkipNth(3))));
-        TEST_DO(test_apply_op("a||b", operation::Or(), Mask2Seq(SkipNth(3))));
-        TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2(), Div10(N())));
-        TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp(), Div10(N())));
-        TEST_DO(test_apply_op("fmod(a,b)", operation::Mod(), Div10(N())));
-        TEST_DO(test_apply_op("min(a,b)", operation::Min(), Div10(N())));
-        TEST_DO(test_apply_op("max(a,b)", operation::Max(), Div10(N())));
+        TEST_DO(test_apply_op("a+b", operation::Add::f, Div10(N())));
+        TEST_DO(test_apply_op("a-b", operation::Sub::f, Div10(N())));
+        TEST_DO(test_apply_op("a*b", operation::Mul::f, Div10(N())));
+        TEST_DO(test_apply_op("a/b", operation::Div::f, Div10(N())));
+        TEST_DO(test_apply_op("a%b", operation::Mod::f, Div10(N())));
+        TEST_DO(test_apply_op("a^b", operation::Pow::f, Div10(N())));
+        TEST_DO(test_apply_op("pow(a,b)", operation::Pow::f, Div10(N())));
+        TEST_DO(test_apply_op("a==b", operation::Equal::f, Div10(N())));
+        TEST_DO(test_apply_op("a!=b", operation::NotEqual::f, Div10(N())));
+        TEST_DO(test_apply_op("a~=b", operation::Approx::f, Div10(N())));
+        TEST_DO(test_apply_op("a<b", operation::Less::f, Div10(N())));
+        TEST_DO(test_apply_op("a<=b", operation::LessEqual::f, Div10(N())));
+        TEST_DO(test_apply_op("a>b", operation::Greater::f, Div10(N())));
+        TEST_DO(test_apply_op("a>=b", operation::GreaterEqual::f, Div10(N())));
+        TEST_DO(test_apply_op("a&&b", operation::And::f, Mask2Seq(SkipNth(3))));
+        TEST_DO(test_apply_op("a||b", operation::Or::f, Mask2Seq(SkipNth(3))));
+        TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2::f, Div10(N())));
+        TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp::f, Div10(N())));
+        TEST_DO(test_apply_op("fmod(a,b)", operation::Mod::f, Div10(N())));
+        TEST_DO(test_apply_op("min(a,b)", operation::Min::f, Div10(N())));
+        TEST_DO(test_apply_op("max(a,b)", operation::Max::f, Div10(N())));
     }
 
     //-------------------------------------------------------------------------
