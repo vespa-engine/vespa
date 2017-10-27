@@ -165,11 +165,11 @@ void
 FastS_SyncSearchAdapter::DoneQuery(FastS_ISearch *,
                                    FastS_SearchContext)
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _queryDone = true;
-    if (_waitQuery)
-        Signal();
-    Unlock();
+    if (_waitQuery) {
+        _cond.notify_one();
+    }
 }
 
 
@@ -177,33 +177,33 @@ void
 FastS_SyncSearchAdapter::DoneDocsums(FastS_ISearch *,
                                      FastS_SearchContext)
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _docsumsDone = true;
-    if (_waitDocsums)
-        Signal();
-    Unlock();
+    if (_waitDocsums) {
+        _cond.notify_one();
+    }
 }
 
 
 void
 FastS_SyncSearchAdapter::WaitQueryDone()
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _waitQuery = true;
-    while (!_queryDone)
-        Wait();
-    Unlock();
+    while (!_queryDone) {
+        _cond.wait(guard);
+    }
 }
 
 
 void
 FastS_SyncSearchAdapter::WaitDocsumsDone()
 {
-    Lock();
+    std::unique_lock<std::mutex> guard(_lock);
     _waitDocsums = true;
-    while (!_docsumsDone)
-        Wait();
-    Unlock();
+    while (!_docsumsDone) {
+        _cond.wait(guard);
+    }
 }
 
 

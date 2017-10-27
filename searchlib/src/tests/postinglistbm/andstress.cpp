@@ -13,6 +13,8 @@
 #include <vespa/searchlib/test/fakedata/fakezcbfilterocc.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/fastos/thread.h>
+#include <mutex>
+#include <condition_variable>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".andstress");
@@ -51,7 +53,8 @@ private:
 
     std::vector<std::vector<FakePosting::SP> > _postings;
 
-    FastOS_Cond _taskCond;
+    std::mutex              _taskLock;
+    std::condition_variable _taskCond;
     unsigned int _taskIdx;
     uint32_t _numTasks;
 
@@ -135,6 +138,7 @@ AndStressMaster::AndStressMaster(search::Rand48 &rnd,
       _workersDone(0),
       _wordSet(wordSet),
       _postings(FakeWordSet::NUM_WORDCLASSES),
+      _taskLock(),
       _taskCond(),
       _taskIdx(0),
       _numTasks(numTasks),
@@ -276,16 +280,15 @@ AndStressMaster::Task *
 AndStressMaster::getTask()
 {
     Task *result = NULL;
-    _taskCond.Lock();
+    std::unique_lock<std::mutex> taskGuard(_taskLock);
     if (_taskIdx < _tasks.size()) {
         result = &_tasks[_taskIdx];
         ++_taskIdx;
     } else {
         _workersDone++;
         if (_workersDone == _workers.size())
-            _taskCond.Broadcast();
+            _taskCond.notify_all();
     }
-    _taskCond.Unlock();
     return result;
 }
 
@@ -329,10 +332,11 @@ AndStressMaster::runWorkers(const std::string &postingFormat)
 
     for (unsigned int i = 0; i < _workers.size(); ++i)
         _threadPool->NewThread(_workers[i]);
-    _taskCond.Lock();
-    while (_workersDone < _workers.size())
-        _taskCond.Wait();
-    _taskCond.Unlock();
+    {
+        std::unique_lock<std::mutex> taskGuard(_taskLock);
+        while (_workersDone < _workers.size())
+            _taskCond.wait(taskGuard);
+    }
     tv.SetNow();
     after = tv.Secs();
     LOG(info,

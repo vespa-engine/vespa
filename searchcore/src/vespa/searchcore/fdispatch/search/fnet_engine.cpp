@@ -14,19 +14,14 @@ using namespace search::fs4transport;
 void
 FastS_StaticMonitorQuery::Free()
 {
-    _lock.Lock();
-    _refcnt--;
-    if (_refcnt == 0) {
-        _lock.Unlock();
+    if (_refcnt-- == 1) {
         delete this;
-    } else
-        _lock.Unlock();
+    }
 }
 
 
 FastS_StaticMonitorQuery::FastS_StaticMonitorQuery()
     : FS4Packet_MONITORQUERYX(),
-      _lock(),
       _refcnt(1)
 { }
 
@@ -64,10 +59,12 @@ FastS_FNET_Engine::Connect()
             _transport->Connect(_spec.c_str(),
                                 &FS4PersistentPacketStreamer::Instance,
                                 this);
-        LockDataSet();
-        FNET_Connection *oldConn = _conn;
-        _conn = newConn;
-        UnlockDataSet();
+        FNET_Connection *oldConn;
+        {
+            auto dsGuard(getDsGuard());
+            oldConn = _conn;
+            _conn = newConn;
+        }
         if (oldConn != NULL)
             oldConn->SubRef();
         if (newConn == NULL && !IsRealBad())
@@ -81,10 +78,12 @@ FastS_FNET_Engine::Disconnect()
 {
     if (_conn != NULL) {
         _conn->CloseAdminChannel();
-        LockDataSet();
-        FNET_Connection *conn = _conn;
-        _conn = NULL;
-        UnlockDataSet();
+        FNET_Connection *conn;
+        {
+            auto dsGuard(getDsGuard());
+            conn = _conn;
+            _conn = NULL;
+        }
         _transport->Close(conn, /* needref = */ false);
     }
 }
@@ -93,7 +92,6 @@ FastS_FNET_Engine::Disconnect()
 FastS_FNET_Engine::FastS_FNET_Engine(FastS_EngineDesc *desc,
                                      FastS_FNET_DataSet *dataset)
     : FastS_EngineBase(desc, dataset),
-      _lock(),
       _spec(),
       _transport(dataset->GetTransport()),
       _conn(NULL),
@@ -116,9 +114,8 @@ FastS_FNET_Engine::~FastS_FNET_Engine()
     _connectTask.Kill();
     Disconnect();
     if (IsUp()) {
-        LockDataSet();
+        auto dsGuard(getDsGuard());
         _dataset->LinkOutPart_HasLock(this);
-        UnlockDataSet();
     }
     if (_monitorQuery != NULL) {
         _monitorQuery->Free();

@@ -8,7 +8,7 @@ using vespalib::make_string;
 namespace mbus {
 
 Sequencer::Sequencer(IMessageHandler &sender) :
-    _lock("mbus::Sequencer::_lock", false),
+    _lock(),
     _sender(sender),
     _seqMap()
 {

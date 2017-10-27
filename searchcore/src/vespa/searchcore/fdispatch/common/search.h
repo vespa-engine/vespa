@@ -8,8 +8,9 @@
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/fastos/cond.h>
 #include <limits>
+#include <mutex>
+#include <condition_variable>
 
 class FastS_ISearch;
 
@@ -469,7 +470,8 @@ class FastS_SyncSearchAdapter : public FastS_SearchAdapter,
                                 public FastS_ISearchOwner
 {
 private:
-    FastOS_Cond _cond;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     bool _waitQuery;
     bool _queryDone;
     bool _waitDocsums;
@@ -482,11 +484,6 @@ public:
     virtual ~FastS_SyncSearchAdapter();
 
     static FastS_ISearch *Adapt(FastS_ISearch *search);
-
-    void Lock()    { _cond.Lock();   }
-    void Unlock()  { _cond.Unlock(); }
-    void Wait()    { _cond.Wait();   }
-    void Signal()  { _cond.Signal(); }
 
     virtual void DoneQuery(FastS_ISearch *, FastS_SearchContext) override;
     virtual void DoneDocsums(FastS_ISearch *, FastS_SearchContext) override;

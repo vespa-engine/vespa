@@ -103,11 +103,11 @@ FastS_FNET_SearchNode::NT_InitMerge(uint32_t *numDocs,
 
 
 FastS_EngineBase *
-FastS_FNET_SearchNode::getPartition(const FastOS_Mutex & dsMutex, bool userow, FastS_FNET_DataSet *dataset)
+FastS_FNET_SearchNode::getPartition(const std::unique_lock<std::mutex> &dsGuard, bool userow, FastS_FNET_DataSet *dataset)
 {
     return ((userow)
-        ? dataset->getPartitionMLD(dsMutex, getPartID(), _flags._docsumMld, _docsumRow)
-        : dataset->getPartitionMLD(dsMutex, getPartID(), _flags._docsumMld));
+        ? dataset->getPartitionMLD(dsGuard, getPartID(), _flags._docsumMld, _docsumRow)
+        : dataset->getPartitionMLD(dsGuard, getPartID(), _flags._docsumMld));
 }
 
 
@@ -335,26 +335,26 @@ FastS_FNET_Search::ConnectQueryNodes()
     }
     EngineNodeMap engines;
     engines.reserve(_nodes.size());
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        FastS_EngineBase *engine = NULL;
-        if (_dataset->useFixedRowDistribution()) {
-            engine = _dataset->getPartition(dsLock, i, fixedRow);
-            LOG(debug, "FixedRow: getPartition(part=%u, row=%u) -> engine(%s)", i, fixedRow, (engine != nullptr ? engine->GetName() : "null"));
-        } else {
-            engine = _dataset->getPartition(dsLock, i);
-        }
-        if (engine != nullptr) {
-            LOG(debug, "Wanted part=%d, engine={name=%s, row=%d, partid=%d}", i, engine->GetName(), engine->GetConfRowID(), engine->GetPartID());
-            if (engine != nullptr) {
-                engines.emplace_back(engine, getNode(i));
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        for (uint32_t i = 0; i < _nodes.size(); i++) {
+            FastS_EngineBase *engine = NULL;
+            if (_dataset->useFixedRowDistribution()) {
+                engine = _dataset->getPartition(dsGuard, i, fixedRow);
+                LOG(debug, "FixedRow: getPartition(part=%u, row=%u) -> engine(%s)", i, fixedRow, (engine != nullptr ? engine->GetName() : "null"));
+            } else {
+                engine = _dataset->getPartition(dsGuard, i);
             }
-        } else {
-            LOG(debug, "No engine for part %d", i);
+            if (engine != nullptr) {
+                LOG(debug, "Wanted part=%d, engine={name=%s, row=%d, partid=%d}", i, engine->GetName(), engine->GetConfRowID(), engine->GetPartID());
+                if (engine != nullptr) {
+                    engines.emplace_back(engine, getNode(i));
+                }
+            } else {
+                LOG(debug, "No engine for part %d", i);
+            }
         }
     }
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -370,19 +370,19 @@ FastS_FNET_Search::ConnectEstimateNodes()
     uint32_t partcnt = 0;
 
     EngineNodeMap engines;
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    while (partcnt < _dataset->GetEstimateParts() && trycnt < _estPartCutoff) {
-        FastS_EngineBase *engine = _dataset->getPartition(dsLock, partid);
-        if (engine != NULL) {
-            engines.emplace_back(engine, getNode(partid));
-            partcnt++;
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        while (partcnt < _dataset->GetEstimateParts() && trycnt < _estPartCutoff) {
+            FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partid);
+            if (engine != NULL) {
+                engines.emplace_back(engine, getNode(partid));
+                partcnt++;
+            }
+            trycnt++;
+            partid = (partid + 1) % _estPartCutoff;
         }
-        trycnt++;
-        partid = (partid + 1) % _estPartCutoff;
+        _estParts = partcnt;
     }
-    _estParts = partcnt;
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -394,11 +394,10 @@ void FastS_FNET_SearchNode::Connect(FastS_FNET_Engine *engine)
 
     _engine = engine;
     _flags._needSubCost = true;
-    _engine->LockDataSet();
+    auto dsGuard(_engine->getDsGuard());
     _channel = _engine->OpenChannel_HasDSLock(this);
     _rowid   = _engine->GetConfRowID();
     _stamp   = _engine->GetTimeStamp();
-    _engine->UnlockDataSet();
 }
 
 void FastS_FNET_SearchNode::Connect_HasDSLock(FastS_FNET_Engine *engine)
@@ -434,30 +433,30 @@ void FastS_FNET_Search::connectSearchPath(const SearchPath::Element &elem,
                                           uint32_t dispatchLevel)
 {
     EngineNodeMap engines;
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    if (!elem.hasRow()) {
-        for (size_t partId : elem.nodes()) {
-            if (partId < _nodes.size()) {
-                FastS_EngineBase *engine = _dataset->getPartition(dsLock, partId);
-                LOG(debug, "searchpath='%s', partId=%ld, dispatchLevel=%u", spec.c_str(), partId, dispatchLevel);
-                if (engine != NULL) {
-                    engines.emplace_back(engine, getNode(partId));
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        if (!elem.hasRow()) {
+            for (size_t partId : elem.nodes()) {
+                if (partId < _nodes.size()) {
+                    FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partId);
+                    LOG(debug, "searchpath='%s', partId=%ld, dispatchLevel=%u", spec.c_str(), partId, dispatchLevel);
+                    if (engine != NULL) {
+                        engines.emplace_back(engine, getNode(partId));
+                    }
                 }
             }
-        }
-    } else {
-        for (size_t partId : elem.nodes()) {
-            if (partId < _nodes.size()) {
-                FastS_EngineBase *engine = _dataset->getPartition(dsLock, partId, elem.row());
-                LOG(debug, "searchpath='%s', partId=%ld, row=%ld, dispatchLevel=%u", spec.c_str(), partId, elem.row(), dispatchLevel);
-                if (engine != NULL) {
-                    engines.emplace_back(engine, getNode(partId));
+        } else {
+            for (size_t partId : elem.nodes()) {
+                if (partId < _nodes.size()) {
+                    FastS_EngineBase *engine = _dataset->getPartition(dsGuard, partId, elem.row());
+                    LOG(debug, "searchpath='%s', partId=%ld, row=%ld, dispatchLevel=%u", spec.c_str(), partId, elem.row(), dispatchLevel);
+                    if (engine != NULL) {
+                        engines.emplace_back(engine, getNode(partId));
+                    }
                 }
             }
         }
     }
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -471,26 +470,26 @@ FastS_FNET_Search::ConnectDocsumNodes(bool ignoreRow)
     bool userow = (_dataset->GetRowBits() > 0) && !ignoreRow;
 
     EngineNodeMap engines;
-    FastOS_Mutex & dsLock = _dataset->getMutex();
-    dsLock.Lock();
-    for (auto & node : _nodes) {
-        if (node._gdx != NULL) {
-            FastS_EngineBase *engine = node.getPartition(dsLock, userow, _dataset);
-            if (engine != nullptr) {
-                engines.emplace_back(engine, &node);
-            }
-        }
-        for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
-            FastS_FNET_SearchNode *eNode = *iter;
-            if (eNode->_gdx != NULL) {
-                FastS_EngineBase *engine = eNode->getPartition(dsLock, userow, _dataset);
+    {
+        auto dsGuard(_dataset->getDsGuard());
+        for (auto & node : _nodes) {
+            if (node._gdx != NULL) {
+                FastS_EngineBase *engine = node.getPartition(dsGuard, userow, _dataset);
                 if (engine != nullptr) {
-                    engines.emplace_back(engine, eNode);
+                    engines.emplace_back(engine, &node);
+                }
+            }
+            for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
+                FastS_FNET_SearchNode *eNode = *iter;
+                if (eNode->_gdx != NULL) {
+                    FastS_EngineBase *engine = eNode->getPartition(dsGuard, userow, _dataset);
+                    if (engine != nullptr) {
+                        engines.emplace_back(engine, eNode);
+                    }
                 }
             }
         }
     }
-    dsLock.Unlock();
     connectNodes(engines);
 }
 
@@ -598,7 +597,8 @@ void
 FastS_FNET_Search::GotQueryResult(FastS_FNET_SearchNode *node,
                                   FS4Packet_QUERYRESULTX *qrx)
 {
-    if (!BeginFNETWork()) {
+    auto searchGuard(BeginFNETWork());
+    if (!searchGuard) {
         qrx->Free();
         return;
     }
@@ -622,14 +622,15 @@ FastS_FNET_Search::GotQueryResult(FastS_FNET_SearchNode *node,
     } else {
         qrx->Free();
     }
-    EndFNETWork();
+    EndFNETWork(std::move(searchGuard));
 }
 
 void
 FastS_FNET_Search::GotDocsum(FastS_FNET_SearchNode *node,
                              FS4Packet_DOCSUM *docsum)
 {
-    if (!BeginFNETWork()) {
+    auto searchGuard(BeginFNETWork());
+    if (!searchGuard) {
         docsum->Free();
         return;
     }
@@ -650,14 +651,16 @@ FastS_FNET_Search::GotDocsum(FastS_FNET_SearchNode *node,
         adjustDocsumTimeout();
     }
     docsum->Free();
-    EndFNETWork();
+    EndFNETWork(std::move(searchGuard));
 }
 
 void
 FastS_FNET_Search::LostSearchNode(FastS_FNET_SearchNode *node)
 {
-    if (!BeginFNETWork())
+    auto searchGuard(BeginFNETWork());
+    if (!searchGuard) {
         return;
+    }
 
     if (_FNET_mode == FNET_QUERY && node->_flags._pendingQuery) {
         FastS_assert(_pendingQueries > 0);
@@ -673,15 +676,17 @@ FastS_FNET_Search::LostSearchNode(FastS_FNET_SearchNode *node)
         _pendingDocsumNodes--;
         adjustDocsumTimeout();
     }
-    EndFNETWork();
+    EndFNETWork(std::move(searchGuard));
 }
 
 
 void
 FastS_FNET_Search::GotEOL(FastS_FNET_SearchNode *node)
 {
-    if (!BeginFNETWork())
+    auto searchGuard(BeginFNETWork());
+    if (!searchGuard) {
         return;
+    }
 
     LOG(spam, "Got EOL from row(%d), part(%d) = pendingQ(%d) pendingDocsum(%d)", node->GetRowID(), node->getPartID(), node->_flags._pendingQuery, node->_pendingDocsums);
     if (_FNET_mode == FNET_QUERY && node->_flags._pendingQuery) {
@@ -698,7 +703,7 @@ FastS_FNET_Search::GotEOL(FastS_FNET_SearchNode *node)
         _pendingDocsumNodes--;
         adjustDocsumTimeout();
     }
-    EndFNETWork();
+    EndFNETWork(std::move(searchGuard));
 }
 
 
@@ -706,7 +711,8 @@ void
 FastS_FNET_Search::GotError(FastS_FNET_SearchNode *node,
                             FS4Packet_ERROR *error)
 {
-    if (!BeginFNETWork()) {
+    auto searchGuard(BeginFNETWork());
+    if (!searchGuard) {
         error->Free();
         return;
     }
@@ -741,15 +747,17 @@ FastS_FNET_Search::GotError(FastS_FNET_SearchNode *node,
         adjustDocsumTimeout();
     }
     error->Free();
-    EndFNETWork();
+    EndFNETWork(std::move(searchGuard));
 }
 
 
 void
 FastS_FNET_Search::HandleTimeout()
 {
-    if (!BeginFNETWork())
+    auto searchGuard(BeginFNETWork());
+    if (!searchGuard) {
         return;
+    }
 
     if (_FNET_mode == FNET_QUERY) {
         for (FastS_FNET_SearchNode & node : _nodes) {
@@ -793,32 +801,30 @@ FastS_FNET_Search::HandleTimeout()
         }
         _docsumTimeout = true;
     }
-    EndFNETWork();
+    EndFNETWork(std::move(searchGuard));
 }
 
-bool
+std::unique_lock<std::mutex>
 FastS_FNET_Search::BeginFNETWork()
 {
-    Lock();
-    if (_FNET_mode != FNET_NONE)
-        return true;
-    Unlock();
-    return false;
+    std::unique_lock<std::mutex> searchGuard(_lock);
+    if (_FNET_mode == FNET_NONE) {
+        searchGuard.unlock();
+    }
+    return searchGuard;
 }
 
 void
-FastS_FNET_Search::EndFNETWork()
+FastS_FNET_Search::EndFNETWork(std::unique_lock<std::mutex> searchGuard)
 {
     if (_FNET_mode == FNET_QUERY && _pendingQueries == 0) {
         _FNET_mode = FNET_NONE;
-        Unlock();
+        searchGuard.unlock();
         _searchOwner->DoneQuery(this, _searchContext);
     } else if (_FNET_mode == FNET_DOCSUMS && _pendingDocsums == 0) {
         _FNET_mode = FNET_NONE;
-        Unlock();
+        searchGuard.unlock();
         _searchOwner->DoneDocsums(this, _searchContext);
-    } else {
-        Unlock();
     }
 }
 
@@ -1070,13 +1076,14 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
     std::vector<uint32_t> send_failed; // partitions where packet send failed
 
     // allow FNET responses while requests are being sent
-    Lock();
-    ++_pendingQueries; // add Elephant query node to avoid early query done
-    ++_queryNodes;     // add Elephant query node to avoid early query done
-    _FNET_mode = FNET_QUERY;
-    _queryStartTime = GetTimeKeeper()->GetTime();
-    _timeout.Schedule(_adjustedQueryTimeOut);
-    Unlock();
+    {
+        std::unique_lock<std::mutex> searchGuard(_lock);
+        ++_pendingQueries; // add Elephant query node to avoid early query done
+        ++_queryNodes;     // add Elephant query node to avoid early query done
+        _FNET_mode = FNET_QUERY;
+        _queryStartTime = GetTimeKeeper()->GetTime();
+        _timeout.Schedule(_adjustedQueryTimeOut);
+    }
     FNET_Packet::SP shared(new FS4Packet_PreSerialized(*setupQueryPacket(hitsPerNode, qflags, _queryArgs->propertiesMap)));
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         FastS_FNET_SearchNode & node = _nodes[i];
@@ -1093,30 +1100,32 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
     }
 
     // finalize setup and check if query is still in progress
-    Lock();
-    assert(_queryNodes >= _pendingQueries);
-    for (uint32_t i: send_failed) {
-        // conditional revert of state for failed nodes
-        if (_nodes[i]._flags._pendingQuery) {
-            _nodes[i]._flags._pendingQuery = false;
-            assert(_pendingQueries > 0);
-            --_pendingQueries;
-            --_queryNodes;
+    bool done;
+    {
+        std::unique_lock<std::mutex> searchGuard(_lock);
+        assert(_queryNodes >= _pendingQueries);
+        for (uint32_t i: send_failed) {
+            // conditional revert of state for failed nodes
+            if (_nodes[i]._flags._pendingQuery) {
+                _nodes[i]._flags._pendingQuery = false;
+                assert(_pendingQueries > 0);
+                --_pendingQueries;
+                --_queryNodes;
+            }
+        }
+        // revert Elephant query node to allow search to complete
+        assert(_pendingQueries > 0);
+        --_pendingQueries;
+        --_queryNodes;
+        done = (_pendingQueries == 0);
+        bool all_down = (num_send_ok == 0);
+        if (done) {
+            _FNET_mode = FNET_NONE;
+            if (all_down) {
+                SetError(search::engine::ECODE_ALL_PARTITIONS_DOWN, NULL);
+            }
         }
     }
-    // revert Elephant query node to allow search to complete
-    assert(_pendingQueries > 0);
-    --_pendingQueries;
-    --_queryNodes;
-    bool done = (_pendingQueries == 0);
-    bool all_down = (num_send_ok == 0);
-    if (done) {
-        _FNET_mode = FNET_NONE;
-        if (all_down) {
-            SetError(search::engine::ECODE_ALL_PARTITIONS_DOWN, NULL);
-        }
-    }
-    Unlock();
 
     return (done) ? RET_OK : RET_INPROGRESS;
 }
@@ -1387,31 +1396,33 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
     FastS_assert(p == hits + hitcnt);
 
     ConnectDocsumNodes(ignoreRow);
-    Lock();
+    bool done;
+    {
+        std::unique_lock<std::mutex> searchGuard(_lock);
 
-    // patch in engine dependent features and send docsum requests
+        // patch in engine dependent features and send docsum requests
 
-    for (FastS_FNET_SearchNode & node : _nodes) {
-        if (node._gdx != NULL)
-            node.postGDX(&_pendingDocsums, &_docsumNodes);
-        for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
-            FastS_FNET_SearchNode *eNode = *iter;
-            if (eNode->_gdx != NULL)
-                eNode->postGDX(&_pendingDocsums, &_docsumNodes);
+        for (FastS_FNET_SearchNode & node : _nodes) {
+            if (node._gdx != NULL)
+                node.postGDX(&_pendingDocsums, &_docsumNodes);
+            for (FastS_FNET_SearchNode::ExtraDocsumNodesIter iter(&node); iter.valid(); ++iter) {
+                FastS_FNET_SearchNode *eNode = *iter;
+                if (eNode->_gdx != NULL)
+                    eNode->postGDX(&_pendingDocsums, &_docsumNodes);
+            }
+        }
+        _pendingDocsumNodes = _docsumNodes;
+        _requestedDocsums = _pendingDocsums;
+
+        done = (_pendingDocsums == 0);
+        if (!done) {
+            _FNET_mode = FNET_DOCSUMS; // FNET; do your thing
+
+            _adjustedDocSumTimeOut = args->getTimeout().sec();
+            _docSumStartTime = GetTimeKeeper()->GetTime();
+            _timeout.Schedule(_adjustedDocSumTimeOut);
         }
     }
-    _pendingDocsumNodes = _docsumNodes;
-    _requestedDocsums = _pendingDocsums;
-
-    bool done = (_pendingDocsums == 0);
-    if (!done) {
-        _FNET_mode = FNET_DOCSUMS; // FNET; do your thing
-
-        _adjustedDocSumTimeOut = args->getTimeout().sec();
-        _docSumStartTime = GetTimeKeeper()->GetTime();
-        _timeout.Schedule(_adjustedDocSumTimeOut);
-    }
-    Unlock();
 
     return (done) ? RET_OK : RET_INPROGRESS;
 }

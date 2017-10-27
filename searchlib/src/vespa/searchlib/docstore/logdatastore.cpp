@@ -179,14 +179,14 @@ LogDataStore::write(uint64_t serialNum, uint32_t lid, const void * buffer, size_
 {
     LockGuard guard(_updateLock);
     WriteableFileChunk & active = getActive(guard);
-    write(guard, active, serialNum,  lid, buffer, len);
+    write(std::move(guard), active, serialNum,  lid, buffer, len);
 }
 
 void
 LogDataStore::write(LockGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len)
 {
     WriteableFileChunk & destination = static_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
-    write(guard, destination, destination.getSerialNum(), lid, buffer, len);
+    write(std::move(guard), destination, destination.getSerialNum(), lid, buffer, len);
 }
 
 void
@@ -196,7 +196,7 @@ LogDataStore::write(LockGuard guard, WriteableFileChunk & destination,
     LidInfo lm = destination.append(serialNum, lid, buffer, len);
     setLid(guard, lid, lm);
     if (destination.getFileId() == getActiveFileId(guard)) {
-        requireSpace(guard, destination);
+        requireSpace(std::move(guard), destination);
     }
 }
 
@@ -428,7 +428,7 @@ SerialNum LogDataStore::flushFile(LockGuard guard, WriteableFileChunk & file, Se
 }
 
 void LogDataStore::flushFileAndWait(LockGuard guard, WriteableFileChunk & file, SerialNum syncToken) {
-    syncToken = flushFile(guard, file, syncToken);
+    syncToken = flushFile(std::move(guard), file, syncToken);
     file.waitForDiskToCatchUpToNow();
     _tlSyncer.sync(syncToken);
     file.flushPendingChunks(syncToken);
@@ -437,13 +437,13 @@ void LogDataStore::flushFileAndWait(LockGuard guard, WriteableFileChunk & file, 
 SerialNum LogDataStore::flushActive(SerialNum syncToken) {
     LockGuard guard(_updateLock);
     WriteableFileChunk &active = getActive(guard);
-    return flushFile(guard, active, syncToken);
+    return flushFile(std::move(guard), active, syncToken);
 }
 
 void LogDataStore::flushActiveAndWait(SerialNum syncToken) {
     LockGuard guard(_updateLock);
     WriteableFileChunk &active = getActive(guard);
-    return flushFileAndWait(guard, active, syncToken);
+    return flushFileAndWait(std::move(guard), active, syncToken);
 }
 
 bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
@@ -488,7 +488,7 @@ void LogDataStore::compactFile(FileId fileId)
     } else {
         LockGuard guard(_updateLock);
         WriteableFileChunk & compactTo = dynamic_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
-        flushFileAndWait(guard, compactTo, 0);
+        flushFileAndWait(std::move(guard), compactTo, 0);
         compactTo.freeze();
     }
     compacter.reset();

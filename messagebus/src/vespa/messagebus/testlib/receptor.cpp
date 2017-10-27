@@ -7,7 +7,7 @@ namespace mbus {
 Receptor::Receptor()
     : IMessageHandler(),
       IReplyHandler(),
-      _mon("mbus::Receptor::_mon", true),
+      _mon(),
       _msg(),
       _reply()
 { }

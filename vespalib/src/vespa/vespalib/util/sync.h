@@ -2,38 +2,14 @@
 
 #pragma once
 
-#include <vespa/fastos/mutex.h>
-#include <vespa/fastos/cond.h>
 #include <vespa/fastos/time.h>
 #include <cassert>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 
 namespace vespalib {
-
-#ifndef IAM_DOXYGEN
-class LockGuardHandover
-{
-private:
-    friend class LockGuard;
-    FastOS_MutexInterface *_mutex;
-    LockGuardHandover(const LockGuardHandover &);
-    LockGuardHandover &operator=(const LockGuardHandover &);
-    LockGuardHandover(FastOS_MutexInterface *m) : _mutex(m) {}
-public:
-};
-
-
-class MonitorGuardHandover
-{
-private:
-    friend class MonitorGuard;
-    FastOS_CondInterface *_cond;
-    MonitorGuardHandover(const MonitorGuardHandover &);
-    MonitorGuardHandover &operator=(const MonitorGuardHandover &);
-    MonitorGuardHandover(FastOS_CondInterface *c) : _cond(c) {}
-public:
-};
-#endif
 
 /**
  * @brief A Lock is a synchronization primitive used to ensure mutual
@@ -47,11 +23,11 @@ public:
  **/
 class Lock
 {
-private:
+protected:
     friend class LockGuard;
     friend class TryLock;
 
-    mutable FastOS_Mutex _mutex;
+    mutable std::mutex _mutex;
 public:
     /**
      * @brief Create a new Lock.
@@ -59,42 +35,10 @@ public:
      * Creates a Lock that has mutex instrumentation disabled.
      **/
     Lock() : _mutex() {}
-    /**
-     * @brief Create a new Lock.
-     *
-     * Creates a Lock with support for mutex instrumentation.
-     *
-     * @param name mutex category (for instrumentation)
-     * @param leaf false if you will lock other locks while holding this one,
-     *             true if you only lock this as the last (leaf) lock
-     *             (for instrumentation).
-     **/
-    Lock(const char *name, bool leaf) : _mutex() {(void) name; (void) leaf; }
-    /**
-     * @brief Copy a Lock.
-     *
-     * Create a new Lock with mutex instrumentation settings obtained
-     * from the given lock. No other information is copied.  Normally
-     * only used when copy-constructing a bigger object containing a
-     * Lock.
-     *
-     * @param rhs other Lock
-     **/
-    Lock(const Lock &rhs) : _mutex() { (void) rhs; }
-    /**
-     * @brief No-op assignment operator.
-     *
-     * Assignment operator ignoring the right hand side. It makes no
-     * sense to assign the state of one Lock to another, but we want
-     * to allow assignment of bigger objects that contain Lock
-     * objects.
-     *
-     * @param rhs other Lock (right hand side)
-     **/
-    Lock &operator=(const Lock &rhs) {
-        (void) rhs;
-        return *this;
-    }
+    Lock(const Lock &) : Lock() { }
+    Lock(Lock &&) : Lock() { }
+    Lock &operator=(const Lock &) { return *this; }
+    Lock &operator=(Lock &&) { return *this; }
 };
 
 
@@ -110,56 +54,25 @@ public:
  *
  * @see TryLock
  **/
-class Monitor
+class Monitor : public Lock
 {
 private:
     friend class LockGuard;
     friend class MonitorGuard;
     friend class TryLock;
 
-    mutable FastOS_Cond _cond;
+    mutable std::condition_variable _cond;
 public:
     /**
      * @brief Create a new Monitor.
      *
      * Creates a Monitor that has mutex instrumentation disabled.
      **/
-    Monitor() : _cond() {}
-    /**
-     * @brief Create a new Monitor.
-     *
-     * Creates a Monitor with support for mutex instrumentation.
-     *
-     * @param name mutex category (for instrumentation)
-     * @param leaf false if you will lock other locks while holding this one,
-     *             true if you only lock this as the last (leaf) lock
-     *             (for instrumentation).
-     **/
-    Monitor(const char *name, bool leaf) : _cond() { (void) name; (void) leaf; }
-    /**
-     * @brief Copy a Monitor.
-     *
-     * Creates a new Monitor with mutex instrumentation settings
-     * obtained from the given monitor. No other information is
-     * copied.  Normally only used when copy-constructing a bigger
-     * object containing a Lock.
-     *
-     * @param rhs other Monitor
-     **/
-    Monitor(const Monitor &rhs) : _cond() { (void) rhs; }
-    /**
-     * @brief No-op assignment operator.
-     *
-     * Assignment operator ignoring the right hand side. It makes no
-     * sense to assign the state of one Monitor to another, but we want
-     * to allow assigning objects that contain Monitor objects.
-     *
-     * @param rhs other Monitor (right hand side)
-     **/
-    Monitor &operator=(const Monitor &rhs) {
-        (void) rhs;
-        return *this;
-    }
+    Monitor() : Lock(), _cond() {}
+    Monitor(const Monitor &) : Monitor() { }
+    Monitor(Monitor &&) : Monitor() { }
+    Monitor &operator=(const Monitor &) { return *this; }
+    Monitor &operator=(Monitor &&) { return *this; }
 };
 
 
@@ -198,29 +111,11 @@ private:
     friend class LockGuard;
     friend class MonitorGuard;
 
-    FastOS_MutexInterface *_mutex;
-    FastOS_CondInterface  *_cond;
+    std::unique_lock<std::mutex> _guard;
+    std::condition_variable     *_cond;
 
-    TryLock(const TryLock &);
-    TryLock &operator=(const TryLock &);
-
-    FastOS_MutexInterface *stealMutex() {
-        FastOS_MutexInterface *ret = _mutex;
-        if (ret != NULL) {
-            _mutex = NULL;
-            return ret;
-        }
-        ret = _cond;
-        assert(ret != NULL);
-        _cond = NULL;
-        return ret;
-    }
-    FastOS_CondInterface *stealCond() {
-        FastOS_CondInterface *ret = _cond;
-        assert(ret != NULL);
-        _cond = NULL;
-        return ret;
-    }
+    TryLock(const TryLock &) = delete;
+    TryLock &operator=(const TryLock &) = delete;
 
 public:
     /**
@@ -228,38 +123,50 @@ public:
      *
      * @param lock the lock to obtain
      **/
-    TryLock(const Lock &lock) : _mutex(&lock._mutex), _cond(NULL) {
-        if (!_mutex->TryLock()) {
-            _mutex = NULL;
-        }
+    TryLock(const Lock &lock)
+        : _guard(lock._mutex, std::try_to_lock),
+          _cond(nullptr)
+    {
     }
+
     /**
      * @brief Try to lock the given Monitor
      *
      * @param mon the monitor to lock
      **/
-    TryLock(const Monitor &mon) : _mutex(NULL), _cond(&mon._cond) {
-        if (!_cond->TryLock()) {
-            _cond = NULL;
-        }
+    TryLock(const Monitor &mon)
+        : _guard(mon._mutex, std::try_to_lock),
+          _cond(_guard ? &mon._cond : nullptr)
+    {
     }
+
+    TryLock(TryLock &&rhs)
+        : _guard(std::move(rhs._guard)),
+          _cond(rhs._cond)
+    {
+        rhs._cond = nullptr;
+    }
+
     /**
      * @brief Release the lock held by this object, if any
      **/
-    ~TryLock() {
-        if (_mutex != NULL) {
-            _mutex->Unlock();
+    ~TryLock() = default;
+
+    TryLock &operator=(TryLock &&rhs) {
+        if (this != &rhs) {
+            _guard = std::move(rhs._guard);
+            _cond = rhs._cond;
+            rhs._cond = nullptr;
         }
-        if (_cond != NULL) {
-            _cond->Unlock();
-        }
+        return *this;
     }
+
     /**
      * @brief Check whether this object holds a lock
      *
      * @return true if this object holds a lock
      **/
-    bool hasLock() { return (_mutex != NULL || _cond != NULL); }
+    bool hasLock() { return static_cast<bool>(_guard); }
     /**
      * @brief Release the lock held by this object.
      *
@@ -269,13 +176,9 @@ public:
      * the destructor will release the lock.
      **/
     void unlock() {
-        if (_mutex != NULL) {
-            _mutex->Unlock();
-            _mutex = NULL;
-        }
-        if (_cond != NULL) {
-            _cond->Unlock();
-            _cond = NULL;
+        if (_guard) {
+            _guard.unlock();
+            _cond = nullptr;
         }
     }
 };
@@ -296,25 +199,20 @@ public:
 class LockGuard
 {
 private:
-    FastOS_MutexInterface *_mutex;
-    LockGuard &operator=(const LockGuard &);
-
-    FastOS_MutexInterface *stealMutex() {
-        FastOS_MutexInterface *ret = _mutex;
-        _mutex = NULL;
-        return ret;
-    }
+    std::unique_lock<std::mutex> _guard;
+    LockGuard &operator=(const LockGuard &) = delete;
 public:
     /**
      * @brief A noop guard without any mutex.
      **/
-    LockGuard() : _mutex(NULL) {}
+    LockGuard() : _guard() {}
+    LockGuard(const LockGuard &rhs) = delete;
     /**
      * @brief Steal the lock from the given LockGuard
      *
      * @param rhs steal the lock from this one
      **/
-    LockGuard(LockGuard &rhs) : _mutex(rhs.stealMutex()) {}
+    LockGuard(LockGuard &&rhs) : _guard(std::move(rhs._guard)) { }
     /**
      * @brief Obtain the lock represented by the given Lock object.
      *
@@ -322,19 +220,8 @@ public:
      *
      * @param lock take it
      **/
-    LockGuard(const Lock &lock) : _mutex(&lock._mutex) {
-        _mutex->Lock();
-    }
-    /**
-     * @brief Obtain the lock on the given Monitor object.
-     *
-     * The method will block until the lock can be obtained.
-     *
-     * @param monitor take the lock on it
-     **/
-    LockGuard(const Monitor &monitor) : _mutex(&monitor._cond) {
-        _mutex->Lock();
-    }
+    LockGuard(const Lock &lock) : _guard(lock._mutex) { }
+
     /**
      * @brief Create a LockGuard from a TryLock.
      *
@@ -344,11 +231,18 @@ public:
      *
      * @param tlock take the lock from this one
      **/
-    LockGuard(TryLock &tlock) : _mutex(tlock.stealMutex()) {}
-#ifndef IAM_DOXYGEN
-    LockGuard(const LockGuardHandover &rhs) : _mutex(rhs._mutex) {}
-    operator LockGuardHandover() { return LockGuardHandover(stealMutex()); }
-#endif
+    LockGuard(TryLock &&tlock) : _guard(std::move(tlock._guard))
+    {
+        tlock._cond = nullptr;
+    }
+
+    LockGuard &operator=(LockGuard &&rhs) {
+        if (this != &rhs) {
+            _guard = std::move(rhs._guard);
+        }
+        return *this;
+    }
+
     /**
      * @brief Release the lock held by this object.
      *
@@ -358,27 +252,22 @@ public:
      * the destructor will release the lock.
      **/
     void unlock() {
-        if (_mutex != NULL) {
-            _mutex->Unlock();
-            _mutex = NULL;
+        if (_guard) {
+            _guard.unlock();
         }
     }
     /**
      * @brief Release the lock held by this object if unlock has not
      * been called.
      **/
-    ~LockGuard() {
-        if (_mutex != NULL) {
-            _mutex->Unlock();
-        }
-    }
+    ~LockGuard() = default;
 
     /**
      * Allow code to match guard with lock. This allows functions to take a
      * guard ref as input, ensuring that the caller have grabbed a lock.
      */
     bool locks(const Lock& lock) const {
-        return (_mutex != NULL && _mutex == &lock._mutex);
+        return (_guard && _guard.mutex() == &lock._mutex);
     }
 };
 
@@ -399,25 +288,27 @@ public:
 class MonitorGuard
 {
 private:
-    FastOS_CondInterface *_cond;
-    MonitorGuard &operator=(const MonitorGuard &);
+    std::unique_lock<std::mutex> _guard;
+    std::condition_variable *_cond;
+    MonitorGuard &operator=(const MonitorGuard &) = delete;
 
-    FastOS_CondInterface *stealCond() {
-        FastOS_CondInterface *ret = _cond;
-        _cond = NULL;
-        return ret;
-    }
 public:
     /**
      * @brief A noop guard without any condition.
      **/
-    MonitorGuard() : _cond(NULL) {}
+    MonitorGuard() : _guard(), _cond(nullptr) {}
+    MonitorGuard(const MonitorGuard &rhs) = delete;
     /**
      * @brief Steal the lock from the given MonitorGuard
      *
      * @param rhs steal the lock from this one
      **/
-    MonitorGuard(MonitorGuard &rhs) : _cond(rhs.stealCond()) {}
+    MonitorGuard(MonitorGuard &&rhs)
+        : _guard(std::move(rhs._guard)),
+          _cond(rhs._cond)
+    {
+        rhs._cond = nullptr;
+    }
     /**
      * @brief Obtain the lock on the given Monitor object.
      *
@@ -425,8 +316,10 @@ public:
      *
      * @param monitor take the lock on it
      **/
-    MonitorGuard(const Monitor &monitor) : _cond(&monitor._cond) {
-        _cond->Lock();
+    MonitorGuard(const Monitor &monitor)
+        : _guard(monitor._mutex),
+          _cond(&monitor._cond)
+    {
     }
     /**
      * @brief Create a MonitorGuard from a TryLock.
@@ -437,13 +330,27 @@ public:
      *
      * @param tlock take the lock from this one
      **/
-    MonitorGuard(TryLock &tlock) : _cond(tlock.stealCond()) {}
-#ifndef IAM_DOXYGEN
-    MonitorGuard(const MonitorGuardHandover &rhs) : _cond(rhs._cond) {}
-    operator MonitorGuardHandover() {
-        return MonitorGuardHandover(stealCond());
+    MonitorGuard(TryLock &&tlock)
+        : _guard(),
+          _cond(nullptr)
+    {
+        if (tlock._guard && tlock._cond != nullptr) {
+            _guard = std::move(tlock._guard);
+            _cond = tlock._cond;
+            tlock._cond = nullptr;
+        }
     }
-#endif
+
+    MonitorGuard &operator=(MonitorGuard &&rhs) {
+        if (this != &rhs) {
+            _guard = std::move(rhs._guard);
+            _cond = rhs._cond;
+            rhs._cond = nullptr;
+        }
+        return *this;
+    }
+
+
     /**
      * @brief Release the lock held by this object.
      *
@@ -453,8 +360,8 @@ public:
      * the destructor will release the lock.
      **/
     void unlock() {
-        assert(_cond != NULL);
-        _cond->Unlock();
+        assert(_guard);
+        _guard.unlock();
         _cond = NULL;
     }
     /**
@@ -462,7 +369,7 @@ public:
      **/
     void wait() {
         assert(_cond != NULL);
-        _cond->Wait();
+        _cond->wait(_guard);
     }
     /**
      * @brief Wait for a signal on the underlying Monitor with the
@@ -473,7 +380,7 @@ public:
      **/
     bool wait(int msTimeout) {
         assert(_cond != NULL);
-        return _cond->TimedWait(msTimeout);
+        return _cond->wait_for(_guard, std::chrono::milliseconds(msTimeout)) == std::cv_status::no_timeout;
     }
     /**
      * @brief Send a signal to a single waiter on the underlying
@@ -481,14 +388,14 @@ public:
      **/
     void signal() {
         assert(_cond != NULL);
-        _cond->Signal();
+        _cond->notify_one();
     }
     /**
      * @brief Send a signal to all waiters on the underlying Monitor.
      **/
     void broadcast() {
         assert(_cond != NULL);
-        _cond->Broadcast();
+        _cond->notify_all();
     }
     /**
      * @brief Send a signal to a single waiter on the underlying
@@ -500,8 +407,8 @@ public:
      **/
     void unsafeSignalUnlock() {
         assert(_cond != NULL);
-        _cond->Unlock();
-        _cond->Signal();
+        _guard.unlock();
+        _cond->notify_one();
         _cond = NULL;
     }
     /**
@@ -514,19 +421,15 @@ public:
      **/
     void unsafeBroadcastUnlock() {
         assert(_cond != NULL);
-        _cond->Unlock();
-        _cond->Broadcast();
+        _guard.unlock();
+        _cond->notify_all();
         _cond = NULL;
     }
     /**
      * @brief Release the lock held by this object if unlock has not
      * been called.
      **/
-    ~MonitorGuard() {
-        if (_cond != NULL) {
-            _cond->Unlock();
-        }
-    }
+    ~MonitorGuard() = default;
 
     /**
      * Allow code to match guard with lock. This allows functions to take a
@@ -642,8 +545,8 @@ private:
     Monitor  _monitor;
     uint32_t _count;
 
-    CountDownLatch(const CountDownLatch &rhs);
-    CountDownLatch &operator=(const CountDownLatch &rhs);
+    CountDownLatch(const CountDownLatch &rhs) = delete;
+    CountDownLatch &operator=(const CountDownLatch &rhs) = delete;
 
 public:
     /**

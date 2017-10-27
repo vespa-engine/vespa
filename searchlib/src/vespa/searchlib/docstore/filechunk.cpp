@@ -322,7 +322,7 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
             if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
                 // I am still in use so I need to taken care of.
                 vespalib::ConstBufferRef data(chunk->getLid(e.getLid()));
-                args->dest.write(guard, chunk->getId(), e.getLid(), data.c_str(), data.size());
+                args->dest.write(std::move(guard), chunk->getId(), e.getLid(), data.c_str(), data.size());
             }
         }
     }

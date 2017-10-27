@@ -16,7 +16,7 @@ void
 Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
     (void) chunkId;
     FileChunk::FileId fileId= _ds.getActiveFileId(guard);
-    _ds.write(guard, fileId, lid, buffer, sz);
+    _ds.write(std::move(guard), fileId, lid, buffer, sz);
 }
 
 BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds, ThreadExecutor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
@@ -92,7 +92,7 @@ BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const 
     LidInfo lidInfo(_sourceFileId.getId(), chunkId, sz);
     if (_ds.getLid(_lidGuard, lid) == lidInfo) {
         FileId fileId = getDestinationId(guard);
-        _ds.write(guard, fileId, lid, buffer, sz);
+        _ds.write(std::move(guard), fileId, lid, buffer, sz);
     }
 }
 

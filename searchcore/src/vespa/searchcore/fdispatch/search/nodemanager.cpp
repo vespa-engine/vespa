@@ -83,7 +83,6 @@ FastS_NodeManager::FastS_NodeManager(vespalib::SimpleComponentConfigProducer &co
     : _componentConfig(componentConfig),
       _managerLock(),
       _configLock(),
-      _stampLock(),
       _appCtx(appCtx),
       _mldPartit(partition),
       _mldDocStamp(0),
@@ -125,19 +124,20 @@ FastS_NodeManager::CheckTempFail()
 
     _checkTempFailScheduled = false;
     tempfail = false;
-    LockManager();
-    FastS_DataSetCollection *dsc = PeekDataSetCollection();
-    for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
-        FastS_DataSetBase *ds;
-        FastS_PlainDataSet *ds_plain;
-        if ((ds = dsc->PeekDataSet(i)) != NULL &&
-            (ds_plain = ds->GetPlainDataSet()) != NULL &&
-            ds_plain->GetTempFail()) {
-            tempfail = true;
-            break;
+    {
+        std::unique_lock<std::mutex> mangerGuard(_managerLock);
+        FastS_DataSetCollection *dsc = PeekDataSetCollection();
+        for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
+            FastS_DataSetBase *ds;
+            FastS_PlainDataSet *ds_plain;
+            if ((ds = dsc->PeekDataSet(i)) != NULL &&
+                (ds_plain = ds->GetPlainDataSet()) != NULL &&
+                ds_plain->GetTempFail()) {
+                tempfail = true;
+                break;
+            }
         }
     }
-    UnlockManager();
     _tempFail = tempfail;
 }
 
@@ -166,16 +166,14 @@ uint32_t
 FastS_NodeManager::SetPartMap(const PartitionsConfig& partmap,
                               unsigned int waitms)
 {
-    LockConfig();
+    std::unique_lock<std::mutex> configGuard(_configLock);
     FastS_DataSetCollDesc *configDesc = new FastS_DataSetCollDesc();
     if (!configDesc->ReadConfig(partmap)) {
         LOG(error, "NodeManager::SetPartMap: Failed to load configuration");
         delete configDesc;
-        UnlockConfig();
         return 0;
     }
     int retval = SetCollDesc(configDesc, waitms);
-    UnlockConfig();
     return retval;
 }
 
@@ -276,23 +274,23 @@ FastS_NodeManager::SetDataSetCollection(FastS_DataSetCollection *dsc)
         dsc->subRef();
 
     } else {
+        {
+            std::unique_lock<std::mutex> managerGuard(_managerLock);
+            _gencnt++;
+            gencnt = _gencnt;
 
-        LockManager();
-        _gencnt++;
-        gencnt = _gencnt;
+            old_dsc = _datasetCollection;
+            _datasetCollection = dsc;
 
-        old_dsc = _datasetCollection;
-        _datasetCollection = dsc;
-
-        // put old config on service list
-        FastS_assert(old_dsc != NULL);
-        if (!old_dsc->IsLastRef()) {
-            old_dsc->_nextOld = _oldDSCList;
-            _oldDSCList = old_dsc;
-            old_dsc = NULL;
+            // put old config on service list
+            FastS_assert(old_dsc != NULL);
+            if (!old_dsc->IsLastRef()) {
+                old_dsc->_nextOld = _oldDSCList;
+                _oldDSCList = old_dsc;
+                old_dsc = NULL;
+            }
+            _hasDsc = true;
         }
-        _hasDsc = true;
-        UnlockManager();
 
         if (old_dsc != NULL)
             old_dsc->subRef();
@@ -306,11 +304,10 @@ FastS_NodeManager::GetDataSetCollection()
 {
     FastS_DataSetCollection *ret;
 
-    LockManager();
+    std::unique_lock<std::mutex> managerGuard(_managerLock);
     ret = _datasetCollection;
     FastS_assert(ret != NULL);
     ret->addRef();
-    UnlockManager();
 
     return ret;
 }
@@ -322,16 +319,16 @@ FastS_NodeManager::ShutdownConfig()
     FastS_DataSetCollection *dsc;
     FastS_DataSetCollection *old_dsc;
 
-    LockConfig();
-    LockManager();
-    _shutdown = true;           // disallow SetPartMap
-    dsc = _datasetCollection;
-    _datasetCollection = new FastS_DataSetCollection(_appCtx);
-    _datasetCollection->Configure(NULL, 0);
-    old_dsc = _oldDSCList;
-    _oldDSCList = NULL;
-    UnlockManager();
-    UnlockConfig();
+    {
+        std::unique_lock<std::mutex> configGuard(_configLock);
+        std::unique_lock<std::mutex> managerGuard(_managerLock);
+        _shutdown = true;           // disallow SetPartMap
+        dsc = _datasetCollection;
+        _datasetCollection = new FastS_DataSetCollection(_appCtx);
+        _datasetCollection->Configure(NULL, 0);
+        old_dsc = _oldDSCList;
+        _oldDSCList = NULL;
+    }
     dsc->AbortQueryQueues();
     dsc->subRef();
     while (old_dsc != NULL) {
@@ -350,7 +347,7 @@ FastS_NodeManager::GetTotalPartitions()
     uint32_t ret;
 
     ret = 0;
-    LockManager();
+    std::unique_lock<std::mutex> managerGuard(_managerLock);
     FastS_DataSetCollection *dsc = PeekDataSetCollection();
     for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
         FastS_DataSetBase *ds;
@@ -359,7 +356,6 @@ FastS_NodeManager::GetTotalPartitions()
             (ds_plain = ds->GetPlainDataSet()) != NULL)
             ret += ds_plain->GetPartitions();
     }
-    UnlockManager();
     return ret;
 }
 
@@ -432,23 +428,20 @@ FastS_NodeManager::CheckEvents(FastS_TimeKeeper *timeKeeper)
     FastS_DataSetCollection *prev = NULL;
     FastS_DataSetCollection *tmp;
 
-    LockManager();
-    old_dsc = _oldDSCList;
-    UnlockManager();
+    {
+        std::unique_lock<std::mutex> managerGuard(_managerLock);
+        old_dsc = _oldDSCList;
+    }
 
     while (old_dsc != NULL) {
         if (old_dsc->IsLastRef()) {
             if (prev == NULL) {
-                LockManager();
+                std::unique_lock<std::mutex> managerGuard(_managerLock);
                 if (_oldDSCList == old_dsc) {
-
                     _oldDSCList = old_dsc->_nextOld;
-                    UnlockManager();
-
                 } else {
-
                     prev = _oldDSCList;
-                    UnlockManager();
+                    managerGuard.unlock();
                     while (prev->_nextOld != old_dsc)
                         prev = prev->_nextOld;
 

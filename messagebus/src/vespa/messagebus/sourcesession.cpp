@@ -12,7 +12,7 @@ using vespalib::make_string;
 namespace mbus {
 
 SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params)
-    : _monitor("mbus::SourceSession::_monitor", false),
+    : _monitor(),
       _mbus(mbus),
       _gate(new ReplyGate(_mbus)),
       _sequencer(*_gate),

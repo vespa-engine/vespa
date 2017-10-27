@@ -83,7 +83,7 @@ namespace mbus {
 
 MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
     _network(net),
-    _lock("mbus::MessageBus::_lock", false),
+    _lock(),
     _routingTables(),
     _sessions(),
     _protocolRepository(std::make_unique<ProtocolRepository>()),
@@ -106,7 +106,7 @@ MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
 
 MessageBus::MessageBus(INetwork &net, const MessageBusParams &params) :
     _network(net),
-    _lock("mbus::MessageBus::_lock", false),
+    _lock(),
     _routingTables(),
     _sessions(),
     _protocolRepository(std::make_unique<ProtocolRepository>()),

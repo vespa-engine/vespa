@@ -241,13 +241,12 @@ FastS_PlainDataSet::~FastS_PlainDataSet()
 void
 FastS_PlainDataSet::UpdateMaxHitsPerNodeLog(bool incomplete, bool fuzzy)
 {
-    LockDataset();
+    auto dsGuard(getDsGuard());
     _MHPN_log._cnt++;
     if (incomplete)
         _MHPN_log._incompleteCnt++;
     if (fuzzy)
         _MHPN_log._fuzzyCnt++;
-    UnlockDataset();
 }
 
 
@@ -272,9 +271,8 @@ FastS_PlainDataSet::RefCostUseNewEngine(FastS_EngineBase *oldEngine,
 void
 FastS_PlainDataSet::updateSearchTime(double searchTime, uint32_t rowId)
 {
-    LockDataset();
+    auto dsGuard(getDsGuard());
     _stateOfRows.updateSearchTime(searchTime, rowId);
-    UnlockDataset();
 }
 
 uint32_t
@@ -316,9 +314,9 @@ FastS_PlainDataSet::UseNewEngine(FastS_EngineBase *oldEngine,
 }
 
 FastS_EngineBase *
-FastS_PlainDataSet::getPartition(const FastOS_Mutex & dsMutex, uint32_t partindex, uint32_t rowid)
+FastS_PlainDataSet::getPartition(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex, uint32_t rowid)
 {
-    (void) dsMutex;
+    (void) dsGuard;
     FastS_EngineBase*  ret = NULL;
 
     if (IsValidPartIndex_HasLock(partindex)) {
@@ -365,9 +363,9 @@ FastS_PlainDataSet::countNodesUpInRow_HasLock(uint32_t rowid)
 }
 
 FastS_EngineBase *
-FastS_PlainDataSet::getPartition(const FastOS_Mutex & dsMutex, uint32_t partindex)
+FastS_PlainDataSet::getPartition(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex)
 {
-    (void) dsMutex;
+    (void) dsGuard;
     FastS_EngineBase*  ret = NULL;
     unsigned int oldCount = 1;
     unsigned int engineCount = 0;
@@ -400,9 +398,9 @@ FastS_PlainDataSet::getPartition(const FastOS_Mutex & dsMutex, uint32_t partinde
 }
 
 FastS_EngineBase *
-FastS_PlainDataSet::getPartitionMLD(const FastOS_Mutex & dsMutex, uint32_t partindex, bool mld)
+FastS_PlainDataSet::getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex, bool mld)
 {
-    (void) dsMutex;
+    (void) dsGuard;
     FastS_EngineBase*  ret = NULL;
     unsigned int oldCount = 1;
     if (partindex < _partMap._num_partitions) {
@@ -429,9 +427,9 @@ FastS_PlainDataSet::getPartitionMLD(const FastOS_Mutex & dsMutex, uint32_t parti
 }
 
 FastS_EngineBase *
-FastS_PlainDataSet::getPartitionMLD(const FastOS_Mutex & dsMutex, uint32_t partindex, bool mld, uint32_t rowid)
+FastS_PlainDataSet::getPartitionMLD(const std::unique_lock<std::mutex> &dsGuard, uint32_t partindex, bool mld, uint32_t rowid)
 {
-    (void) dsMutex;
+    (void) dsGuard;
     FastS_EngineBase*  ret = NULL;
     unsigned int oldCount = 1;
 
@@ -464,11 +462,12 @@ FastS_PlainDataSet::getPartEngines(uint32_t partition)
     typedef FastS_EngineBase EB;
     typedef std::vector<EB *> EBV;
     EBV partEngines;
-    LockDataset();
-    for (FastS_EngineBase *iter = _partMap._partitions[partition]._engines; iter != NULL; iter = iter->_nextpart) {
-        partEngines.push_back(iter);
+    {
+        auto dsGuard(getDsGuard());
+        for (FastS_EngineBase *iter = _partMap._partitions[partition]._engines; iter != NULL; iter = iter->_nextpart) {
+            partEngines.push_back(iter);
+        }
     }
-    UnlockDataset();
     return partEngines;
 }
 

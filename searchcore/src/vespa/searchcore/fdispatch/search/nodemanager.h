@@ -8,6 +8,7 @@
 #include <vespa/searchcore/fdispatch/common/queryperf.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/config/subscription/configuri.h>
+#include <mutex>
 
 using vespa::config::search::core::PartitionsConfig;
 
@@ -24,9 +25,8 @@ private:
 
     vespalib::SimpleComponentConfigProducer &_componentConfig;
 
-    FastOS_Mutex      _managerLock;
-    FastOS_Mutex      _configLock;
-    FastOS_Mutex      _stampLock;
+    std::mutex        _managerLock;
+    std::mutex        _configLock;
     FastS_AppContext *_appCtx;
     uint32_t          _mldPartit;
     uint32_t          _mldDocStamp; // Bumped for all cache flushes
@@ -62,15 +62,6 @@ public:
     ~FastS_NodeManager();
 
     void SubscribePartMap(const config::ConfigUri & configUri);
-
-    void LockManager()   { _managerLock.Lock(); }
-    void UnlockManager() { _managerLock.Unlock(); }
-
-    void LockConfig()   { _configLock.Lock(); }
-    void UnlockConfig() { _configLock.Unlock(); }
-
-    void LockStamp()   { _stampLock.Lock(); }
-    void UnlockStamp() { _stampLock.Unlock(); }
 
     uint32_t GetMldPartition() const { return _mldPartit; }
     uint32_t GetMldDocstamp();

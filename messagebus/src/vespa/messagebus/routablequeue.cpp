@@ -5,7 +5,7 @@
 namespace mbus {
 
 RoutableQueue::RoutableQueue()
-    : _monitor("mbus::RoutableQueue::_monitor", true),
+    : _monitor(),
       _queue()
 { }
 

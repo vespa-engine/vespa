@@ -6,6 +6,7 @@
 #include "engine_base.h"
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/ipackethandler.h>
+#include <atomic>
 
 //----------------------------------------------------------------------
 
@@ -13,22 +14,11 @@ using search::fs4transport::FS4Packet_MONITORQUERYX;
 
 class FastS_StaticMonitorQuery : public FS4Packet_MONITORQUERYX
 {
-    FastOS_Mutex _lock;
-    int _refcnt;
+    std::atomic<int> _refcnt;
 public:
     virtual void Free() override;
-
-    bool getBusy() const
-    {
-        return _refcnt > 1;
-    }
-
-    void markBusy()
-    {
-        _lock.Lock();
-        _refcnt++;
-        _lock.Unlock();
-    }
+    bool getBusy() const { return _refcnt > 1; }
+    void markBusy() { _refcnt++; }
     FastS_StaticMonitorQuery();
     ~FastS_StaticMonitorQuery();
 };
@@ -77,7 +67,6 @@ public:
     friend class FastS_FNET_Engine::ConnectTask;
 
 private:
-    FastOS_Mutex      _lock;
     std::string   _hostName;
     int           _portNumber;
     std::string   _spec;
@@ -95,8 +84,7 @@ public:
                       FastS_FNET_DataSet *dataset);
     virtual ~FastS_FNET_Engine();
 
-    void LockDataSet()   { _dataset->LockDataset();   }
-    void UnlockDataSet() { _dataset->UnlockDataset(); }
+    std::unique_lock<std::mutex> getDsGuard() { return _dataset->getDsGuard(); }
 
     void StartWarnTimer();
     void ScheduleConnect(double delay);
@@ -108,8 +96,6 @@ public:
 
     // common engine API
     //------------------
-    virtual void LockEngine()   override { _lock.Lock();   }
-    virtual void UnlockEngine() override { _lock.Unlock(); }
     virtual void Ping() override;
     virtual void HandleClearedBad() override;
     virtual void HandleUp() override;

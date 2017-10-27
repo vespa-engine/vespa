@@ -2,11 +2,11 @@
 
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/fastos/mutex.h>
+#include <mutex>
 #include <cstring>
 
 bool Fast_NormalizeWordFolder::_isInitialized = false;
-FastOS_Mutex _initMutex;
+std::mutex _initMutex;
 bool Fast_NormalizeWordFolder::_doAccentRemoval = false;
 bool Fast_NormalizeWordFolder::_doSmallToNormalKana = false;
 bool Fast_NormalizeWordFolder::_doKatakanaToHiragana = false;
@@ -28,17 +28,18 @@ void
 Fast_NormalizeWordFolder::Setup(uint32_t flags)
 {
     // Only allow setting these when not initialized or initializing...
-    _initMutex.Lock();
-    _doAccentRemoval         = (DO_ACCENT_REMOVAL           & flags) != 0;
-//    _doSmallToNormalKana     = (DO_SMALL_TO_NORMAL_KANA     & flags) != 0;
-//    _doKatakanaToHiragana    = (DO_KATAKANA_TO_HIRAGANA     & flags) != 0;
-//    _doKanaAccentCollapsing  = (DO_KANA_ACCENT_COLLAPSING   & flags) != 0; // Not implemented
-    _doFullwidthToBasicLatin = (DO_FULLWIDTH_TO_BASIC_LATIN & flags) != 0; // Not implemented
-    _doSharpSSubstitution    = (DO_SHARP_S_SUBSTITUTION     & flags) != 0;
-    _doLigatureSubstitution  = (DO_LIGATURE_SUBSTITUTION    & flags) != 0;
-    _doMulticharExpansion    = (DO_MULTICHAR_EXPANSION      & flags) != 0;
-    _isInitialized = false;
-    _initMutex.Unlock();
+    {
+        std::unique_lock<std::mutex> initGuard(_initMutex);
+        _doAccentRemoval         = (DO_ACCENT_REMOVAL           & flags) != 0;
+//        _doSmallToNormalKana     = (DO_SMALL_TO_NORMAL_KANA     & flags) != 0;
+//        _doKatakanaToHiragana    = (DO_KATAKANA_TO_HIRAGANA     & flags) != 0;
+//        _doKanaAccentCollapsing  = (DO_KANA_ACCENT_COLLAPSING   & flags) != 0; // Not implemented
+        _doFullwidthToBasicLatin = (DO_FULLWIDTH_TO_BASIC_LATIN & flags) != 0; // Not implemented
+        _doSharpSSubstitution    = (DO_SHARP_S_SUBSTITUTION     & flags) != 0;
+        _doLigatureSubstitution  = (DO_LIGATURE_SUBSTITUTION    & flags) != 0;
+        _doMulticharExpansion    = (DO_MULTICHAR_EXPANSION      & flags) != 0;
+        _isInitialized = false;
+    }
     Initialize();
 }
 
@@ -47,7 +48,7 @@ Fast_NormalizeWordFolder::Initialize()
 {
     unsigned int i;
     if (!_isInitialized) {
-        _initMutex.Lock();
+        std::unique_lock<std::mutex> initGuard(_initMutex);
         if (!_isInitialized) {
 
             for (i = 0; i < 128; i++)
@@ -707,7 +708,6 @@ Fast_NormalizeWordFolder::Initialize()
             //
             _isInitialized = true;
         }
-        _initMutex.Unlock();
     }
 }
 
