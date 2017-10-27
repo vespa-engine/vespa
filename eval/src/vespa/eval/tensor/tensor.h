@@ -40,11 +40,9 @@ struct Tensor : public eval::Tensor
     virtual Tensor::UP match(const Tensor &arg) const = 0;
     virtual Tensor::UP apply(const CellFunction &func) const = 0;
     virtual Tensor::UP sum(const vespalib::string &dimension) const = 0;
-    virtual Tensor::UP apply(const eval::BinaryOperation &op,
-                             const Tensor &arg) const = 0;
     virtual Tensor::UP join(join_fun_t function,
                             const Tensor &arg) const = 0;
-    virtual Tensor::UP reduce(const eval::BinaryOperation &op,
+    virtual Tensor::UP reduce(join_fun_t op,
                               const std::vector<vespalib::string> &dimensions)
         const = 0;
     virtual bool equals(const Tensor &arg) const = 0;

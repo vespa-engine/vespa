@@ -51,11 +51,9 @@ public:
     virtual Tensor::UP match(const Tensor &arg) const override;
     virtual Tensor::UP apply(const CellFunction &func) const override;
     virtual Tensor::UP sum(const vespalib::string &dimension) const override;
-    virtual Tensor::UP apply(const eval::BinaryOperation &op,
-                             const Tensor &arg) const override;
     virtual Tensor::UP join(join_fun_t function,
                             const Tensor &arg) const override;
-    virtual Tensor::UP reduce(const eval::BinaryOperation &op,
+    virtual Tensor::UP reduce(join_fun_t op,
                               const std::vector<vespalib::string> &dimensions)
         const override;
     virtual bool equals(const Tensor &arg) const override;

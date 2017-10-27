@@ -4,10 +4,14 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/tensor_engine.h>
 
 namespace vespalib {
 namespace eval {
 namespace test {
+
+using map_fun_t = TensorEngine::map_fun_t;
+using join_fun_t = TensorEngine::join_fun_t;
 
 // Random access sequence of numbers
 struct Sequence {
@@ -37,16 +41,16 @@ struct Sub2 : Sequence {
 // Sequence of a unary operator applied to a sequence
 struct OpSeq : Sequence {
     const Sequence &seq;
-    const UnaryOperation &op;
-    OpSeq(const Sequence &seq_in, const UnaryOperation &op_in) : seq(seq_in), op(op_in) {}
-    double operator[](size_t i) const override { return op.eval(seq[i]); }
+    map_fun_t op;
+    OpSeq(const Sequence &seq_in, map_fun_t op_in) : seq(seq_in), op(op_in) {}
+    double operator[](size_t i) const override { return op(seq[i]); }
 };
 
 // Sequence of applying sigmoid to another sequence
 struct Sigmoid : Sequence {
     const Sequence &seq;
     Sigmoid(const Sequence &seq_in) : seq(seq_in) {}
-    double operator[](size_t i) const override { return operation::Sigmoid().eval(seq[i]); }
+    double operator[](size_t i) const override { return operation::Sigmoid::f(seq[i]); }
 };
 
 // pre-defined sequence of numbers
@@ -105,12 +109,10 @@ struct Mask2Seq : Sequence {
 };
 
 // custom op1
-struct MyOp : CustomUnaryOperation {
+struct MyOp {
     static double f(double a) {
         return ((a + 1) * 2);
     }
-    double eval(double a) const override { return f(a); }
-    op1_fun_t get_f() const override { return f; }
 };
 
 // A collection of labels for a single dimension

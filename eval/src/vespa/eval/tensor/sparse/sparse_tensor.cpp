@@ -286,37 +286,20 @@ SparseTensor::accept(TensorVisitor &visitor) const
 }
 
 Tensor::UP
-SparseTensor::apply(const eval::BinaryOperation &op, const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return sparse::apply(*this, *rhs,
-                         [&op](double lhsValue, double rhsValue)
-                         { return op.eval(lhsValue, rhsValue); });
-}
-
-Tensor::UP
 SparseTensor::join(join_fun_t function, const Tensor &arg) const
 {
     const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
-    return sparse::apply(*this, *rhs,
-                         [function](double lhsValue, double rhsValue)
-                         { return function(lhsValue, rhsValue); });
+    return sparse::apply(*this, *rhs, function);
 }
 
 Tensor::UP
-SparseTensor::reduce(const eval::BinaryOperation &op,
+SparseTensor::reduce(join_fun_t op,
                      const std::vector<vespalib::string> &dimensions) const
 {
-    return sparse::reduce(*this,
-                          dimensions,
-                          [&op](double lhsValue, double rhsValue)
-                          { return op.eval(lhsValue, rhsValue); });
+    return sparse::reduce(*this, dimensions, op);
 }
 
 }

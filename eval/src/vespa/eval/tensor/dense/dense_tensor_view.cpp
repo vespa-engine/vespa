@@ -328,29 +328,18 @@ DenseTensorView::accept(TensorVisitor &visitor) const
 }
 
 Tensor::UP
-DenseTensorView::apply(const eval::BinaryOperation &op, const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [&op](double lhsValue, double rhsValue)
-                        { return op.eval(lhsValue, rhsValue); });
-}
-
-Tensor::UP
 DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 {
-    return dense::apply(*this, arg,
-                        [function](double lhsValue, double rhsValue)
-                        { return function(lhsValue, rhsValue); });
+    return dense::apply(*this, arg, function);
 }
 
 Tensor::UP
-DenseTensorView::reduce(const eval::BinaryOperation &op,
+DenseTensorView::reduce(join_fun_t op,
                         const std::vector<vespalib::string> &dimensions) const
 {
     return dense::reduce(*this,
                          (dimensions.empty() ? _typeRef.dimension_names() : dimensions),
-                         [&op](double lhsValue, double rhsValue)
-                         { return op.eval(lhsValue, rhsValue); });
+                         op);
 }
 
 } // namespace vespalib::tensor

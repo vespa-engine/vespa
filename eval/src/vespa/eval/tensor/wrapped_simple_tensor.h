@@ -45,9 +45,8 @@ public:
     Tensor::UP match(const Tensor &) const override;
     Tensor::UP apply(const CellFunction &) const override;
     Tensor::UP sum(const vespalib::string &) const override;
-    Tensor::UP apply(const eval::BinaryOperation &, const Tensor &) const override;
     Tensor::UP join(join_fun_t, const Tensor &) const override;
-    Tensor::UP reduce(const eval::BinaryOperation &, const std::vector<vespalib::string> &) const override;
+    Tensor::UP reduce(join_fun_t, const std::vector<vespalib::string> &) const override;
 };
 
 } // namespace vespalib::tensor

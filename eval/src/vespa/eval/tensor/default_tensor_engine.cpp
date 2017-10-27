@@ -10,7 +10,6 @@
 #include "dense/dense_tensor_function_compiler.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/operation_visitor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <cassert>
 
@@ -302,17 +301,17 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
             return fallback_reduce(a, aggr, dimensions, stash);
         }
         switch (aggr) {
-        case Aggr::PROD: return to_value(my_a.reduce(eval::operation::Mul(), dimensions), stash);
+        case Aggr::PROD: return to_value(my_a.reduce(eval::operation::Mul::f, dimensions), stash);
         case Aggr::SUM:
             if (dimensions.empty()) {
                 return stash.create<eval::DoubleValue>(my_a.sum());
             } else if (dimensions.size() == 1) {
                 return to_value(my_a.sum(dimensions[0]), stash);
             } else {
-                return to_value(my_a.reduce(eval::operation::Add(), dimensions), stash);
+                return to_value(my_a.reduce(eval::operation::Add::f, dimensions), stash);
             }
-        case Aggr::MAX: return to_value(my_a.reduce(eval::operation::Max(), dimensions), stash);
-        case Aggr::MIN: return to_value(my_a.reduce(eval::operation::Min(), dimensions), stash);
+        case Aggr::MAX: return to_value(my_a.reduce(eval::operation::Max::f, dimensions), stash);
+        case Aggr::MIN: return to_value(my_a.reduce(eval::operation::Min::f, dimensions), stash);
         default:
             return fallback_reduce(a, aggr, dimensions, stash);
         }
