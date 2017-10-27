@@ -542,6 +542,16 @@ SimpleTensor::SimpleTensor(const ValueType &type_in, Cells cells_in)
               [](const auto &a, const auto &b){ return (a.address < b.address); });
 }
 
+double
+SimpleTensor::as_double() const
+{
+    double sum = 0.0;
+    for (auto &cell: _cells) {
+        sum += cell.value;
+    }
+    return sum;
+}
+
 std::unique_ptr<SimpleTensor>
 SimpleTensor::map(map_fun_t function) const
 {

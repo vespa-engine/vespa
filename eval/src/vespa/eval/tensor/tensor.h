@@ -32,6 +32,7 @@ struct Tensor : public eval::Tensor
     virtual ~Tensor() {}
     virtual const eval::ValueType &getType() const = 0;
     virtual double sum() const = 0;
+    virtual double as_double() const final override { return sum(); }
     virtual Tensor::UP add(const Tensor &arg) const = 0;
     virtual Tensor::UP subtract(const Tensor &arg) const = 0;
     virtual Tensor::UP multiply(const Tensor &arg) const = 0;

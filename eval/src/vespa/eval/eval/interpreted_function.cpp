@@ -98,6 +98,24 @@ void op_not_member(State &state, uint64_t) {
 
 //-----------------------------------------------------------------------------
 
+void op_double_map(State &state, uint64_t param) {
+    state.replace(1, state.stash.create<DoubleValue>(to_map_fun(param)(state.peek(0).as_double())));
+}
+
+void op_double_mul(State &state, uint64_t) {
+    state.replace(2, state.stash.create<DoubleValue>(state.peek(1).as_double() * state.peek(0).as_double()));
+}
+
+void op_double_add(State &state, uint64_t) {
+    state.replace(2, state.stash.create<DoubleValue>(state.peek(1).as_double() + state.peek(0).as_double()));
+}
+
+void op_double_join(State &state, uint64_t param) {
+    state.replace(2, state.stash.create<DoubleValue>(to_join_fun(param)(state.peek(1).as_double(), state.peek(0).as_double())));
+}
+
+//-----------------------------------------------------------------------------
+
 void op_tensor_map(State &state, uint64_t param) {
     state.replace(1, state.engine.map(state.peek(0), to_map_fun(param), state.stash));
 }
@@ -217,13 +235,25 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_map_op(const Node &node, map_fun_t function) {
-        (void) node;
-        program.emplace_back(op_tensor_map, to_param(function));
+        if (types.get_type(node).is_double()) {
+            program.emplace_back(op_double_map, to_param(function));
+        } else {
+            program.emplace_back(op_tensor_map, to_param(function));
+        }
     }
 
     void make_join_op(const Node &node, join_fun_t function) {
-        (void) node;
-        program.emplace_back(op_tensor_join, to_param(function));
+        if (types.get_type(node).is_double()) {
+            if (function == operation::Mul::f) {
+                program.emplace_back(op_double_mul);
+            } else if (function == operation::Add::f) {
+                program.emplace_back(op_double_add);
+            } else {
+                program.emplace_back(op_double_join, to_param(function));
+            }
+        } else {
+            program.emplace_back(op_tensor_join, to_param(function));
+        }
     }
 
     //-------------------------------------------------------------------------
