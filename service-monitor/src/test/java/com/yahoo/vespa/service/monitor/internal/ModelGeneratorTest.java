@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.monitor;
+package com.yahoo.vespa.service.monitor.internal;
 
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.Environment;
@@ -10,6 +10,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import org.junit.Test;
 
 import java.util.Collections;
