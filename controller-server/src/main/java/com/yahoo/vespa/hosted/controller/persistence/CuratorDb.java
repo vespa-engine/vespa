@@ -214,7 +214,7 @@ public class CuratorDb {
 
     public boolean readIgnoreConfidence() {
         Optional<byte[]> value = curator.getData(ignoreConfidencePath());
-        if (! value.isPresent() || value.get().length == 0) {
+        if (!value.isPresent() || value.get().length == 0) {
             return false; // Default if value has never been written
         }
         return ByteBuffer.wrap(value.get()).getInt() == 1;
@@ -341,4 +341,5 @@ public class CuratorDb {
     private Path openStackServerPoolPath() {
         return root.append("openStackServerPool");
     }
+
 }

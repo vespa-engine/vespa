@@ -57,7 +57,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
-        // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
+        // 'broken' if too many non-canary apps fail
         if (nonCanaryApplicationsBroken(failingOnThis, productionOnThis, releasedAt, controller.curator()))
             return Confidence.broken;
 
@@ -140,13 +140,25 @@ public class VespaVersion implements Comparable<VespaVersion> {
                                                        ApplicationList productionOnThis,
                                                        Instant releasedAt,
                                                        CuratorDb curator) {
-        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt);
-        ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
+        int failing = failingOnThis.without(UpgradePolicy.canary).startedFailingAfter(releasedAt).size();
+        int production = productionOnThis.without(UpgradePolicy.canary).size();
+        int all = production + failing;
 
-        if (productionNonCanaries.size() + failingNonCanaries.size() == 0 || curator.readIgnoreConfidence()) return false;
+        if (all == 0 || curator.readIgnoreConfidence()) return false;
 
-        // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
-        int brokenByThisVersion = failingNonCanaries.size();
-        return brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.1;
-     }
+        int applicationsGivingMinConfidence = 3;
+        int applicationsGivingMaxConfidence = 4;
+        double failureRatioAtMaxConfidence = 0.1;
+
+        double confidence = (double) (all - applicationsGivingMinConfidence) /
+                (double) (applicationsGivingMaxConfidence - applicationsGivingMinConfidence);
+        if (confidence > 1.0) confidence = 1.0;
+        if (confidence < 0.0) confidence = 0.0;
+
+        double failureToleranceRatio = 1 - confidence * (1 - failureRatioAtMaxConfidence);
+        double brokenRatio = (double) failing / (double) all;
+
+        return (brokenRatio > failureToleranceRatio);
+    }
+
 }

@@ -56,7 +56,7 @@ public class ControllerApiTest extends ControllerContainerTest {
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
                                           "{\"foo\":bar}", Request.Method.PATCH),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unable to configure upgrader with data in request: '{\\\"foo\\\":bar}'\"}",
-                              + 400);
+                              400);
 
         // Patch configuration
         tester.assertResponse(new Request("http://localhost:8080/controller/v1/jobs/upgrader",
