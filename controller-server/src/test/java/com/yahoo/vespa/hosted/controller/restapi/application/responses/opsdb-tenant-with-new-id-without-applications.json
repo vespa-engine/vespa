@@ -5,5 +5,11 @@
   "userGroup": "group1",
   "applications": [
 
+  ],
+  "propertyUrl": "www.properties.tld/4321",
+  "contactsUrl": "www.contacts.tld/4321",
+  "issueCreationUrl": "www.issues.tld/4321",
+  "contacts": [
+
   ]
 }
