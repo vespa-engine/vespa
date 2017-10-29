@@ -173,7 +173,10 @@ public class ControllerTest {
         }
         assertNotNull("Zone was not removed",
                       applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
-        assertNotNull("Deployment job was not removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
+        JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
+        assertNotNull("Deployment job was not removed", jobStatus);
+        assertEquals(42, jobStatus.lastCompleted().get().id());
+        assertEquals("stagingTest completed successfully in build 42", jobStatus.lastCompleted().get().reason());
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
