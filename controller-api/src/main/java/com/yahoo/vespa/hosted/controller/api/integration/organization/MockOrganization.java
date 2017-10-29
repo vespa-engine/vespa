@@ -85,7 +85,7 @@ public class MockOrganization implements Organization {
 
     @Override
     public List<? extends List<? extends User>> contactsFor(PropertyId propertyId) {
-        return properties.get(propertyId).contacts;
+        return properties.getOrDefault(propertyId, new PropertyInfo()).contacts;
     }
 
     @Override
