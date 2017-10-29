@@ -7,6 +7,7 @@
       "type": "system-test",
       "success": true,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -16,9 +17,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -28,9 +31,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -40,6 +45,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "",
         "at": "(ignore)"
       }
     },
@@ -47,6 +53,7 @@
       "type": "staging-test",
       "success": true,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -56,9 +63,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "systemTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -68,9 +77,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "systemTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -80,6 +91,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "systemTest completed successfully in build 42",
         "at": "(ignore)"
       }
     },
@@ -87,6 +99,7 @@
       "type": "production-corp-us-east-1",
       "success": false,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -96,9 +109,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "Retrying as build 42 just started failing",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -108,9 +123,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "stagingTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "firstFailing": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -120,6 +137,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "stagingTest completed successfully in build 42",
         "at": "(ignore)"
       }
     }

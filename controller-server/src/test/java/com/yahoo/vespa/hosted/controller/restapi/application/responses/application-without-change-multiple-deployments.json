@@ -4,11 +4,15 @@
       "type": "component",
       "success": true,
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
+        "reason": "Application commit",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
+        "reason": "Application commit",
         "at": "(ignore)"
       }
     },
@@ -16,6 +20,7 @@
       "type": "system-test",
       "success": true,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -25,9 +30,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "component completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -37,9 +44,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "component completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -49,6 +58,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason": "component completed successfully in build 42",
         "at": "(ignore)"
       }
     },
@@ -56,6 +66,7 @@
       "type": "staging-test",
       "success": true,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -65,9 +76,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"systemTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -77,9 +90,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"systemTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -89,6 +104,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"systemTest completed successfully in build 42",
         "at": "(ignore)"
       }
     },
@@ -96,6 +112,7 @@
       "type": "production-us-west-1",
       "success": true,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -105,9 +122,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"stagingTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -117,9 +136,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"stagingTest completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -129,6 +150,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"stagingTest completed successfully in build 42",
         "at": "(ignore)"
       }
     },
@@ -136,6 +158,7 @@
       "type": "production-us-east-3",
       "success": true,
       "lastTriggered": {
+        "id": -1,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -145,9 +168,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"productionUsWest1 completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastCompleted": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -157,9 +182,11 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"productionUsWest1 completed successfully in build 42",
         "at": "(ignore)"
       },
       "lastSuccess": {
+        "id": 42,
         "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
@@ -169,6 +196,7 @@
             "gitCommit": "commit1"
           }
         },
+        "reason":"productionUsWest1 completed successfully in build 42",
         "at": "(ignore)"
       }
     }
