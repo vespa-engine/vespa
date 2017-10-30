@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferedlogger.h"
-#include <vespa/fastos/mutex.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
@@ -13,6 +12,7 @@
 #include <sstream>
 #include <vector>
 #include <cstdarg>
+#include <mutex>
 
 namespace ns_log {
 
@@ -23,7 +23,7 @@ class BackingBuffer {
 public:
     std::unique_ptr<Timer> _timer;
     /** Lock needed to access cache. */
-    mutable FastOS_Mutex _mutex;
+    mutable std::mutex _mutex;
 
     static uint64_t _countFactor;
 
@@ -100,9 +100,8 @@ public:
      * need to empty buffer before new log messages arive.
      */
     void trimCache() {
-        _mutex.Lock();
+        std::lock_guard<std::mutex> guard(_mutex);
         trimCache(_timer->getTimestamp());
-        _mutex.Unlock();
     }
 
     /**
@@ -240,7 +239,7 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
 {
     Entry entry(level, file, line, token, message, _timer->getTimestamp(), l);
 
-    _mutex.Lock();
+    std::lock_guard<std::mutex> guard(_mutex);
     LogCacheFrontToken::iterator it1 = _cacheFront.get<1>().find(entry);
     LogCacheBackToken::iterator it2 = _cacheBack.get<1>().find(entry);
     if (it1 != _cacheFront.get<1>().end()) {
@@ -257,13 +256,12 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
         _cacheFront.push_back(entry);
     }
     trimCache(entry._timestamp);
-    _mutex.Unlock();
 }
 
 void
 BackingBuffer::flush()
 {
-    _mutex.Lock();
+    std::lock_guard<std::mutex> guard(_mutex);
     for (LogCacheBack::const_iterator it = _cacheBack.begin();
          it != _cacheBack.end(); ++it)
     {
@@ -276,7 +274,6 @@ BackingBuffer::flush()
         log(*it);
     }
     _cacheFront.clear();
-    _mutex.Unlock();
 }
 
 void
@@ -340,7 +337,7 @@ BackingBuffer::toString() const
 {
     std::ostringstream ost;
     ost << "Front log cache content:\n";
-    _mutex.Lock();
+    std::lock_guard<std::mutex> guard(_mutex);
     for (LogCacheFront::const_iterator it = _cacheFront.begin();
          it != _cacheFront.end(); ++it)
     {
@@ -352,7 +349,6 @@ BackingBuffer::toString() const
     {
         ost << "  " << it->toString() << "\n";
     }
-    _mutex.Unlock();
     return ost.str();
 }
 

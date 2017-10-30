@@ -84,7 +84,7 @@ private:
 
     FRT_Supervisor          &_orb;
     RPCHooks                 _hooks;
-    FastOS_Mutex             _lock;
+    std::mutex               _lock;
     bool                     _reqDone;
     bool                     _busy;
     SlobrokList              _slobrokSpecs;
