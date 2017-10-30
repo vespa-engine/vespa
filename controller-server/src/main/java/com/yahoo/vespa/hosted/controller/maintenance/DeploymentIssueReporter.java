@@ -71,7 +71,8 @@ public class DeploymentIssueReporter extends Maintainer {
                                                     .upgradingTo(controller().systemVersion())
                                                     .asList().stream()
                                                     .map(Application::id)
-                                                    .collect(Collectors.toList()));
+                                                    .collect(Collectors.toList()),
+                                            controller().systemVersion());
     }
 
     private boolean oldApplicationChangeFailuresIn(DeploymentJobs jobs) {
