@@ -33,7 +33,6 @@ public:
    char *message;
    FastOS_Mutex *mutex;
    FastOS_Cond *condition;
-   FastOS_BoolCond *boolcondition;
    FastOS_ThreadInterface *otherThread, *ownThread;
    double *timebuf;
    double average;
@@ -48,7 +47,6 @@ public:
        message(nullptr),
        mutex(nullptr),
        condition(nullptr),
-       boolcondition(nullptr),
        otherThread(nullptr),
        ownThread(nullptr),
        timebuf(nullptr),
