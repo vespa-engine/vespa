@@ -496,26 +496,11 @@ Proton::getStatusReports() const
 {
     StatusReport::List reports;
     std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-    reports.push_back(StatusReport::SP(_matchEngine->
-                                       reportStatus().release()));
+    reports.push_back(StatusReport::SP(_matchEngine->reportStatus()));
     for (const auto &kv : _documentDBMap) {
-        reports.push_back(StatusReport::SP(kv.second->
-                                  reportStatus().release()));
+        reports.push_back(StatusReport::SP(kv.second->reportStatus()));
     }
     return reports;
-}
-
-
-DocumentDB::SP
-Proton::getDocumentDB(const document::DocumentType &docType)
-{
-    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-    DocTypeName docTypeName(docType.getName());
-    DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
-    if (it != _documentDBMap.end()) {
-        return it->second;
-    }
-    return DocumentDB::SP();
 }
 
 DocumentDB::SP
@@ -536,17 +521,15 @@ Proton::addDocumentDB(const document::DocumentType &docType,
 
     vespalib::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
     vespalib::mkdir(db_dir, false); // Assume parent is created.
-    ConfigStore::UP config_store(
-            new FileConfigManager(db_dir + "/config",
-                                  documentDBConfig->getConfigId(),
-                                  docTypeName.getName()));
+    auto config_store = std::make_unique<FileConfigManager>(db_dir + "/config",
+                                                            documentDBConfig->getConfigId(),
+                                                            docTypeName.getName());
     config_store->setProtonConfig(bootstrapConfig->getProtonConfigSP());
     if (!initializeThreads) {
         // If configured value for initialize threads was 0, or we
         // are performing a reconfig after startup has completed, then use
         // 1 thread per document type.
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>
-                            (1, 128 * 1024);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1, 128 * 1024);
     }
     DocumentDB::SP ret(new DocumentDB(config.basedir + "/documents",
                                       documentDBConfig,
