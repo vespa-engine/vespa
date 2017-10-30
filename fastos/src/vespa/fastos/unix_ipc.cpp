@@ -474,27 +474,27 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
     for(;;)
     {
         // Deliver messages to from child processes and parent.
-        _app->ProcessLock();
-        for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
         {
-            FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
-            FastOS_UNIX_Process::DescriptorHandle &desc =
-                xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC);
-            DeliverMessages(desc._readBuffer.get());
-            PipeData(xproc, FastOS_UNIX_Process::TYPE_STDOUT);
-            PipeData(xproc, FastOS_UNIX_Process::TYPE_STDERR);
+            auto guard = _app->getProcessGuard();
+            for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
+            {
+                FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
+                FastOS_UNIX_Process::DescriptorHandle &desc =
+                    xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC);
+                DeliverMessages(desc._readBuffer.get());
+                PipeData(xproc, FastOS_UNIX_Process::TYPE_STDOUT);
+                PipeData(xproc, FastOS_UNIX_Process::TYPE_STDERR);
+            }
+            DeliverMessages(_appParentIPCDescriptor._readBuffer.get());
+
+            // Setup file descriptor sets for the next select() call
+            BuildPollChecks();
+
+            // Close and signal closing processes
+            RemoveClosingProcesses();
+
+            BuildPollArray(&fds, &nfds, &allocnfds);
         }
-        DeliverMessages(_appParentIPCDescriptor._readBuffer.get());
-
-        // Setup file descriptor sets for the next select() call
-        BuildPollChecks();
-
-        // Close and signal closing processes
-        RemoveClosingProcesses();
-
-        BuildPollArray(&fds, &nfds, &allocnfds);
-
-        _app->ProcessUnlock();
 
         _lock.Lock();
         bool exitFlag(_exitFlag);
@@ -546,11 +546,13 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
                 break;
         }
 
-        _app->ProcessLock();
-        bool woken = SavePollArray(fds, nfds);
-        // Do actual IO (based on file descriptor sets and buffer contents)
-        PerformAsyncIO();
-        _app->ProcessUnlock();
+        bool woken = false;
+        {
+            auto guard = _app->getProcessGuard();
+            woken = SavePollArray(fds, nfds);
+            // Do actual IO (based on file descriptor sets and buffer contents)
+            PerformAsyncIO();
+        }
         PerformAsyncIPCIO();
 
         // Did someone want to wake us up from the poll() call?
