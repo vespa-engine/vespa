@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import com.google.inject.Inject;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
@@ -62,9 +63,9 @@ public class LoggingDeploymentIssues implements DeploymentIssues {
     }
 
     @Override
-    public IssueId fileUnlessOpen(Collection<ApplicationId> applicationIds) {
+    public IssueId fileUnlessOpen(Collection<ApplicationId> applicationIds, Version version) {
         if ( ! platformIssue.get())
-            log.info("These applications are all failing deployment:\n" + applicationIds);
+            log.info("These applications are all failing deployment to version " + version + ":\n" + applicationIds);
 
         platformIssue.set(true);
         return null;
