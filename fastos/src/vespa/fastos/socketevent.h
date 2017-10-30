@@ -3,11 +3,11 @@
 #pragma once
 
 #include "types.h"
-#include "mutex.h"
 #include <poll.h>
 
 #include <sys/epoll.h>
 #include <vector>
+#include <mutex>
 
 class FastOS_IOEvent
 {
@@ -25,7 +25,7 @@ private:
     FastOS_SocketEventObjects(const FastOS_SocketEventObjects&);
     FastOS_SocketEventObjects& operator=(const FastOS_SocketEventObjects&);
 
-    static FastOS_Mutex _listMutex;
+    static std::mutex   _listMutex;
     static int          _objectCount;
     static bool         _initialized;
 
