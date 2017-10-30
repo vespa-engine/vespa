@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/fastos/mutex.h>
-#include <vespa/fastos/cond.h>
+#include <mutex>
+#include <condition_variable>
 
 enum JobCode
 {
@@ -31,8 +31,8 @@ private:
 public:
    JobCode code;
    char *message;
-   FastOS_Mutex *mutex;
-   FastOS_Cond *condition;
+   std::mutex *mutex;
+   std::condition_variable *condition;
    FastOS_ThreadInterface *otherThread, *ownThread;
    double *timebuf;
    double average;
