@@ -492,10 +492,11 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
 
             BuildPollArray(&fds, &nfds, &allocnfds);
         }
-
-        _lock.Lock();
-        bool exitFlag(_exitFlag);
-        _lock.Unlock();
+        bool exitFlag = false;
+        {
+            std::lock_guard<std::mutex> guard(_lock);
+            exitFlag = _exitFlag;
+        }
         if (exitFlag)
         {
             if (_appParentIPCDescriptor._fd != -1)
@@ -609,10 +610,9 @@ void FastOS_UNIX_IPCHelper::NotifyProcessListChange ()
 
 void FastOS_UNIX_IPCHelper::Exit ()
 {
-    _lock.Lock();
+    std::lock_guard<std::mutex> guard(_lock);
     _exitFlag = true;
     NotifyProcessListChange();
-    _lock.Unlock();
 }
 
 void FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
