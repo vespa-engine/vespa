@@ -54,7 +54,7 @@ public class TenantHandlerTest extends TenantTest {
  
     @Test
     public void testGetExisting() throws Exception {
-        tenants.writeTenantPath(a);
+        tenants.addTenant(a);
         TenantGetResponse response = (TenantGetResponse) handler.handleGET(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.GET));
         assertResponseEquals(response, "{\"message\":\"Tenant 'a' exists.\"}");

@@ -47,9 +47,9 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setup() {
-        tenants.writeTenantPath(tenant1);
-        tenants.writeTenantPath(tenant2);
+    public void setup() throws Exception {
+        tenants.addTenant(tenant1);
+        tenants.addTenant(tenant2);
 
         applicationRepository = new ApplicationRepository(tenants,
                                                           new SessionHandlerTest.MockProvisioner(),

@@ -28,7 +28,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +41,7 @@ import java.util.logging.Logger;
  * implemented support for it).
  *
  * This instance is called from two different threads, the http handler threads and the zookeeper watcher threads.
- * To create or delete a tenant, the handler calls {@link Tenants#writeTenantPath} and {@link Tenants#deleteTenant} methods.
+ * To create or delete a tenant, the handler calls {@link Tenants#addTenant} and {@link Tenants#deleteTenant} methods.
  * This will delete shared state from zookeeper, and return, so it does not mean a tenant is immediately deleted.
  *
  * Once a tenant is deleted from zookeeper, the zookeeper watcher thread will get notified on all configservers, and
@@ -73,14 +72,13 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
 
 
     /**
-     * New instance from the tenants in the given component registry's ZooKeeper. Will set watch when reading them.
+     * New instance from the tenants in the given component registry's ZooKeeper data.
      * 
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      * @throws Exception is creating the Tenants instance fails
      */
     @Inject
     public Tenants(GlobalComponentRegistry globalComponentRegistry, Metrics metrics) throws Exception {
-        // Note: unit tests may want to use the constructor below to avoid setting watch by calling readTenants().
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
@@ -94,12 +92,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         directoryCache.start();
         directoryCache.addListener(this);
-        tenantsChanged(readTenants());
+        createTenants();
         notifyTenantsLoaded();
     }
 
     /**
-     * New instance containing the given tenants. This will not watch in ZooKeeper. 
+     * New instance containing the given tenants. This will not create Zookeeper watches. For testing only
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry} instance
      * @param metrics a {@link com.yahoo.vespa.config.server.monitoring.Metrics} instance
      * @param tenants a collection of {@link Tenant}s
@@ -131,9 +129,9 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         return sessionTenants;
     }
     
-    public synchronized void addTenant(Tenant tenant) {
-        tenants.put(tenant.getName(), tenant);
-        metricUpdater.setTenants(tenants.size());
+    public synchronized void addTenant(TenantName tenantName) throws Exception {
+        writeTenantPath(tenantName);
+        createTenant(tenantName);
     }
 
     /**
@@ -141,7 +139,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      *
      * @return a set of tenant names
      */
-    private Set<TenantName> readTenants() {
+    private Set<TenantName> readTenantsFromZooKeeper() {
         Set<TenantName> tenants = new LinkedHashSet<>();
         for (String tenant : curator.getChildren(tenantsPath)) {
             tenants.add(TenantName.from(tenant));
@@ -149,10 +147,11 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         return tenants;
     }
 
-    synchronized void tenantsChanged(Set<TenantName> newTenants) throws Exception {
-        log.log(LogLevel.DEBUG, "Tenants changed: " + newTenants);
-        checkForRemovedTenants(newTenants);
-        checkForAddedTenants(newTenants);
+    synchronized void createTenants() throws Exception {
+        Set<TenantName> allTenants = readTenantsFromZooKeeper();
+        log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
+        checkForRemovedTenants(allTenants);
+        checkForAddedTenants(allTenants);
         metricUpdater.setTenants(tenants.size());
     }
 
@@ -170,24 +169,26 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
 
     private void checkForAddedTenants(Set<TenantName> newTenants) throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(globalComponentRegistry.getConfigserverConfig().numParallelTenantLoaders());
-        Map<TenantName, Tenant> addedTenants = new ConcurrentHashMap<>();
         for (TenantName tenantName : newTenants) {
             // Note: the http handler will check if the tenant exists, and throw accordingly
             if (!tenants.containsKey(tenantName)) {
                 executor.execute(() -> {
-                    try {
-                        Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName, getTenantPath(tenantName)).build();
-                        notifyNewTenant(tenant);
-                        addedTenants.put(tenantName, tenant);
-                    } catch (Exception e) {
-                        log.log(LogLevel.WARNING, "Error loading tenant '" + tenantName + "', skipping.", e);
-                    }
+                    createTenant(tenantName);
                 });
             }
         }
         executor.shutdown();
         executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
-        tenants.putAll(addedTenants);
+    }
+
+    private void createTenant(TenantName tenantName) {
+        try {
+            Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName, getTenantPath(tenantName)).build();
+            notifyNewTenant(tenant);
+            tenants.put(tenantName, tenant);
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, "Error loading tenant '" + tenantName + "', skipping.", e);
+        }
     }
 
     /**
@@ -239,7 +240,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @param name name of the tenant
      * @return this Tenants
      */
-    public synchronized Tenants writeTenantPath(TenantName name) {
+    synchronized Tenants writeTenantPath(TenantName name) {
         Path tenantPath = getTenantPath(name);
         curator.createAtomically(tenantPath, tenantPath.append(Tenant.SESSIONS), tenantPath.append(Tenant.APPLICATIONS));
         return this;
@@ -316,7 +317,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         switch (event.getType()) {
             case CHILD_ADDED:
             case CHILD_REMOVED:
-                tenantsChanged(readTenants());
+                createTenants();
                 break;
         }
     }

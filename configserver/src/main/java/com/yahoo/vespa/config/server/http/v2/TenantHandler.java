@@ -37,7 +37,7 @@ public class TenantHandler extends HttpHandler {
     protected HttpResponse handlePUT(HttpRequest request) {
         TenantName tenantName = getAndValidateTenantFromRequest(request);
         try {
-            tenants.writeTenantPath(tenantName);
+            tenants.addTenant(tenantName);
         } catch (Exception e) {
             throw new InternalServerException(Exceptions.toMessageString(e));
         }
