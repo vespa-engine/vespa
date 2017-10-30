@@ -183,6 +183,9 @@ class Container(
     val graph = new ComponentGraph(generation)
 
     val componentsConfig = getConfig(componentsConfigKey, configsIncludingBootstrapConfigs)
+    if (componentsConfig == null)
+      throw new ConfigurationRuntimeException(
+        "The set of all configs does not include a valid 'components' config. Config set: " + configsIncludingBootstrapConfigs.keySet)
     addNodes(componentsConfig, graph)
     injectNodes(componentsConfig, graph)
 
