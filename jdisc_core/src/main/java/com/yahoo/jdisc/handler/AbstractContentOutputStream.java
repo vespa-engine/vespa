@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 abstract class AbstractContentOutputStream extends OutputStream {
 
@@ -25,24 +25,24 @@ abstract class AbstractContentOutputStream extends OutputStream {
     }
 
     @Override
-    public final void write(byte[] buf, int offset, int length) {
-        Objects.requireNonNull(buf, "buf");
+    public final void write(byte[] buffer, int offset, int length) {
+        Objects.requireNonNull(buffer, "buf");
         if (current == null) {
             current = ByteBuffer.allocate(BUFFERSIZE + length);
         }
         int part = Math.min(length, current.remaining());
-        current.put(buf, offset, part);
+        current.put(buffer, offset, part);
         if (current.remaining() == 0) {
             flush();
         }
         if (part < length) {
-            write(buf, offset + part, length - part);
+            write(buffer, offset + part, length - part);
         }
     }
 
     @Override
-    public final void write(byte[] buf) {
-        write(buf, 0, buf.length);
+    public final void write(byte[] buffer) {
+        write(buffer, 0, buffer.length);
     }
 
     @Override
@@ -65,4 +65,5 @@ abstract class AbstractContentOutputStream extends OutputStream {
     protected abstract void doFlush(ByteBuffer buf);
 
     protected abstract void doClose();
+
 }

@@ -10,8 +10,10 @@ import com.yahoo.jdisc.core.ActiveContainer;
  * @author bjorncs
  */
 public interface ActiveContainerMetrics {
+
     String TOTAL_DEACTIVATED_CONTAINERS = "jdisc.deactivated_containers.total";
     String DEACTIVATED_CONTAINERS_WITH_RETAINED_REFERENCES = "jdisc.deactivated_containers.with_retained_refs";
 
     void emitMetrics(Metric metric);
+
 }

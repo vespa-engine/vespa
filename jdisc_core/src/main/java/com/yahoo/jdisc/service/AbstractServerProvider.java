@@ -12,7 +12,7 @@ import java.util.Objects;
  * essential {@link #start()} and {@link #close()} methods. It requires that the {@link CurrentContainer} is injected in
  * the constructor, since that interface is needed to dispatch {@link Request}s.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class AbstractServerProvider extends AbstractResource implements ServerProvider {
 

@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
  * <p>A {@link RequestHandler}s that does not expect content can simply return the {@link #INSTANCE} of this class for
  * every invocation of its {@link RequestHandler#handleRequest(Request, ResponseHandler)}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class NullContent implements ContentChannel {
 
@@ -39,4 +39,5 @@ public final class NullContent implements ContentChannel {
             handler.completed();
         }
     }
+
 }

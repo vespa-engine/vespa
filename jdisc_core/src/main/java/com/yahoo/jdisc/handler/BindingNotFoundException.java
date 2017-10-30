@@ -11,7 +11,7 @@ import java.net.URI;
  * instance of this class will be thrown by the {@link Request#connect(ResponseHandler)} method when the current {@link
  * BindingSet} has not binding that matches the corresponding Request's URI.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class BindingNotFoundException extends RuntimeException {
 
@@ -35,4 +35,5 @@ public final class BindingNotFoundException extends RuntimeException {
     public URI uri() {
         return uri;
     }
+
 }

@@ -104,12 +104,12 @@ public class ControllerTest {
         Optional<ApplicationRevision> revision = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision();
         assertTrue("Revision has been set during deployment", revision.isPresent());
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, revision, false, tester.clock().instant())
-                              .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
+                              .withCompletion(-1, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(version1, revision, false, tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant()), app1.id(), tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing)
@@ -117,9 +117,9 @@ public class ControllerTest {
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
-                                               .withTriggering(version1, revision, false, tester.clock().instant()) // Triggered first without revision info
-                                               .withCompletion(Optional.of(JobError.unknown), tester.clock().instant(), tester.controller())
-                                               .withTriggering(version1, revision, false, tester.clock().instant()); // Re-triggering (due to failure) has revision info
+                                               .withTriggering(-1, version1, revision, false, "", tester.clock().instant()) // Triggered first without revision info
+                                               .withCompletion(-1, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller())
+                                               .withTriggering(-1, version1, revision, false, "", tester.clock().instant()); // Re-triggering (due to failure) has revision info
                 
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -139,20 +139,20 @@ public class ControllerTest {
         applications.notifyJobCompletion(mockReport(app1, component, true));
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, revision, false, tester.clock().instant())
-                              .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
+                              .withCompletion(-1, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, revision, false, tester.clock().instant())
-                .withCompletion(Optional.empty(), tester.clock().instant(), tester.controller());
+                .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
+                .withCompletion(-1, Optional.empty(), tester.clock().instant(), tester.controller());
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // causes triggering of next production job
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(version1, revision, false, tester.clock().instant()),
+                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
@@ -173,7 +173,10 @@ public class ControllerTest {
         }
         assertNotNull("Zone was not removed",
                       applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
-        assertNotNull("Deployment job was not removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
+        JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
+        assertNotNull("Deployment job was not removed", jobStatus);
+        assertEquals(42, jobStatus.lastCompleted().get().id());
+        assertEquals("stagingTest completed successfully in build 42", jobStatus.lastCompleted().get().reason());
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()

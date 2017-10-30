@@ -180,4 +180,5 @@ class EnumeratedIdentitySet<T> implements Set<T> {
 
         return result;
     }
+
 }

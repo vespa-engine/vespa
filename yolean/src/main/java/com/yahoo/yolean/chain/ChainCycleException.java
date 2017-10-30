@@ -21,4 +21,5 @@ public class ChainCycleException extends RuntimeException {
     public List<?> components() {
         return components;
     }
+
 }

@@ -12,12 +12,12 @@ import java.lang.annotation.Target;
  * and "after" the string provided here, to impose constraints on ordering.</p>
  *
  * @author tonytv
- * @since 5.1.18
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
 public @interface Provides {
 
-    public abstract String[] value() default { };
+    String[] value() default { };
+
 }

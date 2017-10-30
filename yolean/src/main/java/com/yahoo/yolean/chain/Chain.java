@@ -95,4 +95,5 @@ public final class Chain<T> implements Iterable<T> {
         }
         return true;
     }
+
 }

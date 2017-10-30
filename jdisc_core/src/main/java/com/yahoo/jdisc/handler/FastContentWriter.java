@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>Please notice that the Future implementation of this class will NEVER complete unless {@link #close()} has been
  * called; please use try-with-resources to ensure that close() is called.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class FastContentWriter implements ListenableFuture<Boolean>, AutoCloseable {
 

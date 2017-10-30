@@ -103,4 +103,5 @@ class DirectedGraph {
                Collections.<T>emptyList() :
                list;
     }
+
 }

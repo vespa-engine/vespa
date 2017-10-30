@@ -2,15 +2,15 @@
 package com.yahoo.jdisc.handler;
 
 /**
- * <p>This class extends {@link UnsafeContentInputStream} and adds a finalizer to it that calls {@link #close()}. This
- * has a performance impact, but ensures that an unclosed stream does not prevent shutdown.</p>
+ * This class extends {@link UnsafeContentInputStream} and adds a finalizer to it that calls {@link #close()}. This
+ * has a performance impact, but ensures that an unclosed stream does not prevent shutdown.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class ContentInputStream extends UnsafeContentInputStream {
 
     /**
-     * <p>Constructs a new ContentInputStream that reads from the given {@link ReadableContentChannel}.</p>
+     * Constructs a new ContentInputStream that reads from the given {@link ReadableContentChannel}.
      *
      * @param content The content to read the stream from.
      */
@@ -26,4 +26,5 @@ public final class ContentInputStream extends UnsafeContentInputStream {
             super.finalize();
         }
     }
+
 }

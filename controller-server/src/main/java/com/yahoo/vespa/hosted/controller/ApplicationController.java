@@ -296,14 +296,17 @@ public class ApplicationController {
                     application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if ( ! triggeredWith(revision, application, jobType) && !canDeployDirectlyTo(zone, options) && jobType != null) {
-                    // Triggering information is used to store which changes were made or attempted
-                    // - For all applications, we don't have complete control over which revision is actually built,
-                    //   so we update it here with what we actually triggered if necessary
+                if ( ! canDeployDirectlyTo(zone, options) && jobType != null) {
+                    // Update with (potentially) missing information about what we triggered
+                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType);
                     application = application.with(application.deploymentJobs()
-                                                           .withTriggering(jobType, application.deploying(),
-                                                                           version, Optional.of(revision),
-                                                                           clock.instant()));
+                                                           .withTriggering(jobType,
+                                                                           application.deploying(),
+                                                                           triggering.id(),
+                                                                           version,
+                                                                           Optional.of(revision),
+                                                                           triggering.reason(),
+                                                                           triggering.at()));
                 }
 
                 // Delete zones not listed in DeploymentSpec, if allowed
@@ -390,14 +393,21 @@ public class ApplicationController {
         return application;
     }
 
-    private boolean triggeredWith(ApplicationRevision revision, Application application, DeploymentJobs.JobType jobType) {
-        if (jobType == null) return false;
+    /**
+     * Returns the existing triggering of the given type from this application, 
+     * or an incomplete one created in this method if none is present
+     * This is needed (only) in the case where some external entity triggers a job.
+     */
+    private JobStatus.JobRun getOrCreateTriggering(Application application, Version version, DeploymentJobs.JobType jobType) {
+        if (jobType == null) return incompleteTriggeringEvent(version);
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-        if (status == null) return false;
-        if ( ! status.lastTriggered().isPresent()) return false;
-        JobStatus.JobRun triggered = status.lastTriggered().get();
-        if ( ! triggered.revision().isPresent()) return false;
-        return triggered.revision().get().equals(revision);
+        if (status == null) return  incompleteTriggeringEvent(version);
+        if ( ! status.lastTriggered().isPresent()) return  incompleteTriggeringEvent(version);
+        return status.lastTriggered().get();
+    }
+
+    private JobStatus.JobRun incompleteTriggeringEvent(Version version) {
+        return new JobStatus.JobRun(-1, version, Optional.empty(), false, "", clock.instant());        
     }
     
     private DeployOptions withVersion(Version version, DeployOptions options) {

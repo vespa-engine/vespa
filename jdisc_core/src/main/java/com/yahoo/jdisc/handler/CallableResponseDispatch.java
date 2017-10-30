@@ -6,20 +6,20 @@ import com.yahoo.jdisc.Response;
 import java.util.concurrent.Callable;
 
 /**
- * <p>This is a convenient subclass of {@link ResponseDispatch} that implements the {@link Callable} interface. This
+ * This is a convenient subclass of {@link ResponseDispatch} that implements the {@link Callable} interface. This
  * should be used in place of {@link ResponseDispatch} if you intend to schedule its execution. Because {@link #call()}
  * does not return until the entirety of the {@link Response} and its content have been consumed, you can use the
- * <tt>Future</tt> return value of <tt>ExecutorService.submit(Callable)</tt> to wait for it to complete.</p>
+ * <tt>Future</tt> return value of <tt>ExecutorService.submit(Callable)</tt> to wait for it to complete.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public abstract class CallableResponseDispatch extends ResponseDispatch implements Callable<Boolean> {
 
     private final ResponseHandler handler;
 
     /**
-     * <p>Constructs a new instances of this class over the given {@link ResponseHandler}. Invoking {@link #call()} will
-     * dispatch to this handler.</p>
+     * Constructs a new instances of this class over the given {@link ResponseHandler}. Invoking {@link #call()} will
+     * dispatch to this handler.
      *
      * @param handler The ResponseHandler to dispatch to.
      */
@@ -31,4 +31,5 @@ public abstract class CallableResponseDispatch extends ResponseDispatch implemen
     public final Boolean call() throws Exception {
         return dispatch(handler).get();
     }
+
 }
