@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
@@ -62,7 +63,7 @@ public class DeploymentIssueReporter extends Maintainer {
             if (oldApplicationChangeFailuresIn(application.deploymentJobs()))
                 failingApplications.add(application.id());
             else
-                controller().applications().setIssueId(application.id(), null);
+                storeIssueId(application.id(), null);
 
         failingApplications.forEach(this::fileDeploymentIssueFor);
 
@@ -115,7 +116,7 @@ public class DeploymentIssueReporter extends Maintainer {
             IssueId issueId = tenant.tenantType() == TenantType.USER
                               ? deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, userFor(tenant))
                               : deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, propertyIdFor(tenant));
-            controller().applications().setIssueId(applicationId, issueId);
+            storeIssueId(applicationId, issueId);
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
             log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + applicationId, e);
@@ -132,6 +133,14 @@ public class DeploymentIssueReporter extends Maintainer {
                 log.log(Level.WARNING, "Exception caught when attempting to escalate issue with id " + issueId, e);
             }
         }));
+    }
+
+    private void storeIssueId(ApplicationId id, IssueId issueId) {
+        try (Lock lock = controller().applications().lock(id)) {
+            controller().applications().get(id, lock).ifPresent(
+                    application -> controller().applications().store(application.with(issueId))
+            );
+        }
     }
 
 }

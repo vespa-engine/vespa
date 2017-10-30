@@ -6,13 +6,11 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import org.junit.Test;
 
 import java.nio.file.Files;
@@ -186,13 +184,9 @@ public class FailureRedeployerTest {
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Load test data data
-        ApplicationSerializer serializer = new ApplicationSerializer();
         byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/canary-with-stale-data.json"));
         Slime slime = SlimeUtils.jsonToSlime(json);
-        Application application = serializer.fromSlime(slime);
-        try (Lock lock = tester.controller().applications().lock(application.id())) {
-            tester.controller().applications().store(application, lock);
-        }
+        Application application = tester.controllerTester().createApplication(slime);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
                 .region("cd-us-central-1")
@@ -242,14 +236,9 @@ public class FailureRedeployerTest {
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Load test data data
-        ApplicationSerializer serializer = new ApplicationSerializer();
         byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/pr-instance-with-dead-locked-job.json"));
         Slime slime = SlimeUtils.jsonToSlime(json);
-        Application application = serializer.fromSlime(slime);
-
-        try (Lock lock = tester.controller().applications().lock(application.id())) {
-            tester.controller().applications().store(application, lock);
-        }
+        Application application = tester.controllerTester().createApplication(slime);
 
         // Failure redeployer does not restart deployment
         tester.failureRedeployer().maintain();
@@ -267,14 +256,9 @@ public class FailureRedeployerTest {
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
         // Load test data data
-        ApplicationSerializer serializer = new ApplicationSerializer();
         byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/application-without-project-id.json"));
         Slime slime = SlimeUtils.jsonToSlime(json);
-        Application application = serializer.fromSlime(slime);
-
-        try (Lock lock = tester.controller().applications().lock(application.id())) {
-            tester.controller().applications().store(application, lock);
-        }
+        tester.controllerTester().createApplication(slime);
 
         // Failure redeployer does not restart deployment
         tester.failureRedeployer().maintain();

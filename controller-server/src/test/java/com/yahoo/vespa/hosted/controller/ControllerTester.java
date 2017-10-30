@@ -8,7 +8,10 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
@@ -28,9 +31,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
+import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MemoryControllerDb;
@@ -42,7 +46,6 @@ import com.yahoo.vespa.hosted.rotation.MemoryRotationRepository;
 import java.util.Optional;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Convenience methods for controller tests.
@@ -139,6 +142,16 @@ public final class ControllerTester {
         return createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
 
+    /** Create application from slime */
+    public Application createApplication(Slime slime) {
+        ApplicationSerializer serializer = new ApplicationSerializer();
+        Application application = serializer.fromSlime(slime);
+        try (Lock lock = controller().applications().lock(application.id())) {
+            controller().applications().store(new LockedApplication(application, lock));
+        }
+        return application;
+    }
+
     public Zone toZone(Environment environment) {
         switch (environment) {
             case dev: case test: return new Zone(environment, RegionName.from("us-east-1"));
@@ -167,10 +180,13 @@ public final class ControllerTester {
 
     public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = applicationId(tenant.id(), applicationName, instanceName);
-        Application application = controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken))
-                                                             .withProjectId(projectId);
-        assertTrue(controller().applications().get(applicationId).isPresent());
-        return application;
+        controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
+        try (Lock lock = controller().applications().lock(applicationId)) {
+            LockedApplication lockedApplication = controller().applications().require(applicationId, lock)
+                    .withProjectId(projectId);
+            controller().applications().store(lockedApplication);
+            return lockedApplication;
+        }
     }
 
     public void deploy(Application application, Zone zone) {
@@ -194,6 +210,11 @@ public final class ControllerTester {
         return ApplicationId.from(TenantName.from(tenant),
                                   ApplicationName.from(application),
                                   InstanceName.from(instance));
+    }
+
+    // Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else
+    public static LockedApplication writable(Application application) {
+        return new LockedApplication(application, new Lock("/test", new MockCurator()));
     }
 
     private static Controller createController(ControllerDb db, CuratorDb curator,

@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -74,7 +74,7 @@ public class DeploymentTrigger {
      */
     public void triggerFromCompletion(JobReport report) {
         try (Lock lock = applications().lock(report.applicationId())) {
-            Application application = applications().require(report.applicationId());
+            LockedApplication application = applications().require(report.applicationId(), lock);
             application = application.withJobCompletion(report, clock.instant(), controller);
             
             // Handle successful starting and ending
@@ -87,7 +87,7 @@ public class DeploymentTrigger {
                             application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                     }
                     else { // postpone
-                        applications().store(application.withOutstandingChange(true), lock);
+                        applications().store(application.withOutstandingChange(true));
                         return;
                     }
                 } 
@@ -101,17 +101,17 @@ public class DeploymentTrigger {
             if (report.success())
                 application = trigger(order.nextAfter(report.jobType(), application), application,
                                       String.format("%s completed successfully in build %d",
-                                                    report.jobType(), report.buildNumber()), lock);
+                                                    report.jobType(), report.buildNumber()));
             else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true,
                                       String.format("Retrying due to out of capacity in build %d",
-                                                    report.buildNumber()), lock);
+                                                    report.buildNumber()));
             else if (shouldRetryNow(application))
                 application = trigger(report.jobType(), application, false,
                                       String.format("Retrying as build %d just started failing",
-                                                    report.buildNumber()), lock);
+                                                    report.buildNumber()));
 
-            applications().store(application, lock);
+            applications().store(application);
         }
     }
 
@@ -123,14 +123,14 @@ public class DeploymentTrigger {
         applications = applications.notPullRequest();
         for (Application application : applications.asList()) {
             try (Lock lock = applications().lock(application.id())) {
-                application = controller.applications().get(application.id()).orElse(null); // re-get with lock
-                if (application == null) continue; // application removed
-                triggerReadyJobs(application, lock);
+                Optional<LockedApplication> lockedApplication = controller.applications().get(application.id(), lock);
+                if (!lockedApplication.isPresent()) continue; // application removed
+                triggerReadyJobs(lockedApplication.get());
             }
         }
     }
     
-    private void triggerReadyJobs(Application application, Lock lock) {
+    private void triggerReadyJobs(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return;
         for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
             JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
@@ -145,8 +145,8 @@ public class DeploymentTrigger {
                     nextToTrigger.add(nextJobType);
             }
             // Trigger them in parallel
-            application = trigger(nextToTrigger, application, "Triggering previously blocked jobs", lock);
-            controller.applications().store(application, lock);
+            application = trigger(nextToTrigger, application, "Triggering previously blocked jobs");
+            controller.applications().store(application);
         }
     }
 
@@ -180,7 +180,7 @@ public class DeploymentTrigger {
      */
     public void triggerFailing(ApplicationId applicationId) {
         try (Lock lock = applications().lock(applicationId)) {
-            Application application = applications().require(applicationId);
+            LockedApplication application = applications().require(applicationId, lock);
             if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
 
             // Retry first failing job
@@ -188,8 +188,8 @@ public class DeploymentTrigger {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                 if (isFailing(application.deploying().get(), jobStatus)) {
                     if (shouldRetryNow(jobStatus)) {
-                        application = trigger(jobType, application, false, "Retrying failing job", lock);
-                        applications().store(application, lock);
+                        application = trigger(jobType, application, false, "Retrying failing job");
+                        applications().store(application);
                     }
                     break;
                 }
@@ -198,9 +198,8 @@ public class DeploymentTrigger {
             // Retry dead job
             Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs());
             if (firstDeadJob.isPresent()) {
-                application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job",
-                                      lock);
-                applications().store(application, lock);
+                application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job");
+                applications().store(application);
             }
         }
     }
@@ -224,10 +223,10 @@ public class DeploymentTrigger {
 
             // Trigger next
             try (Lock lock = applications().lock(application.id())) {
-                application = applications().require(application.id());
-                application = trigger(order.nextAfter(lastSuccessfulJob.get().type(), application), application,
-                                      "Resuming delayed deployment", lock);
-                applications().store(application, lock);
+                LockedApplication lockedApplication = applications().require(application.id(), lock);
+                lockedApplication = trigger(order.nextAfter(lastSuccessfulJob.get().type(), lockedApplication),
+                                            lockedApplication, "Resuming delayed deployment");
+                applications().store(lockedApplication);
             }
         }
     }
@@ -240,15 +239,15 @@ public class DeploymentTrigger {
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         try (Lock lock = applications().lock(applicationId)) {
-            Application application = applications().require(applicationId);
+            LockedApplication application = applications().require(applicationId, lock);
             if (application.deploying().isPresent()  && ! application.deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " + 
                                                    application.deploying().get() + " is already in progress");
             application = application.withDeploying(Optional.of(change));
             if (change instanceof Change.ApplicationChange)
                 application = application.withOutstandingChange(false);
-            application = trigger(JobType.systemTest, application, false, "Deploying change", lock);
-            applications().store(application, lock);
+            application = trigger(JobType.systemTest, application, false, "Deploying change");
+            applications().store(application);
         }
     }
 
@@ -259,10 +258,10 @@ public class DeploymentTrigger {
      */
     public void cancelChange(ApplicationId applicationId) {
         try (Lock lock = applications().lock(applicationId)) {
-            Application application = applications().require(applicationId);
+            LockedApplication application = applications().require(applicationId, lock);
             buildSystem.removeJobs(application.id());
             application = application.withDeploying(Optional.empty());
-            applications().store(application, lock);
+            applications().store(application);
         }
     }
 
@@ -344,15 +343,15 @@ public class DeploymentTrigger {
      * @param cause describes why the job is triggered
      * @return the application in the triggered state, which *must* be stored by the caller
      */
-    private Application trigger(JobType jobType, Application application, boolean first, String cause, Lock lock) {
+    private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String cause) {
         if (isRunningProductionJob(application)) return application;
-        return triggerAllowParallel(jobType, application, first, false, cause, lock);
+        return triggerAllowParallel(jobType, application, first, false, cause);
     }
 
-    private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
+    private LockedApplication trigger(List<JobType> jobs, LockedApplication application, String cause) {
         if (isRunningProductionJob(application)) return application;
         for (JobType job : jobs)
-            application = triggerAllowParallel(job, application, false, false, cause, lock);
+            application = triggerAllowParallel(job, application, false, false, cause);
         return application;
     }
 
@@ -366,8 +365,8 @@ public class DeploymentTrigger {
      * @param reason describes why the job is triggered
      * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
      */
-    public Application triggerAllowParallel(JobType jobType, Application application, 
-                                            boolean first, boolean force, String reason, Lock lock) {
+    public LockedApplication triggerAllowParallel(JobType jobType, LockedApplication application,
+                                                  boolean first, boolean force, String reason) {
         if (jobType == null) return application; // we are passed null when the last job has been reached
         // Never allow untested changes to go through
         // Note that this may happen because a new change catches up and prevents an older one from continuing
@@ -382,11 +381,12 @@ public class DeploymentTrigger {
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                reason));
         buildSystem.addJob(application.id(), jobType, first);
-        return application.withJobTriggering(-1, jobType, application.deploying(), reason, clock.instant(), controller);
+        return application.withJobTriggering(-1, jobType, application.deploying(), reason, clock.instant(),
+                                             controller);
     }
 
     /** Returns true if the given proposed job triggering should be effected */
-    private boolean allowedTriggering(JobType jobType, Application application) {
+    private boolean allowedTriggering(JobType jobType, LockedApplication application) {
         // Note: We could make a more fine-grained and more correct determination about whether to block 
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
@@ -405,7 +405,7 @@ public class DeploymentTrigger {
                 .anyMatch(entry -> entry.getKey().isProduction() && entry.getValue().isRunning(jobTimeoutLimit()));
     }
     
-    private boolean acceptNewRevisionNow(Application application) {
+    private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
         

@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -14,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Fetch utilization metrics and update applications with this data.
@@ -46,12 +48,12 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
             try (Lock lock = controller().applications().lock(application.id())) {
-                application = controller.applications().get(application.id()).orElse(null); // re-get inside lock
-                if (application == null) continue; // application removed
+                Optional<LockedApplication> lockedApplication = controller.applications().get(application.id(), lock);
+                if (!lockedApplication.isPresent()) continue; // application removed
                 for (Deployment deployment : application.deployments().values()) {
                     Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
-                    Application app = application.with(deployment.withClusterUtils(clusterUtilization));
-                    controller.applications().store(app, lock);
+                    controller.applications().store(lockedApplication.get()
+                                                                     .with(deployment.withClusterUtils(clusterUtilization)));
                 }
             }
         }
