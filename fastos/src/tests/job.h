@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <vespa/fastos/mutex.h>
+#include <vespa/fastos/cond.h>
+
 enum JobCode
 {
    PRINT_MESSAGE_AND_WAIT3SEC,

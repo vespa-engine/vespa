@@ -5,6 +5,8 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <memory>
+#include <future>
 
 FastOS_UNIX_IPCHelper::
 FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int descriptor)
@@ -427,8 +429,7 @@ RemoveClosingProcesses(void)
 
         if(!stillBusy)
         {
-            if(xproc->_closing != nullptr)
-            {
+            if (xproc->_closing) {
                 // We already have the process lock at this point,
                 // so modifying the list is safe.
                 _app->RemoveChildProcess(node);
@@ -447,7 +448,8 @@ RemoveClosingProcesses(void)
                 }
 
                 // The process destructor can now proceed
-                xproc->_closing->ClearBusy();
+                auto closingPromise(std::move(xproc->_closing));
+                closingPromise->set_value();
             }
         }
     }
@@ -637,16 +639,11 @@ void FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
 
 void FastOS_UNIX_IPCHelper::RemoveProcess (FastOS_UNIX_Process *xproc)
 {
-    (void)xproc;
-
-    FastOS_BoolCond closeWait;
-
-    closeWait.SetBusy();
-    xproc->_closing = &closeWait;
-
+    auto closePromise = std::make_unique<std::promise<void>>();
+    auto closeFuture = closePromise->get_future();
+    xproc->_closing = std::move(closePromise);
     NotifyProcessListChange();
-
-    closeWait.WaitBusy();
+    closeFuture.wait();
 }
 
 void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
