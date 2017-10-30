@@ -19,9 +19,9 @@ public class ListTenantsTest extends TenantTest {
 
     @Test
     public void testListTenants() throws Exception {
-        tenants.writeTenantPath(a);
-        tenants.writeTenantPath(b);
-        tenants.writeTenantPath(c);
+        tenants.addTenant(a);
+        tenants.addTenant(b);
+        tenants.addTenant(c);
 
         ListTenantsHandler listTenantsHandler = new ListTenantsHandler(testExecutor(), null, tenants);
         

@@ -24,8 +24,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
-import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
@@ -40,7 +38,6 @@ import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -279,7 +276,7 @@ public class ApplicationHandlerTest {
         tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app), clock));
     }
 
-    static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
+    private static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
         // This method is a good illustration of the spaghetti wiring resulting from no design
         // TODO: When this setup looks sane we have refactored sufficiently that there is a design
 
@@ -289,18 +286,15 @@ public class ApplicationHandlerTest {
         Path sessionPath = tenantPath.append(Tenant.SESSIONS).append(String.valueOf(sessionId));
 
         MockCurator curator = new MockCurator();
-        GlobalComponentRegistry globalComponents = new TestComponentRegistry.Builder().curator(curator).build();
+        GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .modelFactoryRegistry(new ModelFactoryRegistry(
+                        Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
+                .build();
         
-        Tenants tenants = new Tenants(globalComponents, Metrics.createTestMetrics()); // Creates the application path element in zk
-        tenants.writeTenantPath(tenantName);
-        TenantApplications tenantApplications = ZKTenantApplications.create(curator, 
-                                                                            tenantPath.append(Tenant.APPLICATIONS), 
-                                                                            new MockReloadHandler(), // TODO: Use the real one
-                                                                            tenantName);
-        Tenant tenant = TenantBuilder.create(globalComponents, applicationId.tenant(), tenantPath)
-                                     .withApplicationRepo(tenantApplications)
-                                     .build();
-        tenants.addTenant(tenant);
+        Tenants tenants = new Tenants(componentRegistry, Metrics.createTestMetrics()); // Creates the application path element in zk
+        tenants.addTenant(tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
 
         tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
@@ -317,11 +311,7 @@ public class ApplicationHandlerTest {
 
         tenant.getRemoteSessionRepo().addSession(
                 new RemoteSession(tenantName, sessionId,
-                                  new TestComponentRegistry.Builder()
-                                          .curator(curator)
-                                          .modelFactoryRegistry(new ModelFactoryRegistry(
-                                                  Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
-                                          .build(),
+                                  componentRegistry,
                                   sessionClient,
                                   Clock.systemUTC()));
         return tenants;

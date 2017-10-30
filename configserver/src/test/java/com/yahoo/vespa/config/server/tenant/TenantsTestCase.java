@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -12,7 +10,6 @@ import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.deploy.MockDeployer;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.model.VespaModel;
@@ -52,8 +49,8 @@ public class TenantsTestCase extends TestWithCurator {
         tenantListener.tenantsLoaded = false;
         tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics());
         assertTrue(tenantListener.tenantsLoaded);
-        tenants.writeTenantPath(tenant1);
-        tenants.writeTenantPath(tenant2);
+        tenants.addTenant(tenant1);
+        tenants.addTenant(tenant2);
     }
 
     @After
@@ -79,7 +76,7 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testTenantListenersNotified() throws Exception {
-        tenants.writeTenantPath(tenant3);
+        tenants.addTenant(tenant3);
         assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenantNames() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
         tenants.deleteTenant(tenant2);
         assertFalse(tenants.getAllTenantNames().contains(tenant2));
@@ -91,7 +88,7 @@ public class TenantsTestCase extends TestWithCurator {
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
-        tenants.writeTenantPath(tenant3);
+        tenants.addTenant(tenant3);
         allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
@@ -100,7 +97,7 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testPutAdd() throws Exception {
-        tenants.writeTenantPath(tenant3);
+        tenants.addTenant(tenant3);
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant3)));
     }
     
@@ -115,29 +112,28 @@ public class TenantsTestCase extends TestWithCurator {
     public void testTenantsChanged() throws Exception {
         tenants.close(); // close the Tenants instance created in setupSession, we do not want to use one with a PatchChildrenCache listener
         tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics(), new ArrayList<>());
-        Set<TenantName> newTenants = new LinkedHashSet<>();
         TenantName defaultTenant = TenantName.defaultName();
-        newTenants.add(tenant2);
-        newTenants.add(defaultTenant);
-        tenants.tenantsChanged(newTenants);
+        tenants.writeTenantPath(tenant2);
+        tenants.writeTenantPath(defaultTenant);
+        tenants.createTenants();
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
         assertEquals("default", defaultTenant.value());
         assertTrue(allTenants.contains(defaultTenant));
-        assertFalse(allTenants.contains(tenant1));
-        newTenants.clear();
-        tenants.tenantsChanged(newTenants);
+        tenants.deleteTenant(tenant1);
+        tenants.deleteTenant(tenant2);
+        tenants.deleteTenant(defaultTenant);
+        tenants.createTenants();
         allTenants = tenants.getAllTenantNames();
         assertFalse(allTenants.contains(tenant1));
         assertFalse(allTenants.contains(tenant2));
         assertFalse(allTenants.contains(defaultTenant));
-        newTenants.clear();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
-        newTenants.add(tenant2);
-        newTenants.add(foo);
-        newTenants.add(bar);
-        tenants.tenantsChanged(newTenants);
+        tenants.writeTenantPath(tenant2);
+        tenants.writeTenantPath(foo);
+        tenants.writeTenantPath(bar);
+        tenants.createTenants();
         allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
         assertTrue(allTenants.contains(foo));
