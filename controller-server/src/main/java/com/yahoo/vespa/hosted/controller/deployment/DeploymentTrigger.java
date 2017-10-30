@@ -243,7 +243,7 @@ public class DeploymentTrigger {
             Application application = applications().require(applicationId);
             if (application.deploying().isPresent()  && ! application.deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " + 
-                                                   application.deploying() + " is already in progress");
+                                                   application.deploying().get() + " is already in progress");
             application = application.withDeploying(Optional.of(change));
             if (change instanceof Change.ApplicationChange)
                 application = application.withOutstandingChange(false);
