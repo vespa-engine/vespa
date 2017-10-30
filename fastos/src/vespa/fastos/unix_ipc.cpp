@@ -55,7 +55,7 @@ DoWrite(FastOS_UNIX_Process::DescriptorHandle &desc)
     bool rc = true;
     FastOS_RingBuffer *buffer = desc._writeBuffer.get();
 
-    buffer->Lock();
+    auto bufferGuard = buffer->getGuard();
     int writeBytes = buffer->GetReadSpace();
     if(writeBytes > 0)
     {
@@ -78,8 +78,6 @@ DoWrite(FastOS_UNIX_Process::DescriptorHandle &desc)
         else if(bytesWritten == 0)
             desc.CloseHandle();
     }
-    buffer->Unlock();
-
     return rc;
 }
 
@@ -90,7 +88,7 @@ DoRead (FastOS_UNIX_Process::DescriptorHandle &desc)
 
     FastOS_RingBuffer *buffer = desc._readBuffer.get();
 
-    buffer->Lock();
+    auto bufferGuard = buffer->getGuard();
     int readBytes = buffer->GetWriteSpace();
     if(readBytes > 0) {
         int bytesRead;
@@ -108,7 +106,6 @@ DoRead (FastOS_UNIX_Process::DescriptorHandle &desc)
             desc.CloseHandle();
         }
     }
-    buffer->Unlock();
 
     return rc;
 }
@@ -586,7 +583,7 @@ SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
     ipcBuffer = desc._writeBuffer.get();
 
     if(ipcBuffer != nullptr) {
-        ipcBuffer->Lock();
+        auto ipcBufferGuard = ipcBuffer->getGuard();
 
         if(ipcBuffer->GetWriteSpace() >= int((length + sizeof(int)))) {
             memcpy(ipcBuffer->GetWritePtr(), &length, sizeof(int));
@@ -597,7 +594,6 @@ SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
             NotifyProcessListChange();
             rc = true;
         }
-        ipcBuffer->Unlock();
     }
     return rc;
 }
@@ -658,7 +654,7 @@ void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
     if(buffer == nullptr)
         return;
 
-    buffer->Lock();
+    auto bufferGuard = buffer->getGuard();
 
     unsigned int readSpace;
     while((readSpace = buffer->GetReadSpace()) > sizeof(int))
@@ -675,8 +671,6 @@ void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
         else
             break;
     }
-
-    buffer->Unlock();
 }
 
 void FastOS_UNIX_IPCHelper::
@@ -692,7 +686,7 @@ PipeData (FastOS_UNIX_Process *process,
     if(listener == nullptr)
         return;
 
-    buffer->Lock();
+    auto bufferGuard = buffer->getGuard();
 
     unsigned int readSpace;
     while((readSpace = buffer->GetReadSpace()) > 0) {
@@ -702,6 +696,4 @@ PipeData (FastOS_UNIX_Process *process,
 
     if(buffer->GetCloseFlag())
         process->CloseListener(type);
-
-    buffer->Unlock();
 }
