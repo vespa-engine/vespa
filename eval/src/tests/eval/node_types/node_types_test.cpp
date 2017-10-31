@@ -108,16 +108,6 @@ TEST("require that if resolves to the appropriate type") {
     TEST_DO(verify("if(double,any,double)", "any"));
 }
 
-TEST("require that let expressions propagate type correctly") {
-    TEST_DO(verify("let(a,10,a)", "double"));
-    TEST_DO(verify("let(a,double,a)", "double"));
-    TEST_DO(verify("let(a,any,a)", "any"));
-    TEST_DO(verify("let(a,error,a)", "error"));
-    TEST_DO(verify("let(a,tensor,let(b,double,a))", "tensor"));
-    TEST_DO(verify("let(a,tensor,let(b,double,b))", "double"));
-    TEST_DO(verify("let(a,tensor,let(b,a,b))", "tensor"));
-}
-
 TEST("require that set membership resolves to double unless error") {
     TEST_DO(verify("1 in [1,2,3]", "double"));
     TEST_DO(verify("1 in [tensor,tensor,tensor]", "double"));

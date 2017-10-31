@@ -98,7 +98,6 @@ public:
     void add_set_membership_cases();   // a in [x, y, z]
     void add_boolean_cases();          // 1.0 && 0.0
     void add_if_cases();               // if (a < b, a, b)
-    void add_let_cases();              // let (a, b + 1, a * a)
     void add_complex_cases();          // ...
     //-------------------------------------------------------------------------
     void add_all_cases() {
@@ -110,7 +109,6 @@ public:
         add_set_membership_cases();
         add_boolean_cases();
         add_if_cases();
-        add_let_cases();
         add_complex_cases();
     }
     //-------------------------------------------------------------------------

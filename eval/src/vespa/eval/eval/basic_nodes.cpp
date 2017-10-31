@@ -64,7 +64,6 @@ void Array ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Neg   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Not   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void If    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void Let   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Error ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 
 vespalib::string

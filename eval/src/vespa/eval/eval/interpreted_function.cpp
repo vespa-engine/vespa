@@ -49,10 +49,6 @@ void op_load_param(State &state, uint64_t param) {
     state.stack.push_back(state.params->resolve(param, state.stash));
 }
 
-void op_load_let(State &state, uint64_t param) {
-    state.stack.push_back(state.let_values[param]);
-}
-
 //-----------------------------------------------------------------------------
 
 void op_skip(State &state, uint64_t param) {
@@ -65,17 +61,6 @@ void op_skip_if_false(State &state, uint64_t param) {
         state.program_offset += param;
     }
     state.stack.pop_back();
-}
-
-//-----------------------------------------------------------------------------
-
-void op_store_let(State &state, uint64_t) {
-    state.let_values.push_back(state.peek(0));
-    state.stack.pop_back();
-}
-
-void op_evict_let(State &state, uint64_t) {
-    state.let_values.pop_back();
 }
 
 //-----------------------------------------------------------------------------
@@ -217,7 +202,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
 
     bool is_typed_tensor_param(const Node &node) const {
         auto sym = as<Symbol>(node);
-        return (sym && (sym->id() >= 0) && is_typed_tensor(node));
+        return (sym && is_typed_tensor(node));
     }
 
     bool is_typed_tensor_product_of_params(const Node &node) const {
@@ -262,12 +247,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         make_const_op(node, stash.create<DoubleValue>(node.value()));
     }
     void visit(const Symbol &node) override {
-        if (node.id() >= 0) { // param value
-            program.emplace_back(op_load_param, node.id());
-        } else { // let binding
-            int let_offset = -(node.id() + 1);
-            program.emplace_back(op_load_let, let_offset);
-        }
+        program.emplace_back(op_load_param, node.id());
     }
     void visit(const String &node) override {
         make_const_op(node, stash.create<DoubleValue>(node.hash()));
@@ -291,12 +271,6 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         node.false_expr().traverse(*this);
         program[after_cond].update_param(after_true - after_cond);
         program[after_true].update_param(program.size() - after_true - 1);
-    }
-    void visit(const Let &node) override {
-        node.value().traverse(*this);
-        program.emplace_back(op_store_let);
-        node.expr().traverse(*this);
-        program.emplace_back(op_evict_let);
     }
     void visit(const Error &node) override {
         make_const_op(node, ErrorValue::instance);
@@ -498,7 +472,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     bool open(const Node &node) override {
-        if (check_type<Array, If, Let, In>(node)) {
+        if (check_type<Array, If, In>(node)) {
             node.accept(*this);
             return false;
         }
@@ -557,7 +531,6 @@ InterpretedFunction::State::State(const TensorEngine &engine_in)
       params(nullptr),
       stash(),
       stack(),
-      let_values(),
       program_offset(0)
 {
 }
@@ -569,7 +542,6 @@ InterpretedFunction::State::init(const LazyParams &params_in) {
     params = &params_in;
     stash.clear();
     stack.clear();
-    let_values.clear();
     program_offset = 0;
     if_cnt = 0;
 }

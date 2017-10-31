@@ -14,21 +14,16 @@ class State
 private:
     const std::vector<ValueType>      &_params;
     std::map<const Node *, ValueType> &_type_map;
-    std::vector<ValueType>             _let_types;
     std::vector<ValueType>             _types;
 
 public:
     State(const std::vector<ValueType> &params,
           std::map<const Node *, ValueType> &type_map)
-        : _params(params), _type_map(type_map), _let_types(), _types() {}
+        : _params(params), _type_map(type_map), _types() {}
 
     const ValueType &param_type(size_t idx) {
         assert(idx < _params.size());
         return _params[idx];
-    }
-    const ValueType &let_type(size_t idx) {
-        assert(idx < _let_types.size());
-        return _let_types[idx];
     }
     const ValueType &peek(size_t ridx) const {
         assert(_types.size() > ridx);
@@ -43,31 +38,13 @@ public:
         _types.push_back(type);
         _type_map.emplace(&node, type);
     }
-    void push_let(const ValueType &type) {
-        _let_types.push_back(type);
-    }
-    void pop_let() {
-        assert(!_let_types.empty());
-        _let_types.pop_back();
-    }
     void assert_valid_end_state() const {
-        assert(_let_types.empty());
         assert(_types.size() == 1);
     }
 };
 
-void action_bind_let(State &state) {
-    state.push_let(state.peek(0));
-}
-
-void action_unbind_let(State &state) {
-    state.pop_let();
-}
-
 struct TypeResolver : public NodeVisitor, public NodeTraverser {
     State state;
-    using action_function = void (*)(State &);
-    std::vector<std::pair<const Node *, action_function>> actions;
     TypeResolver(const std::vector<ValueType> &params_in,
                  std::map<const Node *, ValueType> &type_map_out);
     ~TypeResolver();
@@ -75,19 +52,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     void assert_valid_end_state() const {
-        assert(actions.empty());
         state.assert_valid_end_state();
-    }
-
-    void add_action(const Node &trigger, action_function action) {
-        actions.emplace_back(&trigger, action);
-    }
-
-    void check_actions(const Node &node) {
-        if (!actions.empty() && (actions.back().first == &node)) {
-            actions.back().second(state);
-            actions.pop_back();
-        }
     }
 
     //-------------------------------------------------------------------------
@@ -120,12 +85,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind_type(ValueType::double_type(), node);
     }
     void visit(const Symbol &node) override {
-        if (node.id() >= 0) { // param value
-            bind_type(state.param_type(node.id()), node);
-        } else { // let binding
-            int let_offset = -(node.id() + 1);
-            bind_type(state.let_type(let_offset), node);
-        }
+        bind_type(state.param_type(node.id()), node);
     }
     void visit(const String &node) override {
         bind_type(ValueType::double_type(), node);
@@ -145,9 +105,6 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         } else {
             bind_type(ValueType::any_type(), node);
         }
-    }
-    void visit(const Let &node) override {
-        bind_type(state.peek(0), node);
     }
     void visit(const Error &node) override {
         bind_type(ValueType::error_type(), node);
@@ -215,12 +172,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    bool open(const Node &node) override {
-        auto let = as<Let>(node);
-        if (let) {
-            add_action(let->expr(), action_unbind_let);
-            add_action(let->value(), action_bind_let);
-        }
+    bool open(const Node &) override {
         return true;
     }
 
@@ -228,17 +180,16 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         if (!check_error(node)) {
             node.accept(*this);
         }
-        check_actions(node);
     }
 };
 
 TypeResolver::TypeResolver(const std::vector<ValueType> &params_in,
                            std::map<const Node *, ValueType> &type_map_out)
-    : state(params_in, type_map_out),
-      actions()
-{ }
+    : state(params_in, type_map_out)
+{
+}
 
-TypeResolver::~TypeResolver() { }
+TypeResolver::~TypeResolver() {}
 
 } // namespace vespalib::eval::nodes::<unnamed>
 } // namespace vespalib::eval::nodes

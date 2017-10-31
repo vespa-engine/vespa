@@ -58,7 +58,6 @@ public:
         const LazyParams        *params;
         Stash                    stash;
         std::vector<Value::CREF> stack;
-        std::vector<Value::CREF> let_values;
         uint32_t                 program_offset;
         uint32_t                 if_cnt;
 

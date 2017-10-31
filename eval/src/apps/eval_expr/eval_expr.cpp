@@ -12,7 +12,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "usage: %s <expr>\n", argv[0]);
         fprintf(stderr, "  the expression must be self-contained (no arguments)\n");
         fprintf(stderr, "  quote the expression to make it a single parameter\n");
-        fprintf(stderr, "  use let to simulate parameters: let(x, 1, x + 3)\n");
         return 1;
     }
     Function function = Function::parse({}, argv[1]);

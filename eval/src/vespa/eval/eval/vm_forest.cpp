@@ -111,7 +111,7 @@ void encode_less(const nodes::Less &less,
 {
     size_t meta_idx = model_out.size();
     auto symbol = nodes::as<nodes::Symbol>(less.lhs());
-    assert(symbol && (symbol->id() >= 0));
+    assert(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
     assert(less.rhs().is_const());
     encode_const(less.rhs().get_const_value(), model_out);
@@ -129,7 +129,7 @@ void encode_in(const nodes::In &in,
 {
     size_t meta_idx = model_out.size();
     auto symbol = nodes::as<nodes::Symbol>(in.lhs());
-    assert(symbol && (symbol->id() >= 0));
+    assert(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
     assert(in.rhs().is_const());
     auto array = nodes::as<nodes::Array>(in.rhs());
