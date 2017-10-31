@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.container.jdisc.athenz;
+package com.yahoo.container.jdisc.athenz.impl;
 
 import com.yahoo.container.core.identity.IdentityConfig;
-import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl;
-import com.yahoo.container.jdisc.athenz.impl.AthenzService;
-import com.yahoo.container.jdisc.athenz.impl.InstanceIdentity;
-import com.yahoo.container.jdisc.athenz.impl.ServiceProviderApi;
+import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +16,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author mortent
  */
-public class AthenzIdentityProviderTest {
+public class AthenzIdentityProviderImplTest {
 
     @Test
     public void ntoken_fetched_on_init() throws IOException {
