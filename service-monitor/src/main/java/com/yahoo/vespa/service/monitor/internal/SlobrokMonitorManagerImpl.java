@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.service.monitor;
+package com.yahoo.vespa.service.monitor.internal;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
@@ -11,6 +11,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.service.monitor.SlobrokMonitorManager;
 
 import java.util.HashMap;
 import java.util.List;
