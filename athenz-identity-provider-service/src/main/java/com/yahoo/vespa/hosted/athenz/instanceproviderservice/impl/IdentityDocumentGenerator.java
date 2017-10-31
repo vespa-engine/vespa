@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
-import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.IdentityDocument;
@@ -27,6 +26,7 @@ public class IdentityDocumentGenerator {
     private final String dnsSuffix;
     private final String providerService;
     private final String ztsUrl;
+    private final String providerDomain;
 
     public IdentityDocumentGenerator(AthenzProviderServiceConfig config, NodeRepository nodeRepository, Zone zone, KeyProvider keyProvider) {
         this.nodeRepository = nodeRepository;
@@ -35,6 +35,7 @@ public class IdentityDocumentGenerator {
         this.dnsSuffix = config.certDnsSuffix();
         this.providerService = config.serviceName();
         this.ztsUrl = config.ztsUrl();
+        this.providerDomain = config.domain();
     }
 
     public String generateSignedIdentityDocument(String hostname) {
@@ -59,7 +60,7 @@ public class IdentityDocumentGenerator {
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
                     identityDocument.providerUniqueId.asString(),
                     dnsSuffix,
-                    providerService,
+                    providerDomain + "." + providerService,
                     ztsUrl,
                     SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION
             );
