@@ -59,7 +59,7 @@ public class IdentityDocumentGenerator {
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
                     identityDocument.providerUniqueId.asString(),
-                    dnsSuffix,
+                    toZoneDnsSuffix(zone, dnsSuffix),
                     providerDomain + "." + providerService,
                     ztsUrl,
                     SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION
@@ -86,6 +86,10 @@ public class IdentityDocumentGenerator {
                 "localhost", // TODO: Add configserver hostname
                 node.hostname(),
                 Instant.now());
+    }
+
+    private static String toZoneDnsSuffix(Zone zone, String dnsSuffix) {
+        return zone.environment().value() + "-" + zone.region().value() + "." + dnsSuffix;
     }
 }
 
