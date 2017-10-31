@@ -77,6 +77,7 @@ class CryptoUtils {
     static String toPem(PKCS10CertificationRequest csr) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
             pemWriter.writeObject(new PemObject("CERTIFICATE REQUEST", csr.getEncoded()));
+            pemWriter.flush();
             return stringWriter.toString();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
