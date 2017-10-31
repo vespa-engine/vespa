@@ -25,11 +25,11 @@ class Thread_JoinWait_Test : public ThreadTestBase
 
       Job jobs[testThreads];
 
-      std::mutex jobMutex;
+      FastOS_Mutex jobMutex;
 
       // The mutex is used to pause the first threads until we have created
       // the last one.
-      jobMutex.lock();
+      jobMutex.Lock();
 
       for(i=0; i<lastThreadNum; i++)
       {
@@ -68,7 +68,7 @@ class Thread_JoinWait_Test : public ThreadTestBase
          }
       }
 
-      jobMutex.unlock();
+      jobMutex.Unlock();
 
       if((variant & 1) != 0)
       {

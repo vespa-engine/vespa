@@ -25,11 +25,10 @@ class Thread_Mutex_Test : public ThreadTestBase
       {
          int i;
          Job jobs[MUTEX_TEST_THREADS];
-         std::mutex *myMutex=nullptr;
+         FastOS_Mutex *myMutex=nullptr;
 
-         if(usingMutex) {
-             myMutex = new std::mutex;
-         }
+         if(usingMutex)
+            myMutex = new FastOS_Mutex();
 
          for(i=0; i<MUTEX_TEST_THREADS; i++)
          {
@@ -118,7 +117,7 @@ class Thread_Mutex_Test : public ThreadTestBase
 
       FastOS_ThreadPool pool(128*1024);
       Job job;
-      std::mutex mtx;
+      FastOS_Mutex mtx;
 
       job.code = HOLD_MUTEX_FOR2SEC;
       job.result = -1;
@@ -136,28 +135,28 @@ class Thread_Mutex_Test : public ThreadTestBase
 
          for(int i=0; i<5; i++)
          {
-            lockrc = mtx.try_lock();
+            lockrc = mtx.TryLock();
             Progress(!lockrc, "We should not get the mutex lock just yet (%s)",
                      lockrc ? "got it" : "didn't get it");
             if(lockrc) {
-                mtx.unlock();
+                mtx.Unlock();
                break;
             }
          }
 
          FastOS_Thread::Sleep(2000);
 
-         lockrc = mtx.try_lock();
+         lockrc = mtx.TryLock();
          Progress(lockrc, "We should get the mutex lock now (%s)",
                   lockrc ? "got it" : "didn't get it");
 
          if(lockrc)
-            mtx.unlock();
+            mtx.Unlock();
 
          Progress(true, "Attempting to do normal lock...");
-         mtx.lock();
+         mtx.Lock();
          Progress(true, "Got lock. Attempt to do normal unlock...");
-         mtx.unlock();
+         mtx.Unlock();
          Progress(true, "Unlock OK.");
       }
 

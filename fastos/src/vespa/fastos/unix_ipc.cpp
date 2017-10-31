@@ -5,8 +5,6 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
-#include <memory>
-#include <future>
 
 FastOS_UNIX_IPCHelper::
 FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int descriptor)
@@ -57,7 +55,7 @@ DoWrite(FastOS_UNIX_Process::DescriptorHandle &desc)
     bool rc = true;
     FastOS_RingBuffer *buffer = desc._writeBuffer.get();
 
-    auto bufferGuard = buffer->getGuard();
+    buffer->Lock();
     int writeBytes = buffer->GetReadSpace();
     if(writeBytes > 0)
     {
@@ -80,6 +78,8 @@ DoWrite(FastOS_UNIX_Process::DescriptorHandle &desc)
         else if(bytesWritten == 0)
             desc.CloseHandle();
     }
+    buffer->Unlock();
+
     return rc;
 }
 
@@ -90,7 +90,7 @@ DoRead (FastOS_UNIX_Process::DescriptorHandle &desc)
 
     FastOS_RingBuffer *buffer = desc._readBuffer.get();
 
-    auto bufferGuard = buffer->getGuard();
+    buffer->Lock();
     int readBytes = buffer->GetWriteSpace();
     if(readBytes > 0) {
         int bytesRead;
@@ -108,6 +108,7 @@ DoRead (FastOS_UNIX_Process::DescriptorHandle &desc)
             desc.CloseHandle();
         }
     }
+    buffer->Unlock();
 
     return rc;
 }
@@ -429,7 +430,8 @@ RemoveClosingProcesses(void)
 
         if(!stillBusy)
         {
-            if (xproc->_closing) {
+            if(xproc->_closing != nullptr)
+            {
                 // We already have the process lock at this point,
                 // so modifying the list is safe.
                 _app->RemoveChildProcess(node);
@@ -448,8 +450,7 @@ RemoveClosingProcesses(void)
                 }
 
                 // The process destructor can now proceed
-                auto closingPromise(std::move(xproc->_closing));
-                closingPromise->set_value();
+                xproc->_closing->ClearBusy();
             }
         }
     }
@@ -473,32 +474,31 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
     for(;;)
     {
         // Deliver messages to from child processes and parent.
+        _app->ProcessLock();
+        for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
         {
-            auto guard = _app->getProcessGuard();
-            for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
-            {
-                FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
-                FastOS_UNIX_Process::DescriptorHandle &desc =
-                    xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC);
-                DeliverMessages(desc._readBuffer.get());
-                PipeData(xproc, FastOS_UNIX_Process::TYPE_STDOUT);
-                PipeData(xproc, FastOS_UNIX_Process::TYPE_STDERR);
-            }
-            DeliverMessages(_appParentIPCDescriptor._readBuffer.get());
-
-            // Setup file descriptor sets for the next select() call
-            BuildPollChecks();
-
-            // Close and signal closing processes
-            RemoveClosingProcesses();
-
-            BuildPollArray(&fds, &nfds, &allocnfds);
+            FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
+            FastOS_UNIX_Process::DescriptorHandle &desc =
+                xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC);
+            DeliverMessages(desc._readBuffer.get());
+            PipeData(xproc, FastOS_UNIX_Process::TYPE_STDOUT);
+            PipeData(xproc, FastOS_UNIX_Process::TYPE_STDERR);
         }
-        bool exitFlag = false;
-        {
-            std::lock_guard<std::mutex> guard(_lock);
-            exitFlag = _exitFlag;
-        }
+        DeliverMessages(_appParentIPCDescriptor._readBuffer.get());
+
+        // Setup file descriptor sets for the next select() call
+        BuildPollChecks();
+
+        // Close and signal closing processes
+        RemoveClosingProcesses();
+
+        BuildPollArray(&fds, &nfds, &allocnfds);
+
+        _app->ProcessUnlock();
+
+        _lock.Lock();
+        bool exitFlag(_exitFlag);
+        _lock.Unlock();
         if (exitFlag)
         {
             if (_appParentIPCDescriptor._fd != -1)
@@ -546,13 +546,11 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
                 break;
         }
 
-        bool woken = false;
-        {
-            auto guard = _app->getProcessGuard();
-            woken = SavePollArray(fds, nfds);
-            // Do actual IO (based on file descriptor sets and buffer contents)
-            PerformAsyncIO();
-        }
+        _app->ProcessLock();
+        bool woken = SavePollArray(fds, nfds);
+        // Do actual IO (based on file descriptor sets and buffer contents)
+        PerformAsyncIO();
+        _app->ProcessUnlock();
         PerformAsyncIPCIO();
 
         // Did someone want to wake us up from the poll() call?
@@ -586,7 +584,7 @@ SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
     ipcBuffer = desc._writeBuffer.get();
 
     if(ipcBuffer != nullptr) {
-        auto ipcBufferGuard = ipcBuffer->getGuard();
+        ipcBuffer->Lock();
 
         if(ipcBuffer->GetWriteSpace() >= int((length + sizeof(int)))) {
             memcpy(ipcBuffer->GetWritePtr(), &length, sizeof(int));
@@ -597,6 +595,7 @@ SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
             NotifyProcessListChange();
             rc = true;
         }
+        ipcBuffer->Unlock();
     }
     return rc;
 }
@@ -612,9 +611,10 @@ void FastOS_UNIX_IPCHelper::NotifyProcessListChange ()
 
 void FastOS_UNIX_IPCHelper::Exit ()
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    _lock.Lock();
     _exitFlag = true;
     NotifyProcessListChange();
+    _lock.Unlock();
 }
 
 void FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
@@ -639,11 +639,16 @@ void FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
 
 void FastOS_UNIX_IPCHelper::RemoveProcess (FastOS_UNIX_Process *xproc)
 {
-    auto closePromise = std::make_unique<std::promise<void>>();
-    auto closeFuture = closePromise->get_future();
-    xproc->_closing = std::move(closePromise);
+    (void)xproc;
+
+    FastOS_BoolCond closeWait;
+
+    closeWait.SetBusy();
+    xproc->_closing = &closeWait;
+
     NotifyProcessListChange();
-    closeFuture.wait();
+
+    closeWait.WaitBusy();
 }
 
 void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
@@ -651,7 +656,7 @@ void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
     if(buffer == nullptr)
         return;
 
-    auto bufferGuard = buffer->getGuard();
+    buffer->Lock();
 
     unsigned int readSpace;
     while((readSpace = buffer->GetReadSpace()) > sizeof(int))
@@ -668,6 +673,8 @@ void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
         else
             break;
     }
+
+    buffer->Unlock();
 }
 
 void FastOS_UNIX_IPCHelper::
@@ -683,7 +690,7 @@ PipeData (FastOS_UNIX_Process *process,
     if(listener == nullptr)
         return;
 
-    auto bufferGuard = buffer->getGuard();
+    buffer->Lock();
 
     unsigned int readSpace;
     while((readSpace = buffer->GetReadSpace()) > 0) {
@@ -693,4 +700,6 @@ PipeData (FastOS_UNIX_Process *process,
 
     if(buffer->GetCloseFlag())
         process->CloseListener(type);
+
+    buffer->Unlock();
 }

@@ -14,10 +14,8 @@ class Thread_Bounce_Test : public ThreadTestBase
       TestHeader("Bounce Test");
 
      FastOS_ThreadPool pool(128 * 1024);
-     std::mutex mutex1;
-     std::condition_variable cond1;
-     std::mutex mutex2;
-     std::condition_variable cond2;
+     FastOS_Cond cond1;
+     FastOS_Cond cond2;
      Job job1;
      Job job2;
      FastOS_Time checkTime;
@@ -30,9 +28,7 @@ class Thread_Bounce_Test : public ThreadTestBase
      job2.code = BOUNCE_CONDITIONS;
      job1.otherjob = &job2;
      job2.otherjob = &job1;
-     job1.mutex = &mutex1;
      job1.condition = &cond1;
-     job2.mutex = &mutex2;
      job2.condition = &cond2;
 
      job1.ownThread = pool.NewThread(this, static_cast<void *>(&job1));
@@ -48,28 +44,28 @@ class Thread_Bounce_Test : public ThreadTestBase
          left = static_cast<int>(checkTime.MilliSecsToNow());
        }
 
-       mutex1.lock();
+       cond1.Lock();
        cnt1 = job1.bouncewakeupcnt;
-       mutex1.unlock();
-       mutex2.lock();
+       cond1.Unlock();
+       cond2.Lock();
        cnt2 = job2.bouncewakeupcnt;
-       mutex2.unlock();
+       cond2.Unlock();
        cntsum = cnt1 + cnt2;
        Progress(lastcntsum != cntsum, "%d bounces", cntsum);
        lastcntsum = cntsum;
      }
 
      job1.ownThread->SetBreakFlag();
-     mutex1.lock();
+     cond1.Lock();
      job1.bouncewakeup = true;
-     cond1.notify_one();
-     mutex1.unlock();
+     cond1.Signal();
+     cond1.Unlock();
 
      job2.ownThread->SetBreakFlag();
-     mutex2.lock();
+     cond2.Lock();
      job2.bouncewakeup = true;
-     cond2.notify_one();
-     mutex2.unlock();
+     cond2.Signal();
+     cond2.Unlock();
 
      pool.Close();
      Progress(true, "Pool closed.");

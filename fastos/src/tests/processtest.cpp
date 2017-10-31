@@ -17,14 +17,15 @@ public:
    static int _allocCount;
    static int _successCount;
    static int _failCount;
-    static std::mutex *_counterLock;
+   static FastOS_Mutex *_counterLock;
 
    MyListener (const char *title)
      : _title(title),
        _receivedBytes(0)
    {
-       std::lock_guard<std::mutex> guard(*_counterLock);
-       _allocCount++;
+      _counterLock->Lock();
+      _allocCount++;
+      _counterLock->Unlock();
    }
 
    virtual ~MyListener ()
@@ -33,13 +34,14 @@ public:
 
       const int correctByteCount = 16;
 
-      std::lock_guard<std::mutex> guard(*_counterLock);
+      _counterLock->Lock();
       if(_receivedBytes == (isStdout ? correctByteCount : 0))
          _successCount++;
       else
          _failCount++;
 
       _allocCount--;
+      _counterLock->Unlock();
    }
 
    void OnReceiveData (const void *data, size_t length) override
@@ -60,7 +62,7 @@ public:
 int MyListener::_allocCount = 0;
 int MyListener::_successCount = 0;
 int MyListener::_failCount = 0;
-std::mutex *MyListener::_counterLock = nullptr;
+FastOS_Mutex *MyListener::_counterLock = nullptr;
 
 
 class ThreadRunJob : public FastOS_Runnable
@@ -120,7 +122,7 @@ private:
    // or not.
    bool _gotMessage;
    int _receivedMessages;
-   std::mutex *_counterLock;
+   FastOS_Mutex *_counterLock;
    bool _isChild;
 public:
    ProcessTest ()
@@ -154,8 +156,9 @@ public:
       // We only have the counter lock if we are the parent process.
       if(_counterLock != nullptr)
       {
-          std::lock_guard<std::mutex> guard(*_counterLock);
-          _receivedMessages++;
+         _counterLock->Lock();
+         _receivedMessages++;
+         _counterLock->Unlock();
       }
    }
 
@@ -216,7 +219,7 @@ public:
       const int numLoops = 100;
       const int numEachTime = 40;
 
-      MyListener::_counterLock = new std::mutex;
+      MyListener::_counterLock = new FastOS_Mutex();
 
       char testHeader[200];
       strcpy(testHeader, "Process Test");
@@ -378,7 +381,7 @@ public:
       TestHeader ("IPC Test");
       const char *childProgram = _argv[1];
 
-      _counterLock = new std::mutex;
+      _counterLock = new FastOS_Mutex();
 
       int i;
       for(i=0; i<30; i++)

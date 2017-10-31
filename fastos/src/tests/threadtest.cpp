@@ -5,10 +5,10 @@
 #include "thread_test_base.hpp"
 #include <vespa/fastos/time.h>
 #include <cstdlib>
-#include <chrono>
 
 #define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
+
 
 class ThreadTest : public ThreadTestBase
 {
@@ -16,7 +16,7 @@ class ThreadTest : public ThreadTestBase
 
    void WaitForXThreadsToHaveWait (Job *jobs,
                                    int jobCount,
-                                   std::mutex &mutex,
+                                   FastOS_Cond *condition,
                                    int numWait)
    {
       Progress(true, "Waiting for %d threads to be in wait state", numWait);
@@ -26,14 +26,15 @@ class ThreadTest : public ThreadTestBase
       {
          int waitingThreads=0;
 
+         condition->Lock();
+
+         for(int i=0; i<jobCount; i++)
          {
-             std::lock_guard<std::mutex> guard(mutex);
-             for(int i=0; i<jobCount; i++)
-             {
-                 if(jobs[i].result == 1)
-                     waitingThreads++;
-             }
+            if(jobs[i].result == 1)
+               waitingThreads++;
          }
+
+         condition->Unlock();
 
          if(waitingThreads != oldNumber)
             Progress(true, "%d threads are waiting", waitingThreads);
@@ -322,14 +323,12 @@ class ThreadTest : public ThreadTestBase
    }
 
    void SharedSignalAndBroadcastTest (Job *jobs, int numThreads,
-                                      std::mutex *mutex,
-                                      std::condition_variable *condition,
+                                      FastOS_Cond *condition,
                                       FastOS_ThreadPool *pool)
    {
       for(int i=0; i<numThreads; i++)
       {
          jobs[i].code = WAIT_FOR_CONDITION;
-         jobs[i].mutex = mutex;
          jobs[i].condition = condition;
          jobs[i].ownThread = pool->NewThread(this,
                  static_cast<void *>(&jobs[i]));
@@ -339,7 +338,7 @@ class ThreadTest : public ThreadTestBase
       }
 
       WaitForXThreadsToHaveWait (jobs, numThreads,
-                                 *mutex, numThreads);
+                                 condition, numThreads);
 
       // Threads are not guaranteed to have entered sleep yet,
       // as this test only tests for result code
@@ -355,16 +354,15 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool pool(128*1024);
       Job jobs[numThreads];
-      std::mutex mutex;
-      std::condition_variable condition;
+      FastOS_Cond condition;
 
-      SharedSignalAndBroadcastTest(jobs, numThreads, &mutex, &condition, &pool);
+      SharedSignalAndBroadcastTest(jobs, numThreads, &condition, &pool);
 
       for(int i=0; i<numThreads; i++)
       {
-         condition.notify_one();
+         condition.Signal();
          WaitForXThreadsToHaveWait(jobs, numThreads,
-                                   mutex, numThreads-1-i);
+                                   &condition, numThreads-1-i);
       }
 
       Progress(true, "Waiting for threads to finish using pool.Close()...");
@@ -381,13 +379,12 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool pool(128*1024);
       Job jobs[numThreads];
-      std::mutex mutex;
-      std::condition_variable condition;
+      FastOS_Cond condition;
 
-      SharedSignalAndBroadcastTest(jobs, numThreads, &mutex, &condition, &pool);
+      SharedSignalAndBroadcastTest(jobs, numThreads, &condition, &pool);
 
-      condition.notify_all();
-      WaitForXThreadsToHaveWait(jobs, numThreads, mutex, 0);
+      condition.Broadcast();
+      WaitForXThreadsToHaveWait(jobs, numThreads, &condition, 0);
 
       Progress(true, "Waiting for threads to finish using pool.Close()...");
       pool.Close();
@@ -404,9 +401,9 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool pool(128*1024);
       Job jobs[numThreads];
-      std::mutex slowStartMutex;
+      FastOS_Mutex slowStartMutex;
 
-      slowStartMutex.lock();    // Halt all threads until we want them to run
+      slowStartMutex.Lock();    // Halt all threads until we want them to run
 
       for(i=0; i<numThreads; i++) {
          jobs[i].code = TEST_ID;
@@ -431,7 +428,7 @@ class ThreadTest : public ThreadTestBase
          }
       }
 
-      slowStartMutex.unlock();    // Allow threads to run
+      slowStartMutex.Unlock();    // Allow threads to run
 
       Progress(true, "Waiting for threads to finish using pool.Close()...");
       pool.Close();
@@ -452,12 +449,10 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool pool(128*1024);
       Job job;
-      std::mutex mutex;
-      std::condition_variable condition;
+      FastOS_Cond condition;
 
       job.code = WAIT2SEC_AND_SIGNALCOND;
       job.result = -1;
-      job.mutex = &mutex;
       job.condition = &condition;
       job.ownThread = pool.NewThread(this,
                                      static_cast<void *>(&job));
@@ -466,17 +461,18 @@ class ThreadTest : public ThreadTestBase
 
       if(job.ownThread != nullptr)
       {
-         std::unique_lock<std::mutex> guard(mutex);
-         bool gotCond = condition.wait_for(guard, 500ms) == std::cv_status::no_timeout;
+         condition.Lock();
+         bool gotCond = condition.TimedWait(500);
          Progress(!gotCond, "We should not get the condition just yet (%s)",
                   gotCond ? "got it" : "didn't get it");
-         gotCond = condition.wait_for(guard, 500ms) == std::cv_status::no_timeout;
+         gotCond = condition.TimedWait(500);
          Progress(!gotCond, "We should not get the condition just yet (%s)",
                   gotCond ? "got it" : "didn't get it");
-         gotCond = condition.wait_for(guard, 5000ms) == std::cv_status::no_timeout;
+         gotCond = condition.TimedWait(5000);
          Progress(gotCond, "We should have got the condition now (%s)",
                   gotCond ? "got it" : "didn't get it");
-         }
+         condition.Unlock();
+      }
 
       Progress(true, "Waiting for threads to finish using pool.Close()...");
       pool.Close();
@@ -495,22 +491,31 @@ class ThreadTest : public ThreadTestBase
 
       for(i=0; i<allocCount; i++)
       {
-          std::mutex *mtx = new std::mutex;
-         mtx->lock();
-         mtx->unlock();
+         FastOS_Mutex *mtx = new FastOS_Mutex();
+         mtx->Lock();
+         mtx->Unlock();
          delete mtx;
 
          if((i % progressIndex) == (progressIndex - 1))
-            Progress(true, "Tested %d std::mutex instances", i + 1);
+            Progress(true, "Tested %d FastOS_Mutex instances", i + 1);
       }
 
       for(i=0; i<allocCount; i++)
       {
-          std::condition_variable *cond = new std::condition_variable;
+         FastOS_Cond *cond = new FastOS_Cond();
          delete cond;
 
          if((i % progressIndex) == (progressIndex - 1))
-            Progress(true, "Tested %d std::condition_variable instances", i+1);
+            Progress(true, "Tested %d FastOS_Cond instances", i+1);
+      }
+
+      for(i=0; i<allocCount; i++)
+      {
+         FastOS_BoolCond *cond = new FastOS_BoolCond();
+         delete cond;
+
+         if((i % progressIndex) == (progressIndex - 1))
+            Progress(true, "Tested %d FastOS_BoolCond instances", i+1);
       }
 
       PrintSeparator();
@@ -523,13 +528,13 @@ class ThreadTest : public ThreadTestBase
       const int allocCount = 150000;
       int i;
 
-      std::mutex **mutexes = new std::mutex*[allocCount];
+      FastOS_Mutex **mutexes = new FastOS_Mutex*[allocCount];
 
       FastOS_Time startTime, nowTime;
       startTime.SetNow();
 
       for(i=0; i<allocCount; i++)
-          mutexes[i] = new std::mutex;
+         mutexes[i] = new FastOS_Mutex();
 
       nowTime.SetNow();
       Progress(true, "Allocated %d mutexes at time: %d ms", allocCount,
@@ -538,10 +543,10 @@ class ThreadTest : public ThreadTestBase
       for(int e=0; e<4; e++)
       {
          for(i=0; i<allocCount; i++)
-            mutexes[i]->lock();
+            mutexes[i]->Lock();
 
          for(i=0; i<allocCount; i++)
-            mutexes[i]->unlock();
+            mutexes[i]->Unlock();
 
          nowTime.SetNow();
          Progress(true, "Tested %d mutexes at time: %d ms", allocCount,

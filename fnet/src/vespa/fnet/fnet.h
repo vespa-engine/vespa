@@ -3,6 +3,8 @@
 #pragma once
 
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/fastos/mutex.h>
+#include <vespa/fastos/cond.h>
 
 // DEPRECATED
 
