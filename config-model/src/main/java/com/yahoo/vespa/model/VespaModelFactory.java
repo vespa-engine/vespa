@@ -147,6 +147,7 @@ public class VespaModelFactory implements ModelFactory {
         return new DeployProperties.Builder()
                 .applicationId(properties.applicationId())
                 .configServerSpecs(properties.configServerSpecs())
+                .loadBalancerAddress(properties.loadBalancerAddress())
                 .multitenant(properties.multitenant())
                 .hostedVespa(properties.hostedVespa())
                 .vespaVersion(getVersion())
