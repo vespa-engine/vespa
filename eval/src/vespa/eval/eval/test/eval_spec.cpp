@@ -380,20 +380,6 @@ EvalSpec::add_if_cases() {
 }
 
 void
-EvalSpec::add_let_cases() {
-    add_rule({"a", -10.0, 10.0}, "let(tmp,(a+1),(tmp*tmp))", [](double a){ return (a+1)*(a+1); });
-    add_rule({"a", -10.0, 10.0}, "let(a,(a+1),((a*a)*a))", [](double a){ return (a+1)*(a+1)*(a+1); });
-    add_rule({"a", -10.0, 10.0}, "let(a,(a+1),let(a,(a+1),let(b,2,let(a,(a+1),(a+b)))))", [](double a) { return (a + 5.0); });
-    add_rule({"a", -10.0, 10.0}, {"b", -10.0, 10.0}, "let(a,(a*b),let(b,(b+a),(a*b)))",
-             [](double a, double b)
-             {
-                 double let_a = (a * b);
-                 double let_b = (b + let_a);
-                 return (let_a * let_b);
-             });
-}
-
-void
 EvalSpec::add_complex_cases() {
     add_expression({"a", "b"}, "((a<3)||b)")
         .add_cases({2.0, 4.0}, {0.0, 0.5, 1.0},

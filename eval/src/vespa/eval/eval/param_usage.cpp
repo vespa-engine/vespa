@@ -32,8 +32,7 @@ struct CountUsage : NodeTraverser {
         return true;
     }
     void close(const Node &node) override {
-        auto symbol = as<Symbol>(node);
-        if (symbol && (symbol->id() >= 0)) {
+        if (auto symbol = as<Symbol>(node)) {
             result[symbol->id()] += p;
         }
     }
@@ -67,8 +66,7 @@ struct CheckUsage : NodeTraverser {
         return true;
     }
     void close(const Node &node) override {
-        auto symbol = as<Symbol>(node);
-        if (symbol && (symbol->id() >= 0)) {
+        if (auto symbol = as<Symbol>(node)) {
             result[symbol->id()] = 1.0;
         }
     }

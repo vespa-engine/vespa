@@ -74,7 +74,6 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     llvm::IRBuilder<>         builder;
     std::vector<llvm::Value*> params;
     std::vector<llvm::Value*> values;
-    std::vector<llvm::Value*> let_values;
     llvm::Function           *function;
     size_t                    num_params;
     PassParams                pass_params;
@@ -132,7 +131,6 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
           builder(context),
           params(),
           values(),
-          let_values(),
           function(nullptr),
           num_params(num_params_in),
           pass_params(pass_params_in),
@@ -254,7 +252,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             inside_forest = true;
             forest_end = &node;
         }
-        if (check_type<Array, If, Let, In>(node)) {
+        if (check_type<Array, If, In>(node)) {
             node.accept(*this);
             return false;
         }
@@ -352,13 +350,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         push_double(item.value());
     }
     void visit(const Symbol &item) override {
-        if (item.id() >= 0) {
-            push(get_param(item.id()));
-        } else {
-            int let_offset = -(item.id() + 1);
-            assert(size_t(let_offset) < let_values.size());
-            push(let_values[let_offset]);
-        }
+        push(get_param(item.id()));
     }
     void visit(const String &item) override {
         push_double(item.hash());
@@ -401,13 +393,6 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         phi->addIncoming(true_res, true_end);
         phi->addIncoming(false_res, false_end);
         push(phi);
-    }
-    void visit(const Let &item) override {
-        // NB: visit not open
-        item.value().traverse(*this); // NB: recursion
-        let_values.push_back(pop_double());
-        item.expr().traverse(*this); // NB: recursion
-        let_values.pop_back();
     }
     void visit(const Error &) override {
         make_error(0);

@@ -26,7 +26,6 @@ struct NodeVisitor {
     virtual void visit(const nodes::Neg          &) = 0;
     virtual void visit(const nodes::Not          &) = 0;
     virtual void visit(const nodes::If           &) = 0;
-    virtual void visit(const nodes::Let          &) = 0;
     virtual void visit(const nodes::Error        &) = 0;
 
     // tensor nodes
@@ -97,7 +96,6 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Neg          &) override {}
     void visit(const nodes::Not          &) override {}
     void visit(const nodes::If           &) override {}
-    void visit(const nodes::Let          &) override {}
     void visit(const nodes::Error        &) override {}
     void visit(const nodes::TensorMap    &) override {}
     void visit(const nodes::TensorJoin   &) override {}

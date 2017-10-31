@@ -29,7 +29,6 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const Neg          &) override { add_byte( 5); }
     void visit(const Not          &) override { add_byte( 6); }
     void visit(const If       &node) override { add_byte( 7); add_double(node.p_true()); }
-    void visit(const Let          &) override { add_byte( 8); }
     void visit(const Error        &) override { add_byte( 9); }
     void visit(const TensorMap    &) override { add_byte(11); } // lambda should be part of key
     void visit(const TensorJoin   &) override { add_byte(12); } // lambda should be part of key
