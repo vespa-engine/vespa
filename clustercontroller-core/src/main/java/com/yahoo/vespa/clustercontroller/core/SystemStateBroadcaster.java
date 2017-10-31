@@ -134,6 +134,7 @@ public class SystemStateBroadcaster {
         if (systemState == null) return false;
 
         if (!systemState.isOfficial()) {
+            log.log(LogLevel.INFO, String.format("Publishing cluster state version %d", systemState.getVersion()));
             systemState.setOfficial(true);
         }
 
