@@ -179,10 +179,10 @@ ProtonConfigurer::applyInitialConfig(InitializeThreads initializeThreads)
 {
     // called by proton app main thread
     assert(!_executor.isCurrentThread());
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
-    _executor.execute(makeLambdaTask([this, initializeThreads, &promise]() { applyConfig(getPendingConfigSnapshot(), initializeThreads, true); promise.set_value(true); }));
-    (void) future.get();
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    _executor.execute(makeLambdaTask([this, initializeThreads, &promise]() { applyConfig(getPendingConfigSnapshot(), initializeThreads, true); promise.set_value(); }));
+    future.wait();
 }
 
 } // namespace proton
