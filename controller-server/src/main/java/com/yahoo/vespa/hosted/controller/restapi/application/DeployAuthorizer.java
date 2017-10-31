@@ -39,10 +39,12 @@ public class DeployAuthorizer {
                                              Environment environment,
                                              Tenant tenant,
                                              ApplicationId applicationId) {
-        if (!environmentRequiresAuthorization(environment))  return;
+        if (!environmentRequiresAuthorization(environment)) {
+            return;
+        }
 
         if (principal == null) {
-            throw loggedUnauthorizedException("Principal '%s' is not authenticated.", principal.getName());
+            throw loggedUnauthorizedException("Principal not authenticated!");
         }
 
         if (!(principal instanceof AthenzPrincipal)) {
@@ -54,20 +56,22 @@ public class DeployAuthorizer {
         AthenzPrincipal athenzPrincipal = (AthenzPrincipal) principal;
         AthenzDomain principalDomain = athenzPrincipal.getDomain();
 
-        if (!principalDomain.equals(AthenzUtils.SCREWDRIVER_DOMAIN))
+        if (!principalDomain.equals(AthenzUtils.SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
                     "Principal '%s' is not a Screwdriver principal. Excepted principal with Athenz domain '%s', got '%s'.",
                     principal.getName(), AthenzUtils.SCREWDRIVER_DOMAIN.id(), principalDomain.id());
+        }
 
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
         if (tenant.isAthensTenant()) {
             AthenzDomain tenantDomain = tenant.getAthensDomain().get();
-            if ( ! hasDeployAccessToAthenzApplication(athenzPrincipal, tenantDomain, applicationId))
+            if (!hasDeployAccessToAthenzApplication(athenzPrincipal, tenantDomain, applicationId)) {
                 throw loggedForbiddenException(
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
                         "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
                         "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
                         athenzPrincipal.toYRN(), applicationId, tenantDomain.id());
+            }
         }
     }
 
