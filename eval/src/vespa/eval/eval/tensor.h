@@ -30,6 +30,7 @@ public:
     Tensor(Tensor &&) = delete;
     Tensor &operator=(const Tensor &) = delete;
     Tensor &operator=(Tensor &&) = delete;
+    virtual double as_double() const = 0;
     const TensorEngine &engine() const { return _engine; }
     virtual ~Tensor() {}
 };

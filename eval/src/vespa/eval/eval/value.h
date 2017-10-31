@@ -64,6 +64,7 @@ public:
     TensorValue(const Tensor &value) : _tensor(&value), _stored() {}
     TensorValue(std::unique_ptr<Tensor> value) : _tensor(value.get()), _stored(std::move(value)) {}
     bool is_tensor() const override { return true; }
+    double as_double() const override;
     const Tensor *as_tensor() const override { return _tensor; }
     bool equal(const Value &rhs) const override;
     ValueType type() const override;

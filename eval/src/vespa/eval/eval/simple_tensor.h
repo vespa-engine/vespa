@@ -81,6 +81,7 @@ public:
     SimpleTensor();
     explicit SimpleTensor(double value);
     SimpleTensor(const ValueType &type_in, Cells cells_in);
+    double as_double() const final override;
     const ValueType &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     std::unique_ptr<SimpleTensor> map(map_fun_t function) const;

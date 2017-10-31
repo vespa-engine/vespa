@@ -8,6 +8,12 @@ namespace eval {
 
 ErrorValue ErrorValue::instance;
 
+double
+TensorValue::as_double() const
+{
+    return _tensor->as_double();
+}
+
 bool
 TensorValue::equal(const Value &rhs) const
 {
