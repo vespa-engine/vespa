@@ -11,6 +11,7 @@ import static com.yahoo.jdisc.Response.Status.FORBIDDEN;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 
 /**
  * A HTTP JSON response containing an error code and a message
@@ -24,7 +25,8 @@ public class ErrorResponse extends SlimeJsonResponse {
         BAD_REQUEST,
         FORBIDDEN,
         METHOD_NOT_ALLOWED,
-        INTERNAL_SERVER_ERROR
+        INTERNAL_SERVER_ERROR,
+        UNAUTHORIZED
     }
 
     public ErrorResponse(int statusCode, String errorType, String message) {
@@ -53,6 +55,10 @@ public class ErrorResponse extends SlimeJsonResponse {
 
     public static ErrorResponse forbidden(String message) {
         return new ErrorResponse(FORBIDDEN, errorCodes.FORBIDDEN.name(), message);
+    }
+
+    public static ErrorResponse unauthorized(String message) {
+        return new ErrorResponse(UNAUTHORIZED, errorCodes.UNAUTHORIZED.name(), message);
     }
 
     public static ErrorResponse methodNotAllowed(String message) {

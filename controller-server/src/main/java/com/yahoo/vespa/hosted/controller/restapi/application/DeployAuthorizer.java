@@ -5,23 +5,19 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
-import com.yahoo.vespa.hosted.controller.restapi.filter.UnauthenticatedUserPrincipal;
 
 import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.NotAuthorizedException;
 import java.security.Principal;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.restapi.application.Authorizer.environmentRequiresAuthorization;
-import static com.yahoo.vespa.hosted.controller.restapi.application.Authorizer.isScrewdriverPrincipal;
 
 /**
  * @author bjorncs
@@ -43,36 +39,40 @@ public class DeployAuthorizer {
                                              Environment environment,
                                              Tenant tenant,
                                              ApplicationId applicationId) {
-        if (athenzCredentialsRequired(environment, tenant, applicationId, principal))
-            checkAthenzCredentials(principal, tenant, applicationId);
-    }
+        if (!environmentRequiresAuthorization(environment)) {
+            return;
+        }
 
-    // TODO: inline when deployment via ssh is removed
-    private boolean athenzCredentialsRequired(Environment environment, Tenant tenant, ApplicationId applicationId, Principal principal) {
-        if (!environmentRequiresAuthorization(environment))  return false;
+        if (principal == null) {
+            throw loggedUnauthorizedException("Principal not authenticated!");
+        }
 
-        if (! isScrewdriverPrincipal(principal))
+        if (!(principal instanceof AthenzPrincipal)) {
+            throw loggedUnauthorizedException(
+                    "Principal '%s' of type '%s' is not an Athenz principal, which is required for production deployments.",
+                    principal.getName(), principal.getClass().getSimpleName());
+        }
+
+        AthenzPrincipal athenzPrincipal = (AthenzPrincipal) principal;
+        AthenzDomain principalDomain = athenzPrincipal.getDomain();
+
+        if (!principalDomain.equals(AthenzUtils.SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
-                    "Principal '%s' is not a screwdriver principal, and does not have deploy access to application '%s'",
-                    principal.getName(), applicationId.toShortString());
+                    "Principal '%s' is not a Screwdriver principal. Excepted principal with Athenz domain '%s', got '%s'.",
+                    principal.getName(), AthenzUtils.SCREWDRIVER_DOMAIN.id(), principalDomain.id());
+        }
 
-        return tenant.isAthensTenant();
-    }
-
-
-    // TODO: inline when deployment via ssh is removed
-    private void checkAthenzCredentials(Principal principal, Tenant tenant, ApplicationId applicationId) {
-        AthenzDomain domain = tenant.getAthensDomain().get();
-        if (! (principal instanceof AthenzPrincipal))
-            throw loggedForbiddenException("Principal '%s' is not authenticated.", principal.getName());
-
-        AthenzPrincipal athensPrincipal = (AthenzPrincipal)principal;
-        if ( ! hasDeployAccessToAthenzApplication(athensPrincipal, domain, applicationId))
-            throw loggedForbiddenException(
-                    "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
-                    "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
-                    "'%1$s' is not added to the application's deployer role in Athens domain '%3$s'.",
-                    athensPrincipal, applicationId, tenant.getAthensDomain().get());
+        // NOTE: no fine-grained deploy authorization for non-Athenz tenants
+        if (tenant.isAthensTenant()) {
+            AthenzDomain tenantDomain = tenant.getAthensDomain().get();
+            if (!hasDeployAccessToAthenzApplication(athenzPrincipal, tenantDomain, applicationId)) {
+                throw loggedForbiddenException(
+                        "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
+                        "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
+                        "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
+                        athenzPrincipal.toYRN(), applicationId, tenantDomain.id());
+            }
+        }
     }
 
     private static ForbiddenException loggedForbiddenException(String message, Object... args) {
@@ -81,23 +81,10 @@ public class DeployAuthorizer {
         return new ForbiddenException(formattedMessage);
     }
 
-    /**
-     * @deprecated Only usable for ssh. Use the method that takes Principal instead of UserId and screwdriverId.
-     */
-    @Deprecated
-    public void throwIfUnauthorizedForDeploy(Environment environment,
-                                             UserId userId,
-                                             Tenant tenant,
-                                             ApplicationId applicationId,
-                                             Optional<ScrewdriverId> optionalScrewdriverId) {
-        Principal principal = new UnauthenticatedUserPrincipal(userId.id());
-
-        if (athenzCredentialsRequired(environment, tenant, applicationId, principal)) {
-            ScrewdriverId screwdriverId = optionalScrewdriverId.orElseThrow(
-                    () -> loggedForbiddenException("Screwdriver id must be provided when deploying from Screwdriver."));
-            principal = AthenzUtils.createPrincipal(screwdriverId);
-            checkAthenzCredentials(principal, tenant, applicationId);
-        }
+    private static NotAuthorizedException loggedUnauthorizedException(String message, Object... args) {
+        String formattedMessage = String.format(message, args);
+        log.info(formattedMessage);
+        return new NotAuthorizedException(formattedMessage);
     }
 
     private boolean hasDeployAccessToAthenzApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationId applicationId) {
