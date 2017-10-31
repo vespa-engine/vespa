@@ -32,7 +32,7 @@ private:
         return (_dataIndex + offset) % _bufferSize;
     }
 
-    std::mutex _mutex;
+    FastOS_Mutex _mutex;
 
 public:
     void Reset ()
@@ -128,6 +128,14 @@ public:
         return _closed;
     }
 
-    std::unique_lock<std::mutex> getGuard() { return std::unique_lock<std::mutex>(_mutex); }
+    void Lock ()
+    {
+        _mutex.Lock();
+    }
+
+    void Unlock ()
+    {
+        _mutex.Unlock();
+    }
 };
 

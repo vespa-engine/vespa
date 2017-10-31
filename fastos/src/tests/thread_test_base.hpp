@@ -2,17 +2,13 @@
 
 #pragma once
 
-#include <chrono>
-
 static volatile int64_t number;
 #define INCREASE_NUMBER_AMOUNT 10000
-
-using namespace std::chrono_literals;
 
 class ThreadTestBase : public BaseTest, public FastOS_Runnable
 {
 private:
-   std::mutex printMutex;
+   FastOS_Mutex printMutex;
 
 public:
    ThreadTestBase(void)
@@ -23,8 +19,9 @@ public:
 
    void PrintProgress (char *string) override
    {
-      std::lock_guard<std::mutex> guard(printMutex);
+      printMutex.Lock();
       BaseTest::PrintProgress(string);
+      printMutex.Unlock();
    }
 
    void Run (FastOS_ThreadInterface *thread, void *arg) override;
@@ -96,10 +93,8 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       {
          int result;
 
-         std::unique_lock<std::mutex> guard;
-         if(job->mutex != nullptr) {
-             guard = std::unique_lock<std::mutex>(*job->mutex);
-         }
+         if(job->mutex != nullptr)
+            job->mutex->Lock();
 
          result = static_cast<int>(number);
 
@@ -112,7 +107,8 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
                FastOS_Thread::Sleep(1000);
          }
 
-         guard = std::unique_lock<std::mutex>();
+         if(job->mutex != nullptr)
+            job->mutex->Unlock();
 
          job->result = result;  // This marks the end of the thread
 
@@ -136,23 +132,26 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 
       case WAIT_FOR_THREAD_TO_FINISH:
       {
-          std::unique_lock<std::mutex> guard;
-          if (job->mutex != nullptr) {
-              guard = std::unique_lock<std::mutex>(*job->mutex);
-          }
+         if(job->mutex)
+            job->mutex->Lock();
 
          if(job->otherThread != nullptr)
             job->otherThread->Join();
 
+         if(job->mutex)
+            job->mutex->Unlock();
          break;
       }
 
       case WAIT_FOR_CONDITION:
       {
-         std::unique_lock<std::mutex> guard(*job->mutex);
+         job->condition->Lock();
+
          job->result = 1;
-         job->condition->wait(guard);
-         guard.unlock();
+
+         job->condition->Wait();
+         job->condition->Unlock();
+
          job->result = 0;
 
          break;
@@ -161,25 +160,25 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       case BOUNCE_CONDITIONS:
       {
         while (!thread->GetBreakFlag()) {
-            {
-                std::lock_guard<std::mutex> guard(*job->otherjob->mutex);
-                job->otherjob->bouncewakeupcnt++;
-                job->otherjob->bouncewakeup = true;
-                job->otherjob->condition->notify_one();
-            }
-            std::unique_lock<std::mutex> guard(*job->mutex);
-            while (!job->bouncewakeup) {
-                job->condition->wait_for(guard, 1ms);
-            }
-            job->bouncewakeup = false;
+          job->otherjob->condition->Lock();
+          job->otherjob->bouncewakeupcnt++;
+          job->otherjob->bouncewakeup = true;
+          job->otherjob->condition->Signal();
+          job->otherjob->condition->Unlock();
+
+          job->condition->Lock();
+          while (!job->bouncewakeup)
+            job->condition->TimedWait(1);
+          job->bouncewakeup = false;
+          job->condition->Unlock();
         }
         break;
       }
 
       case TEST_ID:
       {
-         job->mutex->lock();          // Initially the parent threads owns the lock
-         job->mutex->unlock();        // It is unlocked when we should start
+         job->mutex->Lock();          // Initially the parent threads owns the lock
+         job->mutex->Unlock();        // It is unlocked when we should start
 
          FastOS_ThreadId currentId = FastOS_Thread::GetCurrentThreadId();
 
@@ -193,19 +192,18 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       case WAIT2SEC_AND_SIGNALCOND:
       {
          FastOS_Thread::Sleep(2000);
-         job->condition->notify_one();
+         job->condition->Signal();
          job->result = 1;
          break;
       }
 
       case HOLD_MUTEX_FOR2SEC:
       {
-          {
-              std::lock_guard<std::mutex> guard(*job->mutex);
-              FastOS_Thread::Sleep(2000);
-          }
-          job->result = 1;
-          break;
+         job->mutex->Lock();
+         FastOS_Thread::Sleep(2000);
+         job->mutex->Unlock();
+         job->result = 1;
+         break;
       }
 
       case WAIT_2_SEC:

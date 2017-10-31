@@ -805,10 +805,9 @@ FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin,
     if (stderrListener != nullptr)
         _descriptor[TYPE_STDERR]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
 
-    {
-        auto guard = _app->getProcessGuard();
-        _app->AddChildProcess(this);
-    }
+    _app->ProcessLock();
+    _app->AddChildProcess(this);
+    _app->ProcessUnlock();
 
     // App::AddToIPCComm() is performed when the process is started
 }
@@ -826,8 +825,9 @@ FastOS_UNIX_Process::~FastOS_UNIX_Process ()
         static_cast<FastOS_UNIX_Application *>(_app)->RemoveFromIPCComm(this);
     } else {
         // No IPC descriptor, do it ourselves
-        auto guard = _app->getProcessGuard();
+        _app->ProcessLock();
         _app->RemoveChildProcess(this);
+        _app->ProcessUnlock();
     }
 
     for(int i=0; i<int(TYPE_COUNT); i++) {
@@ -897,7 +897,7 @@ bool FastOS_UNIX_Process::Signal(int sig)
     bool rc = false;
     pid_t pid;
 
-    auto guard = _app->getProcessGuard();
+    _app->ProcessLock();
     pid = GetProcessId();
     if (pid == 0) {
         /* Do nothing */
@@ -908,6 +908,7 @@ bool FastOS_UNIX_Process::Signal(int sig)
             _killed = true;
         rc = true;
     }
+    _app->ProcessUnlock();
     return rc;
 }
 
@@ -1721,7 +1722,7 @@ CreateProcess (FastOS_UNIX_Process *process,
 
     const char *cmdLine = process->GetCommandLine();
 
-    auto guard = _app->getProcessGuard();
+    process->_app->ProcessLock();
 
     if (process->GetDirectChild()) {
         _hasDirectChildren = true;
@@ -1769,7 +1770,7 @@ CreateProcess (FastOS_UNIX_Process *process,
                     "Forkandexec %s failed\n",
                     cmdLine);
         }
-        guard.unlock();
+        process->_app->ProcessUnlock();
         delete rprocess;
         FreeEnvironmentVariables(env);
         return rc;
@@ -1846,6 +1847,8 @@ CreateProcess (FastOS_UNIX_Process *process,
             }
         }
     }
+    process->_app->ProcessUnlock();
+
     return rc;
 }
 
@@ -1923,13 +1926,13 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
         *pollStillRunning = true;
 
     for (;;) {
-        {
-            auto guard = process->_app->getProcessGuard();
+        process->_app->ProcessLock();
 
-            if (_hasDirectChildren)  PollReapDirectChildren();
+        if (_hasDirectChildren)  PollReapDirectChildren();
 
-            if (_hasProxiedChildren) PollReapProxiedChildren();
-        }
+        if (_hasProxiedChildren) PollReapProxiedChildren();
+
+        process->_app->ProcessUnlock();
 
         if (process->GetDeathFlag()) {
             if (pollStillRunning != nullptr)
@@ -1968,14 +1971,16 @@ bool FastOS_UNIX_ProcessStarter::Detach(FastOS_UNIX_Process *process)
     bool rc = true;
     pid_t pid;
 
-    auto guard = process->_app->getProcessGuard();
+    process->_app->ProcessLock();
 
     pid = process->GetProcessId();
 
     if (pid == 0) {
+        process->_app->ProcessUnlock();
         return false;                   // Cannot detach nonstarted process.
     }
     if (process->GetDeathFlag()) {
+        process->_app->ProcessUnlock();
         return true;
     }
 
@@ -1999,6 +2004,7 @@ bool FastOS_UNIX_ProcessStarter::Detach(FastOS_UNIX_Process *process)
         ReadBytes(_mainSocket, &returnCode, sizeof(int));
         process->DeathNotification(returnCode);
     }
+    process->_app->ProcessUnlock();
     return rc;
 }
 
