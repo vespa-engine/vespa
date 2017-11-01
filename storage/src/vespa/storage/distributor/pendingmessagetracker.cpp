@@ -115,7 +115,7 @@ PendingMessageTracker::insert(
     }
 }
 
-document::BucketId
+document::Bucket
 PendingMessageTracker::reply(const api::StorageReply& r)
 {
     vespalib::LockGuard guard(_lock);
@@ -139,7 +139,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         msgs.erase(msgId);
     }
 
-    return bucket.getBucketId();
+    return bucket;
 }
 
 void

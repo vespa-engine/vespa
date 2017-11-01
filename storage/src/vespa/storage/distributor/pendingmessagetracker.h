@@ -64,7 +64,7 @@ public:
     ~PendingMessageTracker();
 
     void insert(const std::shared_ptr<api::StorageMessage>&);
-    document::BucketId reply(const api::StorageReply& reply);
+    document::Bucket reply(const api::StorageReply& reply);
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
