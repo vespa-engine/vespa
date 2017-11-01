@@ -20,6 +20,8 @@ import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import java.security.PrivateKey;
 import java.util.concurrent.TimeUnit;
 
+import static com.yahoo.vespa.hosted.controller.athenz.AthenzUtils.USER_PRINCIPAL_DOMAIN;
+
 /**
  * @author bjorncs
  */
@@ -63,7 +65,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
                 config.domain() + "." + service.name(), service.publicKeyId(), getServicePrivateKey());
 
         Principal dualPrincipal = SimplePrincipal.create(
-                "yby", signedToken.getName(), signedToken.getSignedToken(), athenzPrincipalAuthority);
+                USER_PRINCIPAL_DOMAIN.id(), signedToken.getName(), signedToken.getSignedToken(), athenzPrincipalAuthority);
         return new ZmsClientImpl(new ZMSClient(config.zmsUrl(), dualPrincipal), config);
 
     }
