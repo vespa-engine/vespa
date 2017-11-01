@@ -110,12 +110,12 @@ public class LocalSessionTest {
     public void require_that_session_can_be_deleted() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
         assertTrue(configCurator.exists("/3"));
-        assertTrue(new File(tenantFileSystemDirs.path(), "3").exists());
+        assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
         long gen = superModelGenerationCounter.get();
         session.delete();
         assertThat(superModelGenerationCounter.get(), is(gen + 1));
         assertFalse(configCurator.exists("/3"));
-        assertFalse(new File(tenantFileSystemDirs.path(), "3").exists());
+        assertFalse(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -163,7 +163,7 @@ public class LocalSessionTest {
             zkClient.write(allocatedHosts.get());
         }
         zkClient.write(Collections.singletonMap(Version.fromIntValues(0, 0, 0), new MockFileRegistry()));
-        File sessionDir = new File(tenantFileSystemDirs.path(), String.valueOf(sessionId));
+        File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
         return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryTenantApplications(), new HostRegistry<>(), superModelGenerationCounter));
     }
