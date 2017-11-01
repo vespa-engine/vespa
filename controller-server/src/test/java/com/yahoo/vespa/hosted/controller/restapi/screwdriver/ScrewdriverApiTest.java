@@ -149,8 +149,9 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
 
         Application app = tester.createApplication();
         try (Lock lock = tester.controller().applications().lock(app.id())) {
-            app = app.withProjectId(1);
-            tester.controller().applications().store(app, lock);
+            tester.controller().applications().store(
+                    tester.controller().applications().require(app.id(), lock).withProjectId(1)
+            );
         }
 
         // Unknown application

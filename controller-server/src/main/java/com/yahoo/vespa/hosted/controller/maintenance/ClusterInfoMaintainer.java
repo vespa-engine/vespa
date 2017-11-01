@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -87,16 +88,16 @@ public class ClusterInfoMaintainer extends Maintainer {
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
             try (Lock lock = controller().applications().lock(application.id())) {
-                application = controller.applications().get(application.id()).orElse(null); // re-get inside lock
-                if (application == null) continue; // application removed
+                Optional<LockedApplication> lockedApplication = controller.applications().get(application.id(), lock);
+                if (!lockedApplication.isPresent()) continue; // application removed
                 
-                for (Deployment deployment : application.deployments().values()) {
+                for (Deployment deployment : lockedApplication.get().deployments().values()) {
                     DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                     try {
                         NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
                         Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
-                        Application app = application.with(deployment.withClusterInfo(clusterInfo));
-                        controller.applications().store(app, lock);
+                        controller.applications().store(lockedApplication.get()
+                                                                         .with(deployment.withClusterInfo(clusterInfo)));
                     } 
                     catch (IOException | IllegalArgumentException e) {
                         log.log(Level.WARNING, "Failing getting cluster info of for " + deploymentId, e);

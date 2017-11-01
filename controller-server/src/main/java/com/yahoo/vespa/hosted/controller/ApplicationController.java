@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -112,9 +111,10 @@ public class ApplicationController {
 
         for (Application application : db.listApplications()) {
             try (Lock lock = lock(application.id())) {
-                Optional<Application> optionalApplication = db.getApplication(application.id()); // re-get inside lock
-                if ( ! optionalApplication.isPresent()) continue; // was removed since listing; ok
-                store(optionalApplication.get(), lock); // re-write all applications to update storage format
+                Optional<LockedApplication> lockedApplication = db.getApplication(application.id())
+                        .map(app -> new LockedApplication(app, lock));
+                if ( ! lockedApplication.isPresent()) continue; // was removed since listing; ok
+                store(lockedApplication.get()); // re-write all applications to update storage format
             }
         }
     }
@@ -124,6 +124,12 @@ public class ApplicationController {
         return db.getApplication(id);
     }
 
+
+    /** Returns an locked application with the given id that be updated and stored */
+    public Optional<LockedApplication> get(ApplicationId id, Lock lock) {
+        return db.getApplication(id).map(application -> new LockedApplication(application, lock));
+    }
+
     /**
      * Returns the application with the given id
      * 
@@ -131,6 +137,16 @@ public class ApplicationController {
      */
     public Application require(ApplicationId id) {
         return get(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
+    }
+
+    /**
+     * Returns a locked application that be updated and stored
+     *
+     * @throws IllegalArgumentException if it does not exist
+     *
+     */
+    public LockedApplication require(ApplicationId id, Lock lock) {
+        return get(id, lock).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
     }
 
     /** Returns a snapshot of all applications */
@@ -260,8 +276,8 @@ public class ApplicationController {
                 zmsClient.addApplication(tenant.get().getAthensDomain().get(), 
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
-            Application application = new Application(id);
-            store(application, lock);
+            LockedApplication application = new LockedApplication(new Application(id), lock);
+            store(application);
             log.info("Created " + application);
             return application;
         }
@@ -273,7 +289,9 @@ public class ApplicationController {
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // Determine what we are doing
-            Application application = get(applicationId).orElse(new Application(applicationId));
+            LockedApplication application = get(applicationId, lock).orElse(new LockedApplication(
+                    new Application(applicationId), lock)
+            );
 
             Version version;
             if (options.deployCurrentVersion)
@@ -311,12 +329,12 @@ public class ApplicationController {
 
                 // Delete zones not listed in DeploymentSpec, if allowed
                 // We do this at deployment time to be able to return a validation failure message when necessary
-                application = deleteRemovedDeployments(application, lock);
+                application = deleteRemovedDeployments(application);
 
                 // Clean up deployment jobs that are no longer referenced by deployment spec
                 application = deleteUnreferencedDeploymentJobs(application);
 
-                store(application, lock); // store missing information even if we fail deployment below
+                store(application); // store missing information even if we fail deployment below
             }
 
             // Ensure that the deploying change is tested
@@ -341,7 +359,7 @@ public class ApplicationController {
                         previousDeployment.clusterUtils(), previousDeployment.clusterInfo(), previousDeployment.metrics());
 
             application = application.with(newDeployment);
-            store(application, lock);
+            store(application);
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
         }
@@ -358,7 +376,7 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId(applicationPackage.hash()), prepareResponse);
     }
 
-    private Application deleteRemovedDeployments(Application application, Lock lock) {
+    private LockedApplication deleteRemovedDeployments(LockedApplication application) {
         List<Deployment> deploymentsToRemove = application.productionDeployments().values().stream()
                 .filter(deployment -> ! application.deploymentSpec().includes(deployment.zone().environment(), 
                                                                               Optional.of(deployment.zone().region())))
@@ -376,13 +394,13 @@ public class ApplicationController {
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
                                                " in deployment.xml");
         
-        Application applicationWithRemoval = application;
+        LockedApplication applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
-            applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone(), lock);
+            applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone());
         return applicationWithRemoval;
     }
 
-    private Application deleteUnreferencedDeploymentJobs(Application application) {
+    private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
         for (DeploymentJobs.JobType job : application.deploymentJobs().jobStatus().keySet()) {
             Optional<Zone> zone = job.zone(controller.system());
 
@@ -510,20 +528,12 @@ public class ApplicationController {
         }
     }
 
-    public void setIssueId(ApplicationId id, IssueId issueId) {
-        try (Lock lock = lock(id)) {
-            get(id).ifPresent(application -> store(application.with(issueId), lock));
-        }
-    }
-
     /** 
      * Replace any previous version of this application by this instance 
      * 
-     * @param application the application version to store
-     * @param lock the lock held on this application since before modification started
+     * @param application a locked application to store
      */
-    @SuppressWarnings("unused") // lock is part of the signature to remind people to acquire it, not needed internally
-    public void store(Application application, Lock lock) {
+    public void store(LockedApplication application) {
         db.store(application);
     }
 
@@ -555,26 +565,25 @@ public class ApplicationController {
     }
 
     /** Deactivate application in the given zone */
-    public Application deactivate(Application application, Zone zone) {
-        return deactivate(application, zone, Optional.empty(), false);
+    public void deactivate(Application application, Zone zone) {
+        deactivate(application, zone, Optional.empty(), false);
     }
 
     /** Deactivate a known deployment of the given application */
-    public Application deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
-        return deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
+    public void deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
+        deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
     }
 
-    private Application deactivate(Application application, Zone zone, Optional<Deployment> deployment,
-                                   boolean requireThatDeploymentHasExpired) {
+    private void deactivate(Application application, Zone zone, Optional<Deployment> deployment,
+                            boolean requireThatDeploymentHasExpired) {
         try (Lock lock = lock(application.id())) {
-            application = controller.applications().require(application.id()); // re-get with lock
+            LockedApplication lockedApplication = controller.applications().require(application.id(), lock);
             if (deployment.isPresent() && requireThatDeploymentHasExpired && 
                 ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant())) {
-                return application;
+                return;
             }
-            application = deactivate(application, zone, lock);
-            store(application, lock);
-            return application;
+            lockedApplication = deactivate(lockedApplication, zone);
+            store(lockedApplication);
         }
     }
 
@@ -583,7 +592,7 @@ public class ApplicationController {
      * 
      * @return the application with the deployment in the given zone removed
      */
-    private Application deactivate(Application application, Zone zone, Lock lock) {
+    private LockedApplication deactivate(LockedApplication application, Zone zone) {
         try {
             configserverClient.deactivate(new DeploymentId(application.id(), zone));
         }

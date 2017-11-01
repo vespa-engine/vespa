@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;// Copyright 2017 Yahoo Ho
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -11,6 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,15 +44,15 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     try (Lock lock = controller().applications().lock(application.id())) {
 
                         // Deployment or application may have changed (or be gone) now:
-                        application = controller().applications().get(application.id()).orElse(null);
-                        if (application == null)
-                            break;
+                        Optional<LockedApplication> lockedApplication = controller().applications()
+                                                                                    .get(application.id(), lock);
+                        if (!lockedApplication.isPresent()) continue;
 
-                        deployment = application.deployments().get(deployment.zone());
-                        if (deployment == null)
-                            continue;
+                        deployment = lockedApplication.get().deployments().get(deployment.zone());
+                        if (deployment == null) continue;
 
-                        controller().applications().store(application.with(deployment.withMetrics(appMetrics)), lock);
+                        controller().applications().store(lockedApplication.get()
+                                                                           .with(deployment.withMetrics(appMetrics)));
                     }
                 }
                 catch (UncheckedIOException e) {

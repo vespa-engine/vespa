@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -49,7 +50,7 @@ public class DeploymentOrder {
 
     /** Returns a list of jobs to trigger after the given job */
     // TODO: This does too much - should just tell us the order, as advertised
-    public List<JobType> nextAfter(JobType job, Application application) {
+    public List<JobType> nextAfter(JobType job, LockedApplication application) {
         if ( ! application.deploying().isPresent()) { // Change was cancelled
             return Collections.emptyList();
         }

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -135,20 +136,20 @@ public class ApplicationSerializerTest {
         assertEquals(6, serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
-            Application original2 = original.withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1"))));
+            Application original2 = writable(original).withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1"))));
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
             assertEquals(original2.deploying(), serialized2.deploying());
             assertEquals(((Change.ApplicationChange)serialized2.deploying().get()).revision().get().source(),
                          ((Change.ApplicationChange)original2.deploying().get()).revision().get().source());
 
-            Application original3 = original.withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1",
-                                                                                                                            new SourceRevision("a", "b", "c")))));
+            Application original3 = writable(original).withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1",
+                                                                                                                                      new SourceRevision("a", "b", "c")))));
             Application serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
             assertEquals(original3.deploying(), serialized2.deploying());
             assertEquals(((Change.ApplicationChange)serialized3.deploying().get()).revision().get().source(),
                          ((Change.ApplicationChange)original3.deploying().get()).revision().get().source());
 
-            Application original4 = original.withDeploying(Optional.empty());
+            Application original4 = writable(original).withDeploying(Optional.empty());
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
             assertEquals(original4.deploying(), serialized4.deploying());
         }
