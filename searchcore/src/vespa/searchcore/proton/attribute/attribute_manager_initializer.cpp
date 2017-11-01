@@ -46,14 +46,14 @@ public:
 
 class AttributeManagerInitializerTask : public vespalib::Executor::Task
 {
-    std::promise<bool> _promise;
+    std::promise<void> _promise;
     search::SerialNum _configSerialNum;
     DocumentMetaStore::SP _documentMetaStore;
     AttributeManager::SP _attrMgr;
     InitializedAttributesResult &_attributesResult;
 
 public:
-    AttributeManagerInitializerTask(std::promise<bool> &&promise,
+    AttributeManagerInitializerTask(std::promise<void> &&promise,
                                     search::SerialNum configSerialNum,
                                     DocumentMetaStore::SP documentMetaStore,
                                     AttributeManager::SP attrMgr,
@@ -63,7 +63,7 @@ public:
 };
 
 
-AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<bool> &&promise,
+AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<void> &&promise,
                                                                  search::SerialNum configSerialNum,
                                                                  DocumentMetaStore::SP documentMetaStore,
                                                                  AttributeManager::SP attrMgr,
@@ -86,7 +86,7 @@ AttributeManagerInitializerTask::run()
     _attrMgr->addExtraAttribute(_documentMetaStore);
     _attrMgr->addInitializedAttributes(_attributesResult.get());
     _attrMgr->pruneRemovedFields(_configSerialNum);
-    _promise.set_value(true);
+    _promise.set_value();
 }
 
 class AttributeInitializerTasksBuilder : public IAttributeInitializerRegistry
@@ -168,8 +168,8 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
 void
 AttributeManagerInitializer::run()
 {
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
+    std::promise<void> promise;
+    auto future = promise.get_future();
     /*
      * Attribute manager and some its members (e.g. _attributeFieldWriter) assumes that work is performed
      * by document db master thread and lacks locking to handle calls from multiple threads.
@@ -179,7 +179,7 @@ AttributeManagerInitializer::run()
                                                                       _documentMetaStore,
                                                                       _attrMgr,
                                                                       _attributesResult));
-    (void) future.get();
+    future.wait();
     *_attrMgrResult = _attrMgr;
 }
 

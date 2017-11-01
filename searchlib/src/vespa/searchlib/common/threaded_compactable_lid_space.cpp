@@ -23,10 +23,10 @@ ThreadedCompactableLidSpace::~ThreadedCompactableLidSpace()
 void
 ThreadedCompactableLidSpace::compactLidSpace(uint32_t wantedDocLidLimit)
 {
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
-    _executor.executeLambda(_executorId, [this, wantedDocLidLimit, &promise]() { _target->compactLidSpace(wantedDocLidLimit); promise.set_value(true); });
-    (void) future.get();
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    _executor.executeLambda(_executorId, [this, wantedDocLidLimit, &promise]() { _target->compactLidSpace(wantedDocLidLimit); promise.set_value(); });
+    future.wait();
 }
 
 bool
@@ -44,10 +44,10 @@ ThreadedCompactableLidSpace::getEstimatedShrinkLidSpaceGain() const
 void
 ThreadedCompactableLidSpace::shrinkLidSpace()
 {
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
-    _executor.executeLambda(_executorId, [this, &promise]() { _target->shrinkLidSpace(); promise.set_value(true); });
-    (void) future.get();
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    _executor.executeLambda(_executorId, [this, &promise]() { _target->shrinkLidSpace(); promise.set_value(); });
+    future.wait();
 }
 
 }

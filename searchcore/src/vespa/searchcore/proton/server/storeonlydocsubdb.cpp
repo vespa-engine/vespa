@@ -200,10 +200,10 @@ StoreOnlyDocSubDB::onReplayDone()
     _dms->shrinkLidSpace();
     uint32_t docIdLimit = _dms->getCommittedDocIdLimit();
     auto &docStore = _rSummaryMgr->getBackingStore();
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
-    _writeService.summary().execute(makeLambdaTask([&]() { docStoreReplayDone(docStore, docIdLimit); promise.set_value(true); }));
-    (void) future.get();
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    _writeService.summary().execute(makeLambdaTask([&]() { docStoreReplayDone(docStore, docIdLimit); promise.set_value(); }));
+    future.wait();
 }
 
 
