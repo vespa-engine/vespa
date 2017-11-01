@@ -25,6 +25,7 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.maxFailureAge;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.maxInactivity;
+import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.upgradeGracePeriod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -155,6 +156,10 @@ public class DeploymentIssueReporterTest {
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
         assertFalse("We have no platform issues initially.", issues.platformIssue());
+        reporter.maintain();
+        reporter.maintain();
+        assertFalse("We have no platform issue before the grace period is out for the failing canary.", issues.platformIssue());
+        tester.clock().advance(upgradeGracePeriod.plus(upgradeGracePeriod));
         reporter.maintain();
         reporter.maintain();
         assertTrue("We get a platform issue when confidence is broken", issues.platformIssue());

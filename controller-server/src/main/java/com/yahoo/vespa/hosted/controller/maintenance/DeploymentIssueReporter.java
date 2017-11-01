@@ -25,8 +25,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Maintenance job which files issues for tenants when they have jobs which fails continuously
@@ -38,6 +38,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivity = Duration.ofDays(4);
+    static final Duration upgradeGracePeriod = Duration.ofHours(2);
 
     private final DeploymentIssues deploymentIssues;
 
@@ -49,6 +50,7 @@ public class DeploymentIssueReporter extends Maintainer {
     @Override
     protected void maintain() {
         maintainDeploymentIssues(controller().applications().asList());
+        maintainPlatformIssue(controller().applications().asList());
         escalateInactiveDeploymentIssues(controller().applications().asList());
     }
 
@@ -60,35 +62,48 @@ public class DeploymentIssueReporter extends Maintainer {
     private void maintainDeploymentIssues(List<Application> applications) {
         List<ApplicationId> failingApplications = new ArrayList<>();
         for (Application application : applications)
-            if (oldApplicationChangeFailuresIn(application.deploymentJobs()))
+            if (oldFailuresIn(application.deploymentJobs(), this::causedByApplicationChange, maxFailureAge))
                 failingApplications.add(application.id());
             else
                 storeIssueId(application.id(), null);
 
         failingApplications.forEach(this::fileDeploymentIssueFor);
 
-        if (controller().versionStatus().version(controller().systemVersion()).confidence() == VespaVersion.Confidence.broken)
-            deploymentIssues.fileUnlessOpen(ApplicationList.from(applications)
-                                                    .upgradingTo(controller().systemVersion())
-                                                    .asList().stream()
-                                                    .map(Application::id)
-                                                    .collect(Collectors.toList()),
-                                            controller().systemVersion());
     }
 
-    private boolean oldApplicationChangeFailuresIn(DeploymentJobs jobs) {
-        if (!jobs.hasFailures()) return false;
+    /**
+     * When the confidence for the system version is BROKEN, file an issue listing the
+     * applications that have been failing the upgrade to the system version for
+     * longer than the set grace period, or update this list if the issue already exists.
+     */
+    private void maintainPlatformIssue(List<Application> applications) {
+        if ( ! (controller().versionStatus().version(controller().systemVersion()).confidence() == VespaVersion.Confidence.broken))
+            return;
+
+        List<ApplicationId> failingApplications = new ArrayList<>();
+        for (Application application : ApplicationList.from(applications).upgradingTo(controller().systemVersion()).asList())
+            if (oldFailuresIn(application.deploymentJobs(), job -> ! causedByApplicationChange(job), upgradeGracePeriod))
+                failingApplications.add(application.id());
+
+        if ( ! failingApplications.isEmpty())
+            deploymentIssues.fileUnlessOpen(failingApplications, controller().systemVersion());
+    }
+
+    /** Return whether the given deployment jobs contain failures due to the given cause, past the given age. */
+    private boolean oldFailuresIn(DeploymentJobs jobs, Predicate<JobStatus> failureCause, Duration maxAge) {
+        if ( ! jobs.hasFailures()) return false;
 
         Optional<Instant> oldestApplicationChangeFailure = jobs.jobStatus().values().stream()
-                .filter(job -> ! job.isSuccess() && failureCausedByApplicationChange(job))
+                .filter(job -> ! job.isSuccess())
+                .filter(failureCause)
                 .map(job -> job.firstFailing().get().at())
                 .min(Comparator.naturalOrder());
 
         return oldestApplicationChangeFailure.isPresent()
-               && oldestApplicationChangeFailure.get().isBefore(controller().clock().instant().minus(maxFailureAge));
+               && oldestApplicationChangeFailure.get().isBefore(controller().clock().instant().minus(maxAge));
     }
 
-    private boolean failureCausedByApplicationChange(JobStatus job) {
+    private boolean causedByApplicationChange(JobStatus job) {
         if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
         if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
         if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
