@@ -13,20 +13,20 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.application.ApplicationList.failingApplicationChange;
+import static com.yahoo.vespa.hosted.controller.application.ApplicationList.failingSince;
+import static com.yahoo.vespa.hosted.controller.application.ApplicationList.failingUpgrade;
+import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 
 /**
  * Maintenance job which files issues for tenants when they have jobs which fails continuously
@@ -60,15 +60,17 @@ public class DeploymentIssueReporter extends Maintainer {
      * where deployment has not failed for this amount of time.
      */
     private void maintainDeploymentIssues(List<Application> applications) {
-        List<ApplicationId> failingApplications = new ArrayList<>();
+        Set<ApplicationId> failingApplications = ApplicationList.from(applications)
+                .withDeploymentJobs(failingApplicationChange, failingSince(controller().clock().instant().minus(maxFailureAge)))
+                .asList().stream()
+                .map(Application::id)
+                .collect(Collectors.toSet());
+
         for (Application application : applications)
-            if (oldFailuresIn(application.deploymentJobs(), this::causedByApplicationChange, maxFailureAge))
-                failingApplications.add(application.id());
+            if (failingApplications.contains(application.id()))
+                fileDeploymentIssueFor(application.id());
             else
                 storeIssueId(application.id(), null);
-
-        failingApplications.forEach(this::fileDeploymentIssueFor);
-
     }
 
     /**
@@ -77,37 +79,17 @@ public class DeploymentIssueReporter extends Maintainer {
      * longer than the set grace period, or update this list if the issue already exists.
      */
     private void maintainPlatformIssue(List<Application> applications) {
-        if ( ! (controller().versionStatus().version(controller().systemVersion()).confidence() == VespaVersion.Confidence.broken))
+        if ( ! (controller().versionStatus().version(controller().systemVersion()).confidence() == broken))
             return;
 
-        List<ApplicationId> failingApplications = new ArrayList<>();
-        for (Application application : ApplicationList.from(applications).upgradingTo(controller().systemVersion()).asList())
-            if (oldFailuresIn(application.deploymentJobs(), job -> ! causedByApplicationChange(job), upgradeGracePeriod))
-                failingApplications.add(application.id());
+        List<ApplicationId> failingApplications = ApplicationList.from(applications)
+                .withDeploymentJobs(failingUpgrade, failingSince(controller().clock().instant().minus(upgradeGracePeriod)))
+                .asList().stream()
+                .map(Application::id)
+                .collect(Collectors.toList());
 
         if ( ! failingApplications.isEmpty())
             deploymentIssues.fileUnlessOpen(failingApplications, controller().systemVersion());
-    }
-
-    /** Return whether the given deployment jobs contain failures due to the given cause, past the given age. */
-    private boolean oldFailuresIn(DeploymentJobs jobs, Predicate<JobStatus> failureCause, Duration maxAge) {
-        if ( ! jobs.hasFailures()) return false;
-
-        Optional<Instant> oldestApplicationChangeFailure = jobs.jobStatus().values().stream()
-                .filter(job -> ! job.isSuccess())
-                .filter(failureCause)
-                .map(job -> job.firstFailing().get().at())
-                .min(Comparator.naturalOrder());
-
-        return oldestApplicationChangeFailure.isPresent()
-               && oldestApplicationChangeFailure.get().isBefore(controller().clock().instant().minus(maxAge));
-    }
-
-    private boolean causedByApplicationChange(JobStatus job) {
-        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
-        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
-        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {
