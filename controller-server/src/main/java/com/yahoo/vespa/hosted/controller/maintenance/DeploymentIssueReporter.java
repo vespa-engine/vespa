@@ -23,9 +23,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.application.ApplicationList.failingApplicationChange;
-import static com.yahoo.vespa.hosted.controller.application.ApplicationList.failingSince;
-import static com.yahoo.vespa.hosted.controller.application.ApplicationList.failingUpgrade;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 
 /**
@@ -61,7 +58,7 @@ public class DeploymentIssueReporter extends Maintainer {
      */
     private void maintainDeploymentIssues(List<Application> applications) {
         Set<ApplicationId> failingApplications = ApplicationList.from(applications)
-                .withDeploymentJobs(failingApplicationChange, failingSince(controller().clock().instant().minus(maxFailureAge)))
+                .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
                 .asList().stream()
                 .map(Application::id)
                 .collect(Collectors.toSet());
@@ -83,7 +80,7 @@ public class DeploymentIssueReporter extends Maintainer {
             return;
 
         List<ApplicationId> failingApplications = ApplicationList.from(applications)
-                .withDeploymentJobs(failingUpgrade, failingSince(controller().clock().instant().minus(upgradeGracePeriod)))
+                .failingUpgradeToVersionSince(controller().systemVersion(), controller().clock().instant().minus(upgradeGracePeriod))
                 .asList().stream()
                 .map(Application::id)
                 .collect(Collectors.toList());
