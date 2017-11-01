@@ -33,14 +33,14 @@ PendingMessageTracker::MessageEntry::MessageEntry(
         uint32_t msgType_,
         uint32_t priority_,
         uint64_t msgId_,
-        document::BucketId bucketId_,
+        document::Bucket bucket_,
         uint16_t nodeIdx_,
         const vespalib::string & msgText_)
     : timeStamp(timeStamp_),
       msgType(msgType_),
       priority(priority_),
       msgId(msgId_),
-      bucketId(bucketId_),
+      bucket(bucket_),
       nodeIdx(nodeIdx_),
       msgText(msgText_)
 {
@@ -102,7 +102,7 @@ PendingMessageTracker::insert(
                              msg->getType().getId(),
                              msg->getPriority(),
                              msg->getMsgId(),
-                             msg->getBucketId(),
+                             msg->getBucket(),
                              msg->getAddress()->getIndex(),
                              msg->getSummary()));
 
@@ -119,7 +119,7 @@ document::BucketId
 PendingMessageTracker::reply(const api::StorageReply& r)
 {
     vespalib::LockGuard guard(_lock);
-    document::BucketId bucketId;
+    document::Bucket bucket;
 
     LOG(debug, "Got reply: %s", r.toString().c_str());
     uint64_t msgId = r.getMsgId();
@@ -128,7 +128,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     MessagesByMsgId::iterator iter = msgs.find(msgId);
 
     if (iter != msgs.end()) {
-        bucketId = iter->bucketId;
+        bucket = iter->bucket;
         _nodeInfo.decPending(r.getAddress()->getIndex());
         updateNodeStatsOnReply(*iter);
         api::ReturnCode::Result code = r.getResult().getResult();
@@ -139,7 +139,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         msgs.erase(msgId);
     }
 
-    return bucketId;
+    return bucket.getBucketId();
 }
 
 void
@@ -208,7 +208,7 @@ PendingMessageTracker::checkPendingMessages(uint16_t node,
     vespalib::LockGuard guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
-    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bucket.getBucketId())));
+    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bucket)));
     runCheckerOnRange(checker, range);
 }
 
@@ -219,7 +219,7 @@ PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket,
     vespalib::LockGuard guard(_lock);
     const MessagesByBucketAndType& msgs(boost::multi_index::get<2>(_messages));
 
-    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bucket.getBucketId())));
+    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bucket)));
     runCheckerOnRange(checker, range);
 }
 
@@ -231,7 +231,7 @@ PendingMessageTracker::hasPendingMessage(uint16_t node,
     vespalib::LockGuard guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
-    auto range = msgs.equal_range(boost::make_tuple(node, bucket.getBucketId(), messageType));
+    auto range = msgs.equal_range(boost::make_tuple(node, bucket, messageType));
     return (range.first != range.second);
 }
 
@@ -249,7 +249,7 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 {
     vespalib::LockGuard guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
-    using BucketMap = std::map<document::BucketId,
+    using BucketMap = std::map<document::Bucket,
                                std::vector<vespalib::string>>;
     BucketMap perBucketMsgs;
     for (auto& msg : msgs) {
@@ -261,23 +261,23 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
            << "</b> "
            << msg.msgText << "</li>\n";
 
-        perBucketMsgs[msg.bucketId].emplace_back(ss.str());
+        perBucketMsgs[msg.bucket].emplace_back(ss.str());
     }
 
-    document::BucketId lastBucketId;
+    bool first = true;
     for (auto& bucket : perBucketMsgs) {
-        if (lastBucketId.getRawId() != 0) {
+        if (!first) {
             out << "</ul>\n";
         }
-        out << "<b>" << bucket.first << "</b>\n";
+        out << "<b>" << bucket.first.toString() << "</b>\n";
         out << "<ul>\n";
-        lastBucketId = bucket.first;
+        first = false;
         for (auto& msgDesc : bucket.second) {
             out << msgDesc;
         }
     }
 
-    if (lastBucketId.getRawId() != 0) {
+    if (!first) {
         out << "</ul>\n";
     }
 }

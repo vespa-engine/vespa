@@ -148,7 +148,7 @@ private:
         uint32_t msgType;
         uint32_t priority;
         uint64_t msgId;
-        document::BucketId bucketId;
+        document::Bucket bucket;
         uint16_t nodeIdx;
         vespalib::string msgText;
 
@@ -156,7 +156,7 @@ private:
                      uint32_t msgType,
                      uint32_t priority,
                      uint64_t msgId,
-                     document::BucketId bucketId,
+                     document::Bucket bucket,
                      uint16_t nodeIdx,
                      const vespalib::string & msgText);
     };
@@ -176,8 +176,8 @@ private:
               MessageEntry,
               boost::multi_index::member<MessageEntry, uint16_t,
                                          &MessageEntry::nodeIdx>,
-              boost::multi_index::member<MessageEntry, document::BucketId,
-                                         &MessageEntry::bucketId>,
+              boost::multi_index::member<MessageEntry, document::Bucket,
+                                         &MessageEntry::bucket>,
               boost::multi_index::member<MessageEntry, uint32_t,
                                          &MessageEntry::msgType>
           >
@@ -187,8 +187,8 @@ private:
     struct CompositeBucketMsgNodeKey
         : boost::multi_index::composite_key<
               MessageEntry,
-              boost::multi_index::member<MessageEntry, document::BucketId,
-                                         &MessageEntry::bucketId>,
+              boost::multi_index::member<MessageEntry, document::Bucket,
+                                         &MessageEntry::bucket>,
               boost::multi_index::member<MessageEntry, uint32_t,
                                          &MessageEntry::msgType>,
               boost::multi_index::member<MessageEntry, uint16_t,
