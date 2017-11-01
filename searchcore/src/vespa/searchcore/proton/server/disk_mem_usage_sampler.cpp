@@ -60,21 +60,39 @@ sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
     return result;
 }
 
+// May throw fs::filesystem_error on concurrent directory tree modification
 uint64_t
-sampleDiskUsageInDirectory(const fs::path &path)
+attemptSampleDirectoryDiskUsageOnce(const fs::path &path)
 {
     uint64_t result = 0;
     for (const auto &elem : fs::recursive_directory_iterator(path,
                                                              fs::directory_options::skip_permission_denied)) {
         if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
-            try {
-                result += fs::file_size(elem.path());
-            } catch (const fs::filesystem_error &) {
-                // This typically happens when a file is removed while doing the directory scan. Ignoring.
+            std::error_code fsize_err;
+            const auto size = fs::file_size(elem.path(), fsize_err);
+            // Errors here typically happens when a file is removed while doing the directory scan. Ignore them.
+            if (!fsize_err) {
+                result += size;
             }
         }
     }
     return result;
+}
+
+uint64_t
+sampleDiskUsageInDirectory(const fs::path &path)
+{
+    // Since attemptSampleDirectoryDiskUsageOnce may throw on concurrent directory
+    // modifications, immediately retry a bounded number of times if this happens.
+    // Number of retries chosen randomly by counting fingers.
+    for (int i = 0; i < 10; ++i) {
+        try {
+            return attemptSampleDirectoryDiskUsageOnce(path);
+        } catch (const fs::filesystem_error&) {
+            // Go around for another spin that hopefully won't race.
+        }
+    }
+    return 0;
 }
 
 }
