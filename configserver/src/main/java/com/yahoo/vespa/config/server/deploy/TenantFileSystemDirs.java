@@ -22,23 +22,19 @@ public class TenantFileSystemDirs {
     public TenantFileSystemDirs(File dir, TenantName tenant) {
         this.serverDB = dir;
         this.tenant = tenant;
-        ConfigServerDB.createDirectory(path());
+        ConfigServerDB.createDirectory(sessionsPath());
     }
 
     public static TenantFileSystemDirs createTestDirs(TenantName tenantName) {
         return new TenantFileSystemDirs(Files.createTempDir(), tenantName);
     }
 
-    public File path() {
+    public File sessionsPath() {
         return new File(serverDB, Path.fromString("tenants").append(tenant.value()).append("sessions").getRelative());
     }
 
     public File getUserApplicationDir(long generation) {
-        return new File(path(), String.valueOf(generation));
-    }
-
-    public String getPath() {
-        return serverDB.getPath();
+        return new File(sessionsPath(), String.valueOf(generation));
     }
 
     public void delete() {
