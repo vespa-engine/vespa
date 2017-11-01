@@ -80,7 +80,7 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
             std::shared_ptr<api::RemoveLocationCommand> command(
                     new api::RemoveLocationCommand(
                             _msg->getDocumentSelection(),
-                            document::Bucket(BucketSpace::placeHolder(), e.getBucketId())));
+                            document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId())));
 
             copyMessageSettings(*_msg, *command);
             _tracker.queueCommand(command, nodes[i]);

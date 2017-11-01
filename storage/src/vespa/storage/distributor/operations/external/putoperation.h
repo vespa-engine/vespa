@@ -63,6 +63,7 @@ private:
             std::vector<MessageTracker::ToSend>& messagesToSend);
 
     void sendPutToBucketOnNode(
+            document::BucketSpace bucketSpace,
             const document::BucketId& bucketId,
             const uint16_t node,
             std::vector<PersistenceMessageTracker::ToSend>& putBatch);
