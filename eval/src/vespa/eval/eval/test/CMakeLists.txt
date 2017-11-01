@@ -3,4 +3,5 @@ vespa_add_library(eval_eval_test OBJECT
     SOURCES
     eval_spec.cpp
     tensor_conformance.cpp
+    test_io.cpp
 )
