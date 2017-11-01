@@ -26,7 +26,6 @@ import java.util.logging.Logger;
  * @author hmusum
  * @author Steinar Knutsen
  * @author bratseth
- * @since 5.1
  */
 public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler {
 

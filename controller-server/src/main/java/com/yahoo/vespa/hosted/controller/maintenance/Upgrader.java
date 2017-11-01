@@ -12,6 +12,9 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,29 +42,36 @@ public class Upgrader extends Maintainer {
      */
     @Override
     public void maintain() {
-        VespaVersion target = controller().versionStatus().version(controller().systemVersion());
-        if (target == null) return; // we don't have information about the current system version at this time
+        ApplicationList applications = applications();
+        
+        // Determine target versions for each upgrade policy
+        Optional<Version> canaryTarget = controller().versionStatus().systemVersion().map(VespaVersion::versionNumber);
+        Optional<Version> defaultTarget = newestVersionWithConfidence(VespaVersion.Confidence.normal);
+        Optional<Version> conservativeTarget = newestVersionWithConfidence(VespaVersion.Confidence.high);
 
-        switch (target.confidence()) {
-            case broken:
-                ApplicationList toCancel = applications().upgradingTo(target.versionNumber())
-                                                         .without(UpgradePolicy.canary);
-                if (toCancel.isEmpty()) break;
-                log.info("Version " + target.versionNumber() + " is broken, cancelling upgrades of non-canaries");
-                cancelUpgradesOf(toCancel);
-                break;
-            case low:
-                upgrade(applications().with(UpgradePolicy.canary), target.versionNumber());
-                break;
-            case normal:
-                upgrade(applications().with(UpgradePolicy.defaultPolicy), target.versionNumber());
-                break;
-            case high:
-                upgrade(applications().with(UpgradePolicy.conservative), target.versionNumber());
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown version confidence " + target.confidence());
-        }
+        // Cancel any upgrades to the wrong targets
+        cancelUpgradesOf(applications.with(UpgradePolicy.canary).upgrading().notUpgradingTo(canaryTarget));
+        cancelUpgradesOf(applications.with(UpgradePolicy.defaultPolicy).upgrading().notUpgradingTo(defaultTarget));
+        cancelUpgradesOf(applications.with(UpgradePolicy.conservative).upgrading().notUpgradingTo(conservativeTarget));
+
+        // Schedule the right upgrades
+        canaryTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.canary), target));
+        defaultTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target));
+        conservativeTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.conservative), target));
+    }
+    
+    private Optional<Version> newestVersionWithConfidence(VespaVersion.Confidence confidence) {
+        return reversed(controller().versionStatus().versions()).stream()
+                                                                .filter(v -> v.confidence().equalOrHigherThan(confidence))
+                                                                .findFirst()
+                                                                .map(VespaVersion::versionNumber);
+    }
+    
+    private List<VespaVersion> reversed(List<VespaVersion> versions) {
+        List<VespaVersion> reversed = new ArrayList<>(versions.size());
+        for (int i = 0; i < versions.size(); i++)
+            reversed.add(versions.get(versions.size() - 1 - i));
+        return reversed;
     }
     
     /** Returns a list of all applications */
@@ -89,9 +99,10 @@ public class Upgrader extends Maintainer {
     }
 
     private void cancelUpgradesOf(ApplicationList applications) {
-        for (Application application : applications.asList()) {
+        if (applications.isEmpty()) return;
+        log.info("Cancelling upgrading of " + applications.asList().size() + " applications");
+        for (Application application : applications.asList())
             controller().applications().deploymentTrigger().cancelChange(application.id());
-        }
     }
 
     /** Returns the number of applications to upgrade in this run */
