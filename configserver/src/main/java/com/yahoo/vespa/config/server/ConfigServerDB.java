@@ -26,6 +26,9 @@ public class ConfigServerDB {
     private final ConfigserverConfig configserverConfig;
 
     public ConfigServerDB(ConfigserverConfig configserverConfig) {
+        if (configserverConfig.configDefinitionsDir().equals(configserverConfig.configServerDBDir()))
+            throw new IllegalArgumentException("configDefinitionsDir and configServerDBDir cannot be equal ('" +
+                    configserverConfig.configDefinitionsDir() + "')");
         this.configserverConfig = configserverConfig;
         this.serverDB = new File(Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir()));
         createDirectory(serverdefs());
@@ -63,7 +66,7 @@ public class ConfigServerDB {
 
     private void initialize(List<String> pluginDirectories) throws IOException {
         IOUtils.recursiveDeleteDir(serverdefs());
-        IOUtils.copyDirectory(classes(), serverdefs());
+        IOUtils.copyDirectory(classes(), serverdefs(), 1);
         ConfigDefinitionDir configDefinitionDir = new ConfigDefinitionDir(serverdefs());
         ArrayList<Bundle> bundles = new ArrayList<>();
         for (String pluginDirectory : pluginDirectories) {
