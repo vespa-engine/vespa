@@ -3,6 +3,9 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <string>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage {
 
@@ -51,7 +54,7 @@ SimpleBucketPriorityDatabaseTest::testCanGetPrioritizedBucket()
 {
     SimpleBucketPriorityDatabase queue;
 
-    PrioritizedBucket lowPriBucket(BucketId(16, 1234), Priority::VERY_LOW);
+    PrioritizedBucket lowPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::VERY_LOW);
     queue.setPriority(lowPriBucket);
 
     PrioritizedBucket highest(*queue.begin());
@@ -63,8 +66,8 @@ SimpleBucketPriorityDatabaseTest::testIterateOverMultiplePriorities()
 {
     SimpleBucketPriorityDatabase queue;
 
-    PrioritizedBucket lowPriBucket(BucketId(16, 1234), Priority::LOW);
-    PrioritizedBucket highPriBucket(BucketId(16, 4321), Priority::HIGH);
+    PrioritizedBucket lowPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::LOW);
+    PrioritizedBucket highPriBucket(makeDocumentBucket(BucketId(16, 4321)), Priority::HIGH);
     queue.setPriority(lowPriBucket);
     queue.setPriority(highPriBucket);
 
@@ -82,8 +85,8 @@ SimpleBucketPriorityDatabaseTest::testMultipleSetPriorityForOneBucket()
 {
     SimpleBucketPriorityDatabase queue;
 
-    PrioritizedBucket lowPriBucket(BucketId(16, 1234), Priority::LOW);
-    PrioritizedBucket highPriBucket(BucketId(16, 1234), Priority::HIGH);
+    PrioritizedBucket lowPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::LOW);
+    PrioritizedBucket highPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::HIGH);
 
     queue.setPriority(lowPriBucket);
     queue.setPriority(highPriBucket);
@@ -99,8 +102,8 @@ SimpleBucketPriorityDatabaseTest::testNoMaintenanceNeededClearsBucketFromDatabas
 {
     SimpleBucketPriorityDatabase queue;
 
-    PrioritizedBucket highPriBucket(BucketId(16, 1234), Priority::HIGH);
-    PrioritizedBucket noPriBucket(BucketId(16, 1234),
+    PrioritizedBucket highPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::HIGH);
+    PrioritizedBucket noPriBucket(makeDocumentBucket(BucketId(16, 1234)),
                                   Priority::NO_MAINTENANCE_NEEDED);
     queue.setPriority(highPriBucket);
     queue.setPriority(noPriBucket);
@@ -114,11 +117,11 @@ SimpleBucketPriorityDatabaseTest::testIterateOverMultipleBucketsWithMultiplePrio
 {
     SimpleBucketPriorityDatabase queue;
 
-    PrioritizedBucket lowPriBucket1(BucketId(16, 1), Priority::LOW);
-    PrioritizedBucket lowPriBucket2(BucketId(16, 2), Priority::LOW);
-    PrioritizedBucket mediumPriBucket(BucketId(16, 3), Priority::MEDIUM);
-    PrioritizedBucket highPriBucket1(BucketId(16, 4), Priority::HIGH);
-    PrioritizedBucket highPriBucket2(BucketId(16, 5), Priority::HIGH);
+    PrioritizedBucket lowPriBucket1(makeDocumentBucket(BucketId(16, 1)), Priority::LOW);
+    PrioritizedBucket lowPriBucket2(makeDocumentBucket(BucketId(16, 2)), Priority::LOW);
+    PrioritizedBucket mediumPriBucket(makeDocumentBucket(BucketId(16, 3)), Priority::MEDIUM);
+    PrioritizedBucket highPriBucket1(makeDocumentBucket(BucketId(16, 4)), Priority::HIGH);
+    PrioritizedBucket highPriBucket2(makeDocumentBucket(BucketId(16, 5)), Priority::HIGH);
 
     queue.setPriority(highPriBucket1);
     queue.setPriority(lowPriBucket2);
@@ -127,7 +130,7 @@ SimpleBucketPriorityDatabaseTest::testIterateOverMultipleBucketsWithMultiplePrio
     queue.setPriority(lowPriBucket1);
 
     const_iterator iter(queue.begin());
-    PrioritizedBucket lastBucket(BucketId(), Priority::PRIORITY_LIMIT);
+    PrioritizedBucket lastBucket(makeDocumentBucket(BucketId()), Priority::PRIORITY_LIMIT);
     for (int i = 0; i < 5; ++i) {
         CPPUNIT_ASSERT(iter != queue.end());
         CPPUNIT_ASSERT(!iter->moreImportantThan(lastBucket));

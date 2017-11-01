@@ -64,7 +64,7 @@ MaintenanceScheduler::possibleToScheduleInEmergency(
 void
 MaintenanceScheduler::clearPriority(const PrioritizedBucket& bucket)
 {
-    _priorityDb.setPriority(PrioritizedBucket(bucket.getBucketId(),
+    _priorityDb.setPriority(PrioritizedBucket(bucket.getBucket(),
                                               MaintenancePriority::NO_MAINTENANCE_NEEDED));
 }
 
@@ -91,7 +91,7 @@ MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority p
 bool
 MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
 {
-    Operation::SP operation(_operationGenerator.generate(bucket.getBucketId()));
+    Operation::SP operation(_operationGenerator.generate(bucket.getBucket().getBucketId()));
     if (!operation) {
         return true;
     }
