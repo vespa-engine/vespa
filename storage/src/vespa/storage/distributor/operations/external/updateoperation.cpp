@@ -91,7 +91,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             std::shared_ptr<api::UpdateCommand> command(
-                    new api::UpdateCommand(document::Bucket(BucketSpace::placeHolder(), entries[j].getBucketId()),
+                    new api::UpdateCommand(document::Bucket(_msg->getBucket().getBucketSpace(), entries[j].getBucketId()),
                             _msg->getUpdate(),
                             _msg->getTimestamp()));
             copyMessageSettings(*_msg, *command);

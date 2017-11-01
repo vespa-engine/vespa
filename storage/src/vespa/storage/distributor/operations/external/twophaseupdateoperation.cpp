@@ -181,7 +181,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
         _updateCmd->getDocumentId().toString().c_str());
 
     _mode = Mode::SLOW_PATH;
-    document::Bucket bucket(BucketSpace::placeHolder(), document::BucketId(0));
+    document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
     std::shared_ptr<api::GetCommand> get(
             std::make_shared<api::GetCommand>(
                 bucket,
@@ -251,7 +251,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(
         sendLostOwnershipTransientErrorReply(sender);
         return;
     }
-    document::Bucket bucket(BucketSpace::placeHolder(), document::BucketId(0));
+    document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
     std::shared_ptr<api::PutCommand> put(
             new api::PutCommand(bucket, doc, putTimestamp));
     copyMessageSettings(*_updateCmd, *put);
@@ -339,7 +339,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(
                     _updateCmd->getDocumentId().toString().c_str());
 
                 _updateReply = intermediate._reply;
-                document::Bucket bucket(BucketSpace::placeHolder(), bestNode.first);
+                document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), bestNode.first);
                 std::shared_ptr<api::GetCommand> cmd(
                     new api::GetCommand(bucket,
                     _updateCmd->getDocumentId(),
