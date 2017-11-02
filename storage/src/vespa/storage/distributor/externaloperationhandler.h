@@ -6,7 +6,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
-#include <vespa/storage/distributor/managed_bucket_space_component.h>
+#include <vespa/storage/distributor/distributor_bucket_space_component.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <chrono>
 
@@ -20,7 +20,7 @@ namespace distributor {
 class Distributor;
 class MaintenanceOperationGenerator;
 
-class ExternalOperationHandler : public ManagedBucketSpaceComponent,
+class ExternalOperationHandler : public DistributorBucketSpaceComponent,
                                  public api::MessageHandler
 {
 public:
@@ -38,7 +38,7 @@ public:
     DEF_MSG_COMMAND_H(GetBucketList);
 
     ExternalOperationHandler(Distributor& owner,
-                             ManagedBucketSpace& bucketSpace,
+                             DistributorBucketSpace& bucketSpace,
                              const MaintenanceOperationGenerator&,
                              DistributorComponentRegister& compReg);
 
