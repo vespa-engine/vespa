@@ -3,8 +3,8 @@ package com.yahoo.container.jdisc.athenz.impl;
 
 import com.yahoo.vespa.defaults.Defaults;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -15,20 +15,21 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 
 /**
  * @author mortent
+ * @author bjorncs
  */
 public class ServiceProviderApi {
 
-    private final URI providerUri;
+    private final URI identityDocumentApiUri;
 
-    public ServiceProviderApi(String providerAddress) {
-        providerUri = URI.create(String.format("https://%s:8443/athenz/v1/provider", providerAddress));
+    public ServiceProviderApi(String configServerHostname) {
+        this.identityDocumentApiUri = createIdentityDocumentApiUri(configServerHostname);
     }
 
     /**
@@ -36,11 +37,7 @@ public class ServiceProviderApi {
      */
     public String getSignedIdentityDocument() {
         try (CloseableHttpClient httpClient = createHttpClient()) {
-            // TODO Figure out a proper way of determining the hostname matching what's registred in node-repository
-            String uri = providerUri + "/identity-document?hostname=" + URLEncoder.encode(
-                    Defaults.getDefaults().vespaHostname(), "UTF-8");
-            HttpUriRequest request = RequestBuilder.get().setUri(uri).build();
-            CloseableHttpResponse idDocResponse = httpClient.execute(request);
+            CloseableHttpResponse idDocResponse = httpClient.execute(new HttpGet(identityDocumentApiUri));
             String responseContent = EntityUtils.toString(idDocResponse.getEntity());
             if (HttpStatus.isSuccess(idDocResponse.getStatusLine().getStatusCode())) {
                 return responseContent;
@@ -66,6 +63,21 @@ public class ServiceProviderApi {
                                                    SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
             return HttpClientBuilder.create().setSSLSocketFactory(sslSocketFactory).build();
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static URI createIdentityDocumentApiUri(String providerHostname) {
+        try {
+            // TODO Figure out a proper way of determining the hostname matching what's registred in node-repository
+            return new URIBuilder()
+                    .setScheme("https")
+                    .setHost(providerHostname)
+                    .setPort(8443)
+                    .setPath("/athenz/v1/provider/identity-document")
+                    .addParameter("hostname", Defaults.getDefaults().vespaHostname())
+                    .build();
+        } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
