@@ -235,7 +235,7 @@ public class VersionStatusTest {
 
 
     @Test
-    public void testIgnoreConfigdeince() {
+    public void testIgnoreConfidence() {
         DeploymentTester tester = new DeploymentTester();
 
         Version version0 = new Version("5.0");

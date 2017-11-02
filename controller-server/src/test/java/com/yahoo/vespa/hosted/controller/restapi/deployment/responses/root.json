@@ -17,7 +17,8 @@
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default"
         }
-      ]
+      ],
+      "deployingApplications": []
     },
     {
       "version": "(ignore)",
@@ -45,6 +46,15 @@
           "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
           "upgradePolicy": "default"
         }
+      ],
+      "deployingApplications": [
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default"
+        }
       ]
     },
     {
@@ -63,7 +73,8 @@
         }
       ],
       "failingApplications": [],
-      "productionApplications": []
+      "productionApplications": [],
+      "deployingApplications": []
     },
     {
       "version": "(ignore)",
@@ -74,7 +85,8 @@
       "systemVersion": false,
       "configServers": [],
       "failingApplications": [],
-      "productionApplications": []
+      "productionApplications": [],
+      "deployingApplications": []
     }
   ]
 }

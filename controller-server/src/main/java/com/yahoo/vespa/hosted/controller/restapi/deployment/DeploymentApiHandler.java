@@ -112,7 +112,9 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
 
             Cursor deployingArray = versionObject.setArray("deployingApplications");
             for (ApplicationId id : version.statistics().deploying()) {
-
+                Optional<Application> application = controller.applications().get(id);
+                if ( ! application.isPresent()) continue; // deleted just now
+                toSlime(application.get(), deployingArray.addObject(), request);
             }
         }
         return new SlimeJsonResponse(slime);

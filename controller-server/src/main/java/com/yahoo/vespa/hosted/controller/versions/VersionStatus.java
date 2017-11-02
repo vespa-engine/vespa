@@ -12,8 +12,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 
 import java.net.URI;
 import java.time.Instant;
@@ -146,51 +144,40 @@ public class VersionStatus {
                 versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
             }
 
-            // List versions which have failing jobs, versions which are in production, and versions to which applications are deploying
+            // List versions which have failing jobs, versions which are in production, and versions for which there are running deployment jobs
 
             // Failing versions
-            Map<Version, List<JobStatus>> failingJobsByVersion = jobs.jobStatus().values().stream()
+            jobs.jobStatus().values().stream()
                     .filter(jobStatus -> jobStatus.lastCompleted().isPresent())
                     .filter(jobStatus -> jobStatus.lastCompleted().get().upgrade())
                     .filter(jobStatus -> jobStatus.jobError().isPresent())
                     .filter(jobStatus -> jobStatus.jobError().get() != DeploymentJobs.JobError.outOfCapacity)
-                    .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastCompleted().get().version()));
-            for (Version v : failingJobsByVersion.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withFailing(application.id()));
-            }
+                    .map(jobStatus -> jobStatus.lastCompleted().get().version())
+                    .forEach(version -> versionMap.merge(version, DeploymentStatistics.empty(version), (statistics, __ ) -> statistics.withFailing(application.id())));
 
             // Succeeding versions
-            Map<Version, List<JobStatus>> succeedingJobsByVersions = jobs.jobStatus().values().stream()
+            jobs.jobStatus().values().stream()
                     .filter(jobStatus -> jobStatus.lastSuccess().isPresent())
                     .filter(jobStatus -> jobStatus.type().isProduction())
-                    .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastSuccess().get().version()));
-            for (Version v : succeedingJobsByVersions.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withProduction(application.id()));
-            }
+                    .map(jobStatus -> jobStatus.lastSuccess().get().version())
+                    .forEach(version -> versionMap.merge(version, DeploymentStatistics.empty(version), (statistics, __ ) -> statistics.withProduction(application.id())));
 
             // Deploying versions
-            Map<Version, List<JobStatus>> deployingJobsByVersion = jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.isRunning(jobTimeoutLimit))
+            jobs.jobStatus().values().stream()
                     .filter(jobStatus -> jobStatus.type() != JobType.component)
-                    .filter(jobStatus -> jobStatus.lastTriggered().isPresent())
-                    .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastTriggered().get().version())); // Plain wrong for component jobs ...
-            for (Version v : deployingJobsByVersion.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withDeploying(application.id()));
-            }
+                    .filter(jobStatus -> jobStatus.isRunning(jobTimeoutLimit))
+                    .map(jobStatus -> jobStatus.lastTriggered().get().version())
+                    .forEach(version -> versionMap.merge(version, DeploymentStatistics.empty(version), (statistics, __ ) -> statistics.withDeploying(application.id())));
         }
         return versionMap.values();
     }
     
-    private static DeploymentStatistics emptyIfMissing(Version version, DeploymentStatistics statistics) {
-        return statistics == null ? DeploymentStatistics.empty(version) : statistics;
-    }
-
-    private static VespaVersion createVersion(DeploymentStatistics statistics, 
+    private static VespaVersion createVersion(DeploymentStatistics statistics,
                                               boolean isSystemVersion, 
                                               Collection<String> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
-        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
+        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime()); // commitedAt ...
         VespaVersion.Confidence confidence;
         // Always compute confidence for system version
         if (isSystemVersion) {
