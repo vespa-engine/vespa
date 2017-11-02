@@ -139,10 +139,10 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
 
 StateChecker::Result
 IdealStateManager::generateHighestPriority(
-        const document::BucketId& bid,
+        const document::Bucket &bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
-    StateChecker::Context c(_distributorComponent, statsTracker, bid);
+    StateChecker::Context c(_distributorComponent, statsTracker, bucket.getBucketId());
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
 
@@ -158,11 +158,11 @@ IdealStateManager::generateHighestPriority(
 
 MaintenancePriorityAndType
 IdealStateManager::prioritize(
-        const document::BucketId& bucketId,
+        const document::Bucket &bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
     StateChecker::Result generated(
-            generateHighestPriority(bucketId, statsTracker));
+            generateHighestPriority(bucket, statsTracker));
     MaintenancePriority priority(generated.getPriority());
     MaintenanceOperation::Type type(priority.requiresMaintenance()
                                     ? generated.getType()
@@ -193,11 +193,11 @@ IdealStateManager::generateInterceptingSplit(const BucketDatabase::Entry& e,
 }
 
 MaintenanceOperation::SP
-IdealStateManager::generate(const document::BucketId& bucketId) const
+IdealStateManager::generate(const document::Bucket &bucket) const
 {
     NodeMaintenanceStatsTracker statsTracker;
     IdealStateOperation::SP op(
-            generateHighestPriority(bucketId, statsTracker).createOperation());
+            generateHighestPriority(bucket, statsTracker).createOperation());
     if (op.get()) {
         op->setIdealStateManager(
                 const_cast<IdealStateManager*>(this));
@@ -206,10 +206,10 @@ IdealStateManager::generate(const document::BucketId& bucketId) const
 }
 
 std::vector<MaintenanceOperation::SP>
-IdealStateManager::generateAll(const document::BucketId& bucketId,
+IdealStateManager::generateAll(const document::Bucket &bucket,
                                NodeMaintenanceStatsTracker& statsTracker) const
 {
-    StateChecker::Context c(_distributorComponent, statsTracker, bucketId);
+    StateChecker::Context c(_distributorComponent, statsTracker, bucket.getBucketId());
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
     BucketDatabase::Entry* e(getEntryForPrimaryBucket(c));
@@ -232,6 +232,7 @@ IdealStateManager::generateAll(const document::BucketId& bucketId,
 
 void
 IdealStateManager::getBucketStatus(
+        document::BucketSpace bucketSpace,
         const BucketDatabase::Entry& entry,
         NodeMaintenanceStatsTracker& statsTracker,
         std::ostream& out) const
@@ -239,8 +240,9 @@ IdealStateManager::getBucketStatus(
     LOG(debug, "Dumping bucket database valid at cluster state version %u",
         _distributorComponent.getDistributor().getClusterState().getVersion());
 
+    document::Bucket bucket(bucketSpace, entry.getBucketId());
     std::vector<MaintenanceOperation::SP> operations(
-            generateAll(entry.getBucketId(), statsTracker));
+            generateAll(bucket, statsTracker));
     if (operations.empty()) {
         out << entry.getBucketId() << " : ";
     } else {
@@ -262,7 +264,7 @@ IdealStateManager::getBucketStatus(
 void
 IdealStateManager::getBucketStatus(std::ostream& out) const
 {
-     StatusBucketVisitor proc(*this, out);
+     StatusBucketVisitor proc(*this, document::BucketSpace::placeHolder(), out);
      _distributorComponent.getBucketDatabase().forEach(proc);
 }
 

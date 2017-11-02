@@ -33,7 +33,7 @@ SimpleMaintenanceScanner::reset()
 void
 SimpleMaintenanceScanner::prioritizeBucket(const document::Bucket &bucket)
 {
-    MaintenancePriorityAndType pri(_priorityGenerator.prioritize(bucket.getBucketId(), _pendingMaintenance.perNodeStats));
+    MaintenancePriorityAndType pri(_priorityGenerator.prioritize(bucket, _pendingMaintenance.perNodeStats));
     if (pri.requiresMaintenance()) {
         _bucketPriorityDb.setPriority(PrioritizedBucket(bucket, pri.getPriority().getPriority()));
         assert(pri.getType() != MaintenanceOperation::OPERATION_COUNT);

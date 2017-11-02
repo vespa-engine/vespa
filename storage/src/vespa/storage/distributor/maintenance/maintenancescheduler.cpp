@@ -91,7 +91,7 @@ MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority p
 bool
 MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
 {
-    Operation::SP operation(_operationGenerator.generate(bucket.getBucket().getBucketId()));
+    Operation::SP operation(_operationGenerator.generate(bucket.getBucket()));
     if (!operation) {
         return true;
     }
