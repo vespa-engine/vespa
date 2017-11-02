@@ -21,4 +21,14 @@ ContentBucketSpaceRepo::get(BucketSpace bucketSpace) const
     return *itr->second;
 }
 
+size_t
+ContentBucketSpaceRepo::getBucketMemoryUsage() const
+{
+    size_t result = 0;
+    for (const auto &elem : _map) {
+        result += elem.second->bucketDatabase().getMemoryUsage();
+    }
+    return result;
+}
+
 }
