@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -47,19 +48,33 @@ public class ApplicationList {
 
     // ----------------------------------- Filters
 
-    /** Returns the subset of applications which is currently upgrading to the given version */
+    /** Returns the subset of applications which are currently upgrading (to any version) */
+    public ApplicationList upgrading() {
+        return listOf(list.stream().filter(application -> isUpgrading(application)));
+    }
+
+    /** Returns the subset of applications which are currently upgrading to the given version */
     public ApplicationList upgradingTo(Version version) {
         return listOf(list.stream().filter(application -> isUpgradingTo(version, application)));
     }
 
-    /** Returns the subset of applications which is currently upgrading to a version lower than the given version */
+    /** Returns the subset of applications which are currently upgrading to a version lower than the given version */
     public ApplicationList upgradingToLowerThan(Version version) {
         return listOf(list.stream().filter(application -> isUpgradingToLowerThan(version, application)));
     }
 
-    /** Returns the subset of applications which is currently not upgrading to the given version */
+    /** Returns the subset of applications which are currently not upgrading to the given version */
     public ApplicationList notUpgradingTo(Version version) {
         return listOf(list.stream().filter(application -> ! isUpgradingTo(version, application)));
+    }
+
+    /** 
+     * Returns the subset of applications which are currently not upgrading to the given version,
+     * or returns all if no version is specified
+     */
+    public ApplicationList notUpgradingTo(Optional<Version> version) {
+        if ( ! version.isPresent()) return this;
+        return notUpgradingTo(version.get());
     }
 
     /** Returns the subset of applications which is currently not deploying a new application revision */
@@ -155,7 +170,13 @@ public class ApplicationList {
     }
 
     // ----------------------------------- Internal helpers
-    
+
+    private static boolean isUpgrading(Application application) {
+        if ( ! (application.deploying().isPresent()) ) return false;
+        if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;
+        return true;
+    }
+
     private static boolean isUpgradingTo(Version version, Application application) {
         if ( ! (application.deploying().isPresent()) ) return false;
         if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;

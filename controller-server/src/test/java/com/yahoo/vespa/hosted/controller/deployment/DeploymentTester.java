@@ -96,6 +96,7 @@ public class DeploymentTester {
     }
     
     public void updateVersionStatus(Version currentVersion) {
+        configServer().setDefaultVersion(currentVersion);
         controller().updateVersionStatus(VersionStatus.compute(controller(), currentVersion));
     }
 

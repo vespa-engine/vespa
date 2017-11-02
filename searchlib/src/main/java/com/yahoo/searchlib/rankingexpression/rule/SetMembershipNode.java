@@ -12,7 +12,6 @@ import java.util.*;
  * A node which returns true or false depending on a set membership test
  *
  * @author bratseth
- * @since 5.1.21
  */
 public class SetMembershipNode extends BooleanNode {
 
