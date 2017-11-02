@@ -13,7 +13,6 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include "bufferedlogger.h"
 
 #include <vespa/defaults.h>
-#include <vespa/fastos/thread.h>
 #include <cassert>
 #include <cstdarg>
 #include <unistd.h>
@@ -267,7 +266,7 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
         // threads, only showing the least significant bits will hopefully
         // distinguish between all threads in your application. Alter later if
         // found to be too inaccurate.
-    int32_t tid = (fakePid ? -1 : FastOS_Thread::GetCurrentThreadId() % 0xffff);
+    int32_t tid = (fakePid ? -1 : pthread_self() % 0xffff);
 
     if (_target->makeHumanReadable()) {
         time_t secs = static_cast<time_t>(timestamp / 1000000);

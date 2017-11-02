@@ -2,7 +2,6 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    fastos
 
     LIBS
     src/vespa/log

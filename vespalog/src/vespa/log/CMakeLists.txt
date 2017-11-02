@@ -15,8 +15,6 @@ vespa_add_library(vespalog
     log-assert.cpp
     reject-filter.cpp
     INSTALL lib64
-    DEPENDS
-    fastos
 )
 
 add_custom_command(
