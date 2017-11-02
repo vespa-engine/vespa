@@ -273,7 +273,7 @@ PutOperationTest::testNodeRemovedOnReply()
                         "doc:test:test, timestamp 100, size 33) => 0"),
             _sender.getCommands(true, true));
 
-    getExternalOperationHandler().removeNodeFromDB(document::BucketId(16, 0x8b13), 0);
+    getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x8b13)), 0);
 
     sendReply(0);
     sendReply(1);
@@ -281,7 +281,7 @@ PutOperationTest::testNodeRemovedOnReply()
     CPPUNIT_ASSERT_EQUAL(std::string(
                                  "PutReply(doc:test:test, BucketId(0x0000000000000000), "
                                  "timestamp 100) ReturnCode(BUCKET_DELETED, "
-                                 "BucketId(0x4000000000008b13) was deleted from nodes [0] "
+                                 "Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000008b13)) was deleted from nodes [0] "
                                  "after message was sent but before it was done. "
                                  "Sent to [1,0])"),
                          _sender.getLastReply());
@@ -596,7 +596,7 @@ PutOperationTest::getNodes(const std::string& infoString) {
 
     std::vector<uint16_t> targetNodes;
     std::vector<uint16_t> createNodes;
-    PutOperation::getTargetNodes(getExternalOperationHandler().getIdealNodes(bid),
+    PutOperation::getTargetNodes(getExternalOperationHandler().getIdealNodes(makeDocumentBucket(bid)),
                                  targetNodes, createNodes, entry, 2);
 
     ost << "target( ";

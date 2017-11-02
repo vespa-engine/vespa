@@ -72,7 +72,7 @@ public:
         return _pendingMessageTracker;
     }
 
-    BucketOwnership checkOwnershipInPendingState(const document::BucketId&) const override;
+    BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const override;
 
     /**
      * Enables a new cluster state. Called after the bucket db updater has
@@ -112,7 +112,7 @@ public:
      * Checks whether a bucket needs to be split, and sends a split
      * if so.
      */
-    void checkBucketForSplit(const BucketDatabase::Entry& e, uint8_t priority) override;
+    void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority) override;
 
     const lib::Distribution& getDistribution() const override;
 

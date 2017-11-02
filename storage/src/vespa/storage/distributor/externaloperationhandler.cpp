@@ -79,9 +79,10 @@ ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 bool
 ExternalOperationHandler::checkTimestampMutationPreconditions(
         api::StorageCommand& cmd,
-        const document::BucketId& bucket,
+        const document::BucketId &bucketId,
         PersistenceOperationMetricSet& persistenceMetrics)
 {
+    document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
     if (!checkDistribution(cmd, bucket)) {
         LOG(debug,
             "Distributor manager received %s, bucket %s with wrong "
@@ -197,8 +198,9 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
 {
     document::BucketId bid;
     RemoveLocationOperation::getBucketId(*this, *cmd, bid);
+    document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
-    if (!checkDistribution(*cmd, bid)) {
+    if (!checkDistribution(*cmd, bucket)) {
         LOG(debug,
             "Distributor manager received %s with wrong distribution",
             cmd->toString().c_str());
@@ -217,12 +219,13 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 {
-    if (!checkDistribution(*cmd, getBucketId(cmd->getDocumentId()))) {
+    document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
+    if (!checkDistribution(*cmd, bucket)) {
         LOG(debug,
             "Distributor manager received get for %s, "
             "bucket %s with wrong distribution",
             cmd->getDocumentId().toString().c_str(),
-            getBucketId(cmd->getDocumentId()).toString().c_str());
+            bucket.toString().c_str());
 
         getMetrics().gets[cmd->getLoadType()].failures.wrongdistributor++;
         return true;
@@ -237,11 +240,11 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, MultiOperation)
 {
-    if (!checkDistribution(*cmd, cmd->getBucketId())) {
+    if (!checkDistribution(*cmd, cmd->getBucket())) {
         LOG(debug,
             "Distributor manager received multi-operation message, "
             "bucket %s with wrong distribution",
-            cmd->getBucketId().toString().c_str());
+            cmd->getBucket().toString().c_str());
         return true;
     }
 
@@ -254,7 +257,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, MultiOperation)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
 {
-    if (!checkDistribution(*cmd, cmd->getBucketId())) {
+    if (!checkDistribution(*cmd, cmd->getBucket())) {
         return true;
     }
 
@@ -264,7 +267,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
 {
-    if (!checkDistribution(*cmd, cmd->getBucketId())) {
+    if (!checkDistribution(*cmd, cmd->getBucket())) {
         return true;
     }
     _op = Operation::SP(new StatBucketListOperation(

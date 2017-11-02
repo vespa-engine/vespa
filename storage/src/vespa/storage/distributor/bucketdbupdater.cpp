@@ -61,7 +61,8 @@ BucketDBUpdater::checkOwnershipInPendingState(const document::BucketId& b) const
     if (hasPendingClusterState()) {
         const lib::ClusterState& state(_pendingClusterState->getNewClusterState());
         const lib::Distribution& distribution(_pendingClusterState->getDistribution());
-        if (!_bucketSpaceComponent.ownsBucketInState(distribution, state, b)) {
+        document::Bucket bucket(BucketSpace::placeHolder(), b);
+        if (!_bucketSpaceComponent.ownsBucketInState(distribution, state, bucket)) {
             return BucketOwnership::createNotOwnedInState(state);
         }
     }
@@ -459,13 +460,15 @@ BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::Buc
 void
 BucketDBUpdater::updateDatabase(uint16_t node, BucketListMerger& merger)
 {
-    for (const document::BucketId & bucket : merger.getRemovedEntries()) {
+    for (const document::BucketId & bucketId : merger.getRemovedEntries()) {
+        document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
         _bucketSpaceComponent.removeNodeFromDB(bucket, node);
     }
 
     for (const BucketListMerger::BucketEntry& entry : merger.getAddedEntries()) {
+        document::Bucket bucket(BucketSpace::placeHolder(), entry.first);
         _bucketSpaceComponent.updateBucketDatabase(
-                entry.first,
+                bucket,
                 BucketCopy(merger.getTimestamp(), node, entry.second),
                 DatabaseUpdate::CREATE_IF_NONEXISTING);
     }

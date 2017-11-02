@@ -27,7 +27,7 @@ public:
 
     virtual void enableClusterState(const lib::ClusterState& state) = 0;
 
-    virtual BucketOwnership checkOwnershipInPendingState(const document::BucketId&) const = 0;
+    virtual BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const = 0;
 
     virtual void notifyDistributionChangeEnabled() = 0;
 
@@ -46,7 +46,7 @@ public:
      * @param e The bucket to check.
      * @param pri The priority the split should be sent at.
      */
-    virtual void checkBucketForSplit(const BucketDatabase::Entry& e, uint8_t pri) = 0;
+    virtual void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t pri) = 0;
 
     /**
      * @return Returns the current cluster state.

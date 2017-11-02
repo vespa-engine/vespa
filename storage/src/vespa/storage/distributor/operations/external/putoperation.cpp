@@ -182,7 +182,7 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
         // subsequently arriving from the storage node will always overwrite it.
         BucketCopy copy(BucketCopy::recentlyCreatedCopy(
                 0, copies[i].getNode().getIndex()));
-        _manager.updateBucketDatabase(lastBucket, copy,
+        _manager.updateBucketDatabase(document::Bucket(originalCommand.getBucket().getBucketSpace(), lastBucket), copy,
                                       DatabaseUpdate::CREATE_IF_NONEXISTING);
     }
     ActiveList active;
@@ -338,6 +338,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
         // TODO(vekterli): only check entries for sendToExisting?
         for (uint32_t i = 0; i < entries.size(); ++i) {
             _manager.getDistributor().checkBucketForSplit(
+                    _msg->getBucket().getBucketSpace(),
                     entries[i],
                     _msg->getPriority());
         }

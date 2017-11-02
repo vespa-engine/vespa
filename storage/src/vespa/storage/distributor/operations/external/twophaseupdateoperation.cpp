@@ -224,8 +224,9 @@ TwoPhaseUpdateOperation::onStart(DistributorMessageSender& sender) {
 bool
 TwoPhaseUpdateOperation::lostBucketOwnershipBetweenPhases() const
 {
+    document::Bucket updateDocBucket(_updateCmd->getBucket().getBucketSpace(), _updateDocBucketId);
     BucketOwnership bo(_manager.checkOwnershipInPendingAndCurrentState(
-            _updateDocBucketId));
+            updateDocBucket));
     return !bo.isOwned();
 }
 
