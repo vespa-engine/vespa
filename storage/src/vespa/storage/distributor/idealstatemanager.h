@@ -4,7 +4,7 @@
 #include <deque>
 #include <map>
 #include <set>
-#include <vespa/storage/distributor/managed_bucket_space_component.h>
+#include <vespa/storage/distributor/distributor_bucket_space_component.h>
 #include <vespa/storage/distributor/statechecker.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
@@ -40,7 +40,7 @@ class IdealStateManager : public framework::HtmlStatusReporter,
 public:
 
     IdealStateManager(Distributor& owner,
-                      ManagedBucketSpace& bucketSpace,
+                      DistributorBucketSpace& bucketSpace,
                       DistributorComponentRegister& compReg,
                       bool manageActiveBucketCopies);
 
@@ -110,7 +110,7 @@ private:
     std::vector<StateChecker::SP> _stateCheckers;
     SplitBucketStateChecker* _splitBucketStateChecker;
 
-    ManagedBucketSpaceComponent _distributorComponent;
+    DistributorBucketSpaceComponent _distributorComponent;
 
     std::vector<IdealStateOperation::SP> generateOperationsForBucket(
             StateChecker::Context& c) const;
