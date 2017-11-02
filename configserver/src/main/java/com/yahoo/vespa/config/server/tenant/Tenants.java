@@ -238,7 +238,6 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * Writes the path of the given tenant into ZooKeeper, for watchers to react on
      *
      * @param name name of the tenant
-     * @return this Tenants
      */
     private synchronized void writeTenantPath(TenantName name) {
         Path tenantPath = getTenantPath(name);
