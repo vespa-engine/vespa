@@ -69,8 +69,8 @@ public:
                           vespalib::stringref name)
         : StorageComponent(compReg, name),
           _diskCount(0),
-          _bucketSpaceRepo(0),
-          _minUsedBitsTracker(0)
+          _bucketSpaceRepo(nullptr),
+          _minUsedBitsTracker(nullptr)
     {
         compReg.registerServiceLayerComponent(*this);
     }
