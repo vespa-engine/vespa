@@ -28,6 +28,7 @@ You can also setup CentOS 7 natively and install the following build dependencie
 ### Build Java modules
 
     export MAVEN_OPTS="-Xms128m -Xmx512m"
+    source /opt/rh/rh-maven33/enable
     bash bootstrap.sh java
     mvn -T <num-threads> install
 
