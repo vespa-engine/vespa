@@ -65,8 +65,9 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                                           SslContextFactory sslContextFactory) {
         this(config, scheduler, zone, sslContextFactory,
                 new InstanceValidator(keyProvider, superModelProvider),
-                new IdentityDocumentGenerator(config, nodeRepository, zone, keyProvider),
-                new AthenzCertificateUpdater(certificateClient, sslContextFactory, keyProvider, config));
+                new IdentityDocumentGenerator(config, getZoneConfig(config, zone), nodeRepository, zone, keyProvider),
+                new AthenzCertificateUpdater(
+                        certificateClient, sslContextFactory, keyProvider, config, getZoneConfig(config, zone)));
     }
 
     AthenzInstanceProviderService(AthenzProviderServiceConfig config,
@@ -149,7 +150,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                                  SslContextFactory sslContextFactory,
                                  KeyProvider keyProvider,
                                  AthenzProviderServiceConfig config,
-                                         AthenzProviderServiceConfig.Zones zoneConfig) {
+                                 AthenzProviderServiceConfig.Zones zoneConfig) {
             this.certificateClient = certificateClient;
             this.sslContextFactory = sslContextFactory;
             this.keyProvider = keyProvider;
