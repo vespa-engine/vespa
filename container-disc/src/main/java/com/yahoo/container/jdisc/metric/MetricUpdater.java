@@ -10,14 +10,17 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
  * Uses a timer to emit metrics
- * 
+ *
+ * @author bjorncs
  * @author vegardh
- * @since 5.17
  *
  */
 public class MetricUpdater extends AbstractComponent {
@@ -31,38 +34,74 @@ public class MetricUpdater extends AbstractComponent {
     private static final String MEMORY_MAPPINGS_COUNT = "jdisc.memory_mappings";
     private static final String OPEN_FILE_DESCRIPTORS = "jdisc.open_file_descriptors";
 
-    private final Metric metric;
-    private final ActiveContainerMetrics activeContainerMetrics;
-    private final Timer timer = new Timer();
-    long freeMemory = -1;
-    long totalMemory = -1;
+    private final Scheduler scheduler;
 
     @Inject
     public MetricUpdater(Metric metric, ActiveContainerMetrics activeContainerMetrics) {
-        this(metric, activeContainerMetrics, 10*1000);
+        this(new TimerScheduler(), metric, activeContainerMetrics);
     }
-    
-    public MetricUpdater(Metric metric, ActiveContainerMetrics activeContainerMetrics, long delayMillis) {
-        this.metric = metric;
-        this.activeContainerMetrics = activeContainerMetrics;
-        timer.schedule(new UpdaterTask(), delayMillis, delayMillis);
+
+    MetricUpdater(Scheduler scheduler, Metric metric, ActiveContainerMetrics activeContainerMetrics) {
+        this.scheduler = scheduler;
+        scheduler.schedule(new UpdaterTask(metric, activeContainerMetrics), Duration.ofSeconds(10));
     }
-    
+
     @Override
     public void deconstruct() {
-        if (timer!=null) timer.cancel();
+        scheduler.cancel();
     }
 
-    // For testing
-    long getFreeMemory() { return freeMemory; }
-    long getTotalMemory() { return totalMemory; }
+    // Note: Linux-specific
+    private static long count_mappings() {
+        long count = 0;
+        try {
+            Path p = Paths.get("/proc/self/maps");
+            if (!p.toFile().exists()) return 0; // E.g. MacOS
+            byte[] data = Files.readAllBytes(p);
+            for (byte b : data) {
+                if (b == '\n') {
+                    ++count;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not read /proc/self/maps: " + e);
+        }
+        return count;
+    }
+    // Note: Linux-specific
 
-    private class UpdaterTask extends TimerTask {
+    private static long count_open_files() {
+        long count = 0;
+        try {
+            Path p = Paths.get("/proc/self/fd");
+            if (!p.toFile().exists()) return 0; // E.g. MacOS
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
+                for (Path entry : stream) {
+                    ++count;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not read /proc/self/fd: " + e);
+        }
+        return count;
+    }
+
+    private static class UpdaterTask implements Runnable {
+
+        private final Runtime runtime = Runtime.getRuntime();
+        private final Metric metric;
+        private final ActiveContainerMetrics activeContainerMetrics;
+
+        public UpdaterTask(Metric metric, ActiveContainerMetrics activeContainerMetrics) {
+            this.metric = metric;
+            this.activeContainerMetrics = activeContainerMetrics;
+        }
+
         @SuppressWarnings("deprecation")
         @Override
         public void run() {
-            freeMemory = Runtime.getRuntime().freeMemory();
-            totalMemory = Runtime.getRuntime().totalMemory();
+            long freeMemory = runtime.freeMemory();
+            long totalMemory = runtime.totalMemory();
             long usedMemory = totalMemory - freeMemory;
             metric.set(DEPRECATED_FREE_MEMORY_BYTES, freeMemory, null);
             metric.set(DEPRECATED_USED_MEMORY_BYTES, usedMemory, null);
@@ -75,40 +114,32 @@ public class MetricUpdater extends AbstractComponent {
             activeContainerMetrics.emitMetrics(metric);
         }
 
-        // Note: Linux-specific
-        private long count_mappings() {
-            long count = 0;
-            try {
-                Path p = Paths.get("/proc/self/maps");
-                if (!p.toFile().exists()) return 0; // E.g. MacOS
-                byte[] data = Files.readAllBytes(p);
-                for (byte b : data) {
-                    if (b == '\n') {
-                        ++count;
-                    }
+    }
+
+    private static class TimerScheduler implements Scheduler {
+
+        private final Timer timer = new Timer();
+
+        @Override
+        public void schedule(Runnable runnable, TemporalAmount frequency) {
+            long frequencyMillis = frequency.get(ChronoUnit.MILLIS);
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    runnable.run();
                 }
-            } catch (Exception e) {
-                System.err.println("Could not read /proc/self/maps: " + e);
-            }
-            return count;
+            }, frequencyMillis, frequencyMillis) ;
         }
 
-        // Note: Linux-specific
-        private long count_open_files() {
-            long count = 0;
-            try {
-                Path p = Paths.get("/proc/self/fd");
-                if (!p.toFile().exists()) return 0; // E.g. MacOS
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
-                    for (Path entry : stream) {
-                        ++count;
-                    }
-                }
-            } catch (Exception e) {
-                System.err.println("Could not read /proc/self/fd: " + e);
-            }
-            return count;
+        @Override
+        public void cancel() {
+            timer.cancel();
         }
+    }
+
+    interface Scheduler {
+        void schedule(Runnable runnable, TemporalAmount frequency);
+        void cancel();
     }
 }
 
