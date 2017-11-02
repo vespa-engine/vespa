@@ -13,6 +13,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include "tensor_model.hpp"
+#include "test_io.h"
 
 namespace vespalib {
 namespace eval {
@@ -955,20 +956,20 @@ struct TestContext {
         vespalib::string path = module_path;
         path.append("src/apps/make_tensor_binary_format_test_spec/test_spec.json");
         MappedFileInput file(path);
-        Slime slime;
         EXPECT_TRUE(file.valid());
-        EXPECT_TRUE(JsonFormat::decode(file, slime) > 0);
-        int64_t num_tests = slime.get()["num_tests"].asLong();
-        Cursor &tests = slime.get()["tests"];
-        EXPECT_GREATER(num_tests, 0u);
-        EXPECT_EQUAL(size_t(num_tests), tests.entries());
-        for (size_t i = 0; i < tests.entries(); ++i) {
-            size_t fail_cnt = TEST_MASTER.getProgress().failCnt; 
-            TEST_DO(test_binary_format_spec(tests[i]));
-            if (TEST_MASTER.getProgress().failCnt > fail_cnt) {
-                fprintf(stderr, "failed:\n%s", tests[i].toString().c_str());
-            }
-        }
+        auto handle_test = [this](Slime &slime)
+                           {
+                               size_t fail_cnt = TEST_MASTER.getProgress().failCnt;
+                               TEST_DO(test_binary_format_spec(slime.get()));
+                               if (TEST_MASTER.getProgress().failCnt > fail_cnt) {
+                                   fprintf(stderr, "failed:\n%s", slime.get().toString().c_str());
+                               }
+                           };
+        auto handle_summary = [](Slime &slime)
+                              {
+                                  EXPECT_GREATER(slime["num_tests"].asLong(), 0);
+                              };
+        for_each_test(file, handle_test, handle_summary);
     }
 
     void test_binary_format() {
