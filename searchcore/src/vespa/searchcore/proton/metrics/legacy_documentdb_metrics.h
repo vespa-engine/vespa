@@ -4,8 +4,8 @@
 
 #include "legacy_attribute_metrics.h"
 #include "executor_metrics.h"
-#include <vespa/metrics/metrics.h>
 #include "sessionmanager_metrics.h"
+#include <vespa/metrics/summetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 
 namespace proton {

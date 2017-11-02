@@ -12,6 +12,6 @@ DocumentMetaStoreReadGuards::DocumentMetaStoreReadGuards(DocumentSubDBCollection
       remdms(subDBs.getRemSubDB()->getDocumentMetaStoreContext().getReadGuard())
 { }
 
-DocumentMetaStoreReadGuards::~DocumentMetaStoreReadGuards() { }
+DocumentMetaStoreReadGuards::~DocumentMetaStoreReadGuards() = default;
 
 }

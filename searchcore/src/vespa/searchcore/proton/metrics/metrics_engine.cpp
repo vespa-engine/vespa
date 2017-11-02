@@ -2,6 +2,7 @@
 
 #include "metrics_engine.h"
 #include "attribute_metrics_collection.h"
+#include "documentdb_metrics_collection.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 
@@ -15,12 +16,9 @@ MetricsEngine::MetricsEngine()
       _legacyRoot(),
       _manager(std::make_unique<metrics::MetricManager>()),
       _metrics_producer(*_manager)
-{
-}
+{ }
 
-MetricsEngine::~MetricsEngine()
-{
-}
+MetricsEngine::~MetricsEngine() = default;
 
 void
 MetricsEngine::start(const config::ConfigUri &)
@@ -236,9 +234,8 @@ MetricsEngine::cleanAttributes(const AttributeMetricsCollection &subAttributes,
     }
 }
 
-void MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner,
-                                   const std::string &name,
-                                   size_t numDocIdPartitions) {
+void
+MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner, const std::string &name, size_t numDocIdPartitions) {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
     auto &entry = owner.matching.rank_profiles[name];
     if (entry.get()) {
@@ -250,13 +247,13 @@ void MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner,
     }
 }
 
-void MetricsEngine::cleanRankProfiles(LegacyDocumentDBMetrics &owner) {
+void
+MetricsEngine::cleanRankProfiles(LegacyDocumentDBMetrics &owner) {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
     LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMap metrics;
     owner.matching.rank_profiles.swap(metrics);
-    for (LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMap::const_iterator
-             it = metrics.begin(); it != metrics.end(); ++it) {
-        owner.matching.unregisterMetric(*it->second);
+    for (auto & metric : metrics) {
+        owner.matching.unregisterMetric(*metric.second);
     }
 }
 

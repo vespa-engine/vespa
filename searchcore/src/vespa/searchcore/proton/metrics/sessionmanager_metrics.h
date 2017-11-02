@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/valuemetric.h>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 struct SessionManagerMetrics : metrics::MetricSet
 {
@@ -21,6 +22,4 @@ struct SessionManagerMetrics : metrics::MetricSet
     ~SessionManagerMetrics();
 };
 
-}  // namespace grouping
-}  // namespace search
-
+}

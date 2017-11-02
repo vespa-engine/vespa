@@ -1007,8 +1007,7 @@ DocumentDB::notifyAllBucketsChanged()
 namespace {
 
 void
-updateIndexMetrics(DocumentDBMetricsCollection &metrics,
-                   const search::SearchableStats &stats)
+updateIndexMetrics(DocumentDBMetricsCollection &metrics, const search::SearchableStats &stats)
 {
     DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
     indexMetrics.diskUsage.set(stats.sizeOnDisk());
@@ -1051,10 +1050,8 @@ isNotReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subD
 }
 
 void
-fillTempAttributeMetrics(TempAttributeMetrics &metrics,
-                         const vespalib::string &attrName,
-                         const MemoryUsage &memoryUsage,
-                         uint32_t bitVectors)
+fillTempAttributeMetrics(TempAttributeMetrics &metrics, const vespalib::string &attrName,
+                         const MemoryUsage &memoryUsage, uint32_t bitVectors)
 {
     metrics._total._memoryUsage.merge(memoryUsage);
     metrics._total._bitVectors += bitVectors;
@@ -1071,7 +1068,7 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
 {
     for (const auto subDb : subDbs) {
         proton::IAttributeManager::SP attrMgr(subDb->getAttributeManager());
-        if (attrMgr.get()) {
+        if (attrMgr) {
             TempAttributeMetrics *subMetrics =
                     (isReadySubDB(subDb, subDbs) ? &readyMetrics :
                      (isNotReadySubDB(subDb, subDbs) ? &notReadyMetrics : nullptr));
@@ -1091,8 +1088,7 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
 }
 
 void
-updateLegacyAttributeMetrics(LegacyAttributeMetrics &metrics,
-                             const TempAttributeMetrics &tmpMetrics)
+updateLegacyAttributeMetrics(LegacyAttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &attr : tmpMetrics._attrs) {
         LegacyAttributeMetrics::List::Entry *entry = metrics.list.get(attr.first);
@@ -1108,20 +1104,18 @@ updateLegacyAttributeMetrics(LegacyAttributeMetrics &metrics,
 }
 
 void
-updateAttributeMetrics(AttributeMetrics &metrics,
-                       const TempAttributeMetrics &tmpMetrics)
+updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &attr : tmpMetrics._attrs) {
         auto entry = metrics.get(attr.first);
-        if (entry.get()) {
+        if (entry) {
             entry->memoryUsage.update(attr.second._memoryUsage);
         }
     }
 }
 
 void
-updateAttributeMetrics(DocumentDBMetricsCollection &metrics,
-                       const DocumentSubDBCollection &subDbs)
+updateAttributeMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDBCollection &subDbs)
 {
     TempAttributeMetrics totalMetrics;
     TempAttributeMetrics readyMetrics;
@@ -1137,8 +1131,7 @@ updateAttributeMetrics(DocumentDBMetricsCollection &metrics,
 }
 
 void
-updateMatchingMetrics(LegacyDocumentDBMetrics::MatchingMetrics &metrics,
-                      const IDocumentSubDB &ready)
+updateMatchingMetrics(LegacyDocumentDBMetrics::MatchingMetrics &metrics, const IDocumentSubDB &ready)
 {
     MatchingStats stats;
     for (const auto &kv : metrics.rank_profiles) {
@@ -1158,8 +1151,10 @@ updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
     CacheStats cache_stats;
     for (const auto subDb : sub_dbs) {
         const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
-        cache_stats += summaryMgr->getBackingStore().getCacheStats();
-        memoryUsage += summaryMgr->getBackingStore().memoryUsed();
+        if (summaryMgr) {
+            cache_stats += summaryMgr->getBackingStore().getCacheStats();
+            memoryUsage += summaryMgr->getBackingStore().memoryUsed();
+        }
     }
     metrics.memoryUsage.set(memoryUsage);
     size_t lookups = cache_stats.hits + cache_stats.misses;
@@ -1204,8 +1199,7 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::
 
 template <typename MetricSetType>
 void
-updateLidSpaceMetrics(MetricSetType &metrics,
-                      const search::IDocumentMetaStore &metaStore)
+updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &metaStore)
 {
     LidUsageStats stats = metaStore.getLidUsageStats();
     metrics.lidLimit.set(stats.getLidLimit());
@@ -1257,13 +1251,10 @@ DocumentDB::
 updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
 {
     AttributeUsageFilter &writeFilter(_writeFilter);
-    AttributeUsageStats attributeUsageStats =
-        writeFilter.getAttributeUsageStats();
+    AttributeUsageStats attributeUsageStats = writeFilter.getAttributeUsageStats();
     bool feedBlocked = !writeFilter.acceptWriteOperation();
-    double enumStoreUsed =
-        attributeUsageStats.enumStoreUsage().getUsage().usage();
-    double multiValueUsed =
-        attributeUsageStats.multiValueUsage().getUsage().usage();
+    double enumStoreUsed = attributeUsageStats.enumStoreUsage().getUsage().usage();
+    double multiValueUsed = attributeUsageStats.multiValueUsage().getUsage().usage();
     metrics.resourceUsage.enumStore.set(enumStoreUsed);
     metrics.resourceUsage.multiValue.set(multiValueUsed);
     metrics.resourceUsage.feedingBlocked.set(feedBlocked ? 1 : 0);
