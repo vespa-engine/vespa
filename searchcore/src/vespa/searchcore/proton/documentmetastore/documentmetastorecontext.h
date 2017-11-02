@@ -22,7 +22,7 @@ public:
         search::AttributeGuard   _activeLidsGuard;
     public:
         ReadGuard(const search::AttributeVector::SP &metaStoreAttr);
-        virtual const search::IDocumentMetaStore &get() const override { return _store; }
+        const search::IDocumentMetaStore &get() const override { return _store; }
     };
 private:
     search::AttributeVector::SP _metaStoreAttr;
@@ -45,12 +45,10 @@ public:
      */
     DocumentMetaStoreContext(const search::AttributeVector::SP &metaStoreAttr);
 
-    // Implements IDocumentMetaStoreContext
     proton::IDocumentMetaStore::SP   getSP() const override { return _metaStore; }
     proton::IDocumentMetaStore &       get()       override { return *_metaStore; }
-
     IReadGuard::UP getReadGuard() const override {
-        return IReadGuard::UP(new ReadGuard(_metaStoreAttr));
+        return std::make_unique<ReadGuard>(_metaStoreAttr);
     }
 
     void constructFreeList() override;
