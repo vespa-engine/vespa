@@ -12,6 +12,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -98,12 +99,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             for (ApplicationId id : version.statistics().failing()) {
                 controller.applications().get(id).ifPresent(application -> {
                     firstFailingOn(version.versionNumber(), application).ifPresent(firstFailing -> {
-                        toSlime(failingArray.addObject(),
-                                application,
-                                firstFailing.firstFailing().get().upgrade(),
-                                firstFailing.firstFailing().get().at().toEpochMilli(),
-                                firstFailing.type().id(),
-                                request);
+                        toSlime(failingArray.addObject(), application, firstFailing.type(), request);
                     });
                 });
             }
@@ -112,12 +108,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             for (ApplicationId id : version.statistics().production()) {
                 controller.applications().get(id).ifPresent(application -> {
                     lastProductionOn(version.versionNumber(), application).ifPresent(lastProduction -> {
-                        toSlime(productionArray.addObject(),
-                                application,
-                                lastProduction.lastCompleted().get().upgrade(),
-                                lastProduction.lastCompleted().get().at().toEpochMilli(),
-                                lastProduction.type().id(),
-                                request);
+                        toSlime(productionArray.addObject(), application, lastProduction.type(), request);
                     });
                 });
             }
@@ -126,12 +117,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             for (ApplicationId id : version.statistics().deploying()) {
                 controller.applications().get(id).ifPresent(application -> {
                     lastDeployingTo(version.versionNumber(), application).ifPresent(lastDeploying -> {
-                        toSlime(deployingArray.addObject(),
-                                application,
-                                lastDeploying.lastTriggered().get().upgrade(),
-                                lastDeploying.lastTriggered().get().at().toEpochMilli(),
-                                lastDeploying.type().id(),
-                                request);
+                        toSlime(deployingArray.addObject(), application, lastDeploying.type(), request);
                     });
                 });
             }
@@ -139,7 +125,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(Cursor object, Application application, boolean upgrade, long at, String jobType, HttpRequest request) {
+    private void toSlime(Cursor object, Application application, JobType jobType, HttpRequest request) {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
@@ -148,9 +134,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                                    "/application/" +
                                                                    application.id().application().value()).toString());
         object.setString("upgradePolicy", toString(application.deploymentSpec().upgradePolicy()));
-        object.setBool("upgrade", upgrade);
-        object.setLong("at", at);
-        object.setString("jobType", jobType);
+        object.setString("jobType", jobType.id());
     }
 
     private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {
@@ -160,7 +144,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         return upgradePolicy.name();
     }
 
-    // ----------------------------- Utilities to pick out the relevant JobRuns -- filter chains mirror the ones in VersionStatus
+    // ----------------------------- Utilities to pick out the relevant JobStatus -- filter chains should mirror the ones in VersionStatus
 
     /** The first upgrade job to fail for this version x application */
     private Optional<JobStatus> firstFailingOn(Version version, Application application) {
