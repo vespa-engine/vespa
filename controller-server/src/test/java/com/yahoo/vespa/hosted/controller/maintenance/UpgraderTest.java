@@ -147,6 +147,7 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         assertEquals("Applications are on 5.3 - nothing to do", 0, tester.buildSystem().jobs().size());
         
+        // --- Starting upgrading to a new version which breaks, causing upgrades to commence on the previous version
         version = Version.fromString("5.4");
         Application default3 = tester.createAndDeploy("default3", 5, "default"); // need 4 to break a version
         Application default4 = tester.createAndDeploy("default4", 5, "default");
@@ -183,7 +184,7 @@ public class UpgraderTest {
         tester.completeUpgradeWithError(default0, version, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default1, version, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default2, version, "default", DeploymentJobs.JobType.stagingTest);
-        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.productionUsWest1);
         tester.completeUpgrade(default4, version, "default");
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
@@ -192,7 +193,7 @@ public class UpgraderTest {
                      3, tester.buildSystem().jobs().size());
         assertEquals("5.4", ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version().toString());
         assertEquals("5.4", ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version().toString());
-        assertEquals("5.4", ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version().toString());
+        assertEquals("5.4", ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version().toString());
     }
 
     @Test
