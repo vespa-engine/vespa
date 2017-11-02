@@ -27,6 +27,8 @@ import java.util.logging.Logger;
 public class InstanceValidator {
 
     private static final Logger log = Logger.getLogger(InstanceValidator.class.getName());
+    static final String SERVICE_PROPERTIES_DOMAIN_KEY = "identity.domain";
+    static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
 
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
@@ -47,8 +49,7 @@ public class InstanceValidator {
         }
 
         log.log(LogLevel.INFO, () -> String.format("Validating instance %s.", providerUniqueId));
-        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion);
-        if (isSignatureValid(publicKey, signedIdentityDocument.rawIdentityDocument, signedIdentityDocument.signature)) {
+        if (isInstanceSignatureValid(instanceConfirmation)) {
             log.log(LogLevel.INFO, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
         }
@@ -56,7 +57,14 @@ public class InstanceValidator {
         return false;
     }
 
-    public static boolean isSignatureValid(PublicKey publicKey, String rawIdentityDocument, String signature) {
+    boolean isInstanceSignatureValid(InstanceConfirmation instanceConfirmation) {
+        SignedIdentityDocument signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
+
+        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion);
+        return isSignatureValid(publicKey, signedIdentityDocument.rawIdentityDocument, signedIdentityDocument.signature);
+    }
+
+    static boolean isSignatureValid(PublicKey publicKey, String rawIdentityDocument, String signature) {
         try {
             Signature signatureVerifier = Signature.getInstance("SHA512withRSA");
             signatureVerifier.initVerify(publicKey);
@@ -68,7 +76,7 @@ public class InstanceValidator {
     }
 
     // If/when we dont care about logging exactly whats wrong, this can be simplified
-    private boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
+    boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
         Optional<ApplicationInfo> applicationInfo = superModelProvider.getSuperModel().getApplicationInfo(applicationId);
 
         if (!applicationInfo.isPresent()) {
@@ -81,8 +89,8 @@ public class InstanceValidator {
                 .getHosts()
                 .stream()
                 .flatMap(hostInfo -> hostInfo.getServices().stream())
-                .filter(serviceInfo -> serviceInfo.getProperty("identity.domain").isPresent())
-                .filter(serviceInfo -> serviceInfo.getProperty("identity.service").isPresent())
+                .filter(serviceInfo -> serviceInfo.getProperty(SERVICE_PROPERTIES_DOMAIN_KEY).isPresent())
+                .filter(serviceInfo -> serviceInfo.getProperty(SERVICE_PROPERTIES_SERVICE_KEY).isPresent())
                 .findFirst();
 
         if (!matchingServiceInfo.isPresent()) {
@@ -90,8 +98,8 @@ public class InstanceValidator {
             return false;
         }
 
-        String domainInConfig = matchingServiceInfo.get().getProperty("identity.domain").get();
-        String serviceInConfig = matchingServiceInfo.get().getProperty("identity.service").get();
+        String domainInConfig = matchingServiceInfo.get().getProperty(SERVICE_PROPERTIES_DOMAIN_KEY).get();
+        String serviceInConfig = matchingServiceInfo.get().getProperty(SERVICE_PROPERTIES_SERVICE_KEY).get();
         if (domainInConfig.equals(domain) && serviceInConfig.equals(service)) {
             return true;
         } else {
