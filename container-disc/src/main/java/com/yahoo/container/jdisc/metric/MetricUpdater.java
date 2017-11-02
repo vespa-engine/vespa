@@ -80,6 +80,7 @@ public class MetricUpdater extends AbstractComponent {
             long count = 0;
             try {
                 Path p = Paths.get("/proc/self/maps");
+                if (!p.toFile().exists()) return 0; // E.g. MacOS
                 byte[] data = Files.readAllBytes(p);
                 for (byte b : data) {
                     if (b == '\n') {
@@ -97,6 +98,7 @@ public class MetricUpdater extends AbstractComponent {
             long count = 0;
             try {
                 Path p = Paths.get("/proc/self/fd");
+                if (!p.toFile().exists()) return 0; // E.g. MacOS
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
                     for (Path entry : stream) {
                         ++count;
