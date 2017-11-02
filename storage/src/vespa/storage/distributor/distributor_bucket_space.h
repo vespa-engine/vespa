@@ -14,7 +14,7 @@ class Distribution;
 namespace distributor {
 
 /**
- * A managed bucket space holds specific state and information required for
+ * A distributor bucket space holds specific state and information required for
  * keeping track of, and computing operations for, a single bucket space:
  *
  * Bucket database instance
