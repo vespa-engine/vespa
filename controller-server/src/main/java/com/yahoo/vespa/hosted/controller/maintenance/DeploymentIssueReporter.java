@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
@@ -12,20 +13,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 
 /**
  * Maintenance job which files issues for tenants when they have jobs which fails continuously
@@ -37,6 +35,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivity = Duration.ofDays(4);
+    static final Duration upgradeGracePeriod = Duration.ofHours(4);
 
     private final DeploymentIssues deploymentIssues;
 
@@ -48,6 +47,7 @@ public class DeploymentIssueReporter extends Maintainer {
     @Override
     protected void maintain() {
         maintainDeploymentIssues(controller().applications().asList());
+        maintainPlatformIssue(controller().applications().asList());
         escalateInactiveDeploymentIssues(controller().applications().asList());
     }
 
@@ -57,41 +57,36 @@ public class DeploymentIssueReporter extends Maintainer {
      * where deployment has not failed for this amount of time.
      */
     private void maintainDeploymentIssues(List<Application> applications) {
-        List<ApplicationId> failingApplications = new ArrayList<>();
+        Set<ApplicationId> failingApplications = ApplicationList.from(applications)
+                .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
+                .asList().stream()
+                .map(Application::id)
+                .collect(Collectors.toSet());
+
         for (Application application : applications)
-            if (oldApplicationChangeFailuresIn(application.deploymentJobs()))
-                failingApplications.add(application.id());
+            if (failingApplications.contains(application.id()))
+                fileDeploymentIssueFor(application.id());
             else
-                controller().applications().setIssueId(application.id(), null);
-
-        failingApplications.forEach(this::fileDeploymentIssueFor);
-
-        if (controller().versionStatus().version(controller().systemVersion()).confidence() == VespaVersion.Confidence.broken)
-            deploymentIssues.fileUnlessOpen(ApplicationList.from(applications)
-                                                    .upgradingTo(controller().systemVersion())
-                                                    .asList().stream()
-                                                    .map(Application::id)
-                                                    .collect(Collectors.toList()),
-                                            controller().systemVersion());
+                storeIssueId(application.id(), null);
     }
 
-    private boolean oldApplicationChangeFailuresIn(DeploymentJobs jobs) {
-        if (!jobs.hasFailures()) return false;
+    /**
+     * When the confidence for the system version is BROKEN, file an issue listing the
+     * applications that have been failing the upgrade to the system version for
+     * longer than the set grace period, or update this list if the issue already exists.
+     */
+    private void maintainPlatformIssue(List<Application> applications) {
+        if ( ! (controller().versionStatus().version(controller().systemVersion()).confidence() == broken))
+            return;
 
-        Optional<Instant> oldestApplicationChangeFailure = jobs.jobStatus().values().stream()
-                .filter(job -> ! job.isSuccess() && failureCausedByApplicationChange(job))
-                .map(job -> job.firstFailing().get().at())
-                .min(Comparator.naturalOrder());
+        List<ApplicationId> failingApplications = ApplicationList.from(applications)
+                .failingUpgradeToVersionSince(controller().systemVersion(), controller().clock().instant().minus(upgradeGracePeriod))
+                .asList().stream()
+                .map(Application::id)
+                .collect(Collectors.toList());
 
-        return oldestApplicationChangeFailure.isPresent()
-               && oldestApplicationChangeFailure.get().isBefore(controller().clock().instant().minus(maxFailureAge));
-    }
-
-    private boolean failureCausedByApplicationChange(JobStatus job) {
-        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
-        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
-        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
+        if ( ! failingApplications.isEmpty())
+            deploymentIssues.fileUnlessOpen(failingApplications, controller().systemVersion());
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {
@@ -116,7 +111,7 @@ public class DeploymentIssueReporter extends Maintainer {
             IssueId issueId = tenant.tenantType() == TenantType.USER
                               ? deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, userFor(tenant))
                               : deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, propertyIdFor(tenant));
-            controller().applications().setIssueId(applicationId, issueId);
+            storeIssueId(applicationId, issueId);
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
             log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + applicationId, e);
@@ -133,6 +128,14 @@ public class DeploymentIssueReporter extends Maintainer {
                 log.log(Level.WARNING, "Exception caught when attempting to escalate issue with id " + issueId, e);
             }
         }));
+    }
+
+    private void storeIssueId(ApplicationId id, IssueId issueId) {
+        try (Lock lock = controller().applications().lock(id)) {
+            controller().applications().get(id, lock).ifPresent(
+                    application -> controller().applications().store(application.with(issueId))
+            );
+        }
     }
 
 }

@@ -28,31 +28,31 @@ GidToLidChangeListener::~GidToLidChangeListener()
 void
 GidToLidChangeListener::notifyPutDone(document::GlobalId gid, uint32_t lid)
 {
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
+    std::promise<void> promise;
+    auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise, gid, lid]() { _attr->notifyReferencedPut(gid, lid); promise.set_value(true); });
-    (void) future.get();
+                                        [this, &promise, gid, lid]() { _attr->notifyReferencedPut(gid, lid); promise.set_value(); });
+    future.wait();
 }
 
 void
 GidToLidChangeListener::notifyRemove(document::GlobalId gid)
 {
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
+    std::promise<void> promise;
+    auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise, gid]() { _attr->notifyReferencedRemove(gid); promise.set_value(true); });
-    (void) future.get();
+                                        [this, &promise, gid]() { _attr->notifyReferencedRemove(gid); promise.set_value(); });
+    future.wait();
 }
 
 void
 GidToLidChangeListener::notifyRegistered()
 {
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
+    std::promise<void> promise;
+    auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise]() { _attr->populateReferencedLids(); promise.set_value(true); });
-    (void) future.get();
+                                        [this, &promise]() { _attr->populateReferencedLids(); promise.set_value(); });
+    future.wait();
 }
 
 const vespalib::string &

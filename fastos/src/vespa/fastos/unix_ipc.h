@@ -13,7 +13,7 @@ private:
     FastOS_UNIX_IPCHelper& operator=(const FastOS_UNIX_IPCHelper&);
 
 protected:
-    std::mutex    _lock;
+    FastOS_Mutex  _lock;
     volatile bool _exitFlag;
     FastOS_ApplicationInterface *_app;
 

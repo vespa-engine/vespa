@@ -65,7 +65,7 @@ bool FastOS_ApplicationInterface::Init ()
 
                 if(errorMsg == nullptr)
                 {
-                    _processListMutex = new std::mutex;
+                    _processListMutex = new FastOS_Mutex();
                     _threadPool = new FastOS_ThreadPool(128 * 1024);
                     rc = true;
                 }

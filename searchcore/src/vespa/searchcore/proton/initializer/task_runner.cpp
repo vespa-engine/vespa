@@ -90,11 +90,11 @@ void
 TaskRunner::runTask(InitializerTask::SP task)
 {
     vespalib::ThreadStackExecutor executor(1, 128 * 1024);
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
+    std::promise<void> promise;
+    auto future = promise.get_future();
     runTask(task, executor,
-            makeLambdaTask([&]() { promise.set_value(true);  }));
-    (void) future.get();
+            makeLambdaTask([&]() { promise.set_value(); }));
+    future.wait();
 }
 
 void

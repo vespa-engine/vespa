@@ -46,7 +46,7 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
 
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             std::shared_ptr<api::RemoveCommand> command(new api::RemoveCommand(
-                                                                  document::Bucket(BucketSpace::placeHolder(), e.getBucketId()),
+                                                                  document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
                                                                   _msg->getDocumentId(),
                                                                   _msg->getTimestamp()));
 

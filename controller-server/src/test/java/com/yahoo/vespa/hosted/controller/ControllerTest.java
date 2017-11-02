@@ -527,13 +527,16 @@ public class ControllerTest {
         TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
-        app = app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
-        applications.store(app, applications.lock(app.id()));
-        try {
-            tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
-            fail("Expected exception");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
+        try (Lock lock = tester.controller().applications().lock(app.id())) {
+            LockedApplication application = tester.controller().applications().require(app.id(), lock);
+            application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
+            applications.store(application);
+            try {
+                tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
+                fail("Expected exception");
+            } catch (IllegalArgumentException e) {
+                assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
+            }
         }
     }
 
@@ -557,7 +560,7 @@ public class ControllerTest {
         Slime slime = SlimeUtils.jsonToSlime(json);
         Application application = serializer.fromSlime(slime);
         try (Lock lock = tester.controller().applications().lock(application.id())) {
-            tester.controller().applications().store(application, lock);
+            tester.controller().applications().store(new LockedApplication(application, lock));
         }
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

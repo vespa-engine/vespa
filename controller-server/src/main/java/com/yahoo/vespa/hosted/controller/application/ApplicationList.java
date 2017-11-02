@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
@@ -71,6 +70,16 @@ public class ApplicationList {
     /** Returns the subset of applications which currently does not have any failing jobs */
     public ApplicationList notFailing() {
         return listOf(list.stream().filter(application -> ! application.deploymentJobs().hasFailures()));
+    }
+
+    /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */
+    public ApplicationList failingUpgradeToVersionSince(Version version, Instant threshold) {
+        return listOf(list.stream().filter(application -> failingUpgradeToVersionSince(application, version, threshold)));
+    }
+
+    /** Returns the subset of applications which have been failing an application change since the given instant */
+    public ApplicationList failingApplicationChangeSince(Instant threshold) {
+        return listOf(list.stream().filter(application -> failingApplicationChangeSince(application, threshold)));
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs on the given version */
@@ -177,7 +186,37 @@ public class ApplicationList {
                 .map(status -> status.lastTriggered().get())
                 .anyMatch(jobRun -> jobRun.version().equals(change.version()));
     }
-    
+
+    private static boolean failingUpgradeToVersionSince(Application application, Version version, Instant threshold) {
+        return application.deploymentJobs().jobStatus().values().stream()
+                .filter(job -> isUpgradeFailure(job))
+                .filter(job -> job.firstFailing().get().at().isBefore(threshold))
+                .anyMatch(job -> job.lastCompleted().get().version().equals(version));
+    }
+
+    private static boolean failingApplicationChangeSince(Application application, Instant threshold) {
+        return application.deploymentJobs().jobStatus().values().stream()
+                .filter(job -> isApplicationChangeFailure(job))
+                .anyMatch(job -> job.firstFailing().get().at().isBefore(threshold));
+    }
+
+    private static boolean isUpgradeFailure(JobStatus job) {
+        if (   job.isSuccess()) return false;
+        if ( ! job.lastSuccess().isPresent()) return false; // An application which never succeeded is surely bad.
+        if ( ! job.lastSuccess().get().revision().isPresent()) return false; // Indicates the component job, which is not an upgrade.
+        if ( ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision())) return false; // Application change may be to blame.
+        return ! job.firstFailing().get().version().equals(job.lastSuccess().get().version()); // Return whether there is a version change.
+    }
+
+    private static boolean isApplicationChangeFailure(JobStatus job) {
+        if (   job.isSuccess()) return false;
+        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
+        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
+        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
+        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
+    }
+
+
     /** Convenience converter from a stream to an ApplicationList */
     private static ApplicationList listOf(Stream<Application> applications) {
         ImmutableList.Builder<Application> b = new ImmutableList.Builder<>();

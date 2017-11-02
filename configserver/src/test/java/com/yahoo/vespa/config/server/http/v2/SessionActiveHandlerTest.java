@@ -231,7 +231,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         writeApplicationId(zkc, deployData.getApplicationName());
         TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenant);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
-        localRepo.addSession(new LocalSession(tenant, sessionId, new SessionTest.MockSessionPreparer(), new SessionContext(app, zkc, new File(tenantFileSystemDirs.path(), String.valueOf(sessionId)), applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator))));
+        localRepo.addSession(new LocalSession(tenant, sessionId, new SessionTest.MockSessionPreparer(),
+                new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
+                        applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator))));
         return localRepo;
     }
 

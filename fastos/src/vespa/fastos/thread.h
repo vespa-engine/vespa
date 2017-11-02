@@ -12,8 +12,8 @@
 
 
 #include "types.h"
-#include <mutex>
-#include <condition_variable>
+#include "mutex.h"
+#include "cond.h"
 
 typedef pthread_t FastOS_ThreadId;
 
@@ -41,7 +41,7 @@ private:
     FastOS_ThreadPool& operator=(const FastOS_ThreadPool&);
 
     int _startedThreadsCount;
-    std::mutex _closeFlagMutex;
+    FastOS_Mutex _closeFlagMutex;
     /**
      * The stack size for threads in this pool.
      */
@@ -49,9 +49,8 @@ private:
     bool _closeCalledFlag;
 
     // Always lock in this order
-    std::mutex _freeMutex;
-    std::mutex _liveMutex;
-    std::condition_variable _liveCond;
+    FastOS_Mutex _freeMutex;
+    FastOS_Cond _liveCond;
     /**
      * List of free (available) threads.
      */
@@ -233,8 +232,7 @@ protected:
      * The thread does not start (call @ref FastOS_Runnable::Run())
      * until this event has been triggered.
      */
-    std::mutex              _dispatchedMutex;
-    std::condition_variable _dispatchedCond;
+    FastOS_Cond _dispatched;
 
     FastOS_ThreadInterface *_next;
     FastOS_ThreadInterface *_prev;
@@ -305,9 +303,7 @@ protected:
      * Is the thread running? This is used by @ref Join(), to wait for threads
      * to finish.
      */
-    std::mutex              _runningMutex;
-    std::condition_variable _runningCond;
-    bool                    _runningFlag;
+    FastOS_BoolCond _runningCond;
 
 public:
     /**
@@ -328,8 +324,7 @@ public:
      * Constructor. Resets internal attributes.
      */
     FastOS_ThreadInterface (FastOS_ThreadPool *pool)
-        : _dispatchedMutex(),
-          _dispatchedCond(),
+        : _dispatched(),
           _next(nullptr),
           _prev(nullptr),
           _owner(nullptr),
@@ -337,9 +332,7 @@ public:
           _startArg(nullptr),
           _breakFlag(false),
           _active(false),
-          _runningMutex(),
-          _runningCond(),
-          _runningFlag(false)
+          _runningCond()
     {
     }
 

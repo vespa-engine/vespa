@@ -29,7 +29,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader,
                             Clock clock, long sessionLifeTime) {
         this(clock, sessionLifeTime);
-        loadSessions(tenantFileSystemDirs.path(), loader);
+        loadSessions(tenantFileSystemDirs.sessionsPath(), loader);
     }
 
     // Constructor public only for testing

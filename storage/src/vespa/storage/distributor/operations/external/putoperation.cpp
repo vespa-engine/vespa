@@ -224,11 +224,12 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
 
 void
 PutOperation::sendPutToBucketOnNode(
+        document::BucketSpace bucketSpace,
         const document::BucketId& bucketId,
         const uint16_t node,
         std::vector<PersistenceMessageTracker::ToSend>& putBatch)
 {
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket(bucketSpace, bucketId);
     std::shared_ptr<api::PutCommand> command(
             new api::PutCommand(
                     bucket,
@@ -318,7 +319,8 @@ PutOperation::onStart(DistributorMessageSender& sender)
         // Now send PUTs
         for (uint32_t i = 0; i < targets.size(); i++) {
             const OperationTarget& target(targets[i]);
-            sendPutToBucketOnNode(target.getBucketId(), target.getNode().getIndex(),
+            sendPutToBucketOnNode(_msg->getBucket().getBucketSpace(),
+                                  target.getBucketId(), target.getNode().getIndex(),
                                   putBatch);
         }
 

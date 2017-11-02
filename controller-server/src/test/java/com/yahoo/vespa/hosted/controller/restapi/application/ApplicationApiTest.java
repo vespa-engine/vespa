@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -753,6 +754,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
             try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
+                LockedApplication lockedApplication = controllerTester.controller().applications()
+                                                                      .require(application.id(), lock);
                 for (Deployment deployment : application.deployments().values()) {
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
                     List<String> hostnames = new ArrayList<>();
@@ -764,8 +767,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     deployment = deployment.withClusterInfo(clusterInfo);
                     deployment = deployment.withClusterUtils(clusterUtils);
                     deployment = deployment.withMetrics(new DeploymentMetrics(1,2,3,4,5));
-                    application = application.with(deployment);
-                    controllerTester.controller().applications().store(application, lock);
+                    controllerTester.controller().applications().store(lockedApplication.with(deployment));
                 }
             }
         }

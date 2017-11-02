@@ -19,7 +19,8 @@ import static org.junit.Assert.assertTrue;
 public class PermanentApplicationPackageTest {
     @Test
     public void testNonexistingApplication() {
-        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(new ConfigserverConfig(new ConfigserverConfig.Builder().applicationDirectory("_no_such_dir")));
+        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(
+                new ConfigserverConfig(new ConfigserverConfig.Builder().applicationDirectory("_no_such_dir")));
         assertFalse(permanentApplicationPackage.applicationPackage().isPresent());
     }
 
@@ -29,7 +30,8 @@ public class PermanentApplicationPackageTest {
     @Test
     public void testExistingApplication() throws IOException {
         File tmpDir = folder.newFolder();
-        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(new ConfigserverConfig(new ConfigserverConfig.Builder().applicationDirectory(tmpDir.getAbsolutePath())));
+        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(
+                new ConfigserverConfig(new ConfigserverConfig.Builder().applicationDirectory(tmpDir.getAbsolutePath())));
         assertTrue(permanentApplicationPackage.applicationPackage().isPresent());
     }
 }

@@ -20,7 +20,6 @@ FastOS_ThreadPool::FastOS_ThreadPool(int stackSize, int maxThreads)
       _stackSize(stackSize),
       _closeCalledFlag(false),
       _freeMutex(),
-      _liveMutex(),
       _liveCond(),
       _freeThreads(nullptr),
       _activeThreads(nullptr),
@@ -41,20 +40,21 @@ void FastOS_ThreadPool::ThreadIsAboutToTerminate(FastOS_ThreadInterface *)
 {
     assert(isClosed());
 
-    std::lock_guard<std::mutex> guard(_liveMutex);
+    _liveCond.Lock();
 
     _numTerminated++;
     _numLive--;
-    if (_numLive == 0) {
-        _liveCond.notify_all();
-    }
+    if (_numLive == 0)
+        _liveCond.Broadcast();
+
+    _liveCond.Unlock();
 }
 
 
 // This is a NOP if the thread isn't active.
 void FastOS_ThreadPool::FreeThread (FastOS_ThreadInterface *thread)
 {
-    std::lock_guard<std::mutex> guard(_freeMutex);
+    _freeMutex.Lock();
 
     if(thread->_active) {
         LinkOutThread(thread, &_activeThreads);
@@ -65,6 +65,8 @@ void FastOS_ThreadPool::FreeThread (FastOS_ThreadInterface *thread)
         LinkInThread(thread, &_freeThreads);
         _numFree++;
     }
+
+    _freeMutex.Unlock();
 }
 
 void FastOS_ThreadPool::LinkOutThread (FastOS_ThreadInterface *thread, FastOS_ThreadInterface **listHead)
@@ -108,7 +110,7 @@ FastOS_ThreadInterface *FastOS_ThreadPool::NewThread (FastOS_Runnable *owner, vo
 {
     FastOS_ThreadInterface *thread=nullptr;
 
-    std::unique_lock<std::mutex> freeGuard(_freeMutex);
+    _freeMutex.Lock();
 
     if (!isClosed()) {
         if ((thread = _freeThreads) != nullptr) {
@@ -124,21 +126,24 @@ FastOS_ThreadInterface *FastOS_ThreadPool::NewThread (FastOS_Runnable *owner, vo
                 fprintf(stderr, "Error: Maximum number of threads (%d)"
                         " already allocated.\n", _maxThreads);
             } else {
-                freeGuard.unlock();
-                {
-                    std::lock_guard<std::mutex> liveGuard(_liveMutex);
-                    _numLive++;
-                }
+                _freeMutex.Unlock();
+
+                _liveCond.Lock();
+                _numLive++;
+                _liveCond.Unlock();
+
                 thread = FastOS_Thread::CreateThread(this);
 
                 if (thread == nullptr) {
-                    std::lock_guard<std::mutex> liveGuard(_liveMutex);
+                    _liveCond.Lock();
                     _numLive--;
                     if (_numLive == 0) {
-                        _liveCond.notify_all();
+                        _liveCond.Broadcast();
                     }
+                    _liveCond.Unlock();
                 }
-                freeGuard.lock();
+
+                _freeMutex.Lock();
 
                 if(thread != nullptr)
                     ActivateThread(thread);
@@ -146,10 +151,11 @@ FastOS_ThreadInterface *FastOS_ThreadPool::NewThread (FastOS_Runnable *owner, vo
         }
     }
 
-    freeGuard.unlock();
+    _freeMutex.Unlock();
     if(thread != nullptr) {
-        std::lock_guard<std::mutex> liveGuard(_liveMutex);
+        _liveCond.Lock();
         thread->Dispatch(owner, arg);
+        _liveCond.Unlock();
     }
 
     return thread;
@@ -160,7 +166,7 @@ void FastOS_ThreadPool::BreakThreads ()
 {
     FastOS_ThreadInterface *thread;
 
-    std::lock_guard<std::mutex> freeGuard(_freeMutex);
+    _freeMutex.Lock();
 
     // Notice all active threads that they should quit
     for(thread=_activeThreads; thread != nullptr; thread=thread->_next) {
@@ -171,22 +177,26 @@ void FastOS_ThreadPool::BreakThreads ()
     for(thread=_freeThreads; thread != nullptr; thread=thread->_next) {
         thread->SetBreakFlag();
     }
+
+    _freeMutex.Unlock();
 }
 
 
 void FastOS_ThreadPool::JoinThreads ()
 {
-    std::unique_lock<std::mutex> liveGuard(_liveMutex);
-    while (_numLive > 0) {
-        _liveCond.wait(liveGuard);
-    }
+    _liveCond.Lock();
+
+    while (_numLive > 0)
+        _liveCond.Wait();
+
+    _liveCond.Unlock();
 }
 
 void FastOS_ThreadPool::DeleteThreads ()
 {
     FastOS_ThreadInterface *thread;
 
-    std::lock_guard<std::mutex> freeGuard(_freeMutex);
+    _freeMutex.Lock();
 
     assert(_numActive == 0);
     assert(_numLive == 0);
@@ -199,25 +209,30 @@ void FastOS_ThreadPool::DeleteThreads ()
     }
 
     assert(_numFree == 0);
+
+    _freeMutex.Unlock();
 }
 
 void FastOS_ThreadPool::Close ()
 {
-    std::unique_lock<std::mutex> closeFlagGuard(_closeFlagMutex);
+    _closeFlagMutex.Lock();
     if (!_closeCalledFlag) {
         _closeCalledFlag = true;
-        closeFlagGuard.unlock();
+        _closeFlagMutex.Unlock();
 
         BreakThreads();
         JoinThreads();
         DeleteThreads();
+    } else {
+        _closeFlagMutex.Unlock();
     }
 }
 
 bool FastOS_ThreadPool::isClosed()
 {
-    std::lock_guard<std::mutex> closeFlagGuard(_closeFlagMutex);
+    _closeFlagMutex.Lock();
     bool closed(_closeCalledFlag);
+    _closeFlagMutex.Unlock();
     return closed;
 }
 
@@ -247,19 +262,20 @@ void FastOS_ThreadInterface::Hook ()
 
     while(!finished) {
 
-        std::unique_lock<std::mutex> dispatchedGuard(_dispatchedMutex); // BEGIN lock
+        _dispatched.Lock();             // BEGIN lock
+
         while (_owner == nullptr && !(finished = _pool->isClosed())) {
-            _dispatchedCond.wait(dispatchedGuard);
+            _dispatched.Wait();
         }
 
-        dispatchedGuard.unlock();           // END lock
+        _dispatched.Unlock();           // END lock
 
         if(!finished) {
             PreEntry();
             deleteOnCompletion = _owner->DeleteOnCompletion();
             _owner->Run(this, _startArg);
 
-            dispatchedGuard.lock();         // BEGIN lock
+            _dispatched.Lock();         // BEGIN lock
 
             if (deleteOnCompletion) {
                 delete _owner;
@@ -269,13 +285,9 @@ void FastOS_ThreadInterface::Hook ()
             _breakFlag = false;
             finished = _pool->isClosed();
 
-            dispatchedGuard.unlock();      // END lock
+            _dispatched.Unlock();               // END lock
 
-            {
-                std::lock_guard<std::mutex> runningGuard(_runningMutex);
-                _runningFlag = false;
-                _runningCond.notify_all();
-            }
+            _runningCond.ClearBusyBroadcast();
 
             _pool->FreeThread(this);
             // printf("Thread given back to FastOS_ThreadPool: %p\n", this);
@@ -295,15 +307,9 @@ void FastOS_ThreadInterface::Hook ()
 
 void FastOS_ThreadInterface::Dispatch(FastOS_Runnable *newOwner, void *arg)
 {
-    std::lock_guard<std::mutex> dispatchedGuard(_dispatchedMutex);
+    _dispatched.Lock();
 
-    {
-        std::unique_lock<std::mutex> runningGuard(_runningMutex);
-        while (_runningFlag) {
-            _runningCond.wait(runningGuard);
-        }
-        _runningFlag = true;
-    }
+    _runningCond.SetBusy();
 
     _owner = newOwner;
     _startArg = arg;
@@ -316,14 +322,18 @@ void FastOS_ThreadInterface::Dispatch(FastOS_Runnable *newOwner, void *arg)
     // it the safe way we just do that, instead of keeping a unneccessary long
     // suppressionslist. It will be long enough anyway.
 
-    _dispatchedCond.notify_one();
+    _dispatched.Signal();
+
+    _dispatched.Unlock();
 }
 
 void FastOS_ThreadInterface::SetBreakFlag()
 {
-    std::lock_guard<std::mutex> dispatchedGuard(_dispatchedMutex);
+    _dispatched.Lock();
     _breakFlag = true;
-    _dispatchedCond.notify_one();
+
+    _dispatched.Signal();
+    _dispatched.Unlock();
 }
 
 
@@ -341,10 +351,7 @@ FastOS_ThreadInterface *FastOS_ThreadInterface::CreateThread(FastOS_ThreadPool *
 
 void FastOS_ThreadInterface::Join ()
 {
-    std::unique_lock<std::mutex> runningGuard(_runningMutex);
-    while (_runningFlag) {
-        _runningCond.wait(runningGuard);
-    }
+    _runningCond.WaitBusy();
 }
 
 

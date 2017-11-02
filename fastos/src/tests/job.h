@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <mutex>
-#include <condition_variable>
-
 enum JobCode
 {
    PRINT_MESSAGE_AND_WAIT3SEC,
@@ -31,8 +28,9 @@ private:
 public:
    JobCode code;
    char *message;
-   std::mutex *mutex;
-   std::condition_variable *condition;
+   FastOS_Mutex *mutex;
+   FastOS_Cond *condition;
+   FastOS_BoolCond *boolcondition;
    FastOS_ThreadInterface *otherThread, *ownThread;
    double *timebuf;
    double average;
@@ -47,6 +45,7 @@ public:
        message(nullptr),
        mutex(nullptr),
        condition(nullptr),
+       boolcondition(nullptr),
        otherThread(nullptr),
        ownThread(nullptr),
        timebuf(nullptr),
