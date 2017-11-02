@@ -2,11 +2,11 @@
 vespa_add_library(storage_hostreporter OBJECT
     SOURCES
     cpureporter.cpp
+    diskreporter.cpp
+    hostinfo.cpp
     kernelmetrictool.cpp
     memreporter.cpp
     networkreporter.cpp
-    hostinfo.cpp
-    diskreporter.cpp
     versionreporter.cpp
     DEPENDS
     AFTER
