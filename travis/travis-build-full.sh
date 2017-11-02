@@ -4,6 +4,7 @@ set -e
 
 export SOURCE_DIR=/source
 export NUM_THREADS=4
+export MALLOC_ARENA_MAX=1
 source /etc/profile.d/devtoolset-6.sh || true
 
 ccache --max-size=1250M
