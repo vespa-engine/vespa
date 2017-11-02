@@ -73,7 +73,7 @@ public class StatisticsSearcher extends Searcher {
     private Metric metric;
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
-
+    static private java.util.Timer scheduler = new java.util.Timer(true);
 
     private void initEvents(com.yahoo.statistics.Statistics manager, MetricReceiver metricReceiver) {
         queries = new Counter(QUERIES_METRIC, manager, false);
@@ -108,6 +108,22 @@ public class StatisticsSearcher extends Searcher {
             metric.set(ACTIVE_QUERIES_METRIC, searchQueriesInFlight, null);
         }
     }
+    private class PeakQpsCleanup extends java.util.TimerTask {
+        private final Metric.Context metricContext;
+        public PeakQpsCleanup(Metric.Context metricContext) {
+            this.metricContext = metricContext;
+        }
+        @Override
+        public void run() {
+            long now = System.currentTimeMillis();
+            synchronized (peakQpsLock) {
+                if ((now - prevMaxQPSTime) >= (1000)) {
+                    flushPeakQps(now, metricContext);
+                    queriesForQPS = 0.0d;
+                }
+            }
+        }
+    }
 
     StatisticsSearcher(Metric metric) {
         this(com.yahoo.statistics.Statistics.nullImplementation, metric, MetricReceiver.nullImplementation);
@@ -122,6 +138,17 @@ public class StatisticsSearcher extends Searcher {
         return (getId().stringValue());
     }
 
+    private void flushPeakQps(long now, Metric.Context metricContext) {
+        double ms = (double) (now - prevMaxQPSTime);
+        final double value = queriesForQPS / (ms / 1000);
+        peakQPS.put(value);
+        metric.set(PEAK_QPS_METRIC, value, metricContext);
+        prevMaxQPSTime = now;
+        if (queriesForQPS > 0) {
+            scheduler.schedule(new PeakQpsCleanup(metricContext), 1000);
+        }
+    }
+
     private void qps(long now, Metric.Context metricContext) {
         // We can either have peakQpsLock _or_ have prevMaxQpsTime as a volatile
         // and queriesForQPS as an AtomicInteger. That would lead no locking,
@@ -129,12 +156,8 @@ public class StatisticsSearcher extends Searcher {
         // that is actually better.
         synchronized (peakQpsLock) {
             if ((now - prevMaxQPSTime) >= (1000)) {
-                double ms = (double) (now - prevMaxQPSTime);
-                final double peakQPS = queriesForQPS / (ms / 1000);
-                this.peakQPS.put(peakQPS);
-                metric.set(PEAK_QPS_METRIC, peakQPS, metricContext);
+                flushPeakQps(now, metricContext);
                 queriesForQPS = 1.0d;
-                prevMaxQPSTime = now;
             } else {
                 queriesForQPS += 1.0d;
             }
