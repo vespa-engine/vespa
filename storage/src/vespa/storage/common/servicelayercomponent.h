@@ -76,6 +76,7 @@ public:
     }
 
     uint16_t getDiskCount() const { return _diskCount; }
+    const ContentBucketSpaceRepo &getBucketSpaceRepo() const;
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const;
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
         assert(_minUsedBitsTracker != 0);

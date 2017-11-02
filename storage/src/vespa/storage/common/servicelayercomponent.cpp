@@ -10,6 +10,13 @@ using document::BucketSpace;
 
 namespace storage {
 
+const ContentBucketSpaceRepo &
+ServiceLayerComponent::getBucketSpaceRepo() const
+{
+    assert(_bucketSpaceRepo != nullptr);
+    return *_bucketSpaceRepo;
+}
+
 StorBucketDatabase&
 ServiceLayerComponent::getBucketDatabase(BucketSpace bucketSpace) const
 {
