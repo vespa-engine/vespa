@@ -3,6 +3,7 @@
 #include "deadlockdetector.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/bucketmover/htmltable.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -130,8 +131,11 @@ DeadLockDetector::getBucketLockInfo() const
     if (_dComponent.get() != nullptr) {
         ost << "No bucket lock information available for distributor\n";
     } else {
-        if (_slComponent->getBucketDatabase(BucketSpace::placeHolder()).size() > 0) {
-            _slComponent->getBucketDatabase(BucketSpace::placeHolder()).showLockClients(ost);
+        for (const auto &elem : _slComponent->getBucketSpaceRepo()) {
+            const auto &bucketDatabase = elem.second->bucketDatabase();
+            if (bucketDatabase.size() > 0) {
+                bucketDatabase.showLockClients(ost);
+            }
         }
     }
     return ost.str();
