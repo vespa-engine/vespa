@@ -153,21 +153,20 @@ public class VersionStatus {
                     .filter(jobStatus -> jobStatus.jobError().isPresent())
                     .filter(jobStatus -> jobStatus.jobError().get() != DeploymentJobs.JobError.outOfCapacity)
                     .map(jobStatus -> jobStatus.lastCompleted().get().version())
-                    .forEach(version -> versionMap.merge(version, DeploymentStatistics.empty(version), (statistics, __ ) -> statistics.withFailing(application.id())));
+                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withFailing(application.id())));
 
             // Succeeding versions
             jobs.jobStatus().values().stream()
                     .filter(jobStatus -> jobStatus.lastSuccess().isPresent())
                     .filter(jobStatus -> jobStatus.type().isProduction())
                     .map(jobStatus -> jobStatus.lastSuccess().get().version())
-                    .forEach(version -> versionMap.merge(version, DeploymentStatistics.empty(version), (statistics, __ ) -> statistics.withProduction(application.id())));
+                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withProduction(application.id())));
 
             // Deploying versions
             jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.type() != JobType.component)
                     .filter(jobStatus -> jobStatus.isRunning(jobTimeoutLimit))
                     .map(jobStatus -> jobStatus.lastTriggered().get().version())
-                    .forEach(version -> versionMap.merge(version, DeploymentStatistics.empty(version), (statistics, __ ) -> statistics.withDeploying(application.id())));
+                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
         }
         return versionMap.values();
     }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
@@ -19,6 +20,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
@@ -28,6 +30,7 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -95,23 +98,20 @@ public class VersionStatusTest {
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
         assertEquals("The two versions above exist", 2, versions.size());
 
+        System.err.println(tester.controller().applications().deploymentTrigger().jobTimeoutLimit());
+
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
-        assertEquals(0, v1.statistics().failing().size());
-        // All applications are on v1 in at least one zone
-        assertEquals(3, v1.statistics().production().size());
-        assertTrue(v1.statistics().production().contains(app2.id()));
-        assertTrue(v1.statistics().production().contains(app1.id()));
+        assertEquals("No applications are failing on version1.", ImmutableSet.of(), v1.statistics().failing());
+        assertEquals("All applications have at least one active production deployment on version 1.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v1.statistics().production());
+        assertEquals("No applications have active deployment jobs on version1.", ImmutableSet.of(), v1.statistics().deploying());
 
         VespaVersion v2 = versions.get(1);
         assertEquals(version2, v2.versionNumber());
-        // All applications have failed on v2 in at least one zone
-        assertEquals(3, v2.statistics().failing().size());
-        assertTrue(v2.statistics().failing().contains(app1.id()));
-        assertTrue(v2.statistics().failing().contains(app3.id()));
-        // Only one application is on v2 in at least one zone
-        assertEquals(1, v2.statistics().production().size());
-        assertTrue(v2.statistics().production().contains(app2.id()));
+        assertEquals("All applications have failed on version2 in at least one zone.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v2.statistics().failing());
+        assertEquals("Only app2 has successfully deployed to production on version2.", ImmutableSet.of(app2.id()), v2.statistics().production());
+        // Should test the below, but can't easily be done with current test framework. This test passes in DeploymentApiTest.
+        // assertEquals("All applications are being retried on version2.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v2.statistics().deploying());
     }
     
     @Test
@@ -264,7 +264,6 @@ public class VersionStatusTest {
         tester.completeUpgradeWithError(default3, version1, "default", stagingTest);
         tester.completeUpgradeWithError(default4, version1, "default", stagingTest);
         tester.updateVersionStatus();
-
         assertEquals("Canaries have upgraded, 1 of 4 default apps failing: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
 
