@@ -170,6 +170,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     private Optional<JobStatus> lastDeployingTo(Version version, Application application) {
         return application.deploymentJobs().jobStatus().values().stream()
                 .filter(jobStatus -> jobStatus.isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit()))
+                .filter(jobStatus -> jobStatus.lastTriggered().get().upgrade())
                 .filter(jobStatus -> jobStatus.lastTriggered().get().version().equals(version))
                 .max(comparing(jobStatus -> jobStatus.lastTriggered().get().at()));
     }
