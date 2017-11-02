@@ -20,7 +20,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -66,7 +65,9 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testListenersAdded() throws IOException, SAXException {
-        tenants.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 4l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
+        tenants.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
+                new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 4l,
+                        Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
         assertThat(listener.reloaded.get(), is(1));
     }
 
@@ -77,7 +78,9 @@ public class TenantsTestCase extends TestWithCurator {
     @Test
     public void testTenantListenersNotified() throws Exception {
         tenants.addTenant(tenant3);
-        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenantNames() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
+        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenantNames() +
+                        ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"),
+                tenantListener.tenantCreatedName, is(tenant3));
         tenants.deleteTenant(tenant2);
         assertFalse(tenants.getAllTenantNames().contains(tenant2));
         assertThat(tenantListener.tenantDeletedName, is(tenant2));
@@ -113,8 +116,8 @@ public class TenantsTestCase extends TestWithCurator {
         tenants.close(); // close the Tenants instance created in setupSession, we do not want to use one with a PatchChildrenCache listener
         tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics(), new ArrayList<>());
         TenantName defaultTenant = TenantName.defaultName();
-        tenants.writeTenantPath(tenant2);
-        tenants.writeTenantPath(defaultTenant);
+        tenants.addTenant(tenant2);
+        tenants.addTenant(defaultTenant);
         tenants.createTenants();
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
@@ -130,9 +133,9 @@ public class TenantsTestCase extends TestWithCurator {
         assertFalse(allTenants.contains(defaultTenant));
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
-        tenants.writeTenantPath(tenant2);
-        tenants.writeTenantPath(foo);
-        tenants.writeTenantPath(bar);
+        tenants.addTenant(tenant2);
+        tenants.addTenant(foo);
+        tenants.addTenant(bar);
         tenants.createTenants();
         allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
