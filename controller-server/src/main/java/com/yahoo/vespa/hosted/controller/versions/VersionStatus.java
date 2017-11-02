@@ -11,7 +11,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 
 import java.net.URI;
 import java.time.Instant;
@@ -92,7 +94,8 @@ public class VersionStatus {
         Version systemVersion = infrastructureVersions.stream().sorted().findFirst().get();
 
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
-                                                                                            controller.applications().asList());
+                                                                                            controller.applications().asList(),
+                                                                                            controller.applications().deploymentTrigger().jobTimeoutLimit());
         List<VespaVersion> versions = new ArrayList<>();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
@@ -126,7 +129,8 @@ public class VersionStatus {
     }
     
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                List<Application> applications) {
+                                                                                List<Application> applications,
+                                                                                Instant jobTimeoutLimit) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
         for (Version infrastructureVersion : infrastructureVersions) {
@@ -142,7 +146,7 @@ public class VersionStatus {
                 versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
             }
 
-            // List versions which have failing jobs, and versions which are in production
+            // List versions which have failing jobs, versions which are in production, and versions to which applications are deploying
 
             // Failing versions
             Map<Version, List<JobStatus>> failingJobsByVersion = jobs.jobStatus().values().stream()
@@ -162,6 +166,16 @@ public class VersionStatus {
                     .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastSuccess().get().version()));
             for (Version v : succeedingJobsByVersions.keySet()) {
                 versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withProduction(application.id()));
+            }
+
+            // Deploying versions
+            Map<Version, List<JobStatus>> deployingJobsByVersion = jobs.jobStatus().values().stream()
+                    .filter(jobStatus -> jobStatus.isRunning(jobTimeoutLimit))
+                    .filter(jobStatus -> jobStatus.type() != JobType.component)
+                    .filter(jobStatus -> jobStatus.lastTriggered().isPresent())
+                    .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastTriggered().get().version())); // Plain wrong for component jobs ...
+            for (Version v : deployingJobsByVersion.keySet()) {
+                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withDeploying(application.id()));
             }
         }
         return versionMap.values();

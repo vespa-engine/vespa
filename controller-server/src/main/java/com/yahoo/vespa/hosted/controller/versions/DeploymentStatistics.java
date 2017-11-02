@@ -18,18 +18,20 @@ public class DeploymentStatistics {
     private final Version version;
     private final ImmutableList<ApplicationId> failing;
     private final ImmutableList<ApplicationId> production;
+    private final ImmutableList<ApplicationId> deploying;
 
     /** DO NOT USE. Public for serialization purposes */
     public DeploymentStatistics(Version version, List<ApplicationId> failingApplications,
-                                List<ApplicationId> production) {
+                                List<ApplicationId> production, List<ApplicationId> deploying) {
         this.version = version;
         this.failing = ImmutableList.copyOf(failingApplications);
         this.production = ImmutableList.copyOf(production);
+        this.deploying = ImmutableList.copyOf(deploying);
     }
 
     /** Returns a statistics instance with the values as 0 */
     public static DeploymentStatistics empty(Version version) { 
-        return new DeploymentStatistics(version, ImmutableList.of(), ImmutableList.of()); 
+        return new DeploymentStatistics(version, ImmutableList.of(), ImmutableList.of(), ImmutableList.of());
     }
 
     /** Returns the version these statistics are for */
@@ -43,15 +45,23 @@ public class DeploymentStatistics {
     
     /** Returns the applications which have this version in production in at least one zone */
     public List<ApplicationId> production() { return production; }
-    
+
+    /** Returns the applications which are currently upgrading to this version */
+    public List<ApplicationId> deploying() { return deploying; }
+
     /** Returns a version of this with the given failing application added */
     public DeploymentStatistics withFailing(ApplicationId application) { 
-        return new DeploymentStatistics(version, add(application, failing), production);
+        return new DeploymentStatistics(version, add(application, failing), production, deploying);
     }
 
     /** Returns a version of this with the given production application added */
     public DeploymentStatistics withProduction(ApplicationId application) {
-        return new DeploymentStatistics(version, failing, add(application, production));
+        return new DeploymentStatistics(version, failing, add(application, production), deploying);
+    }
+
+    /** Returns a version of this with the given deploying application added */
+    public DeploymentStatistics withDeploying(ApplicationId application) {
+        return new DeploymentStatistics(version, failing, production, add(application, deploying));
     }
     
     private ImmutableList<ApplicationId> add(ApplicationId application, ImmutableList<ApplicationId> list) {

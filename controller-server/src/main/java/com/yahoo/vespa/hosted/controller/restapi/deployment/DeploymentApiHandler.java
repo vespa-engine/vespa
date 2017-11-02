@@ -101,7 +101,6 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 Cursor applicationObject = failingArray.addObject();
                 toSlime(application.get(), applicationObject, request);
                 applicationObject.setLong("failingSince", failingSince.toEpochMilli());
-
             }
 
             Cursor productionArray = versionObject.setArray("productionApplications");
@@ -109,6 +108,11 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 Optional<Application> application = controller.applications().get(id);
                 if ( ! application.isPresent()) continue; // deleted just now
                 toSlime(application.get(), productionArray.addObject(), request);
+            }
+
+            Cursor deployingArray = versionObject.setArray("deployingApplications");
+            for (ApplicationId id : version.statistics().deploying()) {
+
             }
         }
         return new SlimeJsonResponse(slime);
