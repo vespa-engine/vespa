@@ -9,7 +9,7 @@
 
 #include "storagecomponentregisterimpl.h"
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 
 namespace storage {
@@ -21,7 +21,7 @@ class ServiceLayerComponentRegisterImpl
     vespalib::Lock _componentLock;
     std::vector<ServiceLayerManagedComponent*> _components;
     uint16_t _diskCount;
-    StorBucketDatabase _bucketDatabase;
+    ContentBucketSpaceRepo _bucketSpaceRepo;
     MinimumUsedBitsTracker _minUsedBitsTracker;
 
 public:
@@ -30,7 +30,7 @@ public:
     ServiceLayerComponentRegisterImpl();
 
     uint16_t getDiskCount() const { return _diskCount; }
-    StorBucketDatabase& getBucketDatabase() { return _bucketDatabase; }
+    ContentBucketSpaceRepo& getBucketSpaceRepo() { return _bucketSpaceRepo; }
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
         return _minUsedBitsTracker;
     }
