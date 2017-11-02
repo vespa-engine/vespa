@@ -28,14 +28,14 @@ You can also setup CentOS 7 natively and install the following build dependencie
 ### Build Java modules
 
     export MAVEN_OPTS="-Xms128m -Xmx512m"
-    sh bootstrap.sh java
+    bash bootstrap.sh java
     mvn -T <num-threads> install
 
 ### Build C++ modules
 Replace `<build-dir>` with the name of the directory in which you'd like to build Vespa.
 Replace `<source-dir>` with the directory in which you've cloned/unpacked the source tree.
 
-    sh bootstrap-cpp.sh <source-dir> <build-dir>
+    bash bootstrap-cpp.sh <source-dir> <build-dir>
     cd <build-dir>
     make -j <num-threads>
     ctest3 -j <num-threads>
