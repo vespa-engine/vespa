@@ -617,6 +617,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                 throw new IllegalArgumentException("In indexed content cluster '" + search.getClusterName() + "': Using multi-level dispatch setup is not supported when using hierarchical distribution.");
             }
         }
+        new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments, redundancy);
     }
 
