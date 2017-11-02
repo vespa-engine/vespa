@@ -15,7 +15,10 @@
           "application": "application1",
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "upgradePolicy": "default"
+          "upgradePolicy": "default",
+          "upgrade": false,
+          "at": "(ignore)",
+          "jobType": "production-corp-us-east-1"
         }
       ],
       "deployingApplications": []
@@ -35,7 +38,9 @@
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
-          "failingSince": "(ignore)"
+          "upgrade": true,
+          "at": "(ignore)",
+          "jobType": "staging-test"
         }
       ],
       "productionApplications": [
@@ -44,7 +49,10 @@
           "application": "application2",
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
-          "upgradePolicy": "default"
+          "upgradePolicy": "default",
+          "upgrade": true,
+          "at": "(ignore)",
+          "jobType": "production-corp-us-east-1"
         }
       ],
       "deployingApplications": [
@@ -53,7 +61,10 @@
           "application": "application1",
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "upgradePolicy": "default"
+          "upgradePolicy": "default",
+          "upgrade": true,
+          "at": "(ignore)",
+          "jobType": "staging-test"
         }
       ]
     },
