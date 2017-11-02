@@ -80,10 +80,8 @@
       <binding>http://*/config/v1/*/</binding>
       <binding>http://*/config/v1/*/*/</binding>
     </handler>
-    <handler id='com.yahoo.vespa.config.server.http.v2.ListTenantsHandler' bundle='configserver'>
-      <binding>http://*/application/v2/tenant/</binding>
-    </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.TenantHandler' bundle='configserver'>
+      <binding>http://*/application/v2/tenant/</binding>
       <binding>http://*/application/v2/tenant/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionCreateHandler' bundle='configserver'>
