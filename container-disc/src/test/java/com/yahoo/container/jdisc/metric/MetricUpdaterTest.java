@@ -5,7 +5,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import org.junit.Test;
 
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -29,7 +29,7 @@ public class MetricUpdaterTest {
 
     private static class MockScheduler implements MetricUpdater.Scheduler {
         @Override
-        public void schedule(Runnable runnable, TemporalAmount frequency) {
+        public void schedule(Runnable runnable, Duration frequency) {
             runnable.run();
         }
         @Override
