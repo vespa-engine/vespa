@@ -9,7 +9,6 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,7 +24,7 @@ public class AthenzIdentityProviderImplTest {
         AthenzService athenzService = mock(AthenzService.class);
 
         when(serviceProviderApi.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
-        when(athenzService.sendInstanceRegisterRequest(any(), anyString())).thenReturn(
+        when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
                 new InstanceIdentity(null, null, null, null, null, null, null, null, "TOKEN"));
 
         AthenzIdentityProvider identityProvider = new AthenzIdentityProviderImpl(config, serviceProviderApi, athenzService);

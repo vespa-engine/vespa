@@ -17,6 +17,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -41,10 +42,10 @@ public class AthenzService {
      * Send instance register request to ZTS, get InstanceIdentity
      */
      public InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation,
-                                                         String ztsEndpoint) {
+                                                         URI uri) {
         try(CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpUriRequest postRequest = RequestBuilder.post()
-                    .setUri(ztsEndpoint + INSTANCE_API_PATH)
+                    .setUri(uri.resolve(INSTANCE_API_PATH))
                     .setEntity(toJsonStringEntity(instanceRegisterInformation))
                     .build();
             return getInstanceIdentity(client, postRequest);
@@ -58,15 +59,15 @@ public class AthenzService {
                                                        String instanceServiceName,
                                                        String instanceId,
                                                        InstanceRefreshInformation instanceRefreshInformation,
-                                                       String ztsEndpoint,
+                                                       URI ztsEndpoint,
                                                        X509Certificate certicate,
                                                        PrivateKey privateKey) {
         try (CloseableHttpClient client = createHttpClientWithTlsAuth(certicate, privateKey)) {
-            String uri = String.format("%s/%s/%s/%s/%s",
-                                       ztsEndpoint + INSTANCE_API_PATH,
-                                       providerService, instanceDomain, instanceServiceName, instanceId);
+            String uriPath = String.format(
+                    "%s/%s/%s/%s/%s",
+                    INSTANCE_API_PATH, providerService, instanceDomain, instanceServiceName, instanceId);
             HttpUriRequest postRequest = RequestBuilder.post()
-                    .setUri(uri)
+                    .setUri(ztsEndpoint.resolve(uriPath))
                     .setEntity(toJsonStringEntity(instanceRefreshInformation))
                     .build();
             return getInstanceIdentity(client, postRequest);

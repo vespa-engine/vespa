@@ -8,6 +8,7 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.KeyPair;
 
 /**
@@ -49,7 +50,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 CryptoUtils.toPem(CryptoUtils.createCSR(domain, service, dnsSuffix, providerUniqueId, keyPair)),
                 true
         );
-        instanceIdentity = athenzService.sendInstanceRegisterRequest( instanceRegisterInformation, document.ztsEndpoint);
+        instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation,
+                                                                     URI.create(document.ztsEndpoint));
     }
 
     @Override
