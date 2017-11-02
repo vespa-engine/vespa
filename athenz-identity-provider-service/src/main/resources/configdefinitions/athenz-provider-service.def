@@ -2,28 +2,28 @@
 namespace=vespa.hosted.athenz.instanceproviderservice.config
 
 # Athenz domain
-domain                            string
+zones{}.domain                            string
 
 # Athenz service name
-serviceName                       string
+zones{}.serviceName                       string
 
-# Current key version
-keyVersion                        int           default=0
+# Secret name of private Key
+zones{}.secretName                        string
+
+# Secret version
+zones{}.secretVersion                     int
 
 # HTTPS port for Athenz Provider Service endpoint
-port                              int           default=8443
-
-# File name prefix for private and public key. Component assumes suffix .[priv|pub].<version>.
-keyPathPrefix                     string
+port                                      int           default=8443
 
 # InstanceConfirmation API path
-apiPath                           string        default="/athenz/v1/provider"
+apiPath                                   string        default="/athenz/v1/provider"
 
 # Athenz principal authority header name
-athenzPrincipalHeaderName         string        default="Athenz-Principal-Auth"
+athenzPrincipalHeaderName                 string        default="Athenz-Principal-Auth"
 
 # Athenz ZTS server url
-ztsUrl                            string
+ztsUrl                                    string
 
 # Certificate DNS suffix
-certDnsSuffix                     string
+certDnsSuffix                             string

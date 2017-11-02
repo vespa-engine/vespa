@@ -21,24 +21,26 @@ public class AthenzCertificateClient implements CertificateClient {
 
     private final AthenzProviderServiceConfig config;
     private final AthenzPrincipalAuthority authority;
+    private final AthenzProviderServiceConfig.Zones zoneConfig;
 
-    public AthenzCertificateClient(AthenzProviderServiceConfig config) {
+    public AthenzCertificateClient(AthenzProviderServiceConfig config, AthenzProviderServiceConfig.Zones zoneConfig) {
         this.config = config;
         this.authority = new AthenzPrincipalAuthority(config.athenzPrincipalHeaderName());
+        this.zoneConfig = zoneConfig;
     }
 
     @Override
     public X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime) {
         SimpleServiceIdentityProvider identityProvider = new SimpleServiceIdentityProvider(
-                authority, config.domain(), config.serviceName(),
-                privateKey, Integer.toString(config.keyVersion()), TimeUnit.MINUTES.toSeconds(10));
+                authority, zoneConfig.domain(), zoneConfig.serviceName(),
+                privateKey, Integer.toString(zoneConfig.secretVersion()), TimeUnit.MINUTES.toSeconds(10));
         ZTSClient ztsClient = new ZTSClient(
-                config.ztsUrl(), config.domain(), config.serviceName(), identityProvider);
+                config.ztsUrl(), zoneConfig.domain(), zoneConfig.serviceName(), identityProvider);
         InstanceRefreshRequest req =
                 ZTSClient.generateInstanceRefreshRequest(
-                        config.domain(), config.serviceName(), privateKey,
+                        zoneConfig.domain(), zoneConfig.serviceName(), privateKey,
                         config.certDnsSuffix(), (int)expiryTime.get(ChronoUnit.SECONDS));
-        String pemEncoded = ztsClient.postInstanceRefreshRequest(config.domain(), config.serviceName(), req)
+        String pemEncoded = ztsClient.postInstanceRefreshRequest(zoneConfig.domain(), zoneConfig.serviceName(), req)
                 .getCertificate();
         return Crypto.loadX509Certificate(pemEncoded);
     }
