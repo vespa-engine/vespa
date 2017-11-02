@@ -5,13 +5,13 @@ vespa_add_library(storage_bucketdb OBJECT
     bucketdatabase.cpp
     bucketinfo.cpp
     bucketmanager.cpp
+    bucketmanagermetrics.cpp
     distribution_hash_normalizer.cpp
     judyarray.cpp
-    mapbucketdatabase.cpp
     lockablemap.cpp
+    mapbucketdatabase.cpp
     storagebucketdbinitializer.cpp
     storbucketdb.cpp
-    bucketmanagermetrics.cpp
     DEPENDS
     AFTER
     storage_storageconfig
