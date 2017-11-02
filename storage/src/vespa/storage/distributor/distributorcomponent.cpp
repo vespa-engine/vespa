@@ -279,10 +279,9 @@ DistributorComponent::updateBucketDatabase(
 }
 
 void
-DistributorComponent::recheckBucketInfo(uint16_t nodeIdx,
-                                          const document::BucketId& bid)
+DistributorComponent::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket)
 {
-    _distributor.recheckBucketInfo(nodeIdx, bid);
+    _distributor.recheckBucketInfo(nodeIdx, bucket);
 }
 
 document::BucketId

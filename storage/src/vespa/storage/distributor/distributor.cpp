@@ -289,13 +289,13 @@ Distributor::isMaintenanceReply(const api::StorageReply& reply) const
 bool
 Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    document::BucketId bid = _pendingMessageTracker.reply(*reply);
+    document::Bucket bucket = _pendingMessageTracker.reply(*reply);
 
     if (reply->getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND &&
-        bid != document::BucketId(0) &&
+        bucket.getBucketId() != document::BucketId(0) &&
         reply->getAddress())
     {
-        recheckBucketInfo(reply->getAddress()->getIndex(), bid);
+        recheckBucketInfo(reply->getAddress()->getIndex(), bucket);
     }
 
     if (reply->callHandler(_bucketDBUpdater, reply)) {
@@ -307,7 +307,7 @@ Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
     }
 
     if (_maintenanceOperationOwner.handleReply(reply)) {
-        _scanner->prioritizeBucket(bid);
+        _scanner->prioritizeBucket(bucket.getBucketId());
         return true;
     }
 
@@ -454,8 +454,8 @@ Distributor::storageDistributionChanged()
 }
 
 void
-Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid) {
-    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bid);
+Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) {
+    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket.getBucketId());
 }
 
 namespace {

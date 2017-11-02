@@ -90,7 +90,7 @@ public:
 
     void storageDistributionChanged() override;
 
-    void recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid) override;
+    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) override;
 
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
 
