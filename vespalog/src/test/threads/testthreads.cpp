@@ -4,11 +4,14 @@
 #include <vespa/fastos/thread.h>
 #include <vespa/log/bufferedlogger.h>
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
 using std::string;
+using namespace std::chrono_literals;
 
 LOG_SETUP(".threadtest");
 
@@ -42,7 +45,7 @@ FileThread::Run(FastOS_ThreadInterface *, void *)
             fprintf(stderr, "open failed: %s\n", strerror(errno));
             exit(1);
         }
-        FastOS_Thread::Sleep(5);
+        std::this_thread::sleep_for(5ms);
         struct stat buf;
         fstat(fd, &buf);
         if (buf.st_size != 0) {
@@ -106,7 +109,7 @@ ThreadTester::Main()
     // buffering. (To avoid test taking a minute)
     while (start.MilliSecsToNow() < 15 * 1000) {
         unlink(_argv[1]);
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
         // Then set to use logbuffer and continue
     for (int i = 0; i < numLoggers; i++) {
@@ -115,7 +118,7 @@ ThreadTester::Main()
     start.SetNow();
     while (start.MilliSecsToNow() < 15 * 1000) {
         unlink(_argv[1]);
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
 
     for (int i = 0; i < numLoggers; i++) {
