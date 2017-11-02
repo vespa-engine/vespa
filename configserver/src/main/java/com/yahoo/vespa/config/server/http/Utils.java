@@ -47,11 +47,6 @@ public class Utils {
             throw new NotFoundException("Tenant '" + tenantName + "' was not found.");
     }
 
-    public static TenantName getTenantNameFromRequest(HttpRequest request) {
-        BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*");
-        return TenantName.from(bm.group(2));
-    }
-
     public static TenantName getTenantNameFromSessionRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*/session*");
         return TenantName.from(bm.group(2));

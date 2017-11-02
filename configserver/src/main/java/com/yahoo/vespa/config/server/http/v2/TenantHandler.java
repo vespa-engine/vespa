@@ -9,6 +9,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -19,7 +20,7 @@ import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
- * Handler to create, get and delete a tenant.
+ * Handler to create, get and delete a tenant, and listing of tenants.
  *
  * @author vegardh
  */
@@ -44,35 +45,22 @@ public class TenantHandler extends HttpHandler {
         return new TenantCreateResponse(tenantName);
     }
 
-    /**
-     * Gets the tenant name from the request, throws if it exists already and validates its name
-     *
-     * @param request an {@link com.yahoo.container.jdisc.HttpRequest}
-     * @return tenant name
-     */
-    private TenantName getAndValidateTenantFromRequest(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantNameFromRequest(request);
-        checkThatTenantDoesNotExist(tenantName);
-        validateTenantName(tenantName);
-        return tenantName;
-    }
-
-    private void validateTenantName(TenantName tenant) {
-        if (!tenant.value().matches(TENANT_NAME_REGEXP)) {
-            throw new BadRequestException("Illegal tenant name: " + tenant);
+    @Override
+    protected HttpResponse handleGET(HttpRequest request) {
+        if (isGetTenantRequest(request)) {
+            final TenantName tenantName = getTenantNameFromRequest(request);
+            Utils.checkThatTenantExists(tenants, tenantName);
+            return new TenantGetResponse(tenantName);
+        } else if (isListTenantsRequest(request)) {
+            return new ListTenantsResponse(tenants.getAllTenantNames());
+        } else {
+            throw new BadRequestException(request.getUri().toString());
         }
     }
 
     @Override
-    protected HttpResponse handleGET(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantNameFromRequest(request);
-        Utils.checkThatTenantExists(tenants, tenantName);
-        return new TenantGetResponse(tenantName);
-    }
-
-    @Override
     protected HttpResponse handleDELETE(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantNameFromRequest(request);
+        final TenantName tenantName = getTenantNameFromRequest(request);
         Utils.checkThatTenantExists(tenants, tenantName);
         Tenant tenant = tenants.getTenant(tenantName);
         TenantApplications applicationRepo = tenant.getApplicationRepo();
@@ -90,9 +78,48 @@ public class TenantHandler extends HttpHandler {
         return new TenantDeleteResponse(tenantName);
     }
 
+    /**
+     * Gets the tenant name from the request, throws if it exists already and validates its name
+     *
+     * @param request an {@link com.yahoo.container.jdisc.HttpRequest}
+     * @return tenant name
+     */
+    private TenantName getAndValidateTenantFromRequest(HttpRequest request) {
+        final TenantName tenantName = getTenantNameFromRequest(request);
+        checkThatTenantDoesNotExist(tenantName);
+        validateTenantName(tenantName);
+        return tenantName;
+    }
+
+    private void validateTenantName(TenantName tenant) {
+        if (!tenant.value().matches(TENANT_NAME_REGEXP)) {
+            throw new BadRequestException("Illegal tenant name: " + tenant);
+        }
+    }
+
     private void checkThatTenantDoesNotExist(TenantName tenantName) {
         if (tenants.checkThatTenantExists(tenantName))
             throw new BadRequestException("There already exists a tenant '" + tenantName + "'");
+    }
+
+    private static BindingMatch<?> getBindingMatch(HttpRequest request) {
+        return HttpConfigRequests.getBindingMatch(request,
+                "http://*/application/v2/tenant/",
+                "http://*/application/v2/tenant/*");
+    }
+
+    private static boolean isGetTenantRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 3;
+    }
+
+    private static boolean isListTenantsRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 2 &&
+                request.getUri().getPath().endsWith("/tenant/");
+    }
+
+    private static TenantName getTenantNameFromRequest(HttpRequest request) {
+        BindingMatch<?> bm = getBindingMatch(request);
+        return TenantName.from(bm.group(2));
     }
 
 }

@@ -53,11 +53,14 @@ public class TenantHandlerTest extends TenantTest {
     }
  
     @Test
-    public void testGetExisting() throws Exception {
+    public void testGetAndList() throws Exception {
         tenants.addTenant(a);
-        TenantGetResponse response = (TenantGetResponse) handler.handleGET(
-                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.GET));
-        assertResponseEquals(response, "{\"message\":\"Tenant 'a' exists.\"}");
+        assertResponseEquals((TenantGetResponse) handler.handleGET(
+                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.GET)),
+                "{\"message\":\"Tenant 'a' exists.\"}");
+        assertResponseEquals((ListTenantsResponse) handler.handleGET(
+                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/", Method.GET)),
+                "{\"tenants\":[\"default\",\"a\"]}");
     }
 
     @Test(expected=BadRequestException.class)
