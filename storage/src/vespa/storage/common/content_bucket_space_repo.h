@@ -18,7 +18,7 @@ private:
 
 public:
     ContentBucketSpaceRepo();
-    ContentBucketSpace *get(document::BucketSpace bucketSpace) const;
+    ContentBucketSpace &get(document::BucketSpace bucketSpace) const;
 };
 
 }

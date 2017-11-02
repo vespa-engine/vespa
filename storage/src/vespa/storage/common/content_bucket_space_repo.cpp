@@ -12,13 +12,13 @@ ContentBucketSpaceRepo::ContentBucketSpaceRepo()
     _map.emplace(BucketSpace::placeHolder(), std::make_unique<ContentBucketSpace>());
 }
 
-ContentBucketSpace *
+ContentBucketSpace &
 ContentBucketSpaceRepo::get(BucketSpace bucketSpace) const
 {
     assert(bucketSpace == BucketSpace::placeHolder());
     auto itr = _map.find(bucketSpace);
     assert(itr != _map.end());
-    return itr->second.get();
+    return *itr->second;
 }
 
 }

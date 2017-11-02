@@ -126,7 +126,7 @@ public:
     uint16_t getPartition(const document::BucketId&);
 
     StorBucketDatabase& getStorageBucketDatabase() override {
-        return _compReg.getBucketSpaceRepo().get(document::BucketSpace::placeHolder())->bucketDatabase();
+        return _compReg.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()).bucketDatabase();
     }
 
 private:

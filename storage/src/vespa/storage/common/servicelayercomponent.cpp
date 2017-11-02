@@ -15,7 +15,7 @@ ServiceLayerComponent::getBucketDatabase(BucketSpace bucketSpace) const
 {
     assert(bucketSpace == BucketSpace::placeHolder());
     assert(_bucketSpaceRepo != nullptr);
-    return _bucketSpaceRepo->get(bucketSpace)->bucketDatabase();
+    return _bucketSpaceRepo->get(bucketSpace).bucketDatabase();
 }
 
 uint16_t
