@@ -162,9 +162,13 @@ void FastOS_UNIX_Application::Cleanup ()
         _ipcHelper->Exit();
 
     if (_processStarter != nullptr) {
-        if (_processListMutex) ProcessLock();
-        _processStarter->Stop();
-        if (_processListMutex) ProcessUnlock();
+        {
+            std::unique_lock<std::mutex> guard;
+            if (_processListMutex) {
+                guard = getProcessGuard();
+            }
+            _processStarter->Stop();
+        }
         delete _processStarter;
         _processStarter = nullptr;
     }

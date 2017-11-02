@@ -15,7 +15,7 @@
 class FastOS_ProcessInterface;
 class FastOS_ThreadPool;
 
-#include <vespa/fastos/mutex.h>
+#include <mutex>
 
 /**
  * FastOS application wrapper class.
@@ -143,7 +143,7 @@ protected:
 
     FastOS_ThreadPool       *_threadPool;
     FastOS_ProcessInterface *_processList;
-    FastOS_Mutex            *_processListMutex;
+    std::mutex              *_processListMutex;
 
     bool _disableLeakReporting;
     virtual bool PreThreadInit () { return true; }
@@ -248,8 +248,7 @@ public:
 
     void AddChildProcess (FastOS_ProcessInterface *node);
     void RemoveChildProcess (FastOS_ProcessInterface *node);
-    void ProcessLock () { _processListMutex->Lock(); }
-    void ProcessUnlock() { _processListMutex->Unlock(); }
+    std::unique_lock<std::mutex> getProcessGuard() { return std::unique_lock<std::mutex>(*_processListMutex); }
     FastOS_ProcessInterface *GetProcessList () { return _processList; }
 
     FastOS_ThreadPool *GetThreadPool ();
