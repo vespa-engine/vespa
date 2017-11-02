@@ -11,8 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -121,8 +119,8 @@ public class MetricUpdater extends AbstractComponent {
         private final Timer timer = new Timer();
 
         @Override
-        public void schedule(Runnable runnable, TemporalAmount frequency) {
-            long frequencyMillis = frequency.get(ChronoUnit.MILLIS);
+        public void schedule(Runnable runnable, Duration frequency) {
+            long frequencyMillis = frequency.toMillis();
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -138,7 +136,7 @@ public class MetricUpdater extends AbstractComponent {
     }
 
     interface Scheduler {
-        void schedule(Runnable runnable, TemporalAmount frequency);
+        void schedule(Runnable runnable, Duration frequency);
         void cancel();
     }
 }
