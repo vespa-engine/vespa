@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
@@ -47,14 +48,16 @@ public class AthenzInstanceProviderService extends AbstractComponent {
     private final Server jetty;
 
     @Inject
-    public AthenzInstanceProviderService(AthenzProviderServiceConfig config, NodeRepository nodeRepository, Zone zone) {
+    public AthenzInstanceProviderService(AthenzProviderServiceConfig config, SuperModelProvider superModelProvider,
+                                         NodeRepository nodeRepository, Zone zone) {
         this(config, new FileBackedKeyProvider(config.keyPathPrefix()), Executors.newSingleThreadScheduledExecutor(),
-             nodeRepository, zone, new AthenzCertificateClient(config));
+             superModelProvider, nodeRepository, zone, new AthenzCertificateClient(config));
     }
 
     AthenzInstanceProviderService(AthenzProviderServiceConfig config,
                                   KeyProvider keyProvider,
                                   ScheduledExecutorService scheduler,
+                                  SuperModelProvider superModelProvider,
                                   NodeRepository nodeRepository,
                                   Zone zone,
                                   CertificateClient certificateClient) {
@@ -63,7 +66,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
             this.scheduler = scheduler;
             SslContextFactory sslContextFactory = createSslContextFactory();
             this.jetty = createJettyServer(
-                    config, keyProvider, sslContextFactory, nodeRepository, zone);
+                    config, keyProvider, sslContextFactory, superModelProvider, nodeRepository, zone);
             AthenzCertificateUpdater reloader =
                     new AthenzCertificateUpdater(certificateClient, sslContextFactory, keyProvider, config);
             // TODO Configurable update frequency
@@ -82,6 +85,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
     private static Server createJettyServer(AthenzProviderServiceConfig config,
                                             KeyProvider keyProvider,
                                             SslContextFactory sslContextFactory,
+                                            SuperModelProvider superModelProvider,
                                             NodeRepository nodeRepository,
                                             Zone zone)  {
         Server server = new Server();
@@ -91,7 +95,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
         ServletHandler handler = new ServletHandler();
         InstanceConfirmationServlet instanceConfirmationServlet =
-                new InstanceConfirmationServlet(new InstanceValidator(keyProvider));
+                new InstanceConfirmationServlet(new InstanceValidator(keyProvider, superModelProvider));
         handler.addServletWithMapping(new ServletHolder(instanceConfirmationServlet), config.apiPath() + "/instance");
 
         IdentityDocumentServlet identityDocumentServlet =

@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
+import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.SuperModelProvider;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.InstanceConfirmation;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;
@@ -12,6 +16,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -24,14 +29,23 @@ public class InstanceValidator {
     private static final Logger log = Logger.getLogger(InstanceValidator.class.getName());
 
     private final KeyProvider keyProvider;
+    private final SuperModelProvider superModelProvider;
 
-    public InstanceValidator(KeyProvider keyProvider) {
+    public InstanceValidator(KeyProvider keyProvider, SuperModelProvider superModelProvider) {
         this.keyProvider = keyProvider;
+        this.superModelProvider = superModelProvider;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
         SignedIdentityDocument signedIdentityDocument = instanceConfirmation.signedIdentityDocument;
         ProviderUniqueId providerUniqueId = signedIdentityDocument.identityDocument.providerUniqueId;
+        ApplicationId applicationId = ApplicationId.from(
+                providerUniqueId.tenant, providerUniqueId.application, providerUniqueId.instance);
+
+        if (! isSameIdentityAsInServicesXml(applicationId, instanceConfirmation.domain, instanceConfirmation.service)) {
+            return false;
+        }
+
         log.log(LogLevel.INFO, () -> String.format("Validating instance %s.", providerUniqueId));
         PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion);
         if (isSignatureValid(publicKey, signedIdentityDocument.rawIdentityDocument, signedIdentityDocument.signature)) {
@@ -50,6 +64,40 @@ public class InstanceValidator {
             return signatureVerifier.verify(Base64.getDecoder().decode(signature));
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    // If/when we dont care about logging exactly whats wrong, this can be simplified
+    private boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
+        Optional<ApplicationInfo> applicationInfo = superModelProvider.getSuperModel().getApplicationInfo(applicationId);
+
+        if (!applicationInfo.isPresent()) {
+            log.info(String.format("Could not find application info for %s", applicationId.serializedForm()));
+            return false;
+        }
+
+        Optional<ServiceInfo> matchingServiceInfo = applicationInfo.get()
+                .getModel()
+                .getHosts()
+                .stream()
+                .flatMap(hostInfo -> hostInfo.getServices().stream())
+                .filter(serviceInfo -> serviceInfo.getProperty("identity.domain").isPresent())
+                .filter(serviceInfo -> serviceInfo.getProperty("identity.service").isPresent())
+                .findFirst();
+
+        if (!matchingServiceInfo.isPresent()) {
+            log.info(String.format("Application %s has not specified domain/service", applicationId.serializedForm()));
+            return false;
+        }
+
+        String domainInConfig = matchingServiceInfo.get().getProperty("identity.domain").get();
+        String serviceInConfig = matchingServiceInfo.get().getProperty("identity.service").get();
+        if (domainInConfig.equals(domain) && serviceInConfig.equals(service)) {
+            return true;
+        } else {
+            log.info(String.format("domain '%s' or service '%s' does not match the one in config for application %s",
+                    domain, service, applicationId.serializedForm()));
+            return false;
         }
     }
 }
