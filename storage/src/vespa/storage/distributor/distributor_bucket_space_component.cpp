@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "managed_bucket_space_component.h"
+#include "distributor_bucket_space_component.h"
 
 namespace storage::distributor {
 
-ManagedBucketSpaceComponent::ManagedBucketSpaceComponent(
+DistributorBucketSpaceComponent::DistributorBucketSpaceComponent(
         DistributorInterface& distributor,
-        ManagedBucketSpace& bucketSpace,
+        DistributorBucketSpace& bucketSpace,
         DistributorComponentRegister& compReg,
         const std::string& name)
     : DistributorComponent(distributor, compReg, name),

@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/test/test_io.h>
 #include <iostream>
 
 using namespace vespalib;
@@ -297,27 +298,24 @@ void make_vector_map_test(Cursor &test,
 
 //-----------------------------------------------------------------------------
 
-void make_tests(Cursor &tests) {
-    make_number_test(tests.addObject(), 0.0);
-    make_number_test(tests.addObject(), 42.0);
-    make_vector_test(tests.addObject(), 3);
-    make_matrix_test(tests.addObject(), 2, 3);
-    make_map_test(tests.addObject(), {});
-    make_map_test(tests.addObject(), {"a", "b", "c"});
-    make_mesh_test(tests.addObject(), {}, "a");
-    make_mesh_test(tests.addObject(), {"foo", "bar"}, "a");
-    make_vector_map_test(tests.addObject(), "x", {}, "y", 10);
-    make_vector_map_test(tests.addObject(), "y", {}, "x", 10);
-    make_vector_map_test(tests.addObject(), "x", {"a", "b"}, "y", 3);
-    make_vector_map_test(tests.addObject(), "y", {"a", "b"}, "x", 3);
+void make_tests(test::TestWriter &writer) {
+    make_number_test(writer.create(), 0.0);
+    make_number_test(writer.create(), 42.0);
+    make_vector_test(writer.create(), 3);
+    make_matrix_test(writer.create(), 2, 3);
+    make_map_test(writer.create(), {});
+    make_map_test(writer.create(), {"a", "b", "c"});
+    make_mesh_test(writer.create(), {}, "a");
+    make_mesh_test(writer.create(), {"foo", "bar"}, "a");
+    make_vector_map_test(writer.create(), "x", {}, "y", 10);
+    make_vector_map_test(writer.create(), "y", {}, "x", 10);
+    make_vector_map_test(writer.create(), "x", {"a", "b"}, "y", 3);
+    make_vector_map_test(writer.create(), "y", {"a", "b"}, "x", 3);
 }
 
 int main(int, char **) {
-    Slime slime;
-    Cursor &top = slime.setObject();
-    Cursor &tests = top.setArray("tests");
-    make_tests(tests);
-    top.setLong("num_tests", tests.entries());
-    fprintf(stdout, "%s", slime.toString().c_str());
+    test::StdOut std_out;
+    test::TestWriter writer(std_out);
+    make_tests(writer);
     return 0;
 }

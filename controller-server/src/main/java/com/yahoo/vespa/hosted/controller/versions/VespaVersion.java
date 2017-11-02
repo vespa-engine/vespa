@@ -120,6 +120,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
         return ((VespaVersion)other).versionNumber().equals(this.versionNumber());
     }
 
+    /** The confidence of a version. */
     public enum Confidence {
 
         /** This version has been proven defective */
@@ -132,7 +133,12 @@ public class VespaVersion implements Comparable<VespaVersion> {
         normal,
         
         /** We have overwhelming evidence that this version is working */
-        high
+        high;
+        
+        /** Returns true if this confidence is at least as high as the given confidence */
+        public boolean equalOrHigherThan(Confidence other) {
+            return this.compareTo(other) >= 0;
+        }
 
     }
 

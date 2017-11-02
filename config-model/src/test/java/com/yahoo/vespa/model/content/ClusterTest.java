@@ -25,7 +25,9 @@ import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
@@ -38,6 +40,8 @@ public class ClusterTest extends ContentBaseTest {
 
     private final static String HOSTS = "<admin version='2.0'><adminserver hostalias='mockhost' /></admin>";
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     ContentCluster parse(String xml) {
         xml = HOSTS + xml;
@@ -785,6 +789,25 @@ public class ClusterTest extends ContentBaseTest {
             "</content>");
         assertThat(cluster.getSearch().getSearchNodes().size(), is(1));
         assertTrue(cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand().isPresent());
+    }
+
+    @Test
+    public void reserved_document_name_throws_exception() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("The following document types conflict with reserved keyword names: 'true'.");
+
+        String xml = "<content version=\"1.0\" id=\"storage\">" +
+              "  <redundancy>1</redundancy>" +
+              "  <documents>" +
+              "    <document type=\"true\" mode=\"index\"/>" +
+              "  </documents>" +
+              "  <group>" +
+              "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+              "  </group>" +
+              "</content>";
+
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("true");
+        new VespaModelCreatorWithMockPkg(null, xml, sds).create();
     }
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {

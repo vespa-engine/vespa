@@ -5,7 +5,7 @@
 #include "throttlingoperationstarter.h"
 #include "idealstatemetricsset.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
-#include "managed_bucket_space_repo.h"
+#include "distributor_bucket_space_repo.h"
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
@@ -66,7 +66,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<ManagedBucketSpaceRepo>()),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(
    	       _component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
@@ -143,11 +143,11 @@ Distributor::getPendingMessageTracker() const
     return _pendingMessageTracker;
 }
 
-ManagedBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
+DistributorBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 
-const ManagedBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
+const DistributorBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 
@@ -289,13 +289,13 @@ Distributor::isMaintenanceReply(const api::StorageReply& reply) const
 bool
 Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    document::BucketId bid = _pendingMessageTracker.reply(*reply);
+    document::Bucket bucket = _pendingMessageTracker.reply(*reply);
 
     if (reply->getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND &&
-        bid != document::BucketId(0) &&
+        bucket.getBucketId() != document::BucketId(0) &&
         reply->getAddress())
     {
-        recheckBucketInfo(reply->getAddress()->getIndex(), bid);
+        recheckBucketInfo(reply->getAddress()->getIndex(), bucket);
     }
 
     if (reply->callHandler(_bucketDBUpdater, reply)) {
@@ -307,7 +307,7 @@ Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
     }
 
     if (_maintenanceOperationOwner.handleReply(reply)) {
-        _scanner->prioritizeBucket(bid);
+        _scanner->prioritizeBucket(bucket);
         return true;
     }
 
@@ -454,8 +454,8 @@ Distributor::storageDistributionChanged()
 }
 
 void
-Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid) {
-    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bid);
+Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) {
+    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket.getBucketId());
 }
 
 namespace {

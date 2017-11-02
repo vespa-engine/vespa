@@ -118,7 +118,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
     } else if (rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
             && _manager->getDistributorComponent().getBucketDatabase().get(getBucketId())->getNode(node) != 0)
     {
-        _manager->getDistributorComponent().recheckBucketInfo(node, getBucketId());
+        _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
         LOGBP(warning, "Join failed to find %s: %s",
               getBucketId().toString().c_str(),
               rep.getResult().toString().c_str());

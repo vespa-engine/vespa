@@ -9,6 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -32,10 +33,8 @@ public class UpgraderTest {
     public void testUpgrading() {
         // --- Setup
         DeploymentTester tester = new DeploymentTester();
-        tester.upgrader().maintain();
-        assertEquals("No system version: Nothing to do", 0, tester.buildSystem().jobs().size());
 
-        Version version = Version.fromString("5.0"); // (lower than the hardcoded version in the config server client)
+        Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
 
         tester.upgrader().maintain();
@@ -146,7 +145,55 @@ public class UpgraderTest {
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
-        assertEquals("Nothing to do", 0, tester.buildSystem().jobs().size());
+        assertEquals("Applications are on 5.3 - nothing to do", 0, tester.buildSystem().jobs().size());
+        
+        // --- Starting upgrading to a new version which breaks, causing upgrades to commence on the previous version
+        version = Version.fromString("5.4");
+        Application default3 = tester.createAndDeploy("default3", 5, "default"); // need 4 to break a version
+        Application default4 = tester.createAndDeploy("default4", 5, "default");
+        tester.updateVersionStatus(version);
+        tester.upgrader().maintain(); // cause canary upgrades to 5.4
+        tester.completeUpgrade(canary0, version, "canary");
+        tester.completeUpgrade(canary1, version, "canary");
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
+        tester.upgrader().maintain();
+        assertEquals("Upgrade of defaults are scheduled", 5, tester.buildSystem().jobs().size());
+        assertEquals(version, ((Change.VersionChange)tester.application(default0.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default4.id()).deploying().get()).version());
+        tester.completeUpgrade(default0, version, "default");
+        // State: Default applications started upgrading to 5.4 (and one completed)
+        version = Version.fromString("5.5");
+        tester.updateVersionStatus(version);
+        tester.upgrader().maintain(); // cause canary upgrades to 5.5
+        tester.completeUpgrade(canary0, version, "canary");
+        tester.completeUpgrade(canary1, version, "canary");
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
+        tester.upgrader().maintain();
+        assertEquals("Upgrade of defaults are scheduled", 5, tester.buildSystem().jobs().size());
+        assertEquals(version, ((Change.VersionChange)tester.application(default0.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version());
+        assertEquals(version, ((Change.VersionChange)tester.application(default4.id()).deploying().get()).version());
+        // State: Default applications started upgrading to 5.5
+        tester.completeUpgradeWithError(default0, version, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default1, version, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default2, version, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.productionUsWest1);
+        tester.completeUpgrade(default4, version, "default");
+        tester.updateVersionStatus(version);
+        assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
+        tester.upgrader().maintain();
+        assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken",
+                     3, tester.buildSystem().jobs().size());
+        assertEquals("5.4", ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version().toString());
+        assertEquals("5.4", ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version().toString());
+        assertEquals("5.4", ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version().toString());
     }
 
     @Test

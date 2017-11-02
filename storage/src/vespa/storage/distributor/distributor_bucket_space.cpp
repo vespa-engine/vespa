@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "managed_bucket_space.h"
+#include "distributor_bucket_space.h"
 
 namespace storage {
 namespace distributor {
 
-ManagedBucketSpace::ManagedBucketSpace() {
+DistributorBucketSpace::DistributorBucketSpace() {
 }
 
-ManagedBucketSpace::~ManagedBucketSpace() {
+DistributorBucketSpace::~DistributorBucketSpace() {
 }
 
 }

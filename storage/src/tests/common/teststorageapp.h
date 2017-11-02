@@ -125,7 +125,9 @@ public:
     spi::PartitionStateList& getPartitions();
     uint16_t getPartition(const document::BucketId&);
 
-    StorBucketDatabase& getStorageBucketDatabase() override { return _compReg.getBucketDatabase(); }
+    StorBucketDatabase& getStorageBucketDatabase() override {
+        return _compReg.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()).bucketDatabase();
+    }
 
 private:
     // For storage server interface implementation we'll get rid of soon.

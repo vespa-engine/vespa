@@ -117,7 +117,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
             rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
             && _manager->getDistributorComponent().getBucketDatabase().get(rep.getBucketId())->getNode(node) != 0)
     {
-        _manager->getDistributorComponent().recheckBucketInfo(node, getBucketId());
+        _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
         LOGBP(debug, "Split failed for %s: bucket not found. Storage and "
                      "distributor bucket databases might be out of sync: %s",
               getBucketId().toString().c_str(),

@@ -16,11 +16,8 @@ private:
       TestHeader("Object Sizes (bytes)");
 
       Progress(true, "FastOS_Application:  %d", sizeof(FastOS_Application));
-      Progress(true, "FastOS_BoolCond      %d", sizeof(FastOS_BoolCond));
-      Progress(true, "FastOS_Cond          %d", sizeof(FastOS_Cond));
       Progress(true, "FastOS_DirectoryScan %d", sizeof(FastOS_DirectoryScan));
       Progress(true, "FastOS_File:         %d", sizeof(FastOS_File));
-      Progress(true, "FastOS_Mutex:        %d", sizeof(FastOS_Mutex));
       Progress(true, "FastOS_Runnable      %d", sizeof(FastOS_Runnable));
       Progress(true, "FastOS_ServerSocket  %d", sizeof(FastOS_ServerSocket));
       Progress(true, "FastOS_Socket:       %d", sizeof(FastOS_Socket));

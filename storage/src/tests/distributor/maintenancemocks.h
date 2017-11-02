@@ -15,7 +15,7 @@ class MockMaintenancePriorityGenerator
     : public MaintenancePriorityGenerator
 {
     MaintenancePriorityAndType prioritize(
-            const document::BucketId&,
+            const document::Bucket&,
             NodeMaintenanceStatsTracker& stats) const override
     {
         stats.incMovingOut(1);
@@ -29,17 +29,17 @@ class MockMaintenancePriorityGenerator
 
 class MockOperation : public MaintenanceOperation
 {
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     std::string _reason;
     bool _shouldBlock;
 public:
-    MockOperation(const document::BucketId& bucketId)
-        : _bucketId(bucketId),
+    MockOperation(const document::Bucket &bucket)
+        : _bucket(bucket),
           _shouldBlock(false)
     {}
 
     std::string toString() const override {
-        return _bucketId.toString();
+        return _bucket.toString();
     }
 
     void onClose(DistributorMessageSender&) override {}
@@ -61,17 +61,17 @@ class MockMaintenanceOperationGenerator
     : public MaintenanceOperationGenerator
 {
 public:
-    MaintenanceOperation::SP generate(const document::BucketId& id) const override {
-        return MaintenanceOperation::SP(new MockOperation(id));
+    MaintenanceOperation::SP generate(const document::Bucket&bucket) const override {
+        return MaintenanceOperation::SP(new MockOperation(bucket));
     }
 
     std::vector<MaintenanceOperation::SP> generateAll(
-            const document::BucketId& id,
+            const document::Bucket &bucket,
             NodeMaintenanceStatsTracker& tracker) const override
     {
         (void) tracker;
         std::vector<MaintenanceOperation::SP> ret;
-        ret.push_back(MaintenanceOperation::SP(new MockOperation(id)));
+        ret.push_back(MaintenanceOperation::SP(new MockOperation(bucket)));
         return ret;
     }
 

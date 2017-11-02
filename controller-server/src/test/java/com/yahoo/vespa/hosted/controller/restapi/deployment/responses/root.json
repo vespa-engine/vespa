@@ -1,5 +1,5 @@
 {
-  "versions": [
+  "versions":[
     {
       "version": "(ignore)",
       "confidence": "high",
@@ -7,8 +7,8 @@
       "date": 0,
       "controllerVersion": false,
       "systemVersion": false,
-      "configServers": [],
-      "failingApplications": [],
+      "configServers": [ ],
+      "failingApplications": [ ],
       "productionApplications": [
         {
           "tenant": "tenant1",
@@ -16,42 +16,43 @@
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
-          "upgrade": false,
-          "at": "(ignore)",
           "jobType": "production-corp-us-east-1"
         }
       ],
-      "deployingApplications": []
+      "deployingApplications": [ ]
     },
     {
-      "version": "(ignore)",
-      "confidence": "normal",
-      "commit": "(ignore)",
-      "date": 0,
-      "controllerVersion": false,
-      "systemVersion": false,
-      "configServers": [],
-      "failingApplications": [
+      "version":"(ignore)",
+      "confidence":"normal",
+      "commit":"(ignore)",
+      "date":0,
+      "controllerVersion":false,
+      "systemVersion":true,
+      "configServers":[
+        {
+          "hostname":"config1.test"
+        },
+        {
+          "hostname":"config2.test"
+        }
+      ],
+      "failingApplications":[
         {
           "tenant": "tenant1",
           "application": "application1",
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
-          "upgrade": true,
-          "at": "(ignore)",
           "jobType": "staging-test"
         }
       ],
-      "productionApplications": [
+      "productionApplications":[
         {
           "tenant": "tenant2",
           "application": "application2",
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
           "upgradePolicy": "default",
-          "upgrade": true,
-          "at": "(ignore)",
           "jobType": "production-corp-us-east-1"
         }
       ],
@@ -62,8 +63,6 @@
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
-          "upgrade": true,
-          "at": "(ignore)",
           "jobType": "staging-test"
         }
       ]
@@ -73,31 +72,12 @@
       "confidence": "normal",
       "commit": "(ignore)",
       "date": 0,
-      "controllerVersion": false,
-      "systemVersion": true,
-      "configServers": [
-        {
-          "hostname": "config1.test"
-        },
-        {
-          "hostname": "config2.test"
-        }
-      ],
-      "failingApplications": [],
-      "productionApplications": [],
-      "deployingApplications": []
-    },
-    {
-      "version": "(ignore)",
-      "confidence": "normal",
-      "commit": "(ignore)",
-      "date": 0,
       "controllerVersion": true,
       "systemVersion": false,
-      "configServers": [],
-      "failingApplications": [],
-      "productionApplications": [],
-      "deployingApplications": []
+      "configServers": [ ],
+      "failingApplications": [ ],
+      "productionApplications": [ ],
+      "deployingApplications": [ ]
     }
   ]
 }

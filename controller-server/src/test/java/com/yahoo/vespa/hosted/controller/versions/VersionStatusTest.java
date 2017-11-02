@@ -201,7 +201,7 @@ public class VersionStatusTest {
         assertTrue("Status for version without applications is removed",
                    tester.controller().versionStatus().versions().stream()
                            .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
-
+        
         // Another default application upgrades, raising confidence to high
         tester.completeUpgrade(default8, version2, "default");
         tester.updateVersionStatus();
@@ -231,8 +231,14 @@ public class VersionStatusTest {
                      Confidence.high, confidence(tester.controller(), version2));
         assertEquals("40% of defaults failed: Broken",
                      VespaVersion.Confidence.broken, confidence(tester.controller(), version3));
-    }
 
+        // Test version order
+        List<VespaVersion> versions = tester.controller().versionStatus().versions();
+        assertEquals(3, versions.size());
+        assertEquals("5", versions.get(0).versionNumber().toString());
+        assertEquals("5.2", versions.get(1).versionNumber().toString());
+        assertEquals("5.3", versions.get(2).versionNumber().toString());
+    }
 
     @Test
     public void testIgnoreConfidence() {

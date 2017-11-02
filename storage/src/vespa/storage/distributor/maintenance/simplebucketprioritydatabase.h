@@ -21,7 +21,7 @@ public:
     std::string toString() const;
 
 private:
-    typedef std::set<document::BucketId> BucketSet;
+    typedef std::set<document::Bucket> BucketSet;
     typedef std::map<Priority, BucketSet> PriorityMap;
 
     class SimpleConstIteratorImpl : public ConstIteratorImpl
@@ -56,7 +56,7 @@ private:
         PrioritizedBucket dereference() const override;
     };
 
-    void clearAllEntriesForBucket(const document::BucketId& bucketId);
+    void clearAllEntriesForBucket(const document::Bucket &bucket);
 
     PriorityMap _prioritizedBuckets;
 };

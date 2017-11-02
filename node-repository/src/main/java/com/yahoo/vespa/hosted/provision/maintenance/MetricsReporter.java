@@ -68,7 +68,7 @@ public class MetricsReporter extends Maintainer {
             ApplicationId applicationId = allocation.get().owner();
             context = getContextAt(
                     "state", node.state().name(),
-                    "hostname", node.hostname(),
+                    "host", node.hostname(),
                     "tenantName", applicationId.tenant().value(),
                     "applicationId", applicationId.serializedForm().replace(':', '.'),
                     "app", toApp(applicationId),
@@ -93,7 +93,7 @@ public class MetricsReporter extends Maintainer {
         } else {
             context = getContextAt(
                     "state", node.state().name(),
-                    "hostname", node.hostname());
+                    "host", node.hostname());
         }
 
         Optional<Version> currentVersion = node.status().vespaVersion();

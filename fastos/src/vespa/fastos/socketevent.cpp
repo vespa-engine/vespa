@@ -7,7 +7,7 @@
 
 
 FastOS_SocketEventObjects *FastOS_SocketEventObjects::_objects = nullptr;
-FastOS_Mutex FastOS_SocketEventObjects::_listMutex;
+std::mutex FastOS_SocketEventObjects::_listMutex;
 int FastOS_SocketEventObjects::_objectCount = 0;
 bool FastOS_SocketEventObjects::_initialized = false;
 
@@ -55,12 +55,12 @@ bool FastOS_SocketEvent::HandleWakeUp ()
 FastOS_SocketEventObjects *FastOS_SocketEventObjects::ObtainObject (FastOS_SocketEvent *event)
 {
     FastOS_SocketEventObjects *node;
-    _listMutex.Lock();
+    std::unique_lock<std::mutex> guard(_listMutex);
 
     if(_objects == nullptr)
     {
         _objectCount++;
-        _listMutex.Unlock();
+        guard.unlock();
 
         node = new FastOS_SocketEventObjects(event);
         node->_next = nullptr;
@@ -70,8 +70,6 @@ FastOS_SocketEventObjects *FastOS_SocketEventObjects::ObtainObject (FastOS_Socke
         node = _objects;
         _objects = node->_next;
         node->_next = nullptr;
-
-        _listMutex.Unlock();
     }
 
     return node;
@@ -81,7 +79,7 @@ void FastOS_SocketEventObjects::ReleaseObject (FastOS_SocketEventObjects *node)
 {
     if (node != nullptr)
         node->ReleasedCleanup();
-    _listMutex.Lock();
+    std::lock_guard<std::mutex> guard(_listMutex);
 
     if (_initialized) {
         node->_next = _objects;
@@ -90,8 +88,6 @@ void FastOS_SocketEventObjects::ReleaseObject (FastOS_SocketEventObjects *node)
         delete node;
         _objectCount--;
     }
-
-    _listMutex.Unlock();
 }
 
 
@@ -213,15 +209,14 @@ FastOS_SocketEvent::epollFini()
 void
 FastOS_SocketEventObjects::InitializeClass(void)
 {
-    _listMutex.Lock();
+    std::lock_guard<std::mutex> guard(_listMutex);
     _initialized = true;
-    _listMutex.Unlock();
 }
 
 
 void FastOS_SocketEventObjects::ClassCleanup(void)
 {
-    _listMutex.Lock();
+    std::lock_guard<std::mutex> guard(_listMutex);
     _initialized = false;
     for (;;)
     {
@@ -236,7 +231,6 @@ void FastOS_SocketEventObjects::ClassCleanup(void)
             _objectCount--;
         }
     }
-    _listMutex.Unlock();
 }
 
 

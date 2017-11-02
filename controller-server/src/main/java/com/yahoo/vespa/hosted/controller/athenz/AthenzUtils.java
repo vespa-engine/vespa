@@ -12,8 +12,7 @@ public class AthenzUtils {
 
     private AthenzUtils() {}
 
-    // TODO Change to "user" as primary user principal domain. Also support "yby" for a limited time as per recent Athenz changes
-    public static final AthenzDomain USER_PRINCIPAL_DOMAIN = new AthenzDomain("yby");
+    public static final AthenzDomain USER_PRINCIPAL_DOMAIN = new AthenzDomain("user");
     public static final AthenzDomain SCREWDRIVER_DOMAIN = new AthenzDomain("cd.screwdriver.project");
     public static final AthenzService ZMS_ATHENZ_SERVICE = new AthenzService("sys.auth", "zms");
 
