@@ -307,7 +307,7 @@ Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
     }
 
     if (_maintenanceOperationOwner.handleReply(reply)) {
-        _scanner->prioritizeBucket(bucket.getBucketId());
+        _scanner->prioritizeBucket(bucket);
         return true;
     }
 

@@ -11,24 +11,23 @@ SimpleBucketPriorityDatabase::~SimpleBucketPriorityDatabase()
 }
 
 void
-SimpleBucketPriorityDatabase::clearAllEntriesForBucket(
-        const document::BucketId& bucketId)
+SimpleBucketPriorityDatabase::clearAllEntriesForBucket(const document::Bucket &bucket)
 {
     for (PriorityMap::iterator priIter(_prioritizedBuckets.begin()),
              priEnd(_prioritizedBuckets.end());
          priIter != priEnd;
          ++priIter)
     {
-        priIter->second.erase(bucketId);
+        priIter->second.erase(bucket);
     }
 }
 
 void
 SimpleBucketPriorityDatabase::setPriority(const PrioritizedBucket& bucket)
 {
-    clearAllEntriesForBucket(bucket.getBucketId());
+    clearAllEntriesForBucket(bucket.getBucket());
     if (bucket.requiresMaintenance()) {
-        _prioritizedBuckets[bucket.getPriority()].insert(bucket.getBucketId());
+        _prioritizedBuckets[bucket.getPriority()].insert(bucket.getBucket());
     }
 }
 
