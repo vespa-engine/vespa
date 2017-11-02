@@ -23,13 +23,13 @@ import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  * @author bjorncs
  */
 @WebServlet(asyncSupported = true, description = "Bridge between Servlet and JDisc APIs")
 class JDiscHttpServlet extends HttpServlet {
-    public static final String ATTRIBUTE_NAME_ACCESS_LOG_ENTRY
-            = JDiscHttpServlet.class.getName() + "_access-log-entry";
+
+    public static final String ATTRIBUTE_NAME_ACCESS_LOG_ENTRY = JDiscHttpServlet.class.getName() + "_access-log-entry";
 
     private final static Logger log = Logger.getLogger(JDiscHttpServlet.class.getName());
     private final JDiscContext context;
@@ -39,49 +39,48 @@ class JDiscHttpServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doPost(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doHead(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doPut(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doPut(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doDelete(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doOptions(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doTrace(final HttpServletRequest request, final HttpServletResponse response)
+    protected void doTrace(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
     }
 
-    private static final Set<String> JETTY_UNSUPPORTED_METHODS = new HashSet<>(Arrays.asList(
-            "PATCH"));
+    private static final Set<String> JETTY_UNSUPPORTED_METHODS = new HashSet<>(Arrays.asList("PATCH"));
 
     /**
      * Override to set connector attribute before the request becomes an upgrade request in the web socket case.
@@ -89,7 +88,8 @@ class JDiscHttpServlet extends HttpServlet {
      */
     @SuppressWarnings("deprecation")
     @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void service(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
         request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector(request));
 
         Metric.Context metricContext = getMetricContext(request);
@@ -108,25 +108,21 @@ class JDiscHttpServlet extends HttpServlet {
         return (JDiscServerConnector)getConnection(request).getConnector();
     }
 
-    private void dispatchHttpRequest(final HttpServletRequest request,
-            final HttpServletResponse response) throws IOException {
-        final AccessLogEntry accessLogEntry = new AccessLogEntry();
+    private void dispatchHttpRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AccessLogEntry accessLogEntry = new AccessLogEntry();
         AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(request, accessLogEntry);
         request.setAttribute(ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, accessLogEntry);
         try {
             switch (request.getDispatcherType()) {
-            case REQUEST:
-                new HttpRequestDispatch(context,
-                        accessLogEntry,
-                        getMetricContext(request),
-                        request, response).dispatch();
-                break;
-            default:
-                if (log.isLoggable(Level.INFO)) {
-                    log.info("Unexpected " + request.getDispatcherType() + "; "
-                            + formatAttributes(request));
-                }
-                break;
+                case REQUEST:
+                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response)
+                            .dispatch();
+                    break;
+                default:
+                    if (log.isLoggable(Level.INFO)) {
+                        log.info("Unexpected " + request.getDispatcherType() + "; " + formatAttributes(request));
+                    }
+                    break;
             }
         } catch (OverloadException e) {
             // nop
@@ -136,12 +132,11 @@ class JDiscHttpServlet extends HttpServlet {
     }
 
     private static Metric.Context getMetricContext(ServletRequest request) {
-        return JDiscServerConnector.fromRequest(request)
-                .getMetricContext();
+        return JDiscServerConnector.fromRequest(request).getMetricContext();
     }
 
     private static String formatAttributes(final HttpServletRequest request) {
-        final StringBuilder out = new StringBuilder();
+        StringBuilder out = new StringBuilder();
         out.append("attributes = {");
         for (Enumeration<String> names = request.getAttributeNames(); names.hasMoreElements(); ) {
             String name = names.nextElement();

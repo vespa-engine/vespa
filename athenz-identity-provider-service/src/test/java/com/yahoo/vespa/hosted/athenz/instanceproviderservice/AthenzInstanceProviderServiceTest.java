@@ -123,16 +123,19 @@ public class AthenzInstanceProviderServiceTest {
     public static AthenzProviderServiceConfig getAthenzProviderConfig(String domain, String service, String dnsSuffix) {
         return new AthenzProviderServiceConfig(
                         new AthenzProviderServiceConfig.Builder()
-                                .domain(domain)
-                                .serviceName(service)
+                                .zones(ImmutableMap.of(zone.environment().value() + "." + zone.region().value(), zoneConfig))
                                 .port(PORT)
-                                .keyPathPrefix("dummy-path")
                                 .certDnsSuffix(dnsSuffix)
                                 .ztsUrl("localhost/zts")
                                 .athenzPrincipalHeaderName("Athenz-Principal-Auth")
                                 .apiPath(""));
 
     }
+
+    private AthenzProviderServiceConfig.Zones getZoneConfig(AthenzProviderServiceConfig config, Zone zone) {
+        return config.zones(zone.environment().value() + "." + zone.region().value());
+    }
+
     private static boolean getStatus(HttpClient client) {
         try {
             HttpResponse response = client.execute(new HttpGet("https://localhost:" + PORT + "/status.html"));
@@ -226,17 +229,20 @@ public class AthenzInstanceProviderServiceTest {
 
         private final KeyPair keyPair;
         private final AthenzProviderServiceConfig config;
+        private final AthenzProviderServiceConfig.Zones zoneConfig;
 
-        private SelfSignedCertificateClient(KeyPair keyPair, AthenzProviderServiceConfig config) {
+        private SelfSignedCertificateClient(KeyPair keyPair, AthenzProviderServiceConfig config,
+                                            AthenzProviderServiceConfig.Zones zoneConfig) {
             this.keyPair = keyPair;
             this.config = config;
+            this.zoneConfig = zoneConfig;
         }
 
         @Override
         public X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime) {
             try {
                 ContentSigner contentSigner = new JcaContentSignerBuilder("SHA512WithRSA").build(keyPair.getPrivate());
-                X500Name dnName = new X500Name("CN=" + config.domain() + "." + config.serviceName());
+                X500Name dnName = new X500Name("CN=" + zoneConfig.domain() + "." + zoneConfig.serviceName());
                 Calendar calendar = Calendar.getInstance();
                 calendar.add(Calendar.HOUR, 1);
                 Date endDate = calendar.getTime();

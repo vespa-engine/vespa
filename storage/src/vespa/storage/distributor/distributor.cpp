@@ -5,7 +5,7 @@
 #include "throttlingoperationstarter.h"
 #include "idealstatemetricsset.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
-#include "managed_bucket_space_repo.h"
+#include "distributor_bucket_space_repo.h"
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
@@ -66,7 +66,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<ManagedBucketSpaceRepo>()),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(
    	       _component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
@@ -143,11 +143,11 @@ Distributor::getPendingMessageTracker() const
     return _pendingMessageTracker;
 }
 
-ManagedBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
+DistributorBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 
-const ManagedBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
+const DistributorBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 
@@ -307,7 +307,7 @@ Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
     }
 
     if (_maintenanceOperationOwner.handleReply(reply)) {
-        _scanner->prioritizeBucket(bucket.getBucketId());
+        _scanner->prioritizeBucket(bucket);
         return true;
     }
 

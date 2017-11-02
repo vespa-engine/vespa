@@ -18,8 +18,7 @@ public:
      * the given bucket. If the bucket does not need maintenance, a nullptr
      * shared_ptr is returned.
      */
-    virtual MaintenanceOperation::SP generate(
-                const document::BucketId&) const = 0;
+    virtual MaintenanceOperation::SP generate(const document::Bucket &bucket) const = 0;
 
     /**
      * Generate all possible maintenance operations for the given bucket and
@@ -27,18 +26,17 @@ public:
      * does not need maintenance, the returned vector will be empty.
      */
     virtual std::vector<MaintenanceOperation::SP> generateAll(
-                const document::BucketId&,
-                NodeMaintenanceStatsTracker&) const = 0;
+                const document::Bucket &bucket,
+                NodeMaintenanceStatsTracker &statsTracker) const = 0;
 
     /**
      * Convenience wrapper around generateAll() for when there's no need for
      * an explicit stats tracker
      */
-    std::vector<MaintenanceOperation::SP> generateAll(
-                const document::BucketId& bucketId) const
+    std::vector<MaintenanceOperation::SP> generateAll(const document::Bucket &bucket) const
     {
         NodeMaintenanceStatsTracker dummyTracker;
-        return generateAll(bucketId, dummyTracker);
+        return generateAll(bucket, dummyTracker);
     }
 };
 

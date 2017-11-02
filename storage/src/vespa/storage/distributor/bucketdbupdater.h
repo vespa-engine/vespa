@@ -6,7 +6,7 @@
 #include "distributorcomponent.h"
 #include "distributormessagesender.h"
 #include "pendingclusterstate.h"
-#include "managed_bucket_space_component.h"
+#include "distributor_bucket_space_component.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -30,7 +30,7 @@ public:
     // TODO take in BucketSpaceRepo instead, this class needs access to all
     // bucket spaces.
     BucketDBUpdater(Distributor& owner,
-                    ManagedBucketSpace& bucketSpace,
+                    DistributorBucketSpace& bucketSpace,
                     DistributorMessageSender& sender,
                     DistributorComponentRegister& compReg);
     ~BucketDBUpdater();
@@ -64,7 +64,7 @@ public:
     }
 
 private:
-    ManagedBucketSpaceComponent _bucketSpaceComponent;
+    DistributorBucketSpaceComponent _bucketSpaceComponent;
     class MergeReplyGuard {
     public:
         MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply)

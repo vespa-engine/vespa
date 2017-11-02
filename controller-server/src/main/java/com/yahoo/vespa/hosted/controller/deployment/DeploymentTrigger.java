@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
@@ -12,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
@@ -155,22 +158,28 @@ public class DeploymentTrigger {
      * newer (different) than the one last completed successfully in next
      */
     private boolean changesAvailable(Application application, JobStatus previous, JobStatus next) {
-        if ( ! previous.lastSuccess().isPresent()) return false;
-
         if ( ! application.deploying().isPresent()) return false;
         Change change = application.deploying().get();
-        if (change instanceof Change.VersionChange && // the last completed is out of date - don't continue with it 
-            ! ((Change.VersionChange)change).version().equals(previous.lastSuccess().get().version()))
-            return false;
+
+        if ( ! previous.lastSuccess().isPresent() && 
+             ! productionJobHasSucceededFor(previous, change)) return false;
+
+        if (change instanceof Change.VersionChange) {
+            Version targetVersion = ((Change.VersionChange)change).version();
+            if ( ! (targetVersion.equals(previous.lastSuccess().get().version())) )
+                return false; // version is outdated
+            if (isOnNewerVersionInProductionThan(targetVersion, application, next.type()))
+                return false; // Don't downgrade
+        }
 
         if (next == null) return true;
         if ( ! next.lastSuccess().isPresent()) return true;
-        
+
         JobStatus.JobRun previousSuccess = previous.lastSuccess().get();
         JobStatus.JobRun nextSuccess = next.lastSuccess().get();
         if (previousSuccess.revision().isPresent() &&  ! previousSuccess.revision().get().equals(nextSuccess.revision().get()))
             return true;
-        if (! previousSuccess.version().equals(nextSuccess.version()))
+        if ( ! previousSuccess.version().equals(nextSuccess.version()))
             return true;
         return false;
     }
@@ -396,6 +405,10 @@ public class DeploymentTrigger {
         if  ( ! deploysTo(application, jobType)) return false;
         // Ignore applications that are not associated with a project
         if ( ! application.deploymentJobs().projectId().isPresent()) return false;
+        if (application.deploying().isPresent() && application.deploying().get() instanceof Change.VersionChange) {
+            Version targetVersion = ((Change.VersionChange)application.deploying().get()).version();
+            if (isOnNewerVersionInProductionThan(targetVersion, application, jobType)) return false; // Don't downgrade
+        }
         
         return true;
     }
@@ -403,6 +416,40 @@ public class DeploymentTrigger {
     private boolean isRunningProductionJob(Application application) {
         return application.deploymentJobs().jobStatus().entrySet().stream()
                 .anyMatch(entry -> entry.getKey().isProduction() && entry.getValue().isRunning(jobTimeoutLimit()));
+    }
+
+    /**
+     * When upgrading it is ok to trigger the next job even if the previous failed if the previous has earlier succeeded
+     * on the version we are currently upgrading to
+     */
+    private boolean productionJobHasSucceededFor(JobStatus jobStatus, Change change) {
+        if ( ! (change instanceof Change.VersionChange) ) return false;
+        if ( ! isProduction(jobStatus.type())) return false;
+        Optional<JobStatus.JobRun> lastSuccess = jobStatus.lastSuccess();
+        if ( ! lastSuccess.isPresent()) return false;
+        return lastSuccess.get().version().equals(((Change.VersionChange)change).version());
+    }
+
+    /** 
+     * Returns whether the current deployed version in the zone given by the job
+     * is newer than the given version. This may be the case even if the production job
+     * in question failed, if the failure happens after deployment.
+     * In that case we should never deploy an earlier version as that may potentially
+     * downgrade production nodes which we are not guaranteed to support.
+     */
+    private boolean isOnNewerVersionInProductionThan(Version version, Application application, JobType job) {
+        if ( ! isProduction(job)) return false;
+        Optional<Zone> zone = job.zone(controller.system());
+        if ( ! zone.isPresent()) return false;
+        Deployment existingDeployment = application.deployments().get(zone.get());
+        if (existingDeployment == null) return false;
+        return existingDeployment.version().isAfter(version);
+    }
+    
+    private boolean isProduction(JobType job) {
+        Optional<Zone> zone = job.zone(controller.system());
+        if ( ! zone.isPresent()) return false; // arbitrary
+        return zone.get().environment() == Environment.prod;
     }
     
     private boolean acceptNewRevisionNow(LockedApplication application) {

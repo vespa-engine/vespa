@@ -15,8 +15,8 @@ public:
     virtual ~MaintenancePriorityGenerator() {}
 
     virtual MaintenancePriorityAndType prioritize(
-            const document::BucketId&,
-            NodeMaintenanceStatsTracker&) const = 0;
+            const document::Bucket &bucket,
+            NodeMaintenanceStatsTracker &statsTarcker) const = 0;
 };
 
 }

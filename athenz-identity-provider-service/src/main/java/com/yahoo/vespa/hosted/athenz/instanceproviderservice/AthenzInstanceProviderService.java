@@ -6,16 +6,17 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.CertificateClient;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.FileBackedKeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentGenerator;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceConfirmationServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceValidator;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.SecretStoreKeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.StatusServlet;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.eclipse.jetty.server.Server;
@@ -49,9 +50,9 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
     @Inject
     public AthenzInstanceProviderService(AthenzProviderServiceConfig config, SuperModelProvider superModelProvider,
-                                         NodeRepository nodeRepository, Zone zone) {
-        this(config, new FileBackedKeyProvider(config.keyPathPrefix()), Executors.newSingleThreadScheduledExecutor(),
-             superModelProvider, nodeRepository, zone, new AthenzCertificateClient(config), createSslContextFactory());
+                                         NodeRepository nodeRepository, Zone zone, SecretStore secretStore) {
+        this(config, new SecretStoreKeyProvider(secretStore, getZoneConfig(config, zone).secretName()), Executors.newSingleThreadScheduledExecutor(),
+             superModelProvider, nodeRepository, zone, new AthenzCertificateClient(config, getZoneConfig(config, zone)), createSslContextFactory());
     }
 
     private AthenzInstanceProviderService(AthenzProviderServiceConfig config,
@@ -115,6 +116,11 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
     }
 
+    private static AthenzProviderServiceConfig.Zones getZoneConfig(AthenzProviderServiceConfig config, Zone zone) {
+        String key = zone.environment().value() + "." + zone.region().value();
+        return config.zones(key);
+    }
+
     static SslContextFactory createSslContextFactory() {
         try {
             SslContextFactory sslContextFactory = new SslContextFactory();
@@ -137,22 +143,25 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         private final SslContextFactory sslContextFactory;
         private final KeyProvider keyProvider;
         private final AthenzProviderServiceConfig config;
+        private final AthenzProviderServiceConfig.Zones zoneConfig;
 
         AthenzCertificateUpdater(CertificateClient certificateClient,
                                  SslContextFactory sslContextFactory,
                                  KeyProvider keyProvider,
-                                 AthenzProviderServiceConfig config) {
+                                 AthenzProviderServiceConfig config,
+                                         AthenzProviderServiceConfig.Zones zoneConfig) {
             this.certificateClient = certificateClient;
             this.sslContextFactory = sslContextFactory;
             this.keyProvider = keyProvider;
             this.config = config;
+            this.zoneConfig = zoneConfig;
         }
 
         @Override
         public void run() {
             try {
                 log.log(LogLevel.INFO, "Updating Athenz certificate through ZTS");
-                PrivateKey privateKey = keyProvider.getPrivateKey(config.keyVersion());
+                PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
                 X509Certificate certificate = certificateClient.updateCertificate(privateKey, EXPIRY_TIME);
 
                 String dummyPassword = "athenz";

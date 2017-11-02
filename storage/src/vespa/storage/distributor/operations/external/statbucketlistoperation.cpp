@@ -23,8 +23,8 @@ void
 StatBucketListOperation::getBucketStatus(const BucketDatabase::Entry& entry,
                                          std::ostream& ost) const
 {
-    std::vector<MaintenanceOperation::SP> operations(
-            _generator.generateAll(entry.getBucketId()));
+    document::Bucket bucket(_command->getBucket().getBucketSpace(), entry.getBucketId());
+    std::vector<MaintenanceOperation::SP> operations(_generator.generateAll(bucket));
 
     for (uint32_t i = 0; i < operations.size(); ++i) {
         const MaintenanceOperation& op(*operations[i]);

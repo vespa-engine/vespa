@@ -27,15 +27,18 @@ public class IdentityDocumentGenerator {
     private final String providerService;
     private final String ztsUrl;
     private final String providerDomain;
+    private final int signingSecretVersion;
 
-    public IdentityDocumentGenerator(AthenzProviderServiceConfig config, NodeRepository nodeRepository, Zone zone, KeyProvider keyProvider) {
+    public IdentityDocumentGenerator(AthenzProviderServiceConfig config, AthenzProviderServiceConfig.Zones zoneConfig,
+                                     NodeRepository nodeRepository, Zone zone, KeyProvider keyProvider) {
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;
         this.dnsSuffix = config.certDnsSuffix();
-        this.providerService = config.serviceName();
+        this.providerService = zoneConfig.serviceName();
         this.ztsUrl = config.ztsUrl();
-        this.providerDomain = config.domain();
+        this.providerDomain = zoneConfig.domain();
+        this.signingSecretVersion = zoneConfig.secretVersion();
     }
 
     public String generateSignedIdentityDocument(String hostname) {
@@ -49,7 +52,7 @@ public class IdentityDocumentGenerator {
             Signature sigGenerator = Signature.getInstance("SHA512withRSA");
 
             // TODO: Get the correct version 0 ok for now
-            PrivateKey privateKey = keyProvider.getPrivateKey(0);
+            PrivateKey privateKey = keyProvider.getPrivateKey(signingSecretVersion);
             sigGenerator.initSign(privateKey);
             sigGenerator.update(encodedIdentityDocument.getBytes());
             String signature = Base64.getEncoder().encodeToString(sigGenerator.sign());
