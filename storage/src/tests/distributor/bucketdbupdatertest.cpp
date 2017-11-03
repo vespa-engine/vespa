@@ -176,7 +176,7 @@ public:
 
         for (int i=0; i<bucketCount + invalidBucketCount; i++) {
             if (!getBucketDBUpdater().getDistributorComponent()
-                    .ownsBucketInState(state, document::BucketId(16, i))) {
+                .ownsBucketInState(state, makeDocumentBucket(document::BucketId(16, i)))) {
                 continue;
             }
 
@@ -1963,7 +1963,7 @@ BucketDBUpdaterTest::testNoDbResurrectionForBucketNotOwnedInCurrentState()
         setAndEnableClusterState(stateAfter, expectedMsgs, dummyBucketsToReturn);
     }
     CPPUNIT_ASSERT(!getBucketDBUpdater().getDistributorComponent()
-            .ownsBucketInCurrentState(bucket));
+                   .ownsBucketInCurrentState(makeDocumentBucket(bucket)));
 
     sendFakeReplyForSingleBucketRequest(*rbi);
 
@@ -1992,7 +1992,7 @@ BucketDBUpdaterTest::testNoDbResurrectionForBucketNotOwnedInPendingState()
     // Set, but _don't_ enable cluster state. We want it to be pending.
     setSystemState(stateAfter);
     CPPUNIT_ASSERT(getBucketDBUpdater().getDistributorComponent()
-            .ownsBucketInCurrentState(bucket));
+                   .ownsBucketInCurrentState(makeDocumentBucket(bucket)));
     CPPUNIT_ASSERT(!getBucketDBUpdater()
             .checkOwnershipInPendingState(bucket).isOwned());
 
@@ -2125,7 +2125,7 @@ BucketDBUpdaterTest::testNewerMutationsNotOverwrittenByEarlierBucketFetch()
     constexpr uint64_t insertionTimestamp = 1001ULL * 1000000;
     api::BucketInfo wantedInfo(5, 6, 7);
     getBucketDBUpdater().getDistributorComponent().updateBucketDatabase(
-            bucket,
+            makeDocumentBucket(bucket),
             BucketCopy(insertionTimestamp, 0, wantedInfo),
             DatabaseUpdate::CREATE_IF_NONEXISTING);
 

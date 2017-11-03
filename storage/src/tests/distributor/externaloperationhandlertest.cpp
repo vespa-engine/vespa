@@ -153,7 +153,7 @@ ExternalOperationHandlerTest::findNonOwnedUserBucketInState(
     lib::ClusterState state(statestr);
     for (uint64_t i = 1; i < 1000; ++i) {
         document::BucketId bucket(32, i);
-        if (!getExternalOperationHandler().ownsBucketInState(state, bucket)) {
+        if (!getExternalOperationHandler().ownsBucketInState(state, makeDocumentBucket(bucket))) {
             return bucket;
         }
     }
@@ -169,8 +169,8 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
     lib::ClusterState state2(statestr2);
     for (uint64_t i = 1; i < 1000; ++i) {
         document::BucketId bucket(32, i);
-        if (getExternalOperationHandler().ownsBucketInState(state1, bucket)
-            && !getExternalOperationHandler().ownsBucketInState(state2, bucket))
+        if (getExternalOperationHandler().ownsBucketInState(state1, makeDocumentBucket(bucket))
+            && !getExternalOperationHandler().ownsBucketInState(state2, makeDocumentBucket(bucket)))
         {
             return bucket;
         }

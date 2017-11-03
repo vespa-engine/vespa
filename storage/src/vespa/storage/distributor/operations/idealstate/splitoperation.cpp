@@ -103,7 +103,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
             // copies would be arbitrarily determined by which copy managed
             // to finish its split first.
             _manager->getDistributorComponent().updateBucketDatabase(
-                    sinfo.first, copy,
+                    document::Bucket(msg->getBucket().getBucketSpace(), sinfo.first), copy,
                     (DatabaseUpdate::CREATE_IF_NONEXISTING
                      | DatabaseUpdate::RESET_TRUSTED));
 

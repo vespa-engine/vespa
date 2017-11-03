@@ -52,7 +52,7 @@ GarbageCollectionOperation::onReceive(DistributorMessageSender&,
 
     if (!rep->getResult().failed()) {
         _manager->getDistributorComponent().updateBucketDatabase(
-                getBucketId(),
+                getBucket(),
                 BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
                            node,
                            rep->getBucketInfo()));

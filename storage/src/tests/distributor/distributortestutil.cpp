@@ -3,6 +3,9 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/document/test/make_document_bucket.h>
+
+using document::test::makeDocumentBucket;
 
 namespace storage::distributor {
 
@@ -127,7 +130,7 @@ DistributorTestUtil::getNodes(document::BucketId id)
 std::string
 DistributorTestUtil::getIdealStr(document::BucketId id, const lib::ClusterState& state)
 {
-    if (!getExternalOperationHandler().ownsBucketInState(state, id)) {
+    if (!getExternalOperationHandler().ownsBucketInState(state, makeDocumentBucket(id))) {
         return id.toString();
     }
 

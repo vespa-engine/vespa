@@ -29,7 +29,7 @@ class PersistenceMessageTrackerImpl : public PersistenceMessageTracker,
                                       public MessageTracker
 {
 private:
-    typedef std::map<document::BucketId, std::vector<BucketCopy> > BucketInfoMap;
+    typedef std::map<document::Bucket, std::vector<BucketCopy> > BucketInfoMap;
     BucketInfoMap _remapBucketInfo;
     BucketInfoMap _bucketInfo;
 

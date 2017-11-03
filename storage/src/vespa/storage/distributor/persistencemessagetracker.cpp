@@ -169,7 +169,7 @@ PersistenceMessageTrackerImpl::checkCopiesDeleted()
          iter++)
     {
         BucketDatabase::Entry dbentry =
-            _manager.getBucketDatabase().get(iter->first);
+            _manager.getBucketDatabase().get(iter->first.getBucketId());
 
         if (!dbentry.valid()) {
             continue;
@@ -188,7 +188,7 @@ PersistenceMessageTrackerImpl::checkCopiesDeleted()
 
         if (!missing.empty()) {
             std::ostringstream msg;
-            msg << iter->first << " was deleted from nodes [" 
+            msg << iter->first.toString() << " was deleted from nodes ["
                 << commaSeparated(missing)
                 << "] after message was sent but before it was done. Sent to ["
                 << commaSeparated(total)
@@ -207,7 +207,7 @@ PersistenceMessageTrackerImpl::addBucketInfoFromReply(
         uint16_t node,
         const api::BucketInfoReply& reply)
 {
-    const document::BucketId& bucket(reply.getBucketId());
+    document::Bucket bucket(reply.getBucket());
     const api::BucketInfo& bucketInfo(reply.getBucketInfo());
 
     if (reply.hasBeenRemapped()) {
@@ -295,7 +295,7 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
         && reply.getResult().getResult() != api::ReturnCode::EXISTS)
     {
         LOG(spam, "Create bucket reply failed, so deleting it from bucket db");
-        _manager.removeNodeFromDB(reply.getBucketId(), node);
+        _manager.removeNodeFromDB(reply.getBucket(), node);
         LOG_BUCKET_OPERATION_NO_LOCK(
                 reply.getBucketId(),
                 vespalib::make_string(

@@ -170,12 +170,12 @@ private:
                 }
             }
 
-            getExternalOperationHandler().removeNodesFromDB(document::BucketId(16, 1), removedNodes);
+            getExternalOperationHandler().removeNodesFromDB(makeDocumentBucket(document::BucketId(16, 1)), removedNodes);
 
             uint32_t flags(DatabaseUpdate::CREATE_IF_NONEXISTING
                            | (resetTrusted ? DatabaseUpdate::RESET_TRUSTED : 0));
 
-            getExternalOperationHandler().updateBucketDatabase(document::BucketId(16, 1),
+            getExternalOperationHandler().updateBucketDatabase(makeDocumentBucket(document::BucketId(16, 1)),
                                             changedNodes,
                                             flags);
         }
@@ -558,12 +558,12 @@ Distributor_Test::testNoDbResurrectionForBucketNotOwnedInPendingState()
     CPPUNIT_ASSERT(!getBucketDBUpdater()
                    .checkOwnershipInPendingState(nonOwnedBucket).isOwned());
     CPPUNIT_ASSERT(!getBucketDBUpdater().getDistributorComponent()
-                   .checkOwnershipInPendingAndCurrentState(nonOwnedBucket)
+                   .checkOwnershipInPendingAndCurrentState(makeDocumentBucket(nonOwnedBucket))
                    .isOwned());
 
     std::vector<BucketCopy> copies;
     copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));
-    getExternalOperationHandler().updateBucketDatabase(nonOwnedBucket, copies,
+    getExternalOperationHandler().updateBucketDatabase(makeDocumentBucket(nonOwnedBucket), copies,
                                     DatabaseUpdate::CREATE_IF_NONEXISTING);
 
     CPPUNIT_ASSERT_EQUAL(std::string("NONEXISTING"),
@@ -579,7 +579,7 @@ Distributor_Test::testAddedDbBucketsWithoutGcTimestampImplicitlyGetCurrentTime()
 
     std::vector<BucketCopy> copies;
     copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));
-    getExternalOperationHandler().updateBucketDatabase(bucket, copies,
+    getExternalOperationHandler().updateBucketDatabase(makeDocumentBucket(bucket), copies,
                                     DatabaseUpdate::CREATE_IF_NONEXISTING);
     BucketDatabase::Entry e(getBucket(bucket));
     CPPUNIT_ASSERT_EQUAL(uint32_t(101234), e->getLastGarbageCollectionTime());

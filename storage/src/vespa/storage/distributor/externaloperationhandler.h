@@ -61,7 +61,7 @@ private:
     api::ReturnCode makeSafeTimeRejectionResult(TimePoint unsafeTime);
     bool checkTimestampMutationPreconditions(
             api::StorageCommand& cmd,
-            const document::BucketId& bucket,
+            const document::BucketId &bucketId,
             PersistenceOperationMetricSet& persistenceMetrics);
     std::shared_ptr<api::StorageMessage> makeConcurrentMutationRejectionReply(
             api::StorageCommand& cmd,

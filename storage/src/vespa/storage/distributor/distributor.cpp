@@ -152,9 +152,9 @@ const DistributorBucketSpace& Distributor::getDefaultBucketSpace() const noexcep
 }
 
 BucketOwnership
-Distributor::checkOwnershipInPendingState(const document::BucketId& b) const
+Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
 {
-    return _bucketDBUpdater.checkOwnershipInPendingState(b);
+    return _bucketDBUpdater.checkOwnershipInPendingState(b.getBucketId());
 }
 
 void
@@ -506,7 +506,8 @@ public:
 }
 
 void
-Distributor::checkBucketForSplit(const BucketDatabase::Entry& e,
+Distributor::checkBucketForSplit(document::BucketSpace bucketSpace,
+                                 const BucketDatabase::Entry& e,
                                  uint8_t priority)
 {
     if (!getConfig().doInlineSplit()) {
@@ -518,7 +519,7 @@ Distributor::checkBucketForSplit(const BucketDatabase::Entry& e,
     SplitChecker checker(priority);
     for (uint32_t i = 0; i < e->getNodeCount(); ++i) {
         _pendingMessageTracker.checkPendingMessages(e->getNodeRef(i).getNode(),
-                                                    document::Bucket(document::BucketSpace::placeHolder(), e.getBucketId()),
+                                                    document::Bucket(bucketSpace, e.getBucketId()),
                                                     checker);
         if (checker.found) {
             return;

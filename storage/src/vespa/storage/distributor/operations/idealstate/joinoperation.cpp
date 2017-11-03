@@ -98,7 +98,8 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
         const std::vector<document::BucketId>& sourceBuckets(
                 rep.getSourceBuckets());
         for (uint32_t i = 0; i < sourceBuckets.size(); i++) {
-            _manager->getDistributorComponent().removeNodeFromDB(sourceBuckets[i], node);
+            document::Bucket sourceBucket(msg->getBucket().getBucketSpace(), sourceBuckets[i]);
+            _manager->getDistributorComponent().removeNodeFromDB(sourceBucket, node);
         }
 
         // Add new buckets.
@@ -107,7 +108,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
                 getBucketId().toString().c_str());
         } else {
             _manager->getDistributorComponent().updateBucketDatabase(
-                    getBucketId(),
+                    getBucket(),
                     BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
                                node,
                                rep.getBucketInfo()),
