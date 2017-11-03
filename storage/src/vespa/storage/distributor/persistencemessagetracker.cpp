@@ -83,7 +83,7 @@ PersistenceMessageTrackerImpl::receiveReply(
 void
 PersistenceMessageTrackerImpl::revert(
         MessageSender& sender,
-        const std::vector<std::pair<document::BucketId, uint16_t> > revertNodes)
+        const std::vector<BucketNodePair> revertNodes)
 {
     if (_revertTimestamp != 0) {
         // Since we're reverting, all received bucket info is voided.
@@ -93,9 +93,8 @@ PersistenceMessageTrackerImpl::revert(
         reverts.push_back(_revertTimestamp);
 
         for (uint32_t i = 0; i < revertNodes.size(); i++) {
-            document::Bucket bucket(document::BucketSpace::placeHolder(), revertNodes[i].first);
             std::shared_ptr<api::RevertCommand> toRevert(
-                    new api::RevertCommand(bucket, reverts));
+                    new api::RevertCommand(revertNodes[i].first, reverts));
             toRevert->setPriority(_priority);
             queueCommand(toRevert, revertNodes[i].second);
         }
@@ -314,8 +313,7 @@ PersistenceMessageTrackerImpl::handlePersistenceReply(
     }
     if (reply.getResult().success()) {
         logSuccessfulReply(node, reply);
-        _revertNodes.push_back(std::pair<document::BucketId, uint16_t>(
-                        reply.getBucketId(), node));
+        _revertNodes.emplace_back(reply.getBucket(), node);
     } else if (!hasSentReply()) {
         updateFailureResult(reply);
     }
