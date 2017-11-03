@@ -259,19 +259,6 @@ void BucketManager::updateMinUsedBits()
     }
 }
 
-namespace {
-
-void copyBucketInfoMap(const BucketManager::BucketInfoMap &src,
-                       BucketManager::BucketInfoMap &dst)
-{
-    for (const auto &srcElem : src) {
-        auto &dstList = dst[srcElem.first];
-        dstList.insert(dstList.end(), srcElem.second.begin(), srcElem.second.end());
-    }
-}
-
-}
-
 // Responsible for sending on messages that was previously queued
 void BucketManager::run(framework::ThreadHandle& thread)
 {
@@ -291,9 +278,8 @@ void BucketManager::run(framework::ThreadHandle& thread)
 
         {
             vespalib::MonitorGuard monitor(_workerMonitor);
-            if (!infoReqs.empty()) {
-                copyBucketInfoMap(_bucketInfoRequests, infoReqs);
-                _bucketInfoRequests.swap(infoReqs);
+            for (const auto &req : infoReqs) {
+                assert(req.second.empty());
             }
             if (!didWork) {
                 monitor.wait(1000);
