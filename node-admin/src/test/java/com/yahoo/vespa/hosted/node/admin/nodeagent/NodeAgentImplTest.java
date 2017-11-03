@@ -6,6 +6,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStatsImpl;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -226,6 +227,44 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(dockerOperations);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(newDockerImage));
+    }
+
+    @Test
+    public void containerIsRestartedIfFlavorChanged() throws Exception {
+        final long wantedRestartGeneration = 1;
+        final long currentRestartGeneration = 1;
+        ContainerNodeSpec.Builder specBuilder = nodeSpecBuilder
+                .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
+                .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .vespaVersion(vespaVersion)
+                .wantedRestartGeneration(wantedRestartGeneration)
+                .currentRestartGeneration(currentRestartGeneration);
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
+        ContainerNodeSpec firstSpec = specBuilder.build();
+        ContainerNodeSpec secondSpec = specBuilder.minDiskAvailableGb(200).build();
+        ContainerNodeSpec thirdSpec = specBuilder.minCpuCores(4).build();
+
+        when(nodeRepository.getContainerNodeSpec(hostName))
+                .thenReturn(Optional.of(firstSpec))
+                .thenReturn(Optional.of(secondSpec))
+                .thenReturn(Optional.of(thirdSpec));
+        when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
+
+        nodeAgent.converge();
+        nodeAgent.converge();
+        nodeAgent.converge();
+
+        InOrder inOrder = inOrder(orchestrator, dockerOperations);
+        inOrder.verify(orchestrator).resume(any(String.class));
+        inOrder.verify(orchestrator).resume(any(String.class));
+        inOrder.verify(orchestrator).suspend(any(String.class));
+        inOrder.verify(dockerOperations).removeContainer(any());
+        inOrder.verify(dockerOperations).startContainer(eq(containerName), eq(thirdSpec));
+        inOrder.verify(orchestrator).resume(any(String.class));
     }
 
     @Test
@@ -611,6 +650,7 @@ public class NodeAgentImplTest {
                 Optional.of(new Container(
                         hostName,
                         dockerImage,
+                        ContainerResources.from(MIN_CPU_CORES, MIN_MAIN_MEMORY_AVAILABLE_GB),
                         containerName,
                         isRunning ? Container.State.RUNNING : Container.State.EXITED,
                         isRunning ? 1 : 0)) :
