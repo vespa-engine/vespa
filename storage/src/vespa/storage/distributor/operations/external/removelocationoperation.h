@@ -10,10 +10,13 @@ namespace api { class RemoveLocationCommand; }
 
 namespace distributor {
 
+class DistributorBucketSpace;
+
 class RemoveLocationOperation  : public Operation
 {
 public:
     RemoveLocationOperation(DistributorComponent& manager,
+                            DistributorBucketSpace &bucketSpace,
                             const std::shared_ptr<api::RemoveLocationCommand> & msg,
                             PersistenceOperationMetricSet& metric);
     ~RemoveLocationOperation();
@@ -34,6 +37,7 @@ private:
     std::shared_ptr<api::RemoveLocationCommand> _msg;
 
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
 };
 
 }

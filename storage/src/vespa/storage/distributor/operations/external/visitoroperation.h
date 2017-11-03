@@ -18,6 +18,7 @@ class VisitorMetricSet;
 namespace distributor {
 
 class DistributorComponent;
+class DistributorBucketSpace;
 
 class VisitorOperation  : public Operation
 {
@@ -33,6 +34,7 @@ public:
     };
 
     VisitorOperation(DistributorComponent& manager,
+                     DistributorBucketSpace &bucketSpace,
                      const std::shared_ptr<api::CreateVisitorCommand> & msg,
                      const Config& config,
                      VisitorMetricSet& metrics);
@@ -147,6 +149,7 @@ private:
     std::unique_ptr<document::OrderingSpecification> _ordering;
 
     DistributorComponent& _owner;
+    DistributorBucketSpace &_bucketSpace;
     SentMessagesMap _sentMessages;
 
     api::CreateVisitorCommand::SP _msg;

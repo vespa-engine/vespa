@@ -16,11 +16,13 @@ namespace api { class StatBucketCommand; }
 namespace distributor {
 
 class DistributorComponent;
+class DistributorBucketSpace;
 
 class StatBucketOperation : public Operation
 {
 public:
     StatBucketOperation(DistributorComponent& manager,
+                        DistributorBucketSpace &bucketSpace,
                  const std::shared_ptr<api::StatBucketCommand> & cmd);
     ~StatBucketOperation();
 
@@ -31,6 +33,7 @@ public:
     void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
 private:
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
 
     std::shared_ptr<api::StatBucketCommand> _command;
 

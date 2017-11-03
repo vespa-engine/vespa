@@ -202,6 +202,7 @@ private:
     {
         return std::make_unique<VisitorOperation>(
                 getExternalOperationHandler(),
+                getDistributorBucketSpace(),
                 msg,
                 config,
                 getDistributor().getMetrics().visits[msg->getLoadType()]);

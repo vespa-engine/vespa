@@ -58,6 +58,7 @@ public:
                 new api::RemoveCommand(makeDocumentBucket(document::BucketId(0)), dId, 100));
 
         op.reset(new RemoveOperation(getExternalOperationHandler(),
+                                     getDistributorBucketSpace(),
                                      msg,
                                      getDistributor().getMetrics().
                                      removes[msg->getLoadType()]));
