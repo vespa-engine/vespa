@@ -10,6 +10,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 
 /**
  * @author mortent
@@ -60,7 +61,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public String getX509Cert() {
+    public X509Certificate getX509Cert() {
         return instanceIdentity.getX509Certificate();
     }
 
