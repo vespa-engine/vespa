@@ -6,6 +6,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.removelocation");
@@ -17,6 +18,7 @@ using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
         DistributorComponent& manager,
+        DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::RemoveLocationCommand> & msg,
         PersistenceOperationMetricSet& metric)
     : Operation(),
@@ -26,7 +28,8 @@ RemoveLocationOperation::RemoveLocationOperation(
                0),
       _tracker(_trackerInstance),
       _msg(msg),
-      _manager(manager)
+      _manager(manager),
+      _bucketSpace(bucketSpace)
 {}
 
 RemoveLocationOperation::~RemoveLocationOperation() {}
@@ -68,7 +71,7 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
     }
 
     std::vector<BucketDatabase::Entry> entries;
-    _manager.getBucketDatabase().getAll(bid, entries);
+    _bucketSpace.getBucketDatabase().getAll(bid, entries);
 
     bool sent = false;
     for (uint32_t j = 0; j < entries.size(); ++j) {

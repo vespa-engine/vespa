@@ -19,6 +19,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
+#include "distributor_bucket_space_repo.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.manager");
@@ -137,7 +138,9 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
-        _op = std::make_shared<PutOperation>(*this, cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
+        _op = std::make_shared<PutOperation>(*this,
+                                             _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+                                             cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
     }
@@ -160,7 +163,9 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
     }
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
-        _op = std::make_shared<TwoPhaseUpdateOperation>(*this, cmd, getMetrics(), std::move(handle));
+        _op = std::make_shared<TwoPhaseUpdateOperation>(*this,
+                                                        _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+                                                        cmd, getMetrics(), std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
     }
@@ -183,8 +188,10 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
     }
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
+        auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
         _op = std::make_shared<RemoveOperation>(
                 *this,
+                distributorBucketSpace,
                 cmd,
                 getMetrics().removes[cmd->getLoadType()],
                 std::move(handle));
@@ -213,6 +220,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
 
     _op = Operation::SP(new RemoveLocationOperation(
                                 *this,
+                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                 cmd,
                                 getMetrics().removelocations[cmd->getLoadType()]));
     return true;
@@ -234,6 +242,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 
     _op = Operation::SP(new GetOperation(
                                 *this,
+                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                 cmd,
                                 getMetrics().gets[cmd->getLoadType()]));
     return true;
@@ -251,6 +260,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, MultiOperation)
 
     _op = Operation::SP(new MultiOperationOperation(
                                 *this,
+                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                 cmd,
                                 getMetrics().multioperations[cmd->getLoadType()]));
     return true;
@@ -261,8 +271,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
     if (!checkDistribution(*cmd, cmd->getBucket())) {
         return true;
     }
-
-    _op = Operation::SP(new StatBucketOperation(*this, cmd));
+    auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
+    _op = Operation::SP(new StatBucketOperation(*this, distributorBucketSpace, cmd));
     return true;
 }
 
@@ -271,8 +281,11 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
     if (!checkDistribution(*cmd, cmd->getBucket())) {
         return true;
     }
+    auto bucketSpace(cmd->getBucket().getBucketSpace());
+    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpace));
+    auto &bucketDatabase(distributorBucketSpace.getBucketDatabase());
     _op = Operation::SP(new StatBucketListOperation(
-            getBucketDatabase(), _operationGenerator, getIndex(), cmd));
+            bucketDatabase, _operationGenerator, getIndex(), cmd));
     return true;
 }
 
@@ -281,7 +294,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
     const DistributorConfiguration& config(getDistributor().getConfig());
     VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(),
                                            config.getMaxVisitorsPerNodePerClientVisitor());
-    _op = Operation::SP(new VisitorOperation(*this, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
+    auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
+    _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
     return true;
 }
 

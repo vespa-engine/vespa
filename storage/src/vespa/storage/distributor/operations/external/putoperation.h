@@ -20,10 +20,13 @@ namespace api {
 }
 namespace distributor {
 
+class DistributorBucketSpace;
+
 class PutOperation : public SequencedOperation
 {
 public:
     PutOperation(DistributorComponent& manager,
+                 DistributorBucketSpace &bucketSpace,
                  const std::shared_ptr<api::PutCommand> & msg,
                  PersistenceOperationMetricSet& metric,
                  SequencingHandle sequencingHandle = SequencingHandle());
@@ -72,6 +75,7 @@ private:
 
     std::shared_ptr<api::PutCommand> _msg;
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
 };
 
 } // distributor

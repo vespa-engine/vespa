@@ -3,6 +3,7 @@
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.statbucket");
@@ -12,9 +13,11 @@ namespace distributor {
 
 StatBucketOperation::StatBucketOperation(
         DistributorComponent& manager,
+        DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::StatBucketCommand> & cmd)
     : Operation(),
       _manager(manager),
+      _bucketSpace(bucketSpace),
       _command(cmd)
 {
 }
@@ -35,7 +38,7 @@ StatBucketOperation::onStart(DistributorMessageSender& sender)
     std::vector<uint16_t> nodes;
 
     BucketDatabase::Entry entry(
-            _manager.getBucketDatabase().get(_command->getBucketId()));
+            _bucketSpace.getBucketDatabase().get(_command->getBucketId()));
 
     if (entry.valid()) {
         nodes = entry->getNodes();

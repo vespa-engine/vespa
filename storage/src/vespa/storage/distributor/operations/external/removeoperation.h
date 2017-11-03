@@ -10,10 +10,13 @@ namespace api { class RemoveCommand; }
 
 namespace distributor {
 
+class DistributorBucketSpace;
+
 class RemoveOperation  : public SequencedOperation
 {
 public:
     RemoveOperation(DistributorComponent& manager,
+                    DistributorBucketSpace &bucketSpace,
                     const std::shared_ptr<api::RemoveCommand> & msg,
                     PersistenceOperationMetricSet& metric,
                     SequencingHandle sequencingHandle = SequencingHandle());
@@ -33,6 +36,7 @@ private:
     std::shared_ptr<api::RemoveCommand> _msg;
 
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
 };
 
 }

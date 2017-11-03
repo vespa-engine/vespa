@@ -46,6 +46,7 @@ StatOperationTest::testBucketInfo()
 
     StatBucketOperation op(
             getExternalOperationHandler(),
+            getDistributorBucketSpace(),
             std::shared_ptr<api::StatBucketCommand>(
                     new api::StatBucketCommand(makeDocumentBucket(document::BucketId(16, 5)), "")));
 
@@ -90,7 +91,7 @@ StatOperationTest::testBucketList() {
             new api::GetBucketListCommand(makeDocumentBucket(document::BucketId(16, 5))));
 
     StatBucketListOperation op(
-            getExternalOperationHandler().getBucketDatabase(),
+            getDistributorBucketSpace().getBucketDatabase(),
             getIdealStateManager(),
             getExternalOperationHandler().getIndex(),
             msg);

@@ -40,6 +40,7 @@ public:
                 new api::RemoveLocationCommand(selection, makeDocumentBucket(document::BucketId(0))));
 
         op.reset(new RemoveLocationOperation(getExternalOperationHandler(),
+                                             getDistributorBucketSpace(),
                                              msg,
                                              getDistributor().getMetrics().
                                              removelocations[msg->getLoadType()]));

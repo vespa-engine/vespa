@@ -131,6 +131,7 @@ public:
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
         op.reset(new PutOperation(getExternalOperationHandler(),
+                                  getDistributorBucketSpace(),
                                   msg,
                                   getDistributor().getMetrics().
                                   puts[msg->getLoadType()]));
