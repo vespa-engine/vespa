@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +34,7 @@ public class ApplicationList {
         return new ApplicationList(applications);
     }
 
-    public static ApplicationList from(List<ApplicationId> ids, ApplicationController applications) {
+    public static ApplicationList from(Collection<ApplicationId> ids, ApplicationController applications) {
         return listOf(ids.stream().map(applications::require));
     }
 
