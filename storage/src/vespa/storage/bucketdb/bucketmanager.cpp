@@ -227,7 +227,7 @@ BucketManager::updateMetrics(bool updateDocCount)
     uint32_t diskCount = _component.getDiskCount();
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater m(diskCount);
-        _component.getBucketSpaceRepo().forEachBucket(
+        _component.getBucketSpaceRepo().forEachBucketChunked(
                 m, "BucketManager::updateMetrics");
         if (updateDocCount) {
             for (uint16_t i = 0; i< diskCount; i++) {
@@ -244,7 +244,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 void BucketManager::updateMinUsedBits()
 {
     MetricsUpdater m(_component.getDiskCount());
-    _component.getBucketSpaceRepo().forEachBucket(
+    _component.getBucketSpaceRepo().forEachBucketChunked(
             m, "BucketManager::updateMetrics");
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
@@ -266,20 +266,20 @@ void BucketManager::run(framework::ThreadHandle& thread)
     framework::MilliSecTime timeToCheckMinUsedBits(0);
     while (!thread.interrupted()) {
         bool didWork = false;
-        BIList infoReqs;
+        BucketInfoRequestMap infoReqs;
         {
             vespalib::MonitorGuard monitor(_workerMonitor);
             infoReqs.swap(_bucketInfoRequests);
         }
 
-        didWork |= processRequestBucketInfoCommands(infoReqs);
+        for (auto &req : infoReqs) {
+            didWork |= processRequestBucketInfoCommands(req.first, req.second);
+        }
 
         {
             vespalib::MonitorGuard monitor(_workerMonitor);
-            if (!infoReqs.empty()) {
-                infoReqs.insert(infoReqs.end(),
-                        _bucketInfoRequests.begin(), _bucketInfoRequests.end());
-                _bucketInfoRequests.swap(infoReqs);
+            for (const auto &req : infoReqs) {
+                assert(req.second.empty());
             }
             if (!didWork) {
                 monitor.wait(1000);
@@ -343,7 +343,7 @@ BucketManager::reportStatus(std::ostream& out,
         framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
         xmlReporter << vespalib::xml::XmlTag("buckets");
         BucketDBDumper dumper(xmlReporter.getStream());
-        _component.getBucketSpaceRepo().forEachBucket(
+        _component.getBucketSpaceRepo().forEachBucketChunked(
                 dumper, "BucketManager::reportStatus");
         xmlReporter << vespalib::xml::XmlEndTag();
     } else {
@@ -362,7 +362,7 @@ BucketManager::dump(std::ostream& out) const
 {
     vespalib::XmlOutputStream xos(out);
     BucketDBDumper dumper(xos);
-    _component.getBucketSpaceRepo().forEachBucket(dumper, "BucketManager::dump");
+    _component.getBucketSpaceRepo().forEachBucketChunked(dumper, "BucketManager::dump");
 }
 
 
@@ -394,7 +394,7 @@ bool BucketManager::onRequestBucketInfo(
     if (cmd->getBuckets().size() == 0 && cmd->hasSystemState()) {
 
         vespalib::MonitorGuard monitor(_workerMonitor);
-        _bucketInfoRequests.push_back(cmd);
+        _bucketInfoRequests[cmd->getBucketSpace()].push_back(cmd);
         monitor.signal();
         LOG(spam, "Scheduled request bucket info request for retrieval");
         return true;
@@ -498,7 +498,8 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
 }
 
 bool
-BucketManager::processRequestBucketInfoCommands(BIList& reqs)
+BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpace,
+                                                BucketInfoRequestList &reqs)
 {
     if (reqs.empty()) return false;
 
@@ -529,7 +530,7 @@ BucketManager::processRequestBucketInfoCommands(BIList& reqs)
         our_hash.c_str());
 
     vespalib::LockGuard lock(_clusterStateLock);
-    for (BIList::reverse_iterator it = reqs.rbegin(); it != reqs.rend(); ++it) {
+    for (auto it = reqs.rbegin(); it != reqs.rend(); ++it) {
         // Currently small requests should not be forwarded to worker thread
         assert((*it)->hasSystemState());
         const auto their_hash = normalizer.normalize(
@@ -602,12 +603,12 @@ BucketManager::processRequestBucketInfoCommands(BIList& reqs)
     if (LOG_WOULD_LOG(spam)) {
         DistributorInfoGatherer<true> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
         DistributorInfoGatherer<false> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(
