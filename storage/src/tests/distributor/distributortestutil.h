@@ -19,6 +19,7 @@ namespace distributor {
 
 class BucketDBUpdater;
 class Distributor;
+class DistributorBucketSpace;
 class IdealStateManager;
 class ExternalOperationHandler;
 class Operation;
@@ -121,6 +122,7 @@ public:
     }
 
     // TODO explicit notion of bucket spaces for tests
+    DistributorBucketSpace &getDistributorBucketSpace();
     BucketDatabase& getBucketDatabase();
     const BucketDatabase& getBucketDatabase() const;
 

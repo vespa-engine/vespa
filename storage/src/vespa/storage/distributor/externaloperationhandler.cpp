@@ -138,7 +138,9 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
-        _op = std::make_shared<PutOperation>(*this, cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
+        _op = std::make_shared<PutOperation>(*this,
+                                             _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+                                             cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
     }
@@ -161,7 +163,9 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
     }
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
-        _op = std::make_shared<TwoPhaseUpdateOperation>(*this, cmd, getMetrics(), std::move(handle));
+        _op = std::make_shared<TwoPhaseUpdateOperation>(*this,
+                                                        _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+                                                        cmd, getMetrics(), std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
     }
@@ -235,6 +239,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 
     _op = Operation::SP(new GetOperation(
                                 *this,
+                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                 cmd,
                                 getMetrics().gets[cmd->getLoadType()]));
     return true;

@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.get");
@@ -46,10 +47,12 @@ GetOperation::GroupId::operator==(const GroupId& other) const
 }
 
 GetOperation::GetOperation(DistributorComponent& manager,
+                           DistributorBucketSpace &bucketSpace,
                            const std::shared_ptr<api::GetCommand> & msg,
                            PersistenceOperationMetricSet& metric)
     : Operation(),
       _manager(manager),
+      _bucketSpace(bucketSpace),
       _msg(msg),
       _returnCode(api::ReturnCode::OK),
       _doc((document::Document*)NULL),
@@ -239,7 +242,7 @@ GetOperation::assignTargetNodeGroups()
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
 
     std::vector<BucketDatabase::Entry> entries;
-    _manager.getBucketDatabase().getParents(bid, entries);
+    _bucketSpace.getBucketDatabase().getParents(bid, entries);
 
     for (uint32_t j = 0; j < entries.size(); ++j) {
         const BucketDatabase::Entry& e = entries[j];

@@ -18,11 +18,13 @@ class PersistenceOperationMetricSet;
 namespace distributor {
 
 class DistributorComponent;
+class DistributorBucketSpace;
 
 class GetOperation  : public Operation
 {
 public:
     GetOperation(DistributorComponent& manager,
+                 DistributorBucketSpace &bucketSpace,
                  const std::shared_ptr<api::GetCommand> & msg,
                  PersistenceOperationMetricSet& metric);
 
@@ -71,6 +73,7 @@ private:
     std::map<GroupId, GroupVector> _responses;
 
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
 
     std::shared_ptr<api::GetCommand> _msg;
 

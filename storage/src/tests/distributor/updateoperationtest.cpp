@@ -93,6 +93,7 @@ UpdateOperation_Test::sendUpdate(const std::string& bucketState)
     ExternalOperationHandler& handler = getExternalOperationHandler();
     return std::shared_ptr<UpdateOperation>(
             new UpdateOperation(handler,
+                                getDistributorBucketSpace(),
                                 msg,
                                 getDistributor().getMetrics().updates[msg->getLoadType()]));
 }

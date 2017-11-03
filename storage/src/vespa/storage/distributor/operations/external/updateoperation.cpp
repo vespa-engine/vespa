@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.update");
@@ -15,6 +16,7 @@ using namespace storage;
 using document::BucketSpace;
 
 UpdateOperation::UpdateOperation(DistributorComponent& manager,
+                                 DistributorBucketSpace &bucketSpace,
                                  const std::shared_ptr<api::UpdateCommand> & msg,
                                  PersistenceOperationMetricSet& metric)
     : Operation(),
@@ -24,7 +26,8 @@ UpdateOperation::UpdateOperation(DistributorComponent& manager,
                msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
-      _manager(manager)
+      _manager(manager),
+      _bucketSpace(bucketSpace)
 {
 }
 
@@ -69,7 +72,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
                     _msg->getDocumentId()));
 
     std::vector<BucketDatabase::Entry> entries;
-    _manager.getBucketDatabase().getParents(bucketId, entries);
+    _bucketSpace.getBucketDatabase().getParents(bucketId, entries);
 
     if (entries.empty()) {
         _tracker.fail(sender,

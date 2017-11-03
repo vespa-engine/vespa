@@ -12,6 +12,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 LOG_SETUP(".distributor.callback.doc.put");
 
@@ -21,6 +22,7 @@ using namespace storage;
 using document::BucketSpace;
 
 PutOperation::PutOperation(DistributorComponent& manager,
+                           DistributorBucketSpace &bucketSpace,
                            const std::shared_ptr<api::PutCommand> & msg,
                            PersistenceOperationMetricSet& metric,
                            SequencingHandle sequencingHandle)
@@ -31,7 +33,8 @@ PutOperation::PutOperation(DistributorComponent& manager,
                msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
-      _manager(manager)
+      _manager(manager),
+      _bucketSpace(bucketSpace)
 {
 };
 
@@ -190,11 +193,11 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
         assert(!multipleBuckets);
         (void) multipleBuckets;
         BucketDatabase::Entry entry(
-                _manager.getBucketDatabase().get(lastBucket));
+                _bucketSpace.getBucketDatabase().get(lastBucket));
         std::vector<uint16_t> idealState(
-                _manager.getDistribution().getIdealStorageNodes(
+                _bucketSpace.getDistribution().getIdealStorageNodes(
                     _manager.getClusterState(), lastBucket, "ui"));
-        active = ActiveCopy::calculate(idealState, _manager.getDistribution(),
+        active = ActiveCopy::calculate(idealState, _bucketSpace.getDistribution(),
                                        entry);
         LOG(debug, "Active copies for bucket %s: %s",
             entry.getBucketId().toString().c_str(), active.toString().c_str());
@@ -203,7 +206,7 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
             copy.setActive(true);
             entry->updateNode(copy);
         }
-        _manager.getBucketDatabase().update(entry);
+        _bucketSpace.getBucketDatabase().update(entry);
     }
     for (uint32_t i=0, n=copies.size(); i<n; ++i) {
         if (!copies[i].isNewCopy()) continue;
@@ -274,13 +277,13 @@ PutOperation::onStart(DistributorMessageSender& sender)
         std::vector<document::BucketId> bucketsToCheckForSplit;
 
         lib::IdealNodeCalculatorImpl idealNodeCalculator;
-        idealNodeCalculator.setDistribution(_manager.getDistribution());
+        idealNodeCalculator.setDistribution(_bucketSpace.getDistribution());
         idealNodeCalculator.setClusterState(_manager.getClusterState());
         OperationTargetResolverImpl targetResolver(
-                _manager.getBucketDatabase(),
+                _bucketSpace.getBucketDatabase(),
                 idealNodeCalculator,
                 _manager.getDistributor().getConfig().getMinimalBucketSplit(),
-                _manager.getDistribution().getRedundancy());
+                _bucketSpace.getDistribution().getRedundancy());
         OperationTargetList targets(targetResolver.getTargets(
                 OperationTargetResolver::PUT, bid));
 
@@ -299,7 +302,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
 
         // Mark any entries we're not feeding to as not trusted.
         std::vector<BucketDatabase::Entry> entries;
-        _manager.getBucketDatabase().getParents(bid, entries);
+        _bucketSpace.getBucketDatabase().getParents(bid, entries);
 
         std::vector<PersistenceMessageTracker::ToSend> createBucketBatch;
         if (targets.hasAnyNewCopies()) {

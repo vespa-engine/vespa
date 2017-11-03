@@ -21,6 +21,8 @@ class CreateBucketReply;
 
 namespace distributor {
 
+class DistributorBucketSpace;
+
 /*
  * General functional outline:
  *
@@ -49,6 +51,7 @@ class TwoPhaseUpdateOperation : public SequencedOperation
 {
 public:
     TwoPhaseUpdateOperation(DistributorComponent& manager,
+                            DistributorBucketSpace &bucketSpace,
                             const std::shared_ptr<api::UpdateCommand> & msg,
                             DistributorMetricSet& metrics,
                             SequencingHandle sequencingHandle = SequencingHandle());
@@ -124,6 +127,7 @@ private:
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::StorageReply> _updateReply;
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
     SentMessageMap _sentMessageMap;
     SendState _sendState;
     Mode _mode;

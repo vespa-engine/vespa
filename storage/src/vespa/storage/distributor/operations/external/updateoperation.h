@@ -17,10 +17,13 @@ class CreateBucketReply;
 
 namespace distributor {
 
+class DistributorBucketSpace;
+
 class UpdateOperation : public Operation
 {
 public:
     UpdateOperation(DistributorComponent& manager,
+                    DistributorBucketSpace &bucketSpace,
                     const std::shared_ptr<api::UpdateCommand> & msg,
                     PersistenceOperationMetricSet& metric);
 
@@ -40,6 +43,7 @@ private:
     std::shared_ptr<api::UpdateCommand> _msg;
 
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
 
     bool anyStorageNodesAvailable() const;

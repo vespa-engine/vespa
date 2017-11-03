@@ -343,6 +343,12 @@ DistributorTestUtil::getConfig() {
     return const_cast<DistributorConfiguration&>(_distributor->getConfig());
 }
 
+DistributorBucketSpace &
+DistributorTestUtil::getDistributorBucketSpace()
+{
+    return _distributor->getDefaultBucketSpace();
+}
+
 BucketDatabase&
 DistributorTestUtil::getBucketDatabase() {
     return _distributor->getDefaultBucketSpace().getBucketDatabase();

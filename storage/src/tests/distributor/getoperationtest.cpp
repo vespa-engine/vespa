@@ -75,6 +75,7 @@ public:
                 new api::GetCommand(makeDocumentBucket(document::BucketId(0)), docId, "[all]"));
 
         op.reset(new GetOperation(getExternalOperationHandler(),
+                                  getDistributorBucketSpace(),
                                   msg,
                                   getDistributor().getMetrics().
                                   gets[msg->getLoadType()]));

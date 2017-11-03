@@ -10,6 +10,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.twophaseupdate");
@@ -22,6 +23,7 @@ namespace distributor {
 
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         DistributorComponent& manager,
+        DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::UpdateCommand>& msg,
         DistributorMetricSet& metrics,
         SequencingHandle sequencingHandle)
@@ -32,6 +34,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     _updateCmd(msg),
     _updateReply(),
     _manager(manager),
+    _bucketSpace(bucketSpace),
     _sendState(SendState::NONE_SENT),
     _mode(Mode::FAST_PATH),
     _replySent(false)
@@ -148,7 +151,7 @@ TwoPhaseUpdateOperation::isFastPathPossible() const
 {
     // Fast path iff bucket exists AND is consistent (split and copies).
     std::vector<BucketDatabase::Entry> entries;
-    _manager.getBucketDatabase().getParents(_updateDocBucketId, entries);
+    _bucketSpace.getBucketDatabase().getParents(_updateDocBucketId, entries);
 
     if (entries.size() != 1) {
         return false;
@@ -161,7 +164,7 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 {
     _mode = Mode::FAST_PATH;
     std::shared_ptr<UpdateOperation> updateOperation(
-            new UpdateOperation(_manager, _updateCmd, _updateMetric));
+            new UpdateOperation(_manager, _bucketSpace, _updateCmd, _updateMetric));
 
     IntermediateMessageSender intermediate(
             _sentMessageMap, updateOperation, sender);
@@ -189,7 +192,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
                 "[all]"));
     copyMessageSettings(*_updateCmd, *get);
     std::shared_ptr<GetOperation> getOperation(
-            std::make_shared<GetOperation>(_manager, get, _getMetric));
+            std::make_shared<GetOperation>(_manager, _bucketSpace, get, _getMetric));
 
     IntermediateMessageSender intermediate(
             _sentMessageMap, getOperation, sender);
@@ -257,7 +260,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(
             new api::PutCommand(bucket, doc, putTimestamp));
     copyMessageSettings(*_updateCmd, *put);
     std::shared_ptr<PutOperation> putOperation(
-            new PutOperation(_manager, put, _putMetric));
+            new PutOperation(_manager, _bucketSpace, put, _putMetric));
 
     IntermediateMessageSender intermediate(
             _sentMessageMap, putOperation, sender);
