@@ -127,17 +127,33 @@ public class DeploymentTrigger {
         for (Application application : applications.asList()) {
             try (Lock lock = applications().lock(application.id())) {
                 Optional<LockedApplication> lockedApplication = controller.applications().get(application.id(), lock);
-                if (!lockedApplication.isPresent()) continue; // application removed
+                if ( ! lockedApplication.isPresent()) continue; // application removed
                 triggerReadyJobs(lockedApplication.get());
             }
         }
     }
-    
+
+    /** Find the next step to trigger if any, and triggers it */
     private void triggerReadyJobs(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return;
-        for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
+        List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
+
+        // Should the first step be triggered?
+        if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) &&
+             application.deploying().get() instanceof Change.VersionChange) {
+            Version target = ((Change.VersionChange)application.deploying().get()).version();
+            JobStatus jobStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
+            if (jobStatus == null || ! jobStatus.lastTriggered().isPresent() 
+                || ! jobStatus.lastTriggered().get().version().equals(target)) {
+                application = trigger(JobType.systemTest, application, false, "Upgrade to " + target);
+                controller.applications().store(application);
+            }
+        }
+
+        // Find next steps to trigger based on the state of the previous step
+        for (JobType jobType : jobs) {
             JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-            if (jobStatus == null) continue; // never run
+            if (jobStatus == null) continue; // job has never run
             if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
             // Collect the subset of next jobs which have not run with the last changes
