@@ -25,7 +25,7 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
     // and atomically using this monitor.
     private final Object monitor = new Object();
     private final SlobrokMonitorManagerImpl slobrokMonitorManager;
-    private SuperModel superModel = new SuperModel();
+    private SuperModel superModel;
 
     SuperModelListenerImpl(SlobrokMonitorManagerImpl slobrokMonitorManager,
                            ServiceMonitorMetrics metrics,
@@ -44,10 +44,9 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
             // This snapshot() call needs to be within the synchronized block,
             // since applicationActivated()/applicationRemoved() may be called
             // asynchronously even before snapshot() returns.
-            SuperModel snapshot = superModelProvider.snapshot(this);
-
-            snapshot.getAllApplicationInfos().stream().forEach(application ->
-                    applicationActivated(snapshot, application));
+            this.superModel = superModelProvider.snapshot(this);
+            superModel.getAllApplicationInfos().stream().forEach(application ->
+                    slobrokMonitorManager.applicationActivated(superModel, application));
         }
     }
 
