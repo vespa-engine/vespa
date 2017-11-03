@@ -18,10 +18,13 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(Distributor& owner, DistributorBucketSpace& bucketSpace,
-                                 DistributorMessageSender& sender, DistributorComponentRegister& compReg)
+BucketDBUpdater::BucketDBUpdater(Distributor& owner,
+                                 DistributorBucketSpaceRepo &bucketSpaceRepo,
+                                 DistributorBucketSpace& bucketSpace,
+                                 DistributorMessageSender& sender,
+                                 DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _bucketSpaceComponent(owner, bucketSpace, compReg, "Bucket DB Updater"),
+      _bucketSpaceComponent(owner, bucketSpaceRepo, bucketSpace, compReg, "Bucket DB Updater"),
       _sender(sender),
       _transitionTimer(_bucketSpaceComponent.getClock())
 {

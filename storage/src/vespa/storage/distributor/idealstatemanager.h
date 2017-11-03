@@ -40,6 +40,7 @@ class IdealStateManager : public framework::HtmlStatusReporter,
 public:
 
     IdealStateManager(Distributor& owner,
+                      DistributorBucketSpaceRepo& bucketSpaceRepo,
                       DistributorBucketSpace& bucketSpace,
                       DistributorComponentRegister& compReg,
                       bool manageActiveBucketCopies);

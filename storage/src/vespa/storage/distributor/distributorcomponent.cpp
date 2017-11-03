@@ -13,10 +13,12 @@ namespace distributor {
 
 DistributorComponent::DistributorComponent(
         DistributorInterface& distributor,
+        DistributorBucketSpaceRepo &bucketSpaceRepo,
         DistributorComponentRegister& compReg,
         const std::string& name)
     : storage::DistributorComponent(compReg, name),
-      _distributor(distributor)
+      _distributor(distributor),
+      _bucketSpaceRepo(bucketSpaceRepo)
 {
 }
 

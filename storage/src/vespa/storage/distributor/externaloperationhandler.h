@@ -38,6 +38,7 @@ public:
     DEF_MSG_COMMAND_H(GetBucketList);
 
     ExternalOperationHandler(Distributor& owner,
+                             DistributorBucketSpaceRepo& bucketSpaceRepo,
                              DistributorBucketSpace& bucketSpace,
                              const MaintenanceOperationGenerator&,
                              DistributorComponentRegister& compReg);
