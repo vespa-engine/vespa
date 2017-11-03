@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
@@ -19,6 +20,7 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
 
     private final AthenzDbMock athenz;
 
+    @Inject
     public AthenzClientFactoryMock() {
         this(new AthenzDbMock());
     }
