@@ -143,18 +143,18 @@ MultiOperationOperation::onStart(DistributorMessageSender& sender)
     {
         if (operationIt->valid()) {
             document::DocumentId docId = operationIt->getDocumentId();
-            document::BucketId bucketId(
-                    _manager.getBucketIdFactory().getBucketId(docId));
+            document::Bucket bucket(_msg->getBucket().getBucketSpace(),
+                                    _manager.getBucketIdFactory().getBucketId(docId));
 
-            LOG(debug, "Operation with documentid %s mapped to bucketid %s", docId.toString().c_str(), bucketId.toString().c_str());
+            LOG(debug, "Operation with documentid %s mapped to bucket %s", docId.toString().c_str(), bucket.toString().c_str());
 
             // OK, we have a bucket ID, must now know which buckets this belongs
             // to
             std::vector<BucketDatabase::Entry> entries;
-            _manager.getBucketDatabase().getParents(bucketId, entries);
+            _manager.getBucketDatabase().getParents(bucket.getBucketId(), entries);
 
             if (entries.empty()) {
-                entries.push_back(_manager.createAppropriateBucket(bucketId));
+                entries.push_back(_manager.createAppropriateBucket(bucket));
             }
 
             for (uint32_t i = 0; i < entries.size(); ++i) {

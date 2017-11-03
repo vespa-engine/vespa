@@ -3,9 +3,12 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorstoragelink");
+
+using document::BucketSpace;
 
 namespace storage {
 
@@ -45,7 +48,8 @@ DistributorComponent::getClusterState() const
 std::vector<uint16_t>
 DistributorComponent::getIdealNodes(const document::Bucket &bucket) const
 {
-    return getDistribution().getIdealStorageNodes(
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return bucketSpace.getDistribution().getIdealStorageNodes(
             getClusterState(),
             bucket.getBucketId(),
             _distributor.getStorageNodeUpStates());
@@ -82,8 +86,9 @@ BucketOwnership
 DistributorComponent::checkOwnershipInPendingAndCurrentState(
         const document::Bucket &bucket) const
 {
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     return checkOwnershipInPendingAndGivenState(
-            getDistribution(), getClusterState(), bucket);
+            bucketSpace.getDistribution(), getClusterState(), bucket);
 }
 
 bool
@@ -112,14 +117,15 @@ DistributorComponent::ownsBucketInState(
         const lib::ClusterState& clusterState,
         const document::Bucket &bucket) const
 {
-    return ownsBucketInState(getDistribution(), clusterState, bucket);
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return ownsBucketInState(bucketSpace.getDistribution(), clusterState, bucket);
 }
 
 bool
-DistributorComponent::ownsBucketInCurrentState(
-        const document::Bucket &bucket) const
+DistributorComponent::ownsBucketInCurrentState(const document::Bucket &bucket) const
 {
-    return ownsBucketInState(getDistribution(), getClusterState(), bucket);
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return ownsBucketInState(bucketSpace.getDistribution(), getClusterState(), bucket);
 }
 
 api::StorageMessageAddress
@@ -165,7 +171,8 @@ void
 DistributorComponent::removeNodesFromDB(const document::Bucket &bucket,
                                           const std::vector<uint16_t>& nodes)
 {
-    BucketDatabase::Entry dbentry = getBucketDatabase().get(bucket.getBucketId());
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
 
     if (dbentry.valid()) {
         for (uint32_t i = 0; i < nodes.size(); ++i) {
@@ -179,14 +186,14 @@ DistributorComponent::removeNodesFromDB(const document::Bucket &bucket,
         }
 
         if (dbentry->getNodeCount() != 0) {
-            getBucketDatabase().update(dbentry);
+            bucketSpace.getBucketDatabase().update(dbentry);
         } else {
             LOG(debug,
                 "After update, bucket %s now has no copies. "
                 "Removing from database.",
                 bucket.toString().c_str());
 
-            getBucketDatabase().remove(bucket.getBucketId());
+            bucketSpace.getBucketDatabase().remove(bucket.getBucketId());
         }
     }
 }
@@ -222,8 +229,9 @@ DistributorComponent::updateBucketDatabase(
         const std::vector<BucketCopy>& changedNodes,
         uint32_t updateFlags)
 {
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     assert(!(bucket.getBucketId() == document::BucketId()));
-    BucketDatabase::Entry dbentry = getBucketDatabase().get(bucket.getBucketId());
+    BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
 
     BucketOwnership ownership(checkOwnershipInPendingAndCurrentState(bucket));
     if (!ownership.isOwned()) {
@@ -277,7 +285,7 @@ DistributorComponent::updateBucketDatabase(
     if (updateFlags & DatabaseUpdate::RESET_TRUSTED) {
         dbentry->resetTrusted();
     }
-    getBucketDatabase().update(dbentry);
+    bucketSpace.getBucketDatabase().update(dbentry);
 }
 
 void
@@ -332,19 +340,12 @@ DistributorComponent::getSibling(const document::BucketId& bid) const {
 };
 
 BucketDatabase::Entry
-DistributorComponent::createAppropriateBucket(const document::BucketId& bid)
+DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
 {
-    return getBucketDatabase().createAppropriateBucket(
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return bucketSpace.getBucketDatabase().createAppropriateBucket(
             _distributor.getConfig().getMinimalBucketSplit(),
-            bid);
-}
-
-document::BucketId
-DistributorComponent::getAppropriateBucket(const document::BucketId& bid)
-{
-    return getBucketDatabase().getAppropriateBucket(
-            _distributor.getConfig().getMinimalBucketSplit(),
-            bid);
+            bucket.getBucketId());
 }
 
 bool

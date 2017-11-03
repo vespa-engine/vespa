@@ -173,13 +173,10 @@ public:
     document::BucketId getSibling(const document::BucketId& bid) const;
 
     /**
-     * Gets a bucket that is split correctly according to other buckets that
-     * are in the bucket database. For instance, if you have a sibling bucket of
-     * the bucket, a similarly split bucket should be created.
+     * Create a bucket that is split correctly according to other buckets that
+     * are in the bucket database.
      */
-    document::BucketId getAppropriateBucket(const document::BucketId& bid);
-
-    BucketDatabase::Entry createAppropriateBucket(const document::BucketId& bid);
+    BucketDatabase::Entry createAppropriateBucket(const document::Bucket &bucket);
 
     /**
      * Returns true if the node is currently initializing.
