@@ -5,6 +5,8 @@ usage() {
     echo "Usage: $0 [full | java | default]" >&2
 }
 
+source /opt/rh/rh-maven33/enable
+
 if [ $# -eq 0 ]; then
     # Build minimal set of java modules required to run cmake
     MODE=default
