@@ -6,9 +6,11 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.maintenance.BlockedChangeDeployer;
@@ -17,6 +19,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -310,6 +313,21 @@ public class DeploymentTriggerTest {
         BuildService.BuildJob productionJob = tester.buildSystem().takeJobsToRun().get(0);
         assertEquals("production-us-west-1", productionJob.jobName());
     }
+    
+    @Test
+    public void testUpgradingButNoJobStarted() {
+        DeploymentTester tester = new DeploymentTester();
+        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
+                                                                                Duration.ofHours(1),
+                                                                                new JobControl(tester.controllerTester().curator()));
+        LockedApplication app = (LockedApplication)tester.createAndDeploy("default0", 3, "default");
+        // Store that we are upgrading but don't start the system-tests job
+        tester.controller().applications().store(app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.2")))));
+        assertEquals(0, tester.buildSystem().jobs().size());
+        blockedChangeDeployer.run();
+        assertEquals(1, tester.buildSystem().jobs().size());
+        assertEquals("system-test", tester.buildSystem().jobs().get(0).jobName());
+    }
 
     @Test
     public void testHandleMultipleNotificationsFromLastJob() {
@@ -336,4 +354,5 @@ public class DeploymentTriggerTest {
                     tester.applications().require(application.id()).deploying().isPresent());
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
     }
+
 }
