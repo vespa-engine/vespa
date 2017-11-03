@@ -4,6 +4,7 @@
 #include "putoperation.h"
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.multioperation");
@@ -14,6 +15,7 @@ namespace storage::distributor {
 
 MultiOperationOperation::MultiOperationOperation(
         DistributorComponent& manager,
+        DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::MultiOperationCommand> & msg,
         PersistenceOperationMetricSet& metric)
     : Operation(),
@@ -22,6 +24,7 @@ MultiOperationOperation::MultiOperationOperation(
       _tracker(_trackerInstance),
       _msg(msg),
       _manager(manager),
+      _bucketSpace(bucketSpace),
       _minUseBits(manager.getDistributor().getConfig().getMinimalBucketSplit())
 {
 }
@@ -36,14 +39,14 @@ MultiOperationOperation::sendToBucket(
     std::vector<uint16_t> targetNodes;
     std::vector<MessageTracker::ToSend> createBucketBatch;
 
-    if (PutOperation::checkCreateBucket(_manager.getDistribution(),
+    if (PutOperation::checkCreateBucket(_bucketSpace.getDistribution(),
                                         _manager.getClusterState(),
                                         e,
                                         targetNodes,
                                         createBucketBatch,
                                         *moCommand))
     {
-        _manager.getBucketDatabase().update(e);
+        _bucketSpace.getBucketDatabase().update(e);
     }
 
     if (createBucketBatch.size()) {
@@ -151,7 +154,7 @@ MultiOperationOperation::onStart(DistributorMessageSender& sender)
             // OK, we have a bucket ID, must now know which buckets this belongs
             // to
             std::vector<BucketDatabase::Entry> entries;
-            _manager.getBucketDatabase().getParents(bucket.getBucketId(), entries);
+            _bucketSpace.getBucketDatabase().getParents(bucket.getBucketId(), entries);
 
             if (entries.empty()) {
                 entries.push_back(_manager.createAppropriateBucket(bucket));

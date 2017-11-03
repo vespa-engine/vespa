@@ -17,10 +17,13 @@ namespace api {
 
 namespace distributor {
 
+class DistributorBucketSpace;
+
 class MultiOperationOperation  : public Operation
 {
 public:
     MultiOperationOperation(DistributorComponent& manager,
+                            DistributorBucketSpace &bucketSpace,
                             const std::shared_ptr<api::MultiOperationCommand> & msg,
                             PersistenceOperationMetricSet& metric);
     ~MultiOperationOperation();
@@ -36,6 +39,7 @@ private:
     PersistenceMessageTracker& _tracker;
     std::shared_ptr<api::MultiOperationCommand> _msg;
     DistributorComponent& _manager;
+    DistributorBucketSpace &_bucketSpace;
     uint32_t _minUseBits;
 
     uint32_t getMinimumUsedBits(const vdslib::DocumentList& opList) const;

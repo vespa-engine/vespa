@@ -19,6 +19,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
+#include "distributor_bucket_space_repo.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.manager");
@@ -251,6 +252,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, MultiOperation)
 
     _op = Operation::SP(new MultiOperationOperation(
                                 *this,
+                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                 cmd,
                                 getMetrics().multioperations[cmd->getLoadType()]));
     return true;
