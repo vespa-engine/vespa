@@ -6,10 +6,11 @@ namespace storage::distributor {
 
 DistributorBucketSpaceComponent::DistributorBucketSpaceComponent(
         DistributorInterface& distributor,
+        DistributorBucketSpaceRepo &bucketSpaceRepo,
         DistributorBucketSpace& bucketSpace,
         DistributorComponentRegister& compReg,
         const std::string& name)
-    : DistributorComponent(distributor, compReg, name),
+    : DistributorComponent(distributor, bucketSpaceRepo, compReg, name),
       _bucketSpace(bucketSpace)
 {
 }

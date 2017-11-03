@@ -15,9 +15,10 @@ class DistributorBucketSpaceComponent : public DistributorComponent {
     DistributorBucketSpace& _bucketSpace;
 public:
     DistributorBucketSpaceComponent(DistributorInterface& distributor,
-                                DistributorBucketSpace& bucketSpace,
-                                DistributorComponentRegister& compReg,
-                                const std::string& name);
+                                    DistributorBucketSpaceRepo &bucketSpaceRepo,
+                                    DistributorBucketSpace& bucketSpace,
+                                    DistributorComponentRegister& compReg,
+                                    const std::string& name);
 
     BucketDatabase& getBucketDatabase() override {
         return _bucketSpace.getBucketDatabase();

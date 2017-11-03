@@ -27,10 +27,11 @@ namespace storage::distributor {
 
 ExternalOperationHandler::ExternalOperationHandler(
         Distributor& owner,
+        DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpace& bucketSpace,
         const MaintenanceOperationGenerator& gen,
         DistributorComponentRegister& compReg)
-    : DistributorBucketSpaceComponent(owner, bucketSpace, compReg, "External operation handler"),
+    : DistributorBucketSpaceComponent(owner, bucketSpaceRepo, bucketSpace, compReg, "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
 { }

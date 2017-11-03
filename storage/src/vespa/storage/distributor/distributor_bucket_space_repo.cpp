@@ -2,9 +2,12 @@
 
 #include "distributor_bucket_space_repo.h"
 #include <vespa/vdslib/distribution/distribution.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.managed_bucket_space_repo");
+
+using document::BucketSpace;
 
 namespace storage {
 namespace distributor {
@@ -21,6 +24,20 @@ void DistributorBucketSpaceRepo::setDefaultDistribution(
     LOG(debug, "Got new default distribution '%s'", distr->toString().c_str());
     // TODO all spaces, per-space config transforms
     _defaultSpace.setDistribution(std::move(distr));
+}
+
+DistributorBucketSpace &
+DistributorBucketSpaceRepo::get(BucketSpace bucketSpace)
+{
+    assert(bucketSpace == BucketSpace::placeHolder());
+    return _defaultSpace;
+}
+
+const DistributorBucketSpace &
+DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const
+{
+    assert(bucketSpace == BucketSpace::placeHolder());
+    return _defaultSpace;
 }
 
 }

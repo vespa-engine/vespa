@@ -14,6 +14,8 @@ namespace storage {
 
 namespace distributor {
 
+class DistributorBucketSpaceRepo;
+
 struct DatabaseUpdate {
     enum UpdateFlags {
         CREATE_IF_NONEXISTING = 1,
@@ -29,6 +31,7 @@ class DistributorComponent : public storage::DistributorComponent
 {
 public:
     DistributorComponent(DistributorInterface& distributor,
+                         DistributorBucketSpaceRepo &bucketSpaceRepo,
   		         DistributorComponentRegister& compReg,
 		         const std::string& name);
 
@@ -160,6 +163,9 @@ public:
     // even has a different signature altogether...!
     virtual const lib::Distribution& getDistribution() const = 0;
 
+    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
+    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
+
     /**
      * Finds a bucket that has the same direct parent as the given bucket
      * (i.e. split one bit less), but different bit in the most used bit.
@@ -189,6 +195,7 @@ private:
 
 protected:
 
+    DistributorBucketSpaceRepo &_bucketSpaceRepo;
     vespalib::Lock _sync;
 };
 
