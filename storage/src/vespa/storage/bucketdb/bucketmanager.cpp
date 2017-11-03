@@ -259,6 +259,19 @@ void BucketManager::updateMinUsedBits()
     }
 }
 
+namespace {
+
+void copyBucketInfoMap(const BucketManager::BucketInfoMap &src,
+                       BucketManager::BucketInfoMap &dst)
+{
+    for (const auto &srcElem : src) {
+        auto &dstList = dst[srcElem.first];
+        dstList.insert(dstList.end(), srcElem.second.begin(), srcElem.second.end());
+    }
+}
+
+}
+
 // Responsible for sending on messages that was previously queued
 void BucketManager::run(framework::ThreadHandle& thread)
 {
@@ -266,19 +279,20 @@ void BucketManager::run(framework::ThreadHandle& thread)
     framework::MilliSecTime timeToCheckMinUsedBits(0);
     while (!thread.interrupted()) {
         bool didWork = false;
-        BIList infoReqs;
+        BucketInfoMap infoReqs;
         {
             vespalib::MonitorGuard monitor(_workerMonitor);
             infoReqs.swap(_bucketInfoRequests);
         }
 
-        didWork |= processRequestBucketInfoCommands(infoReqs);
+        for (auto &req : infoReqs) {
+            didWork |= processRequestBucketInfoCommands(req.first, req.second);
+        }
 
         {
             vespalib::MonitorGuard monitor(_workerMonitor);
             if (!infoReqs.empty()) {
-                infoReqs.insert(infoReqs.end(),
-                        _bucketInfoRequests.begin(), _bucketInfoRequests.end());
+                copyBucketInfoMap(_bucketInfoRequests, infoReqs);
                 _bucketInfoRequests.swap(infoReqs);
             }
             if (!didWork) {
@@ -394,7 +408,7 @@ bool BucketManager::onRequestBucketInfo(
     if (cmd->getBuckets().size() == 0 && cmd->hasSystemState()) {
 
         vespalib::MonitorGuard monitor(_workerMonitor);
-        _bucketInfoRequests.push_back(cmd);
+        _bucketInfoRequests[cmd->getBucketSpace()].push_back(cmd);
         monitor.signal();
         LOG(spam, "Scheduled request bucket info request for retrieval");
         return true;
@@ -498,7 +512,8 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
 }
 
 bool
-BucketManager::processRequestBucketInfoCommands(BIList& reqs)
+BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpace,
+                                                BucketInfoList &reqs)
 {
     if (reqs.empty()) return false;
 
@@ -529,7 +544,7 @@ BucketManager::processRequestBucketInfoCommands(BIList& reqs)
         our_hash.c_str());
 
     vespalib::LockGuard lock(_clusterStateLock);
-    for (BIList::reverse_iterator it = reqs.rbegin(); it != reqs.rend(); ++it) {
+    for (auto it = reqs.rbegin(); it != reqs.rend(); ++it) {
         // Currently small requests should not be forwarded to worker thread
         assert((*it)->hasSystemState());
         const auto their_hash = normalizer.normalize(
@@ -602,12 +617,12 @@ BucketManager::processRequestBucketInfoCommands(BIList& reqs)
     if (LOG_WOULD_LOG(spam)) {
         DistributorInfoGatherer<true> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
         DistributorInfoGatherer<false> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(

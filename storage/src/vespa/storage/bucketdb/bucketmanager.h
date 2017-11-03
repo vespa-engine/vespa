@@ -12,20 +12,21 @@
 
 #pragma once
 
-#include <vespa/storage/bucketdb/config-stor-bucketdb.h>
-#include "storbucketdb.h"
 #include "bucketmanagermetrics.h"
+#include "storbucketdb.h"
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/storage/bucketdb/config-stor-bucketdb.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
-#include <vespa/storageframework/generic/status/statusreporter.h>
-#include <vespa/storageframework/generic/metric/metricupdatehook.h>
-
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/config/subscription/configuri.h>
-#include <unordered_set>
+#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageframework/generic/status/statusreporter.h>
+
 #include <list>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace storage {
 
@@ -34,16 +35,19 @@ class BucketManager : public StorageLinkQueued,
                       private framework::Runnable,
                       private framework::MetricUpdateHook
 {
+public:
     /** Type used for message queues */
-    typedef std::list<std::shared_ptr<api::StorageCommand> > CommandList;
-    typedef std::list<std::shared_ptr<api::RequestBucketInfoCommand> > BIList;
+    using CommandList = std::list<std::shared_ptr<api::StorageCommand> >;
+    using BucketInfoList = std::list<std::shared_ptr<api::RequestBucketInfoCommand> >;
+    using BucketInfoMap = std::unordered_map<document::BucketSpace, BucketInfoList, document::BucketSpace::hash>;
 
+private:
     config::ConfigUri _configUri;
 
     uint32_t _chunkLevel;
     mutable vespalib::Lock _stateAccess;
     framework::MemoryToken::UP _bucketDBMemoryToken;
-    BIList _bucketInfoRequests;
+    BucketInfoMap _bucketInfoRequests;
 
     /**
      * We have our own thread running, which we use to send messages down.
@@ -128,7 +132,8 @@ private:
     void updateMinUsedBits();
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;
-    bool processRequestBucketInfoCommands(BIList&);
+    bool processRequestBucketInfoCommands(document::BucketSpace bucketSpace,
+                                          BucketInfoList &reqs);
 
     /**
      * Enqueue reply and add its bucket to the set of conflicting buckets iff
