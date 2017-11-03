@@ -2,6 +2,7 @@
 #pragma once
 
 #include "distributor_bucket_space.h"
+#include <vespa/document/bucket/bucketspace.h>
 #include <memory>
 
 namespace storage {
@@ -24,6 +25,8 @@ public:
     const DistributorBucketSpace& getDefaultSpace() const noexcept {
         return _defaultSpace;
     }
+    DistributorBucketSpace &get(document::BucketSpace bucketSpace);
+    const DistributorBucketSpace &get(document::BucketSpace bucketSpace) const;
 
     void setDefaultDistribution(std::shared_ptr<lib::Distribution> distr);
 };
