@@ -44,10 +44,9 @@ public class SuperModelListenerImpl implements SuperModelListener, Supplier<Serv
             // This snapshot() call needs to be within the synchronized block,
             // since applicationActivated()/applicationRemoved() may be called
             // asynchronously even before snapshot() returns.
-            SuperModel snapshot = superModelProvider.snapshot(this);
-
-            snapshot.getAllApplicationInfos().stream().forEach(application ->
-                    applicationActivated(snapshot, application));
+            this.superModel = superModelProvider.snapshot(this);
+            superModel.getAllApplicationInfos().stream().forEach(application ->
+                    slobrokMonitorManager.applicationActivated(superModel, application));
         }
     }
 
