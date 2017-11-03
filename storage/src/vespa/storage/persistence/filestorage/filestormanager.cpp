@@ -2,20 +2,21 @@
 
 #include "filestormanager.h"
 
+#include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/storage/common/bucketmessages.h>
+#include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
+#include <vespa/storage/common/messagebucket.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/persistence/bucketownershipnotifier.h>
+#include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/storageutil/log.h>
+#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/storageutil/log.h>
-#include <vespa/storage/common/messagebucket.h>
-#include <vespa/storage/persistence/bucketownershipnotifier.h>
-#include <vespa/storageapi/message/batch.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -974,7 +975,7 @@ FileStorManager::updateState()
     if (_nodeUpInLastNodeStateSeenByProvider && !nodeUp) {
         LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database");
         Deactivator deactivator;
-        _component.getBucketDatabase(BucketSpace::placeHolder()).all(deactivator, "FileStorManager::updateState");
+        _component.getBucketSpaceRepo().forEachBucket(deactivator, "FileStorManager::updateState");
     }
     _provider->setClusterState(spiState);
     _nodeUpInLastNodeStateSeenByProvider = nodeUp;
