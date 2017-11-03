@@ -100,12 +100,12 @@ public class InstanceValidator {
 
         String domainInConfig = matchingServiceInfo.get().getProperty(SERVICE_PROPERTIES_DOMAIN_KEY).get();
         String serviceInConfig = matchingServiceInfo.get().getProperty(SERVICE_PROPERTIES_SERVICE_KEY).get();
-        if (domainInConfig.equals(domain) && serviceInConfig.equals(service)) {
-            return true;
-        } else {
-            log.info(String.format("domain '%s' or service '%s' does not match the one in config for application %s",
+        if (!domainInConfig.equals(domain) || !serviceInConfig.equals(service)) {
+            log.warning(String.format("domain '%s' or service '%s' does not match the one in config for application %s",
                     domain, service, applicationId.serializedForm()));
             return false;
         }
+
+        return true;
     }
 }
