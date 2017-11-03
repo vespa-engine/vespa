@@ -1,25 +1,27 @@
 {
   "versions":[
     {
-      "version": "(ignore)",
-      "confidence": "high",
-      "commit": "(ignore)",
-      "date": 0,
-      "controllerVersion": false,
-      "systemVersion": false,
-      "configServers": [ ],
-      "failingApplications": [ ],
-      "productionApplications": [
-        {
-          "tenant": "tenant1",
-          "application": "application1",
-          "instance": "default",
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "upgradePolicy": "default",
-          "jobType": "production-corp-us-east-1"
-        }
+      "version":"(ignore)",
+      "confidence":"high",
+      "commit":"(ignore)",
+      "date":0,
+      "controllerVersion":false,
+      "systemVersion":false,
+      "configServers":[
+
       ],
-      "deployingApplications": [ ]
+      "failingApplications":[
+
+      ],
+      "productionApplications":[
+        {
+          "tenant":"tenant1",
+          "application":"application1",
+          "instance":"default",
+          "url":"http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy":"default"
+        }
+      ]
     },
     {
       "version":"(ignore)",
@@ -38,46 +40,40 @@
       ],
       "failingApplications":[
         {
-          "tenant": "tenant1",
-          "application": "application1",
-          "instance": "default",
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "upgradePolicy": "default",
-          "jobType": "staging-test"
+          "tenant":"tenant1",
+          "application":"application1",
+          "instance":"default",
+          "url":"http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy":"default",
+          "failingSince":"(ignore)"
         }
       ],
       "productionApplications":[
         {
-          "tenant": "tenant2",
-          "application": "application2",
-          "instance": "default",
-          "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
-          "upgradePolicy": "default",
-          "jobType": "production-corp-us-east-1"
-        }
-      ],
-      "deployingApplications": [
-        {
-          "tenant": "tenant1",
-          "application": "application1",
-          "instance": "default",
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "upgradePolicy": "default",
-          "jobType": "staging-test"
+          "tenant":"tenant2",
+          "application":"application2",
+          "instance":"default",
+          "url":"http://localhost:8080/application/v4/tenant/tenant2/application/application2",
+          "upgradePolicy":"default"
         }
       ]
     },
     {
-      "version": "(ignore)",
-      "confidence": "normal",
-      "commit": "(ignore)",
-      "date": 0,
-      "controllerVersion": true,
-      "systemVersion": false,
-      "configServers": [ ],
-      "failingApplications": [ ],
-      "productionApplications": [ ],
-      "deployingApplications": [ ]
+      "version":"(ignore)",
+      "confidence":"normal",
+      "commit":"(ignore)",
+      "date":0,
+      "controllerVersion":true,
+      "systemVersion":false,
+      "configServers":[
+
+      ],
+      "failingApplications":[
+
+      ],
+      "productionApplications":[
+
+      ]
     }
   ]
 }

@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -226,20 +225,21 @@ public class DeploymentTester {
     /** Assert that the sceduled jobs of this application are exactly those given, and take them */
     private void consumeJobs(Application application, boolean expectOnlyTheseJobs, JobType... jobs) {
         for (JobType job : jobs) {
-            BuildService.BuildJob buildJob = findJob(application, job);
-            assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.projectId());
-            assertEquals(job.id(), buildJob.jobName());
+            Optional<BuildService.BuildJob> buildJob = findJob(application, job);
+            assertTrue(String.format("Job %s is scheduled for %s", job, application), buildJob.isPresent());
+            assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.get().projectId());
+            assertEquals(job.id(), buildJob.get().jobName());
         }
         if (expectOnlyTheseJobs)
             assertEquals(jobs.length, countJobsOf(application));
         buildSystem().removeJobs(application.id());
     }
 
-    private BuildService.BuildJob findJob(Application application, JobType jobType) {
+    private Optional<BuildService.BuildJob> findJob(Application application, JobType jobType) {
         for (BuildService.BuildJob job : buildSystem().jobs())
             if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.id()))
-                return job;
-        throw new NoSuchElementException(jobType + " is not scheduled for " + application);
+                return Optional.of(job);
+        return Optional.empty();
     }
 
     private int countJobsOf(Application application) {
