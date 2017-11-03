@@ -266,7 +266,7 @@ void BucketManager::run(framework::ThreadHandle& thread)
     framework::MilliSecTime timeToCheckMinUsedBits(0);
     while (!thread.interrupted()) {
         bool didWork = false;
-        BucketInfoMap infoReqs;
+        BucketInfoRequestMap infoReqs;
         {
             vespalib::MonitorGuard monitor(_workerMonitor);
             infoReqs.swap(_bucketInfoRequests);
@@ -499,7 +499,7 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
 
 bool
 BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpace,
-                                                BucketInfoList &reqs)
+                                                BucketInfoRequestList &reqs)
 {
     if (reqs.empty()) return false;
 

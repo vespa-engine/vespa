@@ -37,9 +37,9 @@ class BucketManager : public StorageLinkQueued,
 {
 public:
     /** Type used for message queues */
-    using CommandList = std::list<std::shared_ptr<api::StorageCommand> >;
-    using BucketInfoList = std::list<std::shared_ptr<api::RequestBucketInfoCommand> >;
-    using BucketInfoMap = std::unordered_map<document::BucketSpace, BucketInfoList, document::BucketSpace::hash>;
+    using CommandList = std::list<std::shared_ptr<api::StorageCommand>>;
+    using BucketInfoRequestList = std::list<std::shared_ptr<api::RequestBucketInfoCommand>>;
+    using BucketInfoRequestMap = std::unordered_map<document::BucketSpace, BucketInfoRequestList, document::BucketSpace::hash>;
 
 private:
     config::ConfigUri _configUri;
@@ -47,7 +47,7 @@ private:
     uint32_t _chunkLevel;
     mutable vespalib::Lock _stateAccess;
     framework::MemoryToken::UP _bucketDBMemoryToken;
-    BucketInfoMap _bucketInfoRequests;
+    BucketInfoRequestMap _bucketInfoRequests;
 
     /**
      * We have our own thread running, which we use to send messages down.
@@ -133,7 +133,7 @@ private:
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;
     bool processRequestBucketInfoCommands(document::BucketSpace bucketSpace,
-                                          BucketInfoList &reqs);
+                                          BucketInfoRequestList &reqs);
 
     /**
      * Enqueue reply and add its bucket to the set of conflicting buckets iff
