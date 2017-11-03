@@ -29,6 +29,7 @@ public class ConfigServerException extends RuntimeException {
     public enum ErrorCode {
         APPLICATION_LOCK_FAILURE,
         BAD_REQUEST,
+        ACTIVATION_CONFLICT,
         INTERNAL_SERVER_ERROR,
         INVALID_APPLICATION_PACKAGE,
         METHOD_NOT_ALLOWED,

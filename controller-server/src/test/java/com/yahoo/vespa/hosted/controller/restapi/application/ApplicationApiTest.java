@@ -486,6 +486,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       athenzUserDomain, "mytenant"),
                               new File("deploy-out-of-capacity.json"), 400);
 
+        // POST (deploy) an application where activation fails
+        configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to activate application", ConfigServerException.ErrorCode.ACTIVATION_CONFLICT, null));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy",
+                entity,
+                Request.Method.POST,
+                athenzUserDomain, "mytenant"),
+                new File("deploy-activation-conflict.json"), 409);
+
+        // POST (deploy) an application where we get an internal server error
+        configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Internal server error", ConfigServerException.ErrorCode.INTERNAL_SERVER_ERROR, null));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy",
+                entity,
+                Request.Method.POST,
+                athenzUserDomain, "mytenant"),
+                new File("deploy-internal-server-error.json"), 500);
+
         // DELETE tenant which has an application
         tester.assertResponse(request("/application/v4/tenant/tenant1", "", Request.Method.DELETE),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete tenant 'tenant1': This tenant has active applications\"}",
