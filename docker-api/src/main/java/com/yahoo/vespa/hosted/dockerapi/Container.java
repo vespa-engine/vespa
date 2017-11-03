@@ -9,6 +9,7 @@ import java.util.Objects;
 public class Container {
     public final String hostname;
     public final DockerImage image;
+    public final ContainerResources flavor;
     public final ContainerName name;
     public final State state;
     public final int pid;
@@ -16,11 +17,13 @@ public class Container {
     public Container(
             final String hostname,
             final DockerImage image,
+            final ContainerResources flavor,
             final ContainerName containerName,
             final State state,
             final int pid) {
         this.hostname = hostname;
         this.image = image;
+        this.flavor = flavor;
         this.name = containerName;
         this.state = state;
         this.pid = pid;
@@ -34,13 +37,14 @@ public class Container {
         final Container other = (Container) obj;
         return Objects.equals(hostname, other.hostname)
                 && Objects.equals(image, other.image)
+                && Objects.equals(flavor, other.flavor)
                 && Objects.equals(name, other.name)
                 && Objects.equals(pid, other.pid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, image, name, pid);
+        return Objects.hash(hostname, image, flavor, name, pid);
     }
 
     @Override
@@ -48,6 +52,7 @@ public class Container {
         return "Container {"
                 + " hostname=" + hostname
                 + " image=" + image
+                + " flavor=" + flavor
                 + " name=" + name
                 + " state=" + state
                 + " pid=" + pid
