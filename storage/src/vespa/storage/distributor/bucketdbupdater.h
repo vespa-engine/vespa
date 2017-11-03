@@ -27,8 +27,6 @@ class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
 {
 public:
-    // TODO take in BucketSpaceRepo instead, this class needs access to all
-    // bucket spaces.
     BucketDBUpdater(Distributor& owner,
                     DistributorBucketSpaceRepo &bucketSpaceRepo,
                     DistributorBucketSpace& bucketSpace,
