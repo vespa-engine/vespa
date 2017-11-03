@@ -23,12 +23,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -75,19 +75,15 @@ public class NodeFailer extends Maintainer {
     @Override
     protected void maintain() {
         // Ready nodes
-        updateNodeLivenessEventsForReadyNodes();
-        for (Node node : readyNodesWhichAreDead()) {
-            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
-                                                         Agent.system, "Not receiving config requests from node");
+        try (Mutex lock = nodeRepository().lockUnallocated()) {
+            updateNodeLivenessEventsForReadyNodes();
+
+            getReadyNodesByFailureReason().forEach((node, reason) -> {
+                if (!throttle(node)) {
+                    nodeRepository().fail(node.hostname(), Agent.system, reason);
+                }
+            });
         }
-
-        for (Node node : readyNodesWithHardwareFailure())
-            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
-                                                         Agent.system, "Node has hardware failure");
-
-        for (Node node: readyNodesWithHardwareDivergence())
-            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
-                                                         Agent.system, "Node hardware diverges from spec");
 
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
@@ -100,59 +96,55 @@ public class NodeFailer extends Maintainer {
     private void updateNodeLivenessEventsForReadyNodes() {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
-            for (Node node : nodeRepository().getNodes(Node.State.ready)) {
-                Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
-                if ( ! lastLocalRequest.isPresent()) continue;
+        for (Node node : nodeRepository().getNodes(Node.State.ready)) {
+            Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
+            if ( ! lastLocalRequest.isPresent()) continue;
 
-                Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
-                if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
-                    History updatedHistory = node.history().with(new History.Event(History.Event.Type.requested,
-                                                                                   Agent.system,
-                                                                                   lastLocalRequest.get()));
-                    nodeRepository().write(node.with(updatedHistory));
-                }
+            Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
+            if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
+                History updatedHistory = node.history().with(new History.Event(History.Event.Type.requested,
+                        Agent.system,
+                        lastLocalRequest.get()));
+                nodeRepository().write(node.with(updatedHistory));
             }
         }
     }
 
-    private List<Node> readyNodesWhichAreDead() {
-        // Allow requests some time to be registered in case all config servers have been down
-        if (constructionTime.isAfter(clock.instant().minus(nodeRequestInterval).minus(nodeRequestInterval) ))
-            return Collections.emptyList();
+    private Map<Node, String> getReadyNodesByFailureReason() {
+        Instant oldestAcceptableRequestTime =
+                // Allow requests some time to be registered in case all config servers have been down
+                constructionTime.isAfter(clock.instant().minus(nodeRequestInterval.multipliedBy(2))) ?
+                        Instant.EPOCH :
 
-        // Nodes are taken as dead if they have not made a config request since this instant.
-        // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
-        Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
+                        // Nodes are taken as dead if they have not made a config request since this instant.
+                        // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
+                        clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
 
-        return nodeRepository().getNodes(Node.State.ready).stream()
-                .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
-                .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
-                .collect(Collectors.toList());
+        Map<Node, String> nodesByFailureReason = new HashMap<>();
+        for (Node node : nodeRepository().getNodes(Node.State.ready)) {
+            if (! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
+                nodesByFailureReason.put(node, "Not receiving config requests from node");
+            } else if (node.status().hardwareFailureDescription().isPresent()) {
+                nodesByFailureReason.put(node, "Node has hardware failure");
+            } else if (node.status().hardwareDivergence().isPresent()) {
+                nodesByFailureReason.put(node, "Node has hardware divergence");
+            }
+        }
+        return nodesByFailureReason;
     }
 
-    private List<Node> readyNodesWithHardwareDivergence() {
-        return nodeRepository().getNodes(Node.State.ready).stream()
-                .filter(node -> node.status().hardwareDivergence().isPresent())
-                .collect(Collectors.toList());
+    private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {
+        return !wasMadeReadyBefore(node, instant) || hasRecordedRequestAfter(node, instant);
     }
 
-    private boolean wasMadeReadyBefore(Instant instant, Node node) {
+    private boolean wasMadeReadyBefore(Node node, Instant instant) {
         Optional<History.Event> readiedEvent = node.history().event(History.Event.Type.readied);
-        if ( ! readiedEvent.isPresent()) return false;
-        return readiedEvent.get().at().isBefore(instant);
+        return readiedEvent.map(event -> event.at().isBefore(instant)).orElse(false);
     }
 
-    private boolean hasRecordedRequestAfter(Instant instant, Node node) {
+    private boolean hasRecordedRequestAfter(Node node, Instant instant) {
         Optional<History.Event> lastRequest = node.history().event(History.Event.Type.requested);
-        if ( ! lastRequest.isPresent()) return false;
-        return lastRequest.get().at().isAfter(instant);
-    }
-
-    private List<Node> readyNodesWithHardwareFailure() {
-        return nodeRepository().getNodes(Node.State.ready).stream()
-                .filter(node -> node.status().hardwareFailureDescription().isPresent())
-                .collect(Collectors.toList());
+        return lastRequest.map(event -> event.at().isAfter(instant)).orElse(false);
     }
 
     private boolean applicationSuspended(Node node) {
