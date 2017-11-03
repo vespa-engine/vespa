@@ -1,13 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for metrics_engine.
 
-#include <vespa/log/log.h>
-LOG_SETUP("metrics_engine_test");
-
 #include <vespa/metrics/metricset.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics.h>
+#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
+
+
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("metrics_engine_test");
 
 using namespace proton;
 

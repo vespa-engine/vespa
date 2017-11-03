@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0" xmlns:preprocess="properties">
+  <preprocess:include file='controller/admin.xml' required='false' />
   <jdisc id="configserver" jetty="true" version="1.0">
     <config name="container.handler.threadpool">
       <maxthreads>100</maxthreads> <!-- Reduced thread count to minimize memory consumption -->
@@ -43,6 +44,7 @@
     <preprocess:include file='config-models.xml' required='false' />
     <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
+    <preprocess:include file='controller/container.xml' required='false' />
     <component id="com.yahoo.vespa.service.monitor.internal.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.monitor.internal.ServiceMonitorImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService" bundle="orchestrator" />
@@ -78,10 +80,8 @@
       <binding>http://*/config/v1/*/</binding>
       <binding>http://*/config/v1/*/*/</binding>
     </handler>
-    <handler id='com.yahoo.vespa.config.server.http.v2.ListTenantsHandler' bundle='configserver'>
-      <binding>http://*/application/v2/tenant/</binding>
-    </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.TenantHandler' bundle='configserver'>
+      <binding>http://*/application/v2/tenant/</binding>
       <binding>http://*/application/v2/tenant/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionCreateHandler' bundle='configserver'>
@@ -134,6 +134,7 @@
     <http>
       <server port="19071" id="configserver" />
       <preprocess:include file='hosted-vespa/http-server.xml' required='false' />
+      <preprocess:include file='controller/http.xml' required='false' />
     </http>
 
     <preprocess:include file='athenz-identity-provider.xml' required='false' />

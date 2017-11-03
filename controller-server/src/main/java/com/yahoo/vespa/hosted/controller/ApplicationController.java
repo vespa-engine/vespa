@@ -337,11 +337,16 @@ public class ApplicationController {
                 store(application); // store missing information even if we fail deployment below
             }
 
-            // Ensure that the deploying change is tested
-            if (! canDeployDirectlyTo(zone, options) &&
-                ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
-                throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                   " as " + application.deploying().get() + " is not tested");
+            if ( ! canDeployDirectlyTo(zone, options)) { // validate automated deployment
+                if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
+                    throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
+                                                       " as " + application.deploying().get() + " is not tested");
+                Deployment existingDeployment = application.deployments().get(zone);
+                if (existingDeployment != null && existingDeployment.version().isAfter(version))
+                    throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
+                                                       " as the requested version " + version + " is older than" +
+                                                       " the current version " + existingDeployment.version());
+            }    
 
             // Carry out deployment
             DeploymentId deploymentId = new DeploymentId(applicationId, zone);
@@ -356,7 +361,8 @@ public class ApplicationController {
             // Use info from previous deployments is available
             Deployment previousDeployment = application.deployments().getOrDefault(zone, new Deployment(zone, revision, version, clock.instant()));
             Deployment newDeployment = new Deployment(zone, revision, version, clock.instant(),
-                        previousDeployment.clusterUtils(), previousDeployment.clusterInfo(), previousDeployment.metrics());
+                                                      previousDeployment.clusterUtils(), 
+                                                      previousDeployment.clusterInfo(), previousDeployment.metrics());
 
             application = application.with(newDeployment);
             store(application);
@@ -623,7 +629,7 @@ public class ApplicationController {
 
     /** Returns whether a direct deployment to given zone is allowed */
     private static boolean canDeployDirectlyTo(Zone zone, DeployOptions options) {
-        return !options.screwdriverBuildJob.isPresent() ||
+        return ! options.screwdriverBuildJob.isPresent() ||
                options.screwdriverBuildJob.get().screwdriverId == null ||
                zone.environment().isManuallyDeployed();
     }

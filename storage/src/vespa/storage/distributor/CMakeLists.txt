@@ -1,41 +1,41 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(storage_distributor
     SOURCES
-    distributor.cpp
-    distributormetricsset.cpp
-    visitormetricsset.cpp
-    persistence_operation_metric_set.cpp
-    idealstatemetricsset.cpp
-    operationowner.cpp
-    distributorcomponent.cpp
-    statechecker.cpp
-    persistencemessagetracker.cpp
-    messagetracker.cpp
-    externaloperationhandler.cpp
-    bucketlistmerger.cpp
-    idealstatemanager.cpp
-    statecheckers.cpp
+    activecopy.cpp
+    blockingoperationstarter.cpp
     bucketdbupdater.cpp
-    pendingmessagetracker.cpp
-    pendingclusterstate.cpp
+    bucketgctimecalculator.cpp
+    bucketlistmerger.cpp
+    clusterinformation.cpp
+    distributor_bucket_space.cpp
+    distributor_bucket_space_component.cpp
+    distributor_bucket_space_repo.cpp
+    distributor.cpp
+    distributor_host_info_reporter.cpp
+    distributorcomponent.cpp
+    distributormessagesender.cpp
+    distributormetricsset.cpp
+    externaloperationhandler.cpp
+    idealstatemanager.cpp
+    idealstatemetricsset.cpp
+    latency_statistics_provider.cpp
+    messagetracker.cpp
     nodeinfo.cpp
-    sentmessagemap.cpp
+    operation_sequencer.cpp
+    operationowner.cpp
     operationtargetresolver.cpp
     operationtargetresolverimpl.cpp
-    throttlingoperationstarter.cpp
-    blockingoperationstarter.cpp
-    distributormessagesender.cpp
-    clusterinformation.cpp
-    activecopy.cpp
-    statusreporterdelegate.cpp
-    bucketgctimecalculator.cpp
-    distributor_host_info_reporter.cpp
-    latency_statistics_provider.cpp
     ownership_transfer_safe_time_point_calculator.cpp
-    managed_bucket_space.cpp
-    managed_bucket_space_component.cpp
-    managed_bucket_space_repo.cpp
-    operation_sequencer.cpp
+    pendingclusterstate.cpp
+    pendingmessagetracker.cpp
+    persistence_operation_metric_set.cpp
+    persistencemessagetracker.cpp
+    sentmessagemap.cpp
+    statechecker.cpp
+    statecheckers.cpp
+    statusreporterdelegate.cpp
+    throttlingoperationstarter.cpp
+    visitormetricsset.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>
     $<TARGET_OBJECTS:storage_distributoroperationexternal>
     $<TARGET_OBJECTS:storage_distributoroperationidealstate>

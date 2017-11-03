@@ -30,6 +30,7 @@
 
 namespace storage {
 
+class ContentBucketSpaceRepo;
 class MinimumUsedBitsTracker;
 class StorBucketDatabase;
 
@@ -38,7 +39,7 @@ struct ServiceLayerManagedComponent
     virtual ~ServiceLayerManagedComponent() {}
 
     virtual void setDiskCount(uint16_t count) = 0;
-    virtual void setBucketDatabase(StorBucketDatabase&) = 0;
+    virtual void setBucketSpaceRepo(ContentBucketSpaceRepo&) = 0;
     virtual void setMinUsedBitsTracker(MinimumUsedBitsTracker&) = 0;
 };
 
@@ -52,12 +53,12 @@ class ServiceLayerComponent : public StorageComponent,
                               private ServiceLayerManagedComponent
 {
     uint16_t _diskCount;
-    StorBucketDatabase* _bucketDatabase;
+    ContentBucketSpaceRepo* _bucketSpaceRepo;
     MinimumUsedBitsTracker* _minUsedBitsTracker;
 
     // ServiceLayerManagedComponent implementation
     void setDiskCount(uint16_t count) override { _diskCount = count; }
-    void setBucketDatabase(StorBucketDatabase& db) override { _bucketDatabase = &db; }
+    void setBucketSpaceRepo(ContentBucketSpaceRepo& repo) override { _bucketSpaceRepo = &repo; }
     void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override {
         _minUsedBitsTracker = &tracker;
     }
@@ -68,13 +69,14 @@ public:
                           vespalib::stringref name)
         : StorageComponent(compReg, name),
           _diskCount(0),
-          _bucketDatabase(0),
-          _minUsedBitsTracker(0)
+          _bucketSpaceRepo(nullptr),
+          _minUsedBitsTracker(nullptr)
     {
         compReg.registerServiceLayerComponent(*this);
     }
 
     uint16_t getDiskCount() const { return _diskCount; }
+    const ContentBucketSpaceRepo &getBucketSpaceRepo() const;
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const;
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
         assert(_minUsedBitsTracker != 0);

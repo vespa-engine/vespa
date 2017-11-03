@@ -10,6 +10,7 @@ import java.net.URI;
 
 /**
  * Logs to all the configured access logs.
+ *
  * @author tonytv
  */
 public class AccessLog {
@@ -25,7 +26,7 @@ public class AccessLog {
         return new AccessLog(new ComponentRegistry<>());
     }
 
-    public void log(final AccessLogEntry accessLogEntry) {
+    public void log(AccessLogEntry accessLogEntry) {
         for (AccessLogInterface log: implementers.allComponents()) {
             log.log(accessLogEntry);
         }

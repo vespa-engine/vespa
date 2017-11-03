@@ -61,7 +61,7 @@ LegacyAttributeMetrics::List::List(metrics::MetricSet *parent)
 {
 }
 
-LegacyAttributeMetrics::List::~List() {}
+LegacyAttributeMetrics::List::~List() = default;
 
 LegacyAttributeMetrics::LegacyAttributeMetrics(metrics::MetricSet *parent)
     : metrics::MetricSet("attributes", "", "Attribute metrics", parent),
@@ -71,6 +71,6 @@ LegacyAttributeMetrics::LegacyAttributeMetrics(metrics::MetricSet *parent)
 {
 }
 
-LegacyAttributeMetrics::~LegacyAttributeMetrics() {}
+LegacyAttributeMetrics::~LegacyAttributeMetrics() = default;
 
 } // namespace proton

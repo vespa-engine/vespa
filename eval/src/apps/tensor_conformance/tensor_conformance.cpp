@@ -14,69 +14,17 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/test_io.h>
 #include <unistd.h>
 
 #include "generate.h"
 
 using namespace vespalib;
 using namespace vespalib::eval;
+using namespace vespalib::eval::test;
 using namespace vespalib::slime::convenience;
 using slime::JsonFormat;
 using tensor::DefaultTensorEngine;
-
-constexpr size_t CHUNK_SIZE = 16384;
-
-//-----------------------------------------------------------------------------
-
-class StdIn : public Input {
-private:
-    bool _eof = false;
-    SimpleBuffer _input;
-public:
-    ~StdIn() {}
-    Memory obtain() override {
-        if ((_input.get().size == 0) && !_eof) {
-            WritableMemory buf = _input.reserve(CHUNK_SIZE);
-            ssize_t res = read(STDIN_FILENO, buf.data, buf.size);
-            _eof = (res == 0);
-            assert(res >= 0); // fail on stdio read errors
-            _input.commit(res);
-        }
-        return _input.obtain();
-    }
-    Input &evict(size_t bytes) override {
-        _input.evict(bytes);
-        return *this;
-    }
-};
-
-class StdOut : public Output {
-private:
-    SimpleBuffer _output;
-public:
-    ~StdOut() {}
-    WritableMemory reserve(size_t bytes) override {
-        return _output.reserve(bytes);
-    }
-    Output &commit(size_t bytes) override {
-        _output.commit(bytes);
-        Memory buf = _output.obtain();
-        ssize_t res = write(STDOUT_FILENO, buf.data, buf.size);
-        assert(res == ssize_t(buf.size)); // fail on stdout write failures
-        _output.evict(res);
-        return *this;
-    }
-};
-
-void write_compact(const Slime &slime, Output &out) {
-    JsonFormat::encode(slime, out, true);
-    out.reserve(1).data[0] = '\n';
-    out.commit(1);
-}
-
-void write_readable(const Slime &slime, Output &out) {
-    JsonFormat::encode(slime, out, false);
-}
 
 //-----------------------------------------------------------------------------
 
@@ -194,14 +142,12 @@ std::vector<vespalib::string> extract_fields(const Inspector &object) {
 
 class MyTestBuilder : public TestBuilder {
 private:
-    Output &_out;
-    size_t  _num_tests;
+    TestWriter _writer;
     void make_test(const vespalib::string &expression,
                    const std::map<vespalib::string,TensorSpec> &input_map,
                    const TensorSpec *expect = nullptr)
     {
-        Slime slime;
-        Cursor &test = slime.setObject();
+        Cursor &test = _writer.create();
         test.setString("expression", expression);
         Cursor &inputs = test.setObject("inputs");
         for (const auto &input: input_map) {
@@ -211,13 +157,11 @@ private:
             insert_value(test.setObject("result"), "expect", *expect);
         } else {
             insert_value(test.setObject("result"), "expect",
-                         eval_expr(slime.get(), SimpleTensorEngine::ref(), false));
+                         eval_expr(test, SimpleTensorEngine::ref(), false));
         }
-        write_compact(slime, _out);
-        ++_num_tests;
     }
 public:
-    MyTestBuilder(Output &out) : _out(out), _num_tests(0) {}
+    MyTestBuilder(Output &out) : _writer(out) {}
     void add(const vespalib::string &expression,
              const std::map<vespalib::string,TensorSpec> &inputs,
              const TensorSpec &expect) override
@@ -229,48 +173,11 @@ public:
     {
         make_test(expression, inputs);
     }
-    void make_summary() {
-        Slime slime;
-        Cursor &summary = slime.setObject();
-        summary.setLong("num_tests", _num_tests);
-        write_compact(slime, _out);
-    }
 };
 
 void generate(Output &out) {
     MyTestBuilder my_test_builder(out);
     Generator::generate(my_test_builder);
-    my_test_builder.make_summary();
-}
-
-//-----------------------------------------------------------------------------
-
-void for_each_test(Input &in,
-                   const std::function<void(Slime&)> &handle_test,
-                   const std::function<void(Slime&)> &handle_summary)
-{
-    size_t num_tests = 0;
-    bool got_summary = false;
-    while (in.obtain().size > 0) {
-        Slime slime;
-        if (JsonFormat::decode(in, slime)) {
-            bool is_test = slime["expression"].valid();
-            bool is_summary = slime["num_tests"].valid();
-            ASSERT_TRUE(is_test != is_summary);
-            if (is_test) {
-                ++num_tests;
-                ASSERT_TRUE(!got_summary);
-                handle_test(slime);
-            } else {
-                got_summary = true;
-                ASSERT_EQUAL(slime["num_tests"].asLong(), int64_t(num_tests));
-                handle_summary(slime);
-            }
-        } else {
-            ASSERT_EQUAL(in.obtain().size, 0u);
-        }
-    }
-    ASSERT_TRUE(got_summary);
 }
 
 //-----------------------------------------------------------------------------
@@ -322,7 +229,7 @@ void verify(Input &in, Output &out) {
                               for (const auto &entry: result_map) {
                                   stats.setLong(entry.first, entry.second);
                               }
-                              write_readable(slime, out);
+                              JsonFormat::encode(slime, out, false);
                           };
     for_each_test(in, handle_test, handle_summary);
 }

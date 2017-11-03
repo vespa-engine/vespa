@@ -2,12 +2,12 @@
 vespa_add_library(storage_testhostreporter TEST
     SOURCES
     cpureportertest.cpp
+    diskreportertest.cpp
+    hostinfotest.cpp
     memreportertest.cpp
     networkreportertest.cpp
-    versionreportertest.cpp
-    diskreportertest.cpp
     util.cpp
-    hostinfotest.cpp
+    versionreportertest.cpp
     DEPENDS
     storage
 )

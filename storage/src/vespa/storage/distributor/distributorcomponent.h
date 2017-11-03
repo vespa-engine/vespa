@@ -140,8 +140,7 @@ public:
      * Fetch bucket info about the given bucket from the given node.
      * Used when we get BUCKET_NOT_FOUND.
      */
-    void recheckBucketInfo(uint16_t nodeIdx,
-                           const document::BucketId& id);
+    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket);
 
     /**
      * Returns the bucket id corresponding to the given document id.

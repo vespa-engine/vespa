@@ -29,18 +29,18 @@ public:
     /**
        Constructor for operations having only one node.
 
-       @param id Target bucket
+       @param bucket Target bucket
        @param node Target node
     */
-    BucketAndNodes(const document::Bucket &id, uint16_t node);
+    BucketAndNodes(const document::Bucket &bucket, uint16_t node);
 
     /**
        Constructor for operations with multiple target nodes.
 
-       @param id Target bucket
+       @param bucket Target bucket
        @param nodes Target nodes
     */
-    BucketAndNodes(const document::Bucket &id,
+    BucketAndNodes(const document::Bucket &bucket,
                    const std::vector<uint16_t>& nodes);
 
     /**

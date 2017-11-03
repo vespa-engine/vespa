@@ -2,9 +2,9 @@
 vespa_add_library(storage_storageutil OBJECT
     SOURCES
     bloomfilter.cpp
-    piechart.cpp
-    palette.cpp
     graph.cpp
+    palette.cpp
+    piechart.cpp
     DEPENDS
     AFTER
     storage_storageconfig

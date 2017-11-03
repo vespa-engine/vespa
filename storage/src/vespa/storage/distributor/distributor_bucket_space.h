@@ -14,7 +14,7 @@ class Distribution;
 namespace distributor {
 
 /**
- * A managed bucket space holds specific state and information required for
+ * A distributor bucket space holds specific state and information required for
  * keeping track of, and computing operations for, a single bucket space:
  *
  * Bucket database instance
@@ -24,17 +24,17 @@ namespace distributor {
  *   particular so that redundancy, ready copies etc can differ across
  *   bucket spaces.
  */
-class ManagedBucketSpace {
+class DistributorBucketSpace {
     MapBucketDatabase _bucketDatabase;
     std::shared_ptr<lib::Distribution> _distribution;
 public:
-    ManagedBucketSpace();
-    ~ManagedBucketSpace();
+    DistributorBucketSpace();
+    ~DistributorBucketSpace();
 
-    ManagedBucketSpace(const ManagedBucketSpace&) = delete;
-    ManagedBucketSpace& operator=(const ManagedBucketSpace&) = delete;
-    ManagedBucketSpace(ManagedBucketSpace&&) = delete;
-    ManagedBucketSpace& operator=(ManagedBucketSpace&&) = delete;
+    DistributorBucketSpace(const DistributorBucketSpace&) = delete;
+    DistributorBucketSpace& operator=(const DistributorBucketSpace&) = delete;
+    DistributorBucketSpace(DistributorBucketSpace&&) = delete;
+    DistributorBucketSpace& operator=(DistributorBucketSpace&&) = delete;
 
     BucketDatabase& getBucketDatabase() noexcept {
         return _bucketDatabase;

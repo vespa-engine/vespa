@@ -2,16 +2,16 @@
 vespa_add_library(storage_visitor OBJECT
     SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/config-stor-visitor.h
+    countvisitor.cpp
+    dumpvisitor.cpp
+    dumpvisitorsingle.cpp
+    memory_bounded_trace.cpp
+    recoveryvisitor.cpp
+    testvisitor.cpp
     visitor.cpp
     visitormanager.cpp
     visitormetrics.cpp
     visitorthread.cpp
-    testvisitor.cpp
-    recoveryvisitor.cpp
-    dumpvisitor.cpp
-    countvisitor.cpp
-    dumpvisitorsingle.cpp
-    memory_bounded_trace.cpp
     DEPENDS
     AFTER
     storage_storageconfig

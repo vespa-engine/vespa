@@ -18,7 +18,7 @@ public final class FileReference {
 
     private final String value;
 
-    FileReference(String value) {
+    public FileReference(String value) {
         this.value = value;
     }
 

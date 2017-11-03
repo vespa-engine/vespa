@@ -20,6 +20,6 @@ ExecutorMetrics::ExecutorMetrics(const std::string &name, metrics::MetricSet *pa
 {
 }
 
-ExecutorMetrics::~ExecutorMetrics() {}
+ExecutorMetrics::~ExecutorMetrics() = default;
 
 } // namespace proton

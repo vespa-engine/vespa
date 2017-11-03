@@ -13,11 +13,9 @@ vespa_add_library(fastos_objects OBJECT
     time.cpp
     timestamp.cpp
     unix_app.cpp
-    unix_cond.cpp
     unix_dynamiclibrary.cpp
     unix_file.cpp
     unix_ipc.cpp
-    unix_mutex.cpp
     unix_process.cpp
     unix_socket.cpp
     unix_thread.cpp

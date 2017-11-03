@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSource;
+import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 
@@ -14,7 +15,7 @@ import java.util.HashMap;
  * @author hmusum
  * @since 5.1.10
  */
-class MockConfigSource implements ConfigSource {
+class MockConfigSource extends ConfigSourceSet {
     private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
     private final ClientUpdater clientUpdater;
 

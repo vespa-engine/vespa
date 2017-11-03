@@ -2,34 +2,38 @@
 package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import static org.junit.Assert.assertTrue;
+import java.time.Duration;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+/**
+ * @author bjorncs 
+ */
 public class MetricUpdaterTest {
     
     @Test
-    public void testFreeMemory() throws InterruptedException {
-        MetricConsumer consumer = Mockito.mock(MetricConsumer.class);
-        MetricProvider provider = MetricProviders.newInstance(consumer);
+    public void metrics_are_updated_in_scheduler_cycle() throws InterruptedException {
+        Metric metric = mock(Metric.class);
+        ActiveContainerMetrics activeContainerMetrics = mock(ActiveContainerMetrics.class);
+        new MetricUpdater(new MockScheduler(), metric, activeContainerMetrics);
+        verify(activeContainerMetrics, times(1)).emitMetrics(any());
+        verify(metric, times(8)).set(anyString(), any(), any());
+    }
 
-        Metric metric = provider.get();
-        MetricUpdater updater = new MetricUpdater(metric, Mockito.mock(ActiveContainerMetrics.class), 10);
-        long start = System.currentTimeMillis();
-        boolean updated = false;
-        while (System.currentTimeMillis() - start < 60000 && !updated) {
-            Thread.sleep(10);
-            if (memoryMetricsUpdated(updater)) {
-                updated = true;
-            }
+    private static class MockScheduler implements MetricUpdater.Scheduler {
+        @Override
+        public void schedule(Runnable runnable, Duration frequency) {
+            runnable.run();
         }
-        assertTrue(memoryMetricsUpdated(updater));
+        @Override
+        public void cancel() {}
     }
 
-    private boolean memoryMetricsUpdated(MetricUpdater updater) {
-        return updater.getFreeMemory()>0 && updater.getTotalMemory()>0;
-    }
 }

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
@@ -16,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
+import static com.yahoo.vespa.hosted.controller.athenz.AthenzUtils.createPrincipal;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -25,7 +25,7 @@ public class NTokenValidatorTest {
 
     private static final KeyPair TRUSTED_KEY = AthenzTestUtils.generateRsaKeypair();
     private static final KeyPair UNKNOWN_KEY = AthenzTestUtils.generateRsaKeypair();
-    private static final AthenzPrincipal PRINCIPAL = new AthenzPrincipal(new AthenzDomain("yby"), new UserId("user"));
+    private static final AthenzPrincipal PRINCIPAL = createPrincipal(new UserId("myuser"));
 
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
@@ -35,7 +35,7 @@ public class NTokenValidatorTest {
         NTokenValidator validator = new NTokenValidator(createKeystore());
         NToken token = createNToken(PRINCIPAL, System.currentTimeMillis(), TRUSTED_KEY, "0");
         AthenzPrincipal principal = validator.validate(token);
-        assertEquals("yby.user", principal.toYRN());
+        assertEquals("user.myuser", principal.toYRN());
     }
 
     @Test

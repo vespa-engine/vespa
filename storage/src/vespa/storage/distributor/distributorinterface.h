@@ -35,7 +35,7 @@ public:
      * Requests that we send a requestBucketInfo for the given bucket to the given
      * node. Should be called whenever we receive a BUCKET_NOT_FOUND result.
      */
-    virtual void recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid) = 0;
+    virtual void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) = 0;
 
     virtual bool handleReply(const std::shared_ptr<api::StorageReply>& reply) = 0;
 

@@ -105,7 +105,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     public Tenants(GlobalComponentRegistry globalComponentRegistry, Metrics metrics, Collection<Tenant> tenants) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
-        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
+        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.create(tenantsPath);
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
@@ -238,12 +238,10 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * Writes the path of the given tenant into ZooKeeper, for watchers to react on
      *
      * @param name name of the tenant
-     * @return this Tenants
      */
-    synchronized Tenants writeTenantPath(TenantName name) {
+    private synchronized void writeTenantPath(TenantName name) {
         Path tenantPath = getTenantPath(name);
         curator.createAtomically(tenantPath, tenantPath.append(Tenant.SESSIONS), tenantPath.append(Tenant.APPLICATIONS));
-        return this;
     }
 
     /**

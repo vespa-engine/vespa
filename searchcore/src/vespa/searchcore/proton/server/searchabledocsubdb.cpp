@@ -301,7 +301,7 @@ SearchableDocSubDB::getNumActiveDocs() const
 search::SearchableStats
 SearchableDocSubDB::getSearchableStats() const
 {
-    return _indexMgr->getSearchableStats();
+    return _indexMgr ? _indexMgr->getSearchableStats() : search::SearchableStats();
 }
 
 IDocumentRetriever::UP

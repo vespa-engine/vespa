@@ -4,7 +4,7 @@
 #include <deque>
 #include <map>
 #include <set>
-#include <vespa/storage/distributor/managed_bucket_space_component.h>
+#include <vespa/storage/distributor/distributor_bucket_space_component.h>
 #include <vespa/storage/distributor/statechecker.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
@@ -40,7 +40,7 @@ class IdealStateManager : public framework::HtmlStatusReporter,
 public:
 
     IdealStateManager(Distributor& owner,
-                      ManagedBucketSpace& bucketSpace,
+                      DistributorBucketSpace& bucketSpace,
                       DistributorComponentRegister& compReg,
                       bool manageActiveBucketCopies);
 
@@ -51,16 +51,15 @@ public:
 
     // MaintenancePriorityGenerator interface
     MaintenancePriorityAndType prioritize(
-            const document::BucketId& bucketId,
+            const document::Bucket &bucket,
             NodeMaintenanceStatsTracker& statsTracker) const override;
 
     // MaintenanceOperationGenerator
-    MaintenanceOperation::SP generate(
-            const document::BucketId& bucketId) const override;
+    MaintenanceOperation::SP generate(const document::Bucket &bucket) const override;
 
     // MaintenanceOperationGenerator
     std::vector<MaintenanceOperation::SP> generateAll(
-            const document::BucketId& bucketId,
+            const document::Bucket &bucket,
             NodeMaintenanceStatsTracker& statsTracker) const override;
 
     /**
@@ -90,7 +89,7 @@ private:
     void fillParentAndChildBuckets(StateChecker::Context& c) const;
     void fillSiblingBucket(StateChecker::Context& c) const;
     StateChecker::Result generateHighestPriority(
-            const document::BucketId& bucketId,
+            const document::Bucket &bucket,
             NodeMaintenanceStatsTracker& statsTracker) const;
     StateChecker::Result runStateCheckers(StateChecker::Context& c) const;
 
@@ -111,7 +110,7 @@ private:
     std::vector<StateChecker::SP> _stateCheckers;
     SplitBucketStateChecker* _splitBucketStateChecker;
 
-    ManagedBucketSpaceComponent _distributorComponent;
+    DistributorBucketSpaceComponent _distributorComponent;
 
     std::vector<IdealStateOperation::SP> generateOperationsForBucket(
             StateChecker::Context& c) const;
@@ -123,19 +122,21 @@ private:
         // to create a new hash map for each single bucket processed.
         NodeMaintenanceStatsTracker _statsTracker;
         const IdealStateManager& _ism;
+        document::BucketSpace _bucketSpace;
         std::ostream& _out;
     public:
-        StatusBucketVisitor(const IdealStateManager& ism, std::ostream& out)
-            : _ism(ism), _out(out) {}
+        StatusBucketVisitor(const IdealStateManager& ism, document::BucketSpace bucketSpace, std::ostream& out)
+            : _statsTracker(), _ism(ism), _bucketSpace(bucketSpace), _out(out) {}
 
         bool process(const BucketDatabase::Entry& e) override {
-            _ism.getBucketStatus(e, _statsTracker, _out);
+            _ism.getBucketStatus(_bucketSpace, e, _statsTracker, _out);
             return true;
         }
     };
     friend class StatusBucketVisitor;
 
-    void getBucketStatus(const BucketDatabase::Entry& entry,
+    void getBucketStatus(document::BucketSpace bucketSpace,
+                         const BucketDatabase::Entry& entry,
                          NodeMaintenanceStatsTracker& statsTracker,
                          std::ostream& out) const;
 

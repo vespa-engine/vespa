@@ -2,13 +2,10 @@
 
 #include "sessionmanager_metrics.h"
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 SessionManagerMetrics::SessionManagerMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("sessionmanager", "",
-                         "Grouping session manager metrics",
-                         parent),
+    : metrics::MetricSet("sessionmanager", "", "Grouping session manager metrics", parent),
       numInsert("numinsert", "", "Number of inserted sessions", this),
       numPick("numpick", "", "Number if picked sessions", this),
       numDropped("numdropped", "", "Number of dropped cached sessions", this),
@@ -17,11 +14,10 @@ SessionManagerMetrics::SessionManagerMetrics(metrics::MetricSet *parent)
 {
 }
 
-SessionManagerMetrics::~SessionManagerMetrics() {}
+SessionManagerMetrics::~SessionManagerMetrics() = default;
 
 void
-SessionManagerMetrics::update(
-        const proton::matching::SessionManager::Stats &stats)
+SessionManagerMetrics::update(const proton::matching::SessionManager::Stats &stats)
 {
     numInsert.inc(stats.numInsert);
     numPick.inc(stats.numPick);
@@ -31,5 +27,4 @@ SessionManagerMetrics::update(
 }
 
 
-}  // namespace grouping
-}  // namespace search
+}

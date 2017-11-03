@@ -18,7 +18,7 @@ SimpleMaintenanceScanner::scanNext()
     if (!entry.valid()) {
         return ScanResult::createDone();
     }
-    prioritizeBucket(entry.getBucketId());
+    prioritizeBucket(document::Bucket(document::BucketSpace::placeHolder(), entry.getBucketId()));
     _bucketCursor = entry.getBucketId();
     return ScanResult::createNotDone(entry);
 }
@@ -31,11 +31,11 @@ SimpleMaintenanceScanner::reset()
 }
 
 void
-SimpleMaintenanceScanner::prioritizeBucket(const document::BucketId& id)
+SimpleMaintenanceScanner::prioritizeBucket(const document::Bucket &bucket)
 {
-    MaintenancePriorityAndType pri(_priorityGenerator.prioritize(id, _pendingMaintenance.perNodeStats));
+    MaintenancePriorityAndType pri(_priorityGenerator.prioritize(bucket, _pendingMaintenance.perNodeStats));
     if (pri.requiresMaintenance()) {
-        _bucketPriorityDb.setPriority(PrioritizedBucket(id, pri.getPriority().getPriority()));
+        _bucketPriorityDb.setPriority(PrioritizedBucket(bucket, pri.getPriority().getPriority()));
         assert(pri.getType() != MaintenanceOperation::OPERATION_COUNT);
         ++_pendingMaintenance.global.pending[pri.getType()];
     }

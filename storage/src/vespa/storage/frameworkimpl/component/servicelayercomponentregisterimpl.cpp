@@ -9,7 +9,7 @@ using vespalib::IllegalStateException;
 
 ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl()
     : _diskCount(0),
-      _bucketDatabase()
+      _bucketSpaceRepo()
 { }
 
 void
@@ -19,7 +19,7 @@ ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(
     vespalib::LockGuard lock(_componentLock);
     _components.push_back(&smc);
     smc.setDiskCount(_diskCount);
-    smc.setBucketDatabase(_bucketDatabase);
+    smc.setBucketSpaceRepo(_bucketSpaceRepo);
     smc.setMinUsedBitsTracker(_minUsedBitsTracker);
 }
 

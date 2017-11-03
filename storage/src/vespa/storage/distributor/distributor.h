@@ -32,7 +32,7 @@ class HostInfo;
 
 namespace distributor {
 
-class ManagedBucketSpaceRepo;
+class DistributorBucketSpaceRepo;
 class SimpleMaintenanceScanner;
 class BlockingOperationStarter;
 class ThrottlingOperationStarter;
@@ -90,7 +90,7 @@ public:
 
     void storageDistributionChanged() override;
 
-    void recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid) override;
+    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) override;
 
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
 
@@ -159,8 +159,8 @@ public:
         return *_bucketIdHasher;
     }
 
-    ManagedBucketSpace& getDefaultBucketSpace() noexcept;
-    const ManagedBucketSpace& getDefaultBucketSpace() const noexcept;
+    DistributorBucketSpace& getDefaultBucketSpace() noexcept;
+    const DistributorBucketSpace& getDefaultBucketSpace() const noexcept;
 
 private:
     friend class Distributor_Test;
@@ -238,7 +238,7 @@ private:
 
     DistributorComponentRegister& _compReg;
     storage::DistributorComponent _component;
-    std::unique_ptr<ManagedBucketSpaceRepo> _bucketSpaceRepo;
+    std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;

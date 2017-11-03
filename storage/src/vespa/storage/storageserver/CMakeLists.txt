@@ -1,29 +1,29 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(storage_storageserver
     SOURCES
-    priorityconverter.cpp
-    bucketintegritychecker.cpp
     bouncer.cpp
-    messagesink.cpp
-    fnetlistener.cpp
-    rpcrequestwrapper.cpp
+    bucketintegritychecker.cpp
+    changedbucketownershiphandler.cpp
     communicationmanager.cpp
     communicationmanagermetrics.cpp
-    statemanager.cpp
+    distributornode.cpp
+    distributornodecontext.cpp
     documentapiconverter.cpp
-    opslogger.cpp
+    fnetlistener.cpp
     mergethrottler.cpp
     messageallocationtypes.cpp
-    storagenodecontext.cpp
-    distributornodecontext.cpp
-    servicelayernodecontext.cpp
-    storagenode.cpp
-    distributornode.cpp
+    messagesink.cpp
+    opslogger.cpp
+    priorityconverter.cpp
+    rpcrequestwrapper.cpp
+    service_layer_error_listener.cpp
     servicelayernode.cpp
+    servicelayernodecontext.cpp
+    statemanager.cpp
     statereporter.cpp
     storagemetricsset.cpp
-    changedbucketownershiphandler.cpp
-    service_layer_error_listener.cpp
+    storagenode.cpp
+    storagenodecontext.cpp
     INSTALL lib64
     DEPENDS
     storage

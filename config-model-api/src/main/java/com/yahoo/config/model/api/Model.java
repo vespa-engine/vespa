@@ -7,7 +7,6 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Collection;
 
@@ -57,21 +56,11 @@ public interface Model {
     default void reloadDeployFileDistributor(FileDistribution fileDistribution) { }
 
     /**
-     * Get the provisioning info for this model.
+     * Gets the allocated hosts for this model.
      * 
      * @return {@link AllocatedHosts} instance, if available.
-     * @deprecated use allocatedHosts
      */
-    @Deprecated
-    // TODO: Remove this (and the implementation below) when no version older than 6.143 is deployed anywhere
-    default Optional<AllocatedHosts> getProvisionInfo() {
-        return Optional.of(allocatedHosts());
-    }
-
-    @SuppressWarnings("deprecation")
-    default AllocatedHosts allocatedHosts() {
-        return getProvisionInfo().get();
-    }
+    AllocatedHosts allocatedHosts();
 
     /**
      * Returns whether this application allows serving config request for a different version.

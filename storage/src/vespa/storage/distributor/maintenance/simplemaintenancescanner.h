@@ -51,7 +51,7 @@ public:
     void reset() override;
 
     // TODO: move out into own interface!
-    void prioritizeBucket(const document::BucketId& id);
+    void prioritizeBucket(const document::Bucket &id);
 
     const PendingMaintenanceStats& getPendingMaintenanceStats() const {
         return _pendingMaintenance;

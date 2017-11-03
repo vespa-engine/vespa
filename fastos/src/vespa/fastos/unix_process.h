@@ -12,8 +12,8 @@
 #include "app.h"
 #include <string>
 #include <memory>
+#include <future>
 
-class FastOS_BoolCond;
 class FastOS_UNIX_RealProcess;
 class FastOS_RingBuffer;
 
@@ -78,7 +78,7 @@ public:
     {
         TYPE_READCOUNT = 3
     };
-    FastOS_BoolCond *_closing;
+    std::unique_ptr<std::promise<void>> _closing;
     FastOS_ProcessRedirectListener *GetListener (DescriptorType type)
     {
         if(type == TYPE_STDOUT)

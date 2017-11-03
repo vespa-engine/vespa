@@ -2,7 +2,7 @@
 #pragma once
 
 #include <iosfwd>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storage/distributor/maintenance/maintenancepriority.h>
 
@@ -17,37 +17,34 @@ public:
     static const PrioritizedBucket INVALID;
 
     PrioritizedBucket()
-        : _bucketId(),
+        : _bucket(),
           _priority(MaintenancePriority::NO_MAINTENANCE_NEEDED)
     {}
 
-    PrioritizedBucket(const document::BucketId& bid,
-                      Priority pri)
-        : _bucketId(bid),
+    PrioritizedBucket(const document::Bucket &bucket, Priority pri)
+        : _bucket(bucket),
           _priority(pri)
     {
     }
 
-    const document::BucketId& getBucketId() const {
-        return _bucketId;
-    }
+    document::Bucket getBucket() const { return _bucket; }
 
     Priority getPriority() const {
         return _priority;
     }
 
     bool valid() const {
-        return _bucketId.getRawId() != 0;
+        return _bucket.getBucketId().getRawId() != 0;
     }
 
     std::string toString() const {
         return vespalib::make_string("PrioritizedBucket(%s, pri %s)",
-                                     _bucketId.toString().c_str(),
+                                     _bucket.toString().c_str(),
                                      MaintenancePriority::toString(_priority).c_str());
     }
 
     bool operator==(const PrioritizedBucket& other) const {
-        return _bucketId == other._bucketId && _priority == other._priority;
+        return _bucket == other._bucket && _priority == other._priority;
     }
 
     bool requiresMaintenance() const {
@@ -63,7 +60,7 @@ public:
     }
 
 private:
-    document::BucketId _bucketId;
+    document::Bucket _bucket;
     Priority _priority;
 };
 

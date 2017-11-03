@@ -198,7 +198,8 @@ StorBucketDatabase::WrappedEntry
 FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd,
                                              const document::DocumentId* docId)
 {
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(BucketSpace::placeHolder()).get(
+    StorBucketDatabase &database = _component.getBucketDatabase(cmd.getBucket().getBucketSpace());
+    StorBucketDatabase::WrappedEntry entry(database.get(
             cmd.getBucketId(), "FileStorManager::mapOperationToBucketAndDisk"));
     if (!entry.exist()) {
         document::BucketId specific(cmd.getBucketId());
@@ -210,7 +211,7 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd,
         std::shared_ptr<api::StorageReply> reply;
         {
             BucketMap results(
-                    _component.getBucketDatabase(BucketSpace::placeHolder()).getContained(
+                    database.getContained(
                             specific, "FileStorManager::mapOperationToBucketAndDisk-2"));
             if (results.size() == 1) {
                 LOG(debug,

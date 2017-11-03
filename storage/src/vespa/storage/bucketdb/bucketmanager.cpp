@@ -5,6 +5,7 @@
 #include "minimumusedbitstracker.h"
 #include "lockablemap.hpp"
 #include <iomanip>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
@@ -220,13 +221,13 @@ BucketManager::updateMetrics(bool updateDocCount)
     LOG(debug, "Iterating bucket database to update metrics%s%s",
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
-    uint64_t dbMemSize = _component.getBucketDatabase(BucketSpace::placeHolder()).getMemoryUsage();
+    uint64_t dbMemSize = _component.getBucketSpaceRepo().getBucketMemoryUsage();
     _bucketDBMemoryToken->resize(dbMemSize, dbMemSize);
 
     uint32_t diskCount = _component.getDiskCount();
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater m(diskCount);
-        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(
+        _component.getBucketSpaceRepo().forEachBucket(
                 m, "BucketManager::updateMetrics");
         if (updateDocCount) {
             for (uint16_t i = 0; i< diskCount; i++) {
@@ -243,7 +244,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 void BucketManager::updateMinUsedBits()
 {
     MetricsUpdater m(_component.getDiskCount());
-    _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(
+    _component.getBucketSpaceRepo().forEachBucket(
             m, "BucketManager::updateMetrics");
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
@@ -342,8 +343,8 @@ BucketManager::reportStatus(std::ostream& out,
         framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
         xmlReporter << vespalib::xml::XmlTag("buckets");
         BucketDBDumper dumper(xmlReporter.getStream());
-        _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(
-                dumper, "BucketManager::getStatus");
+        _component.getBucketSpaceRepo().forEachBucket(
+                dumper, "BucketManager::reportStatus");
         xmlReporter << vespalib::xml::XmlEndTag();
     } else {
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
@@ -361,7 +362,7 @@ BucketManager::dump(std::ostream& out) const
 {
     vespalib::XmlOutputStream xos(out);
     BucketDBDumper dumper(xos);
-    _component.getBucketDatabase(BucketSpace::placeHolder()).chunkedAll(dumper, 0);
+    _component.getBucketSpaceRepo().forEachBucket(dumper, "BucketManager::dump");
 }
 
 
