@@ -194,7 +194,7 @@ public class ApplicationList {
         if ( ! application.deploying().isPresent()) return false;
         return application.deploying().get() instanceof Change.ApplicationChange;
     }
-    
+
     private static boolean failingOn(Version version, Application application) {
         return JobList.from(application)
                 .failing()

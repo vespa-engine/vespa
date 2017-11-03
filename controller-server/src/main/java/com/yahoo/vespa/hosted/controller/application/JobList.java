@@ -46,6 +46,11 @@ public class JobList {
     /** Returns the jobstatuses in this as an immutable list */
     public List<JobStatus> asList() { return list; }
 
+    /** Returns the jobstatuses in this as an immutable list after mapping with the given function */
+    public <Type> List<Type> asList(Function<JobStatus, Type> mapper) {
+        return ImmutableList.copyOf(list.stream().map(mapper)::iterator);
+    }
+
     public boolean isEmpty() { return list.isEmpty(); }
 
     public boolean anyMatch() { return ! isEmpty(); }
@@ -61,7 +66,7 @@ public class JobList {
 
     /** Returns the subset of jobs which are currently running, according to the given timeout */
     public JobList running(Instant timeoutLimit) {
-        return filter(job -> ! job.isRunning(timeoutLimit));
+        return filter(job -> job.isRunning(timeoutLimit));
     }
 
     /** Returns the subset of jobs which are currently failing */
@@ -111,21 +116,6 @@ public class JobList {
         return new JobRunFilter(job -> job.firstFailing());
     }
 
-    // ----------------------------------- Internal helpers
-
-    private static boolean failingApplicationChange(JobStatus job) {
-        if (   job.isSuccess()) return false;
-        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
-        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
-        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
-    }
-
-    /** Returns a new JobList which is the result of filtering with the -- possibly negated -- condition */
-    private JobList filter(Predicate<JobStatus> condition) {
-        return from(list.stream().filter(negate ? condition.negate() : condition)::iterator);
-    }
-
 
     /** Allows sub-filters for runs of the given kind */
     public class JobRunFilter {
@@ -156,11 +146,31 @@ public class JobList {
             return filter(run -> run.version().equals(version));
         }
 
+        public JobList upgrade() {
+            return filter(run -> run.upgrade());
+        }
+
         /** Transforms the JobRun condition to a JobStatus condition, by considering only the JobRun mapped by which, and executes */
         private JobList filter(Predicate<JobRun> condition) {
             return JobList.this.filter(job -> which.apply(job).filter(condition).isPresent());
         }
 
+    }
+
+
+    // ----------------------------------- Internal helpers
+
+    private static boolean failingApplicationChange(JobStatus job) {
+        if (   job.isSuccess()) return false;
+        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
+        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
+        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
+        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
+    }
+
+    /** Returns a new JobList which is the result of filtering with the -- possibly negated -- condition */
+    private JobList filter(Predicate<JobStatus> condition) {
+        return from(list.stream().filter(negate ? condition.negate() : condition)::iterator);
     }
 
 }

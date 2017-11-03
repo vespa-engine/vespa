@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 
 import java.net.URI;
 import java.time.Instant;
@@ -27,6 +28,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
 /**
  * Information about the current platform versions in use.
@@ -147,26 +150,25 @@ public class VersionStatus {
             // List versions which have failing jobs, versions which are in production, and versions for which there are running deployment jobs
 
             // Failing versions
-            jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.lastCompleted().isPresent())
-                    .filter(jobStatus -> jobStatus.lastCompleted().get().upgrade())
-                    .filter(jobStatus -> jobStatus.jobError().isPresent())
-                    .filter(jobStatus -> jobStatus.jobError().get() != DeploymentJobs.JobError.outOfCapacity)
-                    .map(jobStatus -> jobStatus.lastCompleted().get().version())
+            JobList.from(application)
+                    .failing()
+                    .not().failingApplicationChange()
+                    .not().failingBecause(outOfCapacity)
+                    .asList(job -> job.lastCompleted().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withFailing(application.id())));
 
             // Succeeding versions
-            jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.lastSuccess().isPresent())
-                    .filter(jobStatus -> jobStatus.type().isProduction())
-                    .map(jobStatus -> jobStatus.lastSuccess().get().version())
+            JobList.from(application)
+                    .lastSuccess().present()
+                    .production()
+                    .asList(job -> job.lastSuccess().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withProduction(application.id())));
 
             // Deploying versions
-            jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.isRunning(jobTimeoutLimit))
-                    .filter(jobStatus -> jobStatus.lastTriggered().get().upgrade())
-                    .map(jobStatus -> jobStatus.lastTriggered().get().version())
+            JobList.from(application)
+                    .running(jobTimeoutLimit)
+                    .lastTriggered().upgrade()
+                    .asList(job -> job.lastTriggered().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
         }
         return versionMap.values();

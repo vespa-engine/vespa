@@ -641,9 +641,7 @@ public class UpgraderTest {
         // Over 12 hours pass and upgrade is rescheduled for 5th app
         assertEquals(0, tester.buildSystem().jobs().size());
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
-        System.err.println(tester.controller().applications().require(default4.id()).deploying());
         tester.upgrader().maintain();
-        System.err.println(tester.controller().applications().require(default4.id()).deploying());
         assertEquals(1, tester.buildSystem().jobs().size());
         assertEquals("Upgrade is rescheduled", DeploymentJobs.JobType.systemTest.id(),
                      tester.buildSystem().jobs().get(0).jobName());
