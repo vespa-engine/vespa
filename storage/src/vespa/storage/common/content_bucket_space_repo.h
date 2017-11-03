@@ -26,8 +26,8 @@ public:
     size_t getBucketMemoryUsage() const;
 
     template <typename Functor>
-    void forEachBucket(Functor &functor,
-                       const char *clientId) const {
+    void forEachBucketChunked(Functor &functor,
+                              const char *clientId) const {
         for (const auto &elem : _map) {
             elem.second->bucketDatabase().chunkedAll(functor, clientId);
         }

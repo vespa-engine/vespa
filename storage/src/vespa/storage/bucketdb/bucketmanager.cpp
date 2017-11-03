@@ -227,7 +227,7 @@ BucketManager::updateMetrics(bool updateDocCount)
     uint32_t diskCount = _component.getDiskCount();
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater m(diskCount);
-        _component.getBucketSpaceRepo().forEachBucket(
+        _component.getBucketSpaceRepo().forEachBucketChunked(
                 m, "BucketManager::updateMetrics");
         if (updateDocCount) {
             for (uint16_t i = 0; i< diskCount; i++) {
@@ -244,7 +244,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 void BucketManager::updateMinUsedBits()
 {
     MetricsUpdater m(_component.getDiskCount());
-    _component.getBucketSpaceRepo().forEachBucket(
+    _component.getBucketSpaceRepo().forEachBucketChunked(
             m, "BucketManager::updateMetrics");
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
@@ -357,7 +357,7 @@ BucketManager::reportStatus(std::ostream& out,
         framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
         xmlReporter << vespalib::xml::XmlTag("buckets");
         BucketDBDumper dumper(xmlReporter.getStream());
-        _component.getBucketSpaceRepo().forEachBucket(
+        _component.getBucketSpaceRepo().forEachBucketChunked(
                 dumper, "BucketManager::reportStatus");
         xmlReporter << vespalib::xml::XmlEndTag();
     } else {
@@ -376,7 +376,7 @@ BucketManager::dump(std::ostream& out) const
 {
     vespalib::XmlOutputStream xos(out);
     BucketDBDumper dumper(xos);
-    _component.getBucketSpaceRepo().forEachBucket(dumper, "BucketManager::dump");
+    _component.getBucketSpaceRepo().forEachBucketChunked(dumper, "BucketManager::dump");
 }
 
 
