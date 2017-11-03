@@ -128,20 +128,13 @@ void encode_in(const nodes::In &in,
                std::vector<uint32_t> &model_out)
 {
     size_t meta_idx = model_out.size();
-    auto symbol = nodes::as<nodes::Symbol>(in.lhs());
+    auto symbol = nodes::as<nodes::Symbol>(in.child());
     assert(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
-    assert(in.rhs().is_const());
-    auto array = nodes::as<nodes::Array>(in.rhs());
     size_t set_size_idx = model_out.size();
-    if (array) {
-        model_out.push_back(array->size());
-        for (size_t i = 0; i < array->size(); ++i) {
-            encode_const(array->get(i).get_const_value(), model_out);
-        }
-    } else {
-        model_out.push_back(1);
-        encode_const(in.rhs().get_const_value(), model_out);
+    model_out.push_back(in.num_entries());
+    for (size_t i = 0; i < in.num_entries(); ++i) {
+        encode_const(in.get_entry(i).get_const_value(), model_out);
     }
     size_t left_idx = model_out.size();
     uint32_t left_type = encode_node(left_child, model_out);

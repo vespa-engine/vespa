@@ -60,7 +60,7 @@ Node::traverse(NodeTraverser &traverser) const
 void Number::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Symbol::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void String::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void Array ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void In    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Neg   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Not   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void If    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
@@ -124,7 +124,7 @@ If::If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_tr
         if (less) {
             _is_tree = (less->lhs().is_param() && less->rhs().is_const());
         } else if (in) {
-            _is_tree = (in->lhs().is_param() && in->rhs().is_const());
+            _is_tree = in->child().is_param();
         }
     }
 }

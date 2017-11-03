@@ -104,12 +104,6 @@ EvalSpec::add_terminal_cases() {
     add_expression({}, "10").add_case({}, 10.0);
     add_expression({}, "100").add_case({}, 100.0);
     add_rule({"a", -5.0, 5.0}, "a", [](double a){ return a; });
-    add_expression({}, "[]").add_case({}, 0.0);
-    add_expression({}, "[1]").add_case({}, 1.0);
-    add_expression({}, "[1,2]").add_case({}, 2.0);
-    add_expression({}, "[1,2,3]").add_case({}, 3.0);
-    add_expression({}, "[3,2,1]").add_case({}, 3.0);
-    add_expression({}, "[1,1,1,1,1]").add_case({}, 5.0);
     add_expression({}, "\"\"").add_case({}, vespalib::hash_code(""));
     add_expression({}, "\"foo\"").add_case({}, vespalib::hash_code("foo"));
     add_expression({}, "\"foo bar baz\"").add_case({}, vespalib::hash_code("foo bar baz"));
@@ -277,52 +271,27 @@ EvalSpec::add_set_membership_cases()
 {
     add_expression({"a"}, "(a in [])")
         .add_case({0.0}, 0.0)
-        .add_case({1.0}, 0.0)
-        .add_case({2.0}, 0.0);
+        .add_case({1.0}, 0.0);
 
-    add_expression({"a"}, "(a in [[]])")
-        .add_case({0.0}, 1.0)
-        .add_case({1.0}, 0.0)
-        .add_case({2.0}, 0.0);
+    add_expression({"a"}, "(a in [2.0])")
+        .add_case({my_nan},      0.0)
+        .add_case({1.0},         0.0)
+        .add_case({2.0 - 1e-10}, 0.0)
+        .add_case({2.0},         1.0)
+        .add_case({2.0 + 1e-10}, 0.0)
+        .add_case({3.0},         0.0);
 
-    add_expression({"a"}, "(a in [[[]]])")
-        .add_case({0.0}, 0.0)
-        .add_case({1.0}, 1.0)
-        .add_case({2.0}, 0.0);
+    add_expression({"a"}, "(a in [10,20,30])")
+        .add_case({0.0},  0.0)
+        .add_case({3.0},  0.0)
+        .add_case({10.0}, 1.0)
+        .add_case({20.0}, 1.0)
+        .add_case({30.0}, 1.0);
 
-    add_expression({"a", "b"}, "(a in b)")
-        .add_case({my_nan, 2.0},      0.0)
-        .add_case({2.0, my_nan},      0.0)
-        .add_case({my_nan, my_nan},   0.0)
-        .add_case({1.0, 2.0},         0.0)
-        .add_case({2.0 - 1e-10, 2.0}, 0.0)
-        .add_case({2.0, 2.0},         1.0)
-        .add_case({2.0 + 1e-10, 2.0}, 0.0)
-        .add_case({3.0, 2.0},         0.0);
-
-    add_expression({"a", "b"}, "(a in [b])")
-        .add_case({my_nan, 2.0},      0.0)
-        .add_case({2.0, my_nan},      0.0)
-        .add_case({my_nan, my_nan},   0.0)
-        .add_case({1.0, 2.0},         0.0)
-        .add_case({2.0 - 1e-10, 2.0}, 0.0)
-        .add_case({2.0, 2.0},         1.0)
-        .add_case({2.0 + 1e-10, 2.0}, 0.0)
-        .add_case({3.0, 2.0},         0.0);
-
-    add_expression({"a", "b"}, "(a in [[b]])")
-        .add_case({1.0, 2.0},         1.0)
-        .add_case({2.0, 2.0},         0.0);
-
-    add_expression({"a", "b", "c", "d"}, "(a in [b,c,d])")
-        .add_case({0.0, 10.0, 20.0, 30.0}, 0.0)
-        .add_case({3.0, 10.0, 20.0, 30.0}, 0.0)
-        .add_case({10.0, 10.0, 20.0, 30.0}, 1.0)
-        .add_case({20.0, 10.0, 20.0, 30.0}, 1.0)
-        .add_case({30.0, 10.0, 20.0, 30.0}, 1.0)
-        .add_case({10.0, 30.0, 20.0, 10.0}, 1.0)
-        .add_case({20.0, 30.0, 20.0, 10.0}, 1.0)
-        .add_case({30.0, 30.0, 20.0, 10.0}, 1.0);
+    add_expression({"a"}, "(a in [30,20,10])")
+        .add_case({10.0}, 1.0)
+        .add_case({20.0}, 1.0)
+        .add_case({30.0}, 1.0);
 }
 
 void

@@ -81,12 +81,6 @@ TEST("require that input parameters preserve their type") {
     TEST_DO(verify("tensor(x{},y[10],z[])", "tensor(x{},y[10],z[])"));
 }
 
-TEST("require that arrays are double (size) unless they contain an error") {
-    TEST_DO(verify("[1,2,3]", "double"));
-    TEST_DO(verify("[any,tensor,double]", "double"));
-    TEST_DO(verify("[1,error,3]", "error"));
-}
-
 TEST("require that if resolves to the appropriate type") {
     TEST_DO(verify("if(error,1,2)", "error"));
     TEST_DO(verify("if(1,error,2)", "error"));
@@ -106,17 +100,6 @@ TEST("require that if resolves to the appropriate type") {
     TEST_DO(verify("if(double,double,tensor)", "any"));
     TEST_DO(verify("if(double,double,any)", "any"));
     TEST_DO(verify("if(double,any,double)", "any"));
-}
-
-TEST("require that set membership resolves to double unless error") {
-    TEST_DO(verify("1 in [1,2,3]", "double"));
-    TEST_DO(verify("1 in [tensor,tensor,tensor]", "double"));
-    TEST_DO(verify("1 in tensor", "double"));
-    TEST_DO(verify("tensor in 1", "double"));
-    TEST_DO(verify("tensor in [1,2,any]", "double"));
-    TEST_DO(verify("any in [1,tensor,any]", "double"));
-    TEST_DO(verify("error in [1,tensor,any]", "error"));
-    TEST_DO(verify("any in [tensor,error,any]", "error"));
 }
 
 TEST("require that reduce resolves correct type") {
@@ -242,6 +225,10 @@ TEST("require that various operations resolve appropriate type") {
 
 TEST("require that map resolves correct type") {
     TEST_DO(verify_op1("map(%s,f(x)(sin(x)))"));
+}
+
+TEST("require that set membership resolves correct type") {
+    TEST_DO(verify_op1("%s in [1,2,3]"));
 }
 
 TEST("require that join resolves correct type") {

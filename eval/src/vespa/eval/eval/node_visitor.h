@@ -22,7 +22,7 @@ struct NodeVisitor {
     virtual void visit(const nodes::Number       &) = 0;
     virtual void visit(const nodes::Symbol       &) = 0;
     virtual void visit(const nodes::String       &) = 0;
-    virtual void visit(const nodes::Array        &) = 0;
+    virtual void visit(const nodes::In           &) = 0;
     virtual void visit(const nodes::Neg          &) = 0;
     virtual void visit(const nodes::Not          &) = 0;
     virtual void visit(const nodes::If           &) = 0;
@@ -50,7 +50,6 @@ struct NodeVisitor {
     virtual void visit(const nodes::LessEqual    &) = 0;
     virtual void visit(const nodes::Greater      &) = 0;
     virtual void visit(const nodes::GreaterEqual &) = 0;
-    virtual void visit(const nodes::In           &) = 0;
     virtual void visit(const nodes::And          &) = 0;
     virtual void visit(const nodes::Or           &) = 0;
 
@@ -92,7 +91,7 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Number       &) override {}
     void visit(const nodes::Symbol       &) override {}
     void visit(const nodes::String       &) override {}
-    void visit(const nodes::Array        &) override {}
+    void visit(const nodes::In           &) override {}
     void visit(const nodes::Neg          &) override {}
     void visit(const nodes::Not          &) override {}
     void visit(const nodes::If           &) override {}
@@ -116,7 +115,6 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::LessEqual    &) override {}
     void visit(const nodes::Greater      &) override {}
     void visit(const nodes::GreaterEqual &) override {}
-    void visit(const nodes::In           &) override {}
     void visit(const nodes::And          &) override {}
     void visit(const nodes::Or           &) override {}
     void visit(const nodes::Cos          &) override {}

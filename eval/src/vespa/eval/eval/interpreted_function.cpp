@@ -65,24 +65,6 @@ void op_skip_if_false(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-// compare lhs with a set member, short-circuit if found
-void op_check_member(State &state, uint64_t param) {
-    if (state.peek(1).equal(state.peek(0))) {
-        state.replace(2, state.stash.create<DoubleValue>(1.0));
-        state.program_offset += param;
-    } else {
-        state.stack.pop_back();
-    }
-}
-
-// set member not found, replace lhs with false
-void op_not_member(State &state, uint64_t) {
-    state.stack.pop_back();
-    state.stack.push_back(state.stash.create<DoubleValue>(0.0));
-}
-
-//-----------------------------------------------------------------------------
-
 void op_double_map(State &state, uint64_t param) {
     state.replace(1, state.stash.create<DoubleValue>(to_map_fun(param)(state.peek(0).as_double())));
 }
@@ -252,8 +234,14 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const String &node) override {
         make_const_op(node, stash.create<DoubleValue>(node.hash()));
     }
-    void visit(const Array &node) override {
-        make_const_op(node, stash.create<DoubleValue>(node.size()));
+    void visit(const In &node) override {
+        auto my_in = std::make_unique<In>(std::make_unique<Symbol>(0));
+        for (size_t i = 0; i < node.num_entries(); ++i) {
+            my_in->add_entry(std::make_unique<Number>(node.get_entry(i).get_const_value()));
+        }
+        Function my_fun(std::move(my_in), {"x"});
+        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(my_fun, PassParams::SEPARATE));
+        make_map_op(node, token.get()->get().get_function<1>());
     }
     void visit(const Neg &node) override {
         make_map_op(node, operation::Neg::f);
@@ -367,26 +355,6 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const GreaterEqual &node) override {
         make_join_op(node, operation::GreaterEqual::f);
     }
-    void visit(const In &node) override {
-        std::vector<size_t> checks;
-        node.lhs().traverse(*this);
-        auto array = as<Array>(node.rhs());
-        if (array) {
-            for (size_t i = 0; i < array->size(); ++i) {
-                array->get(i).traverse(*this);
-                checks.push_back(program.size());
-                program.emplace_back(op_check_member);
-            }
-        } else {
-            node.rhs().traverse(*this);
-            checks.push_back(program.size());
-            program.emplace_back(op_check_member);
-        }
-        for (size_t i = 0; i < checks.size(); ++i) {
-            program[checks[i]].update_param(program.size() - checks[i]);
-        }
-        program.emplace_back(op_not_member);
-    }
     void visit(const And &node) override {
         make_join_op(node, operation::And::f);
     }
@@ -472,7 +440,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     bool open(const Node &node) override {
-        if (check_type<Array, If, In>(node)) {
+        if (check_type<If>(node)) {
             node.accept(*this);
             return false;
         }

@@ -25,7 +25,12 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const Number   &node) override { add_byte( 1); add_double(node.value()); }
     void visit(const Symbol   &node) override { add_byte( 2); add_int(node.id()); }
     void visit(const String   &node) override { add_byte( 3); add_hash(node.hash()); }
-    void visit(const Array    &node) override { add_byte( 4); add_size(node.size()); }
+    void visit(const In       &node) override { add_byte( 4);
+        add_size(node.num_entries());
+        for (size_t i = 0; i < node.num_entries(); ++i) {
+            add_double(node.get_entry(i).get_const_value());
+        }
+    }
     void visit(const Neg          &) override { add_byte( 5); }
     void visit(const Not          &) override { add_byte( 6); }
     void visit(const If       &node) override { add_byte( 7); add_double(node.p_true()); }
@@ -49,7 +54,6 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const LessEqual    &) override { add_byte(30); }
     void visit(const Greater      &) override { add_byte(31); }
     void visit(const GreaterEqual &) override { add_byte(32); }
-    void visit(const In           &) override { add_byte(33); }
     void visit(const And          &) override { add_byte(34); }
     void visit(const Or           &) override { add_byte(35); }
     void visit(const Cos          &) override { add_byte(36); }
