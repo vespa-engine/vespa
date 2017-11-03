@@ -611,33 +611,6 @@ SimpleTensor::create(const TensorSpec &spec)
     return builder.build();
 }
 
-bool
-SimpleTensor::equal(const SimpleTensor &a, const SimpleTensor &b)
-{
-    if (a.type() != b.type()) {
-        return false;
-    }
-    TypeAnalyzer type_info(a.type(), b.type());
-    View view_a(a, type_info.overlap_a);
-    View view_b(b, type_info.overlap_b);
-    const CellRef *pos_a = view_a.refs_begin();
-    const CellRef *end_a = view_a.refs_end();
-    const CellRef *pos_b = view_b.refs_begin();
-    const CellRef *end_b = view_b.refs_end();
-    ViewMatcher::CrossCompare cmp(view_a.selector(), view_b.selector());
-    while ((pos_a != end_a) && (pos_b != end_b)) {
-        if (cmp.compare(pos_a->get(), pos_b->get()) != ViewMatcher::CrossCompare::Result::EQUAL) {
-            return false;
-        }
-        if (pos_a->get().value != pos_b->get().value) {
-            return false;
-        }
-        ++pos_a;
-        ++pos_b;
-    }
-    return ((pos_a == end_a) && (pos_b == end_b));
-}
-
 std::unique_ptr<SimpleTensor>
 SimpleTensor::join(const SimpleTensor &a, const SimpleTensor &b, join_fun_t function)
 {

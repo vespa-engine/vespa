@@ -4,6 +4,7 @@
 #include "tensor_address_builder.h"
 #include "tensor_visitor.h"
 #include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib::tensor {
@@ -11,10 +12,9 @@ namespace vespalib::tensor {
 bool
 WrappedSimpleTensor::equals(const Tensor &arg) const
 {
-    if (auto other = dynamic_cast<const WrappedSimpleTensor *>(&arg)) {
-        return eval::SimpleTensor::equal(_tensor, other->_tensor);
-    }
-    return false;
+    auto lhs_spec = _tensor.engine().to_spec(_tensor);
+    auto rhs_spec = arg.engine().to_spec(arg);
+    return (lhs_spec == rhs_spec);
 }
 
 vespalib::string

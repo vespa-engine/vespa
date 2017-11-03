@@ -97,16 +97,6 @@ DefaultTensorEngine::type_of(const Tensor &tensor) const
     return my_tensor.getType();
 }
 
-bool
-DefaultTensorEngine::equal(const Tensor &a, const Tensor &b) const
-{
-    assert(&a.engine() == this);
-    assert(&b.engine() == this);
-    const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
-    const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
-    return my_a.equals(my_b);
-}
-
 vespalib::string
 DefaultTensorEngine::to_string(const Tensor &tensor) const
 {

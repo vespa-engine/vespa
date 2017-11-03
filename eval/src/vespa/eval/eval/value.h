@@ -27,7 +27,6 @@ struct Value {
     virtual double as_double() const { return 0.0; }
     virtual bool as_bool() const { return false; }
     virtual const Tensor *as_tensor() const { return nullptr; }
-    virtual bool equal(const Value &rhs) const = 0;
     virtual ValueType type() const = 0;
     virtual ~Value() {}
 };
@@ -36,7 +35,6 @@ struct ErrorValue : public Value {
     static ErrorValue instance;
     bool is_error() const override { return true; }
     double as_double() const override { return error_value; }
-    bool equal(const Value &) const override { return false; }
     ValueType type() const override { return ValueType::error_type(); }
 };
 
@@ -49,9 +47,6 @@ public:
     bool is_double() const override { return true; }
     double as_double() const override { return _value; }
     bool as_bool() const override { return (_value != 0.0); }
-    bool equal(const Value &rhs) const override {
-        return (rhs.is_double() && (_value == rhs.as_double()));
-    }
     ValueType type() const override { return ValueType::double_type(); }
 };
 
@@ -66,7 +61,6 @@ public:
     bool is_tensor() const override { return true; }
     double as_double() const override;
     const Tensor *as_tensor() const override { return _tensor; }
-    bool equal(const Value &rhs) const override;
     ValueType type() const override;
 };
 

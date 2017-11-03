@@ -42,8 +42,8 @@ std::unique_ptr<Tensor> make_mixed_tensor() {
 void verify_tensor(std::unique_ptr<Tensor> expect, ConstantValue::UP actual) {
     const auto &engine = expect->engine();
     ASSERT_EQUAL(engine.type_of(*expect), actual->type());
-    EXPECT_TRUE(&engine == &actual->value().as_tensor()->engine());
-    EXPECT_TRUE(engine.equal(*expect, *actual->value().as_tensor()));
+    ASSERT_TRUE(&engine == &actual->value().as_tensor()->engine());
+    EXPECT_EQUAL(engine.to_spec(*expect), engine.to_spec(*actual->value().as_tensor()));
 }
 
 TEST_F("require that invalid types loads an empty double", ConstantTensorLoader(SimpleTensorEngine::ref())) {

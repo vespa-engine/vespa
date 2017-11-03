@@ -395,63 +395,6 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
-    void verify_equal(const TensorSpec &a, const TensorSpec &b) {
-        auto ta = tensor(a);
-        auto tb = tensor(b);
-        EXPECT_EQUAL(a, b);
-        EXPECT_EQUAL(*ta, *tb);
-        TensorSpec spec = engine.to_spec(*ta);
-        TensorSpec ref_spec = ref_engine.to_spec(*ref_engine.create(a));
-        EXPECT_EQUAL(spec, ref_spec);
-    }
-
-    void test_tensor_equality() {
-        TEST_DO(verify_equal(spec(), spec()));
-        TEST_DO(verify_equal(spec(10.0), spec(10.0)));
-        TEST_DO(verify_equal(spec(x()), spec(x())));
-        TEST_DO(verify_equal(spec(x({"a"}), Seq({1})), spec(x({"a"}), Seq({1}))));
-        TEST_DO(verify_equal(spec({x({"a"}),y({"a"})}, Seq({1})), spec({y({"a"}),x({"a"})}, Seq({1}))));
-        TEST_DO(verify_equal(spec(x(3)), spec(x(3))));
-        TEST_DO(verify_equal(spec({x(1),y(1)}, Seq({1})), spec({y(1),x(1)}, Seq({1}))));
-        TEST_DO(verify_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({y(1),x({"a"})}, Seq({1}))));
-        TEST_DO(verify_equal(spec({y({"a"}),x(1)}, Seq({1})), spec({x(1),y({"a"})}, Seq({1}))));
-    }
-
-    //-------------------------------------------------------------------------
-
-    void verify_not_equal(const TensorSpec &a, const TensorSpec &b) {
-        auto ta = tensor(a);
-        auto tb = tensor(b);
-        EXPECT_NOT_EQUAL(a, b);
-        EXPECT_NOT_EQUAL(b, a);
-        EXPECT_NOT_EQUAL(*ta, *tb);
-        EXPECT_NOT_EQUAL(*tb, *ta);
-    }
-
-    void test_tensor_inequality() {
-        TEST_DO(verify_not_equal(spec(1.0), spec(2.0)));
-        TEST_DO(verify_not_equal(spec(), spec(x())));
-        TEST_DO(verify_not_equal(spec(), spec(x(1))));
-        TEST_DO(verify_not_equal(spec(x()), spec(x(1))));
-        TEST_DO(verify_not_equal(spec(x()), spec(y())));
-        TEST_DO(verify_not_equal(spec(x(1)), spec(x(2))));
-        TEST_DO(verify_not_equal(spec(x(1)), spec(y(1))));
-        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec(x({"a"}), Seq({2}))));
-        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec(x({"b"}), Seq({1}))));
-        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec({x({"a"}),y({"a"})}, Seq({1}))));
-        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec(x(1), Seq({2}))));
-        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec(x(2), Seq({1}), Bits({1,0}))));
-        TEST_DO(verify_not_equal(spec(x(2), Seq({1,1}), Bits({1,0})),
-                                 spec(x(2), Seq({1,1}), Bits({0,1}))));
-        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec({x(1),y(1)}, Seq({1}))));
-        TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"a"}),y(1)}, Seq({2}))));
-        TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"b"}),y(1)}, Seq({1}))));
-        TEST_DO(verify_not_equal(spec({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
-                                 spec({x(2),y({"a"})}, Seq({X,1}), Bits({0,1}))));
-    }
-
-    //-------------------------------------------------------------------------
-
     void verify_reduce_result(const Eval &eval, const TensorSpec &a, const Eval::Result &expect) {
         TEST_DO(verify_result(eval.eval(engine, a), expect));
     }
@@ -989,8 +932,6 @@ struct TestContext {
 
     void run_tests() {
         TEST_DO(test_tensor_create_type());
-        TEST_DO(test_tensor_equality());
-        TEST_DO(test_tensor_inequality());
         TEST_DO(test_tensor_reduce());
         TEST_DO(test_tensor_map());
         TEST_DO(test_tensor_apply());

@@ -102,7 +102,9 @@ void verify_equal(const Tensor &expect, const Value &value) {
     const Tensor *tensor = value.as_tensor();
     ASSERT_TRUE(tensor != nullptr);
     ASSERT_EQUAL(&expect.engine(), &tensor->engine());
-    EXPECT_TRUE(expect.engine().equal(expect, *tensor));
+    auto expect_spec = expect.engine().to_spec(expect);
+    auto value_spec = tensor->engine().to_spec(*tensor);
+    EXPECT_EQUAL(expect_spec, value_spec);
 }
 
 TEST("require that tensor injection works") {

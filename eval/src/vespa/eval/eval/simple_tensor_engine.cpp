@@ -47,12 +47,6 @@ SimpleTensorEngine::type_of(const Tensor &tensor) const
     return to_simple(tensor).type();
 }
 
-bool
-SimpleTensorEngine::equal(const Tensor &a, const Tensor &b) const
-{
-    return SimpleTensor::equal(to_simple(a), to_simple(b));
-}
-
 vespalib::string
 SimpleTensorEngine::to_string(const Tensor &tensor) const
 {
