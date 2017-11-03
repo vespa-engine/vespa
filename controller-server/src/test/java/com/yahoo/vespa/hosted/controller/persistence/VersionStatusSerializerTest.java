@@ -27,8 +27,6 @@ public class VersionStatusSerializerTest {
                 Version.fromString("5.0"),
                 Arrays.asList(ApplicationId.from("tenant1", "failing1", "default")),
                 Arrays.asList(ApplicationId.from("tenant2", "success1", "default"),
-                              ApplicationId.from("tenant2", "success2", "default")),
-                Arrays.asList(ApplicationId.from("tenant1", "failing1", "default"),
                               ApplicationId.from("tenant2", "success2", "default"))
         );
         vespaVersions.add(new VespaVersion(statistics, "dead", Instant.now(), false,

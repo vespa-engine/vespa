@@ -17,12 +17,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Information about which deployment jobs an application should run and their current status.
@@ -188,12 +184,18 @@ public class DeploymentJobs {
         productionCdUsCentral2("production-cd-us-central-2", zone(SystemName.cd, "prod", "cd-us-central-2"));
 
         private final String id;
-        private final ImmutableMap<SystemName, Zone> zones;
+        private final Map<SystemName, Zone> zones;
 
-        JobType(String id, Zone... zones) {
+        JobType(String id, Zone... zone) {
             this.id = id;
-            this.zones = ImmutableMap.copyOf(Stream.of(zones).collect(Collectors.toMap(zone -> zone.system(),
-                                                                                       zone -> zone)));
+            Map<SystemName, Zone> zones = new HashMap<>();
+            for (Zone z : zone) {
+                if (zones.containsKey(z.system())) {
+                    throw new IllegalArgumentException("A job can only map to a single zone per system");
+                }
+                zones.put(z.system(), z);
+            }
+            this.zones = Collections.unmodifiableMap(zones);
         }
 
         public String id() { return id; }
@@ -240,23 +242,23 @@ public class DeploymentJobs {
             }
         }
         
-        /** Returns the job type for the given zone */
-        public static Optional<JobType> from(SystemName system, Zone zone) {
+        /** Returns the job type for the given zone, or null if none */
+        public static JobType from(SystemName system, com.yahoo.config.provision.Zone zone) {
            for (JobType job : values()) {
-               Optional<Zone> jobZone = job.zone(system);
+               Optional<com.yahoo.config.provision.Zone> jobZone = job.zone(system);
                if (jobZone.isPresent() && jobZone.get().equals(zone))
-                   return Optional.of(job);
+                   return job;
            }
-           return Optional.empty();
+           return null;
         }
 
         /** Returns the job job type for the given environment and region or null if none */
-        public static Optional<JobType> from(SystemName system, Environment environment, RegionName region) {
+        public static JobType from(SystemName system, Environment environment, RegionName region) {
             switch (environment) {
-                case test: return Optional.of(systemTest);
-                case staging: return Optional.of(stagingTest);
+                case test: return systemTest;
+                case staging: return stagingTest;
             }
-            return from(system, new Zone(environment, region));
+            return from(system, new com.yahoo.config.provision.Zone(environment, region));
         }
 
         private static Zone zone(SystemName system, String environment, String region) {
