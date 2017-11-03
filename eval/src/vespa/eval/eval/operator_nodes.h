@@ -166,9 +166,6 @@ struct Less         : OperatorHelper<Less>         { Less()         : Helper("<"
 struct LessEqual    : OperatorHelper<LessEqual>    { LessEqual()    : Helper("<=", 10, LEFT)  {}};
 struct Greater      : OperatorHelper<Greater>      { Greater()      : Helper(">",  10, LEFT)  {}};
 struct GreaterEqual : OperatorHelper<GreaterEqual> { GreaterEqual() : Helper(">=", 10, LEFT)  {}};
-struct In           : OperatorHelper<In>           { In()           : Helper("in", 10, LEFT)  {}
-    virtual vespalib::string dump(DumpContext &ctx) const override;
-};
 struct And          : OperatorHelper<And>          { And()          : Helper("&&",  2, LEFT)  {}};
 struct Or           : OperatorHelper<Or>           { Or()           : Helper("||",  1, LEFT)  {}};
 

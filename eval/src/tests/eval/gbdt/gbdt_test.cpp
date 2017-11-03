@@ -31,14 +31,14 @@ TEST("require that tree stats can be calculated") {
         EXPECT_EQUAL(tree_size, TreeStats(Function::parse(Model().make_tree(tree_size)).root()).size);
     }
 
-    TreeStats stats1(Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))").root());
+    TreeStats stats1(Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in [1]),2.0,3.0),4.0))").root());
     EXPECT_EQUAL(3u, stats1.num_params);
     EXPECT_EQUAL(4u, stats1.size);
     EXPECT_EQUAL(1u, stats1.num_less_checks);
     EXPECT_EQUAL(2u, stats1.num_in_checks);
     EXPECT_EQUAL(3u, stats1.max_set_size);
 
-    TreeStats stats2(Function::parse("if((d in 1),10.0,if((e<1),20.0,30.0))").root());
+    TreeStats stats2(Function::parse("if((d in [1]),10.0,if((e<1),20.0,30.0))").root());
     EXPECT_EQUAL(2u, stats2.num_params);
     EXPECT_EQUAL(3u, stats2.size);
     EXPECT_EQUAL(1u, stats2.num_less_checks);
@@ -61,9 +61,9 @@ TEST("require that trees can be extracted from forest") {
 }
 
 TEST("require that forest stats can be calculated") {
-    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))");
+    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in [1]),2.0,3.0),4.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))");
     std::vector<const Node *> trees = extract_trees(function.root());
     ForestStats stats(trees);
     EXPECT_EQUAL(5u, stats.num_params);
@@ -261,8 +261,8 @@ TEST("require that models with in checks are rejected by less only vm optimizer"
 }
 
 TEST("require that general VM tree optimizer works") {
-    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
-                                        "if((d in 1),10.0,if((e<1),if((f<1),20.0,30.0),40.0))");
+    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in [1]),2.0,3.0),4.0))+"
+                                        "if((d in [1]),10.0,if((e<1),if((f<1),20.0,30.0),40.0))");
     CompiledFunction compiled_function(function, PassParams::ARRAY, general_vm_chain);
     EXPECT_EQUAL(1u, compiled_function.get_forests().size());
     auto f = compiled_function.get_function();
@@ -324,17 +324,17 @@ TEST("require that forests evaluate to approximately the same for all evaluation
 //-----------------------------------------------------------------------------
 
 TEST("require that GDBT expressions can be detected") {
-    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))");
+    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in [1]),2.0,3.0),4.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))");
     EXPECT_TRUE(contains_gbdt(function.root(), 9));
     EXPECT_TRUE(!contains_gbdt(function.root(), 10));
 }
 
 TEST("require that wrapped GDBT expressions can be detected") {
-    Function function = Function::parse("10*(if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0)))");
+    Function function = Function::parse("10*(if((a<1),1.0,if((b in [1,2,3]),if((c in [1]),2.0,3.0),4.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0)))");
     EXPECT_TRUE(contains_gbdt(function.root(), 9));
     EXPECT_TRUE(!contains_gbdt(function.root(), 10));
 }
@@ -345,9 +345,9 @@ TEST("require that lazy parameters are not suggested for GBDT models") {
 }
 
 TEST("require that lazy parameters can be suggested for small GBDT models") {
-    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
-                                        "if((d in 1),10.0,if((e<1),20.0,30.0))");
+    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in [1]),2.0,3.0),4.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in [1]),10.0,if((e<1),20.0,30.0))");
     EXPECT_TRUE(CompiledFunction::should_use_lazy_params(function));
 }
 

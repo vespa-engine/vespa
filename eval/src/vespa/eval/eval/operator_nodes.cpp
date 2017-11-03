@@ -37,21 +37,8 @@ OperatorRepo::OperatorRepo() : _map(), _max_size(0) {
     add(nodes::LessEqual());
     add(nodes::Greater());
     add(nodes::GreaterEqual());
-    add(nodes::In());
     add(nodes::And());
     add(nodes::Or());
-}
-
-vespalib::string
-In::dump(DumpContext &ctx) const
-{
-    vespalib::string str;
-    str += "(";
-    str += lhs().dump(ctx);
-    str += " in ";
-    str += rhs().dump(ctx);
-    str += ")";
-    return str;
 }
 
 } // namespace vespalib::eval::nodes

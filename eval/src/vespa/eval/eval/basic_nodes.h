@@ -142,40 +142,39 @@ public:
     void accept(NodeVisitor &visitor) const override;
 };
 
-class Array : public Node {
+class In : public Node {
 private:
-    std::vector<Node_UP> _nodes;
-    bool                 _is_const;
+    Node_UP              _child;
+    std::vector<Node_UP> _entries;
 public:
-    Array() : _nodes(), _is_const(false) {}
-    bool is_const() const override { return _is_const; }
-    size_t size() const { return _nodes.size(); }
-    const Node &get(size_t i) const { return *_nodes[i]; }
-    size_t num_children() const override { return size(); }
-    const Node &get_child(size_t idx) const override { return get(idx); }
-    void detach_children(NodeHandler &handler) override {
-        for (size_t i = 0; i < _nodes.size(); ++i) {
-            handler.handle(std::move(_nodes[i]));
-        }
-        _nodes.clear();
+    In(Node_UP child) : _child(std::move(child)), _entries() {}
+    void add_entry(Node_UP entry) {
+        assert(entry->is_const());
+        _entries.push_back(std::move(entry));
     }
-    void add(Node_UP node) {
-        if (_nodes.empty()) {
-            _is_const = node->is_const();
-        } else {
-            _is_const = (_is_const && node->is_const());
-        }
-        _nodes.push_back(std::move(node));
+    size_t num_entries() const { return _entries.size(); }
+    const Node &get_entry(size_t idx) const { return *_entries[idx]; }
+    const Node &child() const { return *_child; }
+    size_t num_children() const override { return _child ? 1 : 0; }
+    const Node &get_child(size_t idx) const override {
+        (void) idx;
+        assert(idx == 0);
+        return child();
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_child));
     }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
-        str += "[";
+        str += "(";
+        str += _child->dump(ctx);
+        str += " in [";
         CommaTracker node_list;
-        for (const auto &node: _nodes) {
+        for (const auto &node: _entries) {
             node_list.maybe_comma(str);
             str += node->dump(ctx);
         }
-        str += "]";
+        str += "])";
         return str;
     }
     void accept(NodeVisitor &visitor) const override;

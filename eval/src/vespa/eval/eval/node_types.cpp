@@ -90,9 +90,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const String &node) override {
         bind_type(ValueType::double_type(), node);
     }
-    void visit(const Array &node) override {
-        bind_type(ValueType::double_type(), node);
-    }
+    void visit(const In &node) override { resolve_op1(node); }
     void visit(const Neg &node) override { resolve_op1(node); }
     void visit(const Not &node) override { resolve_op1(node); }
     void visit(const If &node) override {
@@ -139,9 +137,6 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const LessEqual &node) override { resolve_op2(node); }
     void visit(const Greater &node) override { resolve_op2(node); }
     void visit(const GreaterEqual &node) override { resolve_op2(node); }
-    void visit(const In &node) override {
-        bind_type(ValueType::double_type(), node);
-    }
     void visit(const And &node) override { resolve_op2(node); }
     void visit(const Or &node) override { resolve_op2(node); }
     void visit(const Cos &node) override { resolve_op1(node); }

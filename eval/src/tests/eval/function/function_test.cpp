@@ -81,6 +81,11 @@ bool verify_string(const vespalib::string &str, const vespalib::string &expr) {
     return ok;
 }
 
+void verify_error(const vespalib::string &expr, const vespalib::string &expected_error) {
+    Function function = Function::parse(params, expr);
+    EXPECT_TRUE(function.has_error());
+    EXPECT_EQUAL(expected_error, function.get_error());
+}
 
 TEST("require that scientific numbers can be parsed") {
     EXPECT_EQUAL(1.0,     as_number(Function::parse(params, "1")));
@@ -163,18 +168,16 @@ TEST("require that strings are parsed and dumped correctly") {
     }
 }
 
-TEST("require that arrays can be parsed") {
-    EXPECT_EQUAL("[]", Function::parse(params, "[]").dump());
-    EXPECT_EQUAL("[1,2,3]", Function::parse(params, "[1,2,3]").dump());
-    EXPECT_EQUAL("[1,2,3]", Function::parse(params, "[ 1 , 2 , 3 ]").dump());
-    EXPECT_EQUAL("[[x],[x,y],[1,2,[z,w]]]", Function::parse(params, "[[x],[x,y],[1,2,[z,w]]]").dump());
-    EXPECT_EQUAL("[(x+1),(y-[3,7]),z,[]]", Function::parse(params, "[x+1,y-[3,7],z,[]]").dump());
+TEST("require that free arrays cannot be parsed") {
+    verify_error("[1,2,3]", "[]...[missing value]...[[1,2,3]]");
 }
 
 TEST("require that negative values can be parsed") {
-    EXPECT_EQUAL("(-1)", Function::parse(params, "-1").dump());
-    EXPECT_EQUAL("(-2.5)", Function::parse(params, "-2.5").dump());
-    EXPECT_EQUAL("(-100)", Function::parse(params, "-100").dump());
+    EXPECT_EQUAL("-1", Function::parse(params, "-1").dump());
+    EXPECT_EQUAL("1", Function::parse(params, "--1").dump());
+    EXPECT_EQUAL("-1", Function::parse(params, " ( - ( - ( - ( (1) ) ) ) )").dump());
+    EXPECT_EQUAL("-2.5", Function::parse(params, "-2.5").dump());
+    EXPECT_EQUAL("-100", Function::parse(params, "-100").dump());
 }
 
 TEST("require that negative symbols can be parsed") {
@@ -206,7 +209,7 @@ TEST("require that operators have appropriate binding order") {
     verify_operator_binding_order({    { Operator::Order::RIGHT, { "^" } },
                                        { Operator::Order::LEFT,  { "*", "/", "%" } },
                                        { Operator::Order::LEFT,  { "+", "-" } },
-                                       { Operator::Order::LEFT,  { "==", "!=", "~=", "<", "<=", ">", ">=", "in" } },
+                                       { Operator::Order::LEFT,  { "==", "!=", "~=", "<", "<=", ">", ">=" } },
                                        { Operator::Order::LEFT,  { "&&" } },
                                        { Operator::Order::LEFT,  { "||" } } });
 }
@@ -248,10 +251,31 @@ TEST("require that operators can not bind out of parenthesis") {
 }
 
 TEST("require that set membership constructs can be parsed") {
-    EXPECT_EQUAL("(x in [y,z,w])", Function::parse(params, "x in [y,z,w]").dump());
-    EXPECT_EQUAL("(x in [y,z,w])", Function::parse(params, "x  in[y,z,w]").dump());
-    EXPECT_EQUAL("(x in [y,z,w])", Function::parse(params, "(x)in[y,z,w]").dump());
-    EXPECT_EQUAL("((x+1) in [y,z,(w-1)])", Function::parse(params, "(x+1)in[y,z,(w-1)]").dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x in [1,2,3]").dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x  in  [ 1 , 2 , 3 ] ").dump());
+    EXPECT_EQUAL("(x in [-1,-2,-3])", Function::parse(params, "x in [-1,-2,-3]").dump());
+    EXPECT_EQUAL("(x in [-1,-2,-3])", Function::parse(params, "x in [ - 1 , - 2 , - 3 ]").dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x  in[1,2,3]").dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "(x)in[1,2,3]").dump());
+    EXPECT_EQUAL("(x in [\"a\",2,\"c\"])", Function::parse(params, "x in [\"a\",2,\"c\"]").dump());
+}
+
+TEST("require that set membership entries must be array of strings/numbers") {
+    verify_error("x in 1", "[x in ]...[expected '[', but got '1']...[1]");
+    verify_error("x in ([1])", "[x in ]...[expected '[', but got '(']...[([1])]");
+    verify_error("x in [y]", "[x in [y]...[invalid entry for 'in' operator]...[]]");
+    verify_error("x in [!1]", "[x in [!1]...[invalid entry for 'in' operator]...[]]");
+    verify_error("x in [1+2]", "[x in [1]...[expected ',', but got '+']...[+2]]");
+    verify_error("x in [-\"foo\"]", "[x in [-\"foo\"]...[invalid entry for 'in' operator]...[]]");
+}
+
+TEST("require that set membership binds to the next value") {
+    EXPECT_EQUAL("((x in [1,2,3])^2)", Function::parse(params, "x in [1,2,3]^2").dump());
+}
+
+TEST("require that set membership binds to the left with appropriate precedence") {
+    EXPECT_EQUAL("((x<y) in [1,2,3])", Function::parse(params, "x < y in [1,2,3]").dump());
+    EXPECT_EQUAL("(x&&(y in [1,2,3]))", Function::parse(params, "x && y in [1,2,3]").dump());
 }
 
 TEST("require that function calls can be parsed") {
@@ -309,22 +333,12 @@ TEST("require that leaf nodes have no children") {
     EXPECT_EQUAL(0u, Function::parse("\"abc\"").root().num_children());
 }
 
-TEST("require that Array children can be accessed") {
-    Function f = Function::parse("[1,2,3]");
-    const Node &root = f.root();
-    EXPECT_TRUE(!root.is_leaf());
-    ASSERT_EQUAL(3u, root.num_children());
-    EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
-    EXPECT_EQUAL(2.0, root.get_child(1).get_const_value());
-    EXPECT_EQUAL(3.0, root.get_child(2).get_const_value());
-}
-
 TEST("require that Neg child can be accessed") {
-    Function f = Function::parse("-1");
+    Function f = Function::parse("-x");
     const Node &root = f.root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(1u, root.num_children());
-    EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
+    EXPECT_TRUE(root.get_child(0).is_param());
 }
 
 TEST("require that Not child can be accessed") {
@@ -386,7 +400,7 @@ TEST("require that children can be detached") {
     EXPECT_EQUAL(1u, detach_from_root("-a"));
     EXPECT_EQUAL(1u, detach_from_root("!a"));
     EXPECT_EQUAL(3u, detach_from_root("if(1,2,3)"));
-    EXPECT_EQUAL(5u, detach_from_root("[1,2,3,4,5]"));
+    EXPECT_EQUAL(1u, detach_from_root("a in [1,2,3,4,5]"));
     EXPECT_EQUAL(2u, detach_from_root("a+b"));
     EXPECT_EQUAL(1u, detach_from_root("isNan(a)"));
     EXPECT_EQUAL(2u, detach_from_root("max(a,b)"));
@@ -456,7 +470,7 @@ TEST("require that traversal works as expected") {
     EXPECT_TRUE(verify_expression_traversal("1"));
     EXPECT_TRUE(verify_expression_traversal("1+2"));
     EXPECT_TRUE(verify_expression_traversal("1+2*3-4/5"));
-    EXPECT_TRUE(verify_expression_traversal("if(x,1+2*3,[a,b,c]/5)"));
+    EXPECT_TRUE(verify_expression_traversal("if(x,1+2*3,if(a,b,c)/5)"));
 }
 
 //-----------------------------------------------------------------------------
@@ -492,14 +506,6 @@ TEST("require that string is const") {
     EXPECT_TRUE(Function::parse("\"x\"").root().is_const());
 }
 
-TEST("require that array is const if all elements are const") {
-   EXPECT_TRUE(Function::parse("[1,2,3]").root().is_const());
-   EXPECT_TRUE(!Function::parse("[x,2,3]").root().is_const());
-   EXPECT_TRUE(!Function::parse("[1,y,3]").root().is_const());
-   EXPECT_TRUE(!Function::parse("[1,2,z]").root().is_const());
-   EXPECT_TRUE(!Function::parse("[x,y,z]").root().is_const());
-}
-
 TEST("require that neg is const if sub-expression is const") {
     EXPECT_TRUE(Function::parse("-123").root().is_const());
     EXPECT_TRUE(!Function::parse("-x").root().is_const());
@@ -517,11 +523,11 @@ TEST("require that operators are cost if both children are const") {
     EXPECT_TRUE(Function::parse("1+2").root().is_const());
 }
 
-TEST("require that set membership is const only if array elements are const") {
+TEST("require that set membership is never tagged as const (NB: avoids jit recursion)") {
     EXPECT_TRUE(!Function::parse("x in [x,y,z]").root().is_const());
     EXPECT_TRUE(!Function::parse("1 in [x,y,z]").root().is_const());
     EXPECT_TRUE(!Function::parse("1 in [1,y,z]").root().is_const());
-    EXPECT_TRUE(Function::parse("1 in [1,2,3]").root().is_const());
+    EXPECT_TRUE(!Function::parse("1 in [1,2,3]").root().is_const());
 }
 
 TEST("require that calls are cost if all parameters are const") {
@@ -554,10 +560,8 @@ TEST("require that feature in set of constants is tree if children are trees or 
     EXPECT_TRUE(Function::parse("if (foo in [1, 2], if(bar < 3, 4, 5), 6)").root().is_tree());
     EXPECT_TRUE(Function::parse("if (foo in [1, 2], if(bar < 3, 4, 5), if(baz < 6, 7, 8))").root().is_tree());
     EXPECT_TRUE(Function::parse("if (foo in [1, 2], 3, if(baz < 4, 5, 6))").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo in [min(1,2), max(1,2)], 3, 4)").root().is_tree());    
+    EXPECT_TRUE(Function::parse("if (foo in [1, 2], min(1,3), max(1,4))").root().is_tree());    
     EXPECT_TRUE(!Function::parse("if (1 in [1, 2], 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (1 in [foo, 2], 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo in [bar, 2], 3, 4)").root().is_tree());
 }
 
 TEST("require that sums of trees and forests are forests") {
@@ -671,13 +675,16 @@ TEST("require that unknown function that is valid parameter works as expected wi
     EXPECT_EQUAL("[z(x)]...[unknown symbol: 'z(x)']...[+y]", Function::parse(params, "z(x)+y", MySymbolExtractor({'(', ')'})).dump());
 }
 
-//-----------------------------------------------------------------------------
-
-void verify_error(const vespalib::string &expr, const vespalib::string &expected_error) {
-    Function function = Function::parse(params, expr);
-    EXPECT_TRUE(function.has_error());
-    EXPECT_EQUAL(expected_error, function.get_error());
+TEST("require that custom symbol extractor is not invoked for known function call") {
+    MySymbolExtractor extractor;
+    EXPECT_EQUAL(extractor.invoke_count, 0u);
+    EXPECT_EQUAL("[bogus]...[unknown symbol: 'bogus']...[(1,2)]", Function::parse(params, "bogus(1,2)", extractor).dump());
+    EXPECT_EQUAL(extractor.invoke_count, 1u);
+    EXPECT_EQUAL("max(1,2)", Function::parse(params, "max(1,2)", extractor).dump());
+    EXPECT_EQUAL(extractor.invoke_count, 1u);
 }
+
+//-----------------------------------------------------------------------------
 
 TEST("require that valid function does not report parse error") {
     Function function = Function::parse(params, "x + y");

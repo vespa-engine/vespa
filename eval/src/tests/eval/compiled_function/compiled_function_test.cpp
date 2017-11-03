@@ -128,16 +128,13 @@ TEST_FF("require that compiled evaluation passes all conformance tests", MyEvalT
 //-----------------------------------------------------------------------------
 
 TEST("require that large (plugin) set membership checks work") {
-    nodes::Array my_set;
+    auto my_in = std::make_unique<nodes::In>(std::make_unique<nodes::Symbol>(0));
     for(size_t i = 1; i <= 100; ++i) {
-        my_set.add(nodes::Node_UP(new nodes::Number(i)));
+        my_in->add_entry(std::make_unique<nodes::Number>(i));
     }
-    nodes::DumpContext dump_ctx({});
-    vespalib::string expr = vespalib::make_string("if(a in %s,1,0)",
-                                                  my_set.dump(dump_ctx).c_str());
-    // fprintf(stderr, "expression: %s\n", expr.c_str());
-    CompiledFunction cf(Function::parse(expr), PassParams::SEPARATE);
-    CompiledFunction arr_cf(Function::parse(expr), PassParams::ARRAY);
+    Function my_fun(std::move(my_in), {"a"});
+    CompiledFunction cf(my_fun, PassParams::SEPARATE);
+    CompiledFunction arr_cf(my_fun, PassParams::ARRAY);
     auto fun = cf.get_function<1>();
     auto arr_fun = arr_cf.get_function();
     for (double value = 0.5; value <= 100.5; value += 0.5) {
@@ -146,7 +143,7 @@ TEST("require that large (plugin) set membership checks work") {
             EXPECT_EQUAL(1.0, arr_fun(&value));
         } else {
             EXPECT_EQUAL(0.0, fun(value));
-            EXPECT_EQUAL(0.0, arr_fun(&value));            
+            EXPECT_EQUAL(0.0, arr_fun(&value));
         }
     }
 }
