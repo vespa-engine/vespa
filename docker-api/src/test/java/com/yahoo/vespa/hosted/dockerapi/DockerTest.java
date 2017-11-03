@@ -41,18 +41,18 @@ public class DockerTest {
         InetAddress inetAddress1 = InetAddress.getByName("172.18.10.10");
         InetAddress inetAddress2 = InetAddress.getByName("172.18.10.11");
 
-        docker.createContainerCommand(dockerImage, containerName1, hostName1)
+        docker.createContainerCommand(dockerImage, ContainerResources.from(0, 0.1), containerName1, hostName1)
                 .withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(inetAddress1)
-                .withMemoryInMb(100).create();
+                .create();
         docker.startContainer(containerName1);
 
-        docker.createContainerCommand(dockerImage, containerName2, hostName2)
+        docker.createContainerCommand(dockerImage, ContainerResources.from(0, 0.1), containerName2, hostName2)
                 .withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(inetAddress2)
-                .withMemoryInMb(100).create();
+                .create();
         docker.startContainer(containerName2);
 
         // 137 = 128 + 9 = kill -9 (SIGKILL), doesn't need to be run as "root", but "yahoo" does not exist in this basic image
@@ -74,7 +74,8 @@ public class DockerTest {
         final ContainerName containerName = new ContainerName("docker-test-foo");
         final String containerHostname = "hostName1";
 
-        docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
+        docker.createContainerCommand(dockerImage, ContainerResources.UNLIMITED, containerName, containerHostname)
+                .withManagedBy(MANAGER_NAME).create();
         Optional<Container> container = docker.getContainer(containerName);
         assertTrue(container.isPresent());
         assertEquals(container.get().state, Container.State.CREATED);
@@ -110,7 +111,8 @@ public class DockerTest {
         final ContainerName containerName = new ContainerName("docker-test-foo");
         final String containerHostname = "hostName1";
 
-        docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
+        docker.createContainerCommand(dockerImage, ContainerResources.UNLIMITED, containerName, containerHostname)
+                .withManagedBy(MANAGER_NAME).create();
         docker.startContainer(containerName);
         docker.executeInContainerAsRoot(containerName, 1L, "sh", "-c", "sleep 5");
     }
@@ -128,7 +130,8 @@ public class DockerTest {
         final ContainerName containerName = new ContainerName("docker-test-foo");
         final String containerHostname = "hostName1";
 
-        docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
+        docker.createContainerCommand(dockerImage, ContainerResources.UNLIMITED, containerName, containerHostname)
+                .withManagedBy(MANAGER_NAME).create();
         docker.startContainer(containerName);
         docker.executeInContainerAsRoot(containerName, 2L, "sh", "-c", "echo hei");
 
@@ -145,11 +148,13 @@ public class DockerTest {
         InetAddress inetAddress1 = InetAddress.getByName("172.18.10.10");
         InetAddress inetAddress2 = InetAddress.getByName("172.18.10.11");
 
-        docker.createContainerCommand(dockerImage, containerName1, hostName1).withManagedBy(MANAGER_NAME)
+        docker.createContainerCommand(dockerImage, ContainerResources.UNLIMITED, containerName1, hostName1)
+                .withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress1).create();
         docker.startContainer(containerName1);
 
-        docker.createContainerCommand(dockerImage, containerName2, hostName2).withManagedBy(MANAGER_NAME)
+        docker.createContainerCommand(dockerImage, ContainerResources.UNLIMITED, containerName2, hostName2)
+                .withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress2).create();
         docker.startContainer(containerName2);
 

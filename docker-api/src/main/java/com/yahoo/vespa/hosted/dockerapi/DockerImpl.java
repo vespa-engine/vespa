@@ -202,8 +202,9 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, name, hostName);
+    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
+                                                         ContainerName name, String hostName) {
+        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
     }
 
     @Override
