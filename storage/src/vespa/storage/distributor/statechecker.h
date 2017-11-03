@@ -19,6 +19,7 @@ class DistributorConfiguration;
 namespace distributor {
 
 class DistributorComponent;
+class DistributorBucketSpace;
 class NodeMaintenanceStatsTracker;
 
 /**
@@ -45,15 +46,16 @@ public:
     struct Context
     {
         Context(const DistributorComponent&,
+                const DistributorBucketSpace &distributorBucketSpace,
                 NodeMaintenanceStatsTracker&,
-                const document::BucketId& bid);
+                const document::Bucket &bucket_);
         ~Context();
         Context(const Context &) = delete;
         Context & operator =(const Context &) = delete;
 
 
         // Per bucket
-        document::BucketId bucketId;
+        document::Bucket   bucket;
         document::BucketId siblingBucket;
 
         BucketDatabase::Entry entry;
@@ -82,7 +84,7 @@ public:
             return siblingEntry;
         }
 
-        document::Bucket getBucket() const { return document::Bucket(document::BucketSpace::placeHolder(), bucketId); }
+        document::Bucket getBucket() const { return bucket; }
 
         std::string toString() const;
     };

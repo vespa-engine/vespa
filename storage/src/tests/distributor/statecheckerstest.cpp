@@ -13,6 +13,7 @@
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <tests/distributor/distributortestutil.h>
@@ -20,8 +21,12 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
 
 using namespace std::literals::string_literals;
+using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -105,8 +110,9 @@ struct StateCheckersTest : public CppUnit::TestFixture,
     void assertCurrentIdealState(const document::BucketId& bucket,
                                  const std::vector<uint16_t> expected)
     {
+        auto &distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
         std::vector<uint16_t> idealNodes(
-                getIdealStateManager().getDistributorComponent()
+                distributorBucketSpace
                 .getDistribution().getIdealStorageNodes(
                         getIdealStateManager().getDistributorComponent()
                                 .getClusterState(),
@@ -128,17 +134,17 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         std::ostringstream ost;
 
         c.siblingBucket = getIdealStateManager().getDistributorComponent()
-                .getSibling(c.bucketId);
+                          .getSibling(c.bucket.getBucketId());
 
         std::vector<BucketDatabase::Entry> entries;
-        getBucketDatabase().getAll(c.bucketId, entries);
+        getBucketDatabase().getAll(c.bucket.getBucketId(), entries);
         c.siblingEntry = getBucketDatabase().get(c.siblingBucket);
 
         c.entries = entries;
         for (uint32_t j = 0; j < entries.size(); ++j) {
             // Run checking only on this bucketid, but include all buckets
             // owned by it or owners of it, so we can detect inconsistent split.
-            if (entries[j].getBucketId() == c.bucketId) {
+            if (entries[j].getBucketId() == c.bucket.getBucketId()) {
                 c.entry = entries[j];
 
                 StateChecker::Result result(checker.check(c));
@@ -263,7 +269,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
                 lib::ClusterState(params._clusterState));
         NodeMaintenanceStatsTracker statsTracker;
         StateChecker::Context c(
-                getExternalOperationHandler(), statsTracker, bid);
+                getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
         std::string result =  testStateChecker(
                 checker, c, false, *params._blockerMessage,
                 params._includeMessagePriority,
@@ -361,7 +367,7 @@ std::string StateCheckersTest::testSplit(uint32_t splitCount,
 
     SplitBucketStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     getConfig().setSplitSize(splitSize);
     getConfig().setSplitCount(splitCount);
     getConfig().setMinimalBucketSplit(minSplitBits);
@@ -465,7 +471,7 @@ StateCheckersTest::testInconsistentSplit(const document::BucketId& bid,
 {
     SplitInconsistentStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, true,
                             PendingMessage(), includePriority);
 }
@@ -533,7 +539,7 @@ StateCheckersTest::testJoin(uint32_t joinCount,
     getConfig().setMinimalBucketSplit(minSplitBits);
 
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, true, blocker, includePriority);
 }
 
@@ -789,7 +795,7 @@ StateCheckersTest::testSynchronizeAndMove(const std::string& bucketInfo,
 
     _distributor->enableClusterState(lib::ClusterState(clusterState));
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
@@ -984,7 +990,7 @@ StateCheckersTest::testDeleteExtraCopies(
     }
     DeleteExtraCopiesStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
@@ -995,8 +1001,9 @@ StateCheckersTest::testDeleteExtraCopies()
     setupDistributor(2, 100, "distributor:1 storage:4");
 
     {
+        auto &distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
         std::vector<uint16_t> idealNodes(
-                getIdealStateManager().getDistributorComponent()
+                distributorBucketSpace
                 .getDistribution().getIdealStorageNodes(
                         getIdealStateManager().getDistributorComponent().getClusterState(),
                         document::BucketId(17, 0),
@@ -1133,7 +1140,7 @@ std::string StateCheckersTest::testBucketState(
 
     BucketStateStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, PendingMessage(),
                             includePriority);
 }
@@ -1332,7 +1339,7 @@ std::string StateCheckersTest::testBucketStatePerGroup(
 
     BucketStateStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, bid);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, PendingMessage(),
                             includePriority);
 }
@@ -1474,8 +1481,8 @@ std::string StateCheckersTest::testGarbageCollection(
     getConfig().setGarbageCollection("music", checkInterval);
     getConfig().setLastGarbageCollectionChangeTime(lastChangeTime);
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker,
-            e.getBucketId());
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker,
+                            makeDocumentBucket(e.getBucketId()));
     getClock().setAbsoluteTimeInSeconds(nowTimestamp);
     return testStateChecker(checker, c, false, PendingMessage(),
                             includePriority, includeSchedulingPri);
@@ -1561,8 +1568,8 @@ StateCheckersTest::gcInhibitedWhenIdealNodeInMaintenance()
     getConfig().setGarbageCollection("music", 3600);
     getConfig().setLastGarbageCollectionChangeTime(0);
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker,
-                            bucket);
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker,
+                            makeDocumentBucket(bucket));
     getClock().setAbsoluteTimeInSeconds(4000);
     // Would normally (in a non-maintenance case) trigger GC due to having
     // overshot the GC check cycle.
@@ -1727,7 +1734,7 @@ StateCheckersTest::contextPopulatesIdealStateContainers()
     setupDistributor(2, 100, "distributor:1 storage:4");
 
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), statsTracker, {17, 0});
+    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
     CPPUNIT_ASSERT_EQUAL((std::vector<uint16_t>{1, 3}), c.idealState);
     CPPUNIT_ASSERT_EQUAL(size_t(2), c.unorderedIdealState.size());
@@ -1772,7 +1779,7 @@ public:
     // NOTE: resets the bucket database!
     void runFor(const document::BucketId& bid) {
         Checker checker;
-        StateChecker::Context c(_fixture.getExternalOperationHandler(), _statsTracker, bid);
+        StateChecker::Context c(_fixture.getExternalOperationHandler(), _fixture.getDistributorBucketSpace(), _statsTracker, makeDocumentBucket(bid));
         _result = _fixture.testStateChecker(
                 checker, c, false, StateCheckersTest::PendingMessage(), false);
     }
