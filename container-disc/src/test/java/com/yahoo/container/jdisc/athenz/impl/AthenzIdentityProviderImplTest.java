@@ -24,8 +24,7 @@ public class AthenzIdentityProviderImplTest {
         AthenzService athenzService = mock(AthenzService.class);
 
         when(serviceProviderApi.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
-        when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
-                new InstanceIdentity(null, null, null, null, null, null, null, null, "TOKEN"));
+        when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(new InstanceIdentity(null, "TOKEN"));
 
         AthenzIdentityProvider identityProvider = new AthenzIdentityProviderImpl(config, serviceProviderApi, athenzService);
 
