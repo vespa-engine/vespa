@@ -162,7 +162,8 @@ public class DeploymentOrder {
 
     /** Resolve job from deployment step */
     private JobType toJob(DeploymentSpec.DeclaredZone zone) {
-        return JobType.from(controller.system(), zone.environment(), zone.region().orElse(null));
+        return JobType.from(controller.system(), zone.environment(), zone.region().orElse(null))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
     }
 
     /** Returns whether deployment should be postponed according to delay */

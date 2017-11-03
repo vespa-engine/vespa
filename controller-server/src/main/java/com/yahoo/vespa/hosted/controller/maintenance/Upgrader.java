@@ -84,8 +84,12 @@ public class Upgrader extends Maintainer {
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.notDeployingApplication(); // wait with applications deploying an application change
+        System.err.println(applications.asList());
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
+        System.err.println(applications.asList());
+        //System.err.println(applications.asList().get(0));
         applications = applications.notCurrentlyUpgrading(change, controller().applications().deploymentTrigger().jobTimeoutLimit());
+        System.err.println(applications.asList());
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades

@@ -303,7 +303,7 @@ public class ApplicationController {
             else
                 version = application.currentDeployVersion(controller, zone);
 
-            DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
+            Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
 
             if ( ! options.deployCurrentVersion) {
@@ -314,11 +314,11 @@ public class ApplicationController {
                     application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if ( ! canDeployDirectlyTo(zone, options) && jobType != null) {
+                if ( ! canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
                     // Update with (potentially) missing information about what we triggered
-                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType);
+                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
                     application = application.with(application.deploymentJobs()
-                                                           .withTriggering(jobType,
+                                                           .withTriggering(jobType.get(),
                                                                            application.deploying(),
                                                                            triggering.id(),
                                                                            version,
@@ -423,10 +423,9 @@ public class ApplicationController {
      * This is needed (only) in the case where some external entity triggers a job.
      */
     private JobStatus.JobRun getOrCreateTriggering(Application application, Version version, DeploymentJobs.JobType jobType) {
-        if (jobType == null) return incompleteTriggeringEvent(version);
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-        if (status == null) return  incompleteTriggeringEvent(version);
-        if ( ! status.lastTriggered().isPresent()) return  incompleteTriggeringEvent(version);
+        if (status == null) return incompleteTriggeringEvent(version);
+        if ( ! status.lastTriggered().isPresent()) return incompleteTriggeringEvent(version);
         return status.lastTriggered().get();
     }
 

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -98,7 +99,8 @@ public class Application {
     public Map<Zone, Deployment> productionDeployments() {
         return deployments.values().stream()
                                    .filter(deployment -> deployment.zone().environment() == Environment.prod)
-                                   .collect(Collectors.toMap(Deployment::zone, Function.identity()));
+                                   .collect(Collectors.collectingAndThen(Collectors.toMap(Deployment::zone, Function.identity()),
+                                                                         ImmutableMap::copyOf));
     }
 
     public DeploymentJobs deploymentJobs() { return deploymentJobs; }
