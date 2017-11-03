@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
@@ -78,8 +77,6 @@ public class NodeFailer extends Maintainer {
         // Ready nodes
         updateNodeLivenessEventsForReadyNodes();
         for (Node node : readyNodesWhichAreDead()) {
-            // Docker hosts and nodes do not run Vespa services
-            if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER || node.type() == NodeType.host) continue;
             if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
                                                          Agent.system, "Not receiving config requests from node");
         }
@@ -272,10 +269,7 @@ public class NodeFailer extends Maintainer {
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
-        List<Node> nodes = nodeRepository().getNodes().stream()
-                // Do not consider Docker containers when throttling
-                .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
-                .collect(Collectors.toList());
+        List<Node> nodes = nodeRepository().getNodes();
         long recentlyFailedNodes = nodes.stream()
                 .map(n -> n.history().event(History.Event.Type.failed))
                 .filter(Optional::isPresent)
