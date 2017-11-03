@@ -311,13 +311,13 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId());
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks.reset(new RPCHooks(rpcParams));
-    
+
+    waitForInitDone();
+
     _metricsEngine->start(_configUri);
     _stateServer.reset(new vespalib::StateServer(protonConfig.httpport, _healthAdapter, _metricsEngine->metrics_producer(), *this));
     _customComponentBindToken = _stateServer->repo().bind(CUSTOM_COMPONENT_API_PATH, _genericStateHandler);
     _customComponentRootToken = _stateServer->repo().add_root_resource(CUSTOM_COMPONENT_API_PATH);
-
-    waitForInitDone();
 
     _executor.sync();
     waitForOnlineState();
