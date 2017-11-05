@@ -47,6 +47,14 @@ BuildRequires: boost-devel >= 1.60
 BuildRequires: llvm-devel >= 4.0
 BuildRequires: boost-devel >= 1.63
 %endif
+%if 0%{?fc27}
+BuildRequires: llvm-devel >= 4.0
+BuildRequires: boost-devel >= 1.64
+%endif
+%if 0%{?fc28}
+BuildRequires: llvm-devel >= 4.0
+BuildRequires: boost-devel >= 1.64
+%endif
 BuildRequires: zookeeper-devel >= 3.4.9
 %endif
 BuildRequires: lz4-devel
@@ -80,12 +88,22 @@ Requires: vespa-zookeeper-c-client >= 3.4.9-6
 %endif
 %if 0%{?fedora}
 %if 0%{?fc25}
-Requires: llvm >= 3.9.1
+Requires: llvm-libs >= 3.9.1
 Requires: boost >= 1.60
 %endif
 %if 0%{?fc26}
-Requires: llvm >= 4.0
+Requires: llvm-libs >= 4.0
 Requires: boost >= 1.63
+%define _vespa_llvm_version 4.0
+%endif
+%if 0%{?fc27}
+Requires: llvm-libs >= 4.0
+Requires: boost >= 1.64
+%define _vespa_llvm_version 4.0
+%endif
+%if 0%{?fc28}
+Requires: llvm-libs >= 4.0
+Requires: boost >= 1.64
 %define _vespa_llvm_version 4.0
 %endif
 Requires: zookeeper >= 3.4.9
