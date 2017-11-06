@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <climits>
 
 #include <vespa/log/bufferedlogger.h>
@@ -26,8 +27,7 @@ SplitOperation::onStart(DistributorMessageSender& sender)
 {
     _ok = false;
 
-    BucketDatabase::Entry entry = _manager->getDistributorComponent()
-            .getBucketDatabase().get(getBucketId());
+    BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
 
     for (uint32_t i = 0; i < entry->getNodeCount(); i++) {
         std::shared_ptr<api::SplitBucketCommand> msg(
@@ -66,7 +66,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
 
     if (rep.getResult().success()) {
         BucketDatabase::Entry entry =
-            _manager->getDistributorComponent().getBucketDatabase().get(rep.getBucketId());
+            _bucketSpace->getBucketDatabase().get(rep.getBucketId());
 
         if (entry.valid()) {
             entry->removeNode(node);
@@ -74,9 +74,9 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
             if (entry->getNodeCount() == 0) {
                 LOG(spam, "Removing split bucket %s",
                     getBucketId().toString().c_str());
-                _manager->getDistributorComponent().getBucketDatabase().remove(rep.getBucketId());
+                _bucketSpace->getBucketDatabase().remove(rep.getBucketId());
             } else {
-                _manager->getDistributorComponent().getBucketDatabase().update(entry);
+                _bucketSpace->getBucketDatabase().update(entry);
             }
 
             ost << getBucketId() << " => ";
@@ -115,7 +115,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
         }
     } else if (
             rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
-            && _manager->getDistributorComponent().getBucketDatabase().get(rep.getBucketId())->getNode(node) != 0)
+            && _bucketSpace->getBucketDatabase().get(rep.getBucketId())->getNode(node) != 0)
     {
         _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
         LOGBP(debug, "Split failed for %s: bucket not found. Storage and "
