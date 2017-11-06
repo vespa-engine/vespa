@@ -4,6 +4,7 @@
 #include <vespa/storage/common/vectorprinter.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
+#include "distributor_bucket_space_repo.h"
 
 #include <vespa/log/log.h>
 
@@ -123,8 +124,9 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
         LOG(spam, "Can't return early because we have already replied or failed");
         return false;
     }
-
-    const lib::Distribution& distribution = _manager.getDistribution();
+    auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
+    auto &bucketSpace(bucketSpaceRepo.get(_reply->getBucket().getBucketSpace()));
+    const lib::Distribution& distribution = bucketSpace.getDistribution();
 
     if (distribution.getInitialRedundancy() == 0) {
         LOG(spam, "Not returning early because initial redundancy wasn't set");
