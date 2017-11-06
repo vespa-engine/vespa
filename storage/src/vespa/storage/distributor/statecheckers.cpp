@@ -32,7 +32,7 @@ SplitBucketStateChecker::validForSplit(StateChecker::Context& c)
     }
 
     // Can't split anymore if we already used 58 bits.
-    if (c.bucket.getBucketId().getUsedBits() >= 58) {
+    if (c.getBucketId().getUsedBits() >= 58) {
         return false;
     }
 
@@ -145,7 +145,7 @@ SplitBucketStateChecker::check(StateChecker::Context& c) {
     }
 
     // Always split it if it has less used bits than the minimum.
-    if (c.bucket.getBucketId().getUsedBits() < c.distributorConfig.getMinimalBucketSplit()) {
+    if (c.getBucketId().getUsedBits() < c.distributorConfig.getMinimalBucketSplit()) {
         return generateMinimumBucketSplitOperation(c);
     }
     return Result::noMaintenanceNeeded();
@@ -258,8 +258,8 @@ JoinBucketsStateChecker::siblingsAreInSync(const Context& context) const
 bool
 JoinBucketsStateChecker::singleBucketJoinIsConsistent(const Context& c) const
 {
-    document::BucketId joinTarget(c.bucket.getBucketId().getUsedBits() - 1,
-                                  c.bucket.getBucketId().getRawId());
+    document::BucketId joinTarget(c.getBucketId().getUsedBits() - 1,
+                                  c.getBucketId().getRawId());
     // If there are 2 children under the potential join target bucket, joining
     // would cause the bucket tree to become inconsistent. The reason for this
     // being that "moving" a bucket one bit up in the tree (and into
@@ -321,14 +321,14 @@ JoinBucketsStateChecker::shouldJoin(const Context& c) const
         return false;
     }
 
-    if (bucketAtDistributionBitLimit(c.bucket.getBucketId(), c)) {
+    if (bucketAtDistributionBitLimit(c.getBucketId(), c)) {
         LOG(spam,
             "Not joining bucket %s because it is below the min split "
             "count (config: %u, cluster state: %u, bucket has: %u)",
             c.bucket.toString().c_str(),
             c.distributorConfig.getMinimalBucketSplit(),
             c.systemState.getDistributionBitCount(),
-            c.bucket.getBucketId().getUsedBits());
+            c.getBucketId().getUsedBits());
         return false;
     }
 
@@ -337,7 +337,7 @@ JoinBucketsStateChecker::shouldJoin(const Context& c) const
     }
 
     if (c.getSiblingEntry().valid()) {
-        if (!isFirstSibling(c.bucket.getBucketId())) {
+        if (!isFirstSibling(c.getBucketId())) {
             LOG(spam,
                 "Not joining bucket %s because it is the second sibling of "
                 "%s and not the first",
@@ -427,8 +427,8 @@ JoinBucketsStateChecker::computeJoinBucket(const Context& c) const
 {
     // Always decrease by at least 1 bit, as we could not get here unless this
     // were a valid outcome.
-    unsigned int level = c.bucket.getBucketId().getUsedBits() - 1;
-    document::BucketId target(level, c.bucket.getBucketId().getRawId());
+    unsigned int level = c.getBucketId().getUsedBits() - 1;
+    document::BucketId target(level, c.getBucketId().getRawId());
 
     // Push bucket up the tree as long as it gets no siblings. This means
     // joins involving 2 source buckets will currently only be decreased by 1
@@ -436,7 +436,7 @@ JoinBucketsStateChecker::computeJoinBucket(const Context& c) const
     // be decreased by multiple bits. We may want to optimize joins for cases
     // with 2 source buckets in the future.
     while (true) {
-        document::BucketId candidate(level, c.bucket.getBucketId().getRawId());
+        document::BucketId candidate(level, c.getBucketId().getRawId());
         if (bucketHasMultipleChildren(candidate, c)
             || !legalBucketSplitLevel(candidate, c))
         {
@@ -458,15 +458,15 @@ JoinBucketsStateChecker::check(StateChecker::Context& c)
     }
     
     document::Bucket joinedBucket(computeJoinBucket(c));
-    assert(joinedBucket.getBucketId().getUsedBits() < c.bucket.getBucketId().getUsedBits());
+    assert(joinedBucket.getBucketId().getUsedBits() < c.getBucketId().getUsedBits());
 
     std::vector<document::BucketId> sourceBuckets;
     if (c.getSiblingEntry().valid()) {
         sourceBuckets.push_back(c.siblingBucket);
     } else {
-        sourceBuckets.push_back(c.bucket.getBucketId());
+        sourceBuckets.push_back(c.getBucketId());
     }
-    sourceBuckets.push_back(c.bucket.getBucketId());
+    sourceBuckets.push_back(c.getBucketId());
     IdealStateOperation::UP op(new JoinOperation(
             c.component.getClusterName(),
             BucketAndNodes(joinedBucket, c.entry->getNodes()),
@@ -568,7 +568,7 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
         return Result::noMaintenanceNeeded();
     }
 
-    if (!isLeastSplitBucket(c.bucket.getBucketId(), c.entries)) {
+    if (!isLeastSplitBucket(c.getBucketId(), c.entries)) {
         return Result::noMaintenanceNeeded();
     }
     
@@ -581,7 +581,7 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
 
     op->setPriority(c.distributorConfig.getMaintenancePriorities()
                     .splitInconsistentBucket);
-    op->setDetailedReason(getReason(c.bucket.getBucketId(), c.entries));
+    op->setDetailedReason(getReason(c.getBucketId(), c.entries));
     return Result::createStoredResult(std::move(op), MaintenancePriority::HIGH);
 }
 
@@ -1119,7 +1119,7 @@ GarbageCollectionStateChecker::needsGarbageCollection(const Context& c) const
     std::chrono::seconds currentTime(
             c.component.getClock().getTimeInSeconds().getTime());
 
-    return c.gcTimeCalculator.shouldGc(c.bucket.getBucketId(), currentTime, lastRunAt);
+    return c.gcTimeCalculator.shouldGc(c.getBucketId(), currentTime, lastRunAt);
 }
 
 StateChecker::Result

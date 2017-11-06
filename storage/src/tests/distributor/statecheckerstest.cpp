@@ -134,17 +134,17 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         std::ostringstream ost;
 
         c.siblingBucket = getIdealStateManager().getDistributorComponent()
-                          .getSibling(c.bucket.getBucketId());
+                          .getSibling(c.getBucketId());
 
         std::vector<BucketDatabase::Entry> entries;
-        getBucketDatabase().getAll(c.bucket.getBucketId(), entries);
+        getBucketDatabase().getAll(c.getBucketId(), entries);
         c.siblingEntry = getBucketDatabase().get(c.siblingBucket);
 
         c.entries = entries;
         for (uint32_t j = 0; j < entries.size(); ++j) {
             // Run checking only on this bucketid, but include all buckets
             // owned by it or owners of it, so we can detect inconsistent split.
-            if (entries[j].getBucketId() == c.bucket.getBucketId()) {
+            if (entries[j].getBucketId() == c.getBucketId()) {
                 c.entry = entries[j];
 
                 StateChecker::Result result(checker.check(c));

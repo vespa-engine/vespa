@@ -85,6 +85,7 @@ public:
         }
 
         document::Bucket getBucket() const { return bucket; }
+        document::BucketId getBucketId() const { return bucket.getBucketId(); }
 
         std::string toString() const;
     };

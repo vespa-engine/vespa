@@ -77,7 +77,7 @@ IdealStateManager::iAmUp() const
 void
 IdealStateManager::fillParentAndChildBuckets(StateChecker::Context& c) const
 {
-    c.db.getAll(c.bucket.getBucketId(), c.entries);
+    c.db.getAll(c.getBucketId(), c.entries);
     if (c.entries.empty()) {
         LOG(spam,
             "Did not find bucket %s in bucket database",
@@ -95,7 +95,7 @@ IdealStateManager::getEntryForPrimaryBucket(StateChecker::Context& c) const
 {
     for (uint32_t j = 0; j < c.entries.size(); ++j) {
         BucketDatabase::Entry& e = c.entries[j];
-        if (e.getBucketId() == c.bucket.getBucketId()) {
+        if (e.getBucketId() == c.getBucketId()) {
             return &e;
         }
     }
