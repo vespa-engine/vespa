@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.SecretStore;
@@ -48,25 +49,39 @@ public class AthenzInstanceProviderService extends AbstractComponent {
     private final Server jetty;
 
     @Inject
-    public AthenzInstanceProviderService(AthenzProviderServiceConfig config, NodeRepository nodeRepository, Zone zone, SecretStore secretStore) {
+    public AthenzInstanceProviderService(AthenzProviderServiceConfig config, SuperModelProvider superModelProvider,
+                                         NodeRepository nodeRepository, Zone zone, SecretStore secretStore) {
         this(config, new SecretStoreKeyProvider(secretStore, getZoneConfig(config, zone).secretName()), Executors.newSingleThreadScheduledExecutor(),
-             nodeRepository, zone, new AthenzCertificateClient(config, getZoneConfig(config, zone)));
+             superModelProvider, nodeRepository, zone, new AthenzCertificateClient(config, getZoneConfig(config, zone)), createSslContextFactory());
+    }
+
+    private AthenzInstanceProviderService(AthenzProviderServiceConfig config,
+                                          KeyProvider keyProvider,
+                                          ScheduledExecutorService scheduler,
+                                          SuperModelProvider superModelProvider,
+                                          NodeRepository nodeRepository,
+                                          Zone zone,
+                                          CertificateClient certificateClient,
+                                          SslContextFactory sslContextFactory) {
+        this(config, scheduler, zone, sslContextFactory,
+                new InstanceValidator(keyProvider, superModelProvider),
+                new IdentityDocumentGenerator(config, getZoneConfig(config, zone), nodeRepository, zone, keyProvider),
+                new AthenzCertificateUpdater(
+                        certificateClient, sslContextFactory, keyProvider, config, getZoneConfig(config, zone)));
     }
 
     AthenzInstanceProviderService(AthenzProviderServiceConfig config,
-                                  KeyProvider keyProvider,
                                   ScheduledExecutorService scheduler,
-                                  NodeRepository nodeRepository,
                                   Zone zone,
-                                  CertificateClient certificateClient) {
+                                  SslContextFactory sslContextFactory,
+                                  InstanceValidator instanceValidator,
+                                  IdentityDocumentGenerator identityDocumentGenerator,
+                                  AthenzCertificateUpdater reloader) {
         // TODO: Enable for all systems. Currently enabled for CD system only
         if (SystemName.cd.equals(zone.system())) {
             this.scheduler = scheduler;
-            SslContextFactory sslContextFactory = createSslContextFactory();
-            this.jetty = createJettyServer(
-                    config, keyProvider, sslContextFactory, nodeRepository, zone);
-            AthenzCertificateUpdater reloader =
-                    new AthenzCertificateUpdater(certificateClient, sslContextFactory, keyProvider, config, getZoneConfig(config, zone));
+            this.jetty = createJettyServer(config, sslContextFactory, instanceValidator, identityDocumentGenerator);
+
             // TODO Configurable update frequency
             scheduler.scheduleAtFixedRate(reloader, 0, 1, TimeUnit.DAYS);
             try {
@@ -81,22 +96,19 @@ public class AthenzInstanceProviderService extends AbstractComponent {
     }
 
     private static Server createJettyServer(AthenzProviderServiceConfig config,
-                                            KeyProvider keyProvider,
                                             SslContextFactory sslContextFactory,
-                                            NodeRepository nodeRepository,
-                                            Zone zone)  {
+                                            InstanceValidator instanceValidator,
+                                            IdentityDocumentGenerator identityDocumentGenerator)  {
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server, sslContextFactory);
         connector.setPort(config.port());
         server.addConnector(connector);
 
         ServletHandler handler = new ServletHandler();
-        InstanceConfirmationServlet instanceConfirmationServlet =
-                new InstanceConfirmationServlet(new InstanceValidator(keyProvider));
+        InstanceConfirmationServlet instanceConfirmationServlet = new InstanceConfirmationServlet(instanceValidator);
         handler.addServletWithMapping(new ServletHolder(instanceConfirmationServlet), config.apiPath() + "/instance");
 
-        IdentityDocumentServlet identityDocumentServlet =
-                new IdentityDocumentServlet(new IdentityDocumentGenerator(config, getZoneConfig(config, zone), nodeRepository, zone, keyProvider));
+        IdentityDocumentServlet identityDocumentServlet = new IdentityDocumentServlet(identityDocumentGenerator);
         handler.addServletWithMapping(new ServletHolder(identityDocumentServlet), config.apiPath() + "/identity-document");
 
         handler.addServletWithMapping(StatusServlet.class, "/status.html");
@@ -110,7 +122,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         return config.zones(key);
     }
 
-    private static SslContextFactory createSslContextFactory() {
+    static SslContextFactory createSslContextFactory() {
         try {
             SslContextFactory sslContextFactory = new SslContextFactory();
             sslContextFactory.setWantClientAuth(true);
@@ -122,7 +134,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         }
     }
 
-    private static class AthenzCertificateUpdater implements Runnable {
+    static class AthenzCertificateUpdater implements Runnable {
 
         // TODO Make expiry a configuration parameter
         private static final TemporalAmount EXPIRY_TIME = Duration.ofDays(30);
@@ -134,11 +146,11 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         private final AthenzProviderServiceConfig config;
         private final AthenzProviderServiceConfig.Zones zoneConfig;
 
-        private AthenzCertificateUpdater(CertificateClient certificateClient,
-                                         SslContextFactory sslContextFactory,
-                                         KeyProvider keyProvider,
-                                         AthenzProviderServiceConfig config,
-                                         AthenzProviderServiceConfig.Zones zoneConfig) {
+        AthenzCertificateUpdater(CertificateClient certificateClient,
+                                 SslContextFactory sslContextFactory,
+                                 KeyProvider keyProvider,
+                                 AthenzProviderServiceConfig config,
+                                 AthenzProviderServiceConfig.Zones zoneConfig) {
             this.certificateClient = certificateClient;
             this.sslContextFactory = sslContextFactory;
             this.keyProvider = keyProvider;
@@ -179,7 +191,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
             log.log(LogLevel.INFO, "Deconstructing Athenz provider service");
             if(scheduler != null)
                 scheduler.shutdown();
-            if(jetty !=null)
+            if(jetty != null)
                 jetty.stop();
             if (scheduler != null && !scheduler.awaitTermination(1, TimeUnit.MINUTES)) {
                 log.log(LogLevel.ERROR, "Failed to stop certificate updater");

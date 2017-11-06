@@ -162,6 +162,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         // Athenz copper argos
+        // NOTE: Must be done after addNodes()
         addIdentity(spec, cluster, context.getDeployState().getProperties().configServerSpecs());
 
         //TODO: overview handler, see DomQrserverClusterBuilder
@@ -703,7 +704,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Identity identity = new Identity(domain.trim(), service.trim(), cfgHostName);
             cluster.addComponent(identity);
 
-
+            cluster.getContainers().forEach(container -> {
+                container.setProp("identity.domain", domain);
+                container.setProp("identity.service", service);
+            });
         }
     }
 
