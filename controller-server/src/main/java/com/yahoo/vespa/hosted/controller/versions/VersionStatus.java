@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 
 import java.net.URI;
@@ -154,21 +153,21 @@ public class VersionStatus {
                     .failing()
                     .not().failingApplicationChange()
                     .not().failingBecause(outOfCapacity)
-                    .asList(job -> job.lastCompleted().get().version())
+                    .mapToList(job -> job.lastCompleted().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withFailing(application.id())));
 
             // Succeeding versions
             JobList.from(application)
                     .lastSuccess().present()
                     .production()
-                    .asList(job -> job.lastSuccess().get().version())
+                    .mapToList(job -> job.lastSuccess().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withProduction(application.id())));
 
             // Deploying versions
             JobList.from(application)
                     .running(jobTimeoutLimit)
                     .lastTriggered().upgrade()
-                    .asList(job -> job.lastTriggered().get().version())
+                    .mapToList(job -> job.lastTriggered().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
         }
         return versionMap.values();

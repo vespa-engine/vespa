@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
+
 /**
  * A list of deployment jobs that can be filtered in various ways.
  *
@@ -47,7 +49,7 @@ public class JobList {
     public List<JobStatus> asList() { return list; }
 
     /** Returns the jobstatuses in this as an immutable list after mapping with the given function */
-    public <Type> List<Type> asList(Function<JobStatus, Type> mapper) {
+    public <Type> List<Type> mapToList(Function<JobStatus, Type> mapper) {
         return ImmutableList.copyOf(list.stream().map(mapper)::iterator);
     }
 
@@ -57,7 +59,7 @@ public class JobList {
 
     public int size() { return list.size(); }
 
-    // ----------------------------------- Filters
+    // ----------------------------------- Basic filters
 
     /** Negates the next filter operation */
     public JobList not() {

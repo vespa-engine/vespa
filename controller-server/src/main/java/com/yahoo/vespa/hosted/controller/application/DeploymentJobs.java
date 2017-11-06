@@ -13,14 +13,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -152,13 +150,11 @@ public class DeploymentJobs {
     
     /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
     public Instant failingSince() {
-        Instant failingSince = null;
-        for (JobStatus jobStatus : jobStatus().values()) {
-            if (jobStatus.isSuccess()) continue;
-            if (failingSince == null || failingSince.isAfter(jobStatus.firstFailing().get().at()))
-                failingSince = jobStatus.firstFailing().get().at();
-        }
-        return failingSince;
+        return JobList.from(jobStatus().values())
+                .failing()
+                .mapToList(job -> job.firstFailing().get().at())
+                .stream()
+                .min(Comparator.naturalOrder()).orElse(null);
     }
 
     /**
