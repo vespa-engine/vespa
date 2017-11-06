@@ -93,6 +93,7 @@ void generate_tensor_map(TestBuilder &dst) {
     generate_op1_map("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan), dst);
     generate_op1_map("relu(a)", operation::Relu::f, Sub2(Div10(N())), dst);
     generate_op1_map("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N())), dst);
+    generate_op1_map("a in [1,5,7,13,42]", MyIn::f, N(), dst);
     generate_map_expr("map(a,f(a)((a+1)*2))", MyOp::f, Div10(N()), dst);
 }
 

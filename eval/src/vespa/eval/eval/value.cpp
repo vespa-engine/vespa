@@ -14,12 +14,6 @@ TensorValue::as_double() const
     return _tensor->as_double();
 }
 
-bool
-TensorValue::equal(const Value &rhs) const
-{
-    return (rhs.is_tensor() && _tensor->engine().equal(*_tensor, *rhs.as_tensor()));
-}
-
 ValueType
 TensorValue::type() const
 {

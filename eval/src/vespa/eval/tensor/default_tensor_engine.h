@@ -20,7 +20,6 @@ public:
     static const TensorEngine &ref() { return _engine; };
 
     ValueType type_of(const Tensor &tensor) const override;
-    bool equal(const Tensor &a, const Tensor &b) const override;
     vespalib::string to_string(const Tensor &tensor) const override;
     TensorSpec to_spec(const Tensor &tensor) const override;
 

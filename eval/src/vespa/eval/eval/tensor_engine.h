@@ -41,7 +41,6 @@ struct TensorEngine
     using Aggr = eval::Aggr;
 
     virtual ValueType type_of(const Tensor &tensor) const = 0;
-    virtual bool equal(const Tensor &a, const Tensor &b) const = 0;
     virtual vespalib::string to_string(const Tensor &tensor) const = 0;
     virtual TensorSpec to_spec(const Tensor &tensor) const = 0;
 
