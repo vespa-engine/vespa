@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 
 import java.net.URI;
 import java.time.Instant;
@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
 /**
  * Information about the current platform versions in use.
@@ -92,7 +94,8 @@ public class VersionStatus {
         Version systemVersion = infrastructureVersions.stream().sorted().findFirst().get();
 
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
-                                                                                            controller.applications().asList());
+                                                                                            controller.applications().asList(),
+                                                                                            controller.applications().deploymentTrigger().jobTimeoutLimit());
         List<VespaVersion> versions = new ArrayList<>();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
@@ -126,7 +129,8 @@ public class VersionStatus {
     }
     
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                List<Application> applications) {
+                                                                                List<Application> applications,
+                                                                                Instant jobTimeoutLimit) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
         for (Version infrastructureVersion : infrastructureVersions) {
@@ -142,41 +146,39 @@ public class VersionStatus {
                 versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
             }
 
-            // List versions which have failing jobs, and versions which are in production
+            // List versions which have failing jobs, versions which are in production, and versions for which there are running deployment jobs
 
             // Failing versions
-            Map<Version, List<JobStatus>> failingJobsByVersion = jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.lastCompleted().isPresent())
-                    .filter(jobStatus -> jobStatus.lastCompleted().get().upgrade())
-                    .filter(jobStatus -> jobStatus.jobError().isPresent())
-                    .filter(jobStatus -> jobStatus.jobError().get() != DeploymentJobs.JobError.outOfCapacity)
-                    .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastCompleted().get().version()));
-            for (Version v : failingJobsByVersion.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withFailing(application.id()));
-            }
+            JobList.from(application)
+                    .failing()
+                    .not().failingApplicationChange()
+                    .not().failingBecause(outOfCapacity)
+                    .mapToList(job -> job.lastCompleted().get().version())
+                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withFailing(application.id())));
 
             // Succeeding versions
-            Map<Version, List<JobStatus>> succeedingJobsByVersions = jobs.jobStatus().values().stream()
-                    .filter(jobStatus -> jobStatus.lastSuccess().isPresent())
-                    .filter(jobStatus -> jobStatus.type().isProduction())
-                    .collect(Collectors.groupingBy(jobStatus -> jobStatus.lastSuccess().get().version()));
-            for (Version v : succeedingJobsByVersions.keySet()) {
-                versionMap.compute(v, (version, statistics) -> emptyIfMissing(version, statistics).withProduction(application.id()));
-            }
+            JobList.from(application)
+                    .lastSuccess().present()
+                    .production()
+                    .mapToList(job -> job.lastSuccess().get().version())
+                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withProduction(application.id())));
+
+            // Deploying versions
+            JobList.from(application)
+                    .running(jobTimeoutLimit)
+                    .lastTriggered().upgrade()
+                    .mapToList(job -> job.lastTriggered().get().version())
+                    .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
         }
         return versionMap.values();
     }
     
-    private static DeploymentStatistics emptyIfMissing(Version version, DeploymentStatistics statistics) {
-        return statistics == null ? DeploymentStatistics.empty(version) : statistics;
-    }
-
-    private static VespaVersion createVersion(DeploymentStatistics statistics, 
+    private static VespaVersion createVersion(DeploymentStatistics statistics,
                                               boolean isSystemVersion, 
                                               Collection<String> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
-        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
+        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime()); // commitedAt ...
         VespaVersion.Confidence confidence;
         // Always compute confidence for system version
         if (isSystemVersion) {

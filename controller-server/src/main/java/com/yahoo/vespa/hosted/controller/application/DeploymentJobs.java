@@ -13,12 +13,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Information about which deployment jobs an application should run and their current status.
@@ -148,13 +150,11 @@ public class DeploymentJobs {
     
     /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
     public Instant failingSince() {
-        Instant failingSince = null;
-        for (JobStatus jobStatus : jobStatus().values()) {
-            if (jobStatus.isSuccess()) continue;
-            if (failingSince == null || failingSince.isAfter(jobStatus.firstFailing().get().at()))
-                failingSince = jobStatus.firstFailing().get().at();
-        }
-        return failingSince;
+        return JobList.from(jobStatus().values())
+                .failing()
+                .mapToList(job -> job.firstFailing().get().at())
+                .stream()
+                .min(Comparator.naturalOrder()).orElse(null);
     }
 
     /**
@@ -184,18 +184,12 @@ public class DeploymentJobs {
         productionCdUsCentral2("production-cd-us-central-2", zone(SystemName.cd, "prod", "cd-us-central-2"));
 
         private final String id;
-        private final Map<SystemName, Zone> zones;
+        private final ImmutableMap<SystemName, Zone> zones;
 
-        JobType(String id, Zone... zone) {
+        JobType(String id, Zone... zones) {
             this.id = id;
-            Map<SystemName, Zone> zones = new HashMap<>();
-            for (Zone z : zone) {
-                if (zones.containsKey(z.system())) {
-                    throw new IllegalArgumentException("A job can only map to a single zone per system");
-                }
-                zones.put(z.system(), z);
-            }
-            this.zones = Collections.unmodifiableMap(zones);
+            this.zones = ImmutableMap.copyOf(Stream.of(zones).collect(Collectors.toMap(zone -> zone.system(),
+                                                                                       zone -> zone)));
         }
 
         public String id() { return id; }
@@ -242,23 +236,23 @@ public class DeploymentJobs {
             }
         }
         
-        /** Returns the job type for the given zone, or null if none */
-        public static JobType from(SystemName system, com.yahoo.config.provision.Zone zone) {
+        /** Returns the job type for the given zone */
+        public static Optional<JobType> from(SystemName system, Zone zone) {
            for (JobType job : values()) {
-               Optional<com.yahoo.config.provision.Zone> jobZone = job.zone(system);
+               Optional<Zone> jobZone = job.zone(system);
                if (jobZone.isPresent() && jobZone.get().equals(zone))
-                   return job;
+                   return Optional.of(job);
            }
-           return null;
+           return Optional.empty();
         }
 
         /** Returns the job job type for the given environment and region or null if none */
-        public static JobType from(SystemName system, Environment environment, RegionName region) {
+        public static Optional<JobType> from(SystemName system, Environment environment, RegionName region) {
             switch (environment) {
-                case test: return systemTest;
-                case staging: return stagingTest;
+                case test: return Optional.of(systemTest);
+                case staging: return Optional.of(stagingTest);
             }
-            return from(system, new com.yahoo.config.provision.Zone(environment, region));
+            return from(system, new Zone(environment, region));
         }
 
         private static Zone zone(SystemName system, String environment, String region) {

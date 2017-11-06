@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,6 +41,7 @@ public class VersionStatusSerializer {
     private static final String versionField = "version";
     private static final String failingField = "failing";
     private static final String productionField = "production";
+    private static final String deployingField = "deploying";
 
     public Slime toSlime(VersionStatus status) {
         Slime slime = new Slime();
@@ -74,9 +76,10 @@ public class VersionStatusSerializer {
         object.setString(versionField, statistics.version().toString());
         applicationsToSlime(statistics.failing(), object.setArray(failingField));
         applicationsToSlime(statistics.production(), object.setArray(productionField));
+        applicationsToSlime(statistics.deploying(), object.setArray(deployingField));
     }
 
-    private void applicationsToSlime(List<ApplicationId> applications, Cursor array) {
+    private void applicationsToSlime(Collection<ApplicationId> applications, Cursor array) {
         applications.forEach(application -> array.addString(application.serializedForm()));
     }
 
@@ -105,7 +108,8 @@ public class VersionStatusSerializer {
     private DeploymentStatistics deploymentStatisticsFromSlime(Inspector object) {
         return new DeploymentStatistics(Version.fromString(object.field(versionField).asString()),
                                         applicationsFromSlime(object.field(failingField)),
-                                        applicationsFromSlime(object.field(productionField)));
+                                        applicationsFromSlime(object.field(productionField)),
+                                        applicationsFromSlime(object.field(deployingField)));
     }
 
     private List<ApplicationId> applicationsFromSlime(Inspector array) {

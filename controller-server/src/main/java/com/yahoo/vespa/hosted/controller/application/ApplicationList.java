@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -23,17 +24,17 @@ public class ApplicationList {
 
     private final ImmutableList<Application> list;
 
-    private ApplicationList(List<Application> applications) {
+    private ApplicationList(Iterable<Application> applications) {
         this.list = ImmutableList.copyOf(applications);
     }
     
     // ----------------------------------- Factories
     
-    public static ApplicationList from(List<Application> applications) {
+    public static ApplicationList from(Iterable<Application> applications) {
         return new ApplicationList(applications);
     }
 
-    public static ApplicationList from(List<ApplicationId> ids, ApplicationController applications) {
+    public static ApplicationList from(Collection<ApplicationId> ids, ApplicationController applications) {
         return listOf(ids.stream().map(applications::require));
     }
 
@@ -166,7 +167,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications that are not currently upgrading */
     public ApplicationList notCurrentlyUpgrading(Change.VersionChange change, Instant jobTimeoutLimit) {
-        return listOf(list.stream().filter(a -> !currentlyUpgrading(change, a, jobTimeoutLimit)));
+        return listOf(list.stream().filter(a -> ! currentlyUpgrading(change, a, jobTimeoutLimit)));
     }
 
     // ----------------------------------- Internal helpers
@@ -193,56 +194,39 @@ public class ApplicationList {
         if ( ! application.deploying().isPresent()) return false;
         return application.deploying().get() instanceof Change.ApplicationChange;
     }
-    
+
     private static boolean failingOn(Version version, Application application) {
-        for (JobStatus jobStatus : application.deploymentJobs().jobStatus().values())
-            if ( ! jobStatus.isSuccess() && jobStatus.lastCompleted().get().version().equals(version)) return true;
-        return false;
+        return JobList.from(application)
+                .failing()
+                .lastCompleted().on(version)
+                .anyMatch();
     }
 
     private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant jobTimeoutLimit) {
-        return application.deploymentJobs().jobStatus().values().stream()
-                .filter(status -> status.isRunning(jobTimeoutLimit))
-                .filter(status -> status.lastTriggered().isPresent())
-                .map(status -> status.lastTriggered().get())
-                .anyMatch(jobRun -> jobRun.version().equals(change.version()));
+        return JobList.from(application)
+                .running(jobTimeoutLimit)
+                .lastTriggered().on(change.version())
+                .anyMatch();
     }
 
     private static boolean failingUpgradeToVersionSince(Application application, Version version, Instant threshold) {
-        return application.deploymentJobs().jobStatus().values().stream()
-                .filter(job -> isUpgradeFailure(job))
-                .filter(job -> job.firstFailing().get().at().isBefore(threshold))
-                .anyMatch(job -> job.lastCompleted().get().version().equals(version));
+        return JobList.from(application)
+                .not().failingApplicationChange()
+                .firstFailing().before(threshold)
+                .lastCompleted().on(version)
+                .anyMatch();
     }
 
     private static boolean failingApplicationChangeSince(Application application, Instant threshold) {
-        return application.deploymentJobs().jobStatus().values().stream()
-                .filter(job -> isApplicationChangeFailure(job))
-                .anyMatch(job -> job.firstFailing().get().at().isBefore(threshold));
+        return JobList.from(application)
+                .failingApplicationChange()
+                .firstFailing().before(threshold)
+                .anyMatch();
     }
-
-    private static boolean isUpgradeFailure(JobStatus job) {
-        if (   job.isSuccess()) return false;
-        if ( ! job.lastSuccess().isPresent()) return false; // An application which never succeeded is surely bad.
-        if ( ! job.lastSuccess().get().revision().isPresent()) return false; // Indicates the component job, which is not an upgrade.
-        if ( ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision())) return false; // Application change may be to blame.
-        return ! job.firstFailing().get().version().equals(job.lastSuccess().get().version()); // Return whether there is a version change.
-    }
-
-    private static boolean isApplicationChangeFailure(JobStatus job) {
-        if (   job.isSuccess()) return false;
-        if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
-        if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
-        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
-    }
-
 
     /** Convenience converter from a stream to an ApplicationList */
     private static ApplicationList listOf(Stream<Application> applications) {
-        ImmutableList.Builder<Application> b = new ImmutableList.Builder<>();
-        applications.forEach(b::add);
-        return new ApplicationList(b.build());
+        return from(applications::iterator);
     }
 
 }
