@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.net.URI;
+
 /**
  * @author bjorncs
  */
@@ -14,12 +16,12 @@ class SignedIdentityDocument {
     public final String providerUniqueId;
     public final String dnsSuffix;
     public final String providerService;
-    public final String ztsEndpoint;
+    public final URI ztsEndpoint;
 
     public SignedIdentityDocument(@JsonProperty("provider-unique-id") String providerUniqueId,
                                   @JsonProperty("dns-suffix") String dnsSuffix,
                                   @JsonProperty("provider-service") String providerService,
-                                  @JsonProperty("zts-endpoint") String ztsEndpoint) {
+                                  @JsonProperty("zts-endpoint") URI ztsEndpoint) {
         this.providerUniqueId = providerUniqueId;
         this.dnsSuffix = dnsSuffix;
         this.providerService = providerService;

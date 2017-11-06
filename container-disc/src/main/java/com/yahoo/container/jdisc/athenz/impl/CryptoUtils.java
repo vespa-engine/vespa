@@ -45,7 +45,7 @@ class CryptoUtils {
                                                 String identityService,
                                                 String dnsSuffix,
                                                 String providerUniqueId,
-                                                KeyPair keyPair) throws IOException {
+                                                KeyPair keyPair) {
         try {
             // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
             // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
@@ -71,6 +71,8 @@ class CryptoUtils {
             return requestBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate()));
         } catch (OperatorCreationException e) {
             throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
