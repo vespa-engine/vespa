@@ -73,6 +73,21 @@ Requires: epel-release
 %endif
 Requires: which
 Requires: initscripts
+Requires: perl
+Requires: perl-Carp
+Requires: perl-Data-Dumper
+Requires: perl-Digest-MD5
+Requires: perl-Env
+Requires: perl-Exporter
+Requires: perl-File-Path
+Requires: perl-File-Temp
+Requires: perl-Getopt-Long
+Requires: perl-IO-Socket-IP
+Requires: perl-JSON
+Requires: perl-libwww-perl
+Requires: perl-Net-INET6Glue
+Requires: perl-Pod-Usage
+Requires: perl-URI
 Requires: valgrind
 Requires: Judy
 Requires: lz4
