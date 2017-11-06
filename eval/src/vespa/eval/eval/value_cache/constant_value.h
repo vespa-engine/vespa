@@ -21,19 +21,13 @@ struct ConstantValue {
     virtual ~ConstantValue() {}
 };
 
-/**
- * A simple implementation of a constant value that bundles together a
- * ValueType instance with a specific Value subclass instance.
- **/
-template <typename VALUE>
-struct SimpleConstantValue : ConstantValue {
-    ValueType my_type;
-    VALUE my_value;
-    template <typename... Args>
-    SimpleConstantValue(const ValueType &type_in, Args &&...args)
-        : my_type(type_in), my_value(std::forward<Args>(args)...) {}
-    const ValueType &type() const override { return my_type; }
-    const Value &value() const override { return my_value; }
+class SimpleConstantValue : public ConstantValue {
+private:
+    const Value::UP _value;
+public:
+    SimpleConstantValue(Value::UP value) : _value(std::move(value)) {}
+    const ValueType &type() const override { return _value->type(); }
+    const Value &value() const override { return *_value; }
 };
 
 /**

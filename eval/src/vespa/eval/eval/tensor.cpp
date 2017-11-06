@@ -18,7 +18,7 @@ operator==(const Tensor &lhs, const Tensor &rhs)
 std::ostream &
 operator<<(std::ostream &out, const Tensor &tensor)
 {
-    out << tensor.engine().to_string(tensor);
+    out << tensor.engine().to_spec(tensor).to_string();
     return out;
 }
 

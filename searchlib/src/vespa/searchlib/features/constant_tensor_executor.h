@@ -18,10 +18,10 @@ namespace features {
 class ConstantTensorExecutor : public fef::FeatureExecutor
 {
 private:
-    const vespalib::eval::TensorValue::UP _tensor;
+    vespalib::eval::Value::UP _tensor;
 
 public:
-    ConstantTensorExecutor(vespalib::eval::TensorValue::UP tensor)
+    ConstantTensorExecutor(vespalib::eval::Value::UP tensor)
         : _tensor(std::move(tensor))
     {}
     virtual bool isPure() override { return true; }
@@ -29,11 +29,12 @@ public:
         outputs().set_object(0, *_tensor);
     }
     static fef::FeatureExecutor &create(std::unique_ptr<vespalib::eval::Tensor> tensor, vespalib::Stash &stash) {
-        return stash.create<ConstantTensorExecutor>(std::make_unique<vespalib::eval::TensorValue>(std::move(tensor)));
+        return stash.create<ConstantTensorExecutor>(std::move(tensor));
     }
     static fef::FeatureExecutor &createEmpty(const vespalib::eval::ValueType &valueType, vespalib::Stash &stash) {
-        return create(vespalib::tensor::DefaultTensorEngine::ref()
-                      .create(vespalib::eval::TensorSpec(valueType.to_spec())), stash);
+        const auto &engine = vespalib::tensor::DefaultTensorEngine::ref();
+        auto spec = vespalib::eval::TensorSpec(valueType.to_spec());
+        return stash.create<ConstantTensorExecutor>(engine.from_spec(spec));
     }
     static fef::FeatureExecutor &createEmpty(vespalib::Stash &stash) {
         return createEmpty(vespalib::eval::ValueType::double_type(), stash);

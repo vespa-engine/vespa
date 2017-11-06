@@ -16,7 +16,7 @@ std::unique_ptr<Tensor>
 apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
 {
     DirectTensorBuilder<SparseTensor> builder(lhs.combineDimensionsWith(rhs));
-    TensorAddressCombiner addressCombiner(lhs.type(), rhs.type());
+    TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());
     for (const auto &lhsCell : lhs.cells()) {
         for (const auto &rhsCell : rhs.cells()) {
             bool combineSuccess = addressCombiner.combine(lhsCell.first,

@@ -60,69 +60,42 @@ nbostream extract_data(const Inspector &value) {
 
 //-----------------------------------------------------------------------------
 
-TensorSpec to_spec(const Value &value) {
-    if (value.is_error()) {
-        return TensorSpec("error");
-    } else if (value.is_double()) {
-        return TensorSpec("double").add({}, value.as_double());
-    } else {
-        ASSERT_TRUE(value.is_tensor());
-        auto tensor = value.as_tensor();
-        return tensor->engine().to_spec(*tensor);        
-    }
-}
-
-const Value &to_value(const TensorSpec &spec, const TensorEngine &engine, Stash &stash) {
-    if (spec.type() == "error") {
-        return stash.create<ErrorValue>();
-    } else if (spec.type() == "double") {
-        double value = 0.0;
-        for (const auto &cell: spec.cells()) {
-            value += cell.second;
-        }
-        return stash.create<DoubleValue>(value);
-    } else {
-        ASSERT_TRUE(starts_with(spec.type(), "tensor("));
-        return stash.create<TensorValue>(engine.create(spec));
-    }
-}
-
 void insert_value(Cursor &cursor, const vespalib::string &name, const TensorSpec &spec) {
-    Stash stash;
     nbostream data;
-    const Value &value = to_value(spec, SimpleTensorEngine::ref(), stash);
-    SimpleTensorEngine::ref().encode(value, data, stash);
+    Value::UP value = SimpleTensorEngine::ref().from_spec(spec);
+    SimpleTensorEngine::ref().encode(*value, data);
     cursor.setData(name, Memory(data.peek(), data.size()));
 }
 
 TensorSpec extract_value(const Inspector &inspector) {
-    Stash stash;
     nbostream data = extract_data(inspector);
-    return to_spec(SimpleTensorEngine::ref().decode(data, stash));
+    const auto &engine = SimpleTensorEngine::ref();
+    return engine.to_spec(*engine.decode(data));
 }
 
 //-----------------------------------------------------------------------------
 
-std::vector<ValueType> get_types(const std::vector<Value::CREF> &param_values) {
+std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < param_values.size(); ++i) {
-        param_types.emplace_back(param_values[i].get().type());
+        param_types.emplace_back(param_values[i]->type());
     }
     return param_types;
 }
 
 TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typed) {
-    Stash stash;
     Function fun = Function::parse(test["expression"].asString().make_string());
-    std::vector<Value::CREF> param_values;
+    std::vector<Value::UP> param_values;
+    std::vector<Value::CREF> param_refs;
     for (size_t i = 0; i < fun.num_params(); ++i) {
-        param_values.emplace_back(to_value(extract_value(test["inputs"][fun.param_name(i)]), engine, stash));
+        param_values.emplace_back(engine.from_spec(extract_value(test["inputs"][fun.param_name(i)])));
+        param_refs.emplace_back(*param_values.back());
     }
     NodeTypes types = typed ? NodeTypes(fun, get_types(param_values)) : NodeTypes();
     InterpretedFunction ifun(engine, fun, types);
     InterpretedFunction::Context ctx(ifun);
-    InterpretedFunction::SimpleObjectParams params(param_values);
-    return to_spec(ifun.eval(ctx, params));
+    InterpretedFunction::SimpleObjectParams params(param_refs);
+    return engine.to_spec(ifun.eval(ctx, params));
 }
 
 //-----------------------------------------------------------------------------

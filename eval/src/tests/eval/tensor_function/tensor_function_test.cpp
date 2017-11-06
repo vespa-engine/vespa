@@ -19,9 +19,9 @@ struct EvalCtx : TensorFunction::Input {
     std::map<size_t, Value::UP> tensors;
     EvalCtx(const TensorEngine &engine_in)
         : engine(engine_in), stash(), error(), tensors() {}
-    ~EvalCtx() { }
-    void add_tensor(std::unique_ptr<Tensor> tensor, size_t id) {
-        tensors.emplace(id, std::make_unique<TensorValue>(std::move(tensor)));
+    ~EvalCtx() {}
+    void add_tensor(Value::UP tensor, size_t id) {
+        tensors.emplace(id, std::move(tensor));
     }
     const Value &get_tensor(size_t id) const override {
         if (tensors.count(id) == 0) {
@@ -30,20 +30,19 @@ struct EvalCtx : TensorFunction::Input {
         return *tensors.find(id)->second;
     }
     const Value &eval(const TensorFunction &fun) { return fun.eval(*this, stash); }
-    const ValueType type(const Tensor &tensor) const { return engine.type_of(tensor); }
     TensorFunction::UP compile(tensor_function::Node_UP expr) const {
         return engine.compile(std::move(expr));
     }
-    std::unique_ptr<Tensor> make_tensor_inject() {
-        return engine.create(
+    Value::UP make_tensor_inject() {
+        return engine.from_spec(
                 TensorSpec("tensor(x[2],y[2])")
                 .add({{"x", 0}, {"y", 0}}, 1.0)
                 .add({{"x", 0}, {"y", 1}}, 2.0)
                 .add({{"x", 1}, {"y", 0}}, 3.0)
                 .add({{"x", 1}, {"y", 1}}, 4.0));
     }
-    std::unique_ptr<Tensor> make_tensor_reduce_input() {
-        return engine.create(
+    Value::UP make_tensor_reduce_input() {
+        return engine.from_spec(
                 TensorSpec("tensor(x[3],y[2])")
                 .add({{"x",0},{"y",0}}, 1)
                 .add({{"x",1},{"y",0}}, 2)
@@ -52,43 +51,43 @@ struct EvalCtx : TensorFunction::Input {
                 .add({{"x",1},{"y",1}}, 5)
                 .add({{"x",2},{"y",1}}, 6));
     }
-    std::unique_ptr<Tensor> make_tensor_reduce_y_output() {
-        return engine.create(
+    Value::UP make_tensor_reduce_y_output() {
+        return engine.from_spec(
                 TensorSpec("tensor(x[3])")
                 .add({{"x",0}}, 5)
                 .add({{"x",1}}, 7)
                 .add({{"x",2}}, 9));
     }
-    std::unique_ptr<Tensor> make_tensor_map_input() {
-        return engine.create(
+    Value::UP make_tensor_map_input() {
+        return engine.from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, 1)
                 .add({{"x","2"},{"y","1"}}, -3)
                 .add({{"x","1"},{"y","2"}}, 5));
     }
-    std::unique_ptr<Tensor> make_tensor_map_output() {
-        return engine.create(
+    Value::UP make_tensor_map_output() {
+        return engine.from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, -1)
                 .add({{"x","2"},{"y","1"}}, 3)
                 .add({{"x","1"},{"y","2"}}, -5));
     }
-    std::unique_ptr<Tensor> make_tensor_apply_lhs() {
-        return engine.create(
+    Value::UP make_tensor_apply_lhs() {
+        return engine.from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, 1)
                 .add({{"x","2"},{"y","1"}}, 3)
                 .add({{"x","1"},{"y","2"}}, 5));
     }
-    std::unique_ptr<Tensor> make_tensor_apply_rhs() {
-        return engine.create(
+    Value::UP make_tensor_apply_rhs() {
+        return engine.from_spec(
                 TensorSpec("tensor(y{},z{})")
                 .add({{"y","1"},{"z","1"}}, 7)
                 .add({{"y","2"},{"z","1"}}, 11)
                 .add({{"y","1"},{"z","2"}}, 13));
     }
-    std::unique_ptr<Tensor> make_tensor_apply_output() {
-        return engine.create(
+    Value::UP make_tensor_apply_output() {
+        return engine.from_spec(
                 TensorSpec("tensor(x{},y{},z{})")
                 .add({{"x","1"},{"y","1"},{"z","1"}}, 7)
                 .add({{"x","1"},{"y","1"},{"z","2"}}, 13)
@@ -98,21 +97,23 @@ struct EvalCtx : TensorFunction::Input {
     }
 };
 
-void verify_equal(const Tensor &expect, const Value &value) {
+void verify_equal(const Value &expect, const Value &value) {
     const Tensor *tensor = value.as_tensor();
     ASSERT_TRUE(tensor != nullptr);
-    ASSERT_EQUAL(&expect.engine(), &tensor->engine());
-    auto expect_spec = expect.engine().to_spec(expect);
-    auto value_spec = tensor->engine().to_spec(*tensor);
+    const Tensor *expect_tensor = expect.as_tensor();
+    ASSERT_TRUE(expect_tensor != nullptr);
+    ASSERT_EQUAL(&expect_tensor->engine(), &tensor->engine());
+    auto expect_spec = expect_tensor->engine().to_spec(expect);
+    auto value_spec = tensor->engine().to_spec(value);
     EXPECT_EQUAL(expect_spec, value_spec);
 }
 
 TEST("require that tensor injection works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_inject(), 1);
-    auto expect = ctx.make_tensor_inject();
+    Value::UP expect = ctx.make_tensor_inject();
     auto fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), 1);
-    EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
+    EXPECT_EQUAL(expect->type(), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
 }
@@ -120,9 +121,9 @@ TEST("require that tensor injection works") {
 TEST("require that partial tensor reduction works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_reduce_input(), 1);
-    auto expect = ctx.make_tensor_reduce_y_output();
+    Value::UP expect = ctx.make_tensor_reduce_y_output();
     auto fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), 1), Aggr::SUM, {"y"});
-    EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
+    EXPECT_EQUAL(expect->type(), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
 }
@@ -139,9 +140,9 @@ TEST("require that full tensor reduction works") {
 TEST("require that tensor map works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_map_input(), 1);
-    auto expect = ctx.make_tensor_map_output();
+    Value::UP expect = ctx.make_tensor_map_output();
     auto fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), 1), operation::Neg::f);
-    EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
+    EXPECT_EQUAL(expect->type(), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
 }
@@ -150,11 +151,11 @@ TEST("require that tensor join works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     ctx.add_tensor(ctx.make_tensor_apply_lhs(), 1);
     ctx.add_tensor(ctx.make_tensor_apply_rhs(), 2);
-    auto expect = ctx.make_tensor_apply_output();
+    Value::UP expect = ctx.make_tensor_apply_output();
     auto fun = join(inject(ValueType::from_spec("tensor(x{},y{})"), 1),
                     inject(ValueType::from_spec("tensor(y{},z{})"), 2),
                     operation::Mul::f);
-    EXPECT_EQUAL(ctx.type(*expect), fun->result_type);
+    EXPECT_EQUAL(expect->type(), fun->result_type);
     auto prog = ctx.compile(std::move(fun));
     TEST_DO(verify_equal(*expect, ctx.eval(*prog)));
 }

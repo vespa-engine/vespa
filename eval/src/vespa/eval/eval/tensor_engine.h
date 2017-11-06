@@ -32,25 +32,23 @@ class TensorSpec;
  **/
 struct TensorEngine
 {
-    using ValueType = eval::ValueType;
+    using Aggr = eval::Aggr;
     using Tensor = eval::Tensor;
     using TensorSpec = eval::TensorSpec;
     using Value = eval::Value;
-    using map_fun_t = double (*)(double);
+    using ValueType = eval::ValueType;
     using join_fun_t = double (*)(double, double);
-    using Aggr = eval::Aggr;
-
-    virtual ValueType type_of(const Tensor &tensor) const = 0;
-    virtual vespalib::string to_string(const Tensor &tensor) const = 0;
-    virtual TensorSpec to_spec(const Tensor &tensor) const = 0;
+    using map_fun_t = double (*)(double);
 
     virtual TensorFunction::UP compile(tensor_function::Node_UP expr) const { return std::move(expr); }
 
-    virtual std::unique_ptr<Tensor> create(const TensorSpec &spec) const = 0;
-
     // havardpe: new API, WIP
-    virtual void encode(const Value &value, nbostream &output, Stash &stash) const = 0;
-    virtual const Value &decode(nbostream &input, Stash &stash) const = 0;
+    virtual TensorSpec to_spec(const Value &value) const = 0;
+    virtual Value::UP from_spec(const TensorSpec &spec) const = 0;
+
+    virtual void encode(const Value &value, nbostream &output) const = 0;
+    virtual Value::UP decode(nbostream &input) const = 0;
+
     virtual const Value &map(const Value &a, map_fun_t function, Stash &stash) const = 0;
     virtual const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const = 0;
     virtual const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;

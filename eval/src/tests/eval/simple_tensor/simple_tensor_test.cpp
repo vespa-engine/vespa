@@ -13,7 +13,7 @@ using Cells = SimpleTensor::Cells;
 using Address = SimpleTensor::Address;
 using Stash = vespalib::Stash;
 
-TensorSpec to_spec(const Tensor &a) { return a.engine().to_spec(a); }
+TensorSpec to_spec(const Value &a) { return SimpleTensorEngine::ref().to_spec(a); }
 
 const Tensor &unwrap(const Value &value) {
     ASSERT_TRUE(value.is_tensor());
@@ -35,7 +35,7 @@ TEST("require that simple tensors can be built using tensor spec") {
         .add({{"w", "xxx"}, {"x", 0}, {"y", "yyy"}, {"z", 1}}, 2.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "xxx"}, {"z", 0}}, 3.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 1}}, 4.0);
-    auto tensor = SimpleTensorEngine::ref().create(spec);
+    Value::UP tensor = SimpleTensorEngine::ref().from_spec(spec);
     TensorSpec full_spec("tensor(w{},x[2],y{},z[2])");
     full_spec
         .add({{"w", "xxx"}, {"x", 0}, {"y", "xxx"}, {"z", 0}}, 1.0)
@@ -54,7 +54,7 @@ TEST("require that simple tensors can be built using tensor spec") {
         .add({{"w", "yyy"}, {"x", 1}, {"y", "xxx"}, {"z", 1}}, 0.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 0}}, 0.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 1}}, 4.0);
-    auto full_tensor = SimpleTensorEngine::ref().create(full_spec);
+    Value::UP full_tensor = SimpleTensorEngine::ref().from_spec(full_spec);
     EXPECT_EQUAL(full_spec, to_spec(*tensor));
     EXPECT_EQUAL(full_spec, to_spec(*full_tensor));
 };
@@ -73,7 +73,7 @@ TEST("require that simple tensors can have their values negated") {
     auto result = tensor->map([](double a){ return -a; });
     EXPECT_EQUAL(to_spec(*expect), to_spec(*result));
     Stash stash;
-    const Value &result2 = SimpleTensorEngine::ref().map(TensorValue(*tensor), operation::Neg::f, stash);
+    const Value &result2 = SimpleTensorEngine::ref().map(*tensor, operation::Neg::f, stash);
     EXPECT_EQUAL(to_spec(*expect), to_spec(unwrap(result2)));    
 }
 
@@ -98,7 +98,7 @@ TEST("require that simple tensors can be multiplied with each other") {
     auto result = SimpleTensor::join(*lhs, *rhs, [](double a, double b){ return (a * b); });
     EXPECT_EQUAL(to_spec(*expect), to_spec(*result));
     Stash stash;
-    const Value &result2 = SimpleTensorEngine::ref().join(TensorValue(*lhs), TensorValue(*rhs), operation::Mul::f, stash);
+    const Value &result2 = SimpleTensorEngine::ref().join(*lhs, *rhs, operation::Mul::f, stash);
     EXPECT_EQUAL(to_spec(*expect), to_spec(unwrap(result2)));
 }
 
@@ -129,10 +129,10 @@ TEST("require that simple tensors support dimension reduction") {
     EXPECT_EQUAL(to_spec(*expect_sum_y), to_spec(*result_sum_y));
     EXPECT_EQUAL(to_spec(*expect_sum_x), to_spec(*result_sum_x));
     EXPECT_EQUAL(to_spec(*expect_sum_all), to_spec(*result_sum_all));
-    const Value &result_sum_y_2 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {"y"}, stash);
-    const Value &result_sum_x_2 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {"x"}, stash);
-    const Value &result_sum_all_2 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {"x", "y"}, stash); 
-    const Value &result_sum_all_3 = SimpleTensorEngine::ref().reduce(TensorValue(*tensor), Aggr::SUM, {}, stash);
+    const Value &result_sum_y_2 = SimpleTensorEngine::ref().reduce(*tensor, Aggr::SUM, {"y"}, stash);
+    const Value &result_sum_x_2 = SimpleTensorEngine::ref().reduce(*tensor, Aggr::SUM, {"x"}, stash);
+    const Value &result_sum_all_2 = SimpleTensorEngine::ref().reduce(*tensor, Aggr::SUM, {"x", "y"}, stash); 
+    const Value &result_sum_all_3 = SimpleTensorEngine::ref().reduce(*tensor, Aggr::SUM, {}, stash);
     EXPECT_EQUAL(to_spec(*expect_sum_y), to_spec(unwrap(result_sum_y_2)));
     EXPECT_EQUAL(to_spec(*expect_sum_x), to_spec(unwrap(result_sum_x_2)));
     EXPECT_TRUE(result_sum_all_2.is_double());

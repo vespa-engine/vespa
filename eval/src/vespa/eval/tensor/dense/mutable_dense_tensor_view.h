@@ -23,7 +23,7 @@ private:
     public:
         MutableValueType(eval::ValueType type_in);
         ~MutableValueType();
-        const eval::ValueType &type() const { return _type; }
+        const eval::ValueType &fast_type() const { return _type; }
         void setUnboundDimensions(const uint32_t *unboundDimSizeBegin, const uint32_t *unboundDimSizeEnd) {
             const uint32_t *unboundDimSizePtr = unboundDimSizeBegin;
             for (auto unboundDimSize : _unboundDimSizes) {

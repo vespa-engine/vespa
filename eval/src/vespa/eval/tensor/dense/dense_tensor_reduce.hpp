@@ -94,7 +94,7 @@ template <typename Function>
 DenseTensor::UP
 reduce(const DenseTensorView &tensor, const vespalib::string &dimensionToRemove, Function &&func)
 {
-    DimensionReducer reducer(tensor.type(), dimensionToRemove);
+    DimensionReducer reducer(tensor.fast_type(), dimensionToRemove);
     return reducer.reduceCells(tensor.cellsRef(), func);
 }
 

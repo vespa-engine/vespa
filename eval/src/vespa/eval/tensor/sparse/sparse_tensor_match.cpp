@@ -90,9 +90,9 @@ SparseTensorMatch::slowMatch(const TensorImplType &lhs,
 {
     std::vector<AddressOp> ops;
     SparseTensorAddressBuilder addressBuilder;
-    SparseTensorAddressPadder addressPadder(_builder.type(),
-                                            lhs.type());
-    buildTransformOps(ops, lhs.type(), rhs.type());
+    SparseTensorAddressPadder addressPadder(_builder.fast_type(),
+                                            lhs.fast_type());
+    buildTransformOps(ops, lhs.fast_type(), rhs.fast_type());
     for (const auto &lhsCell : lhs.cells()) {
         if (!transformAddress(addressBuilder, lhsCell.first, ops)) {
             continue;
@@ -110,8 +110,8 @@ SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs,
                                            const TensorImplType &rhs)
     : Parent(lhs.combineDimensionsWith(rhs))
 {
-    if ((lhs.type().dimensions().size() == rhs.type().dimensions().size()) &&
-        (lhs.type().dimensions().size() == _builder.type().dimensions().size())) {
+    if ((lhs.fast_type().dimensions().size() == rhs.fast_type().dimensions().size()) &&
+        (lhs.fast_type().dimensions().size() == _builder.fast_type().dimensions().size())) {
         // Ensure that first tensor to fastMatch has fewest cells.
         if (lhs.cells().size() <= rhs.cells().size()) {
             fastMatch(lhs, rhs);

@@ -5,7 +5,6 @@
 
 using search::tensor::DenseTensorAttribute;
 using vespalib::eval::Tensor;
-using vespalib::eval::TensorValue;
 using vespalib::tensor::MutableDenseTensorView;
 
 namespace search {
@@ -14,8 +13,7 @@ namespace features {
 DenseTensorAttributeExecutor::
 DenseTensorAttributeExecutor(const DenseTensorAttribute *attribute)
     : _attribute(attribute),
-      _tensorView(_attribute->getConfig().tensorType()),
-      _tensor(_tensorView)
+      _tensorView(_attribute->getConfig().tensorType())
 {
 }
 
@@ -23,7 +21,7 @@ void
 DenseTensorAttributeExecutor::execute(uint32_t docId)
 {
     _attribute->getTensor(docId, _tensorView);
-    outputs().set_object(0, _tensor);
+    outputs().set_object(0, _tensorView);
 }
 
 } // namespace features

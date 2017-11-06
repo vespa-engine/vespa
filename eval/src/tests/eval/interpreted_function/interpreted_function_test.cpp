@@ -181,9 +181,9 @@ TEST("require that dot product works with tensor function") {
     InterpretedFunction interpreted(engine, function, types);
     EXPECT_EQUAL(1u, interpreted.program_size());
     InterpretedFunction::Context ctx(interpreted);
-    TensorValue va(engine.create(a));
-    TensorValue vb(engine.create(b));
-    InterpretedFunction::SimpleObjectParams params({va,vb});
+    Value::UP va = engine.from_spec(a);
+    Value::UP vb = engine.from_spec(b);
+    InterpretedFunction::SimpleObjectParams params({*va,*vb});
     const Value &result = interpreted.eval(ctx, params);
     EXPECT_TRUE(result.is_double());
     EXPECT_EQUAL(expect, result.as_double());
@@ -211,12 +211,12 @@ TEST("require that matrix multiplication works with tensor function") {
     InterpretedFunction interpreted(engine, function, types);
     EXPECT_EQUAL(1u, interpreted.program_size());
     InterpretedFunction::Context ctx(interpreted);
-    TensorValue va(engine.create(a));
-    TensorValue vb(engine.create(b));
-    InterpretedFunction::SimpleObjectParams params({va,vb});
+    Value::UP va = engine.from_spec(a);
+    Value::UP vb = engine.from_spec(b);
+    InterpretedFunction::SimpleObjectParams params({*va,*vb});
     const Value &result = interpreted.eval(ctx, params);
     ASSERT_TRUE(result.is_tensor());
-    EXPECT_EQUAL(expect, engine.to_spec(*result.as_tensor()));
+    EXPECT_EQUAL(expect, engine.to_spec(result));
 }
 
 //-----------------------------------------------------------------------------

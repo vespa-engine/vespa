@@ -6,19 +6,10 @@
 namespace vespalib {
 namespace eval {
 
-ErrorValue ErrorValue::instance;
+ValueType ErrorValue::_type = ValueType::error_type();
+const ErrorValue ErrorValue::instance;
 
-double
-TensorValue::as_double() const
-{
-    return _tensor->as_double();
-}
-
-ValueType
-TensorValue::type() const
-{
-    return _tensor->engine().type_of(*_tensor);
-}
+ValueType DoubleValue::_type = ValueType::double_type();
 
 } // namespace vespalib::eval
 } // namespace vespalib
