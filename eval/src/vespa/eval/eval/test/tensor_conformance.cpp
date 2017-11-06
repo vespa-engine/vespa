@@ -491,6 +491,7 @@ struct TestContext {
         TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan)));
         TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div10(N()))));
         TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("a in [1,5,7,13,42]", MyIn::f, N()));
         TEST_DO(test_map_op("(a+1)*2", MyOp::f, Div10(N())));
     }
 

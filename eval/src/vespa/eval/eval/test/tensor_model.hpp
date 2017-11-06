@@ -115,6 +115,22 @@ struct MyOp {
     }
 };
 
+// 'a in [1,5,7,13,42]'
+struct MyIn {
+    static double f(double a) {
+        if ((a ==  1) ||
+            (a ==  5) ||
+            (a ==  7) ||
+            (a == 13) ||
+            (a == 42))
+        {
+            return 1.0;
+        } else {
+            return 0.0;
+        }
+    }
+};
+
 // A collection of labels for a single dimension
 struct Domain {
     vespalib::string dimension;
