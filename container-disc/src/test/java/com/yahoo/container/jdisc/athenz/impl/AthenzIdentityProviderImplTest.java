@@ -46,16 +46,17 @@ public class AthenzIdentityProviderImplTest {
     public void athenz_credentials_are_retrieved_after_component_contruction_completed() {
         ServiceProviderApi serviceProviderApi = mock(ServiceProviderApi.class);
         AthenzService athenzService = mock(AthenzService.class);
-        MockScheduler scheduler = new MockScheduler();
+        ManualClock clock = new ManualClock(Instant.EPOCH);
+        MockScheduler scheduler = new MockScheduler(clock);
 
         when(serviceProviderApi.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
         when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
                 new InstanceIdentity(null, "TOKEN"));
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, serviceProviderApi, athenzService, scheduler.clock());
+                new AthenzCredentialsService(IDENTITY_CONFIG, serviceProviderApi, athenzService, clock);
 
         AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, scheduler.clock());
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
 
         List<MockScheduler.CompletedTask> expectedTasks =
                 Arrays.asList(
@@ -79,9 +80,10 @@ public class AthenzIdentityProviderImplTest {
                 .thenThrow(new RuntimeException("#5"))
                 .thenReturn(new AthenzCredentials("TOKEN", null, null, null, Instant.now()));
 
-        MockScheduler scheduler = new MockScheduler();
+        ManualClock clock = new ManualClock(Instant.EPOCH);
+        MockScheduler scheduler = new MockScheduler(clock);
         AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, scheduler.clock());
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
 
         List<MockScheduler.CompletedTask> expectedTasks =
                 Arrays.asList(
@@ -103,7 +105,8 @@ public class AthenzIdentityProviderImplTest {
     public void failed_credentials_updates_will_schedule_retries() {
         ServiceProviderApi serviceProviderApi = mock(ServiceProviderApi.class);
         AthenzService athenzService = mock(AthenzService.class);
-        MockScheduler scheduler = new MockScheduler();
+        ManualClock clock = new ManualClock(Instant.EPOCH);
+        MockScheduler scheduler = new MockScheduler(clock);
 
         when(serviceProviderApi.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
         when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
@@ -115,10 +118,10 @@ public class AthenzIdentityProviderImplTest {
                 .thenThrow(new RuntimeException("#3"))
                 .thenReturn(new InstanceIdentity(null, "TOKEN"));
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, serviceProviderApi, athenzService, scheduler.clock());
+                new AthenzCredentialsService(IDENTITY_CONFIG, serviceProviderApi, athenzService, clock);
 
         AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, scheduler.clock());
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
 
         List<MockScheduler.CompletedTask> expectedTasks =
                 Arrays.asList(
@@ -153,7 +156,11 @@ public class AthenzIdentityProviderImplTest {
     private static class MockScheduler implements Scheduler {
 
         private final PriorityQueue<DelayedTask> tasks = new PriorityQueue<>();
-        private final ManualClock clock = new ManualClock(Instant.EPOCH);
+        private final ManualClock clock;
+
+        MockScheduler(ManualClock clock) {
+            this.clock = clock;
+        }
 
         @Override
         public void schedule(RunnableWithTag task, Duration delay) {
@@ -172,10 +179,6 @@ public class AthenzIdentityProviderImplTest {
                 }
             }
             return completedTasks;
-        }
-
-        public ManualClock clock() {
-            return clock;
         }
 
         private static class DelayedTask implements Comparable<DelayedTask> {
