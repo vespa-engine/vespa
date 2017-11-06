@@ -26,8 +26,8 @@ const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
 };
 
 IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
-        : _manager(NULL),
-          _bucketSpace(NULL),
+        : _manager(nullptr),
+          _bucketSpace(nullptr),
           _bucketAndNodes(bucketAndNodes),
           _ok(true),
           _priority(255)
