@@ -143,7 +143,15 @@ applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum,
                      AttributeVector &attr)
 {
     if (attr.getStatus().getLastSyncToken() < serialNum) {
-        attr.compactLidSpace(wantedLidLimit);
+        /*
+         * If the attribute is an empty placeholder attribute due to
+         * later config changes removing the attribute then it might
+         * be smaller than expected during transaction log replay.
+         */
+        attr.commit();
+        if (wantedLidLimit <= attr.getCommittedDocIdLimit()) {
+            attr.compactLidSpace(wantedLidLimit);
+        }
         attr.commit(serialNum, serialNum);
     }
 }
