@@ -10,6 +10,7 @@
 
 namespace storage::distributor {
 
+class DistributorBucketSpace;
 class PendingMessageTracker;
 class IdealStateManager;
 
@@ -165,9 +166,7 @@ public:
 
        @param manager The ideal state manager.
     */
-    void setIdealStateManager(IdealStateManager* manager) {
-        _manager = manager;
-    };
+    void setIdealStateManager(IdealStateManager* manager);
 
     /**
        Returns the type of operation this is.
@@ -224,6 +223,7 @@ protected:
     friend class IdealStateManager;
 
     IdealStateManager* _manager;
+    DistributorBucketSpace *_bucketSpace;
     BucketAndNodes _bucketAndNodes;
     std::string _detailedReason;
 

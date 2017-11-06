@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 
 #include <vespa/log/log.h>
@@ -26,6 +27,7 @@ const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
 
 IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
         : _manager(NULL),
+          _bucketSpace(NULL),
           _bucketAndNodes(bucketAndNodes),
           _ok(true),
           _priority(255)
@@ -76,6 +78,12 @@ BucketAndNodes::toString() const
     ost <<  _bucket.toString();
     return ost.str();
 }
+
+void
+IdealStateOperation::setIdealStateManager(IdealStateManager* manager) {
+    _manager = manager;
+    _bucketSpace = &_manager->getBucketSpaceRepo().get(getBucket().getBucketSpace());
+};
 
 void
 IdealStateOperation::done()
