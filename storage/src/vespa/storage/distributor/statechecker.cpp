@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "statechecker.h"
 #include "distributorcomponent.h"
+#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.statechecker");
@@ -59,22 +60,23 @@ StateChecker::Result::createStoredResult(
 }
 
 StateChecker::Context::Context(const DistributorComponent& c,
+                               const DistributorBucketSpace &distributorBucketSpace,
                                NodeMaintenanceStatsTracker& statsTracker,
-                               const document::BucketId& bid)
-    : bucketId(bid),
-      siblingBucket(c.getSibling(bid)),
+                               const document::Bucket &bucket_)
+    : bucket(bucket_),
+      siblingBucket(c.getSibling(bucket.getBucketId())),
       systemState(c.getClusterState()),
       distributorConfig(c.getDistributor().getConfig()),
-      distribution(c.getDistribution()),
+      distribution(distributorBucketSpace.getDistribution()),
       gcTimeCalculator(c.getDistributor().getBucketIdHasher(),
                        std::chrono::seconds(distributorConfig
                             .getGarbageCollectionInterval())),
       component(c),
-      db(c.getBucketDatabase()),
+      db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker)
 {
     idealState =
-        distribution.getIdealStorageNodes(systemState, bucketId);
+        distribution.getIdealStorageNodes(systemState, bucket.getBucketId());
     unorderedIdealState.insert(idealState.begin(), idealState.end());
 }
 

@@ -527,7 +527,7 @@ Distributor::checkBucketForSplit(document::BucketSpace bucketSpace,
     }
 
     Operation::SP operation =
-        _idealStateManager.generateInterceptingSplit(e, priority);
+        _idealStateManager.generateInterceptingSplit(bucketSpace, e, priority);
 
     if (operation.get()) {
         _maintenanceOperationOwner.start(operation, priority);
