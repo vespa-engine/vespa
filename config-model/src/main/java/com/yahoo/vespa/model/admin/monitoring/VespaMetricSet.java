@@ -214,6 +214,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_fragmentation_factor.average"));
         metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_fragmentation_factor.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_fragmentation_factor.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_limit.last"));
+        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_limit.last"));
+        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_limit.last"));
 
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
