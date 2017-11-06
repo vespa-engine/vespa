@@ -26,8 +26,12 @@ import java.util.List;
  */
 public class QueryPacket extends Packet {
 
-    private Query query;
+    final private Query query;
     private QueryPacketData queryPacketData;
+    int sessionOffset = 0; // Start of sessionKey ignore section for cache key
+    int sessionSize = 0; // Length of sessionKey ignore section for cache key
+    int ignoreableOffset = 0; // Start of (hits/offset/timestamp) ignore section for cache key
+    int ignoreableSize = 0;  // Length of (hits/offset/timestamp) ignore section for cache key
 
     private QueryPacket(Query query) {
         this.query = query;
@@ -73,6 +77,9 @@ public class QueryPacket extends Packet {
         return new byte[0];
     }
 
+    private int getSessionKeySkipLength() {
+        return (sessionSize > 0) ? sessionSize + 4 : 0;
+    }
     /**
      * Returns an opaque cache key for the query represented by this
      * (pre-serialized) packet.
@@ -86,35 +93,41 @@ public class QueryPacket extends Packet {
         // need to fiddle with feature flags to handle a non-existing
         // summary class.
 
-        int skipOffset     = 4;  // offset of offset/hits/timestamp fields
-        int skipLength     = 12; // length of offset/hits/timestamp fields
         byte[] utf8Summary = getSummaryClassAsUtf8();
-        byte[] stripped    = new byte[encodedBody.length - skipLength + utf8Summary.length + 1];
+        byte[] stripped    = new byte[encodedBody.length - (ignoreableSize + getSessionKeySkipLength()) + utf8Summary.length + 1];
 
-        System.arraycopy(encodedBody, 0, stripped, 0, skipOffset);
-        System.arraycopy(utf8Summary, 0, stripped, skipOffset, utf8Summary.length);
-        stripped[skipOffset + utf8Summary.length] = 0;
-        System.arraycopy(encodedBody, skipOffset + skipLength,
-                         stripped, skipOffset + utf8Summary.length + 1,
-                         encodedBody.length - (skipOffset + skipLength));
+        System.arraycopy(encodedBody, 0, stripped, 0, ignoreableOffset);
+        stripped[1] = (byte)(stripped[1] & 0x7f);  // Ignor sessionKey feature flag
+        System.arraycopy(utf8Summary, 0, stripped, ignoreableOffset, utf8Summary.length);
+        stripped[ignoreableOffset + utf8Summary.length] = 0;
+
+        // Copy part up to sessionKey
+        System.arraycopy(encodedBody, ignoreableOffset + ignoreableSize,
+                         stripped, ignoreableOffset + utf8Summary.length + 1,
+                         sessionOffset - (ignoreableOffset + ignoreableSize));
+        // Copy part after sessionKey
+        System.arraycopy(encodedBody, sessionOffset + getSessionKeySkipLength(),
+                stripped,  utf8Summary.length + 1 + (sessionOffset -  ignoreableSize),
+                encodedBody.length - (sessionOffset + getSessionKeySkipLength()));
         return stripped;
     }
 
     public void encodeBody(ByteBuffer buffer) {
         queryPacketData = new QueryPacketData();
-        int startOfFieldToSave;
+        final int relativeZero = buffer.position();
 
         boolean sendSessionKey = query.getGroupingSessionCache() || query.getRanking().getQueryCache();
         int featureFlag = getFeatureInt(sendSessionKey);
         buffer.putInt(featureFlag);
 
+        ignoreableOffset = buffer.position() - relativeZero;
         IntegerCompressor.putCompressedPositiveNumber(getOffset(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(getHits(), buffer);
         // store the cutoff time in the tag object, and then do a similar Math.max there
         buffer.putInt(Math.max(50, (int)query.getTimeLeft()));
         buffer.putInt(getFlagInt());
-
-        startOfFieldToSave = buffer.position();
+        ignoreableSize = buffer.position() - relativeZero - ignoreableOffset;
+        int startOfFieldToSave = buffer.position();
         Item.putString(query.getRanking().getProfile(), buffer);
         queryPacketData.setRankProfile(buffer, startOfFieldToSave);
 
@@ -147,8 +160,10 @@ public class QueryPacket extends Packet {
             buffer.put(blob);
         }
 
+        sessionOffset = buffer.position() - relativeZero;
         if (sendSessionKey) {
             Utf8String key = query.getSessionId(true).asUtf8String();
+            sessionSize = key.getByteLength();
             buffer.putInt(key.getByteLength());
             buffer.put(key.getBytes());
         }

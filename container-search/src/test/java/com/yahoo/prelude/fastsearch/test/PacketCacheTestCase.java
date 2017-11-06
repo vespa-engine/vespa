@@ -50,7 +50,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
 
         cache.setMaxCacheItemPercentage(50);
 
-        final int keysz = 30;
+        final int keysz = 32;
 
         // first control assumptions
         assertEquals(keysz, key1.byteSize());
