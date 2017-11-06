@@ -125,8 +125,8 @@ public class QueryPacket extends Packet {
         IntegerCompressor.putCompressedPositiveNumber(getHits(), buffer);
         // store the cutoff time in the tag object, and then do a similar Math.max there
         buffer.putInt(Math.max(50, (int)query.getTimeLeft()));
-        buffer.putInt(getFlagInt());
         ignoreableSize = buffer.position() - relativeZero - ignoreableOffset;
+        buffer.putInt(getFlagInt());
         int startOfFieldToSave = buffer.position();
         Item.putString(query.getRanking().getProfile(), buffer);
         queryPacketData.setRankProfile(buffer, startOfFieldToSave);
