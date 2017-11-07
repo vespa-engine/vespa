@@ -131,12 +131,15 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
                 .methodDesc("set which file references to download")
                 .paramDesc(0, "file references", "file reference to download")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
-        supervisor.addMethod(new Method("filedistribution.receiveFile", "slx", "i", // TODO Temporary method to get started with testing
+        supervisor.addMethod(new Method("filedistribution.receiveFile", "ssxli", "i", // TODO Temporary method to get started with testing
                 this, "receiveFile")
                 .methodDesc("receive file reference content")
                 .paramDesc(0, "file references", "file reference to download")
                 .paramDesc(1, "filename", "filename")
                 .paramDesc(2, "content", "array of bytes")
+                .paramDesc(3, "hash", "xx64hash of the file content")
+                .paramDesc(4, "errorcode", "Error code. 0 if none")
+                .paramDesc(5, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
 

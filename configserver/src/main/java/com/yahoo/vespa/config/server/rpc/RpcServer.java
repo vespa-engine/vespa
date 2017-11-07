@@ -198,7 +198,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        getSupervisor().addMethod(new Method("serveFile", "s", "is", this, "serveFile"));
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "s", "is", this, "serveFile"));
     }
 
     /**

@@ -52,21 +52,25 @@ public class FileServer {
     }
 
     private void serveFile(String fileName, Target target) {
-        Request fileBlob = new Request("receiveFile");
+        Request fileBlob = new Request("filedistribution.receiveFile");
         File file = new File(getPath(new FileReference(fileName)));
+        fileBlob.parameters().add(new StringValue(fileName));
         fileBlob.parameters().add(new StringValue(fileName));
         byte [] blob = new byte [0];
         boolean success = false;
+        String errorDescription = "OK";
         try {
             blob = IOUtils.readFileBytes(file);
             success = true;
         } catch (IOException e) {
-            log.warning("Failed reading file '" + file.getAbsolutePath() + "' for sending to '" + target.toString() + "'.");
+            errorDescription = "Failed reading file '" + file.getAbsolutePath() + "'";
+            log.warning(errorDescription + "for sending to '" + target.toString() + "'.");
         }
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         fileBlob.parameters().add(new DataValue(blob));
-        fileBlob.parameters().add(new Int32Value(success ? 0 : 1));
         fileBlob.parameters().add(new Int64Value(hasher.hash(ByteBuffer.wrap(blob), 0)));
+        fileBlob.parameters().add(new Int32Value(success ? 0 : 1));
+        fileBlob.parameters().add(new StringValue(success ? "OK" : errorDescription));
         target.invokeSync(fileBlob, 600);
     }
 }
