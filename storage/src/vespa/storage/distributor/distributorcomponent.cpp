@@ -3,7 +3,8 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorstoragelink");
