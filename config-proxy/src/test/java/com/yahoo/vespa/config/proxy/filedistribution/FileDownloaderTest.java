@@ -18,7 +18,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -107,14 +109,14 @@ public class FileDownloaderTest {
     @Test
     public void setFilesToDownload() throws IOException {
         File downloadDir = Files.createTempDirectory("filedistribution").toFile();
-        MockConnection configSource = new MockConnection();
-        FileDownloader fileDownloader = new FileDownloader(configSource, downloadDir, Duration.ofMillis(200));
+        FileDownloader fileDownloader = new FileDownloader(null, downloadDir, Duration.ofMillis(200));
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
         List<FileReference> fileReferences = Arrays.asList(foo, bar);
         fileDownloader.queueForDownload(fileReferences);
 
-        assertEquals(new LinkedHashSet<>(fileReferences), fileDownloader.queuedDownloads());
+        // All requested file references should be in queue (since FileDownloader was created without ConnectionPool)
+        assertEquals(new LinkedHashSet<>(fileReferences), new LinkedHashSet<>(fileDownloader.queuedDownloads()));
 
         // Verify download status
         assertDownloadStatus(fileDownloader, foo, 0.0);

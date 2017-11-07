@@ -59,7 +59,8 @@ class FileReferenceDownloader {
         this.downloadDirectory = downloadDirectory;
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
-        readFromQueueExecutor.submit(this::readFromQueue);
+        if (connectionPool != null)
+            readFromQueueExecutor.submit(this::readFromQueue);
     }
 
     private synchronized Optional<File> startDownload(FileReference fileReference,
@@ -95,7 +96,7 @@ class FileReferenceDownloader {
         }
     }
 
-    synchronized Set<FileReference> queuedForDownload() {
+    synchronized Set<FileReference> queuedDownloads() {
         return downloadQueue.stream()
                 .map(FileReferenceDownload::fileReference)
                 .collect(Collectors.toCollection(LinkedHashSet::new));

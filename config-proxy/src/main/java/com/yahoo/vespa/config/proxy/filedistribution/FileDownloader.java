@@ -147,7 +147,7 @@ public class FileDownloader {
     }
 
     Set<FileReference> queuedDownloads() {
-        return fileReferenceDownloader.queuedForDownload();
+        return fileReferenceDownloader.queuedDownloads();
     }
 
 }
