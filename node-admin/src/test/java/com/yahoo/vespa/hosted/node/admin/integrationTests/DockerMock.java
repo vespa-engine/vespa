@@ -92,7 +92,7 @@ public class DockerMock implements Docker {
             callOrderVerifier.add("stopContainer with " + containerName);
             Container container = containersByContainerName.get(containerName);
             containersByContainerName.put(containerName,
-                            new Container(container.hostname, container.image, container.flavor, container.name, Container.State.EXITED, 0));
+                            new Container(container.hostname, container.image, container.resources, container.name, Container.State.EXITED, 0));
         }
     }
 
