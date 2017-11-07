@@ -81,8 +81,8 @@ class FileReferenceDownloader {
         }
     }
 
-    Map<FileReference, SettableFuture<Optional<File>>> queuedForDownload() {
-        return queuedForDownload;
+    synchronized ImmutableSet<FileReference> queuedForDownload() {
+        return ImmutableSet.copyOf(queuedForDownload.keySet());
     }
 
     private synchronized void completedDownloading(FileReference fileReference, File file) {

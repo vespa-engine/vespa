@@ -142,7 +142,7 @@ public class FileDownloader {
     }
 
     ImmutableSet<FileReference> queuedForDownload() {
-        return ImmutableSet.copyOf(fileReferenceDownloader.queuedForDownload().keySet());
+        return ImmutableSet.copyOf(fileReferenceDownloader.queuedForDownload());
     }
 
 }
