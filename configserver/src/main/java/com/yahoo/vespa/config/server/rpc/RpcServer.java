@@ -427,6 +427,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         FileApiErrorCodes result = fileServer.hasFile(fileReference)
                 ? FileApiErrorCodes.OK
                 : FileApiErrorCodes.NOT_FOUND;
+        if (result == FileApiErrorCodes.OK) {
+            fileServer.startFileServing(fileReference, request.target());
+        }
         request.returnValues()
                 .add(new Int32Value(result.getCode()))
                 .add(new StringValue(result.getDescription()));
