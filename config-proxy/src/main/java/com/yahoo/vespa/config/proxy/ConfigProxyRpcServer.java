@@ -301,7 +301,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         List<FileReference> fileReferences = Stream.of(fileReferenceStrings)
                 .map(FileReference::new)
                 .collect(Collectors.toList());
-        proxyServer.fileDownloader().download(fileReferences);
+        proxyServer.fileDownloader().queueForDownload(fileReferences);
 
         req.returnValues().add(new Int32Value(0));
     }

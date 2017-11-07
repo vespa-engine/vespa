@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.config.FileReference;
@@ -17,9 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
@@ -35,9 +33,7 @@ public class FileDownloader {
 
     private final File downloadDirectory;
     private final Duration timeout;
-
     private final FileReferenceDownloader fileReferenceDownloader;
-    private final ExecutorService service = Executors.newFixedThreadPool(10);
 
     public FileDownloader(ConnectionPool connectionPool) {
         this(connectionPool,
@@ -48,7 +44,7 @@ public class FileDownloader {
     FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Duration timeout) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, connectionPool);
+        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, connectionPool, timeout);
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -62,12 +58,12 @@ public class FileDownloader {
         } else {
             log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found in " +
                     directory.getAbsolutePath() + ", starting download");
-            return download(fileReference, timeout);
+            return queueForDownload(fileReference, timeout);
         }
     }
 
-    public void download(List<FileReference> fileReferences) {
-        fileReferences.forEach(fileReference -> download(fileReference, timeout));
+    public void queueForDownload(List<FileReference> fileReferences) {
+        fileReferences.forEach(this::queueForDownload);
     }
 
     public void receiveFile(FileReference fileReference, String filename, byte[] content) {
@@ -108,7 +104,7 @@ public class FileDownloader {
         return Optional.empty();
     }
 
-    private synchronized Optional<File> download(FileReference fileReference, Duration timeout) {
+    private synchronized Optional<File> queueForDownload(FileReference fileReference, Duration timeout) {
         if (fileReferenceDownloader.isDownloading(fileReference)) {
             log.log(LogLevel.INFO, "Already downloading '" + fileReference.value() + "'");
             ListenableFuture<Optional<File>> future =
@@ -121,15 +117,15 @@ public class FileDownloader {
             }
         }
 
-        SettableFuture<Optional<File>> file = SettableFuture.create();
-        service.submit(() -> fileReferenceDownloader.startDownload(fileReference, timeout, file));
-        log.log(LogLevel.INFO, "Started download of '" + fileReference.value() + "' with timeout " + timeout);
+        SettableFuture<Optional<File>> future = SettableFuture.create();
+        queueForDownload(new FileReferenceDownload(fileReference, future));
+        log.log(LogLevel.INFO, "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
 
         try {
             Optional<File> fileDownloaded;
             try {
                 log.log(LogLevel.INFO, "Waiting for '" + fileReference.value() + "' to download");
-                fileDownloaded = file.get(timeout.getSeconds() - 1, TimeUnit.SECONDS);
+                fileDownloaded = future.get(timeout.getSeconds() - 1, TimeUnit.SECONDS);
                 log.log(LogLevel.INFO, "'" + fileReference.value() + "' downloaded");
             } catch (TimeoutException e) {
                 log.log(LogLevel.WARNING, "Downloading '" + fileReference.value() + "' timed out");
@@ -141,8 +137,17 @@ public class FileDownloader {
         }
     }
 
-    ImmutableSet<FileReference> queuedForDownload() {
-        return ImmutableSet.copyOf(fileReferenceDownloader.queuedForDownload());
+    // We don't care about the future in this call
+    private synchronized void queueForDownload(FileReference fileReference) {
+        queueForDownload(new FileReferenceDownload(fileReference, SettableFuture.create()));
+    }
+
+    private synchronized void queueForDownload(FileReferenceDownload fileReferenceDownload) {
+        fileReferenceDownloader.addToDownloadQueue(fileReferenceDownload);
+    }
+
+    Set<FileReference> queuedDownloads() {
+        return fileReferenceDownloader.queuedForDownload();
     }
 
 }

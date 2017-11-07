@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -111,9 +112,9 @@ public class FileDownloaderTest {
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
         List<FileReference> fileReferences = Arrays.asList(foo, bar);
-        fileDownloader.download(fileReferences);
+        fileDownloader.queueForDownload(fileReferences);
 
-        assertEquals(fileReferences, fileDownloader.queuedForDownload().asList());
+        assertEquals(new LinkedHashSet<>(fileReferences), fileDownloader.queuedDownloads());
 
         // Verify download status
         assertDownloadStatus(fileDownloader, foo, 0.0);

@@ -2,11 +2,8 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.SettableFuture;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
@@ -20,51 +17,68 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Downloads file reference using rpc requests to config server and keeps track of files being downloaded
  * <p>
- * Some methods are synchronized to make sure access to queuedForDownload is atomic
+ * Some methods are synchronized to make sure access to downloads is atomic
  *
  * @author hmusum
  */
 // TODO: Add retries when a config server does not have a file reference
+// TODO: Handle shutdown of executors
 class FileReferenceDownloader {
 
     private final static Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
     private final static Duration rpcTimeout = Duration.ofSeconds(10);
 
     private final File downloadDirectory;
-    private final ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10));
+    private final ExecutorService downloadExecutor =
+            Executors.newFixedThreadPool(10, new DaemonThreadFactory("filereference downloader"));
+    private ExecutorService readFromQueueExecutor =
+            Executors.newFixedThreadPool(1, new DaemonThreadFactory("filereference download queue"));
     private final ConnectionPool connectionPool;
-    private final Map<FileReference, SettableFuture<Optional<File>>> queuedForDownload = new LinkedHashMap<>();
+    private final ConcurrentLinkedQueue<FileReferenceDownload> downloadQueue = new ConcurrentLinkedQueue<>();
+    private final Map<FileReference, FileReferenceDownload> downloads = new LinkedHashMap<>();
     private final Map<FileReference, Double> downloadStatus = new HashMap<>();
+    private final Duration downloadTimeout;
 
-    FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool) {
+    FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool, Duration timeout) {
         this.downloadDirectory = downloadDirectory;
         this.connectionPool = connectionPool;
+        this.downloadTimeout = timeout;
+        readFromQueueExecutor.submit(this::readFromQueue);
     }
 
-    synchronized Optional<File> startDownload(FileReference fileReference,
-                                              Duration timeout,
-                                              SettableFuture<Optional<File>> file)
+    private synchronized Optional<File> startDownload(FileReference fileReference,
+                                                      Duration timeout,
+                                                      FileReferenceDownload fileReferenceDownload)
             throws ExecutionException, InterruptedException, TimeoutException {
-        queuedForDownload.put(fileReference, file);
+        downloads.put(fileReference, fileReferenceDownload);
         setDownloadStatus(fileReference.value(), 0.0);
         if (startDownloadRpc(fileReference))
-            return file.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            return fileReferenceDownload.future().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         else {
-            file.setException(new RuntimeException("Failed getting file"));
-            queuedForDownload.remove(fileReference);
+            fileReferenceDownload.future().setException(new RuntimeException("Failed getting file"));
+            downloads.remove(fileReference);
             return Optional.empty();
         }
+    }
+
+    synchronized void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
+        downloadQueue.add(fileReferenceDownload);
     }
 
     void receiveFile(FileReference fileReference, String filename, byte[] content) {
@@ -81,12 +95,29 @@ class FileReferenceDownloader {
         }
     }
 
-    synchronized ImmutableSet<FileReference> queuedForDownload() {
-        return ImmutableSet.copyOf(queuedForDownload.keySet());
+    synchronized Set<FileReference> queuedForDownload() {
+        return downloadQueue.stream()
+                .map(FileReferenceDownload::fileReference)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private void readFromQueue() {
+        do {
+            FileReferenceDownload fileReferenceDownload = downloadQueue.poll();
+            if (fileReferenceDownload == null) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) { /* ignore for now */}
+            } else {
+                log.log(LogLevel.INFO, "Polling queue, found file reference '" +
+                        fileReferenceDownload.fileReference().value() + "' to download");
+                downloadExecutor.submit(() -> startDownload(fileReferenceDownload.fileReference(), downloadTimeout, fileReferenceDownload));
+            }
+        } while (true);
     }
 
     private synchronized void completedDownloading(FileReference fileReference, File file) {
-        queuedForDownload.get(fileReference).set(Optional.of(file));
+        downloads.get(fileReference).future().set(Optional.of(file));
         downloadStatus.put(fileReference, 100.0);
     }
 
@@ -112,13 +143,13 @@ class FileReferenceDownloader {
     }
 
     synchronized boolean isDownloading(FileReference fileReference) {
-        return queuedForDownload.containsKey(fileReference);
+        return downloads.containsKey(fileReference);
     }
 
     synchronized ListenableFuture<Optional<File>> addDownloadListener(FileReference fileReference, Runnable runnable) {
-        SettableFuture<Optional<File>> future = queuedForDownload.get(fileReference);
-        future.addListener(runnable, service);
-        return future;
+        FileReferenceDownload fileReferenceDownload = downloads.get(fileReference);
+        fileReferenceDownload.future().addListener(runnable, downloadExecutor);
+        return fileReferenceDownload.future();
     }
 
     private void execute(Request request, Connection connection) {
