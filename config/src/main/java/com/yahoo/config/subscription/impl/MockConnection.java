@@ -53,6 +53,12 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     @Override
+    public void invokeSync(Request request, double jrtTimeout) {
+        numberOfRequests++;
+        lastRequest = request;
+    }
+
+    @Override
     public void setError(int errorCode) {
         numberOfFailovers++;
     }
@@ -68,9 +74,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     @Override
-    public void close() {
-
-    }
+    public void close() {}
 
     @Override
     public void setError(Connection connection, int errorCode) {
@@ -108,7 +112,6 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
             jrtReq.addOkResponse(payload, generation, ConfigUtils.getMd5(payload.getData()));
         }
     }
-
 
     public interface ResponseHandler extends Runnable {
 

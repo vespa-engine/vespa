@@ -11,8 +11,12 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 
 import java.io.File;
-import java.lang.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -109,12 +113,12 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         // Legacy method, needs to be the same name as used in filedistributor
         supervisor.addMethod(new Method("waitFor", "s", "s",
                 this, "getFile")
-                .methodDesc("wait for file reference")
+                .methodDesc("get path to file reference")
                 .paramDesc(0, "file reference", "file reference")
                 .returnDesc(0, "path", "path to file"));
         supervisor.addMethod(new Method("filedistribution.getFile", "s", "s",
                 this, "getFile")
-                .methodDesc("wait for file reference")
+                .methodDesc("get path to file reference")
                 .paramDesc(0, "file reference", "file reference")
                 .returnDesc(0, "path", "path to file"));
         supervisor.addMethod(new Method("filedistribution.getActiveFileReferencesStatus", "", "SD",
@@ -126,6 +130,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
                 this, "setFileReferencesToDownload")
                 .methodDesc("set which file references to download")
                 .paramDesc(0, "file references", "file reference to download")
+                .returnDesc(0, "ret", "0 if success, 1 otherwise"));
+        supervisor.addMethod(new Method("filedistribution.receiveFile", "slx", "i", // TODO Temporary method to get started with testing
+                this, "receiveFile")
+                .methodDesc("receive file reference content")
+                .paramDesc(0, "file references", "file reference to download")
+                .paramDesc(1, "filename", "filename")
+                .paramDesc(2, "content", "array of bytes")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
 
@@ -235,17 +246,33 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
     }
 
+    // TODO: Duplicate of code in FileAcquirereImpl. Find out where to put it. What about C++ code using this RPC call?
+    private static final int baseErrorCode = 0x10000;
+    private static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
+
+    private static final int fileReferenceDoesNotExists = baseFileProviderErrorCode;
+    private static final int fileReferenceRemoved = fileReferenceDoesNotExists + 1;
+    private static final int fileReferenceInternalError = fileReferenceRemoved + 1;
+
     @SuppressWarnings({"UnusedDeclaration"})
     public final void getFile(Request req) {
-        // TODO: Detach to avoid holding transport thread
+        req.detach();
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-        String pathToFile = proxyServer.fileDownloader()
-                .getFile(fileReference)
-                .orElseGet(() -> new File(""))
-                .getAbsolutePath();
-
-        log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' available at " + pathToFile);
-        req.returnValues().add(new StringValue(pathToFile));
+        log.log(LogLevel.DEBUG, "getFile() called for file reference '" + fileReference.value() + "'");
+        Optional<File> pathToFile = proxyServer.fileDownloader().getFile(fileReference);
+        try {
+            if (pathToFile.isPresent()) {
+                req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
+                log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
+            } else {
+                log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
+                req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
+            }
+        } catch (Throwable e) {
+            log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exeption: " + e.getMessage());
+            req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
+        }
+        req.returnRequest();
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -274,8 +301,17 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         List<FileReference> fileReferences = Stream.of(fileReferenceStrings)
                 .map(FileReference::new)
                 .collect(Collectors.toList());
-        proxyServer.fileDownloader().queueForDownload(fileReferences);
+        proxyServer.fileDownloader().download(fileReferences);
 
+        req.returnValues().add(new Int32Value(0));
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public final void receiveFile(Request req) {
+        FileReference fileReference = new FileReference(req.parameters().get(0).asString());
+        String filename = req.parameters().get(1).asString();
+        byte[] content = req.parameters().get(2).asData();
+        proxyServer.fileDownloader().receiveFile(fileReference, filename, content);
         req.returnValues().add(new Int32Value(0));
     }
 

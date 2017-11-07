@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * The current connection is available with {@link #getCurrent()}.
  * When calling {@link #setError(Connection, int)}, {#link #setNewCurrentConnection} will always be called.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  * @author hmusum
  */
 public class JRTConnectionPool implements ConnectionPool {
