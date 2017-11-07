@@ -24,9 +24,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -103,6 +105,13 @@ public class ContainerControllerTester {
         domain.admin(new AthenzPrincipal(new AthenzDomain("domain"), new UserId(userName)));
         mock.getSetup().addDomain(domain);
         return athensDomain;
+    }
+
+    public ContainerControllerTester disableMaintainer(Class<? extends Maintainer> maintainer) {
+        ControllerMaintenance maintenance = (ControllerMaintenance) containerTester
+                .container().components().getComponent(ControllerMaintenance.class.getName());
+        maintenance.jobControl().setActive(maintainer.getSimpleName(), false);
+        return this;
     }
 
     // ---- Delegators:

@@ -11,11 +11,11 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.maintenance.VersionStatusUpdater;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -35,19 +35,17 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
     private final static String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/deployment/responses/";
 
-    private ContainerControllerTester tester;
-
-    @Before
-    public void before() {
-        tester = new ContainerControllerTester(container, responseFiles);
-    }
-
     @Test
     public void testDeploymentApi() throws IOException {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+
+        // Disable VersionStatusUpdater to avoid conflicting runs
+        tester.disableMaintainer(VersionStatusUpdater.class);
+
         Version version = Version.fromString("5.0");
         tester.containerTester().updateSystemVersion(version);
-        long projectId = 11;
+        long project1 = 11;
+        long project2 = 22;
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
@@ -58,8 +56,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                                                   "application1");
         Application productionApplication = tester.createApplication("domain2", "tenant2",
                                                                      "application2");
-        deployCompletely(failingApplication, applicationPackage, projectId, true);
-        deployCompletely(productionApplication, applicationPackage, projectId, true);
+        deployCompletely(tester, failingApplication, applicationPackage, project1, true);
+        deployCompletely(tester, productionApplication, applicationPackage, project2, true);
 
         // New version released
         version = Version.fromString("5.1");
@@ -67,8 +65,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // Applications upgrade, 1/2 succeed
         tester.upgrader().maintain();
-        deployCompletely(failingApplication, applicationPackage, projectId, false);
-        deployCompletely(productionApplication, applicationPackage, projectId, true);
+        deployCompletely(tester, failingApplication, applicationPackage, project1, false);
+        deployCompletely(tester, productionApplication, applicationPackage, project2, true);
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller()),
                                                                     tester.controller()));
@@ -92,8 +90,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
         return new VersionStatus(censored);
     }
 
-    private void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
-                                  boolean success) {
+    private void deployCompletely(ContainerControllerTester tester, Application application,
+                                  ApplicationPackage applicationPackage, long projectId, boolean success) {
         tester.notifyJobCompletion(application.id(), projectId, true, component);
         tester.deploy(application, applicationPackage, new Zone(Environment.test,
                                                                        RegionName.from("us-east-1")), projectId);

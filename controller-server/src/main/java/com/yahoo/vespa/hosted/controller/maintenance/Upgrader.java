@@ -26,8 +26,6 @@ import java.util.logging.Logger;
  */
 public class Upgrader extends Maintainer {
 
-    private static final Duration upgradeTimeout = Duration.ofHours(12);
-
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
     private final CuratorDb curator;

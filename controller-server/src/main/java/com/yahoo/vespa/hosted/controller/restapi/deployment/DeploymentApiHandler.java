@@ -35,6 +35,7 @@ import static java.util.Comparator.comparing;
  *
  * @author bratseth
  */
+@SuppressWarnings("unused") // Injected
 public class DeploymentApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
