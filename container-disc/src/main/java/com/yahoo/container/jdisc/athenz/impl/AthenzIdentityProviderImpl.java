@@ -57,7 +57,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     public AthenzIdentityProviderImpl(IdentityConfig config) {
         this(config,
              new AthenzCredentialsService(config,
-                                          new ServiceProviderApi(config.loadBalancerAddress()),
+                                          new IdentityDocumentService(config.loadBalancerAddress()),
                                           new AthenzService(),
                                           Clock.systemUTC()),
              new ThreadPoolScheduler(),
@@ -164,7 +164,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 credentials.set(newCredentials);
                 scheduler.schedule(new UpdateCredentialsTask(), UPDATE_PERIOD);
             } catch (Throwable t) {
-                log.log(LogLevel.ERROR, "Failed to update credentials: " + t.getMessage(), t);
+                log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);
                 lastThrowable.set(t);
                 Duration timeToExpiration = Duration.between(clock.instant(), getExpirationTime(currentCredentials));
                 // NOTE: Update period might be after timeToExpiration, still we do not want to DDoS Athenz.

@@ -24,12 +24,12 @@ import java.security.NoSuchAlgorithmException;
  * @author mortent
  * @author bjorncs
  */
-public class ServiceProviderApi {
+public class IdentityDocumentService {
 
     private final URI identityDocumentApiUri;
 
-    public ServiceProviderApi(String configServerHostname) {
-        this.identityDocumentApiUri = createIdentityDocumentApiUri(configServerHostname);
+    public IdentityDocumentService(String loadBalancerName) {
+        this.identityDocumentApiUri = createIdentityDocumentApiUri(loadBalancerName);
     }
 
     /**
@@ -67,12 +67,12 @@ public class ServiceProviderApi {
         }
     }
 
-    private static URI createIdentityDocumentApiUri(String providerHostname) {
+    private static URI createIdentityDocumentApiUri(String loadBalancerName) {
         try {
             // TODO Figure out a proper way of determining the hostname matching what's registred in node-repository
             return new URIBuilder()
                     .setScheme("https")
-                    .setHost(providerHostname)
+                    .setHost(loadBalancerName)
                     .setPort(8443)
                     .setPath("/athenz/v1/provider/identity-document")
                     .addParameter("hostname", Defaults.getDefaults().vespaHostname())

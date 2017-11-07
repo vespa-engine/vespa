@@ -44,16 +44,16 @@ public class AthenzIdentityProviderImplTest {
 
     @Test
     public void athenz_credentials_are_retrieved_after_component_contruction_completed() {
-        ServiceProviderApi serviceProviderApi = mock(ServiceProviderApi.class);
+        IdentityDocumentService identityDocumentService = mock(IdentityDocumentService.class);
         AthenzService athenzService = mock(AthenzService.class);
         ManualClock clock = new ManualClock(Instant.EPOCH);
         MockScheduler scheduler = new MockScheduler(clock);
 
-        when(serviceProviderApi.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
+        when(identityDocumentService.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
         when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
                 new InstanceIdentity(null, "TOKEN"));
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, serviceProviderApi, athenzService, clock);
+                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
 
         AthenzIdentityProvider identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
@@ -103,12 +103,12 @@ public class AthenzIdentityProviderImplTest {
 
     @Test
     public void failed_credentials_updates_will_schedule_retries() {
-        ServiceProviderApi serviceProviderApi = mock(ServiceProviderApi.class);
+        IdentityDocumentService identityDocumentService = mock(IdentityDocumentService.class);
         AthenzService athenzService = mock(AthenzService.class);
         ManualClock clock = new ManualClock(Instant.EPOCH);
         MockScheduler scheduler = new MockScheduler(clock);
 
-        when(serviceProviderApi.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
+        when(identityDocumentService.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
         when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
                 new InstanceIdentity(null, "TOKEN"));
         when(athenzService.sendInstanceRefreshRequest(anyString(), anyString(), anyString(),
@@ -118,7 +118,7 @@ public class AthenzIdentityProviderImplTest {
                 .thenThrow(new RuntimeException("#3"))
                 .thenReturn(new InstanceIdentity(null, "TOKEN"));
         AthenzCredentialsService credentialService =
-                new AthenzCredentialsService(IDENTITY_CONFIG, serviceProviderApi, athenzService, clock);
+                new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
 
         AthenzIdentityProvider identityProvider =
                 new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
