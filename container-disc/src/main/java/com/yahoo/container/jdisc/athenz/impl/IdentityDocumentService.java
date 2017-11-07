@@ -24,11 +24,11 @@ import java.security.NoSuchAlgorithmException;
  * @author mortent
  * @author bjorncs
  */
-public class ServiceProviderApi {
+public class IdentityDocumentService {
 
     private final URI identityDocumentApiUri;
 
-    public ServiceProviderApi(String configServerHostname) {
+    public IdentityDocumentService(String configServerHostname) {
         this.identityDocumentApiUri = createIdentityDocumentApiUri(configServerHostname);
     }
 

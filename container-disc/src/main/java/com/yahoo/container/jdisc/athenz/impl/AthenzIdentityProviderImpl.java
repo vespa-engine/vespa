@@ -57,7 +57,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     public AthenzIdentityProviderImpl(IdentityConfig config) {
         this(config,
              new AthenzCredentialsService(config,
-                                          new ServiceProviderApi(config.loadBalancerAddress()),
+                                          new IdentityDocumentService(config.loadBalancerAddress()),
                                           new AthenzService(),
                                           Clock.systemUTC()),
              new ThreadPoolScheduler(),

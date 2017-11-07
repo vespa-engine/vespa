@@ -19,23 +19,23 @@ class AthenzCredentialsService {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final IdentityConfig identityConfig;
-    private final ServiceProviderApi serviceProviderApi;
+    private final IdentityDocumentService identityDocumentService;
     private final AthenzService athenzService;
     private final Clock clock;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
-                             ServiceProviderApi serviceProviderApi,
+                             IdentityDocumentService identityDocumentService,
                              AthenzService athenzService,
                              Clock clock) {
         this.identityConfig = identityConfig;
-        this.serviceProviderApi = serviceProviderApi;
+        this.identityDocumentService = identityDocumentService;
         this.athenzService = athenzService;
         this.clock = clock;
     }
 
     AthenzCredentials registerInstance() {
         KeyPair keyPair = CryptoUtils.createKeyPair();
-        String rawDocument = serviceProviderApi.getSignedIdentityDocument();
+        String rawDocument = identityDocumentService.getSignedIdentityDocument();
         SignedIdentityDocument document = parseSignedIdentityDocument(rawDocument);
         PKCS10CertificationRequest csr = CryptoUtils.createCSR(identityConfig.domain(),
                                                                identityConfig.service(),
