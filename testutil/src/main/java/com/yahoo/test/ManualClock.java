@@ -34,6 +34,10 @@ public class ManualClock extends Clock {
         currentTime = currentTime.plus(temporal);
     }
 
+    public void setInstant(Instant time) {
+        currentTime = time;
+    }
+
     @Override
     public Instant instant() { return currentTime; }
 
