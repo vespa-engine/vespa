@@ -127,7 +127,7 @@ public:
      */
     void mergeInto(BucketDatabase& db);
     // Get our list of information. Only used by unit test.
-    const std::vector<pendingbucketspacedbtransition::Entry>& results() const;
+    const std::vector<dbtransition::Entry>& results() const;
     // Adds info from a node to our list of information.  Only used by unit test.
     void addNodeInfo(const document::BucketId& id, const BucketCopy& copy);
 

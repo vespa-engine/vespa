@@ -4,7 +4,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/bucketdb/bucketcopy.h>
 
-namespace storage::distributor::pendingbucketspacedbtransition {
+namespace storage::distributor::dbtransition {
 
 struct Entry {
     Entry(const document::BucketId& bid,

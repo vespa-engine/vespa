@@ -21,7 +21,7 @@ class PendingClusterState;
 class PendingBucketSpaceDbTransition : public BucketDatabase::MutableEntryProcessor
 {
 public:
-    using Entry = pendingbucketspacedbtransition::Entry;
+    using Entry = dbtransition::Entry;
     using EntryList = std::vector<Entry>;
 private:
     using Range = std::pair<uint32_t, uint32_t>;
