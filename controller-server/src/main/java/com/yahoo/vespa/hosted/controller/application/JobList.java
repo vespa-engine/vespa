@@ -66,11 +66,6 @@ public class JobList {
         return new JobList(list, ! negate);
     }
 
-    /** Returns the subset of jobs which are current upgrading */
-    public JobList upgrading() { // TODO: Centralise and standardise reasoning about upgrades and revisions.
-        return filter(job -> job.lastSuccess().isPresent() && job.lastSuccess().get().version().isBefore(job.lastTriggered().get().version()));
-    }
-
     /** Returns the subset of jobs which are currently running, according to the given timeout */
     public JobList running(Instant timeoutLimit) {
         return filter(job -> job.isRunning(timeoutLimit));

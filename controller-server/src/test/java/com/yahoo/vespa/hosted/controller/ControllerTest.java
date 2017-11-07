@@ -480,6 +480,16 @@ public class ControllerTest {
         assertEquals(expectedStatus, existingStatus);
     }
 
+    private JobReport mockReport(Application application, JobType jobType, Optional<JobError> jobError) {
+        return new JobReport(
+                application.id(),
+                jobType,
+                application.deploymentJobs().projectId().get(),
+                42,
+                jobError
+        );
+    }
+
     @Test
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
