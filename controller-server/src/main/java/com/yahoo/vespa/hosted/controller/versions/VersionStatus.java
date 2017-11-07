@@ -166,7 +166,7 @@ public class VersionStatus {
             // Deploying versions
             JobList.from(application)
                     .running(jobTimeoutLimit)
-                    .lastTriggered().upgrade()
+                    .upgrading()
                     .mapToList(job -> job.lastTriggered().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
         }
