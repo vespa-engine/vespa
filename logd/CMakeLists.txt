@@ -4,6 +4,7 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
+    staging_vespalib
     config_cloudconfig
 
     APPS
