@@ -70,7 +70,8 @@ public class GetDocSumsPacketTestCase {
         FastHit hit = new FastHit();
         result.hits().add(hit);
         ByteBuffer answer = ByteBuffer.allocate(1024);
-        answer.put(new byte[] { 0, 0, 0, -115, 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
+        //assertEquals(0, sessionId.asUtf8String().getByteLength());
+        answer.put(new byte[] { 0, 0, 0, (byte)(107+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -81,7 +82,7 @@ public class GetDocSumsPacketTestCase {
                 0, 0, 0, 2,
                 // rank: sessionId => qrserver.0.XXXXXXXXXXXXX.0
                 0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd'});
-        answer.putInt(sessionId.asUtf8String().getBytes().length);
+        answer.putInt(sessionId.asUtf8String().getByteLength());
         answer.put(sessionId.asUtf8String().getBytes());
         answer.put(new byte [] {
                 // caches: features => true

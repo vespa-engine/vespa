@@ -299,7 +299,7 @@ public class FastSearcherTestCase {
         SessionId sessionId = query.getSessionId(false);
         byte IGNORE = 69;
         ByteBuffer answer = ByteBuffer.allocate(1024);
-        answer.put(new byte[] { 0, 0, 0, -77, 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
+        answer.put(new byte[] { 0, 0, 0, (byte)(145+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
