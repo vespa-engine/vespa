@@ -17,6 +17,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.Value;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.GetConfigContext;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.ReloadListener;
@@ -68,6 +70,18 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
+    private enum FileApiErrorCodes {
+        OK(0, "OK"),
+        NOT_FOUND(1, "Filereference not found");
+        private final int code;
+        private final String description;
+        FileApiErrorCodes(int code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+        int getCode() { return code; }
+        String getDescription() { return description; }
+    }
     private final Supervisor supervisor = new Supervisor(new Transport());
     private Spec spec = null;
     private final boolean useRequestVersion;
@@ -83,6 +97,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final MetricUpdater metrics;
     private final MetricUpdaterFactory metricUpdaterFactory;
     private final HostLivenessTracker hostLivenessTracker;
+    private final FileServer fileServer;
     
     private final ThreadPoolExecutor executorService;
     private volatile boolean allTenantsLoaded = false;
@@ -93,20 +108,23 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * @param config The config to use for setting up this server
      */
     @Inject
-    public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler, MetricUpdaterFactory metrics,
-                     HostRegistries hostRegistries, HostLivenessTracker hostLivenessTracker) {
+    public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
+                     MetricUpdaterFactory metrics, HostRegistries hostRegistries,
+                     HostLivenessTracker hostLivenessTracker, FileServer fileServer) {
         this.superModelRequestHandler = superModelRequestHandler;
-        this.metricUpdaterFactory = metrics;
-        this.supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
+        metricUpdaterFactory = metrics;
+        supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
-        executorService = new ThreadPoolExecutor(config.numthreads(), config.numthreads(), 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
+        executorService = new ThreadPoolExecutor(config.numthreads(), config.numthreads(),
+                0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
         spec = new Spec(null, config.rpcport());
         hostRegistry = hostRegistries.getTenantHostRegistry();
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
+        this.fileServer = fileServer;
         setUpHandlers();
     }
 
@@ -180,6 +198,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
+        getSupervisor().addMethod(new Method("serveFile", "s", "is", this, "serveFile"));
     }
 
     /**
@@ -402,4 +421,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return useRequestVersion;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
+    public final void serveFile(Request request) {
+        String fileReference = request.parameters().get(0).asString();
+        FileApiErrorCodes result = fileServer.hasFile(fileReference)
+                ? FileApiErrorCodes.OK
+                : FileApiErrorCodes.NOT_FOUND;
+        request.returnValues()
+                .add(new Int32Value(result.getCode()))
+                .add(new StringValue(result.getDescription()));
+    }
 }
