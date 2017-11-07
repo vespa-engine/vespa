@@ -94,7 +94,7 @@ public class ControllerTest {
         // staging job - succeeding
         Version version1 = Version.fromString("6.1"); // Set in config server mock
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
-        applications.notifyJobCompletion(mockReport(app1, component, true));
+        tester.notifyJobCompletion(component, app1, true);
         assertFalse("Revision is currently not known",
                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision().isPresent());
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
@@ -136,7 +136,7 @@ public class ControllerTest {
         tester.clock().advance(Duration.ofSeconds(1));
 
         // system and staging test job - succeeding
-        applications.notifyJobCompletion(mockReport(app1, component, true));
+        tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
@@ -163,7 +163,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        applications.notifyJobCompletion(mockReport(app1, component, true));
+        tester.notifyJobCompletion(component, app1, true);
         try {
             tester.deploy(systemTest, app1, applicationPackage);
             fail("Expected exception due to unallowed production deployment removal");
@@ -205,7 +205,7 @@ public class ControllerTest {
         Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
 
         // First deployment: An application change
-        applications.notifyJobCompletion(mockReport(app1, component, true));
+        tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -228,7 +228,7 @@ public class ControllerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        applications.notifyJobCompletion(mockReport(app1, component, true));
+        tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -425,7 +425,7 @@ public class ControllerTest {
         // app1: staging-test job fails with out of capacity and is added to the front of the queue
         tester.deploy(stagingTest, app1, applicationPackage);
         tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));
-        assertEquals(stagingTest.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(stagingTest.jobName(), buildSystem.jobs().get(0).jobName());
         assertEquals(project1, buildSystem.jobs().get(0).projectId());
 
         // app2 and app3: Completes deployment
@@ -461,15 +461,15 @@ public class ControllerTest {
 
         List<BuildJob> nextJobs = buildSystem.takeJobsToRun();
         assertEquals(2, nextJobs.size());
-        assertEquals(stagingTest.id(), nextJobs.get(0).jobName());
+        assertEquals(stagingTest.jobName(), nextJobs.get(0).jobName());
         assertEquals(project2, nextJobs.get(0).projectId());
-        assertEquals(stagingTest.id(), nextJobs.get(1).jobName());
+        assertEquals(stagingTest.jobName(), nextJobs.get(1).jobName());
         assertEquals(project3, nextJobs.get(1).projectId());
 
         // And finally the requeued job for app1
         nextJobs = buildSystem.takeJobsToRun();
         assertEquals(1, nextJobs.size());
-        assertEquals(stagingTest.id(), nextJobs.get(0).jobName());
+        assertEquals(stagingTest.jobName(), nextJobs.get(0).jobName());
         assertEquals(project1, nextJobs.get(0).projectId());
     }
 
@@ -488,10 +488,6 @@ public class ControllerTest {
                 42,
                 jobError
         );
-    }
-
-    private JobReport mockReport(Application application, JobType jobType, boolean success) {
-        return mockReport(application, jobType, JobError.from(success));
     }
 
     @Test

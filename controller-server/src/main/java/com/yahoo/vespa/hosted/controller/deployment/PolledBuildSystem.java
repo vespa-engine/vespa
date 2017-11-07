@@ -87,9 +87,9 @@ public class PolledBuildSystem implements BuildSystem {
 
                     Optional<Long> projectId = projectId(application);
                     if (projectId.isPresent()) {
-                        jobsToRun.add(new BuildJob(projectId.get(), jobType.id()));
+                        jobsToRun.add(new BuildJob(projectId.get(), jobType.jobName()));
                     } else {
-                        log.warning("Not queuing " + jobType.id() + " for " + application.toShortString() +
+                        log.warning("Not queuing " + jobType.jobName() + " for " + application.toShortString() +
                                     " because project ID is missing");
                     }
 

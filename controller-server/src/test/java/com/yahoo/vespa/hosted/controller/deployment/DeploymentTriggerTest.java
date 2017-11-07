@@ -72,7 +72,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.failureRedeployer().maintain();
         assertEquals("Retried dead job", 1, tester.buildSystem().jobs().size());
-        assertEquals(JobType.stagingTest.id(), tester.buildSystem().jobs().get(0).jobName());
+        assertEquals(JobType.stagingTest.jobName(), tester.buildSystem().jobs().get(0).jobName());
     }
 
     @Test
@@ -131,7 +131,7 @@ public class DeploymentTriggerTest {
 
         // Consume us-west-1 job without reporting completion
         assertEquals(1, buildSystem.jobs().size());
-        assertEquals(JobType.productionUsWest1.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(JobType.productionUsWest1.jobName(), buildSystem.jobs().get(0).jobName());
         buildSystem.takeJobsToRun();
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
@@ -184,8 +184,8 @@ public class DeploymentTriggerTest {
 
         // Deploys in two regions in parallel
         assertEquals(2, tester.buildSystem().jobs().size());
-        assertEquals(JobType.productionUsEast3.id(), tester.buildSystem().jobs().get(0).jobName());
-        assertEquals(JobType.productionUsWest1.id(), tester.buildSystem().jobs().get(1).jobName());
+        assertEquals(JobType.productionUsEast3.jobName(), tester.buildSystem().jobs().get(0).jobName());
+        assertEquals(JobType.productionUsWest1.jobName(), tester.buildSystem().jobs().get(1).jobName());
         tester.buildSystem().takeJobsToRun();
 
         tester.deploy(JobType.productionUsWest1, application, applicationPackage, false);
