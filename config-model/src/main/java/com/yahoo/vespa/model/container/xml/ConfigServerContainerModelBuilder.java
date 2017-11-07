@@ -2,15 +2,12 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.application.Xml;
-import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.application.api.ApplicationPackage;
-
+import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
-
+import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -53,15 +50,5 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
                 destination.appendChild(copiedNode);
             }
         }
-    }
-
-    @Override
-    protected void addDefaultComponents(ContainerCluster containerCluster) {
-        // To avoid search specific stuff.
-    }
-
-    @Override
-    protected void addDefaultHandlers(ContainerCluster containerCluster) {
-        addDefaultHandlersExceptStatus(containerCluster);
     }
 }
