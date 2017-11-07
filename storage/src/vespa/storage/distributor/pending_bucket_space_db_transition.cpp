@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".pendingclusterstateprocessor");
+LOG_SETUP(".pendingbucketspacedbtransition");
 
 namespace storage::distributor {
 
