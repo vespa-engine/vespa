@@ -36,7 +36,7 @@ import java.security.cert.X509Certificate;
  */
 public class AthenzService {
 
-    private static final String INSTANCE_API_PATH = "zts/v1/instance";
+    private static final String INSTANCE_API_PATH = "/zts/v1/instance";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpRequestRetryHandler retryHandler = new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true);
@@ -66,11 +66,14 @@ public class AthenzService {
                                                        X509Certificate certicate,
                                                        PrivateKey privateKey) {
         try (CloseableHttpClient client = createHttpClientWithTlsAuth(certicate, privateKey, retryHandler)) {
-            String uriPath = String.format(
-                    "%s/%s/%s/%s/%s",
-                    INSTANCE_API_PATH, providerService, instanceDomain, instanceServiceName, instanceId);
+            URI uri = ztsEndpoint
+                    .resolve(INSTANCE_API_PATH + '/')
+                    .resolve(providerService + '/')
+                    .resolve(instanceDomain + '/')
+                    .resolve(instanceServiceName + '/')
+                    .resolve(instanceId);
             HttpUriRequest postRequest = RequestBuilder.post()
-                    .setUri(ztsEndpoint.resolve(uriPath))
+                    .setUri(uri)
                     .setEntity(toJsonStringEntity(instanceRefreshInformation))
                     .build();
             return getInstanceIdentity(client, postRequest);
