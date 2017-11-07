@@ -47,8 +47,7 @@ class AthenzCredentialsService {
                                                 identityConfig.domain(),
                                                 identityConfig.service(),
                                                 rawDocument,
-                                                CryptoUtils.toPem(csr),
-                                                true);
+                                                CryptoUtils.toPem(csr));
         InstanceIdentity instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation,
                                                                                       document.ztsEndpoint);
         return toAthenzCredentials(instanceIdentity, keyPair, document);
@@ -62,8 +61,7 @@ class AthenzCredentialsService {
                                                                document.dnsSuffix,
                                                                document.providerUniqueId,
                                                                newKeyPair);
-        InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(CryptoUtils.toPem(csr),
-                                                                                /*requestServiceToken*/true);
+        InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(CryptoUtils.toPem(csr));
         InstanceIdentity instanceIdentity =
                 athenzService.sendInstanceRefreshRequest(document.providerService,
                                                          identityConfig.domain(),
