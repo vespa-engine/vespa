@@ -309,12 +309,6 @@ TEST_F("require that attribute writer handles remove", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
-    Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
-
-    DocBuilder idb(s);
-
     fillAttribute(a1, 1, 10, 1);
     fillAttribute(a2, 1, 20, 1);
 
