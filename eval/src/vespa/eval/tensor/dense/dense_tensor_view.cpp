@@ -49,7 +49,7 @@ calcCellsSize(const eval::ValueType &type)
 void
 checkCellsSize(const DenseTensorView &arg)
 {
-    auto cellsSize = calcCellsSize(arg.type());
+    auto cellsSize = calcCellsSize(arg.fast_type());
     if (arg.cellsRef().size() != cellsSize) {
         throw IllegalStateException(make_string("wrong cell size, "
                                                 "expected=%zu, "
@@ -63,14 +63,14 @@ void
 checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
                 vespalib::stringref operation)
 {
-    if (lhs.type() != rhs.type()) {
+    if (lhs.fast_type() != rhs.fast_type()) {
         throw IllegalStateException(make_string("mismatching dimensions for "
                                                 "dense tensor %s, "
                                                 "lhs dimensions = '%s', "
                                                 "rhs dimensions = '%s'",
                                                 operation.c_str(),
-                                                dimensionsAsString(lhs.type()).c_str(),
-                                                dimensionsAsString(rhs.type()).c_str()));
+                                                dimensionsAsString(lhs.fast_type()).c_str(),
+                                                dimensionsAsString(rhs.fast_type()).c_str()));
     }
     checkCellsSize(lhs);
     checkCellsSize(rhs);
@@ -96,7 +96,7 @@ joinDenseTensors(const DenseTensorView &lhs, const DenseTensorView &rhs,
         ++rhsCellItr;
     }
     assert(rhsCellItr == rhs.cellsRef().cend());
-    return std::make_unique<DenseTensor>(lhs.type(),
+    return std::make_unique<DenseTensor>(lhs.fast_type(),
                                          std::move(cells));
 }
 
@@ -132,7 +132,7 @@ bool sameCells(DenseTensorView::CellsRef lhs, DenseTensorView::CellsRef rhs)
 
 
 DenseTensorView::DenseTensorView(const DenseTensor &rhs)
-    : _typeRef(rhs.type()),
+    : _typeRef(rhs.fast_type()),
       _cellsRef(rhs.cellsRef())
 {
 }
@@ -260,7 +260,7 @@ void
 buildAddress(const DenseTensorCellsIterator &itr, TensorSpec::Address &address)
 {
     auto addressItr = itr.address().begin();
-    for (const auto &dim : itr.type().dimensions()) {
+    for (const auto &dim : itr.fast_type().dimensions()) {
         address.emplace(std::make_pair(dim.name, TensorSpec::Label(*addressItr++)));
     }
     assert(addressItr == itr.address().end());

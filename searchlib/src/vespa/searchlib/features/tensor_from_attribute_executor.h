@@ -22,7 +22,7 @@ private:
     const search::attribute::IAttributeVector *_attribute;
     vespalib::string _dimension;
     WeightedBufferType _attrBuffer;
-    vespalib::eval::TensorValue::UP _tensor;
+    std::unique_ptr<vespalib::tensor::Tensor> _tensor;
 
 public:
     TensorFromAttributeExecutor(const search::attribute::IAttributeVector *attribute,
@@ -48,7 +48,7 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
         builder.add_label(dimensionEnum, vespalib::string(_attrBuffer[i].value()));
         builder.add_cell(_attrBuffer[i].weight());
     }
-    _tensor = vespalib::eval::TensorValue::UP(new vespalib::eval::TensorValue(builder.build()));
+    _tensor = builder.build();
     outputs().set_object(0, *_tensor);
 }
 

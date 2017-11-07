@@ -604,7 +604,11 @@ SimpleTensor::rename(const std::vector<vespalib::string> &from, const std::vecto
 std::unique_ptr<SimpleTensor>
 SimpleTensor::create(const TensorSpec &spec)
 {
-    Builder builder(ValueType::from_spec(spec.type()));
+    ValueType my_type = ValueType::from_spec(spec.type());
+    if (my_type.is_error()) {
+        return std::make_unique<SimpleTensor>();
+    }
+    Builder builder(my_type);
     for (const auto &cell: spec.cells()) {
         builder.set(cell.first, cell.second);
     }

@@ -14,8 +14,8 @@ template <typename Function>
 std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
 {
-    DenseTensorAddressCombiner combiner(lhs.type(), rhs.type());
-    DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.type(), rhs.type()));
+    DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type());
+    DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         for (DenseTensorCellsIterator rhsItr = rhs.cellsIterator(); rhsItr.valid(); rhsItr.next()) {
             bool combineSuccess = combiner.combine(lhsItr, rhsItr);

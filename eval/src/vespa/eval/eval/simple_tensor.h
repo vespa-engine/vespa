@@ -82,7 +82,7 @@ public:
     explicit SimpleTensor(double value);
     SimpleTensor(const ValueType &type_in, Cells cells_in);
     double as_double() const final override;
-    const ValueType &type() const { return _type; }
+    const ValueType &type() const override { return _type; }
     const Cells &cells() const { return _cells; }
     std::unique_ptr<SimpleTensor> map(map_fun_t function) const;
     std::unique_ptr<SimpleTensor> reduce(Aggregator &aggr, const std::vector<vespalib::string> &dimensions) const;

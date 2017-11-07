@@ -20,7 +20,7 @@ WrappedSimpleTensor::equals(const Tensor &arg) const
 vespalib::string
 WrappedSimpleTensor::toString() const
 {
-    return eval::SimpleTensorEngine::ref().to_string(_tensor);
+    return toSpec().to_string();
 }
 
 eval::TensorSpec

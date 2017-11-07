@@ -309,8 +309,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             }
             spec.add(addr, fun(&params[0]));
         } while (step_labels(params, type));
-        auto tensor = tensor_engine.create(spec);
-        make_const_op(node, stash.create<TensorValue>(std::move(tensor)));
+        make_const_op(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
     }
     void visit(const TensorConcat &node) override {
         vespalib::string &dimension = stash.create<vespalib::string>(node.dimension());

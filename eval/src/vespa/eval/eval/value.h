@@ -5,7 +5,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 #include <vespa/vespalib/util/stash.h>
-#include "tensor.h"
 #include "value_type.h"
 
 namespace vespalib {
@@ -25,43 +24,33 @@ struct Value {
     virtual bool is_double() const { return false; }
     virtual bool is_tensor() const { return false; }
     virtual double as_double() const { return 0.0; }
-    virtual bool as_bool() const { return false; }
+    bool as_bool() const { return (as_double() != 0.0); }
     virtual const Tensor *as_tensor() const { return nullptr; }
-    virtual ValueType type() const = 0;
+    virtual const ValueType &type() const = 0;
     virtual ~Value() {}
 };
 
-struct ErrorValue : public Value {
-    static ErrorValue instance;
+class ErrorValue : public Value
+{
+private:
+    static ValueType _type;
+public:
+    static const ErrorValue instance;
     bool is_error() const override { return true; }
     double as_double() const override { return error_value; }
-    ValueType type() const override { return ValueType::error_type(); }
+    const ValueType &type() const override { return _type; }
 };
 
 class DoubleValue : public Value
 {
 private:
     double _value;
+    static ValueType _type;
 public:
     DoubleValue(double value) : _value(value) {}
     bool is_double() const override { return true; }
     double as_double() const override { return _value; }
-    bool as_bool() const override { return (_value != 0.0); }
-    ValueType type() const override { return ValueType::double_type(); }
-};
-
-class TensorValue : public Value
-{
-private:
-    const Tensor *_tensor;
-    std::unique_ptr<Tensor> _stored;
-public:
-    TensorValue(const Tensor &value) : _tensor(&value), _stored() {}
-    TensorValue(std::unique_ptr<Tensor> value) : _tensor(value.get()), _stored(std::move(value)) {}
-    bool is_tensor() const override { return true; }
-    double as_double() const override;
-    const Tensor *as_tensor() const override { return _tensor; }
-    ValueType type() const override;
+    const ValueType &type() const override { return _type; }
 };
 
 } // namespace vespalib::eval
