@@ -81,7 +81,7 @@ public class DockerOperationsImplTest {
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {
-        final Container container = new Container(name + ".fqdn", new DockerImage("mock"),
+        final Container container = new Container(name + ".fqdn", new DockerImage("mock"), null,
                 new ContainerName(name), state, pid);
         when(docker.getContainer(eq(container.name))).thenReturn(Optional.of(container));
         return container;

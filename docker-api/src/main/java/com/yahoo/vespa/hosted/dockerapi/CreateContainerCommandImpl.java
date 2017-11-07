@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final DockerClient docker;
     private final DockerImage dockerImage;
+    private final ContainerResources containerResources;
     private final ContainerName containerName;
     private final String hostName;
     private final Map<String, String> labels = new HashMap<>();
@@ -32,8 +33,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final List<String> volumeBindSpecs = new ArrayList<>();
     private final List<Ulimit> ulimits = new ArrayList<>();
 
-    private Optional<Long> memoryInB = Optional.empty();
-    private Optional<Integer> cpuShares = Optional.empty();
     private Optional<String> networkMode = Optional.empty();
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
@@ -43,10 +42,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
+                               ContainerResources containerResources,
                                ContainerName containerName,
                                String hostName) {
         this.docker = docker;
         this.dockerImage = dockerImage;
+        this.containerResources = containerResources;
         this.containerName = containerName;
         this.hostName = hostName;
     }
@@ -103,18 +104,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
-    public Docker.CreateContainerCommand withMemoryInMb(long megaBytes) {
-        memoryInB = Optional.of(megaBytes * 1024 * 1024);
-        return this;
-    }
-
-    @Override
-    public Docker.CreateContainerCommand withCpuShares(int shares) {
-        cpuShares = Optional.of(shares);
-        return this;
-    }
-
-    @Override
     public Docker.CreateContainerCommand withNetworkMode(String mode) {
         networkMode = Optional.of(mode);
         return this;
@@ -144,6 +133,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
         final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
+                .withCpuShares(containerResources.cpuShares)
+                .withMemory(containerResources.memoryBytes)
                 .withName(containerName.asString())
                 .withHostName(hostName)
                 .withLabels(labels)
@@ -157,8 +148,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .filter(mode -> ! mode.toLowerCase().equals("host"))
                 .ifPresent(mode -> containerCmd.withMacAddress(generateMACAddress(hostName, ipv4Address, ipv6Address)));
 
-        memoryInB.ifPresent(containerCmd::withMemory);
-        cpuShares.ifPresent(containerCmd::withCpuShares);
         networkMode.ifPresent(containerCmd::withNetworkMode);
         ipv4Address.ifPresent(containerCmd::withIpv4Address);
         ipv6Address.ifPresent(containerCmd::withIpv6Address);
@@ -191,14 +180,14 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
         return "--name " + containerName.asString() + " "
                 + "--hostname " + hostName + " "
+                + "--cpu-shares " + containerResources.cpuShares + " "
+                + "--memory " + containerResources.memoryBytes + " "
                 + toRepeatedOption("--label", labelList)
                 + toRepeatedOption("--ulimit", ulimitList)
                 + toRepeatedOption("--env", environmentAssignments)
                 + toRepeatedOption("--volume", volumeBindSpecs)
                 + toRepeatedOption("--cap-add", addCapabilitiesList)
                 + toRepeatedOption("--cap-drop", dropCapabilitiesList)
-                + toOptionalOption("--memory", memoryInB)
-                + toOptionalOption("--cpu-shares", cpuShares)
                 + toOptionalOption("--net", networkMode)
                 + toOptionalOption("--ip", ipv4Address)
                 + toOptionalOption("--ip6", ipv6Address)

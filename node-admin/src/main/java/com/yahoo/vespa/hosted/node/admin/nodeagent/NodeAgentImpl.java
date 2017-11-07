@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
@@ -317,6 +318,13 @@ public class NodeAgentImpl implements NodeAgent {
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
+        }
+
+        ContainerResources wantedContainerResources = ContainerResources.from(
+                nodeSpec.minCpuCores, nodeSpec.minMainMemoryAvailableGb);
+        if (!wantedContainerResources.equals(existingContainer.resources)) {
+            return Optional.of("Container should be running with different resource allocation, wanted: " +
+                    wantedContainerResources + ", actual: " + existingContainer.resources);
         }
         return Optional.empty();
     }
