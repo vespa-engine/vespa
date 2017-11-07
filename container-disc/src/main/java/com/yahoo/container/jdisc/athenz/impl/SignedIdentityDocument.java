@@ -10,6 +10,7 @@ import java.net.URI;
 /**
  * @author bjorncs
  */
+// TODO Most of these value should ideally be config provided by config-model
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class SignedIdentityDocument {
