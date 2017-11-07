@@ -6,6 +6,7 @@ import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
@@ -64,11 +65,13 @@ public class GetDocSumsPacketTestCase {
     @Test
     public void requireThatSessionIdIsEncodedAsPropertyWhenUsingSearchSession() throws BufferTooSmallException {
         Result result = new Result(new Query("?query=foo"));
-        result.getQuery().getSessionId(true);  // create session id.
+        SessionId sessionId = result.getQuery().getSessionId(true);  // create session id.
         result.getQuery().getRanking().setQueryCache(true);
         FastHit hit = new FastHit();
         result.hits().add(hit);
-        assertPacket(false, result, new byte[] { 0, 0, 0, -115, 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
+        ByteBuffer answer = ByteBuffer.allocate(1024);
+        //assertEquals(0, sessionId.asUtf8String().getByteLength());
+        answer.put(new byte[] { 0, 0, 0, (byte)(107+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -78,13 +81,19 @@ public class GetDocSumsPacketTestCase {
                 // 2 property entries
                 0, 0, 0, 2,
                 // rank: sessionId => qrserver.0.XXXXXXXXXXXXX.0
-                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd', 0, 0, 0, 34, 'q', 'r', 's', 'e', 'r', 'v', 'e', 'r', '.',
-                IGNORE, '.', IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, '.', IGNORE, '.','d', 'e', 'f', 'a', 'u', 'l', 't',
+                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd'});
+        answer.putInt(sessionId.asUtf8String().getByteLength());
+        answer.put(sessionId.asUtf8String().getBytes());
+        answer.put(new byte [] {
                 // caches: features => true
-                0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
+                0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's',
+                0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
                 // flags
-                0, 0, 0, 2
-        });
+                0, 0, 0, 2});
+        byte [] expected = new byte [answer.position()];
+        answer.flip();
+        answer.get(expected);
+        assertPacket(false, result, expected);
     }
 
     private static void assertPacket(boolean sendQuery, Hit hit, byte[] expected) throws BufferTooSmallException {

@@ -26,6 +26,7 @@ import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.query.SessionId;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -295,8 +296,10 @@ public class FastSearcherTestCase {
         byte[] actual = new byte[buf.remaining()];
         buf.get(actual);
 
+        SessionId sessionId = query.getSessionId(false);
         byte IGNORE = 69;
-        byte[] expected = new byte[] { 0, 0, 0, -77, 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
+        ByteBuffer answer = ByteBuffer.allocate(1024);
+        answer.put(new byte[] { 0, 0, 0, (byte)(145+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -304,15 +307,20 @@ public class FastSearcherTestCase {
                 // 3 property entries (rank, match, caches)
                 0, 0, 0, 3,
                 // rank: sessionId => qrserver.0.XXXXXXXXXXXXX.0
-                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd', 0, 0, 0, 34, 'q', 'r', 's', 'e', 'r', 'v', 'e', 'r', '.',
-                IGNORE, '.', IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, '.', IGNORE, '.','d', 'e', 'f', 'a', 'u', 'l', 't',
+                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd'});
+        answer.putInt(sessionId.asUtf8String().getBytes().length);
+        answer.put(sessionId.asUtf8String().getBytes());
+        answer.put(new byte [] {
                 // match: documentdb.searchdoctype => test
                 0, 0, 0, 5, 'm', 'a', 't', 'c', 'h', 0, 0, 0, 1, 0, 0, 0, 24, 'd', 'o', 'c', 'u', 'm', 'e', 'n', 't', 'd', 'b', '.', 's', 'e', 'a', 'r', 'c', 'h', 'd', 'o', 'c', 't', 'y', 'p', 'e', 0, 0, 0, 4, 't', 'e', 's', 't',
                 // sessionId => qrserver.0.XXXXXXXXXXXXX.0
                 0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
                 // flags
-                0, 0, 0, 2
-        };
+                0, 0, 0, 2});
+        byte [] expected = new byte [answer.position()];
+        answer.flip();
+        answer.get(expected);
+
         assertEquals(expected.length, actual.length);
         for (int i = 0; i < expected.length; ++i) {
             if (expected[i] == IGNORE) {

@@ -14,8 +14,8 @@ import com.yahoo.fs4.QueryPacket;
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class CacheKey {
-    private int hashCode;
-    private byte[] serialized = null;
+    final private int hashCode;
+    final private byte[] serialized;
 
     /**
      * Create a cache key from the query packet.

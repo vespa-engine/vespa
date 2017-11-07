@@ -26,4 +26,16 @@ public class CacheKeyTestCase extends junit.framework.TestCase {
         assertEquals(k1, k2);
         assertEquals(k1.hashCode(), k2.hashCode());
     }
+
+    public void testSessionKeyIgnored() {
+        Query a = new Query("/?query=abcd");
+        QueryPacket ap = QueryPacket.create(a);
+        Query b = new Query("/?query=abcd&ranking.queryCache=true");
+        QueryPacket bp = QueryPacket.create(b);
+        CacheKey ak = new CacheKey(ap);
+        CacheKey bk = new CacheKey(bp);
+        assertEquals(ak, bk);
+        assertEquals(ak.hashCode(), bk.hashCode());
+        assertFalse(ap.getQueryPacketData().equals(bp.getQueryPacketData()));
+    }
 }
