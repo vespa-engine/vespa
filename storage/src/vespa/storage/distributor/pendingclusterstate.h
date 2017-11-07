@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "pending_bucket_space_db_transition_entry.h"
 #include "clusterinformation.h"
-#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
@@ -12,32 +12,19 @@
 #include <unordered_set>
 #include <deque>
 
+namespace storage { class BucketDatabase; }
+
 namespace storage::distributor {
 
 class DistributorMessageSender;
+class PendingBucketSpaceDbTransition;
 
 /**
  * Class used by BucketDBUpdater to track request bucket info
  * messages sent to the storage nodes.
  */
-class PendingClusterState : public vespalib::XmlSerializable,
-                            public BucketDatabase::MutableEntryProcessor {
+class PendingClusterState : public vespalib::XmlSerializable {
 public:
-    struct Entry {
-        Entry(const document::BucketId& bid,
-              const BucketCopy& copy_)
-            : bucketId(bid),
-              copy(copy_)
-        {}
-
-        document::BucketId bucketId;
-        BucketCopy copy;
-
-        bool operator<(const Entry& other) const {
-            return bucketId.toKey() < other.bucketId.toKey();
-        }
-    };
-
     struct Summary {
         Summary(const std::string& prevClusterState, const std::string& newClusterState, uint32_t processingTime);
         Summary(const Summary &);
@@ -50,8 +37,6 @@ public:
         std::string _newClusterState;
         uint32_t _processingTime;
     };
-
-    typedef std::vector<Entry> EntryList;
 
     static std::unique_ptr<PendingClusterState> createForClusterStateChange(
             const framework::Clock& clock,
@@ -99,11 +84,6 @@ public:
         _requestedNodes[nodeIdx] = true;
     }
 
-    /**
-     * Adds info from a node to our list of information.
-     */
-    void addNodeInfo(const document::BucketId& id, const BucketCopy& copy);
-
     /** Called to resend delayed resends due to failures. */
     void resendDelayedMessages();
 
@@ -146,8 +126,11 @@ public:
      * Merges all the results with the given bucket database.
      */
     void mergeInto(BucketDatabase& db);
-    bool process(BucketDatabase::Entry& e) override;
-    const EntryList& results() const { return _entries; }
+    // Get our list of information. Only used by unit test.
+    const std::vector<pendingbucketspacedbtransition::Entry>& results() const;
+    // Adds info from a node to our list of information.  Only used by unit test.
+    void addNodeInfo(const document::BucketId& id, const BucketCopy& copy);
+
 
     /**
      * Returns true if this pending state was due to a distribution bit
@@ -156,6 +139,7 @@ public:
     bool distributionChange() const { return _distributionChange; }
     void printXml(vespalib::XmlOutputStream&) const override;
     Summary getSummary() const;
+    std::string requestNodesToString() const;
 
 private:
     /**
@@ -202,41 +186,12 @@ private:
     bool nodeNeedsOwnershipTransferFromGroupDown(uint16_t nodeIndex, const lib::ClusterState& state) const;
     bool nodeWasUpButNowIsDown(const lib::State& old, const lib::State& nw) const;
 
-    typedef std::pair<uint32_t, uint32_t> Range;
-
-    /**
-     * Skips through all entries for the same bucket and returns
-     * the range in the entry list for which they were found.
-     * The range is [from, to>
-     */
-    Range skipAllForSameBucket();
-
-    void insertInfo(BucketDatabase::Entry& info, const Range& range);
-    void addToBucketDB(BucketDatabase& db, const Range& range);
-
-    std::vector<BucketCopy> getCopiesThatAreNewOrAltered(BucketDatabase::Entry& info, const Range& range);
-
-    std::string requestNodesToString();
-
-    // Returns whether at least one replica was removed from the entry.
-    // Does NOT implicitly update trusted status on remaining replicas; caller must do
-    // this explicitly.
-    bool removeCopiesFromNodesThatWereRequested(BucketDatabase::Entry& e, const document::BucketId& bucketId);
-
-    bool databaseIteratorHasPassedBucketInfoIterator(const document::BucketId& bucketId) const;
-    bool bucketInfoIteratorPointsToBucket(const document::BucketId& bucketId) const;
-
-    bool nodeIsOutdated(uint16_t node) const {
-        return (_outdatedNodes.find(node) != _outdatedNodes.end());
-    }
-
     bool storageNodeUpInNewState(uint16_t node) const;
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
     std::map<uint64_t, uint16_t> _sentMessages;
     std::vector<bool> _requestedNodes;
-    std::vector<document::BucketId> _removedBuckets;
     std::deque<std::pair<framework::MilliSecTime, uint16_t> > _delayedRequests;
 
     // Set for all nodes that may have changed state since that previous
@@ -245,11 +200,6 @@ private:
     // May be a superset of _requestedNodes, as some nodes that are outdated
     // may be down and thus cannot get a request.
     std::unordered_set<uint16_t> _outdatedNodes;
-
-    EntryList _entries;
-    uint32_t _iter;
-
-    std::vector<Range> _missingEntries;
 
     lib::ClusterState _prevClusterState;
     lib::ClusterState _newClusterState;
@@ -262,6 +212,7 @@ private:
 
     bool _distributionChange;
     bool _bucketOwnershipTransfer;
+    std::unique_ptr<PendingBucketSpaceDbTransition> _pendingTransition;
 };
 
 }
