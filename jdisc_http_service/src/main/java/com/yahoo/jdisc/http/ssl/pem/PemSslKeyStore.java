@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.Security;
 import java.security.cert.CertificateException;
 
@@ -50,4 +51,16 @@ public class PemSslKeyStore extends SslKeyStore {
         return keyStore;
     }
 
+    private static class PemKeyStoreProvider extends Provider {
+
+        static final String NAME = "PEMKeyStoreProvider";
+        static final double VERSION = 1;
+        static final String DESCRIPTION = "Provides PEM keystore support";
+
+        PemKeyStoreProvider() {
+            super(NAME, VERSION, DESCRIPTION);
+            putService(new Service(this, "KeyStore", "PEM", PemKeyStore. class.getName(), PemKeyStore.aliases, PemKeyStore.attributes));
+        }
+
+    }
 }
