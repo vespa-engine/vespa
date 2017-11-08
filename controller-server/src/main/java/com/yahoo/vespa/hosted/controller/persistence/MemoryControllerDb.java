@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
  */
 public class MemoryControllerDb extends ControllerDb {
 
-    private Map<TenantId, Tenant> tenants = new HashMap<>();
-    private Map<String, Application> applications = new HashMap<>();
-    private Map<RotationId, ApplicationId> rotationAssignments = new HashMap<>();
+    private final Map<TenantId, Tenant> tenants = new HashMap<>();
+    private final Map<String, Application> applications = new HashMap<>();
+    private final Map<RotationId, ApplicationId> rotationAssignments = new HashMap<>();
 
     @Override
     public void createTenant(Tenant tenant) {
@@ -46,23 +46,14 @@ public class MemoryControllerDb extends ControllerDb {
 
     @Override
     public void deleteTenant(TenantId tenantId) {
-        Object removed = tenants.remove(tenantId);
-        if (removed == null)
+        if (tenants.remove(tenantId) == null) {
             throw new NotExistsException(tenantId);
+        }
     }
 
     @Override
     public Optional<Tenant> getTenant(TenantId tenantId) throws PersistenceException {
-        Optional<Tenant> tenant = Optional.ofNullable(tenants.get(tenantId));
-        if(tenant.isPresent()) {
-            Tenant t_noquota = tenant.get();
-            Tenant t_withquota = new Tenant(
-                    t_noquota.getId(), t_noquota.getUserGroup(), t_noquota.getProperty(),
-                    t_noquota.getAthensDomain(), t_noquota.getPropertyId());
-            return Optional.of(t_withquota);
-        } else {
-            return tenant;
-        }
+        return Optional.ofNullable(tenants.get(tenantId));
     }
 
     @Override
