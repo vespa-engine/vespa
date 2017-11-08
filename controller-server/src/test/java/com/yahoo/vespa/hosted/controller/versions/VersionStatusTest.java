@@ -204,6 +204,7 @@ public class VersionStatusTest {
         
         // Another default application upgrades, raising confidence to high
         tester.completeUpgrade(default8, version2, "default");
+        tester.completeUpgrade(default9, version2, "default");
         tester.updateVersionStatus();
 
         assertEquals("Confidence remains unchanged for version0: High",

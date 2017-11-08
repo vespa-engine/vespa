@@ -22,8 +22,12 @@ public interface FileDistribution {
     void limitSendingOfDeployedFilesTo(Collection<String> hostNames);
     void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames);
 
+    static String getDefaultFileDBRoot() {
+        return Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution");
+    }
+
     static File getDefaultFileDBPath() {
-        return new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
+        return new File(getDefaultFileDBRoot());
     }
 
 }

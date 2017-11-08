@@ -22,11 +22,8 @@ public class FileDistributionProvider {
     public FileDistributionProvider(File applicationDir, String zooKeepersSpec, String applicationId, Lock fileDistributionLock) {
         ensureDirExists(FileDistribution.getDefaultFileDBPath());
         final FileDistributionManager manager = new FileDistributionManager(
-                FileDistribution.getDefaultFileDBPath(),
-                applicationDir,
-                zooKeepersSpec,
-                applicationId,
-                fileDistributionLock);
+                FileDistribution.getDefaultFileDBPath(), applicationDir,
+                zooKeepersSpec, applicationId, fileDistributionLock);
         this.fileDistribution = new FileDBHandler(manager);
         this.fileRegistry = new FileDBRegistry(manager);
     }

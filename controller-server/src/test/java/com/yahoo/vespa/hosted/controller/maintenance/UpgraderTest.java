@@ -51,7 +51,7 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         assertEquals("All already on the right version: Nothing to do", 0, tester.buildSystem().jobs().size());
 
-        // --- A new version is released - everything goes smoothly
+        // --- 5.1 is released - everything goes smoothly
         version = Version.fromString("5.1");
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
@@ -86,7 +86,7 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         assertEquals("Nothing to do", 0, tester.buildSystem().jobs().size());
 
-        // --- A new version is released - which fails a Canary
+        // --- 5.2 is released - which fails a Canary
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
@@ -148,51 +148,55 @@ public class UpgraderTest {
         assertEquals("Applications are on 5.3 - nothing to do", 0, tester.buildSystem().jobs().size());
         
         // --- Starting upgrading to a new version which breaks, causing upgrades to commence on the previous version
-        version = Version.fromString("5.4");
+        Version version54 = Version.fromString("5.4");
         Application default3 = tester.createAndDeploy("default3", 5, "default"); // need 4 to break a version
         Application default4 = tester.createAndDeploy("default4", 5, "default");
-        tester.updateVersionStatus(version);
+        tester.updateVersionStatus(version54);
         tester.upgrader().maintain(); // cause canary upgrades to 5.4
-        tester.completeUpgrade(canary0, version, "canary");
-        tester.completeUpgrade(canary1, version, "canary");
-        tester.updateVersionStatus(version);
+        tester.completeUpgrade(canary0, version54, "canary");
+        tester.completeUpgrade(canary1, version54, "canary");
+        tester.updateVersionStatus(version54);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         assertEquals("Upgrade of defaults are scheduled", 5, tester.buildSystem().jobs().size());
-        assertEquals(version, ((Change.VersionChange)tester.application(default0.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default4.id()).deploying().get()).version());
-        tester.completeUpgrade(default0, version, "default");
+        assertEquals(version54, ((Change.VersionChange)tester.application(default0.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default4.id()).deploying().get()).version());
+        tester.completeUpgrade(default0, version54, "default");
         // State: Default applications started upgrading to 5.4 (and one completed)
-        version = Version.fromString("5.5");
-        tester.updateVersionStatus(version);
+        Version version55 = Version.fromString("5.5");
+        tester.updateVersionStatus(version55);
         tester.upgrader().maintain(); // cause canary upgrades to 5.5
-        tester.completeUpgrade(canary0, version, "canary");
-        tester.completeUpgrade(canary1, version, "canary");
-        tester.updateVersionStatus(version);
+        tester.completeUpgrade(canary0, version55, "canary");
+        tester.completeUpgrade(canary1, version55, "canary");
+        tester.updateVersionStatus(version55);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         assertEquals("Upgrade of defaults are scheduled", 5, tester.buildSystem().jobs().size());
-        assertEquals(version, ((Change.VersionChange)tester.application(default0.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version());
-        assertEquals(version, ((Change.VersionChange)tester.application(default4.id()).deploying().get()).version());
+        assertEquals(version55, ((Change.VersionChange)tester.application(default0.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version());
+        assertEquals(version54, ((Change.VersionChange)tester.application(default4.id()).deploying().get()).version());
+        tester.completeUpgrade(default1, version54, "default");
+        tester.completeUpgrade(default2, version54, "default");
+        tester.completeUpgradeWithError(default3, version54, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default4, version54, "default", DeploymentJobs.JobType.productionUsWest1);
         // State: Default applications started upgrading to 5.5
-        tester.completeUpgradeWithError(default0, version, "default", DeploymentJobs.JobType.stagingTest);
-        tester.completeUpgradeWithError(default1, version, "default", DeploymentJobs.JobType.stagingTest);
-        tester.completeUpgradeWithError(default2, version, "default", DeploymentJobs.JobType.stagingTest);
-        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.productionUsWest1);
-        tester.completeUpgrade(default4, version, "default");
-        tester.updateVersionStatus(version);
+        tester.upgrader().maintain();
+        tester.completeUpgradeWithError(default0, version55, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default1, version55, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default2, version55, "default", DeploymentJobs.JobType.stagingTest);
+        tester.completeUpgradeWithError(default3, version55, "default", DeploymentJobs.JobType.productionUsWest1);
+        tester.completeUpgrade(default4, version55, "default");
+        tester.updateVersionStatus(version55);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
-        assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken",
-                     3, tester.buildSystem().jobs().size());
-        assertEquals("5.4", ((Change.VersionChange)tester.application(default1.id()).deploying().get()).version().toString());
-        assertEquals("5.4", ((Change.VersionChange)tester.application(default2.id()).deploying().get()).version().toString());
+        assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
+                     "This is default3 since it failed upgrade on both 5.4 and 5.5",
+                     1, tester.buildSystem().jobs().size());
         assertEquals("5.4", ((Change.VersionChange)tester.application(default3.id()).deploying().get()).version().toString());
     }
 
@@ -637,16 +641,6 @@ public class UpgraderTest {
         assertEquals(version, tester.application(default1.id()).deployedVersion().get());
         assertEquals(version, tester.application(default2.id()).deployedVersion().get());
         assertEquals(version, tester.application(default3.id()).deployedVersion().get());
-
-        // Over 12 hours pass and upgrade is rescheduled for 5th app
-        assertEquals(0, tester.buildSystem().jobs().size());
-        tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
-        tester.upgrader().maintain();
-        assertEquals(1, tester.buildSystem().jobs().size());
-        assertEquals("Upgrade is rescheduled", DeploymentJobs.JobType.systemTest.jobName(),
-                     tester.buildSystem().jobs().get(0).jobName());
-        tester.deployCompletely(default4, applicationPackage);
-        assertEquals(version, tester.application(default4.id()).deployedVersion().get());
     }
 
     @Test
