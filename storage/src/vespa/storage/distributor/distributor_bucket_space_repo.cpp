@@ -16,7 +16,7 @@ namespace distributor {
 DistributorBucketSpaceRepo::DistributorBucketSpaceRepo()
     : _map()
 {
-    _map.insert(std::make_pair(BucketSpace::placeHolder(), std::make_unique<DistributorBucketSpace>()));
+    _map.emplace(BucketSpace::placeHolder(), std::make_unique<DistributorBucketSpace>());
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() {
