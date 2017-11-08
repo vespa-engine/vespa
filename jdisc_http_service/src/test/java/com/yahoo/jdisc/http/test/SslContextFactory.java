@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:charlesk@yahoo-inc.com">Charles Kim</a>
+ * @author Charles Kim
  */
 public class SslContextFactory {
 
