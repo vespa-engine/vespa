@@ -1,6 +1,8 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
+import com.google.inject.Inject;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Int32Value;
@@ -27,9 +29,13 @@ public class FileServer {
         return rootDir + "/" + ref.value();
     }
 
+    @Inject
+    public FileServer() {
+        this(FileDistribution.getDefaultFileDBRoot());
+    }
+
     public FileServer(String rootDir) {
         this(rootDir, Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
-
     }
 
     public FileServer(String rootDir, ExecutorService executor) {
