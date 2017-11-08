@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -220,7 +219,7 @@ public class JobStatus {
             if (this == o) return true;
             if ( ! (o instanceof JobRun)) return false;
             JobRun jobRun = (JobRun) o;
-            return id == id &&
+            return id == jobRun.id &&
                    Objects.equals(version, jobRun.version) &&
                    Objects.equals(revision, jobRun.revision) &&
                    upgrade == jobRun.upgrade &&
