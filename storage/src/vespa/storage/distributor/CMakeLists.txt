@@ -27,6 +27,7 @@ vespa_add_library(storage_distributor
     operationtargetresolverimpl.cpp
     ownership_transfer_safe_time_point_calculator.cpp
     pendingclusterstate.cpp
+    pending_bucket_space_db_transition.cpp
     pendingmessagetracker.cpp
     persistence_operation_metric_set.cpp
     persistencemessagetracker.cpp
