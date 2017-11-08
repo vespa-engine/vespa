@@ -94,7 +94,8 @@ public class ProvisioningTester implements AutoCloseable {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
         b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
-        b.addFlavor("docker1", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
+        b.addFlavor("dockerSmall", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
+        b.addFlavor("dockerLarge", 2., 1., 20, Flavor.Type.DOCKER_CONTAINER).cost(3);
         b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
         b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
         b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);

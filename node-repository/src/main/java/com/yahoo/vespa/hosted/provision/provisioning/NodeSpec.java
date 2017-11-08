@@ -79,7 +79,6 @@ public interface NodeSpec {
         @Override
         public boolean isCompatible(Flavor flavor) { 
             if (flavor.satisfies(requestedFlavor)) return true;
-
             return requestedFlavorCanBeAchievedByResizing(flavor);
         }
 
