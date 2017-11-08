@@ -75,7 +75,7 @@ public class JobStatus {
         }
         else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
-                                            ", but that has not been triggered nor deployed");
+                                            ", but that has neither been triggered nor deployed");
 
         }
         else {
@@ -131,18 +131,6 @@ public class JobStatus {
     /** Returns the run when this last succeeded, or empty if it has never succeeded */
     public Optional<JobRun> lastSuccess() { return lastSuccess; }
 
-    /** Returns whether the job last completed for the given change */
-    public boolean lastCompletedFor(Change change) {
-        if (change instanceof Change.ApplicationChange) {
-            Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
-            return lastCompleted().isPresent() && lastCompleted().get().revision().equals(applicationChange.revision());
-        } else if (change instanceof Change.VersionChange) {
-            Change.VersionChange versionChange = (Change.VersionChange) change;
-            return lastCompleted().isPresent() && lastCompleted().get().version().equals(versionChange.version());
-        }
-        throw new IllegalArgumentException("Unexpected change: " + change.getClass());
-    }
-
     @Override
     public String toString() {
         return "job status of " + type + "[ " +
@@ -191,10 +179,12 @@ public class JobStatus {
             this.reason = reason;
             this.at = at;
         }
-        
+
+        // TODO: Replace with proper ID, and make the build number part optional, or something -- it's not there for lastTriggered!
         /** Returns the id of this run of this job, or -1 if not known */
         public long id() { return id; }
 
+        // TODO: Fix how this is set, and add an applicationChange() method as well, in the same vein.
         /** Returns whether this job run was a Vespa upgrade */
         public boolean upgrade() { return upgrade; }
         
@@ -209,6 +199,19 @@ public class JobStatus {
         
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
+
+        // TODO: Consider a version and revision for each JobStatus, to compare against a Target (instead of Change, which is, really, a Target).
+        /** Returns whether the job last completed for the given change */
+        public boolean lastCompletedWas(Change change) {
+            if (change instanceof Change.ApplicationChange) {
+                Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
+                return revision().equals(applicationChange.revision());
+            } else if (change instanceof Change.VersionChange) {
+                Change.VersionChange versionChange = (Change.VersionChange) change;
+                return version().equals(versionChange.version());
+            }
+            throw new IllegalArgumentException("Unexpected change: " + change.getClass());
+        }
 
         @Override
         public int hashCode() {

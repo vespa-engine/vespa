@@ -84,17 +84,14 @@ public class DeploymentTrigger {
             if (report.success()) {
                 if (order.givesApplicationChange(report.jobType())) {
                     if (acceptNewRevisionNow(application)) {
-                        // Set this as the change we are doing, unless we are already pushing a platform change
-                        if ( ! ( application.deploying().isPresent() && 
-                                 (application.deploying().get() instanceof Change.VersionChange)))
-                            application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
+                        application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                     }
                     else { // postpone
                         applications().store(application.withOutstandingChange(true));
                         return;
                     }
                 } 
-                else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
+                else if (application.deployingCompleted()) {
                     // change completed
                     application = application.withDeploying(Optional.empty());
                 }
@@ -209,6 +206,7 @@ public class DeploymentTrigger {
             if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
 
             // Retry first failing job
+            // TODO: Use JobList, requires JobList to sort according to deploymentSpec.
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                 if (isFailing(application.deploying().get(), jobStatus)) {
@@ -296,9 +294,9 @@ public class DeploymentTrigger {
 
     /** Returns whether a job is failing for the current change in the given application */
     private boolean isFailing(Change change, JobStatus status) {
-        return status != null &&
-               !status.isSuccess() &&
-               status.lastCompletedFor(change);
+        return       status != null
+                && ! status.isSuccess()
+                &&   status.lastCompleted().get().lastCompletedWas(change);
     }
 
     private boolean isCapacityConstrained(JobType jobType) {
@@ -368,6 +366,7 @@ public class DeploymentTrigger {
      * @param cause describes why the job is triggered
      * @return the application in the triggered state, which *must* be stored by the caller
      */
+    // TODO: Improve explanation for first parameter.
     private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String cause) {
         if (isRunningProductionJob(application)) return application;
         return triggerAllowParallel(jobType, application, first, false, cause);
@@ -474,6 +473,7 @@ public class DeploymentTrigger {
         
         if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
         if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+        // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
         return false;
     }
     

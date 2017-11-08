@@ -122,7 +122,7 @@ public class DeploymentJobs {
 
     /** Returns whether change can be deployed to the given environment */
     public boolean isDeployableTo(Environment environment, Optional<Change> change) {
-        if (environment == null || !change.isPresent()) {
+        if (environment == null || ! change.isPresent()) {
             return true;
         }
         if (environment == Environment.staging) {
@@ -143,8 +143,8 @@ public class DeploymentJobs {
     /** Returns whether job has completed successfully */
     public boolean isSuccessful(Change change, JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType))
-                .filter(JobStatus::isSuccess)
-                .filter(status -> status.lastCompletedFor(change))
+                .flatMap(JobStatus::lastSuccess)
+                .filter(status -> status.lastCompletedWas(change))
                 .isPresent();
     }
     

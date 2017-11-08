@@ -120,6 +120,7 @@ public class DeploymentOrder {
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
+    // TODO: These sorts should throw when not all items to sort are listed.
     /** Returns deployments sorted according to declared zones */
     public List<Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Collection<Deployment> deployments) {
         List<Zone> productionZones = zones.stream()
@@ -185,7 +186,7 @@ public class DeploymentOrder {
         List<DeploymentSpec.Step> remainingSteps = application.deploymentSpec().steps()
                 .subList(stepIndex + 1, application.deploymentSpec().steps().size());
         for (DeploymentSpec.Step s : remainingSteps) {
-            if (!(s instanceof DeploymentSpec.Delay)) {
+            if (! (s instanceof DeploymentSpec.Delay)) {
                 break;
             }
             totalDelay = totalDelay.plus(((DeploymentSpec.Delay) s).duration());
