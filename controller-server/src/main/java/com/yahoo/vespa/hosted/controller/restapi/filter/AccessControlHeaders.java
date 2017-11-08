@@ -3,16 +3,15 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.common.collect.ImmutableMap;
 
+import java.time.Duration;
 import java.util.Map;
-
-import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * @author gv
  */
 public interface AccessControlHeaders {
 
-    String CORS_PREFLIGHT_REQUEST_CACHE_TTL =  Long.toString(DAYS.toSeconds(7));
+    String CORS_PREFLIGHT_REQUEST_CACHE_TTL =  Long.toString(Duration.ofDays(7).getSeconds());
 
     String ALLOW_ORIGIN_HEADER = "Access-Control-Allow-Origin";
 
