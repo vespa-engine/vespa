@@ -424,11 +424,17 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
         String fileReference = request.parameters().get(0).asString();
-        FileApiErrorCodes result = fileServer.hasFile(fileReference)
-                ? FileApiErrorCodes.OK
-                : FileApiErrorCodes.NOT_FOUND;
-        if (result == FileApiErrorCodes.OK) {
-            fileServer.startFileServing(fileReference, request.target());
+        FileApiErrorCodes result;
+        try {
+            result = fileServer.hasFile(fileReference)
+                    ? FileApiErrorCodes.OK
+                    : FileApiErrorCodes.NOT_FOUND;
+            if (result == FileApiErrorCodes.OK) {
+                fileServer.startFileServing(fileReference, request.target());
+            }
+        } catch (IllegalArgumentException e) {
+            result = FileApiErrorCodes.NOT_FOUND;
+            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
         }
         request.returnValues()
                 .add(new Int32Value(result.getCode()))
