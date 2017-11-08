@@ -437,16 +437,11 @@ PendingClusterState::getSummary() const
                    (_clock.getTimeInMicros().getTime() - _creationTimestamp));
 }
 
-const PendingBucketSpaceDbTransition::EntryList &
-PendingClusterState::results() const
+PendingBucketSpaceDbTransition &
+PendingClusterState::getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace)
 {
-    return _pendingTransition->results();
-}
-
-void
-PendingClusterState::addNodeInfo(const document::BucketId& id, const BucketCopy& copy)
-{
-    _pendingTransition->addNodeInfo(id, copy);
+    (void) bucketSpace;
+    return *_pendingTransition;
 }
 
 }

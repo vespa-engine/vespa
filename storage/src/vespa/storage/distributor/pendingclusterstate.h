@@ -129,11 +129,8 @@ public:
      * Merges all the results with the given bucket database.
      */
     void mergeInto(BucketDatabase& db);
-    // Get our list of information. Only used by unit test.
-    const std::vector<dbtransition::Entry>& results() const;
-    // Adds info from a node to our list of information.  Only used by unit test.
-    void addNodeInfo(const document::BucketId& id, const BucketCopy& copy);
-
+    // Get pending transition for a specific bucket space. Only used by unit test.
+    PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 
     /**
      * Returns true if this pending state was due to a distribution bit
