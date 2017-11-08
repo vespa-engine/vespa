@@ -470,7 +470,8 @@ public class DeploymentTrigger {
     private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
-        
+
+        // TODO: Don't these two below allow concurrent App and Version changes?
         if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
         if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
