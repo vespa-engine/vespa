@@ -10,6 +10,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 #include <unordered_set>
+#include <unordered_map>
 #include <deque>
 
 namespace storage::distributor {
@@ -164,9 +165,20 @@ private:
             DistributorBucketSpaceRepo &bucketSpaceRepo,
             api::Timestamp creationTimestamp);
 
+    struct BucketSpaceAndNode {
+        document::BucketSpace bucketSpace;
+        uint16_t              node;
+        BucketSpaceAndNode(document::BucketSpace bucketSpace_,
+                           uint16_t node_)
+            : bucketSpace(bucketSpace_),
+              node(node_)
+        {
+        }
+    };
+
     void constructorHelper();
     void logConstructionInformation() const;
-    void requestNode(uint16_t node);
+    void requestNode(BucketSpaceAndNode bucketSpaceAndNode);
     bool distributorChanged(const lib::ClusterState& oldState, const lib::ClusterState& newState);
     bool storageNodeMayHaveLostData(uint16_t index);
     bool storageNodeChanged(uint16_t index);
@@ -191,9 +203,9 @@ private:
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
-    std::map<uint64_t, uint16_t> _sentMessages;
+    std::map<uint64_t, BucketSpaceAndNode> _sentMessages;
     std::vector<bool> _requestedNodes;
-    std::deque<std::pair<framework::MilliSecTime, uint16_t> > _delayedRequests;
+    std::deque<std::pair<framework::MilliSecTime, BucketSpaceAndNode> > _delayedRequests;
 
     // Set for all nodes that may have changed state since that previous
     // active cluster state, or that were marked as outdated when the pending
@@ -214,7 +226,7 @@ private:
 
     bool _distributionChange;
     bool _bucketOwnershipTransfer;
-    std::unique_ptr<PendingBucketSpaceDbTransition> _pendingTransition;
+    std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash> _pendingTransitions;
 };
 
 }
