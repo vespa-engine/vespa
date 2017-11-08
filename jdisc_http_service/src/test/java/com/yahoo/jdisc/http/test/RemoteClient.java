@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.test;
 
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
-import com.yahoo.jdisc.http.ssl.SslContextFactory;
 import com.yahoo.jdisc.http.ssl.SslKeyStore;
 
 import javax.net.ssl.SSLContext;
