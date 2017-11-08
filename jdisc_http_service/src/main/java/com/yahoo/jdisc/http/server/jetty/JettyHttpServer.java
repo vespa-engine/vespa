@@ -324,8 +324,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         return bundleContext.getService(ref);
     }
 
-    private static ExecutorService newJanitor(final ThreadFactory factory) {
-        final int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    private static ExecutorService newJanitor(ThreadFactory factory) {
+        int threadPoolSize = Runtime.getRuntime().availableProcessors();
         log.info("Creating janitor executor with " + threadPoolSize + " threads");
         return Executors.newFixedThreadPool(
                 threadPoolSize,
