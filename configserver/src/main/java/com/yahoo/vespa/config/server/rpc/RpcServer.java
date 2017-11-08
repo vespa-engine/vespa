@@ -4,18 +4,22 @@ package com.yahoo.vespa.config.server.rpc;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Int64Value;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Value;
 import com.yahoo.log.LogLevel;
@@ -38,7 +42,10 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.Tenants;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -421,14 +428,45 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return useRequestVersion;
     }
 
+    class FileReceiver implements FileServer.Receiver {
+        Target target;
+        FileReceiver(Target target) {
+            this.target = target;
+        }
+
+        @Override
+        public String toString() {
+            return target.toString();
+        }
+
+        @Override
+        public void receive(FileReference reference, String filename, byte [] content, FileServer.ReplayStatus status) {
+            XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+            Request fileBlob = new Request("filedistribution.receiveFile");
+            fileBlob.parameters().add(new StringValue(reference.value()));
+            fileBlob.parameters().add(new StringValue(filename));
+            fileBlob.parameters().add(new DataValue(content));
+            fileBlob.parameters().add(new Int64Value(hasher.hash(ByteBuffer.wrap(content), 0)));
+            fileBlob.parameters().add(new Int32Value(status.getCode()));
+            fileBlob.parameters().add(new StringValue(status.getDescription()));
+            target.invokeSync(fileBlob, 600);
+        }
+    }
+
     @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
         String fileReference = request.parameters().get(0).asString();
-        FileApiErrorCodes result = fileServer.hasFile(fileReference)
-                ? FileApiErrorCodes.OK
-                : FileApiErrorCodes.NOT_FOUND;
-        if (result == FileApiErrorCodes.OK) {
-            fileServer.startFileServing(fileReference, request.target());
+        FileApiErrorCodes result;
+        try {
+            result = fileServer.hasFile(fileReference)
+                    ? FileApiErrorCodes.OK
+                    : FileApiErrorCodes.NOT_FOUND;
+            if (result == FileApiErrorCodes.OK) {
+                fileServer.startFileServing(fileReference, new FileReceiver(request.target()));
+            }
+        } catch (IllegalArgumentException e) {
+            result = FileApiErrorCodes.NOT_FOUND;
+            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
         }
         request.returnValues()
                 .add(new Int32Value(result.getCode()))
