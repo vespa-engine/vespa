@@ -7,21 +7,6 @@
 namespace storage::distributor {
 
 bool
-ClusterInformation::ownsBucket(const document::BucketId& bucketId) const
-{
-    try {
-        uint16_t distributor(getDistribution().getIdealDistributorNode(
-                        getClusterState(), bucketId));
-
-        return (getDistributorIndex() == distributor);
-    } catch (lib::TooFewBucketBitsInUseException& e) {
-        return false;
-    } catch (lib::NoDistributorsAvailableException& e) {
-        return false;
-    }
-}
-
-bool
 ClusterInformation::nodeInSameGroupAsSelf(uint16_t otherNode) const
 {
     return (getDistribution().getNodeGraph().getGroupForNode(otherNode)

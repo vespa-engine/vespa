@@ -32,8 +32,6 @@ public:
 
     virtual const char* getStorageUpStates() const = 0;
 
-    bool ownsBucket(const document::BucketId& bucketId) const;
-
     bool nodeInSameGroupAsSelf(uint16_t otherNode) const;
 
     vespalib::string getDistributionHash() const;
