@@ -70,7 +70,7 @@ public class FailureRedeployerTest {
         tester.clock().advance(Duration.ofMinutes(1));
         tester.failureRedeployer().maintain();
         assertFalse("Job is not retried", tester.buildSystem().jobs().stream()
-                .anyMatch(j -> j.jobName().equals(DeploymentJobs.JobType.productionUsEast3.id())));
+                .anyMatch(j -> j.jobName().equals(DeploymentJobs.JobType.productionUsEast3.jobName())));
 
         // Test environments pass
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
@@ -109,14 +109,14 @@ public class FailureRedeployerTest {
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
 
         // staging-test starts, but does not complete
-        assertEquals(DeploymentJobs.JobType.stagingTest.id(), tester.buildSystem().takeJobsToRun().get(0).jobName());
+        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.buildSystem().takeJobsToRun().get(0).jobName());
         tester.failureRedeployer().maintain();
         assertTrue("No jobs retried", tester.buildSystem().jobs().isEmpty());
 
         // Just over 12 hours pass, job is retried
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.failureRedeployer().maintain();
-        assertEquals(DeploymentJobs.JobType.stagingTest.id(), tester.buildSystem().takeJobsToRun().get(0).jobName());
+        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.buildSystem().takeJobsToRun().get(0).jobName());
 
         // Deployment completes
         tester.deploy(DeploymentJobs.JobType.stagingTest, app, applicationPackage, true);
@@ -212,7 +212,7 @@ public class FailureRedeployerTest {
 
         // Production job starts, but does not complete
         assertEquals(1, tester.buildSystem().jobs().size());
-        assertEquals("Production job triggered", DeploymentJobs.JobType.productionCdUsCentral1.id(), tester.buildSystem().jobs().get(0).jobName());
+        assertEquals("Production job triggered", DeploymentJobs.JobType.productionCdUsCentral1.jobName(), tester.buildSystem().jobs().get(0).jobName());
         tester.buildSystem().takeJobsToRun();
 
         // Failure re-deployer runs

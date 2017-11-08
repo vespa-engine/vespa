@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -16,19 +15,16 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
+import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
 /**
  * This class determines the order of deployments according to an application's deployment spec.
@@ -64,7 +60,7 @@ public class DeploymentOrder {
         // At this point we have deployed to system test, so deployment spec is available
         List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
         Optional<DeploymentSpec.Step> currentStep = fromJob(job, application);
-        if (!currentStep.isPresent()) {
+        if ( ! currentStep.isPresent()) {
             return Collections.emptyList();
         }
 
@@ -75,13 +71,13 @@ public class DeploymentOrder {
         }
 
         // Postpone if step hasn't completed all its jobs for this change
-        if (!completedSuccessfully(currentStep.get(), application.deploying().get(), application)) {
+        if ( ! completedSuccessfully(currentStep.get(), application.deploying().get(), application)) {
             return Collections.emptyList();
         }
 
         // Postpone next job if delay has not passed yet
         Duration delay = delayAfter(currentStep.get(), application);
-        if (postponeDeployment(delay, job, application)) {
+        if (shouldPostponeDeployment(delay, job, application)) {
             log.info(String.format("Delaying next job after %s of %s by %s", job, application, delay));
             return Collections.emptyList();
         }
@@ -89,11 +85,11 @@ public class DeploymentOrder {
         DeploymentSpec.Step nextStep = deploymentSteps.get(currentIndex + 1);
         return nextStep.zones().stream()
                 .map(this::toJob)
-                .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
-    /** Returns whether the given job is first in a deployment */
-    public boolean isFirst(JobType job) {
+    /** Returns whether the given job causes an application change */
+    public boolean givesApplicationChange(JobType job) {
         return job == JobType.component;
     }
 
@@ -113,35 +109,33 @@ public class DeploymentOrder {
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
         return deploymentSpec.steps().stream()
                 .flatMap(step -> jobsFrom(step).stream())
-                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
     /** Returns job status sorted according to deployment spec */
-    public Map<JobType, JobStatus> sortBy(DeploymentSpec deploymentSpec, Map<JobType, JobStatus> jobStatus) {
-        List<DeploymentJobs.JobType> jobs = jobsFrom(deploymentSpec);
-        return jobStatus.entrySet().stream()
-                .sorted(Comparator.comparingInt(kv -> jobs.indexOf(kv.getKey())))
-                .collect(Collectors.collectingAndThen(toLinkedMap(Map.Entry::getKey, Map.Entry::getValue),
-                                                      Collections::unmodifiableMap));
+    public List<JobStatus> sortBy(DeploymentSpec deploymentSpec, Collection<JobStatus> jobStatus) {
+        List<DeploymentJobs.JobType> sortedJobs = jobsFrom(deploymentSpec);
+        return jobStatus.stream()
+                .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
     /** Returns deployments sorted according to declared zones */
-    public Map<Zone, Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Map<Zone, Deployment> deployments) {
+    public List<Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Collection<Deployment> deployments) {
         List<Zone> productionZones = zones.stream()
-                .filter(z -> z.environment() == Environment.prod && z.region().isPresent())
+                .filter(z -> z.region().isPresent())
                 .map(z -> new Zone(z.environment(), z.region().get()))
-                .collect(Collectors.toList());
-        return deployments.entrySet().stream()
-                .sorted(Comparator.comparingInt(kv -> productionZones.indexOf(kv.getKey())))
-                .collect(Collectors.collectingAndThen(toLinkedMap(Map.Entry::getKey, Map.Entry::getValue),
-                                                      Collections::unmodifiableMap));
+                .collect(toList());
+        return deployments.stream()
+                .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
     /** Returns jobs for the given step */
     private List<JobType> jobsFrom(DeploymentSpec.Step step) {
         return step.zones().stream()
                 .map(this::toJob)
-                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
     /** Returns whether all jobs have completed successfully for given step */
@@ -167,7 +161,7 @@ public class DeploymentOrder {
     }
 
     /** Returns whether deployment should be postponed according to delay */
-    private boolean postponeDeployment(Duration delay, JobType job, Application application) {
+    private boolean shouldPostponeDeployment(Duration delay, JobType job, Application application) {
         Optional<Instant> lastSuccess = Optional.ofNullable(application.deploymentJobs().jobStatus().get(job))
                 .flatMap(JobStatus::lastSuccess)
                 .map(JobStatus.JobRun::at);
@@ -177,9 +171,8 @@ public class DeploymentOrder {
     /** Find all steps that deploy to one or more zones */
     private static List<DeploymentSpec.Step> deploymentSteps(Application application) {
         return application.deploymentSpec().steps().stream()
-                .filter(step -> step instanceof DeploymentSpec.DeclaredZone ||
-                                step instanceof DeploymentSpec.ParallelZones)
-                .collect(Collectors.toList());
+                .filter(step -> ! step.zones().isEmpty())
+                .collect(toList());
     }
 
     /** Determines the delay that should pass after the given step */
@@ -198,15 +191,6 @@ public class DeploymentOrder {
             totalDelay = totalDelay.plus(((DeploymentSpec.Delay) s).duration());
         }
         return totalDelay;
-    }
-
-    private static <T, K, U> Collector<T, ?, Map<K,U>> toLinkedMap(Function<? super T, ? extends K> keyMapper,
-                                                                   Function<? super T, ? extends U> valueMapper) {
-        return Collectors.toMap(keyMapper, valueMapper,
-                                (u, v) -> {
-                                    throw new IllegalStateException(String.format("Duplicate key %s", u));
-                                },
-                                LinkedHashMap::new);
     }
 
 }

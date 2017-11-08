@@ -643,7 +643,7 @@ public class UpgraderTest {
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.upgrader().maintain();
         assertEquals(1, tester.buildSystem().jobs().size());
-        assertEquals("Upgrade is rescheduled", DeploymentJobs.JobType.systemTest.id(),
+        assertEquals("Upgrade is rescheduled", DeploymentJobs.JobType.systemTest.jobName(),
                      tester.buildSystem().jobs().get(0).jobName());
         tester.deployCompletely(default4, applicationPackage);
         assertEquals(version, tester.application(default4.id()).deployedVersion().get());

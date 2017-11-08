@@ -101,7 +101,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                     firstFailingOn(version.versionNumber(), application).ifPresent(firstFailing -> {
                         Cursor applicationObject = failingArray.addObject();
                         toSlime(applicationObject, application, request);
-                        applicationObject.setString("failing", firstFailing.type().id());
+                        applicationObject.setString("failing", firstFailing.type().jobName());
                     });
                 });
             }
@@ -124,7 +124,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                     lastDeployingTo(version.versionNumber(), application).ifPresent(lastDeploying -> {
                         Cursor applicationObject = runningArray.addObject();
                         toSlime(applicationObject, application, request);
-                        applicationObject.setString("running", lastDeploying.type().id());
+                        applicationObject.setString("running", lastDeploying.type().jobName());
                     });
                 });
             }

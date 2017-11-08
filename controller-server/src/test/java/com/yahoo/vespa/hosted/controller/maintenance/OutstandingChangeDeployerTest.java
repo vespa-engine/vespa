@@ -49,7 +49,7 @@ public class OutstandingChangeDeployerTest {
         List<BuildService.BuildJob> jobs = tester.buildSystem().jobs();
         assertEquals(1, jobs.size());
         assertEquals(11, jobs.get(0).projectId());
-        assertEquals(DeploymentJobs.JobType.systemTest.id(), jobs.get(0).jobName());
+        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), jobs.get(0).jobName());
         assertFalse(tester.application("app1").hasOutstandingChange());
     }
 

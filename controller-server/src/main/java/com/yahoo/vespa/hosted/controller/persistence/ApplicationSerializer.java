@@ -215,7 +215,7 @@ public class ApplicationSerializer {
     }
     
     private void toSlime(JobStatus jobStatus, Cursor object) {
-        object.setString(jobTypeField, jobStatus.type().id());
+        object.setString(jobTypeField, jobStatus.type().jobName());
         if (jobStatus.jobError().isPresent())
             object.setString(errorField, jobStatus.jobError().get().name());
 
@@ -373,7 +373,7 @@ public class ApplicationSerializer {
     }
     
     private JobStatus jobStatusFromSlime(Inspector object) {
-        DeploymentJobs.JobType jobType = DeploymentJobs.JobType.fromId(object.field(jobTypeField).asString());
+        DeploymentJobs.JobType jobType = DeploymentJobs.JobType.fromJobName(object.field(jobTypeField).asString());
 
         Optional<JobError> jobError = Optional.empty();
         if (object.field(errorField).valid())

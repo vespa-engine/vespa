@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.yahoo.vespa.hosted.controller.deployment.MockBuildService.JobStatus.QUEUED;
@@ -161,11 +162,11 @@ public class MockBuildService implements BuildService {
                                 jobType,
                                 projectId,
                                 42,
-                                JobError.from(success)
+                                Optional.ofNullable(success ? null : JobError.unknown)
                         ));
         }
 
-        private BuildJob buildJob() { return new BuildJob(projectId, jobType.id()); }
+        private BuildJob buildJob() { return new BuildJob(projectId, jobType.jobName()); }
 
     }
 
