@@ -252,8 +252,10 @@ PendingClusterState::distributorChanged(
         const lib::State& nw(newState.getNodeState(node).getState());
 
         if (nodeWasUpButNowIsDown(old, nw)) {
-            return (nodeInSameGroupAsSelf(i)
-                    || nodeNeedsOwnershipTransferFromGroupDown(i, newState));
+            if (nodeInSameGroupAsSelf(i) ||
+                nodeNeedsOwnershipTransferFromGroupDown(i, newState)) {
+                return true;
+            }
         }
     }
 
