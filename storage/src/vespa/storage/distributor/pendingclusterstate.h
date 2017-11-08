@@ -79,8 +79,8 @@ public:
     bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& reply);
 
     /**
-     * Tags the given node as having replied to the
-     * request bucket info command.
+     * Tags the given node as having replied to at least one of the
+     * request bucket info commands. Only used for debug logging.
      */
     void setNodeReplied(uint16_t nodeIdx) {
         _requestedNodes[nodeIdx] = true;
@@ -176,7 +176,7 @@ private:
         }
     };
 
-    void constructorHelper();
+    void initializeBucketSpaceTransitions();
     void logConstructionInformation() const;
     void requestNode(BucketSpaceAndNode bucketSpaceAndNode);
     bool distributorChanged(const lib::ClusterState& oldState, const lib::ClusterState& newState);

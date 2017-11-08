@@ -48,7 +48,7 @@ PendingClusterState::PendingClusterState(
         updateSetOfNodesThatAreOutdated();
         addAdditionalNodesToOutdatedSet(outdatedNodes);
     }
-    constructorHelper();
+    initializeBucketSpaceTransitions();
 }
 
 PendingClusterState::PendingClusterState(
@@ -71,13 +71,13 @@ PendingClusterState::PendingClusterState(
 {
     logConstructionInformation();
     markAllAvailableNodesAsRequiringRequest();
-    constructorHelper();
+    initializeBucketSpaceTransitions();
 }
 
 PendingClusterState::~PendingClusterState() {}
 
 void
-PendingClusterState::constructorHelper()
+PendingClusterState::initializeBucketSpaceTransitions()
 {
     for (auto &elem : _bucketSpaceRepo) {
         _pendingTransitions.emplace(elem.first, std::make_unique<PendingBucketSpaceDbTransition>(*this, _clusterInfo, _newClusterState, _creationTimestamp));
@@ -326,8 +326,9 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
     vespalib::string distributionHash(_clusterInfo->getDistributionHash());
     LOG(debug,
-        "Requesting bucket info for node %d with cluster state '%s' "
+        "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' "
         "and distribution hash '%s'",
+        bucketSpaceAndNode.bucketSpace.getId(),
         bucketSpaceAndNode.node,
         _newClusterState.toString().c_str(),
         distributionHash.c_str());
