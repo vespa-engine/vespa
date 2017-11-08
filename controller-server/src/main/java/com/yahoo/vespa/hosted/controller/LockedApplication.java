@@ -61,6 +61,7 @@ public class LockedApplication extends Application {
                                                      deploying(), hasOutstandingChange()), lock);
     }
 
+    // TODO: runId is always -1. Don't pass it, and pretend it's there.
     public LockedApplication withJobTriggering(long runId, DeploymentJobs.JobType type, Optional<Change> change,
                                                String reason, Instant triggerTime, Controller controller) {
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(), deployments(),

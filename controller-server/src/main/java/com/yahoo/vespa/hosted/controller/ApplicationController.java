@@ -318,6 +318,7 @@ public class ApplicationController {
                     // Update with (potentially) missing information about what we triggered
                     JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
                     application = application.with(application.deploymentJobs()
+                            // TODO: What is this hack?
                                                            .withTriggering(jobType.get(),
                                                                            application.deploying(),
                                                                            triggering.id(),

@@ -110,7 +110,7 @@ public class JobStatus {
         if ( ! lastTriggered.isPresent()) return false;
         if (lastTriggered.get().at().isBefore(timeoutLimit)) return false;
         if ( ! lastCompleted.isPresent()) return true;
-        return lastTriggered.get().at().isAfter(lastCompleted.get().at());
+        return ! lastTriggered.get().at().isBefore(lastCompleted.get().at());
     }
 
     /** The error of the last completion, or empty if the last run succeeded */

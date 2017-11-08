@@ -191,6 +191,7 @@ public class DeploymentTester {
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, Optional<DeploymentJobs.JobError> jobError) {
+        clock().advance(Duration.ofSeconds(1));
         applications().notifyJobCompletion(jobReport(application, jobType, jobError));
     }
 
