@@ -176,10 +176,6 @@ public class CuratorDb {
         VersionStatusSerializer serializer = new VersionStatusSerializer();
         NestedTransaction transaction = new NestedTransaction();
         try {
-            // TODO: Removes unused data. Remove after October 2017
-            if (curator.getData(systemVersionPath()).isPresent()) {
-                curator.delete(systemVersionPath());
-            }
             curator.set(versionStatusPath(), SlimeUtils.toJsonBytes(serializer.toSlime(status)));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize version status", e);
