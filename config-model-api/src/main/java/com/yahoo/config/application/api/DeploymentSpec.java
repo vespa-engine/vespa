@@ -90,9 +90,6 @@ public class DeploymentSpec {
 
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<Step> completeSteps(List<Step> steps) {
-        // Ensure no duplicate deployments to the same zone
-        steps = new ArrayList<>(new LinkedHashSet<>(steps));
-        
         // Add staging if required and missing
         if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
             steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {

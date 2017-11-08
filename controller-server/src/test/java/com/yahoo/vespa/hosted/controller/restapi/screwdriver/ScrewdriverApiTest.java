@@ -96,14 +96,14 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         Response response;
 
         response = container.handleRequest(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.GET));
-        assertTrue("Response contains system-test", response.getBodyAsString().contains(JobType.systemTest.id()));
-        assertTrue("Response contains staging-test", response.getBodyAsString().contains(JobType.stagingTest.id()));
+        assertTrue("Response contains system-test", response.getBodyAsString().contains(JobType.systemTest.jobName()));
+        assertTrue("Response contains staging-test", response.getBodyAsString().contains(JobType.stagingTest.jobName()));
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
         // Check that GET didn't affect the enqueued jobs.
         response = container.handleRequest(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.DELETE));
-        assertTrue("Response contains system-test", response.getBodyAsString().contains(JobType.systemTest.id()));
-        assertTrue("Response contains staging-test", response.getBodyAsString().contains(JobType.stagingTest.id()));
+        assertTrue("Response contains system-test", response.getBodyAsString().contains(JobType.systemTest.jobName()));
+        assertTrue("Response contains staging-test", response.getBodyAsString().contains(JobType.stagingTest.jobName()));
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
         Thread.sleep(50);
@@ -163,7 +163,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    "invalid".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown job id 'invalid'\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown job name 'invalid'\"}");
 
         // component is triggered if no job is specified in request body
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
@@ -172,7 +172,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
 
         assertFalse(buildSystem.jobs().isEmpty());
-        assertEquals(JobType.component.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(JobType.component.jobName(), buildSystem.jobs().get(0).jobName());
         assertEquals(1L, buildSystem.jobs().get(0).projectId());
         buildSystem.takeJobsToRun();
 
@@ -182,7 +182,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                    "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
                        200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
         assertFalse(buildSystem.jobs().isEmpty());
-        assertEquals(JobType.stagingTest.id(), buildSystem.jobs().get(0).jobName());
+        assertEquals(JobType.stagingTest.jobName(), buildSystem.jobs().get(0).jobName());
         assertEquals(1L, buildSystem.jobs().get(0).projectId());
     }
     
@@ -197,14 +197,14 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                      Optional<JobError> jobError) {
         return
                 "{\n" +
-                        "    \"projectId\"     : "  + projectId + ",\n" +
-                        "    \"jobName\"       :\"" + jobType.id() + "\",\n" +
-                        "    \"buildNumber\"   : "  + buildNumber + ",\n" +
-                        jobError.map(message -> "    \"jobError\"      : \""  + message + "\",\n").orElse("") +
-                        "    \"tenant\"        :\"" + applicationId.tenant().value() + "\",\n" +
-                        "    \"application\"   :\"" + applicationId.application().value() + "\",\n" +
-                        "    \"instance\"      :\"" + applicationId.instance().value() + "\"\n" +
-                        "}";
+                "    \"projectId\"     : " + projectId + ",\n" +
+                "    \"jobName\"       :\"" + jobType.jobName() + "\",\n" +
+                "    \"buildNumber\"   : " + buildNumber + ",\n" +
+                jobError.map(message -> "    \"jobError\"      : \""  + message + "\",\n").orElse("") +
+                "    \"tenant\"        :\"" + applicationId.tenant().value() + "\",\n" +
+                "    \"application\"   :\"" + applicationId.application().value() + "\",\n" +
+                "    \"instance\"      :\"" + applicationId.instance().value() + "\"\n" +
+                "}";
     }
 
 }

@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.unknown;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -140,6 +141,20 @@ public class DeploymentTester {
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
+    public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType, boolean success) {
+        return jobReport(application, jobType, Optional.ofNullable(success ? null : unknown));
+    }
+
+    public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType, Optional<DeploymentJobs.JobError> jobError) {
+        return new DeploymentJobs.JobReport(
+                application.id(),
+                jobType,
+                application.deploymentJobs().projectId().get(),
+                42,
+                jobError
+        );
+    }
+
     /** Deploy application using the given application package, but expecting to stop after test phases */
     public void deployTestOnly(Application application, ApplicationPackage applicationPackage) {
         notifyJobCompletion(JobType.component, application, true);
@@ -172,7 +187,7 @@ public class DeploymentTester {
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, boolean success) {
-        notifyJobCompletion(jobType, application, DeploymentJobs.JobError.from(success));
+        notifyJobCompletion(jobType, application, Optional.ofNullable(success ? null : unknown));
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, Optional<DeploymentJobs.JobError> jobError) {
@@ -228,7 +243,7 @@ public class DeploymentTester {
         for (JobType job : jobs) {
             BuildService.BuildJob buildJob = findJob(application, job);
             assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.projectId());
-            assertEquals(job.id(), buildJob.jobName());
+            assertEquals(job.jobName(), buildJob.jobName());
         }
         if (expectOnlyTheseJobs)
             assertEquals(jobs.length, countJobsOf(application));
@@ -237,7 +252,7 @@ public class DeploymentTester {
 
     private BuildService.BuildJob findJob(Application application, JobType jobType) {
         for (BuildService.BuildJob job : buildSystem().jobs())
-            if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.id()))
+            if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.jobName()))
                 return job;
         throw new NoSuchElementException(jobType + " is not scheduled for " + application);
     }
@@ -246,15 +261,6 @@ public class DeploymentTester {
         return (int)buildSystem().jobs().stream()
                                         .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
                                         .count();
-    }
-    private DeploymentJobs.JobReport jobReport(Application application, JobType jobType, Optional<DeploymentJobs.JobError> jobError) {
-        return new DeploymentJobs.JobReport(
-                application.id(),
-                jobType,
-                application.deploymentJobs().projectId().get(),
-                42,
-                jobError
-        );
     }
 
     private static ApplicationPackage applicationPackage(String upgradePolicy) {

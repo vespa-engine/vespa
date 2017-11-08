@@ -82,7 +82,7 @@ public class DeploymentTrigger {
             
             // Handle successful starting and ending
             if (report.success()) {
-                if (order.isFirst(report.jobType())) { // the first job tells us that a change occurred
+                if (order.givesApplicationChange(report.jobType())) {
                     if (acceptNewRevisionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
                         if ( ! ( application.deploying().isPresent() && 

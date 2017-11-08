@@ -105,12 +105,12 @@ public class DeploymentJobs {
 
     /** Returns whether this has some job status which is not a success */
     public boolean hasFailures() {
-        return status.values().stream().anyMatch(jobStatus -> ! jobStatus.isSuccess());
+        return JobList.from(status.values()).failing().anyMatch();
     }
 
     /** Returns whether any job is currently in progress */
     public boolean isRunning(Instant timeoutLimit) {
-        return status.values().stream().anyMatch(job -> job.isRunning(timeoutLimit));
+        return JobList.from(status.values()).running(timeoutLimit).anyMatch();
     }
 
     /** Returns whether the given job type is currently running and was started after timeoutLimit */
@@ -166,33 +166,44 @@ public class DeploymentJobs {
 
     public Optional<IssueId> issueId() { return issueId; }
 
+    private static Optional<Long> requireId(Optional<Long> id, String message) {
+        Objects.requireNonNull(id, message);
+        if ( ! id.isPresent()) {
+            return id;
+        }
+        if (id.get() <= 0) {
+            throw new IllegalArgumentException(message);
+        }
+        return id;
+    }
+
     /** Job types that exist in the build system */
     public enum JobType {
 
-        component("component"),
-        systemTest("system-test", zone(SystemName.cd, "test", "cd-us-central-1"), zone("test", "us-east-1")),
-        stagingTest("staging-test", zone(SystemName.cd, "staging", "cd-us-central-1"), zone("staging", "us-east-3")),
-        productionCorpUsEast1("production-corp-us-east-1", zone("prod", "corp-us-east-1")),
-        productionUsEast3("production-us-east-3", zone("prod", "us-east-3")),
-        productionUsWest1("production-us-west-1", zone("prod", "us-west-1")),
-        productionUsCentral1("production-us-central-1", zone("prod", "us-central-1")),
-        productionApNortheast1("production-ap-northeast-1", zone("prod", "ap-northeast-1")),
-        productionApNortheast2("production-ap-northeast-2", zone("prod", "ap-northeast-2")),
-        productionApSoutheast1("production-ap-southeast-1", zone("prod", "ap-southeast-1")),
-        productionEuWest1("production-eu-west-1", zone("prod", "eu-west-1")),
-        productionCdUsCentral1("production-cd-us-central-1", zone(SystemName.cd, "prod", "cd-us-central-1")),
-        productionCdUsCentral2("production-cd-us-central-2", zone(SystemName.cd, "prod", "cd-us-central-2"));
+        component              ("component")                ,
+        systemTest             ("system-test"               , zone("test"   , "us-east-1"     ), zone(SystemName.cd, "test"   , "cd-us-central-1")),
+        stagingTest            ("staging-test"              , zone("staging", "us-east-3"     ), zone(SystemName.cd, "staging", "cd-us-central-1")),
+        productionCorpUsEast1  ("production-corp-us-east-1" , zone("prod"   , "corp-us-east-1")),
+        productionUsEast3      ("production-us-east-3"      , zone("prod"   , "us-east-3"     )),
+        productionUsWest1      ("production-us-west-1"      , zone("prod"   , "us-west-1"     )),
+        productionUsCentral1   ("production-us-central-1"   , zone("prod"   , "us-central-1"  )),
+        productionApNortheast1 ("production-ap-northeast-1" , zone("prod"   , "ap-northeast-1")),
+        productionApNortheast2 ("production-ap-northeast-2" , zone("prod"   , "ap-northeast-2")),
+        productionApSoutheast1 ("production-ap-southeast-1" , zone("prod"   , "ap-southeast-1")),
+        productionEuWest1      ("production-eu-west-1"      , zone("prod"   , "eu-west-1"     )),
+        productionCdUsCentral1 ("production-cd-us-central-1",                                                       zone(SystemName.cd, "prod", "cd-us-central-1")),
+        productionCdUsCentral2 ("production-cd-us-central-2",                                                       zone(SystemName.cd, "prod", "cd-us-central-2"));
 
-        private final String id;
+        private final String jobName;
         private final ImmutableMap<SystemName, Zone> zones;
 
-        JobType(String id, Zone... zones) {
-            this.id = id;
+        JobType(String jobName, Zone... zones) {
+            this.jobName = jobName;
             this.zones = ImmutableMap.copyOf(Stream.of(zones).collect(Collectors.toMap(zone -> zone.system(),
                                                                                        zone -> zone)));
         }
 
-        public String id() { return id; }
+        public String jobName() { return jobName; }
 
         /** Returns the zone for this job in the given system, or empty if this job does not have a zone */
         public Optional<Zone> zone(SystemName system) {
@@ -217,33 +228,17 @@ public class DeploymentJobs {
             return zone(system).map(Zone::region);
         }
 
-        public static JobType fromId(String id) {
-            switch (id) {
-                case "component" : return component;
-                case "system-test" : return systemTest;
-                case "staging-test" : return stagingTest;
-                case "production-corp-us-east-1" : return productionCorpUsEast1;
-                case "production-us-east-3" : return productionUsEast3;
-                case "production-us-west-1" : return productionUsWest1;
-                case "production-us-central-1" : return productionUsCentral1;
-                case "production-ap-northeast-1" : return productionApNortheast1;
-                case "production-ap-northeast-2" : return productionApNortheast2;
-                case "production-ap-southeast-1" : return productionApSoutheast1;
-                case "production-eu-west-1" : return productionEuWest1;
-                case "production-cd-us-central-1" : return productionCdUsCentral1;
-                case "production-cd-us-central-2" : return productionCdUsCentral2;
-                default : throw new IllegalArgumentException("Unknown job id '" + id + "'");
-            }
+        public static JobType fromJobName(String jobName) {
+            return Stream.of(values())
+                    .filter(jobType -> jobType.jobName.equals(jobName))
+                    .findAny().orElseThrow(() -> new IllegalArgumentException("Unknown job name '" + jobName + "'"));
         }
         
         /** Returns the job type for the given zone */
         public static Optional<JobType> from(SystemName system, Zone zone) {
-           for (JobType job : values()) {
-               Optional<Zone> jobZone = job.zone(system);
-               if (jobZone.isPresent() && jobZone.get().equals(zone))
-                   return Optional.of(job);
-           }
-           return Optional.empty();
+            return Stream.of(values())
+                    .filter(job -> job.zone(system).filter(zone::equals).isPresent())
+                    .findAny();
         }
 
         /** Returns the job job type for the given environment and region or null if none */
@@ -290,7 +285,7 @@ public class DeploymentJobs {
         public JobType jobType() { return jobType; }
         public long projectId() { return projectId; }
         public long buildNumber() { return buildNumber; }
-        public boolean success() { return !jobError.isPresent(); }
+        public boolean success() { return ! jobError.isPresent(); }
         public Optional<JobError> jobError() { return jobError; }
 
     }
@@ -298,23 +293,6 @@ public class DeploymentJobs {
     public enum JobError {
         unknown,
         outOfCapacity;
-
-        public static Optional<JobError> from(boolean success) {
-            return Optional.of(success)
-                    .filter(b -> !b)
-                    .map(ignored -> unknown);
-        }
-    }
-
-    private static Optional<Long> requireId(Optional<Long> id, String message) {
-        Objects.requireNonNull(id, message);
-        if (!id.isPresent()) {
-            return id;
-        }
-        if (id.get() <= 0) {
-            throw new IllegalArgumentException(message);
-        }
-        return id;
     }
 
 }
