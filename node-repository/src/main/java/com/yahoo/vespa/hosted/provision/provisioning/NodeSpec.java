@@ -67,10 +67,12 @@ public interface NodeSpec {
             this.requestedFlavor = flavor;
         }
 
+        // TODO: Remove usage of this
         public Flavor getFlavor() {
             return requestedFlavor;
         }
 
+        // TODO: Remove usage of this
         public int getCount()  { return count; }
 
         @Override
