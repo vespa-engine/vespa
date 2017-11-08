@@ -20,6 +20,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -147,23 +148,24 @@ public class TenantsTestCase extends TestWithCurator {
     public void testTenantWatching() throws Exception {
         TestComponentRegistry reg = new TestComponentRegistry.Builder().curator(curator).build();
         Tenants t = new Tenants(reg, Metrics.createTestMetrics());
+        TenantName newTenant = TenantName.from("newTenant");
+        List<TenantName> expectedTenants = Arrays.asList(TenantName.defaultName(), newTenant);
         try {
-            assertTrue(t.getAllTenantNames().contains(TenantName.defaultName()));
-            reg.getCurator().framework().create().forPath(tenants.tenantZkPath(TenantName.from("newTenant")));
+            t.addTenant(newTenant);
             // Poll for the watcher to pick up the tenant from zk, and add it
             int tries=0;
             while(true) {
-                if (tries > 500) fail("Didn't react on watch");
-                if (t.getAllTenantNames().contains(TenantName.from("newTenant"))) {
-                    return;
+                if (tries > 5000) fail("Didn't react on watch");
+                if (t.getAllTenantNames().containsAll(expectedTenants)) {
+                    break;
                 }
                 tries++;
-                Thread.sleep(100);
+                Thread.sleep(10);
             }
         } finally {
+            assertTrue(t.getAllTenantNames().containsAll(expectedTenants));
             t.close();
         }
     }
-
 
 }
