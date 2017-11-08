@@ -354,14 +354,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Jobs sorted according to deployment spec
-        Map<DeploymentJobs.JobType, JobStatus> jobStatus = controller.applications().deploymentTrigger()
+        List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
                 .deploymentOrder()
-                .sortBy(application.deploymentSpec(), application.deploymentJobs().jobStatus());
+                .sortBy(application.deploymentSpec(), application.deploymentJobs().jobStatus().values());
 
         Cursor deploymentsArray = response.setArray("deploymentJobs");
-        for (JobStatus job : jobStatus.values()) {
+        for (JobStatus job : jobStatus) {
             Cursor jobObject = deploymentsArray.addObject();            
-            jobObject.setString("type", job.type().id());
+            jobObject.setString("type", job.type().jobName());
             jobObject.setBool("success", job.isSuccess());
 
             job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
@@ -382,11 +382,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             globalRotationsArray.addString(rotation.toString());
 
         // Deployments sorted according to deployment spec
-        Map<Zone, Deployment> deployments = controller.applications().deploymentTrigger()
+        List<Deployment> deployments = controller.applications().deploymentTrigger()
                 .deploymentOrder()
-                .sortBy(application.deploymentSpec().zones(), application.deployments());
+                .sortBy(application.deploymentSpec().zones(), application.deployments().values());
         Cursor instancesArray = response.setArray("instances");
-        for (Deployment deployment : deployments.values()) {
+        for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());

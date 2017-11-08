@@ -295,8 +295,8 @@ public class VersionStatusTest {
         Version versionWithUnknownTag = new Version("6.1.2");
 
         Application app = tester.createAndDeploy("tenant1", "domain1","application1", Environment.test, 11);
-        applications.notifyJobCompletion(mockReport(app, component, true));
-        applications.notifyJobCompletion(mockReport(app, systemTest, true));
+        applications.notifyJobCompletion(DeploymentTester.jobReport(app, component, true));
+        applications.notifyJobCompletion(DeploymentTester.jobReport(app, systemTest, true));
 
         List<VespaVersion> vespaVersions = VersionStatus.compute(tester.controller()).versions();
 
@@ -311,16 +311,6 @@ public class VersionStatusTest {
                 .findFirst()
                 .map(VespaVersion::confidence)
                 .orElseThrow(() -> new IllegalArgumentException("Expected to find version: " + version));
-    }
-
-    private DeploymentJobs.JobReport mockReport(Application application, DeploymentJobs.JobType jobType, boolean success) {
-        return new DeploymentJobs.JobReport(
-                application.id(),
-                jobType,
-                application.deploymentJobs().projectId().get(),
-                42,
-                JobError.from(success)
-        );
     }
 
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "value_type.h"
+#include "value.h"
 
 namespace vespalib {
 namespace eval {
@@ -18,7 +19,7 @@ class TensorEngine;
  * engine. TensorEngines should only have a single static instance per
  * implementation.
  **/
-class Tensor
+class Tensor : public Value
 {
 private:
     const TensorEngine &_engine;
@@ -30,7 +31,8 @@ public:
     Tensor(Tensor &&) = delete;
     Tensor &operator=(const Tensor &) = delete;
     Tensor &operator=(Tensor &&) = delete;
-    virtual double as_double() const = 0;
+    bool is_tensor() const override { return true; }
+    const Tensor *as_tensor() const override { return this; }
     const TensorEngine &engine() const { return _engine; }
     virtual ~Tensor() {}
 };

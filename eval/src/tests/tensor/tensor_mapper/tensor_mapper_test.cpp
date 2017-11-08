@@ -9,6 +9,7 @@
 #include <vespa/eval/eval/simple_tensor.h>
 
 using vespalib::eval::ValueType;
+using vespalib::eval::Value;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::SimpleTensor;
 using namespace vespalib::tensor;
@@ -21,8 +22,8 @@ void verify_wrapped(const TensorSpec &source, const vespalib::string &type, cons
 }
 
 void verify(const TensorSpec &source, const vespalib::string &type, const TensorSpec &expect) {
-    auto tensor = DefaultTensorEngine::ref().create(source);
-    const Tensor *tensor_impl = dynamic_cast<const Tensor *>(tensor.get());
+    Value::UP value = DefaultTensorEngine::ref().from_spec(source);
+    const Tensor *tensor_impl = dynamic_cast<const Tensor *>(value->as_tensor());
     ASSERT_TRUE(tensor_impl);
     TensorMapper mapper(ValueType::from_spec(type));
     auto mapped = mapper.map(*tensor_impl);

@@ -5,10 +5,20 @@
 #include "operation.h"
 #include "tensor.h"
 #include "tensor_engine.h"
+#include "simple_tensor_engine.h"
 
 namespace vespalib {
 namespace eval {
 namespace tensor_function {
+
+const TensorEngine &infer_engine(const std::initializer_list<Value::CREF> &values) {
+    for (const Value &value: values) {
+        if (auto tensor = value.as_tensor()) {
+            return tensor->engine();
+        }
+    }
+    return SimpleTensorEngine::ref();
+}
 
 void Inject::accept(TensorFunctionVisitor &visitor) const { visitor.visit(*this); }
 void Reduce::accept(TensorFunctionVisitor &visitor) const { visitor.visit(*this); }
@@ -27,7 +37,7 @@ const Value &
 Reduce::eval(const Input &input, Stash &stash) const 
 {
     const Value &a = tensor->eval(input, stash);
-    const TensorEngine &engine = a.as_tensor()->engine();
+    const TensorEngine &engine = infer_engine({a});
     return engine.reduce(a, aggr, dimensions, stash);
 }
 
@@ -35,7 +45,7 @@ const Value &
 Map::eval(const Input &input, Stash &stash) const
 {
     const Value &a = tensor->eval(input, stash);
-    const TensorEngine &engine = a.as_tensor()->engine();
+    const TensorEngine &engine = infer_engine({a});
     return engine.map(a, function, stash);
 }
 
@@ -44,7 +54,7 @@ Join::eval(const Input &input, Stash &stash) const
 {
     const Value &a = lhs_tensor->eval(input, stash);
     const Value &b = rhs_tensor->eval(input, stash);
-    const TensorEngine &engine = a.as_tensor()->engine();
+    const TensorEngine &engine = infer_engine({a,b});
     return engine.join(a, b, function, stash);
 }
 

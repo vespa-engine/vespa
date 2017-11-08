@@ -26,7 +26,7 @@ calcCellsSize(const eval::ValueType &type)
 void
 checkCellsSize(const DenseTensor &arg)
 {
-    auto cellsSize = calcCellsSize(arg.type());
+    auto cellsSize = calcCellsSize(arg.fast_type());
     if (arg.cells().size() != cellsSize) {
         throw IllegalStateException(make_string("Wrong cell size, "
                                                 "expected=%zu, "

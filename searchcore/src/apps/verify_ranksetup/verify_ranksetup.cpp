@@ -36,12 +36,9 @@ using vespa::config::search::core::RankingConstantsConfig;
 using vespalib::eval::ConstantValue;
 using vespalib::eval::ErrorValue;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::TensorValue;
 using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
-
-using ErrorConstant = vespalib::eval::SimpleConstantValue<ErrorValue>;
-using TensorConstant = vespalib::eval::SimpleConstantValue<TensorValue>;
+using vespalib::eval::SimpleConstantValue;
 
 class App : public FastOS_Application
 {
@@ -66,11 +63,11 @@ struct DummyConstantValueRepo : IConstantValueRepo {
         for (const auto &entry: cfg.constant) {
             if (entry.name == name) {                
                 const auto &engine = DefaultTensorEngine::ref();
-                auto tensor = engine.create(TensorSpec(entry.type));
-                return std::make_unique<TensorConstant>(engine.type_of(*tensor), std::move(tensor));
+                auto tensor = engine.from_spec(TensorSpec(entry.type));
+                return std::make_unique<SimpleConstantValue>(std::move(tensor));
             }
         }
-        return std::make_unique<ErrorConstant>(ValueType::error_type());
+        return std::make_unique<SimpleConstantValue>(std::make_unique<ErrorValue>());
     }
 };
 

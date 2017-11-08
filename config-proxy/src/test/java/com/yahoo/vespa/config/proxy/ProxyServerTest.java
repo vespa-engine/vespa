@@ -95,7 +95,6 @@ public class ProxyServerTest {
      */
     @Test
     public void testModeSwitch() {
-        ConfigSourceSet source = new ConfigSourceSet(); // Need to use a ConfigSourceSet to test modes
         ProxyServer proxy = ProxyServer.createTestServer(source);
         assertTrue(proxy.getMode().isDefault());
 

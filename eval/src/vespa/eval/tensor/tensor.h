@@ -31,6 +31,7 @@ struct Tensor : public eval::Tensor
     Tensor();
     virtual ~Tensor() {}
     virtual const eval::ValueType &getType() const = 0;
+    virtual const eval::ValueType &type() const override { return getType(); }
     virtual double sum() const = 0;
     virtual double as_double() const final override { return sum(); }
     virtual Tensor::UP add(const Tensor &arg) const = 0;

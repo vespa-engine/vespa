@@ -11,6 +11,8 @@ public interface Connection {
 
     void invokeAsync(Request request, double jrtTimeout, RequestWaiter requestWaiter);
 
+    void invokeSync(Request request, double jrtTimeout);
+
     void setError(int errorCode);
 
     void setSuccess();

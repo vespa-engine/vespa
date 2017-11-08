@@ -22,7 +22,6 @@ using eval::Aggregator;
 using eval::DoubleValue;
 using eval::ErrorValue;
 using eval::TensorSpec;
-using eval::TensorValue;
 using eval::Value;
 using eval::ValueType;
 
@@ -36,18 +35,13 @@ const eval::TensorEngine &default_engine() { return DefaultTensorEngine::ref(); 
 
 // map tensors to simple tensors before fall-back evaluation
 
-const eval::SimpleTensor &to_simple(const eval::Tensor &tensor, Stash &stash) {
-    if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(&tensor)) {
-        return wrapped->get();
-    }
-    TensorSpec spec = tensor.engine().to_spec(tensor);
-    using PTR = std::unique_ptr<eval::SimpleTensor>;
-    return *stash.create<PTR>(eval::SimpleTensor::create(spec));
-}
-
 const Value &to_simple(const Value &value, Stash &stash) {
     if (auto tensor = value.as_tensor()) {
-        return stash.create<TensorValue>(to_simple(*tensor, stash));
+        if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(tensor)) {
+            return wrapped->get();
+        }
+        TensorSpec spec = tensor->engine().to_spec(*tensor);
+        return *stash.create<Value::UP>(eval::SimpleTensor::create(spec));
     }
     return value;
 }
@@ -58,11 +52,11 @@ const Value &to_default(const Value &value, Stash &stash) {
     if (auto tensor = value.as_tensor()) {
         if (auto simple = dynamic_cast<const eval::SimpleTensor *>(tensor)) {
             if (!Tensor::supported({simple->type()})) {
-                return stash.create<TensorValue>(std::make_unique<WrappedSimpleTensor>(*simple));
+                return stash.create<WrappedSimpleTensor>(*simple);
             }
         }
         TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return stash.create<TensorValue>(default_engine().create(spec));
+        return *stash.create<Value::UP>(default_engine().from_spec(spec));
     }
     return value;
 }
@@ -72,9 +66,19 @@ const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
         return ErrorValue::instance;
     }
     if (tensor->getType().is_tensor()) {
-        return stash.create<TensorValue>(std::move(tensor));
+        return *stash.create<Value::UP>(std::move(tensor));
     }
-    return stash.create<DoubleValue>(tensor->sum());
+    return stash.create<DoubleValue>(tensor->as_double());
+}
+
+Value::UP to_value(std::unique_ptr<Tensor> tensor) {
+    if (!tensor) {
+        return std::make_unique<ErrorValue>();
+    }
+    if (tensor->type().is_tensor()) {
+        return std::move(tensor);
+    }
+    return std::make_unique<DoubleValue>(tensor->as_double());
 }
 
 const Value &fallback_join(const Value &a, const Value &b, join_fun_t function, Stash &stash) {
@@ -89,38 +93,28 @@ const Value &fallback_reduce(const Value &a, eval::Aggr aggr, const std::vector<
 
 const DefaultTensorEngine DefaultTensorEngine::_engine;
 
-eval::ValueType
-DefaultTensorEngine::type_of(const Tensor &tensor) const
-{
-    assert(&tensor.engine() == this);
-    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
-    return my_tensor.getType();
-}
-
-vespalib::string
-DefaultTensorEngine::to_string(const Tensor &tensor) const
-{
-    assert(&tensor.engine() == this);
-    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
-    return my_tensor.toString();
-}
-
-TensorSpec
-DefaultTensorEngine::to_spec(const Tensor &tensor) const
-{
-    assert(&tensor.engine() == this);
-    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
-    return my_tensor.toSpec();
-}
-
 eval::TensorFunction::UP
 DefaultTensorEngine::compile(eval::tensor_function::Node_UP expr) const
 {
     return DenseTensorFunctionCompiler::compile(std::move(expr));
 }
 
-std::unique_ptr<eval::Tensor>
-DefaultTensorEngine::create(const TensorSpec &spec) const
+TensorSpec
+DefaultTensorEngine::to_spec(const Value &value) const
+{
+    if (value.is_double()) {
+        return TensorSpec("double").add({}, value.as_double());
+    } else if (auto tensor = value.as_tensor()) {
+        assert(&tensor->engine() == this);
+        const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(*tensor);
+        return my_tensor.toSpec();
+    } else {
+        return TensorSpec("error");
+    }
+}
+
+Value::UP
+DefaultTensorEngine::from_spec(const TensorSpec &spec) const
 {
     ValueType type = ValueType::from_spec(spec.type());
     bool is_dense = false;
@@ -149,7 +143,7 @@ DefaultTensorEngine::create(const TensorSpec &spec) const
             builder.addCell(cell.second);
         }
         return builder.build();
-    } else { // sparse
+    } else if (is_sparse) {
         DefaultTensor::builder builder;
         std::map<vespalib::string,DefaultTensor::builder::Dimension> dimension_map;
         for (const auto &dimension: type.dimensions()) {
@@ -163,6 +157,12 @@ DefaultTensorEngine::create(const TensorSpec &spec) const
             builder.add_cell(cell.second);
         }
         return builder.build();
+    } else if (type.is_double()) {
+        double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
+        return std::make_unique<DoubleValue>(value);
+    } else {
+        assert(type.is_error());
+        return std::make_unique<ErrorValue>();
     }
 }
 
@@ -189,7 +189,7 @@ struct CellFunctionBindRightAdapter : tensor::CellFunction {
 //-----------------------------------------------------------------------------
 
 void
-DefaultTensorEngine::encode(const Value &value, nbostream &output, Stash &) const
+DefaultTensorEngine::encode(const Value &value, nbostream &output) const
 {
     if (auto tensor = value.as_tensor()) {
         TypedBinaryFormat::serialize(output, static_cast<const tensor::Tensor &>(*tensor));
@@ -198,10 +198,10 @@ DefaultTensorEngine::encode(const Value &value, nbostream &output, Stash &) cons
     }
 }
 
-const Value &
-DefaultTensorEngine::decode(nbostream &input, Stash &stash) const
+Value::UP
+DefaultTensorEngine::decode(nbostream &input) const
 {
-    return to_value(TypedBinaryFormat::deserialize(input), stash);
+    return to_value(TypedBinaryFormat::deserialize(input));
 }
 
 //-----------------------------------------------------------------------------

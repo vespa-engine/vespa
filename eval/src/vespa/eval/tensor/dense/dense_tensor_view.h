@@ -42,7 +42,7 @@ public:
             : _typeRef(type_in),
               _cellsRef()
     {}
-    const eval::ValueType &type() const { return _typeRef; }
+    const eval::ValueType &fast_type() const { return _typeRef; }
     const CellsRef &cellsRef() const { return _cellsRef; }
     bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_typeRef, _cellsRef); }

@@ -19,14 +19,12 @@ private:
 public:
     static const TensorEngine &ref() { return _engine; };
 
-    ValueType type_of(const Tensor &tensor) const override;
-    vespalib::string to_string(const Tensor &tensor) const override;
-    TensorSpec to_spec(const Tensor &tensor) const override;
+    TensorSpec to_spec(const Value &value) const override;
+    Value::UP from_spec(const TensorSpec &spec) const override;
 
-    std::unique_ptr<Tensor> create(const TensorSpec &spec) const override;
+    void encode(const Value &value, nbostream &output) const override;
+    Value::UP decode(nbostream &input) const override;
 
-    void encode(const Value &value, nbostream &output, Stash &stash) const override;
-    const Value &decode(nbostream &input, Stash &stash) const override;
     const Value &map(const Value &a, map_fun_t function, Stash &stash) const override;
     const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const override;
     const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;

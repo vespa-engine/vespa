@@ -108,7 +108,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             LockedApplication application = controller.applications().require(applicationId, lock);
             JobType jobType = Optional.of(asString(request.getData()))
                     .filter(s -> !s.isEmpty())
-                    .map(JobType::fromId)
+                    .map(JobType::fromJobName)
                     .orElse(JobType.component);
             // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
             // front of the queue
@@ -120,7 +120,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
             Slime slime = new Slime();
             Cursor cursor = slime.setObject();
-            cursor.setString("message", "Triggered " + jobType.id() + " for " + applicationId);
+            cursor.setString("message", "Triggered " + jobType.jobName() + " for " + applicationId);
             return new SlimeJsonResponse(slime);
         }
     }
@@ -174,7 +174,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                         report.field("tenant").asString(),
                         report.field("application").asString(),
                         report.field("instance").asString()),
-                JobType.fromId(report.field("jobName").asString()),
+                JobType.fromJobName(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
                 jobError
