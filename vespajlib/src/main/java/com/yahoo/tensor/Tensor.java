@@ -347,7 +347,7 @@ public interface Tensor {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
-                throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
+                return MixedTensor.Builder.of(type);
             if (containsMapped)
                 return MappedTensor.Builder.of(type);
             else // indexed or empty
@@ -359,7 +359,7 @@ public interface Tensor {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
-                throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
+                return MixedTensor.Builder.of(type);
             if (containsMapped)
                 return MappedTensor.Builder.of(type);
             else // indexed or empty
