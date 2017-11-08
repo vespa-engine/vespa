@@ -114,7 +114,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             // front of the queue
             application = controller.applications().deploymentTrigger().triggerAllowParallel(
                     jobType, application, true, true,
-                    "Triggered from the screwdriver/v1 web service"
+                    "Triggered from screwdriver/v1"
             );
             controller.applications().store(application);
 

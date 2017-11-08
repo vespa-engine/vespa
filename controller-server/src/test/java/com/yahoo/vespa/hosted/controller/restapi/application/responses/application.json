@@ -63,7 +63,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "systemTest completed successfully in build 42",
+        "reason": "system-test completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -77,7 +77,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "systemTest completed successfully in build 42",
+        "reason": "system-test completed",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -91,7 +91,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "systemTest completed successfully in build 42",
+        "reason": "system-test completed",
         "at": "(ignore)"
       }
     },
@@ -109,7 +109,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Retrying as build 42 just started failing",
+        "reason": "Immediate retry on failure",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -123,7 +123,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "stagingTest completed successfully in build 42",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       },
       "firstFailing": {
@@ -137,7 +137,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "stagingTest completed successfully in build 42",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       }
     }

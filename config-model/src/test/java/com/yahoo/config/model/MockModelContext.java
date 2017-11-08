@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -92,6 +93,11 @@ public class MockModelContext implements ModelContext {
             @Override
             public List<ConfigServerSpec> configServerSpecs() {
                 return Collections.emptyList();
+            }
+
+            @Override
+            public URI loadBalancerAddress() {
+                return null;
             }
 
             @Override

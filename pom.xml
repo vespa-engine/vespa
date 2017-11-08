@@ -544,6 +544,12 @@
                 <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
+              <!-- This version is exported by jdisc via jcl-over-slf4j. -->
+              <groupId>commons-logging</groupId>
+              <artifactId>commons-logging</artifactId>
+              <version>1.1.1</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-net</groupId>
                 <artifactId>commons-net</artifactId>
                 <version>2.0</version>

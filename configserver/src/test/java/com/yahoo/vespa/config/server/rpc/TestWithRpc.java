@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Request;
@@ -12,6 +13,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -88,7 +90,7 @@ public class TestWithRpc {
                                                                        emptyNodeFlavors(),
                                                                        generationCounter)),
                                   Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker);
+                                  hostLivenessTracker, new FileServer(FileDistribution.getDefaultFileDBRoot()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();

@@ -45,6 +45,7 @@ public class ModelContextImplTest {
                         ApplicationId.defaultId(),
                         true,
                         Collections.emptyList(),
+                        null,
                         false,
                         Zone.defaultZone(),
                         rotations),
