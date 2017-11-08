@@ -49,7 +49,7 @@ class GroupPreparer {
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int nofSpares, BiConsumer<List<Node>, String> debugRecorder) {
         try (Mutex lock = nodeRepository.lock(application)) {
 
-            // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
+            // Lock ready pool to ensure that ready nodes are not simultaneously grabbed by others
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
 
                 // Create a prioritized set of nodes

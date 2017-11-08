@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
 
@@ -39,6 +40,13 @@ public interface NodeSpec {
     /** Returns a specification of a fraction of all the nodes of this. It is assumed the argument is a valid divisor. */
     NodeSpec fraction(int divisor);
 
+    /** 
+     * Assigns the flavor requested by this to the given node and returns it, 
+     * if one is requested and it is allowed to change.
+     * Otherwise, the node is returned unchanged.
+     */
+    Node assignRequestedFlavor(Node node);
+
     static NodeSpec from(int nodeCount, Flavor flavor) {
         return new CountNodeSpec(nodeCount, flavor);
     }
@@ -51,16 +59,16 @@ public interface NodeSpec {
     class CountNodeSpec implements NodeSpec {
         
         private final int count;
-        private final Flavor flavor;
+        private final Flavor requestedFlavor;
         
         public CountNodeSpec(int count, Flavor flavor) {
             Objects.requireNonNull(flavor, "A flavor must be specified");
             this.count = count;
-            this.flavor = flavor;
+            this.requestedFlavor = flavor;
         }
 
         public Flavor getFlavor() {
-            return flavor;
+            return requestedFlavor;
         }
 
         public int getCount()  { return count; }
@@ -69,13 +77,17 @@ public interface NodeSpec {
         public NodeType type() { return NodeType.tenant; }
 
         @Override
-        public boolean isCompatible(Flavor flavor) { return flavor.satisfies(this.flavor); }
+        public boolean isCompatible(Flavor flavor) { 
+            if (flavor.satisfies(requestedFlavor)) return true;
+
+            return requestedFlavorCanBeAchievedByResizing(flavor);
+        }
 
         @Override
-        public boolean matchesExactly(Flavor flavor) { return flavor.equals(this.flavor); }
+        public boolean matchesExactly(Flavor flavor) { return flavor.equals(this.requestedFlavor); }
 
         @Override
-        public boolean specifiesNonStockFlavor() { return ! flavor.isStock(); }
+        public boolean specifiesNonStockFlavor() { return ! requestedFlavor.isStock(); }
 
         @Override
         public boolean fulfilledBy(int count) { return count >= this.count; } 
@@ -87,10 +99,23 @@ public interface NodeSpec {
         public int surplusGiven(int count) { return count - this.count; }
 
         @Override
-        public NodeSpec fraction(int divisor) { return new CountNodeSpec(count/divisor, flavor); }
+        public NodeSpec fraction(int divisor) { return new CountNodeSpec(count/divisor, requestedFlavor); }
+        
+        @Override
+        public Node assignRequestedFlavor(Node node) {
+            // Docker nodes can change flavor in place
+            if (requestedFlavorCanBeAchievedByResizing(node.flavor()))
+                return node.with(requestedFlavor);
+            return node;
+        }
 
         @Override
-        public String toString() { return "request for " + count + " nodes of " + flavor; }
+        public String toString() { return "request for " + count + " nodes of " + requestedFlavor; }
+
+        /** Docker nodes can be downsized in place */
+        private boolean requestedFlavorCanBeAchievedByResizing(Flavor flavor) {
+            return flavor.isDocker() && requestedFlavor.isDocker() && flavor.isLargerThan(requestedFlavor);
+        }
         
     }
 
@@ -126,6 +151,9 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) { return this; }
+
+        @Override
+        public Node assignRequestedFlavor(Node node) { return node; }
 
         @Override
         public String toString() { return "request for all nodes of type '" + type + "'"; }
