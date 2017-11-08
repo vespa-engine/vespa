@@ -41,23 +41,32 @@ public class Upgrader extends Maintainer {
      * Schedule application upgrades. Note that this implementation must be idempotent.
      */
     @Override
-    public void maintain() {
-        ApplicationList applications = applications();
-        
+    public void maintain() {        
         // Determine target versions for each upgrade policy
         Optional<Version> canaryTarget = controller().versionStatus().systemVersion().map(VespaVersion::versionNumber);
         Optional<Version> defaultTarget = newestVersionWithConfidence(VespaVersion.Confidence.normal);
         Optional<Version> conservativeTarget = newestVersionWithConfidence(VespaVersion.Confidence.high);
 
-        // Cancel any upgrades to the wrong targets
-        cancelUpgradesOf(applications.with(UpgradePolicy.canary).upgrading().notUpgradingTo(canaryTarget));
-        cancelUpgradesOf(applications.with(UpgradePolicy.defaultPolicy).upgrading().notUpgradingTo(defaultTarget));
-        cancelUpgradesOf(applications.with(UpgradePolicy.conservative).upgrading().notUpgradingTo(conservativeTarget));
+        // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation
+        for (VespaVersion version : controller().versionStatus().versions()) {
+            if (version.confidence() == VespaVersion.Confidence.broken)
+                cancelUpgradesOf(applications().without(UpgradePolicy.canary).upgradingTo(version.versionNumber()),
+                                 version.versionNumber() + " is broken");
+        }
+
+        // Canaries should always try the canary target
+        cancelUpgradesOf(applications().with(UpgradePolicy.canary).upgrading().notUpgradingTo(canaryTarget),
+                         "Outdated target version for Canaries");
+
+        // Cancel *failed* upgrades to earlier versions, as the new version may fix it
+        String reason = "Failing on outdated version";
+        cancelUpgradesOf(applications().with(UpgradePolicy.defaultPolicy).upgrading().failing().notUpgradingTo(defaultTarget), reason);
+        cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTarget), reason);
 
         // Schedule the right upgrades
-        canaryTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.canary), target));
-        defaultTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target));
-        conservativeTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.conservative), target));
+        canaryTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.canary), target));
+        defaultTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.defaultPolicy), target));
+        conservativeTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
     }
     
     private Optional<Version> newestVersionWithConfidence(VespaVersion.Confidence confidence) {
@@ -79,13 +88,11 @@ public class Upgrader extends Maintainer {
     
     private void upgrade(ApplicationList applications, Version version) {
         Change.VersionChange change = new Change.VersionChange(version);
-        cancelUpgradesOf(applications.upgradingToLowerThan(version));
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
-        applications = applications.notDeployingApplication(); // wait with applications deploying an application change
+        applications = applications.notDeploying(); // wait with applications deploying an application change or already upgrading
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
-        applications = applications.notCurrentlyUpgrading(change, controller().applications().deploymentTrigger().jobTimeoutLimit());
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
@@ -98,9 +105,9 @@ public class Upgrader extends Maintainer {
         }
     }
 
-    private void cancelUpgradesOf(ApplicationList applications) {
+    private void cancelUpgradesOf(ApplicationList applications, String reason) {
         if (applications.isEmpty()) return;
-        log.info("Cancelling upgrading of " + applications.asList().size() + " applications");
+        log.info("Cancelling upgrading of " + applications.asList().size() + " applications: " + reason);
         for (Application application : applications.asList())
             controller().applications().deploymentTrigger().cancelChange(application.id());
     }
