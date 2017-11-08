@@ -103,7 +103,7 @@ public class DeployTester {
                                                                           configserverConfig, clock);
         try {
             this.testApp = new File(appPath);
-            this.tenants = new Tenants(componentRegistry, metrics);
+            this.tenants = new Tenants(componentRegistry, metrics, Collections.emptySet());
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);

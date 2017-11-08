@@ -108,6 +108,8 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.create(tenantsPath);
+        createSystemTenants(globalComponentRegistry.getConfigserverConfig());
+        createTenants();
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.tenants.putAll(addTenants(tenants));
     }
@@ -147,7 +149,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         return tenants;
     }
 
-    synchronized void createTenants() throws Exception {
+    synchronized void createTenants() {
         Set<TenantName> allTenants = readTenantsFromZooKeeper();
         log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
         checkForRemovedTenants(allTenants);
@@ -167,7 +169,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         }
     }
 
-    private void checkForAddedTenants(Set<TenantName> newTenants) throws Exception {
+    private void checkForAddedTenants(Set<TenantName> newTenants) {
         ExecutorService executor = Executors.newFixedThreadPool(globalComponentRegistry.getConfigserverConfig().numParallelTenantLoaders());
         for (TenantName tenantName : newTenants) {
             // Note: the http handler will check if the tenant exists, and throw accordingly
@@ -178,7 +180,11 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
             }
         }
         executor.shutdown();
-        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+        try {
+            executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Executor for creating tenants did not terminate within timeout");
+        }
     }
 
     private void createTenant(TenantName tenantName) {
