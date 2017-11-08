@@ -62,6 +62,7 @@ public class FailureRedeployerTest {
         // Another version is released, which cancels any pending upgrades to lower versions
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3); // Finish previous production job.
         tester.upgrader().maintain();
         assertEquals("Application starts upgrading to new version", 1, tester.buildSystem().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.versionChange(app.id()).get().version());

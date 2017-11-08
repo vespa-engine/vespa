@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -79,10 +80,10 @@ public class DeploymentTrigger {
         try (Lock lock = applications().lock(report.applicationId())) {
             LockedApplication application = applications().require(report.applicationId(), lock);
             application = application.withJobCompletion(report, clock.instant(), controller);
-            
+
             // Handle successful starting and ending
             if (report.success()) {
-                if (order.givesApplicationChange(report.jobType())) {
+                if (order.givesNewRevision(report.jobType())) {
                     if (acceptNewRevisionNow(application)) {
                         application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                     }
@@ -90,8 +91,9 @@ public class DeploymentTrigger {
                         applications().store(application.withOutstandingChange(true));
                         return;
                     }
-                } 
-                else if (application.deployingCompleted()) {
+                }
+                // TODO: Should rather fix deployingCompleted() (let it check that all declared zones have the change).
+                else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
                     // change completed
                     application = application.withDeploying(Optional.empty());
                 }
@@ -429,8 +431,10 @@ public class DeploymentTrigger {
     }
     
     private boolean isRunningProductionJob(Application application) {
-        return application.deploymentJobs().jobStatus().entrySet().stream()
-                .anyMatch(entry -> entry.getKey().isProduction() && entry.getValue().isRunning(jobTimeoutLimit()));
+        return JobList.from(application)
+                .production()
+                .running(jobTimeoutLimit())
+                .anyMatch();
     }
 
     /**

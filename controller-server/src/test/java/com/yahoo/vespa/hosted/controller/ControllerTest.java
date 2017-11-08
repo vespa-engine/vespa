@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
@@ -104,8 +105,8 @@ public class ControllerTest {
         Optional<ApplicationRevision> revision = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision();
         assertTrue("Revision has been set during deployment", revision.isPresent());
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
-                              .withCompletion(-1, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
@@ -120,7 +121,7 @@ public class ControllerTest {
                                                .withTriggering(-1, version1, revision, false, "", tester.clock().instant()) // Triggered first without revision info
                                                .withCompletion(-1, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller())
                                                .withTriggering(-1, version1, revision, false, "", tester.clock().instant()); // Re-triggering (due to failure) has revision info
-                
+
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // Simulate restart
@@ -133,20 +134,23 @@ public class ControllerTest {
                                                           InstanceName.from("default"))));
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
-        tester.clock().advance(Duration.ofSeconds(1));
+
+        tester.clock().advance(Duration.ofHours(1));
+
+        tester.notifyJobCompletion(productionCorpUsEast1, app1, false); // Need to complete the job, or new jobs won't start.
 
         // system and staging test job - succeeding
         tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
+                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(-1, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
-                .withTriggering(-1, version1, revision, false, "", tester.clock().instant())
+                .withTriggering(-1, version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                 .withCompletion(-1, Optional.empty(), tester.clock().instant(), tester.controller());
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -322,13 +326,13 @@ public class ControllerTest {
         tester.notifyJobCompletion(component, app, true);
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure", 
-                     initialFailure, firstFailing(app, tester).get().at());
+                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at second consecutive failure", 
-                     initialFailure, firstFailing(app, tester).get().at());
+                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
 
         // Success resets failingSince
         tester.clock().advance(Duration.ofMillis(1000));
@@ -346,13 +350,13 @@ public class ControllerTest {
         tester.notifyJobCompletion(component, app, true);
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure", 
-                     initialFailure, firstFailing(app, tester).get().at());
+                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at second consecutive failure", 
-                     initialFailure, firstFailing(app, tester).get().at());
+                     initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
     }
 
     private Optional<JobStatus.JobRun> firstFailing(Application application, DeploymentTester tester) {
@@ -437,6 +441,7 @@ public class ControllerTest {
         // app1: 15 minutes pass, staging-test job is still failing due out of capacity, but is no longer re-queued by
         // out of capacity retry mechanism
         tester.clock().advance(Duration.ofMinutes(15));
+        tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity)); // Clear the previous staging test
         tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         tester.deploy(stagingTest, app1, applicationPackage);

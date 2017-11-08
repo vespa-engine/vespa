@@ -162,6 +162,12 @@ public class VersionStatusTest {
         assertEquals("One canary failed: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
 
+        // Finish running jobs
+        tester.deployAndNotify(canary2, DeploymentTester.applicationPackage("canary"), false, systemTest);
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(canary1, DeploymentTester.applicationPackage("canary"), false, productionUsWest1);
+        tester.deployAndNotify(canary2, DeploymentTester.applicationPackage("canary"), false, systemTest);
+
         // New version is released
         Version version2 = new Version("5.2");
         tester.upgradeSystem(version2);

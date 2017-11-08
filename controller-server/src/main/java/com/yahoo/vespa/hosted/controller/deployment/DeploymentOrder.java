@@ -89,7 +89,7 @@ public class DeploymentOrder {
     }
 
     /** Returns whether the given job causes an application change */
-    public boolean givesApplicationChange(JobType job) {
+    public boolean givesNewRevision(JobType job) {
         return job == JobType.component;
     }
 
