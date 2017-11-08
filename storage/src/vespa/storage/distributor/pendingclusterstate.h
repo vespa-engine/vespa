@@ -18,6 +18,7 @@ namespace storage::distributor {
 
 class DistributorMessageSender;
 class PendingBucketSpaceDbTransition;
+class DistributorBucketSpaceRepo;
 
 /**
  * Class used by BucketDBUpdater to track request bucket info
@@ -42,12 +43,13 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
+            DistributorBucketSpaceRepo &bucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const std::unordered_set<uint16_t>& outdatedNodes,
             api::Timestamp creationTimestamp)
     {
         return std::unique_ptr<PendingClusterState>(
-                new PendingClusterState(clock, clusterInfo, sender, newStateCmd,
+                new PendingClusterState(clock, clusterInfo, sender, bucketSpaceRepo, newStateCmd,
                                         outdatedNodes,
                                         creationTimestamp));
     }
@@ -60,10 +62,11 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
+            DistributorBucketSpaceRepo &bucketSpaceRepo,
             api::Timestamp creationTimestamp)
     {
         return std::unique_ptr<PendingClusterState>(
-                new PendingClusterState(clock, clusterInfo, sender, creationTimestamp));
+                new PendingClusterState(clock, clusterInfo, sender, bucketSpaceRepo, creationTimestamp));
     }
 
     PendingClusterState(const PendingClusterState &) = delete;
@@ -150,6 +153,7 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
+            DistributorBucketSpaceRepo &bucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const std::unordered_set<uint16_t>& outdatedNodes,
             api::Timestamp creationTimestamp);
@@ -162,8 +166,10 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
+            DistributorBucketSpaceRepo &bucketSpaceRepo,
             api::Timestamp creationTimestamp);
 
+    void constructorHelper();
     void logConstructionInformation() const;
     void requestNode(uint16_t node);
     bool distributorChanged(const lib::ClusterState& oldState, const lib::ClusterState& newState);
@@ -209,6 +215,7 @@ private:
     api::Timestamp _creationTimestamp;
 
     DistributorMessageSender& _sender;
+    DistributorBucketSpaceRepo &_bucketSpaceRepo;
 
     bool _distributionChange;
     bool _bucketOwnershipTransfer;

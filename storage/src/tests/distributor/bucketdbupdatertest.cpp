@@ -538,7 +538,7 @@ public:
 
             std::unordered_set<uint16_t> outdatedNodes;
             state = PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, cmd, outdatedNodes,
+                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), cmd, outdatedNodes,
                     api::Timestamp(1));
         }
 
@@ -551,7 +551,7 @@ public:
 
             std::unordered_set<uint16_t> outdatedNodes;
             state = PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, api::Timestamp(1));
+                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), api::Timestamp(1));
         }
     };
 
@@ -1475,7 +1475,7 @@ BucketDBUpdaterTest::getSentNodesDistributionChanged(
     ClusterInformation::CSP clusterInfo(createClusterInfo(oldClusterState));
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, api::Timestamp(1)));
+                    clock, clusterInfo, sender, getBucketSpaceRepo(), api::Timestamp(1)));
 
     sortSentMessagesByIndex(sender);
 
@@ -1640,7 +1640,7 @@ BucketDBUpdaterTest::testPendingClusterStateReceive()
     std::unordered_set<uint16_t> outdatedNodes;
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, cmd, outdatedNodes,
+                    clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodes,
                     api::Timestamp(1)));
 
     CPPUNIT_ASSERT_EQUAL(3, (int)sender.commands.size());
@@ -1803,7 +1803,7 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo("cluster:d"));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, cmd, outdatedNodes,
+                        clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodes,
                         beforeTime));
 
         parseInputData(existingData, beforeTime, *state, includeBucketInfo);
@@ -1822,7 +1822,7 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo(oldState.toString()));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, cmd, outdatedNodes,
+                        clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodes,
                         afterTime));
 
         parseInputData(newData, afterTime, *state, includeBucketInfo);

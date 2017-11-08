@@ -23,6 +23,7 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
+        DistributorBucketSpaceRepo &bucketSpaceRepo,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
         const std::unordered_set<uint16_t>& outdatedNodes,
         api::Timestamp creationTimestamp)
@@ -35,6 +36,7 @@ PendingClusterState::PendingClusterState(
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
+      _bucketSpaceRepo(bucketSpaceRepo),
       _bucketOwnershipTransfer(distributorChanged(_prevClusterState, _newClusterState)),
       _pendingTransition()
 {
@@ -45,16 +47,14 @@ PendingClusterState::PendingClusterState(
         updateSetOfNodesThatAreOutdated();
         addAdditionalNodesToOutdatedSet(outdatedNodes);
     }
-    _pendingTransition = std::make_unique<PendingBucketSpaceDbTransition>(*this, _clusterInfo, _newClusterState, _creationTimestamp);
-    if (shouldRequestBucketInfo()) {
-        requestNodes();
-    }
+    constructorHelper();
 }
 
 PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
+        DistributorBucketSpaceRepo &bucketSpaceRepo,
         api::Timestamp creationTimestamp)
     : _requestedNodes(clusterInfo->getStorageNodeCount()),
       _outdatedNodes(clusterInfo->getStorageNodeCount()),
@@ -64,18 +64,25 @@ PendingClusterState::PendingClusterState(
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
+      _bucketSpaceRepo(bucketSpaceRepo),
       _bucketOwnershipTransfer(true),
       _pendingTransition()
 {
     logConstructionInformation();
     markAllAvailableNodesAsRequiringRequest();
+    constructorHelper();
+}
+
+PendingClusterState::~PendingClusterState() {}
+
+void
+PendingClusterState::constructorHelper()
+{
     _pendingTransition = std::make_unique<PendingBucketSpaceDbTransition>(*this, _clusterInfo, _newClusterState, _creationTimestamp);
     if (shouldRequestBucketInfo()) {
         requestNodes();
     }
 }
-
-PendingClusterState::~PendingClusterState() {}
 
 void
 PendingClusterState::logConstructionInformation() const

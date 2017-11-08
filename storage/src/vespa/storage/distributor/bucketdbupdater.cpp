@@ -169,6 +169,7 @@ BucketDBUpdater::storageDistributionChanged(
             _bucketSpaceComponent.getClock(),
             std::move(clusterInfo),
             _sender,
+            _bucketSpaceComponent.getBucketSpaceRepo(),
             _bucketSpaceComponent.getUniqueTimestamp());
     _outdatedNodes = _pendingClusterState->getOutdatedNodeSet();
 }
@@ -216,6 +217,7 @@ BucketDBUpdater::onSetSystemState(
             _bucketSpaceComponent.getClock(),
             std::move(clusterInfo),
             _sender,
+            _bucketSpaceComponent.getBucketSpaceRepo(),
             cmd,
             _outdatedNodes,
             _bucketSpaceComponent.getUniqueTimestamp());
