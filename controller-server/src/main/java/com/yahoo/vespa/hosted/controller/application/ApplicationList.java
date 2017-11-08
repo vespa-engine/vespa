@@ -83,9 +83,19 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> ! isDeployingApplicationChange(application)));
     }
 
+    /** Returns the subset of applications which is currently not deploying a change */
+    public ApplicationList notDeploying() {
+        return listOf(list.stream().filter(application -> ! application.deploying().isPresent()));
+    }
+
     /** Returns the subset of applications which currently does not have any failing jobs */
     public ApplicationList notFailing() {
         return listOf(list.stream().filter(application -> ! application.deploymentJobs().hasFailures()));
+    }
+
+    /** Returns the subset of applications which currently have failing jobs */
+    public ApplicationList failing() {
+        return listOf(list.stream().filter(application -> application.deploymentJobs().hasFailures()));
     }
 
     /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */
