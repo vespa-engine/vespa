@@ -12,8 +12,6 @@
 #include <unordered_set>
 #include <deque>
 
-namespace storage { class BucketDatabase; }
-
 namespace storage::distributor {
 
 class DistributorMessageSender;
@@ -126,9 +124,9 @@ public:
     std::unordered_set<uint16_t> getOutdatedNodeSet() const;
 
     /**
-     * Merges all the results with the given bucket database.
+     * Merges all the results with the corresponding bucket databases.
      */
-    void mergeInto(BucketDatabase& db);
+    void mergeIntoBucketDatabases();
     // Get pending transition for a specific bucket space. Only used by unit test.
     PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 

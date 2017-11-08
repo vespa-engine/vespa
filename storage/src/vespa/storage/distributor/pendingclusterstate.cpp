@@ -3,6 +3,7 @@
 #include "pendingclusterstate.h"
 #include "pending_bucket_space_db_transition.h"
 #include "bucketdbupdater.h"
+#include "distributor_bucket_space_repo.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
@@ -408,9 +409,9 @@ PendingClusterState::requestNodesToString() const
 }
 
 void
-PendingClusterState::mergeInto(BucketDatabase& db)
+PendingClusterState::mergeIntoBucketDatabases()
 {
-    _pendingTransition->mergeInto(db);
+    _pendingTransition->mergeInto(_bucketSpaceRepo.get(BucketSpace::placeHolder()).getBucketDatabase());
 }
 
 void

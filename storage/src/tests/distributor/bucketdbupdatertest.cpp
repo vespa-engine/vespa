@@ -1812,7 +1812,7 @@ BucketDBUpdaterTest::mergeBucketLists(
                         beforeTime));
 
         parseInputData(existingData, beforeTime, *state, includeBucketInfo);
-        state->mergeInto(getBucketDBUpdater().getDistributorComponent().getBucketDatabase());
+        state->mergeIntoBucketDatabases();
     }
 
     BucketDumper dumper_tmp(true);
@@ -1831,8 +1831,7 @@ BucketDBUpdaterTest::mergeBucketLists(
                         afterTime));
 
         parseInputData(newData, afterTime, *state, includeBucketInfo);
-        state->mergeInto(getBucketDBUpdater().getDistributorComponent()
-                .getBucketDatabase());
+        state->mergeIntoBucketDatabases();
     }
 
     BucketDumper dumper(includeBucketInfo);

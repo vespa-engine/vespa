@@ -488,7 +488,7 @@ BucketDBUpdater::isPendingClusterStateCompleted() const
 void
 BucketDBUpdater::processCompletedPendingClusterState()
 {
-    _pendingClusterState->mergeInto(_bucketSpaceComponent.getBucketDatabase());
+    _pendingClusterState->mergeIntoBucketDatabases();
 
     if (_pendingClusterState->getCommand().get()) {
         enableCurrentClusterStateInDistributor();
