@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
+import com.yahoo.log.LogLevel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -58,12 +59,14 @@ import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -92,6 +95,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
+
+    private static final Logger logger = Logger.getLogger(ContainerModelBuilder.class.getName());
 
     public ContainerModelBuilder(boolean standaloneBuilder, Networking networking) {
         super(ContainerModel.class);
@@ -163,7 +168,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Athenz copper argos
         // NOTE: Must be done after addNodes()
-        addIdentity(spec, cluster, context.getDeployState().getProperties().configServerSpecs());
+        addIdentity(spec, cluster, context.getDeployState().getProperties().configServerSpecs(),
+                    context.getDeployState().getProperties().loadBalancerAddress());
 
         //TODO: overview handler, see DomQrserverClusterBuilder
     }
@@ -691,13 +697,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentity(Element element, ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs) {
+    private void addIdentity(Element element, ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, URI loadBalancerAddress) {
         Element identityElement = XML.getChild(element, "identity");
         if(identityElement != null) {
             String domain = XML.getValue(XML.getChild(identityElement, "domain"));
             String service = XML.getValue(XML.getChild(identityElement, "service"));
 
+            // TODO: Remove after verifying that this is propagated correctly
+            logger.log(LogLevel.INFO, String.format("loadBalancerAddress: %s", loadBalancerAddress));
+
             // TODO: Inject the load balancer address. For now only add first configserver
+            // TODO: The loadBalancerAddress is a URI, not specific host.
+            // TODO: Either rename loadBalancerAddress -> loadBalancerName (or similar) or
+            // TODO: make consumers of it use URI.
             String cfgHostName = configServerSpecs.stream().findFirst().map(ConfigServerSpec::getHostName)
                     .orElse(""); // How to test this?
 

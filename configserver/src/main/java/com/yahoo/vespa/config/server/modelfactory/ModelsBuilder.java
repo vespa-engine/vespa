@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -170,9 +171,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                    ConfigserverConfig configserverConfig,
                                                                    Zone zone,
                                                                    Set<Rotation> rotations) {
-        return new ModelContextImpl.Properties(applicationId, 
+        return new ModelContextImpl.Properties(applicationId,
                                                configserverConfig.multitenant(),
                                                ConfigServerSpec.fromConfig(configserverConfig),
+                                               URI.create(configserverConfig.loadBalancerAddress()),
                                                configserverConfig.hostedVespa(),
                                                zone,
                                                rotations);
