@@ -1,4 +1,3 @@
-//  Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -6,13 +5,9 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
-import com.yahoo.jrt.StringValue;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.filedistribution.RpcServer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,7 +18,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +38,6 @@ public class FileDownloaderTest {
             File downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
             fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(3000));
-            RpcServer rpcServer = new RpcServer(new Supervisor(new Transport()), fileDownloader);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -208,10 +204,8 @@ public class FileDownloaderTest {
 
             @Override
             public void request(Request request) {
-                if (request.methodName().equals("filedistribution.serveFile")) {
+                if (request.methodName().equals("filedistribution.serveFile"))
                     request.returnValues().add(new Int32Value(0));
-                    request.returnValues().add(new StringValue("OK"));
-                }
             }
         }
 
@@ -219,10 +213,8 @@ public class FileDownloaderTest {
 
             @Override
             public void request(Request request) {
-                if (request.methodName().equals("filedistribution.serveFile")) {
+                if (request.methodName().equals("filedistribution.serveFile"))
                     request.returnValues().add(new Int32Value(1));
-                    request.returnValues().add(new StringValue("Internal error"));
-                }
             }
         }
 
