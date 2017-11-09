@@ -20,63 +20,58 @@ const TensorEngine &infer_engine(const std::initializer_list<Value::CREF> &value
     return SimpleTensorEngine::ref();
 }
 
-void Inject::accept(TensorFunctionVisitor &visitor) const { visitor.visit(*this); }
-void Reduce::accept(TensorFunctionVisitor &visitor) const { visitor.visit(*this); }
-void Map   ::accept(TensorFunctionVisitor &visitor) const { visitor.visit(*this); }
-void Join  ::accept(TensorFunctionVisitor &visitor) const { visitor.visit(*this); }
-
 //-----------------------------------------------------------------------------
 
 const Value &
-Inject::eval(const Input &input, Stash &) const
+Inject::eval(ConstArrayRef<Value::CREF> params, Stash &) const
 {
-    return input.get_tensor(tensor_id);
+    return params[tensor_id];
 }
 
 const Value &
-Reduce::eval(const Input &input, Stash &stash) const 
+Reduce::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const 
 {
-    const Value &a = tensor->eval(input, stash);
+    const Value &a = tensor.eval(params, stash);
     const TensorEngine &engine = infer_engine({a});
     return engine.reduce(a, aggr, dimensions, stash);
 }
 
 const Value &
-Map::eval(const Input &input, Stash &stash) const
+Map::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const
 {
-    const Value &a = tensor->eval(input, stash);
+    const Value &a = tensor.eval(params, stash);
     const TensorEngine &engine = infer_engine({a});
     return engine.map(a, function, stash);
 }
 
 const Value &
-Join::eval(const Input &input, Stash &stash) const
+Join::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const
 {
-    const Value &a = lhs_tensor->eval(input, stash);
-    const Value &b = rhs_tensor->eval(input, stash);
+    const Value &a = lhs_tensor.eval(params, stash);
+    const Value &b = rhs_tensor.eval(params, stash);
     const TensorEngine &engine = infer_engine({a,b});
     return engine.join(a, b, function, stash);
 }
 
 //-----------------------------------------------------------------------------
 
-Node_UP inject(const ValueType &type, size_t tensor_id) {
-    return std::make_unique<Inject>(type, tensor_id);
+const Node &inject(const ValueType &type, size_t tensor_id, Stash &stash) {
+    return stash.create<Inject>(type, tensor_id);
 }
 
-Node_UP reduce(Node_UP tensor, Aggr aggr, const std::vector<vespalib::string> &dimensions) {
-    ValueType result_type = tensor->result_type.reduce(dimensions);
-    return std::make_unique<Reduce>(result_type, std::move(tensor), aggr, dimensions);
+const Node &reduce(const Node &tensor, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
+    ValueType result_type = tensor.result_type.reduce(dimensions);
+    return stash.create<Reduce>(result_type, tensor, aggr, dimensions);
 }
 
-Node_UP map(Node_UP tensor, map_fun_t function) {
-    ValueType result_type = tensor->result_type;
-    return std::make_unique<Map>(result_type, std::move(tensor), function);
+const Node &map(const Node &tensor, map_fun_t function, Stash &stash) {
+    ValueType result_type = tensor.result_type;
+    return stash.create<Map>(result_type, tensor, function);
 }
 
-Node_UP join(Node_UP lhs_tensor, Node_UP rhs_tensor, join_fun_t function) {
-    ValueType result_type = ValueType::join(lhs_tensor->result_type, rhs_tensor->result_type);
-    return std::make_unique<Join>(result_type, std::move(lhs_tensor), std::move(rhs_tensor), function);
+const Node &join(const Node &lhs_tensor, const Node &rhs_tensor, join_fun_t function, Stash &stash) {
+    ValueType result_type = ValueType::join(lhs_tensor.result_type, rhs_tensor.result_type);
+    return stash.create<Join>(result_type, lhs_tensor, rhs_tensor, function);
 }
 
 } // namespace vespalib::eval::tensor_function

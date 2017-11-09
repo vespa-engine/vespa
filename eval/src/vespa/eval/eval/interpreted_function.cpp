@@ -5,6 +5,7 @@
 #include "node_traverser.h"
 #include "check_type.h"
 #include "tensor_spec.h"
+#include "operation.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
@@ -118,32 +119,19 @@ const T &undef_cref() {
 }
 
 struct TensorFunctionArgArgMeta {
-    TensorFunction::UP function;
+    const TensorFunction &function;
     size_t param1;
     size_t param2;
-    TensorFunctionArgArgMeta(TensorFunction::UP function_in, size_t param1_in, size_t param2_in)
-        : function(std::move(function_in)), param1(param1_in), param2(param2_in) {}
-};
-
-struct ArgArgInput : TensorFunction::Input {
-    const TensorFunctionArgArgMeta &meta;
-    State &state;
-    ArgArgInput(const TensorFunctionArgArgMeta &meta_in, State &state_in)
-        : meta(meta_in), state(state_in) {}
-    const Value &get_tensor(size_t id) const override {
-        if (id == 0) {
-            return state.params->resolve(meta.param1, state.stash);
-        } else if (id == 1) {
-            return state.params->resolve(meta.param2, state.stash);
-        }
-        return undef_cref<Value>();
-    }
+    TensorFunctionArgArgMeta(const TensorFunction &function_in, size_t param1_in, size_t param2_in)
+        : function(function_in), param1(param1_in), param2(param2_in) {}
 };
 
 void op_tensor_function_arg_arg(State &state, uint64_t param) {
     const TensorFunctionArgArgMeta &meta = unwrap_param<TensorFunctionArgArgMeta>(param);
-    ArgArgInput input(meta, state);
-    state.stack.push_back(meta.function->eval(input, state.stash));
+    Value::CREF params[2] =
+        {state.params->resolve(meta.param1, state.stash),
+         state.params->resolve(meta.param2, state.stash)};
+    state.stack.push_back(meta.function.eval(ConstArrayRef<Value::CREF>(params, 2), state.stash));
 }
 
 //-----------------------------------------------------------------------------
@@ -279,12 +267,12 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             program.pop_back(); // load
             auto a = as<Symbol>(node.get_child(0).get_child(0));
             auto b = as<Symbol>(node.get_child(0).get_child(1));
-            auto ir = tensor_function::reduce(tensor_function::join(
-                            tensor_function::inject(types.get_type(*a), 0),
-                            tensor_function::inject(types.get_type(*b), 1),
-                            operation::Mul::f), node.aggr(), node.dimensions());
-            auto fun = tensor_engine.compile(std::move(ir));
-            const auto &meta = stash.create<TensorFunctionArgArgMeta>(std::move(fun), a->id(), b->id());
+            const auto &ir = tensor_function::reduce(tensor_function::join(
+                            tensor_function::inject(types.get_type(*a), 0, stash),
+                            tensor_function::inject(types.get_type(*b), 1, stash),
+                            operation::Mul::f, stash), node.aggr(), node.dimensions(), stash);
+            const auto &fun = tensor_engine.compile(ir, stash);
+            const auto &meta = stash.create<TensorFunctionArgArgMeta>(fun, a->id(), b->id());
             program.emplace_back(op_tensor_function_arg_arg, wrap_param<TensorFunctionArgArgMeta>(meta));
         } else {
             ReduceParams &params = stash.create<ReduceParams>(node.aggr(), node.dimensions());

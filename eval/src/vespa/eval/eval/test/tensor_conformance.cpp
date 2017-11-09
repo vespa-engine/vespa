@@ -238,20 +238,28 @@ const size_t tensor_id_a = 11;
 const size_t tensor_id_b = 12;
 
 // input used when evaluating in retained mode
-struct Input : TensorFunction::Input {
+struct Input {
     std::vector<Value::UP> tensors;
+    std::vector<Value::CREF> params;
+    ~Input() {}
+    void pad_params() {
+        for (size_t i = 0; i < tensor_id_a; ++i) {
+            params.push_back(ErrorValue::instance);
+        }
+    }
     Input(Value::UP a) : tensors() {
+        pad_params();
         tensors.push_back(std::move(a));
+        params.emplace_back(*tensors.back());
     }
     Input(Value::UP a, Value::UP b) : tensors() {
+        pad_params();
         tensors.push_back(std::move(a));
+        params.emplace_back(*tensors.back());
         tensors.push_back(std::move(b));
+        params.emplace_back(*tensors.back());
     }
-    const Value &get_tensor(size_t id) const override {
-        size_t offset = (id - tensor_id_a);
-        ASSERT_GREATER(tensors.size(), offset);
-        return *tensors[offset];
-    }
+    ConstArrayRef<Value::CREF> get() const { return params; }
 };
 
 // evaluate tensor reduce operation using tensor engine retained api
@@ -264,11 +272,11 @@ struct RetainedReduce : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         auto a_type = ValueType::from_spec(a.type());
-        auto ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a), aggr, dimensions);
-        ValueType expect_type = ir->result_type;
-        auto fun = engine.compile(std::move(ir));
+        const auto &ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a, stash), aggr, dimensions, stash);
+        ValueType expect_type = ir.result_type;
+        const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a));
-        return Result(engine, check_type(fun->eval(input, stash), expect_type));
+        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
     }
 };
 
@@ -279,11 +287,11 @@ struct RetainedMap : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         auto a_type = ValueType::from_spec(a.type());
-        auto ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a), function);
-        ValueType expect_type = ir->result_type;
-        auto fun = engine.compile(std::move(ir));
+        const auto &ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a, stash), function, stash);
+        ValueType expect_type = ir.result_type;
+        const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a));
-        return Result(engine, check_type(fun->eval(input, stash), expect_type));
+        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
     }
 };
 
@@ -295,13 +303,13 @@ struct RetainedJoin : Eval {
         Stash stash;
         auto a_type = ValueType::from_spec(a.type());
         auto b_type = ValueType::from_spec(b.type());
-        auto ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a),
-                                        tensor_function::inject(b_type, tensor_id_b),
-                                        function);
-        ValueType expect_type = ir->result_type;
-        auto fun = engine.compile(std::move(ir));
+        const auto &ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a, stash),
+                                               tensor_function::inject(b_type, tensor_id_b, stash),
+                                               function, stash);
+        ValueType expect_type = ir.result_type;
+        const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a), engine.from_spec(b));
-        return Result(engine, check_type(fun->eval(input, stash), expect_type));
+        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
     }
 };
 
