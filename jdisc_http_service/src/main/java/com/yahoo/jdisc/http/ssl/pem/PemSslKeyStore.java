@@ -21,7 +21,7 @@ import java.security.cert.CertificateException;
  * @author Tony Vaagenes
  * @author bjorncs
  */
-public class PemSslKeyStore extends SslKeyStore {
+public class PemSslKeyStore implements SslKeyStore {
 
     static {
         Security.addProvider(new PemKeyStoreProvider());
@@ -42,10 +42,6 @@ public class PemSslKeyStore extends SslKeyStore {
 
     @Override
     public KeyStore loadJavaKeyStore() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        if (getKeyStorePassword().isPresent()) {
-            throw new UnsupportedOperationException("PEM key store with password is currently not supported. Please file a feature request.");
-        }
-
         //cached since Reader(in loadParameter) can only be used one time.
         if (keyStore == null) {
             keyStore = KeyStore.getInstance(KEY_STORE_TYPE);

@@ -6,9 +6,8 @@ import com.google.inject.Module;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ssl.jks.JKSKeyStore;
 import com.yahoo.jdisc.http.SslContextFactory;
-import com.yahoo.jdisc.http.ssl.SslKeyStore;
+import com.yahoo.jdisc.http.ssl.jks.JksKeyStore;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -76,8 +75,9 @@ public class TestDriver {
         ConnectorConfig.Ssl sslConfig = builder.getInstance(ConnectorConfig.class).ssl();
         if (!sslConfig.enabled()) return null;
 
-        SslKeyStore keyStore = new JKSKeyStore(Paths.get(sslConfig.keyStorePath()));
-        keyStore.setKeyStorePassword(builder.getInstance(Key.get(String.class, named("keyStorePassword"))));
+        JksKeyStore keyStore = new JksKeyStore(
+                Paths.get(sslConfig.keyStorePath()),
+                builder.getInstance(Key.get(String.class, named("keyStorePassword"))));
         return SslContextFactory.newInstanceFromTrustStore(keyStore).getServerSSLContext();
     }
 
