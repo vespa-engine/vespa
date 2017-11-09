@@ -7,7 +7,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -57,6 +56,6 @@ public class TestTenantBuilder {
                 }
             }
         });
-        return new Tenants(componentRegistry, Metrics.createTestMetrics(), tenantList);
+        return new Tenants(componentRegistry, tenantList);
     }
 }
