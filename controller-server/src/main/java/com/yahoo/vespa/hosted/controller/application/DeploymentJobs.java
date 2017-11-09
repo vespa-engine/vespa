@@ -133,6 +133,7 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
+    // TODO: This is wrong -- JobStatuses which are not yet run are ignored here.
     /** Returns whether the given change has been deployed completely */
     public boolean isDeployed(Change change) {
         return status.values().stream()
@@ -147,7 +148,8 @@ public class DeploymentJobs {
                 .filter(status -> status.lastCompletedWas(change))
                 .isPresent();
     }
-    
+
+    // TODO: This should be replaced by more precise firstFailing.at -- both uses of this are wrong.
     /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
     public Instant failingSince() {
         return JobList.from(jobStatus().values())

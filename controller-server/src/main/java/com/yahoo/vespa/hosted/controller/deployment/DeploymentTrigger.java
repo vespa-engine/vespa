@@ -135,6 +135,7 @@ public class DeploymentTrigger {
         List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
 
         // Should the first step be triggered?
+        // TODO: How can the first job not be systemTest (second ccondition)?
         if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) &&
              application.deploying().get() instanceof Change.VersionChange) {
             Version target = ((Change.VersionChange)application.deploying().get()).version();
@@ -174,7 +175,7 @@ public class DeploymentTrigger {
         Change change = application.deploying().get();
 
         if ( ! previous.lastSuccess().isPresent() && 
-             ! productionJobHasSucceededFor(previous, change)) return false;
+             ! productionUpgradeHasSucceededFor(previous, change)) return false;
 
         if (change instanceof Change.VersionChange) {
             Version targetVersion = ((Change.VersionChange)change).version();
@@ -328,6 +329,7 @@ public class DeploymentTrigger {
     
     /** Retry immediately only if this just started failing. Otherwise retry periodically */
     private boolean shouldRetryNow(Application application) {
+        // TODO: This is wrong, because an old failure for a later job could be causing this to fail, when it shouldn't.
         return application.deploymentJobs().failingSince().isAfter(clock.instant().minus(Duration.ofSeconds(10)));
     }
 
@@ -438,7 +440,7 @@ public class DeploymentTrigger {
      * When upgrading it is ok to trigger the next job even if the previous failed if the previous has earlier succeeded
      * on the version we are currently upgrading to
      */
-    private boolean productionJobHasSucceededFor(JobStatus jobStatus, Change change) {
+    private boolean productionUpgradeHasSucceededFor(JobStatus jobStatus, Change change) {
         if ( ! (change instanceof Change.VersionChange) ) return false;
         if ( ! isProduction(jobStatus.type())) return false;
         Optional<JobStatus.JobRun> lastSuccess = jobStatus.lastSuccess();
