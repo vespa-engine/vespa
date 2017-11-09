@@ -126,7 +126,6 @@ public class SessionPreparerTest extends TestWithCurator {
                          new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
                          Optional.empty(), tenantPath, Instant.now());
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().sendDeployedFilesCalled, is(0));
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().limitSendingOfDeployedFilesToCalled, is(0));
         assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().reloadDeployFileDistributorCalled, is(0));
     }
 

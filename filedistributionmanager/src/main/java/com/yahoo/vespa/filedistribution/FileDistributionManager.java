@@ -4,7 +4,6 @@ package com.yahoo.vespa.filedistribution;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -30,12 +29,7 @@ public class FileDistributionManager {
 
     private native void setDeployedFilesImpl(byte[] host, byte[] appId, byte[][] fileReferences);
 
-    private native void limitSendingOfDeployedFilesToImpl(byte[][] hostNames, byte[] appId);
-    private native void limitFilesToImpl(byte[][] fileReferences);
     private native void removeDeploymentsThatHaveDifferentApplicationIdImpl(byte[][] asByteArrays, byte[] bytes);
-
-    private native byte[] getProgressImpl(byte[] fileReference,
-                                          byte[][] hostNames);
 
     private byte[][] getAsByteArrays(Collection<String> strings) {
         byte[][] byteArrays = new byte[strings.size()][];
@@ -119,17 +113,6 @@ public class FileDistributionManager {
         } catch (IOException e) {
             throw new RuntimeException("Failed to reinitialize the filedistributor", e);
         }
-    }
-
-    public void limitSendingOfDeployedFilesTo(Collection<String> hostNames) {
-        try (LockGuard guard = new LockGuard(lock)) {
-            limitSendingOfDeployedFilesToImpl(getAsByteArrays(hostNames), appId.getBytes());
-        }
-    }
-
-    public byte[] getProgress(String fileReference,
-                              List<String> hostNamesSortedAscending) {
-        return getProgressImpl(fileReference.getBytes(), getAsByteArrays(hostNamesSortedAscending));
     }
 
 

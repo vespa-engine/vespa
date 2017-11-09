@@ -14,7 +14,6 @@ import java.util.Set;
 public class MockFileDBHandler implements FileDistribution {
     public int sendDeployedFilesCalled = 0;
     public int reloadDeployFileDistributorCalled = 0;
-    public int limitSendingOfDeployedFilesToCalled = 0;
     public int removeDeploymentsThatHaveDifferentApplicationIdCalled = 0;
 
     @Override
@@ -25,11 +24,6 @@ public class MockFileDBHandler implements FileDistribution {
     @Override
     public void reloadDeployFileDistributor() {
         reloadDeployFileDistributorCalled++;
-    }
-
-    @Override
-    public void limitSendingOfDeployedFilesTo(Collection<String> hostNames) {
-        limitSendingOfDeployedFilesToCalled++;
     }
 
     @Override
