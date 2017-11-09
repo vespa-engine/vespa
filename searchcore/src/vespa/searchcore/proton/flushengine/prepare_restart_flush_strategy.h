@@ -21,9 +21,12 @@ class PrepareRestartFlushStrategy : public IFlushStrategy
 public:
     struct Config
     {
-        double tlsReplayCost;
+        double tlsReplayByteCost;
+        double tlsReplayOperationCost;
         double flushTargetWriteCost;
-        Config(double tlsReplayCost_, double flushTargetWriteCost_);
+        Config(double tlsReplayByteCost_,
+               double tlsReplayOperationCost_,
+               double flushTargetWriteCost_);
     };
 
 private:

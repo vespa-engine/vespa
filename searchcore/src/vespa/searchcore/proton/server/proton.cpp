@@ -655,7 +655,8 @@ PrepareRestartFlushStrategy::Config
 createPrepareRestartConfig(const ProtonConfig &protonConfig)
 {
     return PrepareRestartFlushStrategy::Config(protonConfig.flush.preparerestart.replaycost,
-            protonConfig.flush.preparerestart.writecost);
+                                               protonConfig.flush.preparerestart.replayoperationcost,
+                                               protonConfig.flush.preparerestart.writecost);
 }
 
 }
