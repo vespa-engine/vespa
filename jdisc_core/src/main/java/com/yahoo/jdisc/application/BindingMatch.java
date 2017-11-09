@@ -23,7 +23,9 @@ public class BindingMatch<T> {
      * @param match  The match information for this instance.
      * @param target The target of this match.
      * @throws NullPointerException If any argument is null.
+     * @deprecated use BindingMatch(UriPattern.Match match, T target, UriPattern matched)
      */
+    @Deprecated
     public BindingMatch(UriPattern.Match match, T target) {
         this(match, target, null);
     }
