@@ -146,7 +146,6 @@ public class UpgraderTest {
         tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, default0, false);
 
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
-        // TODO: NO: Change only carries a single change at a time, even though there are two in this case, leaving the version at 5.1 for this application.
         // Deploy application change
         tester.deployCompletely("default0");
 
