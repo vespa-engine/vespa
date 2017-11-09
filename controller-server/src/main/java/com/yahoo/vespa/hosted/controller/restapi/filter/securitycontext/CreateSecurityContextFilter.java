@@ -19,6 +19,7 @@ import java.security.Principal;
  */
 @After("BouncerFilter")
 @Provides("SecurityContext")
+@SuppressWarnings("unused") // Injected
 public class CreateSecurityContextFilter implements SecurityRequestFilter {
 
     @Override

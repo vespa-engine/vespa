@@ -90,15 +90,15 @@ class NodeAllocation {
 
                 // conditions on which we want to retire nodes that were allocated previously
                 if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) wantToRetireNode = true;
-                if ( !hasCompatibleFlavor(offered)) wantToRetireNode = true;
+                if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
                 if ( offered.flavor().isRetired()) wantToRetireNode = true;
                 if ( offered.status().wantToRetire()) wantToRetireNode = true;
 
-                if ((!saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) ) {
+                if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) ) {
                     accepted.add(acceptNode(offeredPriority, wantToRetireNode));
                 }
             }
-            else if (! saturated() && hasCompatibleFlavor(offered)) {
+            else if ( ! saturated() && hasCompatibleFlavor(offered)) {
                 if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) {
                     ++rejectedWithClashingParentHost;
                     continue;
@@ -232,6 +232,12 @@ class NodeAllocation {
                     if (++surplus == 0) break;
                 }
             }
+        }
+        
+        // Update flavor of allocated docker nodes as we can change it in place
+        for (PrioritizableNode node : nodes) {
+            if (node.node.allocation().isPresent())
+                node.node = requestedNodes.assignRequestedFlavor(node.node);
         }
 
         return nodes.stream().map(n -> n.node).collect(Collectors.toList());

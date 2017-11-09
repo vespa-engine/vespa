@@ -315,10 +315,11 @@ public class ApplicationController {
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
                 if ( ! canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
-                    // Update with (potentially) missing information about what we triggered
+                    // Update with (potentially) missing information about what we triggered:
+                    // * When someone else triggered the job, we need to store a stand-in triggering event.
+                    // * When this is the system test job, we need to record the new revision, for future use.
                     JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
                     application = application.with(application.deploymentJobs()
-                            // TODO: What is this hack?
                                                            .withTriggering(jobType.get(),
                                                                            application.deploying(),
                                                                            triggering.id(),

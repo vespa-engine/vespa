@@ -85,7 +85,10 @@ public class DeploymentTrigger {
             if (report.success()) {
                 if (order.givesNewRevision(report.jobType())) {
                     if (acceptNewRevisionNow(application)) {
-                        application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
+                        // Set this as the change we are doing, unless we are already pushing a platform change
+                        if ( ! ( application.deploying().isPresent() &&
+                                 (application.deploying().get() instanceof Change.VersionChange)))
+                            application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                     }
                     else { // postpone
                         applications().store(application.withOutstandingChange(true));

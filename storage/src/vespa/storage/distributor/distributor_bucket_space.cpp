@@ -5,7 +5,10 @@
 namespace storage {
 namespace distributor {
 
-DistributorBucketSpace::DistributorBucketSpace() {
+DistributorBucketSpace::DistributorBucketSpace()
+    : _bucketDatabase(),
+      _distribution()
+{
 }
 
 DistributorBucketSpace::~DistributorBucketSpace() {

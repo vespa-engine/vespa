@@ -232,6 +232,29 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void application_deployment_with_inplace_downsize() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId application1 = tester.makeApplicationId();
+
+        tester.makeReadyNodes(14, "dockerLarge");
+
+        // deploy
+        SystemState state1 = prepare(application1, 2, 2, 4, 4, "dockerLarge", tester);
+        tester.activate(application1, state1.allHosts);
+
+        // redeploy with smaller docker flavor - causes in-place flavor change
+        SystemState state2 = prepare(application1, 2, 2, 4, 4, "dockerSmall", tester);
+        tester.activate(application1, state2.allHosts);
+
+        assertEquals(12, tester.getNodes(application1, Node.State.active).asList().size());
+        for (Node node : tester.getNodes(application1, Node.State.active).asList())
+            assertEquals("Node changed flavor in place", "dockerSmall", node.flavor().name());
+        assertEquals("No nodes are retired",
+                     0, tester.getNodes(application1, Node.State.active).retired().size());
+    }
+
+    @Test
     public void application_deployment_multiple_flavors_default_per_type() {
         ConfigserverConfig.Builder config = new ConfigserverConfig.Builder();
         config.environment("prod");
@@ -506,7 +529,7 @@ public class ProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Unknown flavor 'nonexisting'. Flavors are [default, docker1, large, old-large1, old-large2, small, v-4-8-100]", e.getMessage());
+            assertEquals("Unknown flavor 'nonexisting'. Flavors are [default, dockerLarge, dockerSmall, large, old-large1, old-large2, small, v-4-8-100]", e.getMessage());
         }
     }
 

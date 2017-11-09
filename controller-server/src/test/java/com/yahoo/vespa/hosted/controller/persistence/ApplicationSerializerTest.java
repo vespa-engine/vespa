@@ -200,15 +200,6 @@ public class ApplicationSerializerTest {
         assertFalse(application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).lastCompleted().get().upgrade());
     }
 
-    // TODO: Remove after October 2017
-    @Test
-    public void testLegacySerializationWithZeroProjectId() {
-        Application original = applicationSerializer.fromSlime(applicationSlime(0, false));
-        assertFalse(original.deploymentJobs().projectId().isPresent());
-        Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
-        assertFalse(serialized.deploymentJobs().projectId().isPresent());
-    }
-
     private Slime applicationSlime(boolean error) {
         return applicationSlime(123, error);
     }
