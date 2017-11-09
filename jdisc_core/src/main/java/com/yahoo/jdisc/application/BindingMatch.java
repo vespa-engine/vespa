@@ -15,6 +15,7 @@ public class BindingMatch<T> {
 
     private final UriPattern.Match match;
     private final T target;
+    private final UriPattern matched;
 
     /**
      * <p>Constructs a new instance of this class.</p>
@@ -24,10 +25,23 @@ public class BindingMatch<T> {
      * @throws NullPointerException If any argument is null.
      */
     public BindingMatch(UriPattern.Match match, T target) {
+        this(match, target, null);
+    }
+
+    /**
+     * <p>Constructs a new instance of this class.</p>
+     *
+     * @param match  The match information for this instance.
+     * @param target The target of this match.
+     * @param matched The matched URI pattern
+     * @throws NullPointerException If any argument is null.
+     */
+    public BindingMatch(UriPattern.Match match, T target, UriPattern matched) {
         Objects.requireNonNull(match, "match");
         Objects.requireNonNull(target, "target");
         this.match = match;
         this.target = target;
+        this.matched = matched;
     }
 
     /**
@@ -61,4 +75,14 @@ public class BindingMatch<T> {
     public T target() {
         return target;
     }
+
+    /**
+     * <p>Returns the URI pattern that was matched.</p>
+     *
+     * @return The matched pattern.
+     */
+    public UriPattern matched() {
+        return matched;
+    }
+
 }
