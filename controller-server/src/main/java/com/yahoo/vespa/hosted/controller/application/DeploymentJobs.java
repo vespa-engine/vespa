@@ -68,7 +68,6 @@ public class DeploymentJobs {
 
     public DeploymentJobs withTriggering(JobType jobType,
                                          Optional<Change> change,
-                                         long runId,
                                          Version version,
                                          Optional<ApplicationRevision> revision,
                                          String reason,
@@ -76,8 +75,7 @@ public class DeploymentJobs {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(jobType, (type, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
-            return job.withTriggering(runId,
-                                      version,
+            return job.withTriggering( version,
                                       revision,
                                       change.isPresent() && change.get() instanceof Change.VersionChange,
                                       reason,

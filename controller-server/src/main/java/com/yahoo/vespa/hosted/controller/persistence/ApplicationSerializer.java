@@ -385,7 +385,7 @@ public class ApplicationSerializer {
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017
+        return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017 -- what about lastTriggered?
                                                 new Version(object.field(versionField).asString()),
                                                 applicationRevisionFromSlime(object.field(revisionField)),
                                                 object.field(upgradeField).asBool(),

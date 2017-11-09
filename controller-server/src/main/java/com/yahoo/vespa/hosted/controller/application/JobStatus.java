@@ -55,9 +55,9 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()); 
     }
 
-    public JobStatus withTriggering(long runId, Version version, Optional<ApplicationRevision> revision,
+    public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision,
                                     boolean upgrade, String reason, Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(runId, version, revision, upgrade, reason, triggerTime)),
+        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, revision, upgrade, reason, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 

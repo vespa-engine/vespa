@@ -95,7 +95,10 @@ public class UpgraderTest {
         assertEquals("New system version: Should upgrade Canaries", 2, tester.buildSystem().jobs().size());
         tester.completeUpgradeWithError(canary0, version, "canary", DeploymentJobs.JobType.stagingTest);
         assertEquals("Other Canary was cancelled", 2, tester.buildSystem().jobs().size());
-        // TODO: Cancelled?
+        // TODO: Cancelled would mean it was triggerd, removed from the build system, but never reported in.
+        //       Thus, the expected number of jobs should be 1, above: the retrying canary0.
+        //       Further, canary1 should be retried after the timeout period of 12 hours, but verifying this is
+        //       not possible when jobs are consumed form the build system on notification, rather than on deploy.
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());

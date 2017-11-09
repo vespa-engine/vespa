@@ -322,7 +322,6 @@ public class ApplicationController {
                     application = application.with(application.deploymentJobs()
                                                            .withTriggering(jobType.get(),
                                                                            application.deploying(),
-                                                                           triggering.id(),
                                                                            version,
                                                                            Optional.of(revision),
                                                                            triggering.reason(),

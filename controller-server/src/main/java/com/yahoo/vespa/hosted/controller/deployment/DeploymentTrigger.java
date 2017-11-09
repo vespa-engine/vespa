@@ -216,7 +216,6 @@ public class DeploymentTrigger {
             if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
 
             // Retry first failing job
-            // TODO: Use JobList, requires JobList to sort according to deploymentSpec.
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                 if (isFailing(application.deploying().get(), jobStatus)) {
@@ -373,11 +372,10 @@ public class DeploymentTrigger {
      *
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
-     * @param first whether to trigger the job before other jobs
+     * @param first whether to put the job at the front of the build system queue (or the back)
      * @param reason describes why the job is triggered
      * @return the application in the triggered state, which *must* be stored by the caller
      */
-    // TODO: Improve explanation for first parameter.
     private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String reason) {
         if (isRunningProductionJob(application)) return application;
         return triggerAllowParallel(jobType, application, first, false, reason);
@@ -416,8 +414,7 @@ public class DeploymentTrigger {
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                reason));
         buildSystem.addJob(application.id(), jobType, first);
-        return application.withJobTriggering(-1, jobType, application.deploying(), reason, clock.instant(),
-                                             controller);
+        return application.withJobTriggering(jobType, application.deploying(), reason, clock.instant(), controller);
     }
 
     /** Returns true if the given proposed job triggering should be effected */
