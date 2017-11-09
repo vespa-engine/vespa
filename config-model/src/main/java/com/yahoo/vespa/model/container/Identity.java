@@ -28,4 +28,8 @@ public class Identity extends SimpleComponent implements IdentityConfig.Producer
         builder.service(service);
         builder.loadBalancerAddress(loadBalancerAddress);
     }
+
+    public String getService() {
+        return service;
+    }
 }

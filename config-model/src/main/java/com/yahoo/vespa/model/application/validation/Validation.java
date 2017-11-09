@@ -54,6 +54,7 @@ public class Validation {
         new NoPrefixForIndexes().validate(model, deployState);
         new DeploymentFileValidator().validate(model, deployState);
         new RankingConstantsValidator().validate(model, deployState);
+        new IdentityValidator().validate(model, deployState);
 
         Optional<Model> currentActiveModel = deployState.getPreviousModel();
         if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
