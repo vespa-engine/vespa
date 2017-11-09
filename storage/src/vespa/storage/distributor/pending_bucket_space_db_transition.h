@@ -12,6 +12,7 @@ namespace storage::distributor {
 
 class ClusterInformation;
 class PendingClusterState;
+class DistributorBucketSpace;
 
 /**
  * Class used by PendingClusterState to track request bucket info
@@ -42,6 +43,7 @@ private:
     const lib::ClusterState                  &_newClusterState;
     const api::Timestamp                      _creationTimestamp;
     const PendingClusterState                &_pendingClusterState;
+    DistributorBucketSpace                   &_distributorBucketSpace;
 
     // BucketDataBase::MutableEntryProcessor API
     bool process(BucketDatabase::Entry& e) override;
@@ -73,13 +75,14 @@ private:
 
 public:
     PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
+                                   DistributorBucketSpace &distributorBucketSpace,
                                    std::shared_ptr<const ClusterInformation> clusterInfo,
                                    const lib::ClusterState &newClusterState,
                                    api::Timestamp creationTimestamp);
     ~PendingBucketSpaceDbTransition();
 
-    // Merges all the results with the given bucket database.
-    void mergeInto(BucketDatabase& db);
+    // Merges all the results with the corresponding bucket database.
+    void mergeIntoBucketDatabase();
 
     // Adds the info from the reply to our list of information.
     void onRequestBucketInfoReply(const api::RequestBucketInfoReply &reply, uint16_t node);

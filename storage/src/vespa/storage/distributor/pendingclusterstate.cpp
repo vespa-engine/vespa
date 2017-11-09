@@ -80,7 +80,7 @@ void
 PendingClusterState::initializeBucketSpaceTransitions()
 {
     for (auto &elem : _bucketSpaceRepo) {
-        _pendingTransitions.emplace(elem.first, std::make_unique<PendingBucketSpaceDbTransition>(*this, _clusterInfo, _newClusterState, _creationTimestamp));
+        _pendingTransitions.emplace(elem.first, std::make_unique<PendingBucketSpaceDbTransition>(*this, *elem.second, _clusterInfo, _newClusterState, _creationTimestamp));
     }
     if (shouldRequestBucketInfo()) {
         requestNodes();
@@ -420,8 +420,8 @@ PendingClusterState::requestNodesToString() const
 void
 PendingClusterState::mergeIntoBucketDatabases()
 {
-    for (auto &elem : _bucketSpaceRepo) {
-        _pendingTransitions[elem.first]->mergeInto(elem.second->getBucketDatabase());
+    for (auto &elem : _pendingTransitions) {
+        elem.second->mergeIntoBucketDatabase();
     }
 }
 

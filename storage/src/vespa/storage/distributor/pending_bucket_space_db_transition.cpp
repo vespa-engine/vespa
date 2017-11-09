@@ -3,6 +3,7 @@
 #include "pending_bucket_space_db_transition.h"
 #include "clusterinformation.h"
 #include "pendingclusterstate.h"
+#include "distributor_bucket_space.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <algorithm>
 
@@ -12,6 +13,7 @@ LOG_SETUP(".pendingbucketspacedbtransition");
 namespace storage::distributor {
 
 PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
+                                                               DistributorBucketSpace &distributorBucketSpace,
                                                                std::shared_ptr<const ClusterInformation> clusterInfo,
                                                                const lib::ClusterState &newClusterState,
                                                                api::Timestamp creationTimestamp)
@@ -23,7 +25,8 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _outdatedNodes(pendingClusterState.getOutdatedNodeSet()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
-      _pendingClusterState(pendingClusterState)
+      _pendingClusterState(pendingClusterState),
+      _distributorBucketSpace(distributorBucketSpace)
 {
 }
 
@@ -192,8 +195,9 @@ PendingBucketSpaceDbTransition::addToBucketDB(BucketDatabase& db, const Range& r
 }
 
 void
-PendingBucketSpaceDbTransition::mergeInto(BucketDatabase& db)
+PendingBucketSpaceDbTransition::mergeIntoBucketDatabase()
 {
+    BucketDatabase &db(_distributorBucketSpace.getBucketDatabase());
     std::sort(_entries.begin(), _entries.end());
 
     db.forEach(*this);
