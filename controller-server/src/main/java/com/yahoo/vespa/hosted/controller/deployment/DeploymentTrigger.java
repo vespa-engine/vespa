@@ -109,7 +109,7 @@ public class DeploymentTrigger {
             else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true,
                                       "Retrying on out of capacity");
-            else if (shouldRetryNow(application))
+            else if (shouldRetryNow(application, report.jobType()))
                 application = trigger(report.jobType(), application, false,
                                       "Immediate retry on failure");
 
@@ -330,10 +330,10 @@ public class DeploymentTrigger {
         return false;
     }
     
-    /** Retry immediately only if this just started failing. Otherwise retry periodically */
-    private boolean shouldRetryNow(Application application) {
-        // TODO: This is wrong, because an old failure for a later job could be causing this to fail, when it shouldn't.
-        return application.deploymentJobs().failingSince().isAfter(clock.instant().minus(Duration.ofSeconds(10)));
+    /** Retry immediately only if this job just started failing. Otherwise retry periodically */
+    private boolean shouldRetryNow(Application application, JobType jobType) {
+        JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+        return (jobStatus != null && jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofSeconds(10))));
     }
 
     /** Decide whether to retry due to capacity restrictions */
