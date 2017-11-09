@@ -3,32 +3,36 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/tensor/dense/dense_dot_product_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor_function_compiler.h>
+#include <vespa/eval/eval/operation.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::operation;
 using namespace vespalib::eval::tensor_function;
 using namespace vespalib::tensor;
+using vespalib::Stash;
 
 template <typename T>
 const T *as(const TensorFunction &function) { return dynamic_cast<const T *>(&function); }
 
-TensorFunction::UP
+const TensorFunction &
 compileDotProduct(const vespalib::string &lhsType,
-                  const vespalib::string &rhsType)
+                  const vespalib::string &rhsType,
+                  Stash &stash)
 {
-    Node_UP reduceNode = reduce(join(inject(ValueType::from_spec(lhsType), 1),
-                                     inject(ValueType::from_spec(rhsType), 3),
-                                     Mul::f),
-                                Aggr::SUM, {});
-    return DenseTensorFunctionCompiler::compile(std::move(reduceNode));
+    const Node &reduceNode = reduce(join(inject(ValueType::from_spec(lhsType), 1, stash),
+                                         inject(ValueType::from_spec(rhsType), 3, stash),
+                                         Mul::f, stash),
+                                    Aggr::SUM, {}, stash);
+    return DenseTensorFunctionCompiler::compile(reduceNode, stash);
 }
 
 void
 assertCompiledDotProduct(const vespalib::string &lhsType,
                          const vespalib::string &rhsType)
 {
-    TensorFunction::UP func = compileDotProduct(lhsType, rhsType);
-    const DenseDotProductFunction *dotProduct = as<DenseDotProductFunction>(*func);
+    Stash stash;
+    const TensorFunction &func = compileDotProduct(lhsType, rhsType, stash);
+    const DenseDotProductFunction *dotProduct = as<DenseDotProductFunction>(func);
     ASSERT_TRUE(dotProduct);
     EXPECT_EQUAL(1u, dotProduct->lhsTensorId());
     EXPECT_EQUAL(3u, dotProduct->rhsTensorId());
@@ -38,8 +42,9 @@ void
 assertNotCompiledDotProduct(const vespalib::string &lhsType,
                             const vespalib::string &rhsType)
 {
-    TensorFunction::UP func = compileDotProduct(lhsType, rhsType);
-    const Reduce *reduce = as<Reduce>(*func);
+    Stash stash;
+    const TensorFunction &func = compileDotProduct(lhsType, rhsType, stash);
+    const Reduce *reduce = as<Reduce>(func);
     EXPECT_TRUE(reduce);
 }
 

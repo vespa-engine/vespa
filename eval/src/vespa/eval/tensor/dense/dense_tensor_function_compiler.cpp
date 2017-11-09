@@ -2,6 +2,7 @@
 
 #include "dense_dot_product_function.h"
 #include "dense_tensor_function_compiler.h"
+#include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <iostream>
 
@@ -36,30 +37,30 @@ isCompatibleTensorsForDotProduct(const ValueType &lhsType, const ValueType &rhsT
 
 struct DotProductFunctionCompiler
 {
-    static TensorFunction::UP compile(Node_UP expr) {
-        const Reduce *reduce = as<Reduce>(*expr);
+    static const TensorFunction &compile(const Node &expr, Stash &stash) {
+        const Reduce *reduce = as<Reduce>(expr);
         if (reduce && (reduce->aggr == Aggr::SUM) && willReduceAllDimensions(reduce->dimensions)) {
-            const Join *join = as<Join>(*reduce->tensor);
+            const Join *join = as<Join>(reduce->tensor);
             if (join && (join->function == Mul::f)) {
-                const Inject *lhsTensor = as<Inject>(*join->lhs_tensor);
-                const Inject *rhsTensor = as<Inject>(*join->rhs_tensor);
+                const Inject *lhsTensor = as<Inject>(join->lhs_tensor);
+                const Inject *rhsTensor = as<Inject>(join->rhs_tensor);
                 if (lhsTensor && rhsTensor &&
                     isCompatibleTensorsForDotProduct(lhsTensor->result_type, rhsTensor->result_type))
                 {
-                    return std::make_unique<DenseDotProductFunction>(lhsTensor->tensor_id, rhsTensor->tensor_id);
+                    return stash.create<DenseDotProductFunction>(lhsTensor->tensor_id, rhsTensor->tensor_id);
                 }
             }
         }
-        return std::move(expr);
+        return expr;
     }
 };
 
 }
 
-TensorFunction::UP
-DenseTensorFunctionCompiler::compile(Node_UP expr)
+const TensorFunction &
+DenseTensorFunctionCompiler::compile(const eval::tensor_function::Node &expr, Stash &stash)
 {
-    return DotProductFunctionCompiler::compile(std::move(expr));
+    return DotProductFunctionCompiler::compile(expr, stash);    
 }
 
 } // namespace tensor

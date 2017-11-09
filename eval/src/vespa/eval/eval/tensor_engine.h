@@ -34,20 +34,20 @@ struct TensorEngine
 {
     using Aggr = eval::Aggr;
     using Tensor = eval::Tensor;
+    using TensorFunction = eval::TensorFunction;
     using TensorSpec = eval::TensorSpec;
     using Value = eval::Value;
     using ValueType = eval::ValueType;
     using join_fun_t = double (*)(double, double);
     using map_fun_t = double (*)(double);
 
-    virtual TensorFunction::UP compile(tensor_function::Node_UP expr) const { return std::move(expr); }
-
-    // havardpe: new API, WIP
     virtual TensorSpec to_spec(const Value &value) const = 0;
     virtual Value::UP from_spec(const TensorSpec &spec) const = 0;
 
     virtual void encode(const Value &value, nbostream &output) const = 0;
     virtual Value::UP decode(nbostream &input) const = 0;
+
+    virtual const TensorFunction &compile(const tensor_function::Node &expr, Stash &) const { return expr; }
 
     virtual const Value &map(const Value &a, map_fun_t function, Stash &stash) const = 0;
     virtual const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const = 0;

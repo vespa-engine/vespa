@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/eval/eval/basic_nodes.h>

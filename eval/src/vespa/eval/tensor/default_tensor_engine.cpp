@@ -11,6 +11,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/operation.h>
 #include <cassert>
 
 
@@ -21,6 +22,7 @@ using eval::Aggr;
 using eval::Aggregator;
 using eval::DoubleValue;
 using eval::ErrorValue;
+using eval::TensorFunction;
 using eval::TensorSpec;
 using eval::Value;
 using eval::ValueType;
@@ -92,12 +94,6 @@ const Value &fallback_reduce(const Value &a, eval::Aggr aggr, const std::vector<
 } // namespace vespalib::tensor::<unnamed>
 
 const DefaultTensorEngine DefaultTensorEngine::_engine;
-
-eval::TensorFunction::UP
-DefaultTensorEngine::compile(eval::tensor_function::Node_UP expr) const
-{
-    return DenseTensorFunctionCompiler::compile(std::move(expr));
-}
 
 TensorSpec
 DefaultTensorEngine::to_spec(const Value &value) const
@@ -202,6 +198,14 @@ Value::UP
 DefaultTensorEngine::decode(nbostream &input) const
 {
     return to_value(TypedBinaryFormat::deserialize(input));
+}
+
+//-----------------------------------------------------------------------------
+
+const TensorFunction &
+DefaultTensorEngine::compile(const eval::tensor_function::Node &expr, Stash &stash) const
+{
+    return DenseTensorFunctionCompiler::compile(expr, stash);
 }
 
 //-----------------------------------------------------------------------------
