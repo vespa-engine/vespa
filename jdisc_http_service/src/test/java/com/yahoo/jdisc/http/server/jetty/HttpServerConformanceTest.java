@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
@@ -52,6 +53,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
  */
 public class HttpServerConformanceTest extends ServerProviderConformanceTest {
+
+    private static final Logger log = Logger.getLogger(HttpServerConformanceTest.class.getName());
 
     private static final String REQUEST_CONTENT = "myRequestContent";
     private static final String RESPONSE_CONTENT = "myResponseContent";
@@ -784,7 +787,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                 post.setProtocolVersion(client.requestVersion);
                 request = post;
             }
-            System.out.println("executorService:"
+            log.fine(() -> "executorService:"
                     + " .isShutDown()=" + executorService.isShutdown()
                     + " .isTerminated()=" + executorService.isTerminated());
             return executorService.submit(() -> client.delegate.execute(request));
