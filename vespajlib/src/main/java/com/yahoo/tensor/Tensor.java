@@ -259,7 +259,9 @@ public interface Tensor {
         if ( a.size() != b.size()) return false;
         for (Iterator<Cell> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
             Cell aCell = aIterator.next();
-            if ( ! aCell.getValue().equals(b.get(aCell.getKey()))) return false;
+            double aValue = aCell.getValue();
+            double bValue = b.get(aCell.getKey());
+            if (Math.abs(aValue-bValue) > 1e-7) return false; // TODO: determine relative precision
         }
         return true;
     }
