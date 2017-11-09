@@ -146,25 +146,23 @@ public class TenantsTestCase extends TestWithCurator {
     
     @Test
     public void testTenantWatching() throws Exception {
-        TestComponentRegistry reg = new TestComponentRegistry.Builder().curator(curator).build();
-        Tenants t = new Tenants(reg, Metrics.createTestMetrics());
         TenantName newTenant = TenantName.from("newTenant");
         List<TenantName> expectedTenants = Arrays.asList(TenantName.defaultName(), newTenant);
         try {
-            t.addTenant(newTenant);
+            tenants.addTenant(newTenant);
             // Poll for the watcher to pick up the tenant from zk, and add it
             int tries=0;
             while(true) {
                 if (tries > 5000) fail("Didn't react on watch");
-                if (t.getAllTenantNames().containsAll(expectedTenants)) {
+                if (tenants.getAllTenantNames().containsAll(expectedTenants)) {
                     break;
                 }
                 tries++;
                 Thread.sleep(10);
             }
         } finally {
-            assertTrue(t.getAllTenantNames().containsAll(expectedTenants));
-            t.close();
+            assertTrue(tenants.getAllTenantNames().containsAll(expectedTenants));
+            tenants.close();
         }
     }
 
