@@ -358,6 +358,16 @@ DistributorTestUtil::getBucketDatabase() const {
     return _distributor->getDefaultBucketSpace().getBucketDatabase();
 }
 
+DistributorBucketSpaceRepo &
+DistributorTestUtil::getBucketSpaceRepo() {
+    return _distributor->getBucketSpaceRepo();
+}
+
+const DistributorBucketSpaceRepo &
+DistributorTestUtil::getBucketSpaceRepo() const {
+    return _distributor->getBucketSpaceRepo();
+}
+
 const lib::Distribution&
 DistributorTestUtil::getDistribution() const {
     return _distributor->getDefaultBucketSpace().getDistribution();

@@ -20,6 +20,7 @@ namespace distributor {
 class BucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
+class DistributorBucketSpaceRepo;
 class IdealStateManager;
 class ExternalOperationHandler;
 class Operation;
@@ -125,6 +126,8 @@ public:
     DistributorBucketSpace &getDistributorBucketSpace();
     BucketDatabase& getBucketDatabase();
     const BucketDatabase& getBucketDatabase() const;
+    DistributorBucketSpaceRepo &getBucketSpaceRepo();
+    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const;
 
     const lib::Distribution& getDistribution() const;
     // "End to end" distribution change trigger, which will invoke the bucket

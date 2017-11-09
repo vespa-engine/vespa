@@ -4,11 +4,13 @@
 #include <iomanip>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
+#include <vespa/storage/distributor/pending_bucket_space_db_transition.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
@@ -16,6 +18,7 @@
 using namespace storage::api;
 using namespace storage::lib;
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 
 namespace storage {
 namespace distributor {
@@ -538,7 +541,7 @@ public:
 
             std::unordered_set<uint16_t> outdatedNodes;
             state = PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, cmd, outdatedNodes,
+                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), cmd, outdatedNodes,
                     api::Timestamp(1));
         }
 
@@ -551,7 +554,7 @@ public:
 
             std::unordered_set<uint16_t> outdatedNodes;
             state = PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, api::Timestamp(1));
+                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), api::Timestamp(1));
         }
     };
 
@@ -1475,7 +1478,7 @@ BucketDBUpdaterTest::getSentNodesDistributionChanged(
     ClusterInformation::CSP clusterInfo(createClusterInfo(oldClusterState));
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, api::Timestamp(1)));
+                    clock, clusterInfo, sender, getBucketSpaceRepo(), api::Timestamp(1)));
 
     sortSentMessagesByIndex(sender);
 
@@ -1640,7 +1643,7 @@ BucketDBUpdaterTest::testPendingClusterStateReceive()
     std::unordered_set<uint16_t> outdatedNodes;
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, cmd, outdatedNodes,
+                    clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodes,
                     api::Timestamp(1)));
 
     CPPUNIT_ASSERT_EQUAL(3, (int)sender.commands.size());
@@ -1668,7 +1671,8 @@ BucketDBUpdaterTest::testPendingClusterStateReceive()
                              state->done());
     }
 
-    CPPUNIT_ASSERT_EQUAL(3, (int)state->results().size());
+    auto &pendingTransition = state->getPendingBucketSpaceDbTransition(makeBucketSpace());
+    CPPUNIT_ASSERT_EQUAL(3, (int)pendingTransition.results().size());
 }
 
 void
@@ -1721,13 +1725,14 @@ parseInputData(const std::string& data,
         uint16_t node = atoi(tok2[0].c_str());
 
         state.setNodeReplied(node);
+        auto &pendingTransition = state.getPendingBucketSpaceDbTransition(makeBucketSpace());
 
         vespalib::StringTokenizer tok3(tok2[1], ",");
         for (uint32_t j = 0; j < tok3.size(); j++) {
             if (includeBucketInfo) {
                 vespalib::StringTokenizer tok4(tok3[j], "/");
 
-                state.addNodeInfo(
+                pendingTransition.addNodeInfo(
                         document::BucketId(16, atoi(tok4[0].c_str())),
                         BucketCopy(
                                 timestamp,
@@ -1739,7 +1744,7 @@ parseInputData(const std::string& data,
                                         atoi(tok4[2].c_str()),
                                         atoi(tok4[3].c_str()))));
             } else {
-                state.addNodeInfo(
+                pendingTransition.addNodeInfo(
                         document::BucketId(16, atoi(tok3[j].c_str())),
                         BucketCopy(timestamp,
                                    node,
@@ -1803,11 +1808,11 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo("cluster:d"));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, cmd, outdatedNodes,
+                        clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodes,
                         beforeTime));
 
         parseInputData(existingData, beforeTime, *state, includeBucketInfo);
-        state->mergeInto(getBucketDBUpdater().getDistributorComponent().getBucketDatabase());
+        state->mergeIntoBucketDatabases();
     }
 
     BucketDumper dumper_tmp(true);
@@ -1822,12 +1827,11 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo(oldState.toString()));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, cmd, outdatedNodes,
+                        clock, clusterInfo, sender, getBucketSpaceRepo(), cmd, outdatedNodes,
                         afterTime));
 
         parseInputData(newData, afterTime, *state, includeBucketInfo);
-        state->mergeInto(getBucketDBUpdater().getDistributorComponent()
-                .getBucketDatabase());
+        state->mergeIntoBucketDatabases();
     }
 
     BucketDumper dumper(includeBucketInfo);
