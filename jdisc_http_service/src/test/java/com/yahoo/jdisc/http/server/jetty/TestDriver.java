@@ -6,8 +6,8 @@ import com.google.inject.Module;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ssl.JKSKeyStore;
-import com.yahoo.jdisc.http.ssl.SslContextFactory;
+import com.yahoo.jdisc.http.ssl.jks.JKSKeyStore;
+import com.yahoo.jdisc.http.SslContextFactory;
 import com.yahoo.jdisc.http.ssl.SslKeyStore;
 
 import javax.net.ssl.SSLContext;

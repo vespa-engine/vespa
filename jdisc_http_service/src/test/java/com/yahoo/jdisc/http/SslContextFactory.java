@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.ssl;
+package com.yahoo.jdisc.http;
+
+import com.yahoo.jdisc.http.ssl.SslKeyStore;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -13,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:charlesk@yahoo-inc.com">Charles Kim</a>
+ * @author Charles Kim
  */
 public class SslContextFactory {
 

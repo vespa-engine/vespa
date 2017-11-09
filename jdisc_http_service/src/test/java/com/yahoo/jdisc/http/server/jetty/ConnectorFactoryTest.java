@@ -6,7 +6,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.ReaderForPath;
-import com.yahoo.jdisc.http.ssl.SslContextFactory;
+import com.yahoo.jdisc.http.SslContextFactory;
 import com.yahoo.jdisc.http.ssl.SslKeyStore;
 import com.yahoo.jdisc.http.ssl.pem.PemKeyStore;
 import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
