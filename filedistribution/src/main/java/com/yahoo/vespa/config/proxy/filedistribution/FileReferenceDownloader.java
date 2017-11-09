@@ -162,7 +162,7 @@ class FileReferenceDownloader {
             return false;
         } else if (request.returnValues().size() == 0) {
             return false;
-        } else if (!request.checkReturnTypes("i")) {
+        } else if (!request.checkReturnTypes("is")) { // TODO: Do not hard-code return type
             log.log(LogLevel.WARNING, "Invalid return types for response: " + request.errorMessage());
             return false;
         }
@@ -180,4 +180,5 @@ class FileReferenceDownloader {
     Map<FileReference, Double> downloadStatus() {
         return ImmutableMap.copyOf(downloadStatus);
     }
+
 }
