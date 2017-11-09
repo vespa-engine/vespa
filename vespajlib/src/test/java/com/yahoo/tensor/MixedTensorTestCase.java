@@ -26,6 +26,13 @@ public class MixedTensorTestCase {
     }
 
     @Test
+    public void testScalar() {
+        TensorType type = new TensorType.Builder().build();
+        Tensor scalar = MixedTensor.Builder.of(type).cell().value(42.0).build();
+        assertEquals(scalar.asDouble(), 42.0, 1e-6);
+    }
+
+    @Test
     public void testOneIndexedBuilding() {
         TensorType type = new TensorType.Builder().indexed("y", 3).build();
         Tensor tensor = MixedTensor.Builder.of(type).
