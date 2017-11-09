@@ -97,10 +97,10 @@ class Activator {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
-            node = hostSpec.membership().get().retired()
-                    ? node.retire(clock.instant())
-                    : node.unretire();
+            node = hostSpec.membership().get().retired() ? node.retire(clock.instant()) : node.unretire();
             node = node.with(node.allocation().get().with(hostSpec.membership().get()));
+            if (hostSpec.flavor().isPresent()) // Docker nodes may change flavor
+                node = node.with(hostSpec.flavor().get());
             updated.add(node);
         }
         return updated;
