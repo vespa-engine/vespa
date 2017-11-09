@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import org.apache.zookeeper.Op;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
@@ -77,6 +79,7 @@ public class DeploymentTrigger {
      * @param report information about the job that just completed
      */
     public void triggerFromCompletion(JobReport report) {
+        log.info("Got notified about completion of " + report.jobType() + " + for " + report.applicationId() + " with outcome " + (report.success() ? "success" : "failure"));
         try (Lock lock = applications().lock(report.applicationId())) {
             LockedApplication application = applications().require(report.applicationId(), lock);
             application = application.withJobCompletion(report, clock.instant(), controller);
@@ -95,8 +98,7 @@ public class DeploymentTrigger {
                         return;
                     }
                 }
-                // TODO: Should rather fix deployingCompleted() (let it check that all declared zones have the change).
-                else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
+                else if (deploymentComplete(application)) {
                     // change completed
                     application = application.withDeploying(Optional.empty());
                 }
@@ -115,6 +117,14 @@ public class DeploymentTrigger {
 
             applications().store(application);
         }
+    }
+
+    /** Returns whether all production zones listed in deployment spec last were successful on the currently deploying change. */
+    private boolean deploymentComplete(LockedApplication application) {
+        if ( ! application.deploying().isPresent()) return true;
+        return order.jobsFrom(application.deploymentSpec()).stream()
+                .filter(JobType::isProduction)
+                .allMatch(jobType -> application.deploymentJobs().isSuccessful(application.deploying().get(), jobType));
     }
 
     /**
@@ -477,7 +487,6 @@ public class DeploymentTrigger {
         if ( ! application.deploying().isPresent()) return true;
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
 
-        // TODO: Don't these two below allow concurrent App and Version changes?
         if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
         if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.

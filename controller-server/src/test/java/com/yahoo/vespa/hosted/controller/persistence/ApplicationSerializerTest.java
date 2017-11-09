@@ -105,7 +105,6 @@ public class ApplicationSerializerTest {
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest));
         assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest),
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
-        assertEquals(original.deploymentJobs().failingSince(), serialized.deploymentJobs().failingSince());
 
         assertEquals(original.hasOutstandingChange(), serialized.hasOutstandingChange());
 

@@ -147,8 +147,6 @@ public class VespaVersion implements Comparable<VespaVersion> {
                                                        ApplicationList productionOnThis,
                                                        Instant releasedAt,
                                                        CuratorDb curator) {
-        // TODO: This is wrong: a non-canary could fail a job for the previous version and then fail again here;
-        // it would then not be listed, because the old failure was from before upgrade. Use JobList filters instead.
         ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOnVersionAfter(version, releasedAt);
         ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
 

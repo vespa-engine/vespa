@@ -149,10 +149,6 @@ public class UpgraderTest {
         // Deploy application change
         tester.deployCompletely("default0");
 
-        // Let maintainer trigger version change, and deploy it, too
-        tester.upgrader().maintain();
-        tester.deployCompletely("default0");
-
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();

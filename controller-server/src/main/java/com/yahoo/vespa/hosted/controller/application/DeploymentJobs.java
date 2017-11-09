@@ -133,30 +133,12 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
-    // TODO: This is wrong -- JobStatuses which are not yet run are ignored here.
-    /** Returns whether the given change has been deployed completely */
-    public boolean isDeployed(Change change) {
-        return status.values().stream()
-                .filter(status -> status.type().isProduction())
-                .allMatch(status -> isSuccessful(change, status.type()));
-    }
-
     /** Returns whether job has completed successfully */
     public boolean isSuccessful(Change change, JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType))
                 .flatMap(JobStatus::lastSuccess)
                 .filter(status -> status.lastCompletedWas(change))
                 .isPresent();
-    }
-
-    // TODO: This should be replaced by more precise firstFailing.at -- both uses of this are wrong.
-    /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
-    public Instant failingSince() {
-        return JobList.from(jobStatus().values())
-                .failing()
-                .mapToList(job -> job.firstFailing().get().at())
-                .stream()
-                .min(Comparator.naturalOrder()).orElse(null);
     }
 
     /**

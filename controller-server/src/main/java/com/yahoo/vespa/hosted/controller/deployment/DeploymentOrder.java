@@ -93,18 +93,6 @@ public class DeploymentOrder {
         return job == JobType.component;
     }
 
-    /** Returns whether the given job is last in a deployment */
-    public boolean isLast(JobType job, Application application) {
-        List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
-        if (deploymentSteps.isEmpty()) { // Deployment spec not yet available
-            return false;
-        }
-        DeploymentSpec.Step lastStep = deploymentSteps.get(deploymentSteps.size() - 1);
-        Optional<DeploymentSpec.Step> step = fromJob(job, application);
-        // Step may not exist for all jobs, e.g. component
-        return step.map(s -> s.equals(lastStep)).orElse(false);
-    }
-
     /** Returns jobs for given deployment spec, in the order they are declared */
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
         return deploymentSpec.steps().stream()

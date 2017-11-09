@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
@@ -78,6 +77,12 @@ public class ControllerTest {
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
             .region("corp-us-east-1")
+            .build();
+
+    private static final ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+            .environment(Environment.prod)
+            .region("corp-us-east-1")
+            .region("us-west-1")
             .build();
 
     @Test
@@ -448,12 +453,13 @@ public class ControllerTest {
         tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));
         assertTrue("No jobs queued", buildSystem.jobs().isEmpty());
 
-        // app2 and app3: New change triggers staging-test jobs
+        // app2 and app3: New change triggers system-test jobs
+        // Provide a changed application package, too, or the deployment is a no-op.
         tester.notifyJobCompletion(component, app2, true);
-        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app2, applicationPackage2, true, systemTest);
 
         tester.notifyJobCompletion(component, app3, true);
-        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app3, applicationPackage2, true, systemTest);
 
         assertEquals(2, buildSystem.jobs().size());
 
