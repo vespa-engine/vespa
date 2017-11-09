@@ -186,6 +186,8 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     private void createTenant(TenantName tenantName) {
+        if (tenants.containsKey(tenantName)) return;
+
         try {
             Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName, getTenantPath(tenantName)).build();
             notifyNewTenant(tenant);
@@ -255,6 +257,8 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @return this Tenants instance
      */
     public synchronized Tenants deleteTenant(TenantName name) {
+        if (name.equals(TenantName.defaultName()))
+            throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         Tenant tenant = tenants.get(name);
         tenant.delete();
         return this;
