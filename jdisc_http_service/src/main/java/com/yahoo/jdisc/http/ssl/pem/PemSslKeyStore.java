@@ -3,11 +3,12 @@ package com.yahoo.jdisc.http.ssl.pem;
 
 import com.yahoo.jdisc.http.ssl.SslKeyStore;
 import com.yahoo.jdisc.http.ssl.pem.PemKeyStore.KeyStoreLoadParameter;
-import com.yahoo.jdisc.http.ssl.pem.PemKeyStore.PemLoadStoreParameter;
 import com.yahoo.jdisc.http.ssl.pem.PemKeyStore.TrustStoreLoadParameter;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.KeyStore;
+import java.security.KeyStore.LoadStoreParameter;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -18,6 +19,7 @@ import java.security.cert.CertificateException;
  * Responsible for creating pem key stores.
  *
  * @author Tony Vaagenes
+ * @author bjorncs
  */
 public class PemSslKeyStore extends SslKeyStore {
 
@@ -25,16 +27,17 @@ public class PemSslKeyStore extends SslKeyStore {
         Security.addProvider(new PemKeyStoreProvider());
     }
 
-    private static final String keyStoreType = "PEM";
-    private final PemLoadStoreParameter loadParameter;
+    private static final String KEY_STORE_TYPE = "PEM";
+
+    private final LoadStoreParameter loadParameter;
     private KeyStore keyStore;
 
-    public PemSslKeyStore(KeyStoreLoadParameter loadParameter) {
-        this.loadParameter = loadParameter;
+    public PemSslKeyStore(Path certificatePath, Path keyPath) {
+        this.loadParameter = new KeyStoreLoadParameter(certificatePath, keyPath);
     }
 
-    public PemSslKeyStore(TrustStoreLoadParameter loadParameter) {
-        this.loadParameter = loadParameter;
+    public PemSslKeyStore(Path certificatePath) {
+        this.loadParameter = new TrustStoreLoadParameter(certificatePath);
     }
 
     @Override
@@ -45,7 +48,7 @@ public class PemSslKeyStore extends SslKeyStore {
 
         //cached since Reader(in loadParameter) can only be used one time.
         if (keyStore == null) {
-            keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
             keyStore.load(loadParameter);
         }
         return keyStore;
@@ -61,6 +64,6 @@ public class PemSslKeyStore extends SslKeyStore {
             super(NAME, VERSION, DESCRIPTION);
             putService(new Service(this, "KeyStore", "PEM", PemKeyStore. class.getName(), PemKeyStore.aliases, PemKeyStore.attributes));
         }
-
     }
+
 }
