@@ -44,15 +44,11 @@ import javax.servlet.DispatcherType;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.MalformedURLException;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -63,7 +59,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
-import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
  * @author Simon Thoresen Hult
@@ -147,11 +142,9 @@ public class JettyHttpServer extends AbstractServerProvider {
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
-        Map<Path, FileChannel> keyStoreChannels = getKeyStoreFileChannels(osgiFramework.bundleContext());
-
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorFactory.getConnectorConfig().listenPort(), osgiFramework.bundleContext());
-            server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel, keyStoreChannels));
+            server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel));
             listenedPorts.add(connectorFactory.getConnectorConfig().listenPort());
         }
 
@@ -255,43 +248,6 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private static String getServletPath(ServletPathsConfig servletPathsConfig, ComponentId id) {
         return "/" + servletPathsConfig.servlets(id.stringValue()).path();
-    }
-
-    // Ugly trick to get generic type literal.
-    @SuppressWarnings("unchecked")
-    private static final Class<Map<?, ?>> mapClass = (Class<Map<?, ?>>) (Object) Map.class;
-
-    private Map<Path, FileChannel> getKeyStoreFileChannels(BundleContext bundleContext) {
-        try {
-            Collection<ServiceReference<Map<?, ?>>> serviceReferences = bundleContext.getServiceReferences(mapClass,
-                    "(role=com.yahoo.container.standalone.StandaloneContainerActivator.KeyStoreFileChannels)");
-
-            if (serviceReferences == null || serviceReferences.isEmpty())
-                return Collections.emptyMap();
-
-            if (serviceReferences.size() != 1)
-                throw new IllegalStateException("Multiple KeyStoreFileChannels registered");
-
-            return getKeyStoreFileChannels(bundleContext, serviceReferences.iterator().next());
-        } catch (InvalidSyntaxException e) {
-            throw throwUnchecked(e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<Path, FileChannel> getKeyStoreFileChannels(BundleContext bundleContext, ServiceReference<Map<?, ?>> keyStoreFileChannelReference) {
-        Map<?, ?> fileChannelMap = bundleContext.getService(keyStoreFileChannelReference);
-        try {
-            if (fileChannelMap == null)
-                return Collections.emptyMap();
-
-            Map<Path, FileChannel> result = (Map<Path, FileChannel>) fileChannelMap;
-            log.fine("Using file channel for " + result.keySet());
-            return result;
-        } finally {
-            //if we change this to be anything other than a simple map, we should hold the reference as long as the object is in use.
-            bundleContext.ungetService(keyStoreFileChannelReference);
-        }
     }
 
     private ServletContextHandler createServletContextHandler() {

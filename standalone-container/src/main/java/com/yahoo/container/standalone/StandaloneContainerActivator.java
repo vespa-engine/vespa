@@ -19,24 +19,15 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toMap;
 
 /**
  * @author Einar M R Rosenvinge
@@ -45,60 +36,10 @@ public class StandaloneContainerActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
-        Container container = getContainer();
-        List<ConnectorConfig> connectorConfigs = getConnectorConfigs(container);
-
-        Stream<Path> keyStorePaths = getKeyStorePaths(connectorConfigs);
-        Map<Path, FileChannel> fileChannels = openFiles(keyStorePaths);
-        registerKeyStoreFileChannels(bundleContext, fileChannels);
-
-        for (ConnectorConfig config: connectorConfigs) {
+        for (ConnectorConfig config: getConnectorConfigs(getContainer())) {
             ServerSocketChannel socketChannel = bindChannel(config);
             registerChannels(bundleContext, config.listenPort(), socketChannel);
         }
-    }
-
-    private void registerKeyStoreFileChannels(BundleContext bundleContext, Map<Path, FileChannel> fileChannels) {
-        Hashtable<String, Object> properties = new Hashtable<>();
-        properties.put("role", "com.yahoo.container.standalone.StandaloneContainerActivator.KeyStoreFileChannels");
-        //Since Standalone container and jdisc http service don't have a suitable common module for placing a wrapper class for fileChannels,
-        //we register it with the type map. In the future, we should wrap this.
-        bundleContext.registerService(Map.class,
-                Collections.unmodifiableMap(fileChannels),
-                properties);
-    }
-
-    private Map<Path, FileChannel> openFiles(Stream<Path> keyStorePaths) {
-        return keyStorePaths.collect(toMap(
-                Function.<Path>identity(),
-                StandaloneContainerActivator::getFileChannel));
-    }
-
-    private static FileChannel getFileChannel(Path path) {
-        try {
-            FileInputStream inputStream = new FileInputStream(path.toFile());
-            //don't close the inputStream, as that will close the underlying channel.
-            return inputStream.getChannel();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed opening path " + path, e);
-        }
-    }
-
-    private Stream<Path> getKeyStorePaths(List<ConnectorConfig> connectorConfigs) {
-        return connectorConfigs.stream().
-                map(ConnectorConfig::ssl).
-                flatMap(StandaloneContainerActivator::getKeyStorePaths);
-    }
-
-    private static Stream<Path> getKeyStorePaths(ConnectorConfig.Ssl ssl) {
-        Stream<String> paths = Stream.of(
-                ssl.keyStorePath(),
-                ssl.pemKeyStore().certificatePath(),
-                ssl.pemKeyStore().keyPath());
-
-        return paths.
-                filter(path -> !path.isEmpty()).
-                map(Paths::get);
     }
 
     void registerChannels(BundleContext bundleContext, int listenPort, ServerSocketChannel boundChannel) {
