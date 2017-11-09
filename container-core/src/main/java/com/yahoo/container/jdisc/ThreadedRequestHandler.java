@@ -2,10 +2,13 @@
 package com.yahoo.container.jdisc;
 
 import com.google.inject.Inject;
+import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.BufferedContentChannel;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -22,6 +25,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.util.Collections.singletonMap;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -75,6 +79,21 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         this.allowAsyncResponse = allowAsyncResponse;
     }
 
+    private Map<String, Metric.Context> handlerContexts = new CopyOnWriteHashMap<>();
+    private Metric.Context contextFor(BindingMatch match) {
+        if (match == null) return null;
+        UriPattern matched = match.matched();
+        if (matched == null) return null;
+        String name = matched.toString();
+        Metric.Context context = handlerContexts.get(name);
+        if (context == null) {
+            Map<String, String> dimensions = singletonMap("handler", name);
+            context = this.metric.createContext(dimensions);
+            handlerContexts.put(name, context);
+        }
+        return context;
+    }
+
     /**
      * Handles a request by assigning a worker thread to it.
      *
@@ -82,6 +101,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Override
     public final ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
+        metric.add("container.handled.requests", 1, contextFor(request.getBindingMatch()));
         if (request.getTimeout(TimeUnit.SECONDS) == null) {
             Duration timeout = getTimeout();
             if (timeout != null) {
@@ -173,7 +193,10 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         @Override
         public ContentChannel handleResponse(Response response) {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
-            return responseHandler.handleResponse(response);
+            ContentChannel cc = responseHandler.handleResponse(response);
+            long millis = request.container().currentTimeMillis() - request.creationTime(TimeUnit.MILLISECONDS);
+            metric.set("container.handled.latency", millis, contextFor(request.getBindingMatch()));
+            return cc;
         }
 
         private boolean tryHasResponded() {
