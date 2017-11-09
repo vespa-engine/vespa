@@ -31,9 +31,10 @@ public class Utils {
         com.yahoo.jdisc.http.HttpRequest jDiscRequest = req.getJDiscRequest();
         BindingMatch<?> bm = jDiscRequest.getBindingMatch();
         if (bm == null) {
+            UriPattern pattern = new UriPattern(uriPattern);
             bm = new BindingMatch<>(
-                    new UriPattern(uriPattern).match(URI.create(jDiscRequest.getUri().toString())),
-                    new Object());
+                    pattern.match(URI.create(jDiscRequest.getUri().toString())),
+                    new Object(), pattern);
         }
         return bm;
     }
