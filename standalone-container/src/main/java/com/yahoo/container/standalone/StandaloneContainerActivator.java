@@ -42,13 +42,13 @@ public class StandaloneContainerActivator implements BundleActivator {
         }
     }
 
-    void registerChannels(BundleContext bundleContext, int listenPort, ServerSocketChannel boundChannel) {
+    static void registerChannels(BundleContext bundleContext, int listenPort, ServerSocketChannel boundChannel) {
         Hashtable<String, Integer> properties = new Hashtable<>();
         properties.put("port", listenPort);
         bundleContext.registerService(ServerSocketChannel.class, boundChannel, properties);
     }
 
-    ServerSocketChannel bindChannel(ConnectorConfig channelInfo) throws IOException {
+    static ServerSocketChannel bindChannel(ConnectorConfig channelInfo) throws IOException {
         ServerSocketChannel serverChannel = ServerSocketChannel.open();
         InetSocketAddress bindAddress = new InetSocketAddress(channelInfo.listenPort());
         serverChannel.socket().bind(bindAddress, channelInfo.acceptQueueSize());
@@ -58,7 +58,7 @@ public class StandaloneContainerActivator implements BundleActivator {
     @Override
     public void stop(BundleContext bundleContext) throws Exception { }
 
-    Container getContainer(Module... modules) {
+    static Container getContainer(Module... modules) {
         Module activatorModule = new ActivatorModule();
         List<Module> allModules = new ArrayList<>();
         allModules.addAll(Arrays.asList(modules));
@@ -68,7 +68,7 @@ public class StandaloneContainerActivator implements BundleActivator {
         return app.container();
     }
 
-    List<ConnectorConfig> getConnectorConfigs(Container container) {
+    static List<ConnectorConfig> getConnectorConfigs(Container container) {
         Http http = container.getHttp();
 
         return (http == null) ?

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone;
 
-import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertThat;
  */
 public class StandaloneContainerActivatorTest {
 
-    private String getJdiscXml(String contents) throws ParserConfigurationException, IOException, SAXException {
+    private static String getJdiscXml(String contents) throws ParserConfigurationException, IOException, SAXException {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<services>\n" +
                 "  <jdisc version=\"1.0\" jetty=\"true\">\n" +
@@ -38,7 +38,7 @@ public class StandaloneContainerActivatorTest {
                 "</services>";
     }
 
-    private void writeApplicationPackage(String servicesXml, Path tmpDir) throws IOException {
+    private static void writeApplicationPackage(String servicesXml, Path tmpDir) throws IOException {
         FileWriter fw = new FileWriter(tmpDir.resolve("services.xml").toFile(), false);
         fw.write(servicesXml);
         fw.close();
@@ -50,16 +50,16 @@ public class StandaloneContainerActivatorTest {
         try {
             writeApplicationPackage(getJdiscXml(""), applicationDir);
             StandaloneContainerActivator activator = new StandaloneContainerActivator();
-            Container container = activator.getContainer(newAppDirBinding(applicationDir));
+            Container container = StandaloneContainerActivator.getContainer(newAppDirBinding(applicationDir));
             List<Integer> ports = getPorts(activator, container);
-            assertThat(ports, is(asList(Defaults.getDefaults().vespaWebServicePort())));
+            assertThat(ports, is(singletonList(Defaults.getDefaults().vespaWebServicePort())));
         } finally {
             IOUtils.recursiveDeleteDir(applicationDir.toFile());
         }
     }
 
-    private List<Integer> getPorts(StandaloneContainerActivator activator, Container container) {
-        return activator.getConnectorConfigs(container).stream().
+    private static List<Integer> getPorts(StandaloneContainerActivator activator, Container container) {
+        return StandaloneContainerActivator.getConnectorConfigs(container).stream().
                 map(ConnectorConfig::listenPort).
                 collect(toList());
     }
@@ -70,7 +70,7 @@ public class StandaloneContainerActivatorTest {
         try {
             writeApplicationPackage(getJdiscXml("<http/>"), applicationDir);
             StandaloneContainerActivator activator = new StandaloneContainerActivator();
-            Container container = activator.getContainer(newAppDirBinding(applicationDir));
+            Container container = StandaloneContainerActivator.getContainer(newAppDirBinding(applicationDir));
             List<Integer> ports = getPorts(activator, container);
             assertThat(ports, empty());
         } finally {
@@ -90,7 +90,7 @@ public class StandaloneContainerActivatorTest {
                     "</http>\n";
             writeApplicationPackage(getJdiscXml(contents), applicationDir);
             StandaloneContainerActivator activator = new StandaloneContainerActivator();
-            Container container = activator.getContainer(newAppDirBinding(applicationDir));
+            Container container = StandaloneContainerActivator.getContainer(newAppDirBinding(applicationDir));
             List<Integer> ports = getPorts(activator, container);
             assertThat(ports, is(asList(123, 456, 789)));
         } finally {
@@ -98,15 +98,10 @@ public class StandaloneContainerActivatorTest {
         }
     }
 
-    private Module newAppDirBinding(final Path applicationDir) {
-        return new Module() {
-            @Override
-            public void configure(Binder binder) {
-                binder.bind(Path.class)
-                        .annotatedWith(StandaloneContainerApplication.applicationPathName())
-                        .toInstance(applicationDir);
-            }
-        };
+    private static Module newAppDirBinding(final Path applicationDir) {
+        return binder -> binder.bind(Path.class)
+                .annotatedWith(StandaloneContainerApplication.applicationPathName())
+                .toInstance(applicationDir);
     }
 
 }
