@@ -125,8 +125,12 @@ public class IndexedTensor implements Tensor {
         if (indexes.length == 0) return 0; // for speed
 
         int valueIndex = 0;
-        for (int i = 0; i < indexes.length; i++)
+        for (int i = 0; i < indexes.length; i++) {
+            if (indexes[i] >= sizes.size(i)) {
+                throw new IndexOutOfBoundsException();
+            }
             valueIndex += productOfDimensionsAfter(i, sizes) * indexes[i];
+        }
         return valueIndex;
     }
 
@@ -134,8 +138,12 @@ public class IndexedTensor implements Tensor {
         if (address.isEmpty()) return 0;
 
         int valueIndex = 0;
-        for (int i = 0; i < address.size(); i++)
+        for (int i = 0; i < address.size(); i++) {
+            if (address.intLabel(i) >= sizes.size(i)) {
+                throw new IndexOutOfBoundsException();
+            }
             valueIndex += productOfDimensionsAfter(i, sizes) * address.intLabel(i);
+        }
         return valueIndex;
     }
 
