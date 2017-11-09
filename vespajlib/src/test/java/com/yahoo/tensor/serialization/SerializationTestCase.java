@@ -58,7 +58,7 @@ public class SerializationTestCase {
 
                 JsonNode binaryNode = node.get("binary");
                 for (int i = 0; i < binaryNode.size(); ++i) {
-                    byte[] bin = getBytes(binaryNode.get(i).toString());
+                    byte[] bin = getBytes(binaryNode.get(i).asText());
                     Tensor decodedTensor = TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(bin));
 
                     if (spec.equalsIgnoreCase("double")) {
@@ -92,7 +92,7 @@ public class SerializationTestCase {
     }
 
     private String getSpec(JsonNode tensor) {
-        return removeQuote(tensor.get("type").toString());
+        return tensor.get("type").asText();
     }
 
     private void tensorCells(JsonNode tensor, Tensor.Builder builder) {
@@ -116,12 +116,12 @@ public class SerializationTestCase {
         while (dimension.hasNext()) {
             String name = dimension.next();
             JsonNode label = address.get(name);
-            cellBuilder.label(removeQuote(name), removeQuote(label.toString()));
+            cellBuilder.label(name, label.asText());
         }
     }
 
     private byte[] getBytes(String binaryRepresentation) {
-        return parseHexValue(binaryRepresentation.substring(3, binaryRepresentation.length() - 1));
+        return parseHexValue(binaryRepresentation.substring(2));
     }
     
     private byte[] parseHexValue(String s) {
@@ -145,13 +145,5 @@ public class SerializationTestCase {
         }
         throw new IllegalArgumentException("Hex contains illegal characters");
     }
-
-    private String removeQuote(String s) {
-        if (!s.startsWith("\"")) {
-            return s;
-        }
-        return s.substring(1, s.length()-1);
-    }
-
 
 }
