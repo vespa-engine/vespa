@@ -1,5 +1,5 @@
-//  Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.proxy.filedistribution;
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
@@ -12,6 +12,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.RpcServer;
 import org.junit.Before;
 import org.junit.Test;

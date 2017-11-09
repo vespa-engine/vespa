@@ -11,7 +11,6 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.proxy.filedistribution.FileDownloader;
 
 import java.io.File;
 import java.util.List;
