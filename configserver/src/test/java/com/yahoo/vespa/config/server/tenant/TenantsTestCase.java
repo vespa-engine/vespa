@@ -106,10 +106,20 @@ public class TenantsTestCase extends TestWithCurator {
     }
     
     @Test
-    public void testRemove() throws Exception {
+    public void testDelete() throws Exception {
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant1)));
         tenants.deleteTenant(tenant1);
         assertFalse(tenants.getAllTenantNames().contains(tenant1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeleteOfDefaultTenant()  {
+        try {
+            assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(TenantName.defaultName())));
+        } catch (Exception e) {
+            fail("default tenant does not exist");
+        }
+        tenants.deleteTenant(TenantName.defaultName());
     }
     
     @Test
@@ -118,7 +128,6 @@ public class TenantsTestCase extends TestWithCurator {
         tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics(), new ArrayList<>());
         TenantName defaultTenant = TenantName.defaultName();
         tenants.addTenant(tenant2);
-        tenants.addTenant(defaultTenant);
         tenants.createTenants();
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
@@ -126,12 +135,10 @@ public class TenantsTestCase extends TestWithCurator {
         assertTrue(allTenants.contains(defaultTenant));
         tenants.deleteTenant(tenant1);
         tenants.deleteTenant(tenant2);
-        tenants.deleteTenant(defaultTenant);
         tenants.createTenants();
         allTenants = tenants.getAllTenantNames();
         assertFalse(allTenants.contains(tenant1));
         assertFalse(allTenants.contains(tenant2));
-        assertFalse(allTenants.contains(defaultTenant));
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
         tenants.addTenant(tenant2);
