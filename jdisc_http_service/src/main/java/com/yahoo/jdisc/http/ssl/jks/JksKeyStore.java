@@ -13,22 +13,33 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
+ * @author bjorncs
  */
-public class JKSKeyStore extends SslKeyStore {
+public class JksKeyStore implements SslKeyStore {
 
-    private static final String keyStoreType = "JKS";
+    private static final String KEY_STORE_TYPE = "JKS";
     private final Path keyStoreFile;
+    private final String keyStorePassword;
 
-    public JKSKeyStore(Path keyStoreFile) {
+    public JksKeyStore(Path keyStoreFile) {
+        this(keyStoreFile, null);
+    }
+
+    public JksKeyStore(Path keyStoreFile, String keyStorePassword) {
         this.keyStoreFile = keyStoreFile;
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    public String getKeyStorePassword() {
+        return keyStorePassword;
     }
 
     @Override
     public KeyStore loadJavaKeyStore() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         try(InputStream stream = Files.newInputStream(keyStoreFile)) {
-            KeyStore keystore = KeyStore.getInstance(keyStoreType);
-            keystore.load(stream, getKeyStorePassword().map(String::toCharArray).orElse(null));
+            KeyStore keystore = KeyStore.getInstance(KEY_STORE_TYPE);
+            keystore.load(stream, keyStorePassword != null ? keyStorePassword.toCharArray() : null);
             return keystore;
         }
     }
