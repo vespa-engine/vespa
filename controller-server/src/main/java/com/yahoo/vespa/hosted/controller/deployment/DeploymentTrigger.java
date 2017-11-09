@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -79,13 +80,13 @@ public class DeploymentTrigger {
         try (Lock lock = applications().lock(report.applicationId())) {
             LockedApplication application = applications().require(report.applicationId(), lock);
             application = application.withJobCompletion(report, clock.instant(), controller);
-            
+
             // Handle successful starting and ending
             if (report.success()) {
-                if (order.givesApplicationChange(report.jobType())) {
+                if (order.givesNewRevision(report.jobType())) {
                     if (acceptNewRevisionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
-                        if ( ! ( application.deploying().isPresent() && 
+                        if ( ! ( application.deploying().isPresent() &&
                                  (application.deploying().get() instanceof Change.VersionChange)))
                             application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                     }
@@ -93,7 +94,8 @@ public class DeploymentTrigger {
                         applications().store(application.withOutstandingChange(true));
                         return;
                     }
-                } 
+                }
+                // TODO: Should rather fix deployingCompleted() (let it check that all declared zones have the change).
                 else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
                     // change completed
                     application = application.withDeploying(Optional.empty());
@@ -206,6 +208,7 @@ public class DeploymentTrigger {
             if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
 
             // Retry first failing job
+            // TODO: Use JobList, requires JobList to sort according to deploymentSpec.
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                 if (isFailing(application.deploying().get(), jobStatus)) {
@@ -293,9 +296,9 @@ public class DeploymentTrigger {
 
     /** Returns whether a job is failing for the current change in the given application */
     private boolean isFailing(Change change, JobStatus status) {
-        return status != null &&
-               !status.isSuccess() &&
-               status.lastCompletedFor(change);
+        return       status != null
+                && ! status.isSuccess()
+                &&   status.lastCompleted().get().lastCompletedWas(change);
     }
 
     private boolean isCapacityConstrained(JobType jobType) {
@@ -365,6 +368,7 @@ public class DeploymentTrigger {
      * @param reason describes why the job is triggered
      * @return the application in the triggered state, which *must* be stored by the caller
      */
+    // TODO: Improve explanation for first parameter.
     private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String reason) {
         if (isRunningProductionJob(application)) return application;
         return triggerAllowParallel(jobType, application, first, false, reason);
@@ -427,8 +431,10 @@ public class DeploymentTrigger {
     }
     
     private boolean isRunningProductionJob(Application application) {
-        return application.deploymentJobs().jobStatus().entrySet().stream()
-                .anyMatch(entry -> entry.getKey().isProduction() && entry.getValue().isRunning(jobTimeoutLimit()));
+        return JobList.from(application)
+                .production()
+                .running(jobTimeoutLimit())
+                .anyMatch();
     }
 
     /**
@@ -468,9 +474,11 @@ public class DeploymentTrigger {
     private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
-        
+
+        // TODO: Don't these two below allow concurrent App and Version changes?
         if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
         if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+        // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
         return false;
     }
     

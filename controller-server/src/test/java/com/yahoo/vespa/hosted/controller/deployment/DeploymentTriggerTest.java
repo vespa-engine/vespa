@@ -59,9 +59,10 @@ public class DeploymentTriggerTest {
         // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
         assertEquals("Retried immediately", 1, tester.buildSystem().jobs().size());
-        tester.buildSystem().takeJobsToRun();
-        assertEquals("Job removed", 0, tester.buildSystem().jobs().size());
-        tester.clock().advance(Duration.ofHours(4).plus(Duration.ofSeconds(1)));
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
+        tester.clock().advance(Duration.ofHours(1));
+        assertEquals("Nothing scheduled", 0, tester.buildSystem().jobs().size());
         tester.failureRedeployer().maintain(); // Causes retry of systemTests
 
         assertEquals("Scheduled retry", 1, tester.buildSystem().jobs().size());

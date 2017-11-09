@@ -95,11 +95,19 @@ public class UpgraderTest {
         assertEquals("New system version: Should upgrade Canaries", 2, tester.buildSystem().jobs().size());
         tester.completeUpgradeWithError(canary0, version, "canary", DeploymentJobs.JobType.stagingTest);
         assertEquals("Other Canary was cancelled", 2, tester.buildSystem().jobs().size());
+        // TODO: Cancelled?
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         assertEquals("Version broken, but Canaries should keep trying", 2, tester.buildSystem().jobs().size());
+
+        // Exhaust canary retries.
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, canary1, false);
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(canary0, DeploymentTester.applicationPackage("canary"), false, DeploymentJobs.JobType.stagingTest);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, canary1, false);
+        //tester.deployAndNotify(canary1, DeploymentTester.applicationPackage("canary"), false, DeploymentJobs.JobType.stagingTest);
 
         // --- A new version is released - which repairs the Canary app and fails a default
         version = Version.fromString("5.3");
@@ -128,13 +136,21 @@ public class UpgraderTest {
         tester.completeUpgrade(default2, version, "default");
 
         tester.updateVersionStatus(version);
-        assertEquals("Not enough evidence to mark this neither broken nor high",
+        assertEquals("Not enough evidence to mark this as neither broken nor high",
                      VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
-        tester.upgrader().maintain();
+
         assertEquals("Upgrade with error should retry", 1, tester.buildSystem().jobs().size());
+
+        // Finish previous run, with exhausted retry.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, default0, false);
 
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
+        tester.deployCompletely("default0");
+
+        // Let maintainer trigger version change, and deploy it, too
+        tester.upgrader().maintain();
         tester.deployCompletely("default0");
 
         tester.updateVersionStatus(version);
@@ -190,9 +206,13 @@ public class UpgraderTest {
         tester.completeUpgradeWithError(default1, version55, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default2, version55, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default3, version55, "default", DeploymentJobs.JobType.productionUsWest1);
-        tester.completeUpgrade(default4, version55, "default");
         tester.updateVersionStatus(version55);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
+
+        // Finish running job, without retry.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsWest1, default3, false);
+
         tester.upgrader().maintain();
         assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
                      "This is default3 since it failed upgrade on both 5.4 and 5.5",
@@ -614,7 +634,15 @@ public class UpgraderTest {
         tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.systemTest);
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
+
         tester.upgrader().maintain();
+
+        // Exhaust retries and finish runs
+        tester.clock().advance(Duration.ofHours(1));
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default0, false);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default1, false);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default2, false);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default3, false);
 
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());

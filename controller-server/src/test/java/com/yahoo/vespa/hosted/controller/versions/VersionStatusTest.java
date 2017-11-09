@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
@@ -161,6 +162,12 @@ public class VersionStatusTest {
         assertEquals("One canary failed: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
 
+        // Finish running jobs
+        tester.deployAndNotify(canary2, DeploymentTester.applicationPackage("canary"), false, systemTest);
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(canary1, DeploymentTester.applicationPackage("canary"), false, productionUsWest1);
+        tester.deployAndNotify(canary2, DeploymentTester.applicationPackage("canary"), false, systemTest);
+
         // New version is released
         Version version2 = new Version("5.2");
         tester.upgradeSystem(version2);
@@ -295,6 +302,7 @@ public class VersionStatusTest {
         Version versionWithUnknownTag = new Version("6.1.2");
 
         Application app = tester.createAndDeploy("tenant1", "domain1","application1", Environment.test, 11);
+        tester.clock().advance(Duration.ofMillis(1));
         applications.notifyJobCompletion(DeploymentTester.jobReport(app, component, true));
         applications.notifyJobCompletion(DeploymentTester.jobReport(app, systemTest, true));
 

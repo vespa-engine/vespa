@@ -69,6 +69,8 @@ public class DeploymentTester {
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
+    // TODO: This thing simulates the wrong thing: the build system won't hold the jobs that are running,
+    // and so these should be consumed immediately upon triggering, and be "somewhere else" while running.
     public BuildSystem buildSystem() { return tester.controller().applications().deploymentTrigger().buildSystem(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
@@ -170,7 +172,7 @@ public class DeploymentTester {
             jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
-            deployAndNotify(application, applicationPackage, !failJob, false, job);
+            deployAndNotify(application, applicationPackage, ! failJob, false, job);
             if (failJob) {
                 break;
             }
@@ -191,6 +193,7 @@ public class DeploymentTester {
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, Optional<DeploymentJobs.JobError> jobError) {
+        clock().advance(Duration.ofMillis(1));
         applications().notifyJobCompletion(jobReport(application, jobType, jobError));
     }
 
@@ -227,7 +230,7 @@ public class DeploymentTester {
         deployAndNotify(application, applicationPackage, success, true, jobs);
     }
 
-    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success, 
+    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
                                 boolean expectOnlyTheseJobs, JobType... jobs) {
         consumeJobs(application, expectOnlyTheseJobs, jobs);
         for (JobType job : jobs) {
@@ -263,7 +266,7 @@ public class DeploymentTester {
                                         .count();
     }
 
-    private static ApplicationPackage applicationPackage(String upgradePolicy) {
+    public static ApplicationPackage applicationPackage(String upgradePolicy) {
         return new ApplicationPackageBuilder()
                 .upgradePolicy(upgradePolicy)
                 .environment(Environment.prod)

@@ -45,6 +45,8 @@ public class JobList {
 
     // ----------------------------------- Accessors
 
+    // TODO: Add sorting based on various stuff, such as deployment order, time of last completion, etc..
+
     /** Returns the jobstatuses in this as an immutable list */
     public List<JobStatus> asList() { return list; }
 
