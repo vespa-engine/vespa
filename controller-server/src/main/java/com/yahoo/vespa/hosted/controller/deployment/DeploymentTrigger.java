@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import org.apache.zookeeper.Op;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
@@ -79,7 +77,6 @@ public class DeploymentTrigger {
      * @param report information about the job that just completed
      */
     public void triggerFromCompletion(JobReport report) {
-        log.info("Got notified about completion of " + report.jobType() + " + for " + report.applicationId() + " with outcome " + (report.success() ? "success" : "failure"));
         try (Lock lock = applications().lock(report.applicationId())) {
             LockedApplication application = applications().require(report.applicationId(), lock);
             application = application.withJobCompletion(report, clock.instant(), controller);
