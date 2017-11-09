@@ -11,7 +11,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -78,10 +77,10 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @throws Exception is creating the Tenants instance fails
      */
     @Inject
-    public Tenants(GlobalComponentRegistry globalComponentRegistry, Metrics metrics) throws Exception {
+    public Tenants(GlobalComponentRegistry globalComponentRegistry) throws Exception {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
-        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
+        metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.framework().getConnectionStateListenable().addListener(this);
 
@@ -99,13 +98,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     /**
      * New instance containing the given tenants. This will not create Zookeeper watches. For testing only
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry} instance
-     * @param metrics a {@link com.yahoo.vespa.config.server.monitoring.Metrics} instance
      * @param tenants a collection of {@link Tenant}s
      */
-    public Tenants(GlobalComponentRegistry globalComponentRegistry, Metrics metrics, Collection<Tenant> tenants) {
+    public Tenants(GlobalComponentRegistry globalComponentRegistry, Collection<Tenant> tenants) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
-        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
+        metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.create(tenantsPath);
         createSystemTenants(globalComponentRegistry.getConfigserverConfig());

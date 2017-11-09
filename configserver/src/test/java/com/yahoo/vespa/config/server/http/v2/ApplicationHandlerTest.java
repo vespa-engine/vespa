@@ -292,7 +292,7 @@ public class ApplicationHandlerTest {
                         Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                 .build();
         
-        Tenants tenants = new Tenants(componentRegistry, Metrics.createTestMetrics()); // Creates the application path element in zk
+        Tenants tenants = new Tenants(componentRegistry); // Creates the application path element in zk
         tenants.addTenant(tenantName);
         Tenant tenant = tenants.getTenant(tenantName);
 

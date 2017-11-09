@@ -96,14 +96,12 @@ public class DeployTester {
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
-        Metrics metrics = Metrics.createTestMetrics();
-        Curator curator = new MockCurator();
         this.clock = clock;
-        TestComponentRegistry componentRegistry = createComponentRegistry(curator, metrics, modelFactories,
-                                                                          configserverConfig, clock);
+        TestComponentRegistry componentRegistry = createComponentRegistry(new MockCurator(), Metrics.createTestMetrics(),
+                                                                          modelFactories, configserverConfig, clock);
         try {
             this.testApp = new File(appPath);
-            this.tenants = new Tenants(componentRegistry, metrics, Collections.emptySet());
+            this.tenants = new Tenants(componentRegistry, Collections.emptySet());
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);

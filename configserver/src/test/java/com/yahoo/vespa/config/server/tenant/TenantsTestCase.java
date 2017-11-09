@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +46,7 @@ public class TenantsTestCase extends TestWithCurator {
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         tenantListener.tenantsLoaded = false;
-        tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics());
+        tenants = new Tenants(globalComponentRegistry);
         assertTrue(tenantListener.tenantsLoaded);
         tenants.addTenant(tenant1);
         tenants.addTenant(tenant2);
@@ -115,7 +114,7 @@ public class TenantsTestCase extends TestWithCurator {
     @Test
     public void testTenantsChanged() throws Exception {
         tenants.close(); // close the Tenants instance created in setupSession, we do not want to use one with a PatchChildrenCache listener
-        tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics(), new ArrayList<>());
+        tenants = new Tenants(globalComponentRegistry, new ArrayList<>());
         TenantName defaultTenant = TenantName.defaultName();
         tenants.addTenant(tenant2);
         tenants.addTenant(defaultTenant);
