@@ -28,10 +28,7 @@ import java.io.Reader;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,10 +40,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.JKS;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.PEM;
-import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
  * @author Einar M R Rosenvinge
@@ -84,11 +79,11 @@ public class ConnectorFactory {
         return connectorConfig;
     }
 
-    public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch, Map<Path, FileChannel> keyStoreChannels) {
+    public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch) {
         ServerConnector connector;
         if (connectorConfig.ssl().enabled()) {
             connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
-                                                 newSslConnectionFactory(keyStoreChannels),
+                                                 newSslConnectionFactory(),
                                                  newHttpConnectionFactory());
         } else {
             connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
@@ -125,7 +120,7 @@ public class ConnectorFactory {
     }
 
     //TODO: does not support loading non-yahoo readable JKS key stores.
-    private SslConnectionFactory newSslConnectionFactory(Map<Path, FileChannel> keyStoreChannels) {
+    private SslConnectionFactory newSslConnectionFactory() {
         Ssl sslConfig = connectorConfig.ssl();
 
         SslContextFactory factory = new SslContextFactory();
@@ -175,7 +170,7 @@ public class ConnectorFactory {
         Optional<String> keyDbPassword = secret(sslConfig.keyDbKey());
         switch (sslConfig.keyStoreType()) {
             case PEM:
-                factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore(), keyStoreChannels));
+                factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore()));
                 if (keyDbPassword.isPresent())
                     log.warning("Encrypted PEM key stores are not supported.");
                 break;
@@ -208,29 +203,16 @@ public class ConnectorFactory {
         return () -> new RuntimeException(String.format("Password is required for JKS %s store", type));
     }
 
-    private KeyStore getKeyStore(PemKeyStore pemKeyStore, Map<Path, FileChannel> keyStoreChannels) {
+    private static KeyStore getKeyStore(PemKeyStore pemKeyStore) {
         Preconditions.checkArgument(!pemKeyStore.certificatePath().isEmpty(), "Missing certificate path.");
         Preconditions.checkArgument(!pemKeyStore.keyPath().isEmpty(), "Missing key path.");
 
         class KeyStoreReaderForPath implements AutoCloseable {
-            private final Optional<FileChannel> channel;
             public final ReaderForPath readerForPath;
-
 
             KeyStoreReaderForPath(String pathString) {
                 Path path = Paths.get(pathString);
-                channel = Optional.ofNullable(keyStoreChannels.get(path));
-                readerForPath = new ReaderForPath(channel.map(this::getReader).orElseGet(() -> getReader(path)), path);
-            }
-
-            private Reader getReader(FileChannel channel) {
-                try {
-                    channel.position(0);
-                    return Channels.newReader(channel, StandardCharsets.UTF_8.newDecoder(), -1);
-                } catch (IOException e) {
-                    throw throwUnchecked(e);
-                }
-
+                readerForPath = new ReaderForPath(getReader(path), path);
             }
 
             private Reader getReader(Path path) {
@@ -242,12 +224,7 @@ public class ConnectorFactory {
             }
 
             @Override
-            public void close()  {
-                //channels are reused
-                if (!channel.isPresent()) {
-                    closeQuietly(readerForPath.reader);
-                }
-            }
+            public void close() {}
         }
 
         try (KeyStoreReaderForPath certificateReader = new KeyStoreReaderForPath(pemKeyStore.certificatePath());
