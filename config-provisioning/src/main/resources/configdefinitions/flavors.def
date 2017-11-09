@@ -25,7 +25,7 @@ flavor[].cost int default=0
 # for some historical reason. These nodes are assigned to applications by exact match and ignoring cost.
 flavor[].stock bool default=true
 
-# The type of node (e.g. bare metal, docker..).
+# The type of node: BARE_METAL, VIRTUAL_MACHINE or DOCKER_CONTAINER
 flavor[].environment string default="undefined"
 
 # The minimum number of CPU cores available.

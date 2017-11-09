@@ -174,20 +174,6 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_setDeployedFilesIm
 
 JNIEXPORT
 void JNICALL
-Java_com_yahoo_vespa_filedistribution_FileDistributionManager_limitSendingOfDeployedFilesToImpl(
-        JNIEnv *env, jobject self, jobjectArray hostNamesArg, jbyteArray appIdArg)
-{
-    try {
-        JNIArray<JNIString> hostNames(hostNamesArg, env);
-        JNIString appId(appIdArg, env);
-
-        nativeFileDistributionManagerField.get(self, env)->_fileDBModel->
-            cleanDeployedFilesToDownload(hostNames._value, appId._value);
-    } STANDARDCATCH()
-}
-
-JNIEXPORT
-void JNICALL
 Java_com_yahoo_vespa_filedistribution_FileDistributionManager_removeDeploymentsThatHaveDifferentApplicationIdImpl(
         JNIEnv *env, jobject self, jobjectArray hostNamesArg, jbyteArray appIdArg)
 {
@@ -200,40 +186,3 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_removeDeploymentsT
     } STANDARDCATCH()
 }
 
-
-
-JNIEXPORT
-void JNICALL
-Java_com_yahoo_vespa_filedistribution_FileDistributionManager_limitFilesTo(
-        JNIEnv *env, jobject self, jobjectArray fileReferencesArg)
-{
-    try {
-        JNIArray<JNIString> fileReferences(fileReferencesArg, env);
-
-        nativeFileDistributionManagerField.get(self, env)->_fileDBModel->
-            cleanFiles(fileReferences._value);
-    } STANDARDCATCH()
-}
-
-
-JNIEXPORT
-jbyteArray JNICALL
-Java_com_yahoo_vespa_filedistribution_FileDistributionManager_getProgressImpl(
-        JNIEnv *env, jobject self, jbyteArray fileReferenceArg, jobjectArray hostNamesArg)
-{
-    try {
-        JNIString fileReference(fileReferenceArg, env);
-        JNIArray<JNIString> hostNames(hostNamesArg, env);
-
-        const FileDBModel::Progress progress =
-            nativeFileDistributionManagerField.get(self, env)->_fileDBModel->
-            getProgress(fileReference._value, hostNames._value);
-
-        jbyteArray result = env->NewByteArray(progress.size());
-        if (!result)
-            return 0; //exception thrown when returning
-
-        env->SetByteArrayRegion(result, 0, progress.size(), &*progress.begin());
-        return result;
-    } STANDARDCATCH(return 0)
-}
