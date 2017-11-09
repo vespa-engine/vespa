@@ -100,8 +100,8 @@ public class CertificateSignerTest {
     private void assertCertificate(X509Certificate certificate, String expectedSubjectName, Set<String> expectedExtensions) throws Exception {
         assertEquals(3, certificate.getVersion());
         assertEquals(BigInteger.valueOf(startTime), certificate.getSerialNumber());
-        assertEquals("Sat Feb 14 00:31:30 CET 2009", certificate.getNotBefore().toString());
-        assertEquals("Mon Mar 16 00:31:30 CET 2009", certificate.getNotAfter().toString());
+        assertEquals(startTime, certificate.getNotBefore().getTime());
+        assertEquals(startTime + CertificateSigner.CERTIIFICATE_DURATION.toMillis(), certificate.getNotAfter().getTime());
         assertEquals(CertificateSigner.SIGNER_ALGORITHM, certificate.getSigAlgName());
         assertEquals(expectedSubjectName, certificate.getSubjectDN().getName());
         assertEquals("CN=" + cfgServerHostname, certificate.getIssuerX500Principal().getName());

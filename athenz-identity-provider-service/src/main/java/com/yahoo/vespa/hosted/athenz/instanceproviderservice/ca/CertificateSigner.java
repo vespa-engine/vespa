@@ -45,7 +45,7 @@ public class CertificateSigner {
     private static final Logger log = Logger.getLogger(CertificateSigner.class.getName());
 
     static final String SIGNER_ALGORITHM = "SHA256withRSA";
-    private static final Duration CERTIIFICATE_DURATION = Duration.ofDays(30);
+    static final Duration CERTIIFICATE_DURATION = Duration.ofDays(30);
     private static final List<ASN1ObjectIdentifier> ILLEGAL_EXTENSIONS = Arrays.asList(
             Extension.basicConstraints, Extension.subjectAlternativeName);
 
@@ -108,6 +108,7 @@ public class CertificateSigner {
         }
     }
 
+    @SuppressWarnings("unchecked")
     static void assertCertificateExtensions(PKCS10CertificationRequest request) {
         List<String> illegalExt = Arrays
                 .stream(request.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest))
