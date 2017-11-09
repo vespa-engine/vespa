@@ -44,7 +44,6 @@
     <preprocess:include file='config-models.xml' required='false' />
     <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
-    <preprocess:include file='hosted-vespa/scoreboard.xml' required='false' />
     <preprocess:include file='controller/container.xml' required='false' />
     <component id="com.yahoo.vespa.service.monitor.internal.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.monitor.internal.ServiceMonitorImpl" bundle="service-monitor" />
