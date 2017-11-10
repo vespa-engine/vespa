@@ -110,11 +110,5 @@ public class FileDistributor {
     public void reloadDeployFileDistributor(FileDistribution dbHandler) {
         dbHandler.reloadDeployFileDistributor();
     }
-
-    private Set<String> union(Set<String> hosts, String... additionalHosts) {
-        Set<String> result = new HashSet<>(hosts);
-        result.addAll(asList(additionalHosts));
-        return result;
-    }
     
 }
