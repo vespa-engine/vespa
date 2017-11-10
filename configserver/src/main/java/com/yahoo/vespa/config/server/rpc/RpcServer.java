@@ -458,6 +458,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         String fileReference = request.parameters().get(0).asString();
         FileApiErrorCodes result;
         try {
+            // TODO remove once verified in system tests.
+            log.info("Received request for reference '" + fileReference + "'");
             result = fileServer.hasFile(fileReference)
                     ? FileApiErrorCodes.OK
                     : FileApiErrorCodes.NOT_FOUND;
