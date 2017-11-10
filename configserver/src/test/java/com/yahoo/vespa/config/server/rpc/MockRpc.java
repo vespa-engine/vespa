@@ -39,7 +39,7 @@ public class MockRpc extends RpcServer {
 
     public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication) {
         super(createConfig(port), null, Metrics.createTestMetrics(), 
-              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBPath()));
+              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBRoot()));
         if (createDefaultTenant) {
             onTenantCreate(TenantName.from("default"), new MockTenantProvider(pretendToHaveLoadedAnyApplication));
         }
