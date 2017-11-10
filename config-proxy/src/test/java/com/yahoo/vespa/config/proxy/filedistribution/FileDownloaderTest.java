@@ -5,6 +5,9 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
@@ -18,9 +21,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,6 +39,7 @@ public class FileDownloaderTest {
             File downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
             fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(3000));
+            FileDistributionRpcServer rpcServer = new FileDistributionRpcServer(new Supervisor(new Transport()), fileDownloader);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -204,8 +206,10 @@ public class FileDownloaderTest {
 
             @Override
             public void request(Request request) {
-                if (request.methodName().equals("filedistribution.serveFile"))
+                if (request.methodName().equals("filedistribution.serveFile")) {
                     request.returnValues().add(new Int32Value(0));
+                    request.returnValues().add(new StringValue("OK"));
+                }
             }
         }
 
@@ -213,8 +217,10 @@ public class FileDownloaderTest {
 
             @Override
             public void request(Request request) {
-                if (request.methodName().equals("filedistribution.serveFile"))
+                if (request.methodName().equals("filedistribution.serveFile")) {
                     request.returnValues().add(new Int32Value(1));
+                    request.returnValues().add(new StringValue("Internal error"));
+                }
             }
         }
 
