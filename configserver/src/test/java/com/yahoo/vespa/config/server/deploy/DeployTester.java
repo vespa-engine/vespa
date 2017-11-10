@@ -138,6 +138,11 @@ public class DeployTester {
      */
     public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
         Tenant tenant = tenant();
+        if (tenant == null) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) { }
+        }
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(clock, Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
