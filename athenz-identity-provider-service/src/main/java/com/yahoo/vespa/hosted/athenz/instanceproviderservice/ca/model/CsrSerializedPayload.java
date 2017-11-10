@@ -9,12 +9,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @author freva
  */
-public class SigningRequest {
+public class CsrSerializedPayload {
 
     @JsonProperty("csr") public final String csr;
 
     @JsonCreator
-    public SigningRequest(@JsonProperty("csr") String csr) {
+    public CsrSerializedPayload(@JsonProperty("csr") String csr) {
         this.csr = csr;
     }
 
@@ -23,7 +23,7 @@ public class SigningRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        SigningRequest that = (SigningRequest) o;
+        CsrSerializedPayload that = (CsrSerializedPayload) o;
 
         return csr.equals(that.csr);
     }
@@ -35,7 +35,7 @@ public class SigningRequest {
 
     @Override
     public String toString() {
-        return "SigningRequest{" +
+        return "CsrSerializedPayload{" +
                 "csr='" + csr + '\'' +
                 '}';
     }

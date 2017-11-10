@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.SignedCertificate;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.SigningRequest;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CertificateSerializedPayload;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CsrSerializedPayload;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
@@ -38,17 +38,17 @@ public class CertificateSignerServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             String remoteHostname = getRemoteHostname(req);
-            SigningRequest signingRequest = Utils.getMapper().readValue(req.getReader(), SigningRequest.class);
+            CsrSerializedPayload csrSerializedPayload = Utils.getMapper().readValue(req.getReader(), CsrSerializedPayload.class);
 
-            PKCS10CertificationRequest csr = getPKCS10CertRequest(new StringReader(signingRequest.csr));
+            PKCS10CertificationRequest csr = getPKCS10CertRequest(new StringReader(csrSerializedPayload.csr));
             log.log(LogLevel.DEBUG, "Certification request from " + remoteHostname + ": " + csr);
 
             X509Certificate certificate = certificateSigner.generateX509Certificate(csr, remoteHostname);
-            SignedCertificate signedCertificate = new SignedCertificate(x509CertificateToString(certificate));
+            CertificateSerializedPayload certificateSerializedPayload = new CertificateSerializedPayload(x509CertificateToString(certificate));
 
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
-            resp.getWriter().write(Utils.getMapper().writeValueAsString(signedCertificate));
+            resp.getWriter().write(Utils.getMapper().writeValueAsString(certificateSerializedPayload));
         } catch (RuntimeException e) {
             log.log(LogLevel.ERROR, e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
