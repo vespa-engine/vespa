@@ -1,11 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
-import com.yahoo.jdisc.http.ssl.jks.JksKeyStore;
+import com.yahoo.jdisc.http.ssl.SslKeyStore;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,16 +32,16 @@ public class SslContextFactory {
         return this.sslContext;
     }
 
-    public static SslContextFactory newInstanceFromTrustStore(JksKeyStore trustStore) {
+    public static SslContextFactory newInstanceFromTrustStore(SslKeyStore trustStore) {
         return newInstance(DEFAULT_ALGORITHM, DEFAULT_PROTOCOL, null, trustStore);
     }
 
-    public static SslContextFactory newInstance(JksKeyStore trustStore, JksKeyStore keyStore) {
+    public static SslContextFactory newInstance(SslKeyStore trustStore, SslKeyStore keyStore) {
         return newInstance(DEFAULT_ALGORITHM, DEFAULT_PROTOCOL, keyStore, trustStore);
     }
 
     public static SslContextFactory newInstance(String sslAlgorithm, String sslProtocol,
-                                                JksKeyStore keyStore, JksKeyStore trustStore) {
+                                                SslKeyStore keyStore, SslKeyStore trustStore) {
         log.fine("Configuring SSLContext...");
         log.fine("Using " + sslAlgorithm + " algorithm.");
         try {
@@ -55,14 +60,15 @@ public class SslContextFactory {
     /**
      * Used for the key store, which contains the SSL cert and private key.
      */
-    public static javax.net.ssl.KeyManager[] getKeyManagers(JksKeyStore keyStore,
-                                                            String sslAlgorithm) throws Exception {
+    public static javax.net.ssl.KeyManager[] getKeyManagers(SslKeyStore keyStore,
+                                                            String sslAlgorithm)
+            throws NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException,
+                   KeyStoreException {
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(sslAlgorithm);
-        String keyStorePassword = keyStore.getKeyStorePassword();
         keyManagerFactory.init(
                 keyStore.loadJavaKeyStore(),
-                keyStorePassword != null ? keyStorePassword.toCharArray() : null);
+                keyStore.getKeyStorePassword().map(String::toCharArray).orElse(null));
         log.fine("KeyManagerFactory initialized with keystore");
         return keyManagerFactory.getKeyManagers();
     }
@@ -71,9 +77,9 @@ public class SslContextFactory {
      * Used for the trust store, which contains certificates from other parties that you expect to communicate with,
      * or from Certificate Authorities that you trust to identify other parties.
      */
-    public static javax.net.ssl.TrustManager[] getTrustManagers(JksKeyStore trustStore,
+    public static javax.net.ssl.TrustManager[] getTrustManagers(SslKeyStore trustStore,
                                                                 String sslAlgorithm)
-            throws Exception {
+            throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException {
 
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(sslAlgorithm);
         trustManagerFactory.init(trustStore.loadJavaKeyStore());

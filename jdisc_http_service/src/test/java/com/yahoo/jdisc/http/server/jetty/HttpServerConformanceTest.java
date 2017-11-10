@@ -24,7 +24,6 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.net.URI;
@@ -34,8 +33,6 @@ import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
@@ -52,33 +49,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * @author Simon Thoresen Hult
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
  */
 public class HttpServerConformanceTest extends ServerProviderConformanceTest {
 
-    private static final Logger log = Logger.getLogger(HttpServerConformanceTest.class.getName());
-
     private static final String REQUEST_CONTENT = "myRequestContent";
     private static final String RESPONSE_CONTENT = "myResponseContent";
-
-    @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static Logger httpRequestDispatchLogger = Logger.getLogger(HttpRequestDispatch.class.getName());
-    private static Level httpRequestDispatchLoggerOriginalLevel;
-
-    /*
-     * Reduce logging of every stack trace for {@link ServerProviderConformanceTest.ConformanceException} thrown.
-     * This makes the log more readable and the test faster as well.
-     */
-    @BeforeClass
-    public static void reduceExcessiveLogging() {
-        httpRequestDispatchLoggerOriginalLevel = httpRequestDispatchLogger.getLevel();
-        httpRequestDispatchLogger.setLevel(Level.SEVERE);
-    }
-
-    @AfterClass
-    public static void restoreExcessiveLogging() {
-        httpRequestDispatchLogger.setLevel(httpRequestDispatchLoggerOriginalLevel);
-    }
 
     @AfterClass
     public static void reportDiagnostics() {
@@ -808,7 +784,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                 post.setProtocolVersion(client.requestVersion);
                 request = post;
             }
-            log.fine(() -> "executorService:"
+            System.out.println("executorService:"
                     + " .isShutDown()=" + executorService.isShutdown()
                     + " .isTerminated()=" + executorService.isTerminated());
             return executorService.submit(() -> client.delegate.execute(request));

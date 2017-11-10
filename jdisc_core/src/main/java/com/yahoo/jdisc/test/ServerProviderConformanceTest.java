@@ -24,6 +24,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,18 +35,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
- * @author Simon Thoresen Hult
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
  */
 @SuppressWarnings("UnusedDeclaration")
 @Beta
 public abstract class ServerProviderConformanceTest {
-
-    private static final Logger log = Logger.getLogger(ServerProviderConformanceTest.class.getName());
-
     private static final int NUM_RUNS_EACH_TEST = 10;
 
     /**
@@ -2793,7 +2790,7 @@ public abstract class ServerProviderConformanceTest {
         serverProvider.release();
 
         for (int i = 0; i < NUM_RUNS_EACH_TEST; ++i) {
-            log.fine("Test run #" + i);
+            System.out.println("Test run #" + i);
             requestHandler.reset(adapter.newResponseContent());
             final U client = adapter.newClient(serverProvider);
             final boolean withRequestContent = requestType == RequestType.WITH_CONTENT;
