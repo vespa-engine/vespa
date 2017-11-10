@@ -377,12 +377,12 @@ public class DeploymentTrigger {
      * @return the application in the triggered state, which *must* be stored by the caller
      */
     private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String reason) {
-        if (isRunningProductionJob(application)) return application;
+        if (jobType.isProduction() && isRunningProductionJob(application)) return application;
         return triggerAllowParallel(jobType, application, first, false, reason);
     }
 
     private LockedApplication trigger(List<JobType> jobs, LockedApplication application, String reason) {
-        if (isRunningProductionJob(application)) return application;
+        if (jobs.stream().anyMatch(JobType::isProduction) && isRunningProductionJob(application)) return application;
         for (JobType job : jobs)
             application = triggerAllowParallel(job, application, false, false, reason);
         return application;
