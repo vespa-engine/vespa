@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -367,12 +366,10 @@ public class NodeFailerTest {
     public void node_failing_throttle() {
         // Throttles based on a absolute number in small zone
         {
-            NodeFailTester tester = NodeFailTester.withNoApplications();
-            tester.createReadyNodes(50);
-            tester.createReadyNodes(50, 50, "docker");
-
-            List<Node> readyNodes = tester.nodeRepository.getNodes();
-            Collections.shuffle(readyNodes);
+            // 50 regular tenant nodes, 10 hosts with each 3 tenant nodes, total 90 nodes
+            NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(10);
+            List<Node> readyNodes = tester.createReadyNodes(50, 30);
+            List<Node> hosts = tester.nodeRepository.getNodes(NodeType.host);
 
             List<Node> deadNodes = readyNodes.subList(0, 4);
 
@@ -394,13 +391,37 @@ public class NodeFailerTest {
             tester.failer.run();
             assertEquals(2, tester.nodeRepository.getNodes(Node.State.failed).size());
 
-            // 18 more hours pass, it's now 24 hours since the first 2 failed. The remaining 2 are failed
-            for (int minutes = 0, interval = 30; minutes <= 18 * 60; minutes += interval) {
+            // 2 docker hosts now fail, 1 of them (with all its children is allowed to fail)
+            hosts.subList(0, 2).forEach(host -> {
+                tester.serviceMonitor.setHostDown(host.hostname());
+                deadNodes.add(host);
+            });
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(61));
+            tester.allNodesMakeAConfigRequestExcept(deadNodes);
+
+            tester.failer.run();
+            assertEquals(6, tester.nodeRepository.getNodes(Node.State.failed).size());
+
+            // 24 more hours pass without any other nodes being failed out
+            for (int minutes = 0, interval = 30; minutes <= 23 * 60; minutes += interval) {
                 tester.clock.advance(Duration.ofMinutes(interval));
                 tester.allNodesMakeAConfigRequestExcept(deadNodes);
             }
             tester.failer.run();
-            assertEquals(4, tester.nodeRepository.getNodes(Node.State.failed).size());
+            assertEquals(6, tester.nodeRepository.getNodes(Node.State.failed).size());
+
+            // Next, the 2 ready nodes that were dead from the start are failed out, and finally
+            // the second host and all its children are failed
+            tester.clock.advance(Duration.ofMinutes(30));
+            tester.failer.run();
+            assertEquals(12, tester.nodeRepository.getNodes(Node.State.failed).size());
+
+            // Nothing else to fail
+            tester.clock.advance(Duration.ofHours(25));
+            tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            tester.failer.run();
+            assertEquals(12, tester.nodeRepository.getNodes(Node.State.failed).size());
         }
 
         // Throttles based on percentage in large zone

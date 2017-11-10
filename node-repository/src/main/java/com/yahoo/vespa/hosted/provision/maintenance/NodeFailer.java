@@ -268,8 +268,11 @@ public class NodeFailer extends Maintainer {
                 .map(Optional::get)
                 .filter(failedEvent -> failedEvent.at().isAfter(startOfThrottleWindow))
                 .count();
-        boolean throttle = recentlyFailedNodes >= Math.max(nodes.size() * throttlePolicy.fractionAllowedToFail,
-                                                           throttlePolicy.minimumAllowedToFail);
+        int allowedFailedNodes = (int) Math.max(nodes.size() * throttlePolicy.fractionAllowedToFail,
+                throttlePolicy.minimumAllowedToFail);
+
+        boolean throttle = allowedFailedNodes < recentlyFailedNodes ||
+                (allowedFailedNodes == recentlyFailedNodes && node.type() != NodeType.host);
         if (throttle) {
             log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
                                    throttlePolicy.toHumanReadableString()));
