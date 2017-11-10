@@ -111,7 +111,7 @@ public class NodeRetirer extends Maintainer {
         flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numSpareNodesByFlavorByState);
 
         // Get all the nodes that we could retire along with their deployments
-        Map<Deployment, Set<Node>> nodesToRetireByDeployment = new HashMap<>();
+        Map<ApplicationId, Set<Node>> nodesToRetireByApplicationId = new HashMap<>();
         for (ApplicationId applicationId : activeApplications) {
             Map<ClusterSpec.Id, Set<Node>> nodesByCluster = getNodesBelongingToApplication(allNodes, applicationId).stream()
                     .collect(Collectors.groupingBy(
@@ -123,19 +123,18 @@ public class NodeRetirer extends Maintainer {
                             entry -> filterRetireableNodes(entry.getValue())));
             if (retireableNodesByCluster.values().stream().mapToInt(Set::size).sum() == 0) continue;
 
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
-            if ( ! deployment.isPresent()) continue; // this will be done at another config server
-
             Set<Node> replaceableNodes = retireableNodesByCluster.entrySet().stream()
                     .flatMap(entry -> entry.getValue().stream()
                             .filter(node -> flavorSpareChecker.canRetireAllocatedNodeWithFlavor(node.flavor()))
                             .limit(getNumberNodesAllowToRetireForCluster(nodesByCluster.get(entry.getKey()), MAX_SIMULTANEOUS_RETIRES_PER_CLUSTER)))
                     .collect(Collectors.toSet());
-            if (! replaceableNodes.isEmpty()) nodesToRetireByDeployment.put(deployment.get(), replaceableNodes);
+            if (! replaceableNodes.isEmpty()) nodesToRetireByApplicationId.put(applicationId, replaceableNodes);
         }
 
-        nodesToRetireByDeployment.forEach(((deployment, nodes) -> {
-            ApplicationId app = nodes.iterator().next().allocation().get().owner();
+        nodesToRetireByApplicationId.forEach(((app, nodes) -> {
+            Optional<Deployment> deployment = deployer.deployFromLocalActive(app, Duration.ofMinutes(30));
+            if ( ! deployment.isPresent()) return; // this will be done at another config server
+
             Set<Node> nodesToRetire;
 
             // While under application lock, get up-to-date node, and make sure that the state and the owner of the
@@ -166,7 +165,7 @@ public class NodeRetirer extends Maintainer {
             // This takes a while, so do it outside of the application lock
             if (! nodesToRetire.isEmpty()) {
                 try {
-                    deployment.activate();
+                    deployment.get().activate();
                 } catch (Exception e) {
                     log.log(LogLevel.INFO, "Failed to redeploy " + app.serializedForm() + ", will be redeployed later by application maintainer", e);
                 }
