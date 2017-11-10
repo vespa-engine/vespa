@@ -59,8 +59,8 @@ public class ConnectorFactoryTest {
         try {
             ConnectorFactory factory = new ConnectorFactory(new ConnectorConfig(new ConnectorConfig.Builder()),
                                                             new ThrowingSecretStore());
-            ConnectorFactory.JDiscServerConnector connector =
-                    (ConnectorFactory.JDiscServerConnector)factory.createConnector(new DummyMetric(), server, null);
+            JDiscServerConnector connector =
+                    (JDiscServerConnector)factory.createConnector(new DummyMetric(), server, null);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();
@@ -86,7 +86,7 @@ public class ConnectorFactoryTest {
             serverChannel.socket().bind(new InetSocketAddress(0));
 
             ConnectorFactory factory = new ConnectorFactory(new ConnectorConfig(new ConnectorConfig.Builder()), new ThrowingSecretStore());
-            ConnectorFactory.JDiscServerConnector connector = (ConnectorFactory.JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
+            JDiscServerConnector connector = (JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();

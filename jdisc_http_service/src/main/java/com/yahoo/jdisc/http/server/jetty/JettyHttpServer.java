@@ -58,8 +58,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
-
 /**
  * @author Simon Thoresen Hult
  * @author bjorncs
