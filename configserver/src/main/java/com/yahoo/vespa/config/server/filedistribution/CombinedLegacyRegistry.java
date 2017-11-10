@@ -17,7 +17,8 @@ public class CombinedLegacyRegistry implements FileRegistry {
     @Override
     public FileReference addFile(String relativePath) {
         FileReference reference = legacy.addFile(relativePath);
-        return future.addFile(relativePath, reference);
+        // TODO: Enable when system tested future.addFile(relativePath, reference);
+        return reference;
     }
 
     @Override
