@@ -111,7 +111,14 @@ public class DeployTester {
                                                           clock);
     }
 
-    public Tenant tenant() { return tenants.defaultTenant(); }
+    public Tenant tenant() {
+        Tenant tenant = null;
+        // TODO Retry since there is some code removing/updating the default tenant which should not be done.
+        while (tenant == null) {
+            tenant = tenants.defaultTenant();
+        }
+        return tenant;
+    }
     
     /** Create a model factory for the version of this source*/
     public static ModelFactory createModelFactory(Clock clock) { 
@@ -137,12 +144,8 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
+
         Tenant tenant = tenant();
-        if (tenant == null) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) { }
-        }
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(clock, Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
