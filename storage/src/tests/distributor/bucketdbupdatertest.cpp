@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/pending_bucket_space_db_transition.h>
+#include <vespa/storage/distributor/outdated_nodes_map.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
@@ -157,8 +158,7 @@ protected:
     }
 
 public:
-    using OutdatedNodes = std::unordered_set<uint16_t>;
-    using OutdatedNodesMap = std::unordered_map<document::BucketSpace, OutdatedNodes, document::BucketSpace::hash>;
+    using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     void setUp() override {
         createLinks();
     };
