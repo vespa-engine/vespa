@@ -90,7 +90,9 @@ public class FileDistributorService extends AbstractService implements
 
     @Override
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
-        builder.connectionspec("tcp/" + getHostName() + ":" + getRelativePort(0));
+        // If disabled config proxy should act as file distributor, so use config proxy port
+        int port = (fileDistributionOptions.disabled()) ? 19090 : getRelativePort(0);
+        builder.connectionspec("tcp/" + getHostName() + ":" + port);
     }
 
     @Override
