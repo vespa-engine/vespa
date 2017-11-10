@@ -38,9 +38,10 @@ public class BindingSet<T> implements Iterable<Map.Entry<UriPattern, T>>  {
      */
     public BindingMatch<T> match(URI uri) {
         for (Map.Entry<UriPattern, T> entry : bindings) {
-            UriPattern.Match match = entry.getKey().match(uri);
+            UriPattern pattern = entry.getKey();
+            UriPattern.Match match = pattern.match(uri);
             if (match != null) {
-                return new BindingMatch<>(match, entry.getValue());
+                return new BindingMatch<>(match, entry.getValue(), pattern);
             }
         }
         return null;

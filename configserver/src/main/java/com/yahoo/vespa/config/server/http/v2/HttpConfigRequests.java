@@ -39,7 +39,7 @@ public class HttpConfigRequests {
             UriPattern fullAppIdPattern = new UriPattern(pattern);
             URI uri = req.getUri();
             Match match = fullAppIdPattern.match(uri);
-            if (match!=null) return new BindingMatch<>(match, new Object());
+            if (match!=null) return new BindingMatch<>(match, new Object(), fullAppIdPattern);
         }
         throw new IllegalArgumentException("Illegal url for config request: " + req.getUri());
     }
