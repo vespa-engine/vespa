@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -24,8 +23,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
-import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.JKS;
@@ -33,6 +30,7 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.PEM;
 
 /**
  * @author Einar M R Rosenvinge
+ * @author bjorncs
  */
 public class ConnectorFactory {
 
@@ -54,12 +52,30 @@ public class ConnectorFactory {
         ConnectorConfig.Ssl ssl = config.ssl();
 
         if (ssl.keyStoreType() == JKS) {
-            if (! ssl.pemKeyStore().keyPath().isEmpty() || ! ssl.pemKeyStore().certificatePath().isEmpty())
+            if (!ssl.pemKeyStore().keyPath().isEmpty() || ! ssl.pemKeyStore().certificatePath().isEmpty()) {
                 throw new IllegalArgumentException("pemKeyStore attributes can not be set when keyStoreType is JKS.");
+            }
+            if (ssl.keyDbKey().isEmpty()) {
+                throw new IllegalArgumentException("Missing password for JKS keystore");
+            }
         }
         if (ssl.keyStoreType() == PEM) {
-            if (! ssl.keyStorePath().isEmpty())
+            if (! ssl.keyStorePath().isEmpty()) {
                 throw new IllegalArgumentException("keyStorePath can not be set when keyStoreType is PEM");
+            }
+            if (!ssl.keyDbKey().isEmpty()) {
+                // TODO Make an error once there are separate passwords for truststore and keystore
+                log.warning("Encrypted PEM key stores are not supported. Password is only applied to truststore");
+            }
+            if (ssl.pemKeyStore().certificatePath().isEmpty()) {
+                throw new IllegalArgumentException("Missing certificate path.");
+            }
+            if (ssl.pemKeyStore().keyPath().isEmpty()) {
+                throw new IllegalArgumentException("Missing key path.");
+            }
+        }
+        if (!ssl.trustStorePath().isEmpty() && ssl.useTrustStorePassword() && ssl.keyDbKey().isEmpty()) {
+            throw new IllegalArgumentException("Missing password for JKS truststore");
         }
     }
 
@@ -155,25 +171,24 @@ public class ConnectorFactory {
             factory.setIncludeCipherSuites(ciphs);
         }
 
-        Optional<String> keyDbPassword = secret(sslConfig.keyDbKey());
+        String keyDbPassword = sslConfig.keyDbKey();
         switch (sslConfig.keyStoreType()) {
             case PEM:
                 factory.setKeyStore(createPemKeyStore(sslConfig.pemKeyStore()));
-                if (keyDbPassword.isPresent())
-                    log.warning("Encrypted PEM key stores are not supported.");
                 break;
             case JKS:
                 factory.setKeyStorePath(sslConfig.keyStorePath());
                 factory.setKeyStoreType(sslConfig.keyStoreType().toString());
-                factory.setKeyStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("key")));
+                factory.setKeyStorePassword(secretStore.getSecret(keyDbPassword));
                 break;
         }
 
         if (!sslConfig.trustStorePath().isEmpty()) {
             factory.setTrustStorePath(sslConfig.trustStorePath());
             factory.setTrustStoreType(sslConfig.trustStoreType().toString());      
-            if (sslConfig.useTrustStorePassword())
-                factory.setTrustStorePassword(keyDbPassword.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
+            if (sslConfig.useTrustStorePassword()) {
+                factory.setTrustStorePassword(secretStore.getSecret(keyDbPassword));
+            }
         }
 
         factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
@@ -181,19 +196,7 @@ public class ConnectorFactory {
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
     }
 
-    /** Returns the secret password with the given name, or empty if the password name is null or empty */
-    private Optional<String> secret(String keyname) {
-        return Optional.of(keyname).filter(key -> !key.isEmpty()).map(secretStore::getSecret);
-    }
-    
-    @SuppressWarnings("ThrowableInstanceNeverThrown")
-    private static Supplier<RuntimeException> passwordRequiredForJKSKeyStore(String type) {
-        return () -> new RuntimeException(String.format("Password is required for JKS %s store", type));
-    }
-
     private static KeyStore createPemKeyStore(PemKeyStore pemKeyStore) {
-        Preconditions.checkArgument(!pemKeyStore.certificatePath().isEmpty(), "Missing certificate path.");
-        Preconditions.checkArgument(!pemKeyStore.keyPath().isEmpty(), "Missing key path.");
         try {
             Path certificatePath = Paths.get(pemKeyStore.certificatePath());
             Path keyPath = Paths.get(pemKeyStore.keyPath());
