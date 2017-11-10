@@ -7,39 +7,28 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorConfig;
 
 /**
  * Options for controlling the behavior of the file distribution services.
- *
  * @author tonytv
  */
 public class FileDistributionOptions implements FiledistributorConfig.Producer {
-
     public static FileDistributionOptions defaultOptions() {
         return new FileDistributionOptions();
     }
 
-    private FileDistributionOptions() {
-    }
+    private FileDistributionOptions() {}
 
-    private BinaryScaledAmount uploadBitRate = new BinaryScaledAmount();
-    private BinaryScaledAmount downloadBitRate = new BinaryScaledAmount();
-    private boolean disabled = false;
+    private BinaryScaledAmount uploadbitrate = new BinaryScaledAmount();
+    private BinaryScaledAmount downloadbitrate = new BinaryScaledAmount();
 
-
-    public void downloadBitRate(BinaryScaledAmount amount) {
+    //Called through reflection
+    public void downloadbitrate(BinaryScaledAmount amount) {
         ensureNonNegative(amount);
-        downloadBitRate = amount;
+        downloadbitrate = amount;
     }
 
-    public void uploadBitRate(BinaryScaledAmount amount) {
+    //Called through reflection
+    public void uploadbitrate(BinaryScaledAmount amount) {
         ensureNonNegative(amount);
-        uploadBitRate = amount;
-    }
-
-    public void disabled(boolean value) {
-        disabled = value;
-    }
-
-    public boolean disabled() {
-        return disabled;
+        uploadbitrate = amount;
     }
 
     private void ensureNonNegative(BinaryScaledAmount amount) {
@@ -49,12 +38,12 @@ public class FileDistributionOptions implements FiledistributorConfig.Producer {
 
     private int byteRate(BinaryScaledAmount bitRate) {
         BinaryScaledAmount byteRate = bitRate.divide(8);
-        return (int) byteRate.as(BinaryPrefix.unit);
+        return (int)byteRate.as(BinaryPrefix.unit);
     }
 
     @Override
     public void getConfig(FiledistributorConfig.Builder builder) {
-        builder.maxuploadspeed((double) byteRate(uploadBitRate));
-        builder.maxdownloadspeed((double) byteRate(downloadBitRate));
+        builder.maxuploadspeed((double)byteRate(uploadbitrate));
+        builder.maxdownloadspeed((double)byteRate(downloadbitrate));
     }
 }
