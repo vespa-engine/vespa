@@ -3,6 +3,17 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.util.io.pem.PemObject;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 
 /**
  * Contains PEM formatted signed certificate
@@ -11,10 +22,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class CertificateSerializedPayload {
 
-    @JsonProperty("certificate") public final String certificate;
+    @JsonProperty("certificate") @JsonSerialize(using = CertificateSerializer.class)
+    public final X509Certificate certificate;
 
     @JsonCreator
-    public CertificateSerializedPayload(@JsonProperty("certificate") String certificate) {
+    public CertificateSerializedPayload(@JsonProperty("certificate") X509Certificate certificate) {
         this.certificate = certificate;
     }
 
@@ -38,5 +50,19 @@ public class CertificateSerializedPayload {
         return "CertificateSerializedPayload{" +
                 "certificate='" + certificate + '\'' +
                 '}';
+    }
+
+    public static class CertificateSerializer extends JsonSerializer<X509Certificate> {
+        @Override
+        public void serialize(
+                X509Certificate certificate, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+                pemWriter.writeObject(new PemObject("CERTIFICATE", certificate.getEncoded()));
+                pemWriter.flush();
+                gen.writeString(stringWriter.toString());
+            } catch (CertificateEncodingException e) {
+                throw new RuntimeException("Failed to encode X509Certificate", e);
+            }
+        }
     }
 }
