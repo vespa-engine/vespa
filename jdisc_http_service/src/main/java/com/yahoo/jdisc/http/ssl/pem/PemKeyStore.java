@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.ssl.pem;
 
 import com.google.common.base.Preconditions;
-import com.yahoo.jdisc.http.ssl.ReaderForPath;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -16,9 +15,13 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Key;
+import java.security.KeyStore;
 import java.security.KeyStore.LoadStoreParameter;
-import java.security.KeyStore.ProtectionParameter;
 import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
@@ -43,7 +46,7 @@ import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
  * @author Tony Vaagenes
  * @author bjorncs
  */
-public class PemKeyStore extends KeyStoreSpi {
+class PemKeyStore extends KeyStoreSpi {
 
     private static String KEY_ALIAS = "KEY";
 
@@ -58,9 +61,7 @@ public class PemKeyStore extends KeyStoreSpi {
     @GuardedBy("this")
     private final Map<String, Certificate> aliasToCertificate = new LinkedHashMap<>();
 
-
-    public PemKeyStore() {}
-
+    PemKeyStore() {}
 
     /**
      * The user is responsible for closing any readers given in the parameter.
@@ -287,30 +288,51 @@ public class PemKeyStore extends KeyStoreSpi {
         }
     }
 
-    public static class PemLoadStoreParameter implements LoadStoreParameter {
-        private PemLoadStoreParameter() {}
+    // A reader along with the path used to construct it.
+    private static class ReaderForPath {
+        final Reader reader;
+        final Path path;
+
+        private ReaderForPath(Reader reader, Path path) {
+            this.reader = reader;
+            this.path = path;
+        }
+
+        static ReaderForPath of(Path path) {
+            try {
+                return new ReaderForPath(Files.newBufferedReader(path), path);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    static class TrustStoreLoadParameter implements KeyStore.LoadStoreParameter {
+        final ReaderForPath certificateReader;
+
+        TrustStoreLoadParameter(Path certificateReader) {
+            this.certificateReader = ReaderForPath.of(certificateReader);
+        }
 
         @Override
-        public ProtectionParameter getProtectionParameter() {
+        public KeyStore.ProtectionParameter getProtectionParameter() {
             return null;
         }
     }
 
-    public static final class KeyStoreLoadParameter extends PemLoadStoreParameter {
-        public final ReaderForPath certificateReader;
-        public final ReaderForPath keyReader;
+    static class KeyStoreLoadParameter implements KeyStore.LoadStoreParameter {
+        final ReaderForPath certificateReader;
+        final ReaderForPath keyReader;
 
-        public KeyStoreLoadParameter(ReaderForPath certificateReader, ReaderForPath keyReader) {
-            this.certificateReader = certificateReader;
-            this.keyReader = keyReader;
+        KeyStoreLoadParameter(Path certificateReader, Path keyReader) {
+            this.certificateReader = ReaderForPath.of(certificateReader);
+            this.keyReader = ReaderForPath.of(keyReader);
+        }
+
+        @Override
+        public KeyStore.ProtectionParameter getProtectionParameter() {
+            return null;
         }
     }
 
-    public static final class TrustStoreLoadParameter extends PemLoadStoreParameter {
-        public final ReaderForPath certificateReader;
-
-        public TrustStoreLoadParameter(ReaderForPath certificateReader) {
-            this.certificateReader = certificateReader;
-        }
-    }
 }

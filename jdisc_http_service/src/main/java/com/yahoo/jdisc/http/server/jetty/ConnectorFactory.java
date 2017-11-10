@@ -8,8 +8,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.PemKeyStore;
 import com.yahoo.jdisc.http.SecretStore;
-import com.yahoo.jdisc.http.ssl.ReaderForPath;
-import com.yahoo.jdisc.http.ssl.SslKeyStore;
 import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.ConnectionFactory;
@@ -24,15 +22,11 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.servlet.ServletRequest;
 import java.io.IOException;
-import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
@@ -43,10 +37,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.JKS;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.PEM;
-import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
  * @author Einar M R Rosenvinge
@@ -84,11 +76,11 @@ public class ConnectorFactory {
         return connectorConfig;
     }
 
-    public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch, Map<Path, FileChannel> keyStoreChannels) {
+    public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch) {
         ServerConnector connector;
         if (connectorConfig.ssl().enabled()) {
             connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
-                                                 newSslConnectionFactory(keyStoreChannels),
+                                                 newSslConnectionFactory(),
                                                  newHttpConnectionFactory());
         } else {
             connector = new JDiscServerConnector(connectorConfig, metric, server, ch,
@@ -125,7 +117,7 @@ public class ConnectorFactory {
     }
 
     //TODO: does not support loading non-yahoo readable JKS key stores.
-    private SslConnectionFactory newSslConnectionFactory(Map<Path, FileChannel> keyStoreChannels) {
+    private SslConnectionFactory newSslConnectionFactory() {
         Ssl sslConfig = connectorConfig.ssl();
 
         SslContextFactory factory = new SslContextFactory();
@@ -175,7 +167,7 @@ public class ConnectorFactory {
         Optional<String> keyDbPassword = secret(sslConfig.keyDbKey());
         switch (sslConfig.keyStoreType()) {
             case PEM:
-                factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore(), keyStoreChannels));
+                factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore()));
                 if (keyDbPassword.isPresent())
                     log.warning("Encrypted PEM key stores are not supported.");
                 break;
@@ -208,54 +200,16 @@ public class ConnectorFactory {
         return () -> new RuntimeException(String.format("Password is required for JKS %s store", type));
     }
 
-    private KeyStore getKeyStore(PemKeyStore pemKeyStore, Map<Path, FileChannel> keyStoreChannels) {
+    private static KeyStore getKeyStore(PemKeyStore pemKeyStore) {
         Preconditions.checkArgument(!pemKeyStore.certificatePath().isEmpty(), "Missing certificate path.");
         Preconditions.checkArgument(!pemKeyStore.keyPath().isEmpty(), "Missing key path.");
-
-        class KeyStoreReaderForPath implements AutoCloseable {
-            private final Optional<FileChannel> channel;
-            public final ReaderForPath readerForPath;
-
-
-            KeyStoreReaderForPath(String pathString) {
-                Path path = Paths.get(pathString);
-                channel = Optional.ofNullable(keyStoreChannels.get(path));
-                readerForPath = new ReaderForPath(channel.map(this::getReader).orElseGet(() -> getReader(path)), path);
-            }
-
-            private Reader getReader(FileChannel channel) {
-                try {
-                    channel.position(0);
-                    return Channels.newReader(channel, StandardCharsets.UTF_8.newDecoder(), -1);
-                } catch (IOException e) {
-                    throw throwUnchecked(e);
-                }
-
-            }
-
-            private Reader getReader(Path path) {
-                try {
-                    return Files.newBufferedReader(path);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed opening " + path, e);
-                }
-            }
-
-            @Override
-            public void close()  {
-                //channels are reused
-                if (!channel.isPresent()) {
-                    closeQuietly(readerForPath.reader);
-                }
-            }
-        }
-
-        try (KeyStoreReaderForPath certificateReader = new KeyStoreReaderForPath(pemKeyStore.certificatePath());
-             KeyStoreReaderForPath keyReader = new KeyStoreReaderForPath(pemKeyStore.keyPath())) {
-            SslKeyStore keyStore = new PemSslKeyStore(
-                    new com.yahoo.jdisc.http.ssl.pem.PemKeyStore.KeyStoreLoadParameter(
-                            certificateReader.readerForPath, keyReader.readerForPath));
-            return keyStore.loadJavaKeyStore();
+        try {
+            Path certificatePath = Paths.get(pemKeyStore.certificatePath());
+            Path keyPath = Paths.get(pemKeyStore.keyPath());
+            return new PemSslKeyStore(certificatePath, keyPath)
+                    .loadJavaKeyStore();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         } catch (Exception e) {
             throw new RuntimeException("Failed setting up key store for " + pemKeyStore.keyPath() + ", " + pemKeyStore.certificatePath(), e);
         }
