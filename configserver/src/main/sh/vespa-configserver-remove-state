@@ -75,14 +75,12 @@ usage() {
 sudo="sudo"
 ask=true
 remove_zookeeper_dir=true
-remove_applications_dir=true
 remove_tenants_dir=true
 confirmed=true
 zookeeper_dir=var/zookeeper
-applications_dir=var/db/vespa/config_server/serverdb/applications
 tenants_dir=var/db/vespa/config_server/serverdb/tenants
 
-if [ -w $applications_dir ] && [ -w $zookeeper_dir ]; then
+if [ -w $zookeeper_dir ]; then
     sudo=""
 fi
 
@@ -123,9 +121,8 @@ confirm() {
 }
 
 garbage_collect_dirs() {
-    find $zookeeper_dir $applications_dir -type d -depth 2>/dev/null | while read dir; do
+    find $zookeeper_dir $tenants_dir -type d -depth 2>/dev/null | while read dir; do
 	[ "$dir" = "$zookeeper_dir" ] && continue
-	[ "$dir" = "$applications_dir" ] && continue
 	$sudo rmdir "$dir" 2>/dev/null
     done
 }
@@ -146,10 +143,6 @@ garbage_collect_dirs
 
 if $remove_zookeeper_dir && [ -d $zookeeper_dir ]; then
     confirm_and_clean_dir $zookeeper_dir
-fi
-
-if $remove_applications_dir && [ -d $applications_dir ]; then
-    confirm_and_clean_dir $applications_dir
 fi
 
 if $remove_tenants_dir && [ -d $tenants_dir ]; then
