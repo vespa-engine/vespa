@@ -27,6 +27,8 @@ class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
 {
 public:
+    using OutdatedNodes = std::unordered_set<uint16_t>;
+    using OutdatedNodesMap = std::unordered_map<document::BucketSpace, OutdatedNodes, document::BucketSpace::hash>;
     BucketDBUpdater(Distributor& owner,
                     DistributorBucketSpaceRepo &bucketSpaceRepo,
                     DistributorBucketSpace& bucketSpace,
@@ -226,7 +228,7 @@ private:
     std::list<PendingClusterState::Summary> _history;
     DistributorMessageSender& _sender;
     std::set<EnqueuedBucketRecheck> _enqueuedRechecks;
-    std::unordered_set<uint16_t> _outdatedNodes;
+    OutdatedNodesMap         _outdatedNodesMap;
     framework::MilliSecTimer _transitionTimer;
 };
 

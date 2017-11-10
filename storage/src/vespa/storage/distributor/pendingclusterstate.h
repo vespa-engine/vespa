@@ -25,6 +25,8 @@ class DistributorBucketSpaceRepo;
  */
 class PendingClusterState : public vespalib::XmlSerializable {
 public:
+    using OutdatedNodes = std::unordered_set<uint16_t>;
+    using OutdatedNodesMap = std::unordered_map<document::BucketSpace, OutdatedNodes, document::BucketSpace::hash>;
     struct Summary {
         Summary(const std::string& prevClusterState, const std::string& newClusterState, uint32_t processingTime);
         Summary(const Summary &);
@@ -44,12 +46,12 @@ public:
             DistributorMessageSender& sender,
             DistributorBucketSpaceRepo &bucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-            const std::unordered_set<uint16_t>& outdatedNodes,
+            const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp)
     {
         return std::unique_ptr<PendingClusterState>(
                 new PendingClusterState(clock, clusterInfo, sender, bucketSpaceRepo, newStateCmd,
-                                        outdatedNodes,
+                                        outdatedNodesMap,
                                         creationTimestamp));
     }
 
@@ -122,7 +124,7 @@ public:
      * state was constructed for a distribution config change, this set will
      * be equal to the set of all available storage nodes.
      */
-    std::unordered_set<uint16_t> getOutdatedNodeSet() const;
+    OutdatedNodesMap getOutdatedNodesMap() const;
 
     /**
      * Merges all the results with the corresponding bucket databases.
@@ -131,11 +133,6 @@ public:
     // Get pending transition for a specific bucket space. Only used by unit test.
     PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 
-    /**
-     * Returns true if this pending state was due to a distribution bit
-     * change rather than an actual state change.
-     */
-    bool distributionChange() const { return _distributionChange; }
     void printXml(vespalib::XmlOutputStream&) const override;
     Summary getSummary() const;
     std::string requestNodesToString() const;
@@ -151,7 +148,7 @@ private:
             DistributorMessageSender& sender,
             DistributorBucketSpaceRepo &bucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-            const std::unordered_set<uint16_t>& outdatedNodes,
+            const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp);
 
     /**
@@ -176,15 +173,9 @@ private:
         }
     };
 
-    void initializeBucketSpaceTransitions();
+    void initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap);
     void logConstructionInformation() const;
     void requestNode(BucketSpaceAndNode bucketSpaceAndNode);
-    bool distributorChanged(const lib::ClusterState& oldState, const lib::ClusterState& newState);
-    bool storageNodeMayHaveLostData(uint16_t index);
-    bool storageNodeChanged(uint16_t index);
-    void markAllAvailableNodesAsRequiringRequest();
-    void addAdditionalNodesToOutdatedSet(const std::unordered_set<uint16_t>& nodes);
-    void updateSetOfNodesThatAreOutdated();
     void requestNodes();
     void requestBucketInfoFromStorageNodesWithChangedState();
 
@@ -195,9 +186,6 @@ private:
     bool shouldRequestBucketInfo() const;
     bool clusterIsDown() const;
     bool iAmDown() const;
-    bool nodeInSameGroupAsSelf(uint16_t index) const;
-    bool nodeNeedsOwnershipTransferFromGroupDown(uint16_t nodeIndex, const lib::ClusterState& state) const;
-    bool nodeWasUpButNowIsDown(const lib::State& old, const lib::State& nw) const;
 
     bool storageNodeUpInNewState(uint16_t node) const;
 
@@ -206,13 +194,6 @@ private:
     std::map<uint64_t, BucketSpaceAndNode> _sentMessages;
     std::vector<bool> _requestedNodes;
     std::deque<std::pair<framework::MilliSecTime, BucketSpaceAndNode> > _delayedRequests;
-
-    // Set for all nodes that may have changed state since that previous
-    // active cluster state, or that were marked as outdated when the pending
-    // cluster state was constructed.
-    // May be a superset of _requestedNodes, as some nodes that are outdated
-    // may be down and thus cannot get a request.
-    std::unordered_set<uint16_t> _outdatedNodes;
 
     lib::ClusterState _prevClusterState;
     lib::ClusterState _newClusterState;
@@ -224,7 +205,6 @@ private:
     DistributorMessageSender& _sender;
     DistributorBucketSpaceRepo &_bucketSpaceRepo;
 
-    bool _distributionChange;
     bool _bucketOwnershipTransfer;
     std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash> _pendingTransitions;
 };

@@ -6,7 +6,7 @@
 #include <unordered_set>
 
 namespace storage::api { class RequestBucketInfoReply; }
-namespace storage::lib { class ClusterState; }
+namespace storage::lib { class ClusterState; class State; }
 
 namespace storage::distributor {
 
@@ -24,6 +24,7 @@ class PendingBucketSpaceDbTransition : public BucketDatabase::MutableEntryProces
 public:
     using Entry = dbtransition::Entry;
     using EntryList = std::vector<Entry>;
+    using OutdatedNodes = std::unordered_set<uint16_t>;
 private:
     using Range = std::pair<uint32_t, uint32_t>;
 
@@ -38,12 +39,15 @@ private:
     // cluster state was constructed.
     // May be a superset of _requestedNodes, as some nodes that are outdated
     // may be down and thus cannot get a request.
-    const std::unordered_set<uint16_t>        _outdatedNodes;
+    OutdatedNodes                             _outdatedNodes;
 
+    const lib::ClusterState                  &_prevClusterState;
     const lib::ClusterState                  &_newClusterState;
     const api::Timestamp                      _creationTimestamp;
     const PendingClusterState                &_pendingClusterState;
     DistributorBucketSpace                   &_distributorBucketSpace;
+    int                                       _distributorIndex;
+    bool                                      _bucketOwnershipTransfer;
 
     // BucketDataBase::MutableEntryProcessor API
     bool process(BucketDatabase::Entry& e) override;
@@ -73,10 +77,26 @@ private:
     bool bucketInfoIteratorPointsToBucket(const document::BucketId& bucketId) const;
     std::string requestNodesToString();
 
+    bool distributorChanged();
+    static bool nodeWasUpButNowIsDown(const lib::State &old, const lib::State &nw);
+    bool storageNodeUpInNewState(uint16_t node) const;
+    bool nodeInSameGroupAsSelf(uint16_t index) const;
+    bool nodeNeedsOwnershipTransferFromGroupDown(uint16_t nodeIndex, const lib::ClusterState& state) const;
+    uint16_t newStateStorageNodeCount() const;
+    bool storageNodeMayHaveLostData(uint16_t index);
+    bool storageNodeChanged(uint16_t index);
+    void markAllAvailableNodesAsRequiringRequest();
+    void addAdditionalNodesToOutdatedSet(const OutdatedNodes &nodes);
+    void updateSetOfNodesThatAreOutdated();
+
 public:
     PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
                                    DistributorBucketSpace &distributorBucketSpace,
+                                   int distributorIndex,
+                                   bool distributionChanged,
+                                   const OutdatedNodes &outdatedNodes,
                                    std::shared_ptr<const ClusterInformation> clusterInfo,
+                                   const lib::ClusterState &prevClusterState,
                                    const lib::ClusterState &newClusterState,
                                    api::Timestamp creationTimestamp);
     ~PendingBucketSpaceDbTransition();
@@ -86,6 +106,9 @@ public:
 
     // Adds the info from the reply to our list of information.
     void onRequestBucketInfoReply(const api::RequestBucketInfoReply &reply, uint16_t node);
+
+    const OutdatedNodes &getOutdatedNodes() { return _outdatedNodes; }
+    bool getBucketOwnershipTransfer() const { return _bucketOwnershipTransfer; }
 
     // Methods used by unit tests.
     const EntryList& results() const { return _entries; }

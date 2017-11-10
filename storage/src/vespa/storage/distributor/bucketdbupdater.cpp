@@ -171,7 +171,7 @@ BucketDBUpdater::storageDistributionChanged(
             _sender,
             _bucketSpaceComponent.getBucketSpaceRepo(),
             _bucketSpaceComponent.getUniqueTimestamp());
-    _outdatedNodes = _pendingClusterState->getOutdatedNodeSet();
+    _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 }
 
 void
@@ -219,9 +219,9 @@ BucketDBUpdater::onSetSystemState(
             _sender,
             _bucketSpaceComponent.getBucketSpaceRepo(),
             cmd,
-            _outdatedNodes,
+            _outdatedNodesMap,
             _bucketSpaceComponent.getUniqueTimestamp());
-    _outdatedNodes = _pendingClusterState->getOutdatedNodeSet();
+    _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 
     if (isPendingClusterStateCompleted()) {
         processCompletedPendingClusterState();
@@ -500,7 +500,7 @@ BucketDBUpdater::processCompletedPendingClusterState()
     }
 
     _pendingClusterState.reset();
-    _outdatedNodes.clear();
+    _outdatedNodesMap.clear();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
 }

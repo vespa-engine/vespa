@@ -26,11 +26,10 @@ PendingClusterState::PendingClusterState(
         DistributorMessageSender& sender,
         DistributorBucketSpaceRepo &bucketSpaceRepo,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-        const std::unordered_set<uint16_t>& outdatedNodes,
+        const OutdatedNodesMap &outdatedNodesMap,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
       _requestedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
-      _outdatedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
       _prevClusterState(clusterInfo->getClusterState()),
       _newClusterState(newStateCmd->getSystemState()),
       _clock(clock),
@@ -38,17 +37,11 @@ PendingClusterState::PendingClusterState(
       _creationTimestamp(creationTimestamp),
       _sender(sender),
       _bucketSpaceRepo(bucketSpaceRepo),
-      _bucketOwnershipTransfer(distributorChanged(_prevClusterState, _newClusterState)),
+      _bucketOwnershipTransfer(false),
       _pendingTransitions()
 {
     logConstructionInformation();
-    if (hasBucketOwnershipTransfer()) {
-        markAllAvailableNodesAsRequiringRequest();
-    } else {
-        updateSetOfNodesThatAreOutdated();
-        addAdditionalNodesToOutdatedSet(outdatedNodes);
-    }
-    initializeBucketSpaceTransitions();
+    initializeBucketSpaceTransitions(false, outdatedNodesMap);
 }
 
 PendingClusterState::PendingClusterState(
@@ -58,7 +51,6 @@ PendingClusterState::PendingClusterState(
         DistributorBucketSpaceRepo &bucketSpaceRepo,
         api::Timestamp creationTimestamp)
     : _requestedNodes(clusterInfo->getStorageNodeCount()),
-      _outdatedNodes(clusterInfo->getStorageNodeCount()),
       _prevClusterState(clusterInfo->getClusterState()),
       _newClusterState(clusterInfo->getClusterState()),
       _clock(clock),
@@ -70,17 +62,28 @@ PendingClusterState::PendingClusterState(
       _pendingTransitions()
 {
     logConstructionInformation();
-    markAllAvailableNodesAsRequiringRequest();
-    initializeBucketSpaceTransitions();
+    initializeBucketSpaceTransitions(true, OutdatedNodesMap());
 }
 
 PendingClusterState::~PendingClusterState() {}
 
 void
-PendingClusterState::initializeBucketSpaceTransitions()
+PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap)
 {
+    OutdatedNodes emptyOutdatedNodes;
     for (auto &elem : _bucketSpaceRepo) {
-        _pendingTransitions.emplace(elem.first, std::make_unique<PendingBucketSpaceDbTransition>(*this, *elem.second, _clusterInfo, _newClusterState, _creationTimestamp));
+        auto onItr = outdatedNodesMap.find(elem.first);
+        const auto &outdatedNodes = (onItr == outdatedNodesMap.end()) ? emptyOutdatedNodes : onItr->second;
+        auto pendingTransition =
+            std::make_unique<PendingBucketSpaceDbTransition>
+            (*this, *elem.second,
+             _sender.getDistributorIndex(), distributionChanged,
+             outdatedNodes,
+             _clusterInfo, _prevClusterState, _newClusterState, _creationTimestamp);
+        if (pendingTransition->getBucketOwnershipTransfer()) {
+            _bucketOwnershipTransfer = true;
+        }
+        _pendingTransitions.emplace(elem.first, std::move(pendingTransition));
     }
     if (shouldRequestBucketInfo()) {
         requestNodes();
@@ -106,33 +109,14 @@ PendingClusterState::storageNodeUpInNewState(uint16_t node) const
                .getState().oneOf(_clusterInfo->getStorageUpStates());
 }
 
-void
-PendingClusterState::markAllAvailableNodesAsRequiringRequest()
+PendingClusterState::OutdatedNodesMap
+PendingClusterState::getOutdatedNodesMap() const
 {
-    const uint16_t nodeCount(newStateStorageNodeCount());
-    for (uint16_t i = 0; i < nodeCount; ++i) {
-        if (storageNodeUpInNewState(i)) {
-            _outdatedNodes.insert(i);
-        }
+    OutdatedNodesMap outdatedNodesMap;
+    for (const auto &elem : _pendingTransitions) {
+        outdatedNodesMap.emplace(elem.first, elem.second->getOutdatedNodes());
     }
-}
-
-void
-PendingClusterState::addAdditionalNodesToOutdatedSet(
-        const std::unordered_set<uint16_t>& nodes)
-{
-    const uint16_t nodeCount(newStateStorageNodeCount());
-    for (uint16_t node : nodes) {
-        if (node < nodeCount) {
-            _outdatedNodes.insert(node);
-        }
-    }
-}
-
-std::unordered_set<uint16_t>
-PendingClusterState::getOutdatedNodeSet() const
-{
-    return _outdatedNodes;
+    return outdatedNodesMap;
 }
 
 uint16_t
@@ -170,47 +154,6 @@ PendingClusterState::iAmDown() const
     return myState.getState() == lib::State::DOWN;
 }
 
-bool
-PendingClusterState::storageNodeMayHaveLostData(uint16_t index)
-{
-    Node node(NodeType::STORAGE, index);
-    NodeState newState = _newClusterState.getNodeState(node);
-    NodeState oldState = _prevClusterState.getNodeState(node);
-
-    return (newState.getStartTimestamp() > oldState.getStartTimestamp());
-}
-
-void
-PendingClusterState::updateSetOfNodesThatAreOutdated()
-{
-    const uint16_t nodeCount(newStateStorageNodeCount());
-    for (uint16_t index = 0; index < nodeCount; ++index) {
-        if (storageNodeMayHaveLostData(index) || storageNodeChanged(index)) {
-            _outdatedNodes.insert(index);
-        }
-    }
-}
-
-bool
-PendingClusterState::storageNodeChanged(uint16_t index) {
-    Node node(NodeType::STORAGE, index);
-    NodeState newState = _newClusterState.getNodeState(node);
-    NodeState oldNodeState = _prevClusterState.getNodeState(node);
-
-    // similarTo() also covers disk states.
-    if (!(oldNodeState.similarTo(newState))) {
-        LOG(debug,
-                "State for storage node %d has changed from '%s' to '%s', "
-                "updating bucket information",
-                index,
-                oldNodeState.toString().c_str(),
-                newState.toString().c_str());
-        return true;
-    }
-
-    return false;
-}
-
 void
 PendingClusterState::requestNodes()
 {
@@ -225,102 +168,14 @@ PendingClusterState::requestNodes()
 void
 PendingClusterState::requestBucketInfoFromStorageNodesWithChangedState()
 {
-    for (uint16_t idx : _outdatedNodes) {
-        if (storageNodeUpInNewState(idx)) {
-            for (auto &elem : _bucketSpaceRepo) {
+    for (auto &elem : _pendingTransitions) {
+        const OutdatedNodes &outdatedNodes(elem.second->getOutdatedNodes());
+        for (uint16_t idx : outdatedNodes) {
+            if (storageNodeUpInNewState(idx)) {
                 requestNode(BucketSpaceAndNode(elem.first, idx));
             }
         }
     }
-}
-
-bool
-PendingClusterState::distributorChanged(
-        const lib::ClusterState& oldState,
-        const lib::ClusterState& newState)
-{
-    if (newState.getDistributionBitCount() !=
-        oldState.getDistributionBitCount())
-    {
-        return true;
-    }
-
-    Node myNode(NodeType::DISTRIBUTOR, _sender.getDistributorIndex());
-    if (oldState.getNodeState(myNode).getState() ==
-        lib::State::DOWN)
-    {
-        return true;
-    }
-
-    uint16_t oldCount = oldState.getNodeCount(NodeType::DISTRIBUTOR);
-    uint16_t newCount = newState.getNodeCount(NodeType::DISTRIBUTOR);
-
-    uint16_t maxCount = std::max(oldCount, newCount);
-
-    for (uint16_t i = 0; i < maxCount; ++i) {
-        Node node(NodeType::DISTRIBUTOR, i);
-
-        const lib::State& old(oldState.getNodeState(node).getState());
-        const lib::State& nw(newState.getNodeState(node).getState());
-
-        if (nodeWasUpButNowIsDown(old, nw)) {
-            if (nodeInSameGroupAsSelf(i) ||
-                nodeNeedsOwnershipTransferFromGroupDown(i, newState)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool
-PendingClusterState::nodeWasUpButNowIsDown(const lib::State& old,
-                                           const lib::State& nw) const
-{
-    return (old.oneOf("uimr") && !nw.oneOf("uimr"));
-}
-
-bool
-PendingClusterState::nodeInSameGroupAsSelf(uint16_t index) const
-{
-    if (_clusterInfo->nodeInSameGroupAsSelf(index)) {
-        LOG(debug,
-            "Distributor %d state changed, need to request data from all "
-            "storage nodes",
-            index);
-        return true;
-    } else {
-        LOG(debug,
-            "Distributor %d state changed but unrelated to my group.",
-            index);
-        return false;
-    }
-}
-
-bool
-PendingClusterState::nodeNeedsOwnershipTransferFromGroupDown(
-        uint16_t nodeIndex,
-        const lib::ClusterState& state) const
-{
-    const lib::Distribution& dist(_clusterInfo->getDistribution());
-    if (!dist.distributorAutoOwnershipTransferOnWholeGroupDown()) {
-        return false; // Not doing anything for downed groups.
-    }
-    const lib::Group* group(dist.getNodeGraph().getGroupForNode(nodeIndex));
-    // If there is no group information associated with the node (because the
-    // group has changed or the node has been removed from config), we must
-    // also invoke ownership transfer of buckets.
-    if (group == nullptr
-        || lib::Distribution::allDistributorsDown(*group, state))
-    {
-        LOG(debug,
-            "Distributor %u state changed and is in a "
-            "group that now has no distributors remaining",
-            nodeIndex);
-        return true;
-    }
-    return false;
 }
 
 void
