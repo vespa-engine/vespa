@@ -63,7 +63,7 @@ public class InjectedGlobalComponentRegistryTest {
         serverDB = new ConfigServerDB(configserverConfig);
         sessionPreparer = new SessionTest.MockSessionPreparer();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), 
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBRoot()));
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(FileDistribution.getDefaultFileDBPath()));
         generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
