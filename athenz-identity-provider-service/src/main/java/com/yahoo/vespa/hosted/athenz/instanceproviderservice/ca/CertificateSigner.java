@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
@@ -38,6 +39,10 @@ import java.util.stream.Stream;
 
 
 /**
+ * Signs Certificate Signing Reqest from tenant nodes. This certificate will be used
+ * by nodes to authenticate themselves when performing operations against the config
+ * server, such as updating node-repository or orchestrator.
+ *
  * @author freva
  */
 public class CertificateSigner {
@@ -46,7 +51,7 @@ public class CertificateSigner {
 
     static final String SIGNER_ALGORITHM = "SHA256withRSA";
     static final Duration CERTIIFICATE_DURATION = Duration.ofDays(30);
-    private static final List<ASN1ObjectIdentifier> ILLEGAL_EXTENSIONS = Arrays.asList(
+    private static final List<ASN1ObjectIdentifier> ILLEGAL_EXTENSIONS = ImmutableList.of(
             Extension.basicConstraints, Extension.subjectAlternativeName);
 
     private final PrivateKey caPrivateKey;
@@ -65,6 +70,13 @@ public class CertificateSigner {
         this.clock = clock;
     }
 
+    /**
+     * Signs the CSR if:
+     * <ul>
+     *  <li>Common Name matches {@code remoteHostname}</li>
+     *  <li>CSR does not contain any any of the extensions in {@code ILLEGAL_EXTENSIONS}</li>
+     * </ul>
+     */
     X509Certificate generateX509Certificate(PKCS10CertificationRequest certReq, String remoteHostname) {
         assertCertificateCommonName(certReq.getSubject(), remoteHostname);
         assertCertificateExtensions(certReq);
