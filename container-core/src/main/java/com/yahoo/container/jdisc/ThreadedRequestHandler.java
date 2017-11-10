@@ -194,7 +194,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         public ContentChannel handleResponse(Response response) {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
             ContentChannel cc = responseHandler.handleResponse(response);
-            long millis = request.container().currentTimeMillis() - request.creationTime(TimeUnit.MILLISECONDS);
+            long millis = request.timeElapsed(TimeUnit.MILLISECONDS);
             metric.set("container.handled.latency", millis, contextFor(request.getBindingMatch()));
             return cc;
         }
