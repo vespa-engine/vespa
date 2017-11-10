@@ -95,8 +95,7 @@ public class DeploymentTrigger {
                         return;
                     }
                 }
-                // TODO: Should rather fix deployingCompleted() (let it check that all declared zones have the change).
-                else if (order.isLast(report.jobType(), application) && application.deployingCompleted()) {
+                else if (deploymentComplete(application)) {
                     // change completed
                     application = application.withDeploying(Optional.empty());
                 }
@@ -109,12 +108,20 @@ public class DeploymentTrigger {
             else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true,
                                       "Retrying on out of capacity");
-            else if (shouldRetryNow(application))
+            else if (shouldRetryNow(application, report.jobType()))
                 application = trigger(report.jobType(), application, false,
                                       "Immediate retry on failure");
 
             applications().store(application);
         }
+    }
+
+    /** Returns whether all production zones listed in deployment spec last were successful on the currently deploying change. */
+    private boolean deploymentComplete(LockedApplication application) {
+        if ( ! application.deploying().isPresent()) return true;
+        return order.jobsFrom(application.deploymentSpec()).stream()
+                .filter(JobType::isProduction)
+                .allMatch(jobType -> application.deploymentJobs().isSuccessful(application.deploying().get(), jobType));
     }
 
     /**
@@ -138,6 +145,7 @@ public class DeploymentTrigger {
         List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
 
         // Should the first step be triggered?
+        // TODO: How can the first job not be systemTest (second ccondition)?
         if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) &&
              application.deploying().get() instanceof Change.VersionChange) {
             Version target = ((Change.VersionChange)application.deploying().get()).version();
@@ -177,7 +185,7 @@ public class DeploymentTrigger {
         Change change = application.deploying().get();
 
         if ( ! previous.lastSuccess().isPresent() && 
-             ! productionJobHasSucceededFor(previous, change)) return false;
+             ! productionUpgradeHasSucceededFor(previous, change)) return false;
 
         if (change instanceof Change.VersionChange) {
             Version targetVersion = ((Change.VersionChange)change).version();
@@ -208,7 +216,6 @@ public class DeploymentTrigger {
             if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
 
             // Retry first failing job
-            // TODO: Use JobList, requires JobList to sort according to deploymentSpec.
             for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
                 JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                 if (isFailing(application.deploying().get(), jobStatus)) {
@@ -329,9 +336,10 @@ public class DeploymentTrigger {
         return false;
     }
     
-    /** Retry immediately only if this just started failing. Otherwise retry periodically */
-    private boolean shouldRetryNow(Application application) {
-        return application.deploymentJobs().failingSince().isAfter(clock.instant().minus(Duration.ofSeconds(10)));
+    /** Retry immediately only if this job just started failing. Otherwise retry periodically */
+    private boolean shouldRetryNow(Application application, JobType jobType) {
+        JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+        return (jobStatus != null && jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofSeconds(10))));
     }
 
     /** Decide whether to retry due to capacity restrictions */
@@ -364,11 +372,10 @@ public class DeploymentTrigger {
      *
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
-     * @param first whether to trigger the job before other jobs
+     * @param first whether to put the job at the front of the build system queue (or the back)
      * @param reason describes why the job is triggered
      * @return the application in the triggered state, which *must* be stored by the caller
      */
-    // TODO: Improve explanation for first parameter.
     private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String reason) {
         if (isRunningProductionJob(application)) return application;
         return triggerAllowParallel(jobType, application, first, false, reason);
@@ -407,8 +414,7 @@ public class DeploymentTrigger {
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                reason));
         buildSystem.addJob(application.id(), jobType, first);
-        return application.withJobTriggering(-1, jobType, application.deploying(), reason, clock.instant(),
-                                             controller);
+        return application.withJobTriggering(jobType, application.deploying(), reason, clock.instant(), controller);
     }
 
     /** Returns true if the given proposed job triggering should be effected */
@@ -441,7 +447,7 @@ public class DeploymentTrigger {
      * When upgrading it is ok to trigger the next job even if the previous failed if the previous has earlier succeeded
      * on the version we are currently upgrading to
      */
-    private boolean productionJobHasSucceededFor(JobStatus jobStatus, Change change) {
+    private boolean productionUpgradeHasSucceededFor(JobStatus jobStatus, Change change) {
         if ( ! (change instanceof Change.VersionChange) ) return false;
         if ( ! isProduction(jobStatus.type())) return false;
         Optional<JobStatus.JobRun> lastSuccess = jobStatus.lastSuccess();
@@ -475,7 +481,6 @@ public class DeploymentTrigger {
         if ( ! application.deploying().isPresent()) return true;
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
 
-        // TODO: Don't these two below allow concurrent App and Version changes?
         if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
         if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.

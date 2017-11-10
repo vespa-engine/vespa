@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
@@ -80,6 +79,12 @@ public class ControllerTest {
             .region("corp-us-east-1")
             .build();
 
+    private static final ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+            .environment(Environment.prod)
+            .region("corp-us-east-1")
+            .region("us-west-1")
+            .build();
+
     @Test
     public void testDeployment() {
         // Setup system
@@ -104,12 +109,12 @@ public class ControllerTest {
         Optional<ApplicationRevision> revision = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).revision();
         assertTrue("Revision has been set during deployment", revision.isPresent());
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(version1, revision, false, "", tester.clock().instant()), app1.id(), tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing)
@@ -117,9 +122,9 @@ public class ControllerTest {
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
-                                               .withTriggering(-1, version1, revision, false, "", tester.clock().instant()) // Triggered first without revision info
+                                               .withTriggering(version1, revision, false, "", tester.clock().instant()) // Triggered first without revision info
                                                .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller())
-                                               .withTriggering(-1, version1, revision, false, "", tester.clock().instant()); // Re-triggering (due to failure) has revision info
+                                               .withTriggering(version1, revision, false, "", tester.clock().instant()); // Re-triggering (due to failure) has revision info
 
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -142,20 +147,20 @@ public class ControllerTest {
         tester.notifyJobCompletion(component, app1, true);
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
-                .withTriggering(-1, version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                .withTriggering(version1, revision, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                 .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller());
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // causes triggering of next production job
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(-1, version1, revision, false, "", tester.clock().instant()),
+                              .withTriggering(version1, revision, false, "", tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
@@ -448,12 +453,13 @@ public class ControllerTest {
         tester.notifyJobCompletion(stagingTest, app1, Optional.of(JobError.outOfCapacity));
         assertTrue("No jobs queued", buildSystem.jobs().isEmpty());
 
-        // app2 and app3: New change triggers staging-test jobs
+        // app2 and app3: New change triggers system-test jobs
+        // Provide a changed application package, too, or the deployment is a no-op.
         tester.notifyJobCompletion(component, app2, true);
-        tester.deployAndNotify(app2, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app2, applicationPackage2, true, systemTest);
 
         tester.notifyJobCompletion(component, app3, true);
-        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app3, applicationPackage2, true, systemTest);
 
         assertEquals(2, buildSystem.jobs().size());
 
