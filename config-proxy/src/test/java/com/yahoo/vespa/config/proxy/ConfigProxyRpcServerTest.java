@@ -5,6 +5,8 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.RawConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -28,7 +30,7 @@ public class ConfigProxyRpcServerTest {
     @Before
     public void setup() {
         proxyServer = ProxyServer.createTestServer(new ConfigSourceSet(address));
-        rpcServer = new ConfigProxyRpcServer(proxyServer, null);
+        rpcServer = new ConfigProxyRpcServer(proxyServer, new Supervisor(new Transport()), null);
     }
 
     @After
@@ -40,7 +42,7 @@ public class ConfigProxyRpcServerTest {
     public void basic() {
         ProxyServer proxy = ProxyServer.createTestServer(new MockConfigSource(new MockClientUpdater()));
         Spec spec = new Spec("localhost", 12345);
-        ConfigProxyRpcServer server = new ConfigProxyRpcServer(proxy, spec);
+        ConfigProxyRpcServer server = new ConfigProxyRpcServer(proxy, new Supervisor(new Transport()), spec);
         assertThat(server.getSpec(), is(spec));
     }
 
