@@ -18,11 +18,9 @@ using lib::NodeState;
 
 PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
                                                                DistributorBucketSpace &distributorBucketSpace,
-                                                               int distributorIndex,
                                                                bool distributionChanged,
                                                                const OutdatedNodes &outdatedNodes,
                                                                std::shared_ptr<const ClusterInformation> clusterInfo,
-                                                               const lib::ClusterState &prevClusterState,
                                                                const lib::ClusterState &newClusterState,
                                                                api::Timestamp creationTimestamp)
     : _entries(),
@@ -31,12 +29,12 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _missingEntries(),
       _clusterInfo(std::move(clusterInfo)),
       _outdatedNodes(newClusterState.getNodeCount(NodeType::STORAGE)),
-      _prevClusterState(prevClusterState),
+      _prevClusterState(_clusterInfo->getClusterState()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
       _pendingClusterState(pendingClusterState),
       _distributorBucketSpace(distributorBucketSpace),
-      _distributorIndex(distributorIndex),
+      _distributorIndex(_clusterInfo->getDistributorIndex()),
       _bucketOwnershipTransfer(distributionChanged)
 {
     if (distributorChanged()) {

@@ -7,6 +7,7 @@
 #include "distributormessagesender.h"
 #include "pendingclusterstate.h"
 #include "distributor_bucket_space_component.h"
+#include "outdated_nodes_map.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -27,8 +28,8 @@ class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
 {
 public:
-    using OutdatedNodes = std::unordered_set<uint16_t>;
-    using OutdatedNodesMap = std::unordered_map<document::BucketSpace, OutdatedNodes, document::BucketSpace::hash>;
+    using OutdatedNodes = dbtransition::OutdatedNodes;
+    using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     BucketDBUpdater(Distributor& owner,
                     DistributorBucketSpaceRepo &bucketSpaceRepo,
                     DistributorBucketSpace& bucketSpace,

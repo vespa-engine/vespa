@@ -2,8 +2,8 @@
 #pragma once
 
 #include "pending_bucket_space_db_transition_entry.h"
+#include "outdated_nodes.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <unordered_set>
 
 namespace storage::api { class RequestBucketInfoReply; }
 namespace storage::lib { class ClusterState; class State; }
@@ -24,7 +24,7 @@ class PendingBucketSpaceDbTransition : public BucketDatabase::MutableEntryProces
 public:
     using Entry = dbtransition::Entry;
     using EntryList = std::vector<Entry>;
-    using OutdatedNodes = std::unordered_set<uint16_t>;
+    using OutdatedNodes = dbtransition::OutdatedNodes;
 private:
     using Range = std::pair<uint32_t, uint32_t>;
 
@@ -46,7 +46,7 @@ private:
     const api::Timestamp                      _creationTimestamp;
     const PendingClusterState                &_pendingClusterState;
     DistributorBucketSpace                   &_distributorBucketSpace;
-    int                                       _distributorIndex;
+    uint16_t                                  _distributorIndex;
     bool                                      _bucketOwnershipTransfer;
 
     // BucketDataBase::MutableEntryProcessor API
@@ -92,11 +92,9 @@ private:
 public:
     PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
                                    DistributorBucketSpace &distributorBucketSpace,
-                                   int distributorIndex,
                                    bool distributionChanged,
                                    const OutdatedNodes &outdatedNodes,
                                    std::shared_ptr<const ClusterInformation> clusterInfo,
-                                   const lib::ClusterState &prevClusterState,
                                    const lib::ClusterState &newClusterState,
                                    api::Timestamp creationTimestamp);
     ~PendingBucketSpaceDbTransition();

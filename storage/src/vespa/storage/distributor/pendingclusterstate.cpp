@@ -76,10 +76,8 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
         const auto &outdatedNodes = (onItr == outdatedNodesMap.end()) ? emptyOutdatedNodes : onItr->second;
         auto pendingTransition =
             std::make_unique<PendingBucketSpaceDbTransition>
-            (*this, *elem.second,
-             _sender.getDistributorIndex(), distributionChanged,
-             outdatedNodes,
-             _clusterInfo, _prevClusterState, _newClusterState, _creationTimestamp);
+            (*this, *elem.second, distributionChanged, outdatedNodes,
+             _clusterInfo, _newClusterState, _creationTimestamp);
         if (pendingTransition->getBucketOwnershipTransfer()) {
             _bucketOwnershipTransfer = true;
         }

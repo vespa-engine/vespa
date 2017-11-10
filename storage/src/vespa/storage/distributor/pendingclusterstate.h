@@ -9,7 +9,7 @@
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlserializable.h>
-#include <unordered_set>
+#include "outdated_nodes_map.h"
 #include <unordered_map>
 #include <deque>
 
@@ -25,8 +25,8 @@ class DistributorBucketSpaceRepo;
  */
 class PendingClusterState : public vespalib::XmlSerializable {
 public:
-    using OutdatedNodes = std::unordered_set<uint16_t>;
-    using OutdatedNodesMap = std::unordered_map<document::BucketSpace, OutdatedNodes, document::BucketSpace::hash>;
+    using OutdatedNodes = dbtransition::OutdatedNodes;
+    using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     struct Summary {
         Summary(const std::string& prevClusterState, const std::string& newClusterState, uint32_t processingTime);
         Summary(const Summary &);
