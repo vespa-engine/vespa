@@ -83,7 +83,8 @@ LogServer = element logserver {
 
 FileDistribution = element filedistribution {
    element uploadbitrate { xsd:string {   pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }? &
-   element downloadbitrate { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }?
+   element downloadbitrate { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }? &
+   element disabled { xsd:boolean }?
 }
 
 Metrics = element metrics {
