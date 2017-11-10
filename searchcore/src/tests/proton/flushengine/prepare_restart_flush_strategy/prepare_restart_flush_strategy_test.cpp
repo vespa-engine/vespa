@@ -15,7 +15,7 @@ using SimpleFlushHandler = test::DummyFlushHandler;
 using FlushCandidatesList = std::vector<FlushTargetCandidates>;
 using Config = PrepareRestartFlushStrategy::Config;
 
-const Config DEFAULT_CFG(2.0, 4.0);
+const Config DEFAULT_CFG(2.0, 0.0, 4.0);
 
 struct SimpleFlushTarget : public test::DummyFlushTarget
 {
@@ -107,7 +107,7 @@ public:
         : _sortedFlushContexts(&sortedFlushContexts),
           _numCandidates(sortedFlushContexts.size()),
           _tlsStats(1000, 11, 110),
-          _cfg(DEFAULT_CFG)
+          _cfg(2.0, 3.0, 4.0)
     {}
     CandidatesBuilder &flushContexts(const FlushContext::List &sortedFlushContexts) {
         _sortedFlushContexts = &sortedFlushContexts;
@@ -140,28 +140,35 @@ struct CandidatesFixture
     CandidatesFixture() : emptyContexts(), builder(emptyContexts) {}
 };
 
+void
+assertCosts(double tlsReplayBytesCost, double tlsReplayOperationsCost, double flushTargetsWriteCost, const FlushTargetCandidates &candidates)
+{
+    EXPECT_EQUAL(tlsReplayBytesCost, candidates.getTlsReplayCost().bytesCost);
+    EXPECT_EQUAL(tlsReplayOperationsCost, candidates.getTlsReplayCost().operationsCost);
+    EXPECT_EQUAL(flushTargetsWriteCost, candidates.getFlushTargetsWriteCost());
+    EXPECT_EQUAL(tlsReplayBytesCost + tlsReplayOperationsCost + flushTargetsWriteCost, candidates.getTotalCost());
+}
+
 TEST_F("require that tls replay cost is correct for 100% replay", CandidatesFixture)
 {
-    EXPECT_EQUAL(2000, f.builder.replayEnd(110).build().getTlsReplayCost());
+    TEST_DO(assertCosts(1000 * 2, 100 * 3, 0, f.builder.replayEnd(110).build()));
 }
 
 TEST_F("require that tls replay cost is correct for 75% replay", CandidatesFixture)
 {
     FlushContext::List contexts = ContextsBuilder().add("target1", 10, 0).add("target2", 35, 0).build();
-    EXPECT_EQUAL(1500, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).
-            build().getTlsReplayCost());
+    TEST_DO(assertCosts(750 * 2, 75 * 3, 0, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).build()));
 }
 
 TEST_F("require that tls replay cost is correct for 25% replay", CandidatesFixture)
 {
     FlushContext::List contexts = ContextsBuilder().add("target1", 10, 0).add("target2", 85, 0).build();
-    EXPECT_EQUAL(500, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).
-            build().getTlsReplayCost());
+    TEST_DO(assertCosts(250 * 2, 25 * 3, 0, f.builder.flushContexts(contexts).numCandidates(1).replayEnd(110).build()));
 }
 
 TEST_F("require that tls replay cost is correct for zero operations to replay", CandidatesFixture)
 {
-    EXPECT_EQUAL(0, f.builder.replayEnd(10).build().getTlsReplayCost());
+    TEST_DO(assertCosts(0, 0, 0, f.builder.replayEnd(10).build()));
 }
 
 TEST_F("require that flush cost is correct for zero flush targets", CandidatesFixture)
@@ -172,7 +179,7 @@ TEST_F("require that flush cost is correct for zero flush targets", CandidatesFi
 TEST_F("require that flush cost is sum of flush targets", CandidatesFixture)
 {
     FlushContext::List contexts = ContextsBuilder().add("target1", 20, 1000).add("target2", 30, 2000).build();
-    EXPECT_EQUAL(12000, f.builder.flushContexts(contexts).build().getFlushTargetsWriteCost());
+    TEST_DO(assertCosts(0, 0, 1000 * 4 + 2000 * 4, f.builder.flushContexts(contexts).build()));
 }
 
 
@@ -227,7 +234,7 @@ assertFlushContexts(const vespalib::string &expected, const FlushContext::List &
  *   - handler1: serial numbers 10 -> 110, 1000 bytes
  *   - handler2: serial numbers 10 -> 110, 2000 bytes
  *
- * The cost config is: tlsReplayCost=2.0, flushTargetsWriteCost=4.0.
+ * The cost config is: tlsReplayByteCost=2.0, tlsReplayOperationCost=0.0, flushTargetsWriteCost=4.0.
  * The cost of replaying the complete TLS is then:
  *   - handler1: 1000*2.0 = 2000
  *   - handler2: 2000*2.0 = 4000

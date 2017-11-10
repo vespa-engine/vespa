@@ -16,10 +16,20 @@ namespace flushengine { class TlsStats; }
  */
 class FlushTargetCandidates
 {
+public:
+    struct TlsReplayCost {
+        double bytesCost;
+        double operationsCost;
+        TlsReplayCost(double bytesCost_, double operationsCost_)
+            : bytesCost(bytesCost_),
+              operationsCost(operationsCost_)
+        {}
+        double totalCost() const { return bytesCost + operationsCost; }
+    };
 private:
     const FlushContext::List *_sortedFlushContexts; // NOTE: ownership is handled outside
     size_t _numCandidates;
-    double _tlsReplayCost;
+    TlsReplayCost _tlsReplayCost;
     double _flushTargetsWriteCost;
 
     using Config = PrepareRestartFlushStrategy::Config;
@@ -32,9 +42,9 @@ public:
                           const flushengine::TlsStats &tlsStats,
                           const Config &cfg);
 
-    double getTlsReplayCost() const { return _tlsReplayCost; }
+    TlsReplayCost getTlsReplayCost() const { return _tlsReplayCost; }
     double getFlushTargetsWriteCost() const { return _flushTargetsWriteCost; }
-    double getTotalCost() const { return getTlsReplayCost() + getFlushTargetsWriteCost(); }
+    double getTotalCost() const { return getTlsReplayCost().totalCost() + getFlushTargetsWriteCost(); }
     FlushContext::List getCandidates() const;
 };
 
