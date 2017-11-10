@@ -56,11 +56,11 @@ public class CertificateSignerTest {
 
     @Test
     public void common_name_test() throws Exception {
-        CertificateSigner.assertCertificateCommonName(
+        CertificateSigner.verifyCertificateCommonName(
                 new X500Name("CN=" + requestersHostname), requestersHostname);
-        CertificateSigner.assertCertificateCommonName(
+        CertificateSigner.verifyCertificateCommonName(
                 new X500Name("C=NO,OU=Vespa,CN=" + requestersHostname), requestersHostname);
-        CertificateSigner.assertCertificateCommonName(
+        CertificateSigner.verifyCertificateCommonName(
                 new X500Name("C=NO+OU=org,CN=" + requestersHostname), requestersHostname);
 
         assertCertificateCommonNameException("C=NO", "Only 1 common name should be set");
@@ -76,7 +76,7 @@ public class CertificateSignerTest {
                 new GeneralName(GeneralName.dNSName, "some.other.domain.tld")}));
         PKCS10CertificationRequest request = makeRequest("OU=Vespa", extGen.generate());
 
-        CertificateSigner.assertCertificateExtensions(request);
+        CertificateSigner.verifyCertificateExtensions(request);
     }
 
     @Test
@@ -85,12 +85,12 @@ public class CertificateSignerTest {
         extGen.addExtension(Extension.certificateIssuer, true, new byte[0]);
         PKCS10CertificationRequest request = makeRequest("OU=Vespa", extGen.generate());
 
-        CertificateSigner.assertCertificateExtensions(request);
+        CertificateSigner.verifyCertificateExtensions(request);
     }
 
     private void assertCertificateCommonNameException(String subject, String expectedMessage) {
         try {
-            CertificateSigner.assertCertificateCommonName(new X500Name(subject), requestersHostname);
+            CertificateSigner.verifyCertificateCommonName(new X500Name(subject), requestersHostname);
             fail("Expected to fail");
         } catch (IllegalArgumentException e) {
             assertEquals(expectedMessage, e.getMessage());

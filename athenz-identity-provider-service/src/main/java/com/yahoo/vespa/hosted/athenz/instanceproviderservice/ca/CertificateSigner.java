@@ -82,8 +82,8 @@ public class CertificateSigner {
      * </ul>
      */
     X509Certificate generateX509Certificate(PKCS10CertificationRequest certReq, String remoteHostname) {
-        assertCertificateCommonName(certReq.getSubject(), remoteHostname);
-        assertCertificateExtensions(certReq);
+        verifyCertificateCommonName(certReq.getSubject(), remoteHostname);
+        verifyCertificateExtensions(certReq);
 
         Date notBefore = Date.from(clock.instant());
         Date notAfter = Date.from(clock.instant().plus(CERTIFICATE_EXPIRATION));
@@ -107,7 +107,7 @@ public class CertificateSigner {
         }
     }
 
-    static void assertCertificateCommonName(X500Name subject, String commonName) {
+    static void verifyCertificateCommonName(X500Name subject, String commonName) {
         List<AttributeTypeAndValue> attributesAndValues = Arrays.stream(subject.getRDNs())
                 .flatMap(rdn -> rdn.isMultiValued() ?
                         Stream.of(rdn.getTypesAndValues()) : Stream.of(rdn.getFirst()))
@@ -125,7 +125,7 @@ public class CertificateSigner {
     }
 
     @SuppressWarnings("unchecked")
-    static void assertCertificateExtensions(PKCS10CertificationRequest request) {
+    static void verifyCertificateExtensions(PKCS10CertificationRequest request) {
         List<String> illegalExt = Arrays
                 .stream(request.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest))
                 .map(attribute -> Extensions.getInstance(attribute.getAttrValues().getObjectAt(0)))
