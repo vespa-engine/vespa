@@ -101,7 +101,7 @@ public class CertificateSignerTest {
         assertEquals(3, certificate.getVersion());
         assertEquals(BigInteger.valueOf(startTime), certificate.getSerialNumber());
         assertEquals(startTime, certificate.getNotBefore().getTime());
-        assertEquals(startTime + CertificateSigner.CERTIIFICATE_DURATION.toMillis(), certificate.getNotAfter().getTime());
+        assertEquals(startTime + CertificateSigner.CERTIFICATE_EXPIRATION.toMillis(), certificate.getNotAfter().getTime());
         assertEquals(CertificateSigner.SIGNER_ALGORITHM, certificate.getSigAlgName());
         assertEquals(expectedSubjectName, certificate.getSubjectDN().getName());
         assertEquals("CN=" + cfgServerHostname, certificate.getIssuerX500Principal().getName());

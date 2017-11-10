@@ -50,7 +50,7 @@ public class CertificateSigner {
     private static final Logger log = Logger.getLogger(CertificateSigner.class.getName());
 
     static final String SIGNER_ALGORITHM = "SHA256withRSA";
-    static final Duration CERTIIFICATE_DURATION = Duration.ofDays(30);
+    static final Duration CERTIFICATE_EXPIRATION = Duration.ofDays(30);
     private static final List<ASN1ObjectIdentifier> ILLEGAL_EXTENSIONS = ImmutableList.of(
             Extension.basicConstraints, Extension.subjectAlternativeName);
 
@@ -82,7 +82,7 @@ public class CertificateSigner {
         assertCertificateExtensions(certReq);
 
         Date notBefore = Date.from(clock.instant());
-        Date notAfter = Date.from(clock.instant().plus(CERTIIFICATE_DURATION));
+        Date notAfter = Date.from(clock.instant().plus(CERTIFICATE_EXPIRATION));
 
         try {
             PublicKey publicKey = new JcaPKCS10CertificationRequest(certReq).getPublicKey();
