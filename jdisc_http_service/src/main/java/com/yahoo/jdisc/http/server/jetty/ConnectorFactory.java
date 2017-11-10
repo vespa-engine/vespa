@@ -158,7 +158,7 @@ public class ConnectorFactory {
         Optional<String> keyDbPassword = secret(sslConfig.keyDbKey());
         switch (sslConfig.keyStoreType()) {
             case PEM:
-                factory.setKeyStore(getKeyStore(sslConfig.pemKeyStore()));
+                factory.setKeyStore(createPemKeyStore(sslConfig.pemKeyStore()));
                 if (keyDbPassword.isPresent())
                     log.warning("Encrypted PEM key stores are not supported.");
                 break;
@@ -187,11 +187,11 @@ public class ConnectorFactory {
     }
     
     @SuppressWarnings("ThrowableInstanceNeverThrown")
-    private Supplier<RuntimeException> passwordRequiredForJKSKeyStore(String type) {
+    private static Supplier<RuntimeException> passwordRequiredForJKSKeyStore(String type) {
         return () -> new RuntimeException(String.format("Password is required for JKS %s store", type));
     }
 
-    private static KeyStore getKeyStore(PemKeyStore pemKeyStore) {
+    private static KeyStore createPemKeyStore(PemKeyStore pemKeyStore) {
         Preconditions.checkArgument(!pemKeyStore.certificatePath().isEmpty(), "Missing certificate path.");
         Preconditions.checkArgument(!pemKeyStore.keyPath().isEmpty(), "Missing key path.");
         try {
