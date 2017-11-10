@@ -6,47 +6,42 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.FileDistributionOptions;
 import org.w3c.dom.Element;
 
+import java.util.Optional;
+
 /**
- * Builds a file distribution options.
- * @author tonytv
+ * Builds file distribution options.
+ *
+ * @author Tony Vaagenes
+ * @author hmusum
  */
 public class DomFileDistributionOptionsBuilder {
+
     private static void throwExceptionForElementInFileDistribution(String subElement, String reason) {
         throw new RuntimeException("In element '" + subElement + "' contained in 'filedistribution': " + reason);
     }
 
-    private static void callSetter(FileDistributionOptions options, String name, BinaryScaledAmount amount) {
+    private Optional<BinaryScaledAmount> getAmount(String name, Element fileDistributionElement) {
+        Element optionElement = XML.getChild(fileDistributionElement, name);
         try {
-            options.getClass().getMethod(name, BinaryScaledAmountParser.class).invoke(options, amount);
-        } catch (IllegalArgumentException e) {
-            throwExceptionForElementInFileDistribution(name, e.getMessage());
-        }
-        catch (Exception e) {
-            if (e instanceof RuntimeException)
-                throw (RuntimeException)e;
-            else
-                throw new RuntimeException(e);
-        }
-    }
-
-    private static void setIfPresent(FileDistributionOptions options, String name, Element fileDistributionElement) {
-        try {
-            Element optionElement = XML.getChild(fileDistributionElement, name);
             if (optionElement != null) {
                 String valueString = XML.getValue(optionElement);
-                BinaryScaledAmount amount = BinaryScaledAmountParser.parse(valueString);
-                callSetter(options, name, amount);
+                return Optional.of(BinaryScaledAmountParser.parse(valueString));
             }
         } catch (NumberFormatException e) {
             throwExceptionForElementInFileDistribution(name, "Expected a valid number. (Message = " + e.getMessage() + ").");
         }
+        return Optional.empty();
     }
 
     public FileDistributionOptions build(Element fileDistributionElement) {
         FileDistributionOptions options = FileDistributionOptions.defaultOptions();
         if (fileDistributionElement != null) {
-            setIfPresent(options, "uploadbitrate", fileDistributionElement);
-            setIfPresent(options, "downloadbitrate", fileDistributionElement);
+            getAmount("uploadbitrate", fileDistributionElement).ifPresent(options::uploadBitRate);
+            getAmount("downloadbitrate", fileDistributionElement).ifPresent(options::downloadBitRate);
+            Element disable = XML.getChild(fileDistributionElement, "disabled");
+            if (disable != null) {
+                options.disabled(Boolean.valueOf(XML.getValue(disable)));
+            }
         }
         return options;
     }
