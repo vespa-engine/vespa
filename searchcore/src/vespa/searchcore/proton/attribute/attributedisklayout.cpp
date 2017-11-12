@@ -59,7 +59,7 @@ AttributeDiskLayout::getAttributeDir(const vespalib::string &name)
 std::shared_ptr<AttributeDirectory>
 AttributeDiskLayout::createAttributeDir(const vespalib::string &name)
 {
-    std::unique_lock<std::shared_timed_mutex> guard(_mutex);
+    std::lock_guard<std::shared_timed_mutex> guard(_mutex);
     auto itr = _dirs.find(name);
     if (itr == _dirs.end()) {
         auto dir = std::make_shared<AttributeDirectory>(shared_from_this(), name);
@@ -81,7 +81,7 @@ AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::Se
             writer->invalidateOldSnapshots(serialNum);
             writer->removeInvalidSnapshots();
             if (writer->removeDiskDir()) {
-                std::unique_lock<std::shared_timed_mutex> guard(_mutex);
+                std::lock_guard<std::shared_timed_mutex> guard(_mutex);
                 auto itr = _dirs.find(name);
                 assert(itr != _dirs.end());
                 assert(dir.get() == itr->second.get());
@@ -89,7 +89,7 @@ AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::Se
                 writer->detach();
             }
         } else {
-            std::unique_lock<std::shared_timed_mutex> guard(_mutex);
+            std::lock_guard<std::shared_timed_mutex> guard(_mutex);
             auto itr = _dirs.find(name);
             if (itr != _dirs.end()) {
                 assert(dir.get() != itr->second.get());

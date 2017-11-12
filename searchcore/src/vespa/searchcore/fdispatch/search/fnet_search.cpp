@@ -1077,7 +1077,7 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
 
     // allow FNET responses while requests are being sent
     {
-        std::unique_lock<std::mutex> searchGuard(_lock);
+        std::lock_guard<std::mutex> searchGuard(_lock);
         ++_pendingQueries; // add Elephant query node to avoid early query done
         ++_queryNodes;     // add Elephant query node to avoid early query done
         _FNET_mode = FNET_QUERY;
@@ -1102,7 +1102,7 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
     // finalize setup and check if query is still in progress
     bool done;
     {
-        std::unique_lock<std::mutex> searchGuard(_lock);
+        std::lock_guard<std::mutex> searchGuard(_lock);
         assert(_queryNodes >= _pendingQueries);
         for (uint32_t i: send_failed) {
             // conditional revert of state for failed nodes
@@ -1398,7 +1398,7 @@ FastS_FNET_Search::GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
     ConnectDocsumNodes(ignoreRow);
     bool done;
     {
-        std::unique_lock<std::mutex> searchGuard(_lock);
+        std::lock_guard<std::mutex> searchGuard(_lock);
 
         // patch in engine dependent features and send docsum requests
 

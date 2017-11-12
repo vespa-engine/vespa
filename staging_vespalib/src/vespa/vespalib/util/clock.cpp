@@ -45,7 +45,7 @@ void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
 void
 Clock::stop(void)
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _stop = true;
     _cond.notify_all();
 }
