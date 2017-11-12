@@ -305,6 +305,7 @@ public class DeploymentTrigger {
     private boolean isFailing(Change change, JobStatus status) {
         return       status != null
                 && ! status.isSuccess()
+                &&   status.lastCompleted().isPresent()
                 &&   status.lastCompleted().get().lastCompletedWas(change);
     }
 

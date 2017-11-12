@@ -102,7 +102,9 @@ public class JobStatus {
     public DeploymentJobs.JobType type() { return type; }
 
     /** Returns true unless this job last completed with a failure */
-    public boolean isSuccess() { return ! jobError.isPresent(); }
+    public boolean isSuccess() {
+        return lastCompleted().isPresent() && ! jobError.isPresent();
+    }
     
     /** Returns true if last triggered is newer than last completed and was started after timeoutLimit */
     public boolean isRunning(Instant timeoutLimit) {
