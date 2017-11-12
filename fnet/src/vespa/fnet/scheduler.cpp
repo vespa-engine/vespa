@@ -40,7 +40,7 @@ FNET_Scheduler::~FNET_Scheduler()
         bool empty = true;
         std::stringstream dump;
         {
-            std::unique_lock<std::mutex> guard(_lock);
+            std::lock_guard<std::mutex> guard(_lock);
             dump << "FNET_Scheduler {" << std::endl;
             dump << "  [slot=" << _currSlot << "][iter=" << _currIter << "]" << std::endl;
             for (int i = 0; i <= NUM_SLOTS; i++) {
@@ -70,7 +70,7 @@ FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
 {
     uint32_t ticks = 1 + (uint32_t) (seconds * (1000 / SLOT_TICK) + 0.5);
 
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
         if (IsActive(task))
             LinkOut(task);
@@ -84,7 +84,7 @@ FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
 void
 FNET_Scheduler::ScheduleNow(FNET_Task *task)
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
         if (IsActive(task))
             LinkOut(task);
@@ -119,7 +119,7 @@ FNET_Scheduler::Kill(FNET_Task *task)
 void
 FNET_Scheduler::Print(FILE *dst)
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     fprintf(dst, "FNET_Scheduler {\n");
     fprintf(dst, "  [slot=%d][iter=%d]\n", _currSlot, _currIter);
     for (int i = 0; i <= NUM_SLOTS; i++) {
