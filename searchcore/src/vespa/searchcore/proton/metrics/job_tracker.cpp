@@ -20,14 +20,14 @@ JobTracker::sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard)
 void
 JobTracker::start()
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _sampler.startJob(std::chrono::steady_clock::now());
 }
 
 void
 JobTracker::end()
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _sampler.endJob(std::chrono::steady_clock::now());
 }
 

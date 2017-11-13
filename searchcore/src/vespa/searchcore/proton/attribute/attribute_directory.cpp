@@ -56,7 +56,7 @@ AttributeDirectory::getDirName() const
 {
     std::shared_ptr<AttributeDiskLayout> diskLayout;
     {
-        std::unique_lock<std::mutex> guard(_mutex);
+        std::lock_guard<std::mutex> guard(_mutex);
         assert(!_diskLayout.expired());
         diskLayout = _diskLayout.lock();
     }
@@ -204,7 +204,7 @@ void
 AttributeDirectory::detach()
 {
     assert(empty());
-    std::unique_lock<std::mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
     _diskLayout.reset();
 }
 
@@ -238,7 +238,7 @@ AttributeDirectory::tryGetWriter()
 bool
 AttributeDirectory::empty() const
 {
-    std::unique_lock<std::mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
     return _snapInfo.snapshots().empty();
 }
 

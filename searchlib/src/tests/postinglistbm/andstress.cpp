@@ -280,7 +280,7 @@ AndStressMaster::Task *
 AndStressMaster::getTask()
 {
     Task *result = NULL;
-    std::unique_lock<std::mutex> taskGuard(_taskLock);
+    std::lock_guard<std::mutex> taskGuard(_taskLock);
     if (_taskIdx < _tasks.size()) {
         result = &_tasks[_taskIdx];
         ++_taskIdx;

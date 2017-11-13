@@ -367,7 +367,7 @@ int Fast_HTTPServer::Start(void)
     int retCode = FASTLIB_SUCCESS;
 
     {
-        std::unique_lock<std::mutex> runningGuard(_runningMutex);
+        std::lock_guard<std::mutex> runningGuard(_runningMutex);
         if (!_isRunning) {
             // Try listening
             retCode = Listen();
@@ -391,7 +391,7 @@ int Fast_HTTPServer::Start(void)
 void
 Fast_HTTPServer::Stop(void) {
     {
-        std::unique_lock<std::mutex> runningGuard(_runningMutex);
+        std::lock_guard<std::mutex> runningGuard(_runningMutex);
         _stopSignalled = true;
         if (_acceptThread) {
             _acceptThread->SetBreakFlag();
@@ -407,7 +407,7 @@ Fast_HTTPServer::Stop(void) {
 bool Fast_HTTPServer::StopSignalled(void)
 {
     bool retVal;
-    std::unique_lock<std::mutex> runningGuard(_runningMutex);
+    std::lock_guard<std::mutex> runningGuard(_runningMutex);
     retVal = _stopSignalled;
     return retVal;
 }
@@ -458,7 +458,7 @@ void Fast_HTTPServer::Run(FastOS_ThreadInterface *thisThread, void *params)
     Fast_Socket *mySocket;
 
     {
-        std::unique_lock<std::mutex> runningGuard(_runningMutex);
+        std::lock_guard<std::mutex> runningGuard(_runningMutex);
         _isRunning = true;
         _stopSignalled = false;
     }
@@ -516,7 +516,7 @@ void Fast_HTTPServer::Run(FastOS_ThreadInterface *thisThread, void *params)
         _serverSocket.SetSocketEvent(NULL);
     }
 
-    std::unique_lock<std::mutex> runningGuard(_runningMutex);
+    std::lock_guard<std::mutex> runningGuard(_runningMutex);
     _isRunning = false;
 }
 
@@ -1040,7 +1040,7 @@ void Fast_HTTPServer::HandleFileRequest(const string & url, Fast_HTTPConnection&
 
 void Fast_HTTPServer::SetBaseDir(const char *baseDir)
 {
-    std::unique_lock<std::mutex> runningGuard(_runningMutex);
+    std::lock_guard<std::mutex> runningGuard(_runningMutex);
     if (!_isRunning) {
         _baseDir = baseDir;
 
@@ -1178,14 +1178,14 @@ void Fast_HTTPServer::OutputNotFound(Fast_HTTPConnection& conn,
 void
 Fast_HTTPServer::AddConnection(Fast_HTTPConnection* connection)
 {
-    std::unique_lock<std::mutex> connectionGuard(_connectionLock);
+    std::lock_guard<std::mutex> connectionGuard(_connectionLock);
     _connections.Insert(connection);
 }
 
 void
 Fast_HTTPServer::RemoveConnection(Fast_HTTPConnection* connection)
 {
-    std::unique_lock<std::mutex> connectionGuard(_connectionLock);
+    std::lock_guard<std::mutex> connectionGuard(_connectionLock);
     _connections.RemoveElement(connection);
     _connectionCond.notify_one();
  }

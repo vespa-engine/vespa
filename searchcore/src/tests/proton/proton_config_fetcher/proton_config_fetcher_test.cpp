@@ -170,12 +170,12 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
         return getConfigured();
     }
     virtual void reconfigure(std::shared_ptr<ProtonConfigSnapshot> cfg) override {
-        std::unique_lock<std::mutex> guard(_mutex);
+        std::lock_guard<std::mutex> guard(_mutex);
         _config.set(cfg);
         _configured = true;
     }
     bool getConfigured() const {
-        std::unique_lock<std::mutex> guard(_mutex);
+        std::lock_guard<std::mutex> guard(_mutex);
         return _configured;
     }
     BootstrapConfig::SP getBootstrapConfig() {

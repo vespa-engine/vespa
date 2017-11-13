@@ -6,7 +6,6 @@
 
 namespace proton {
 
-using LockGuard = std::unique_lock<std::mutex>;
 PendingLidTracker::PendingLidTracker()
     : _mutex(),
       _cond(),
@@ -19,12 +18,12 @@ PendingLidTracker::~PendingLidTracker() {
 
 void
 PendingLidTracker::produce(uint32_t lid) {
-    LockGuard guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
     _pending[lid]++;
 }
 void
 PendingLidTracker::consume(uint32_t lid) {
-    LockGuard guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
     auto found = _pending.find(lid);
     assert (found != _pending.end());
     assert (found->second > 0);
@@ -38,7 +37,7 @@ PendingLidTracker::consume(uint32_t lid) {
 
 void
 PendingLidTracker::waitForConsumedLid(uint32_t lid) {
-    LockGuard guard(_mutex);
+    std::unique_lock<std::mutex> guard(_mutex);
     while (_pending.find(lid) != _pending.end()) {
         _cond.wait(guard);
     }
