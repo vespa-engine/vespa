@@ -405,7 +405,7 @@ BucketDBUpdater::mergeBucketInfoWithDatabase(
     std::sort(newList.begin(), newList.end(), sort_pred);
 
     BucketListMerger merger(newList, existing, req.timestamp);
-    updateDatabase(req.targetNode, merger);
+    updateDatabase(req.bucket.getBucketSpace(), req.targetNode, merger);
 }
 
 bool
@@ -460,15 +460,15 @@ BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::Buc
 }
 
 void
-BucketDBUpdater::updateDatabase(uint16_t node, BucketListMerger& merger)
+BucketDBUpdater::updateDatabase(document::BucketSpace bucketSpace, uint16_t node, BucketListMerger& merger)
 {
     for (const document::BucketId & bucketId : merger.getRemovedEntries()) {
-        document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+        document::Bucket bucket(bucketSpace, bucketId);
         _bucketSpaceComponent.removeNodeFromDB(bucket, node);
     }
 
     for (const BucketListMerger::BucketEntry& entry : merger.getAddedEntries()) {
-        document::Bucket bucket(BucketSpace::placeHolder(), entry.first);
+        document::Bucket bucket(bucketSpace, entry.first);
         _bucketSpaceComponent.updateBucketDatabase(
                 bucket,
                 BucketCopy(merger.getTimestamp(), node, entry.second),
