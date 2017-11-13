@@ -103,15 +103,7 @@ public class DeployTester {
     }
 
     public Tenant tenant() {
-        Tenant tenant = tenants.defaultTenant();
-        // TODO Retry since there is some code removing/updating the default tenant which should not be done.
-        while (tenant == null) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {}
-            tenant = tenants.defaultTenant();
-        }
-        return tenant;
+        return tenants.defaultTenant();
     }
     
     /** Create a model factory for the version of this source*/
