@@ -9,6 +9,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.AthenzInstanceProviderService.AthenzCertificateUpdater;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.CertificateSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.CertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentGenerator;
@@ -101,13 +102,16 @@ public class AthenzInstanceProviderServiceTest {
         ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         when(executor.awaitTermination(anyLong(), any())).thenReturn(true);
 
+        CertificateSigner certificateSigner = mock(CertificateSigner.class);
+
         InstanceValidator instanceValidator = mock(InstanceValidator.class);
         when(instanceValidator.isValidInstance(any())).thenReturn(true);
 
         IdentityDocumentGenerator identityDocumentGenerator = mock(IdentityDocumentGenerator.class);
 
         AthenzInstanceProviderService athenzInstanceProviderService = new AthenzInstanceProviderService(
-                config, executor, ZONE, sslContextFactory, instanceValidator, identityDocumentGenerator, certificateUpdater);
+                config, executor, ZONE, sslContextFactory, certificateSigner, instanceValidator,
+                identityDocumentGenerator, certificateUpdater);
 
         try (CloseableHttpClient client = createHttpClient(domain, service)) {
             assertFalse(getStatus(client));

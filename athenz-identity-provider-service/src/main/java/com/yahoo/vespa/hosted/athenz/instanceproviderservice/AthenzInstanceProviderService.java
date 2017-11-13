@@ -8,6 +8,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.CertificateSigner;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.CertificateSignerServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.CertificateClient;
@@ -64,6 +67,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                                           CertificateClient certificateClient,
                                           SslContextFactory sslContextFactory) {
         this(config, scheduler, zone, sslContextFactory,
+                new CertificateSigner(keyProvider, getZoneConfig(config, zone), HostName.getLocalhost()),
                 new InstanceValidator(keyProvider, superModelProvider),
                 new IdentityDocumentGenerator(config, getZoneConfig(config, zone), nodeRepository, zone, keyProvider),
                 new AthenzCertificateUpdater(
@@ -74,13 +78,15 @@ public class AthenzInstanceProviderService extends AbstractComponent {
                                   ScheduledExecutorService scheduler,
                                   Zone zone,
                                   SslContextFactory sslContextFactory,
+                                  CertificateSigner certificateSigner,
                                   InstanceValidator instanceValidator,
                                   IdentityDocumentGenerator identityDocumentGenerator,
                                   AthenzCertificateUpdater reloader) {
         // TODO: Enable for all systems. Currently enabled for CD system only
         if (SystemName.cd.equals(zone.system())) {
             this.scheduler = scheduler;
-            this.jetty = createJettyServer(config, sslContextFactory, instanceValidator, identityDocumentGenerator);
+            this.jetty = createJettyServer(config, sslContextFactory,
+                    certificateSigner, instanceValidator, identityDocumentGenerator);
 
             // TODO Configurable update frequency
             scheduler.scheduleAtFixedRate(reloader, 0, 1, TimeUnit.DAYS);
@@ -97,6 +103,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
     private static Server createJettyServer(AthenzProviderServiceConfig config,
                                             SslContextFactory sslContextFactory,
+                                            CertificateSigner certificateSigner,
                                             InstanceValidator instanceValidator,
                                             IdentityDocumentGenerator identityDocumentGenerator)  {
         Server server = new Server();
@@ -105,6 +112,10 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         server.addConnector(connector);
 
         ServletHandler handler = new ServletHandler();
+
+        CertificateSignerServlet certificateSignerServlet = new CertificateSignerServlet(certificateSigner);
+        handler.addServletWithMapping(new ServletHolder(certificateSignerServlet), config.apiPath() + "/sign");
+
         InstanceConfirmationServlet instanceConfirmationServlet = new InstanceConfirmationServlet(instanceValidator);
         handler.addServletWithMapping(new ServletHolder(instanceConfirmationServlet), config.apiPath() + "/instance");
 
