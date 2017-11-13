@@ -159,7 +159,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         Map<TenantName, Tenant> current = new LinkedHashMap<>(tenants);
         for (Map.Entry<TenantName, Tenant> entry : current.entrySet()) {
             TenantName tenant = entry.getKey();
-            if (!newTenants.contains(tenant)) {
+            if (!newTenants.contains(tenant) && !DEFAULT_TENANT.equals(tenant)) {
                 notifyRemovedTenant(tenant);
                 entry.getValue().close();
                 tenants.remove(tenant);
@@ -257,7 +257,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @return this Tenants instance
      */
     public synchronized Tenants deleteTenant(TenantName name) {
-        if (name.equals(TenantName.defaultName()))
+        if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         Tenant tenant = tenants.get(name);
         tenant.delete();
@@ -275,7 +275,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * @return the log string
      */
     public static String logPre(ApplicationId app) {
-        if (TenantName.defaultName().equals(app.tenant())) return "";
+        if (DEFAULT_TENANT.equals(app.tenant())) return "";
         StringBuilder ret = new StringBuilder()
             .append(logPre(app.tenant()))
             .append("app:"+app.application().value())
