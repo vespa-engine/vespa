@@ -6,30 +6,6 @@
 
 namespace storage::distributor {
 
-bool
-ClusterInformation::nodeInSameGroupAsSelf(uint16_t otherNode) const
-{
-    return (getDistribution().getNodeGraph().getGroupForNode(otherNode)
-            == getDistribution().getNodeGraph().getGroupForNode(getDistributorIndex()));
-}
-
-vespalib::string
-ClusterInformation::getDistributionHash() const
-{
-    return getDistribution().getNodeGraph().getDistributionConfigHash();
-}
-
-std::vector<uint16_t>
-ClusterInformation::getIdealStorageNodesForState(
-        const lib::ClusterState& clusterState,
-        const document::BucketId& bucketId) const
-{
-    return getDistribution().getIdealStorageNodes(
-            clusterState,
-            bucketId,
-            getStorageUpStates());
-}
-
 uint16_t
 ClusterInformation::getStorageNodeCount() const
 {

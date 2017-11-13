@@ -161,7 +161,6 @@ BucketDBUpdater::storageDistributionChanged(
 
     ClusterInformation::CSP clusterInfo(new SimpleClusterInformation(
             _bucketSpaceComponent.getIndex(),
-            distribution,
             _bucketSpaceComponent.getClusterState(),
             _bucketSpaceComponent.getDistributor().getStorageNodeUpStates()));
     _pendingClusterState = PendingClusterState::createForDistributionChange(
@@ -208,7 +207,6 @@ BucketDBUpdater::onSetSystemState(
     ClusterInformation::CSP clusterInfo(
             new SimpleClusterInformation(
                 _bucketSpaceComponent.getIndex(),
-                _bucketSpaceComponent.getDistribution(),
                 _bucketSpaceComponent.getClusterState(),
                 _bucketSpaceComponent.getDistributor()
                 .getStorageNodeUpStates()));

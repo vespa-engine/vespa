@@ -113,9 +113,6 @@ public:
     const lib::ClusterState& getPrevClusterState() const {
         return _prevClusterState;
     }
-    const lib::Distribution& getDistribution() const {
-        return _clusterInfo->getDistribution();
-    }
 
     /**
      * Returns the union set of the outdated node set provided at construction

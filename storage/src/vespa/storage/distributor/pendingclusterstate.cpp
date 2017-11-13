@@ -91,13 +91,15 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
 void
 PendingClusterState::logConstructionInformation() const
 {
+    const auto &distributorBucketSpace(_bucketSpaceRepo.get(BucketSpace::placeHolder()));
+    const auto &distribution(distributorBucketSpace.getDistribution());
     LOG(debug,
         "New PendingClusterState constructed with previous cluster "
         "state '%s', new cluster state '%s', distribution config "
         "hash: '%s'",
         _prevClusterState.toString().c_str(),
         _newClusterState.toString().c_str(),
-        _clusterInfo->getDistribution().getNodeGraph().getDistributionConfigHash().c_str());
+        distribution.getNodeGraph().getDistributionConfigHash().c_str());
 }
 
 bool
@@ -179,7 +181,9 @@ PendingClusterState::requestBucketInfoFromStorageNodesWithChangedState()
 void
 PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
-    vespalib::string distributionHash(_clusterInfo->getDistributionHash());
+    const auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpaceAndNode.bucketSpace));
+    const auto &distribution(distributorBucketSpace.getDistribution());
+    vespalib::string distributionHash(distribution.getNodeGraph().getDistributionConfigHash());
     LOG(debug,
         "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' "
         "and distribution hash '%s'",
