@@ -55,8 +55,8 @@ public class FileDownloaderTest {
 
             String fileReferenceString = "foo";
             String filename = "foo.jar";
-            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReferenceString);
             FileReference fileReference = new FileReference(fileReferenceString);
+            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
             writeFileReference(downloadDir, fileReferenceString, filename);
 
             // Check that we get correct path and content when asking for file reference
@@ -76,7 +76,7 @@ public class FileDownloaderTest {
             connection.setResponseHandler(new MockConnection.UnknownFileReferenceResponseHandler());
 
             FileReference fileReference = new FileReference("bar");
-            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference.value());
+            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
             assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
             // Verify download status when unable to download
@@ -87,7 +87,7 @@ public class FileDownloaderTest {
             // fileReference does not exist on disk, needs to be downloaded)
 
             FileReference fileReference = new FileReference("fileReference");
-            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference.value());
+            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
             assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
             // Verify download status
@@ -125,13 +125,24 @@ public class FileDownloaderTest {
         assertDownloadStatus(fileDownloader, bar, 0.0);
     }
 
+    @Test
+    public void receiveFile() throws IOException {
+        File downloadDir = Files.createTempDirectory("filedistribution").toFile();
+        FileDownloader fileDownloader = new FileDownloader(null, downloadDir, Duration.ofMillis(200));
+        FileReference foo = new FileReference("foo");
+        String filename = "foo.jar";
+        fileDownloader.receiveFile(foo, filename, Utf8.toBytes("content"));
+        File downloadedFile = new File(fileReferenceFullPath(downloadDir, foo), filename);
+        assertEquals("content", IOUtils.readFile(downloadedFile));
+    }
+
     private void writeFileReference(File dir, String fileReferenceString, String fileName) throws IOException {
         File file = new File(new File(dir, fileReferenceString), fileName);
         IOUtils.writeFile(file, "content", false);
     }
 
-    private File fileReferenceFullPath(File dir, String fileReferenceString) {
-        return new File(dir, fileReferenceString);
+    private File fileReferenceFullPath(File dir, FileReference fileReference) {
+        return new File(dir, fileReference.value());
     }
 
     private void assertDownloadStatus(FileDownloader fileDownloader, FileReference fileReference, double expectedDownloadStatus) {

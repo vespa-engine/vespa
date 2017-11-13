@@ -118,7 +118,8 @@ class FileReferenceDownloader {
     }
 
     private synchronized void completedDownloading(FileReference fileReference, File file) {
-        downloads.get(fileReference).future().set(Optional.of(file));
+        if (downloads.containsKey(fileReference))
+            downloads.get(fileReference).future().set(Optional.of(file));
         downloadStatus.put(fileReference, 100.0);
     }
 
