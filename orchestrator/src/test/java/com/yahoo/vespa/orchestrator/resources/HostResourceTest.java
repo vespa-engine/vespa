@@ -48,7 +48,6 @@ import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -358,17 +357,13 @@ public class HostResourceTest {
                 Collections.singletonList(serviceInstance));
         when(orchestrator.getHost(hostName)).thenReturn(host);
         GetHostResponse response = hostResource.getHost(hostName.s());
+        assertEquals("https://foo.com/bar", response.applicationUrl());
         assertEquals("hostname", response.hostname());
         assertEquals("ALLOWED_TO_BE_DOWN", response.state());
-
-        // See TODO in HostResource:
-        // assertEquals("https://foo.com/bar", response.applicationUrl());
-        // assertEquals(1, response.services().size());
-        // assertEquals("clusterId", response.services().get(0).clusterId);
-        // assertEquals("configId", response.services().get(0).configId);
-        // assertEquals("UP", response.services().get(0).serviceStatus);
-        // assertEquals("serviceType", response.services().get(0).serviceType);
-        assertNull(response.applicationUrl());
-        assertNull(response.services());
+        assertEquals(1, response.services().size());
+        assertEquals("clusterId", response.services().get(0).clusterId);
+        assertEquals("configId", response.services().get(0).configId);
+        assertEquals("UP", response.services().get(0).serviceStatus);
+        assertEquals("serviceType", response.services().get(0).serviceType);
     }
 }

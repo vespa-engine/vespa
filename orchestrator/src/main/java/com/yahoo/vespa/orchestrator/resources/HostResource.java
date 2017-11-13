@@ -68,13 +68,11 @@ public class HostResource implements HostApi {
                             serviceInstance.serviceStatus().name()))
                     .collect(Collectors.toList());
 
-            // TODO: Use applicationUri.toString() and hostServices once nobody is using <6.164
-            // TODO: Enable testing again in HostResourceTest.getHost_works
             return new GetHostResponse(
                     host.getHostName().s(),
                     host.getHostStatus().name(),
-                    null,
-                    null);
+                    applicationUri.toString(),
+                    hostServices);
         } catch (HostNameNotFoundException e) {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
