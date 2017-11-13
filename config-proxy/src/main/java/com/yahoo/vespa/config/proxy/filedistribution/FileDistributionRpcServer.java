@@ -138,11 +138,13 @@ public class FileDistributionRpcServer {
         String filename = req.parameters().get(1).asString();
         byte[] content = req.parameters().get(2).asData();
         long xxhash = req.parameters().get(3).asInt64();
-        int errorCode = req.parameters().get(3).asInt32();
-        String errorDescription = req.parameters().get(4).asString();
+        int errorCode = req.parameters().get(4).asInt32();
+        String errorDescription = req.parameters().get(5).asString();
 
         if (errorCode == 0) {
-            //downloader.receive(fileReference, filename, content);
+            // TODO: Remove when system test works
+            log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
+            downloader.receiveFile(fileReference, filename, content);
             req.returnValues().add(new Int32Value(0));
         } else {
             log.log(LogLevel.WARNING, "Receiving file reference '" + fileReference.value() + "' failed: " + errorDescription);
