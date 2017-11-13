@@ -21,6 +21,7 @@ vespa_define_module(
     src/tests/json
     src/tests/librarypool
     src/tests/memorydatastore
+    src/tests/metrics
     src/tests/objectdump
     src/tests/objects
     src/tests/objectselection
@@ -38,6 +39,7 @@ vespa_define_module(
     src/vespa/vespalib
     src/vespa/vespalib/data
     src/vespa/vespalib/encoding
+    src/vespa/vespalib/metrics
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
