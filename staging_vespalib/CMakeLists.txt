@@ -38,6 +38,7 @@ vespa_define_module(
     src/vespa/vespalib
     src/vespa/vespalib/data
     src/vespa/vespalib/encoding
+    src/vespa/vespalib/metrics
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
