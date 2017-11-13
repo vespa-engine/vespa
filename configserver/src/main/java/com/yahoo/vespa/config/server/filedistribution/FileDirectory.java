@@ -5,6 +5,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.io.IOUtils;
+import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -13,6 +14,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.logging.Logger;
 
 public class FileDirectory  {
@@ -88,22 +91,24 @@ public class FileDirectory  {
             throw new IllegalArgumentException(e);
         }
     }
+
     public FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
         try {
             File destinationDir = new File(root, reference.value());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
-                File tempDestinationDir = File.createTempFile("writing", null, root);
-                tempDestinationDir.mkdir();
-                File  destination = new File(tempDestinationDir, source.getName());
+                Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
+                File destination = new File(tempDestinationDir.toFile(), source.getName());
                 IOUtils.copy(source, destination);
                 if (!destinationDir.exists()) {
-                    if ( ! tempDestinationDir.renameTo(destinationDir)) {
-                        log.warning("Failed moving '" + tempDestinationDir.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
+                    if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
+                        log.warning("Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
                     }
+                } else {
+                    IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, 1);
                 }
-                IOUtils.recursiveDeleteDir(tempDestinationDir);
+                IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
             }
             return reference;
         } catch (IOException e) {

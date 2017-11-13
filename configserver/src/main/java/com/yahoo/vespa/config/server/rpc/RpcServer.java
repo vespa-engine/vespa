@@ -451,7 +451,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             fileBlob.parameters().add(new StringValue(status.getDescription()));
             target.invokeSync(fileBlob, 600);
             if (fileBlob.isError()) {
-                log.warning("Failed delivering reference '" + reference + "' with file '" + filename + "' to " +
+                log.warning("Failed delivering reference '" + reference.value() + "' with file '" + filename + "' to " +
                             target.toString() + " with error : '" + fileBlob.errorMessage() + "'.");
             }
         }
