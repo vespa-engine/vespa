@@ -69,26 +69,19 @@ public class DeployTester {
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
-        this(appPath, modelFactories, new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                     .configServerDBDir(Files.createTempDir()
-                                                                                             .getAbsolutePath())
-                                                                     .configDefinitionsDir(Files.createTempDir()
-                                                                                                .getAbsolutePath())),
+        this(appPath, modelFactories,
+             new ConfigserverConfig(new ConfigserverConfig.Builder()
+                     .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                     .configDefinitionsDir(Files.createTempDir().getAbsolutePath())),
              Clock.systemUTC());
     }
 
     public DeployTester(String appPath, ConfigserverConfig configserverConfig) {
-        this(appPath,
-             Collections.singletonList(createModelFactory(Clock.systemUTC())),
-             configserverConfig,
-             Clock.systemUTC());
+        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
     }
 
     public DeployTester(String appPath, ConfigserverConfig configserverConfig, Clock clock) {
-        this(appPath,
-             Collections.singletonList(createModelFactory(clock)),
-             configserverConfig,
-             clock);
+        this(appPath, Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
@@ -106,9 +99,7 @@ public class DeployTester {
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        applicationRepository = new ApplicationRepository(tenants,
-                                                          createHostProvisioner(),
-                                                          clock);
+        applicationRepository = new ApplicationRepository(tenants, createHostProvisioner(), clock);
     }
 
     public Tenant tenant() {
