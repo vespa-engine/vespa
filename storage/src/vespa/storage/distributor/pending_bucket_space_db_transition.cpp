@@ -3,6 +3,7 @@
 #include "pending_bucket_space_db_transition.h"
 #include "clusterinformation.h"
 #include "pendingclusterstate.h"
+#include "distributor_bucket_space.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <algorithm>
 
@@ -11,7 +12,14 @@ LOG_SETUP(".pendingbucketspacedbtransition");
 
 namespace storage::distributor {
 
+using lib::Node;
+using lib::NodeType;
+using lib::NodeState;
+
 PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
+                                                               DistributorBucketSpace &distributorBucketSpace,
+                                                               bool distributionChanged,
+                                                               const OutdatedNodes &outdatedNodes,
                                                                std::shared_ptr<const ClusterInformation> clusterInfo,
                                                                const lib::ClusterState &newClusterState,
                                                                api::Timestamp creationTimestamp)
@@ -20,11 +28,24 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _removedBuckets(),
       _missingEntries(),
       _clusterInfo(std::move(clusterInfo)),
-      _outdatedNodes(pendingClusterState.getOutdatedNodeSet()),
+      _outdatedNodes(newClusterState.getNodeCount(NodeType::STORAGE)),
+      _prevClusterState(_clusterInfo->getClusterState()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
-      _pendingClusterState(pendingClusterState)
+      _pendingClusterState(pendingClusterState),
+      _distributorBucketSpace(distributorBucketSpace),
+      _distributorIndex(_clusterInfo->getDistributorIndex()),
+      _bucketOwnershipTransfer(distributionChanged)
 {
+    if (distributorChanged()) {
+        _bucketOwnershipTransfer = true;
+    }
+    if (_bucketOwnershipTransfer) {
+        markAllAvailableNodesAsRequiringRequest();
+    } else {
+        updateSetOfNodesThatAreOutdated();
+        addAdditionalNodesToOutdatedSet(outdatedNodes);
+    }
 }
 
 PendingBucketSpaceDbTransition::~PendingBucketSpaceDbTransition()
@@ -67,10 +88,12 @@ PendingBucketSpaceDbTransition::insertInfo(BucketDatabase::Entry& info, const Ra
     std::vector<BucketCopy> copiesToAddOrUpdate(
             getCopiesThatAreNewOrAltered(info, range));
 
+    const auto &dist(_distributorBucketSpace.getDistribution());
     std::vector<uint16_t> order(
-            _clusterInfo->getIdealStorageNodesForState(
+            dist.getIdealStorageNodes(
                     _newClusterState,
-                    _entries[range.first].bucketId));
+                    _entries[range.first].bucketId,
+                    _clusterInfo->getStorageUpStates()));
     info->addNodes(copiesToAddOrUpdate, order, TrustedUpdate::DEFER);
 
     LOG_BUCKET_OPERATION_NO_LOCK(
@@ -192,8 +215,9 @@ PendingBucketSpaceDbTransition::addToBucketDB(BucketDatabase& db, const Range& r
 }
 
 void
-PendingBucketSpaceDbTransition::mergeInto(BucketDatabase& db)
+PendingBucketSpaceDbTransition::mergeIntoBucketDatabase()
 {
+    BucketDatabase &db(_distributorBucketSpace.getBucketDatabase());
     std::sort(_entries.begin(), _entries.end());
 
     db.forEach(*this);
@@ -221,6 +245,170 @@ PendingBucketSpaceDbTransition::onRequestBucketInfoReply(const api::RequestBucke
                               BucketCopy(_creationTimestamp,
                                          node,
                                          entry._info));
+    }
+}
+
+bool
+PendingBucketSpaceDbTransition::distributorChanged()
+{
+    const auto &oldState(_prevClusterState);
+    const auto &newState(_newClusterState);
+    if (newState.getDistributionBitCount() != oldState.getDistributionBitCount()) {
+        return true;
+    }
+
+    Node myNode(NodeType::DISTRIBUTOR, _distributorIndex);
+    if (oldState.getNodeState(myNode).getState() == lib::State::DOWN) {
+        return true;
+    }
+
+    uint16_t oldCount = oldState.getNodeCount(NodeType::DISTRIBUTOR);
+    uint16_t newCount = newState.getNodeCount(NodeType::DISTRIBUTOR);
+
+    uint16_t maxCount = std::max(oldCount, newCount);
+
+    for (uint16_t i = 0; i < maxCount; ++i) {
+        Node node(NodeType::DISTRIBUTOR, i);
+
+        const lib::State& old(oldState.getNodeState(node).getState());
+        const lib::State& nw(newState.getNodeState(node).getState());
+
+        if (nodeWasUpButNowIsDown(old, nw)) {
+            if (nodeInSameGroupAsSelf(i) ||
+                nodeNeedsOwnershipTransferFromGroupDown(i, newState)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool
+PendingBucketSpaceDbTransition::nodeWasUpButNowIsDown(const lib::State& old,
+                                                      const lib::State& nw)
+{
+    return (old.oneOf("uimr") && !nw.oneOf("uimr"));
+}
+
+bool
+PendingBucketSpaceDbTransition::nodeInSameGroupAsSelf(uint16_t index) const
+{
+    const auto &dist(_distributorBucketSpace.getDistribution());
+    if (dist.getNodeGraph().getGroupForNode(index) ==
+        dist.getNodeGraph().getGroupForNode(_distributorIndex)) {
+        LOG(debug,
+            "Distributor %d state changed, need to request data from all "
+            "storage nodes",
+            index);
+        return true;
+    } else {
+        LOG(debug,
+            "Distributor %d state changed but unrelated to my group.",
+            index);
+        return false;
+    }
+}
+
+bool
+PendingBucketSpaceDbTransition::nodeNeedsOwnershipTransferFromGroupDown(
+        uint16_t nodeIndex,
+        const lib::ClusterState& state) const
+{
+    const auto &dist(_distributorBucketSpace.getDistribution());
+    if (!dist.distributorAutoOwnershipTransferOnWholeGroupDown()) {
+        return false; // Not doing anything for downed groups.
+    }
+    const lib::Group* group(dist.getNodeGraph().getGroupForNode(nodeIndex));
+    // If there is no group information associated with the node (because the
+    // group has changed or the node has been removed from config), we must
+    // also invoke ownership transfer of buckets.
+    if (group == nullptr
+        || lib::Distribution::allDistributorsDown(*group, state))
+    {
+        LOG(debug,
+            "Distributor %u state changed and is in a "
+            "group that now has no distributors remaining",
+            nodeIndex);
+        return true;
+    }
+    return false;
+}
+
+uint16_t
+PendingBucketSpaceDbTransition::newStateStorageNodeCount() const
+{
+    return _newClusterState.getNodeCount(lib::NodeType::STORAGE);
+}
+
+bool
+PendingBucketSpaceDbTransition::storageNodeMayHaveLostData(uint16_t index)
+{
+    Node node(NodeType::STORAGE, index);
+    NodeState newState = _newClusterState.getNodeState(node);
+    NodeState oldState = _prevClusterState.getNodeState(node);
+
+    return (newState.getStartTimestamp() > oldState.getStartTimestamp());
+}
+
+void
+PendingBucketSpaceDbTransition::updateSetOfNodesThatAreOutdated()
+{
+    const uint16_t nodeCount(newStateStorageNodeCount());
+    for (uint16_t index = 0; index < nodeCount; ++index) {
+        if (storageNodeMayHaveLostData(index) || storageNodeChanged(index)) {
+            _outdatedNodes.insert(index);
+        }
+    }
+}
+
+bool
+PendingBucketSpaceDbTransition::storageNodeChanged(uint16_t index) {
+    Node node(NodeType::STORAGE, index);
+    NodeState newState = _newClusterState.getNodeState(node);
+    NodeState oldNodeState = _prevClusterState.getNodeState(node);
+
+    // similarTo() also covers disk states.
+    if (!(oldNodeState.similarTo(newState))) {
+        LOG(debug,
+                "State for storage node %d has changed from '%s' to '%s', "
+                "updating bucket information",
+                index,
+                oldNodeState.toString().c_str(),
+                newState.toString().c_str());
+        return true;
+    }
+
+    return false;
+}
+
+bool
+PendingBucketSpaceDbTransition::storageNodeUpInNewState(uint16_t node) const
+{
+    return _newClusterState.getNodeState(Node(NodeType::STORAGE, node))
+        .getState().oneOf(_clusterInfo->getStorageUpStates());
+}
+
+void
+PendingBucketSpaceDbTransition::markAllAvailableNodesAsRequiringRequest()
+{
+    const uint16_t nodeCount(newStateStorageNodeCount());
+    for (uint16_t i = 0; i < nodeCount; ++i) {
+        if (storageNodeUpInNewState(i)) {
+            _outdatedNodes.insert(i);
+        }
+    }
+}
+
+void
+PendingBucketSpaceDbTransition::addAdditionalNodesToOutdatedSet(
+        const std::unordered_set<uint16_t>& nodes)
+{
+    const uint16_t nodeCount(newStateStorageNodeCount());
+    for (uint16_t node : nodes) {
+        if (node < nodeCount) {
+            _outdatedNodes.insert(node);
+        }
     }
 }
 
