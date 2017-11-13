@@ -880,7 +880,7 @@ BucketDBUpdaterTest::testInitializingWhileRecheck()
     CPPUNIT_ASSERT_EQUAL(size_t(2), _sender.commands.size());
     CPPUNIT_ASSERT_EQUAL(size_t(0), _senderDown.commands.size());
 
-    getBucketDBUpdater().recheckBucketInfo(1, document::BucketId(16, 3));
+    getBucketDBUpdater().recheckBucketInfo(1, makeDocumentBucket(document::BucketId(16, 3)));
 
     for (int i=0; i<2; i++) {
         fakeBucketReply(systemState,
@@ -1010,7 +1010,7 @@ BucketDBUpdaterTest::testRecheckNodeWithFailure()
 
     _sender.clear();
 
-    getBucketDBUpdater().recheckBucketInfo(1, document::BucketId(16, 3));
+    getBucketDBUpdater().recheckBucketInfo(1, makeDocumentBucket(document::BucketId(16, 3)));
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
 
@@ -1060,7 +1060,7 @@ BucketDBUpdaterTest::testRecheckNode()
 
     _sender.clear();
 
-    getBucketDBUpdater().recheckBucketInfo(1, document::BucketId(16, 3));
+    getBucketDBUpdater().recheckBucketInfo(1, makeDocumentBucket(document::BucketId(16, 3)));
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
 
@@ -1954,7 +1954,7 @@ BucketDBUpdaterTest::testNoDbResurrectionForBucketNotOwnedInCurrentState()
     }
     _sender.clear();
 
-    getBucketDBUpdater().recheckBucketInfo(0, bucket);
+    getBucketDBUpdater().recheckBucketInfo(0, makeDocumentBucket(bucket));
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
     std::shared_ptr<api::RequestBucketInfoCommand> rbi(
@@ -1986,7 +1986,7 @@ BucketDBUpdaterTest::testNoDbResurrectionForBucketNotOwnedInPendingState()
     }
     _sender.clear();
 
-    getBucketDBUpdater().recheckBucketInfo(0, bucket);
+    getBucketDBUpdater().recheckBucketInfo(0, makeDocumentBucket(bucket));
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
     std::shared_ptr<api::RequestBucketInfoCommand> rbi(
@@ -1999,7 +1999,7 @@ BucketDBUpdaterTest::testNoDbResurrectionForBucketNotOwnedInPendingState()
     CPPUNIT_ASSERT(getBucketDBUpdater().getDistributorComponent()
                    .ownsBucketInCurrentState(makeDocumentBucket(bucket)));
     CPPUNIT_ASSERT(!getBucketDBUpdater()
-            .checkOwnershipInPendingState(bucket).isOwned());
+            .checkOwnershipInPendingState(makeDocumentBucket(bucket)).isOwned());
 
     sendFakeReplyForSingleBucketRequest(*rbi);
 

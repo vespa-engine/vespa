@@ -556,7 +556,7 @@ Distributor_Test::testNoDbResurrectionForBucketNotOwnedInPendingState()
 
     document::BucketId nonOwnedBucket(16, 3);
     CPPUNIT_ASSERT(!getBucketDBUpdater()
-                   .checkOwnershipInPendingState(nonOwnedBucket).isOwned());
+                   .checkOwnershipInPendingState(makeDocumentBucket(nonOwnedBucket)).isOwned());
     CPPUNIT_ASSERT(!getBucketDBUpdater().getDistributorComponent()
                    .checkOwnershipInPendingAndCurrentState(makeDocumentBucket(nonOwnedBucket))
                    .isOwned());

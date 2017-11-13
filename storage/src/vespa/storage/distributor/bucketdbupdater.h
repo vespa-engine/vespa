@@ -8,7 +8,7 @@
 #include "pendingclusterstate.h"
 #include "distributor_bucket_space_component.h"
 #include "outdated_nodes_map.h"
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -38,8 +38,8 @@ public:
     ~BucketDBUpdater();
 
     void flush();
-    BucketOwnership checkOwnershipInPendingState(const document::BucketId&) const;
-    void recheckBucketInfo(uint32_t nodeIdx, const document::BucketId& bid);
+    BucketOwnership checkOwnershipInPendingState(const document::Bucket&) const;
+    void recheckBucketInfo(uint32_t nodeIdx, const document::Bucket& bucket);
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
     bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
@@ -84,9 +84,9 @@ private:
 
     struct BucketRequest {
         BucketRequest()
-            : targetNode(0), bucket(0), timestamp(0) {};
+            : targetNode(0), bucket(), timestamp(0) {};
 
-        BucketRequest(uint16_t t, uint64_t currentTime, const document::BucketId& b,
+        BucketRequest(uint16_t t, uint64_t currentTime, const document::Bucket& b,
                       const std::shared_ptr<MergeReplyGuard>& guard)
             : targetNode(t),
               bucket(b),
@@ -94,7 +94,7 @@ private:
               _mergeReplyGuard(guard) {};
 
         uint16_t targetNode;
-        document::BucketId bucket;
+        document::Bucket bucket;
         uint64_t timestamp;
 
         std::shared_ptr<MergeReplyGuard> _mergeReplyGuard;
@@ -102,11 +102,11 @@ private:
 
     struct EnqueuedBucketRecheck {
         uint16_t node;
-        document::BucketId bucket;
+        document::Bucket bucket;
 
         EnqueuedBucketRecheck() : node(0), bucket() {}
 
-        EnqueuedBucketRecheck(uint16_t _node, const document::BucketId& _bucket)
+        EnqueuedBucketRecheck(uint16_t _node, const document::Bucket& _bucket)
           : node(_node),
             bucket(_bucket)
         {}
@@ -124,7 +124,6 @@ private:
 
     bool hasPendingClusterState() const;
     bool pendingClusterStateAccepted(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
-    bool bucketOwnedAccordingToPendingState(const document::BucketId& bucketId) const;
     bool processSingleBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
     void handleSingleBucketInfoFailure(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                        const BucketRequest& req);
@@ -134,7 +133,7 @@ private:
                                      const BucketRequest& req);
     void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                        uint16_t targetNode, BucketListMerger::BucketList& newList);
-    void sendRequestBucketInfo(uint16_t node, const document::BucketId& bucket,
+    void sendRequestBucketInfo(uint16_t node, const document::Bucket& bucket,
                                const std::shared_ptr<MergeReplyGuard>& mergeReply);
     void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
                               BucketListMerger::BucketList& existing) const;
@@ -146,7 +145,7 @@ private:
      * in bucketId, or that bucketId is contained in, that have copies
      * on the given node.
      */
-    void findRelatedBucketsInDatabase(uint16_t node, const document::BucketId& bucketId,
+    void findRelatedBucketsInDatabase(uint16_t node, const document::Bucket& bucket,
                                       BucketListMerger::BucketList& existing);
 
     /**
@@ -163,7 +162,7 @@ private:
 
     void enableCurrentClusterStateInDistributor();
     void addCurrentStateToClusterStateHistory();
-    void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::BucketId&);
+    void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::Bucket&);
     void sendAllQueuedBucketRechecks();
 
     friend class BucketDBUpdater_Test;

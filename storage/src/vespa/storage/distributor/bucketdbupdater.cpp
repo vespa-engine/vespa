@@ -2,6 +2,7 @@
 
 #include "bucketdbupdater.h"
 #include "distributor.h"
+#include "distributor_bucket_space_repo.h"
 #include "simpleclusterinformation.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -59,13 +60,11 @@ BucketDBUpdater::hasPendingClusterState() const
 }
 
 BucketOwnership
-BucketDBUpdater::checkOwnershipInPendingState(const document::BucketId& b) const
+BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
 {
     if (hasPendingClusterState()) {
         const lib::ClusterState& state(_pendingClusterState->getNewClusterState());
-        const lib::Distribution& distribution(_pendingClusterState->getDistribution());
-        document::Bucket bucket(BucketSpace::placeHolder(), b);
-        if (!_bucketSpaceComponent.ownsBucketInState(distribution, state, bucket)) {
+        if (!_bucketSpaceComponent.ownsBucketInState(state, b)) {
             return BucketOwnership::createNotOwnedInState(state);
         }
     }
@@ -75,7 +74,7 @@ BucketDBUpdater::checkOwnershipInPendingState(const document::BucketId& b) const
 void
 BucketDBUpdater::sendRequestBucketInfo(
         uint16_t node,
-        const document::BucketId& bucket,
+        const document::Bucket& bucket,
         const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard)
 {
     if (!_bucketSpaceComponent.storageNodeIsUp(node)) {
@@ -83,10 +82,10 @@ BucketDBUpdater::sendRequestBucketInfo(
     }
 
     std::vector<document::BucketId> buckets;
-    buckets.push_back(bucket);
+    buckets.push_back(bucket.getBucketId());
 
     std::shared_ptr<api::RequestBucketInfoCommand> msg(
-            new api::RequestBucketInfoCommand(BucketSpace::placeHolder(), buckets));
+            new api::RequestBucketInfoCommand(bucket.getBucketSpace(), buckets));
 
     LOG(debug,
         "Sending request bucket info command %lu for "
@@ -106,9 +105,9 @@ BucketDBUpdater::sendRequestBucketInfo(
 
 void
 BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
-                                   const document::BucketId& bid)
+                                   const document::Bucket& bucket)
 {
-    sendRequestBucketInfo(nodeIdx, bid, std::shared_ptr<MergeReplyGuard>());
+    sendRequestBucketInfo(nodeIdx, bucket, std::shared_ptr<MergeReplyGuard>());
 }
 
 void
@@ -248,7 +247,7 @@ BucketDBUpdater::onMergeBucketReply(
    // bucket again to make sure it's ok.
    for (uint32_t i = 0; i < reply->getNodes().size(); i++) {
        sendRequestBucketInfo(reply->getNodes()[i].index,
-                             reply->getBucketId(),
+                             reply->getBucket(),
                              replyGuard);
    }
 
@@ -258,7 +257,7 @@ BucketDBUpdater::onMergeBucketReply(
 void
 BucketDBUpdater::enqueueRecheckUntilPendingStateEnabled(
         uint16_t node,
-        const document::BucketId& bucket)
+        const document::Bucket& bucket)
 {
     LOG(spam,
         "DB updater has a pending cluster state, enqueuing recheck "
@@ -305,10 +304,10 @@ BucketDBUpdater::onNotifyBucketChange(
 
     if (hasPendingClusterState()) {
         enqueueRecheckUntilPendingStateEnabled(cmd->getSourceIndex(),
-                                               cmd->getBucketId());
+                                               cmd->getBucket());
     } else {
         sendRequestBucketInfo(cmd->getSourceIndex(),
-                              cmd->getBucketId(),
+                              cmd->getBucket(),
                               std::shared_ptr<MergeReplyGuard>());
     }
 
@@ -357,7 +356,7 @@ BucketDBUpdater::handleSingleBucketInfoFailure(
     LOG(debug, "Request bucket info failed towards node %d: error was %s",
         req.targetNode, repl->getResult().toString().c_str());
 
-    if (req.bucket != document::BucketId(0)) {
+    if (req.bucket.getBucketId() != document::BucketId(0)) {
         framework::MilliSecTime sendTime(_bucketSpaceComponent.getClock());
         sendTime += framework::MilliSecTime(100);
         _delayedRequests.emplace_back(sendTime, req);
@@ -451,11 +450,12 @@ BucketDBUpdater::addBucketInfoForNode(
 }
 
 void
-BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::BucketId& bucketId,
+BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::Bucket& bucket,
                                               BucketListMerger::BucketList& existing)
 {
+    auto &distributorBucketSpace(_bucketSpaceComponent.getBucketSpaceRepo().get(bucket.getBucketSpace()));
     std::vector<BucketDatabase::Entry> entries;
-    _bucketSpaceComponent.getBucketDatabase().getAll(bucketId, entries);
+                                 distributorBucketSpace.getBucketDatabase().getAll(bucket.getBucketId(), entries);
 
     for (const BucketDatabase::Entry & entry : entries) {
         addBucketInfoForNode(entry, node, existing);
@@ -585,10 +585,10 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
     {
         xos << XmlTag("storagenode")
             << XmlAttribute("index", entry.second.targetNode);
-        if (entry.second.bucket.getRawId() == 0) {
+        if (entry.second.bucket.getBucketId().getRawId() == 0) {
             xos << XmlAttribute("bucket", ALL);
         } else {
-            xos << XmlAttribute("bucket", entry.second.bucket.getId(), XmlAttribute::HEX);
+            xos << XmlAttribute("bucket", entry.second.bucket.getBucketId().getId(), XmlAttribute::HEX);
         }
         xos << XmlAttribute("sendtimestamp", entry.second.timestamp)
             << XmlEndTag();
