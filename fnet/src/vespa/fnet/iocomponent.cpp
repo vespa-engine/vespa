@@ -48,7 +48,7 @@ FNET_IOComponent::UpdateTimeOut() {
 void
 FNET_IOComponent::AddRef()
 {
-    std::unique_lock<std::mutex> guard(_ioc_lock);
+    std::lock_guard<std::mutex> guard(_ioc_lock);
     assert(_ioc_refcnt > 0);
     _ioc_refcnt++;
 }
@@ -66,7 +66,7 @@ void
 FNET_IOComponent::SubRef()
 {
     {
-        std::unique_lock<std::mutex> guard(_ioc_lock);
+        std::lock_guard<std::mutex> guard(_ioc_lock);
         assert(_ioc_refcnt > 0);
         if (--_ioc_refcnt > 0) {
             return;

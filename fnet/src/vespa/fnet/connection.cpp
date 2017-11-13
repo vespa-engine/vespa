@@ -45,7 +45,7 @@ public:
 void
 SyncPacket::Free()
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _done = true;
     if (_waiting) {
         _cond.notify_one();
@@ -560,7 +560,7 @@ FNET_Connection::OpenChannel()
 
     uint32_t chid;
     {
-        std::unique_lock<std::mutex> guard(_ioc_lock);
+        std::lock_guard<std::mutex> guard(_ioc_lock);
         chid = GetNextID();
         AddRef_NoLock();
     }
@@ -652,7 +652,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
 uint32_t
 FNET_Connection::GetQueueLen()
 {
-    std::unique_lock<std::mutex> guard(_ioc_lock);
+    std::lock_guard<std::mutex> guard(_ioc_lock);
     return _queue.GetPacketCnt_NoLock() + _myQueue.GetPacketCnt_NoLock();
 }
 
@@ -710,7 +710,7 @@ FNET_Connection::HandleReadEvent()
 bool
 FNET_Connection::writePendingAfterConnect()
 {
-    std::unique_lock<std::mutex> guard(_ioc_lock);
+    std::lock_guard<std::mutex> guard(_ioc_lock);
     _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
     LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
         GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
