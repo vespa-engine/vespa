@@ -70,7 +70,7 @@ public class FileServer {
     private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
         // TODO remove once verified in system tests.
-        log.info("Start serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
+        log.info("Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         byte [] blob = new byte [0];
         boolean success = false;
         String errorDescription = "OK";
