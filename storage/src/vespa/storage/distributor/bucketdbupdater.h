@@ -46,7 +46,7 @@ public:
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
     void resendDelayedMessages();
-    void storageDistributionChanged(const lib::Distribution&);
+    void storageDistributionChanged();
 
     vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const;
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
@@ -156,7 +156,7 @@ private:
 
     void updateState(const lib::ClusterState& oldState, const lib::ClusterState& newState);
 
-    void removeSuperfluousBuckets(const lib::Distribution& newDistribution, const lib::ClusterState& newState);
+    void removeSuperfluousBuckets(const lib::ClusterState& newState);
 
     void replyToPreviousPendingClusterStateIfAny();
 

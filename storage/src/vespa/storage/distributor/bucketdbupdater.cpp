@@ -112,23 +112,26 @@ BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
 
 void
 BucketDBUpdater::removeSuperfluousBuckets(
-        const lib::Distribution& newDistribution,
         const lib::ClusterState& newState)
 {
-    // Remove all buckets not belonging to this distributor, or
-    // being on storage nodes that are no longer up.
-    NodeRemover proc(
-            _bucketSpaceComponent.getClusterState(),
-            newState,
-            _bucketSpaceComponent.getBucketIdFactory(),
-            _bucketSpaceComponent.getIndex(),
-            newDistribution,
-            _bucketSpaceComponent.getDistributor().getStorageNodeUpStates());
+    for (auto &elem : _bucketSpaceComponent.getBucketSpaceRepo()) {
+        const auto &newDistribution(elem.second->getDistribution());
+        auto &bucketDb(elem.second->getBucketDatabase());
 
-    _bucketSpaceComponent.getBucketDatabase().forEach(proc);
+        // Remove all buckets not belonging to this distributor, or
+        // being on storage nodes that are no longer up.
+        NodeRemover proc(
+                _bucketSpaceComponent.getClusterState(),
+                newState,
+                _bucketSpaceComponent.getBucketIdFactory(),
+                _bucketSpaceComponent.getIndex(),
+                newDistribution,
+                _bucketSpaceComponent.getDistributor().getStorageNodeUpStates());
+        bucketDb.forEach(proc);
 
-    for (const auto & entry :proc.getBucketsToRemove()) {
-        _bucketSpaceComponent.getBucketDatabase().remove(entry);
+        for (const auto & entry :proc.getBucketsToRemove()) {
+            bucketDb.remove(entry);
+        }
     }
 }
 
@@ -151,13 +154,11 @@ BucketDBUpdater::completeTransitionTimer()
 }
 
 void
-BucketDBUpdater::storageDistributionChanged(
-        const lib::Distribution& distribution)
+BucketDBUpdater::storageDistributionChanged()
 {
     ensureTransitionTimerStarted();
 
-    removeSuperfluousBuckets(distribution,
-            _bucketSpaceComponent.getClusterState());
+    removeSuperfluousBuckets(_bucketSpaceComponent.getClusterState());
 
     ClusterInformation::CSP clusterInfo(new SimpleClusterInformation(
             _bucketSpaceComponent.getIndex(),
@@ -199,9 +200,7 @@ BucketDBUpdater::onSetSystemState(
     }
     ensureTransitionTimerStarted();
 
-    removeSuperfluousBuckets(
-            _bucketSpaceComponent.getDistribution(),
-            cmd->getSystemState());
+    removeSuperfluousBuckets(cmd->getSystemState());
     replyToPreviousPendingClusterStateIfAny();
 
     ClusterInformation::CSP clusterInfo(

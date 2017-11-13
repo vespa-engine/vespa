@@ -553,7 +553,7 @@ Distributor::enableNextDistribution()
         _distribution = _nextDistribution;
         propagateDefaultDistribution(_distribution);
         _nextDistribution = std::shared_ptr<lib::Distribution>();
-        _bucketDBUpdater.storageDistributionChanged(getDistribution());
+        _bucketDBUpdater.storageDistributionChanged();
     }
 }
 
