@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.yahoo.vespa.hosted.controller.deployment.MockBuildService.JobStatus.QUEUED;
-import static com.yahoo.vespa.hosted.controller.deployment.MockBuildService.JobStatus.RUNNING;
+import static com.yahoo.vespa.hosted.controller.deployment.MockBuildService.JobRunStatus.QUEUED;
+import static com.yahoo.vespa.hosted.controller.deployment.MockBuildService.JobRunStatus.RUNNING;
 
 /**
  * Simulates polling of build jobs from the controller and triggering and execution of
@@ -30,7 +30,7 @@ public class MockBuildService implements BuildService {
     private final ControllerTester tester;
     private final MockTimeline timeline;
     private final Map<String, Job> jobs;
-    private final Map<String, JobStatus> jobStatuses;
+    private final Map<String, JobRunStatus> jobStatuses;
     private Version version;
 
     public MockBuildService(ControllerTester tester, MockTimeline timeline) {
@@ -72,12 +72,6 @@ public class MockBuildService implements BuildService {
         System.err.println(timeline.now() + ": Triggered " + key + "; it will finish at " + timeline.now().plus(job.duration));
     }
 
-    public void incrementVersion() {
-        version = new Version(version.getMajor(), version.getMinor() + 1);
-    }
-
-    public Version version() { return version; }
-
     /** Add @job to the set of @Job objects we have information about. */
     private void add(Job job) {
         jobs.put(job.buildJob().toString(), job);
@@ -88,9 +82,10 @@ public class MockBuildService implements BuildService {
         project.jobs.values().forEach(this::add);
     }
 
+    // TODO: Replace with something that relies on ApplicationPackage.
     /** Make a @Project with the given settings, modify it if desired, and @add() it its jobs to the pool of known ones. */
-    public Project project(ApplicationId applicationId, Long projectId, Duration duration, Supplier<Boolean> success) {
-        return new Project(applicationId, projectId, duration, success);
+    public Project project(ApplicationId applicationId, Long projectId, Duration duration, Supplier<JobError> error) {
+        return new Project(applicationId, projectId, duration, error);
     }
 
 
@@ -99,31 +94,27 @@ public class MockBuildService implements BuildService {
 
         private final ApplicationId applicationId;
         private final Long projectId;
-        private final Duration duration;
-        private final Supplier<Boolean> success;
         private final Map<JobType, Job> jobs;
 
-        private Project(ApplicationId applicationId, Long projectId, Duration duration, Supplier<Boolean> success) {
+        private Project(ApplicationId applicationId, Long projectId, Duration duration, Supplier<JobError> error) {
             this.applicationId = applicationId;
             this.projectId = projectId;
-            this.duration = duration;
-            this.success = success;
 
             jobs = new EnumMap<>(JobType.class);
 
             for (JobType jobType : JobType.values())
-                jobs.put(jobType, new Job(applicationId, projectId, jobType, duration, success));
+                jobs.put(jobType, new Job(applicationId, projectId, jobType, duration, error));
         }
 
         /** Set @duration for @jobType of this @Project. */
         public Project set(Duration duration, JobType jobType) {
-            jobs.compute(jobType, (type, job) -> new Job(applicationId, projectId, jobType, duration, job.success));
+            jobs.compute(jobType, (__, job) -> new Job(applicationId, projectId, jobType, duration, job.error));
             return this;
         }
 
         /** Set @success for @jobType of this @Project. */
-        public Project set(Supplier<Boolean> success, JobType jobType) {
-            jobs.compute(jobType, (type, job) -> new Job(applicationId, projectId, jobType, job.duration, success));
+        public Project set(Supplier<JobError> error, JobType jobType) {
+            jobs.compute(jobType, (__, job) -> new Job(applicationId, projectId, jobType, job.duration, error));
             return this;
         }
 
@@ -142,35 +133,35 @@ public class MockBuildService implements BuildService {
         private final Long projectId;
         private final JobType jobType;
         private final Duration duration;
-        private final Supplier<Boolean> success;
+        private final Supplier<JobError> error;
 
-        private Job(ApplicationId applicationId, Long projectId, JobType jobType, Duration duration, Supplier<Boolean> success) {
+        private long buildNumber = 0;
+
+        private Job(ApplicationId applicationId, Long projectId, JobType jobType, Duration duration, Supplier<JobError> error) {
             this.applicationId = applicationId;
             this.projectId = projectId;
             this.jobType = jobType;
             this.duration = duration;
-            this.success = success;
+            this.error = error;
         }
 
         private void outcome() {
-            Boolean success = this.success.get();
-            System.err.println(timeline.now() + ": Job " + projectId + ":" + jobType + " reports " + success);
-            if (success != null)
-                tester.controller().applications().notifyJobCompletion(
-                        new DeploymentJobs.JobReport(
-                                applicationId,
-                                jobType,
-                                projectId,
-                                42,
-                                Optional.ofNullable(success ? null : JobError.unknown)
-                        ));
+            if (error == null) return; // null JobError supplier means the job doesn't report back, i.e., is aborted.
+
+            JobError jobError = this.error.get();
+            System.err.println(timeline.now() + ": Job " + projectId + ":" + jobType + " reports " + (jobError == null ? " success " : jobError));
+            tester.controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId,
+                                                                                                jobType,
+                                                                                                projectId,
+                                                                                                ++buildNumber,
+                                                                                                Optional.ofNullable(jobError)));
         }
 
         private BuildJob buildJob() { return new BuildJob(projectId, jobType.jobName()); }
 
     }
 
-    enum JobStatus {
+    enum JobRunStatus {
         QUEUED,
         RUNNING
     }
