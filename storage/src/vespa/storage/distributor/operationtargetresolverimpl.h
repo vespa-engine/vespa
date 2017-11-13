@@ -71,7 +71,7 @@ public:
         std::sort(_instances.begin(), _instances.end(), order);
     }
 
-    OperationTargetList createTargets();
+    OperationTargetList createTargets(document::BucketSpace bucketSpace);
 
     void print(vespalib::asciistream& out, const PrintProperties& p) const override;
 };
@@ -81,16 +81,19 @@ class OperationTargetResolverImpl : public OperationTargetResolver {
     const lib::IdealNodeCalculator& _idealNodeCalculator;
     uint32_t _minUsedBucketBits;
     uint16_t _redundancy;
+    document::BucketSpace _bucketSpace;
 
 public:
     OperationTargetResolverImpl(BucketDatabase& bucketDatabase,
                                 const lib::IdealNodeCalculator& idealNodeCalc,
                                 uint32_t minUsedBucketBits,
-                                uint16_t redundancy)
+                                uint16_t redundancy,
+                                document::BucketSpace bucketSpace)
         : _bucketDatabase(bucketDatabase),
           _idealNodeCalculator(idealNodeCalc),
           _minUsedBucketBits(minUsedBucketBits),
-          _redundancy(redundancy)
+          _redundancy(redundancy),
+          _bucketSpace(bucketSpace)
     {}
 
     BucketInstanceList getAllInstances(OperationType type,
@@ -102,7 +105,7 @@ public:
     }
 
     OperationTargetList getTargets(OperationType type, const document::BucketId& id) override {
-        return getInstances(type, id).createTargets();
+        return getInstances(type, id).createTargets(_bucketSpace);
     }
 };
 

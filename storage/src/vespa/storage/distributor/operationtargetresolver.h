@@ -15,17 +15,17 @@ namespace distributor {
 
 class OperationTarget : public vespalib::AsciiPrintable
 {
-    document::BucketId _bucket;
+    document::Bucket _bucket;
     lib::Node _node;
     bool _newCopy;
 
 public:
     OperationTarget() : _newCopy(true) {} 
-    OperationTarget(const document::BucketId& id, const lib::Node& node, bool newCopy)
-        : _bucket(id), _node(node), _newCopy(newCopy) {}
+    OperationTarget(const document::Bucket& bucket, const lib::Node& node, bool newCopy)
+        : _bucket(bucket), _node(node), _newCopy(newCopy) {}
 
-    const document::BucketId& getBucketId() const { return _bucket; }
-    document::Bucket getBucket() const;
+    document::BucketId getBucketId() const { return _bucket.getBucketId(); }
+    document::Bucket getBucket() const { return _bucket; }
     const lib::Node& getNode() const { return _node; }
     bool isNewCopy() const { return _newCopy; }
 
