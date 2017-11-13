@@ -4,29 +4,41 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.filedistribution.FileDistributionManager;
-import com.yahoo.config.model.application.provider.FileReferenceCreator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author tonytv
  */
 public class FileDBRegistry implements FileRegistry {
 
-    private final FileDistributionManager manager;
+    private final AddFileInterface manager;
     private List<Entry> entries = new ArrayList<>();
     private final Map<String, FileReference> fileReferenceCache = new HashMap<>();
 
-    public FileDBRegistry(FileDistributionManager manager) {
+    public FileDBRegistry(AddFileInterface manager) {
         this.manager = manager;
+    }
+
+    public synchronized FileReference addFile(String relativePath, FileReference reference) {
+        Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
+        return cachedReference.orElseGet(() -> {
+            FileReference newRef = manager.addFile(relativePath, reference);
+            entries.add(new Entry(relativePath, newRef));
+            fileReferenceCache.put(relativePath, newRef);
+            return newRef;
+        });
     }
 
     @Override
     public synchronized FileReference addFile(String relativePath) {
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
         return cachedReference.orElseGet(() -> {
-            FileReference newRef = FileReferenceCreator.create(manager.addFile(relativePath));
+            FileReference newRef = manager.addFile(relativePath);
             entries.add(new Entry(relativePath, newRef));
             fileReferenceCache.put(relativePath, newRef);
             return newRef;

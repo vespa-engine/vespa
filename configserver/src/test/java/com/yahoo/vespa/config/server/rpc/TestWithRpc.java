@@ -90,7 +90,7 @@ public class TestWithRpc {
                                                                        emptyNodeFlavors(),
                                                                        generationCounter)),
                                   Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker, new FileServer(FileDistribution.getDefaultFileDBRoot()));
+                                  hostLivenessTracker, new FileServer(FileDistribution.getDefaultFileDBPath()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();
