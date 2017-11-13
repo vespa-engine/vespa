@@ -20,7 +20,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
-import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
 
 /**
  * @author Simon Thoresen Hult
