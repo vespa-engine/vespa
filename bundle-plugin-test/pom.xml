@@ -10,7 +10,7 @@
     <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
   </parent>
-  <groupId>com.yahoo.container.maven.plugin</groupId>
+  <groupId>com.yahoo.vespa</groupId>
   <artifactId>bundle-plugin-test</artifactId>
   <version>6-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
