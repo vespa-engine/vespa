@@ -21,6 +21,7 @@ vespa_define_module(
     src/tests/json
     src/tests/librarypool
     src/tests/memorydatastore
+    src/tests/metrics
     src/tests/objectdump
     src/tests/objects
     src/tests/objectselection
