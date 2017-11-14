@@ -20,7 +20,6 @@ using storage::spi::PartitionState;
 using storage::spi::PartitionStateList;
 using storage::spi::Result;
 using vespalib::IllegalStateException;
-using vespalib::LockGuard;
 using vespalib::Sequence;
 using vespalib::make_string;
 
@@ -30,7 +29,7 @@ namespace {
 
 class ResultHandlerBase {
 protected:
-    vespalib::Lock           _lock;
+    std::mutex               _lock;
     vespalib::CountDownLatch _latch;
 public:
     ResultHandlerBase(uint32_t waitCnt);
@@ -55,7 +54,7 @@ public:
     ~GenericResultHandler();
     void handle(const Result &result) override {
         if (result.hasError()) {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard<std::mutex> guard(_lock);
             if (_result.hasError()) {
                 _result = TransportLatch::mergeErrorResults(_result, result);
             } else {
@@ -109,7 +108,7 @@ public:
     ~SynchronizedBucketIdListResultHandler() override;
     void handle(const BucketIdListResult &result) override {
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard<std::mutex> guard(_lock);
             BucketIdListResultHandler::handle(result);
         }
         _latch.countDown();
@@ -161,21 +160,21 @@ BucketInfoResultHandler::~BucketInfoResultHandler() = default;
 PersistenceEngine::HandlerSnapshot::UP
 PersistenceEngine::getHandlerSnapshot() const
 {
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandlerSnapshot();
 }
 
 PersistenceEngine::HandlerSnapshot::UP
 PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace) const
 {
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandlerSnapshot(bucketSpace);
 }
 
 PersistenceEngine::HandlerSnapshot::UP
 PersistenceEngine::getHandlerSnapshot(document::BucketSpace bucketSpace, const DocumentId &id) const
 {
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandlerSnapshot(bucketSpace, id);
 }
 
@@ -207,7 +206,7 @@ IPersistenceHandler::SP
 PersistenceEngine::putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
                               const IPersistenceHandler::SP &handler)
 {
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.putHandler(bucketSpace, docType, handler);
 }
 
@@ -215,7 +214,7 @@ PersistenceEngine::putHandler(document::BucketSpace bucketSpace, const DocTypeNa
 IPersistenceHandler::SP
 PersistenceEngine::getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const
 {
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandler(bucketSpace, docType);
 }
 
@@ -224,7 +223,7 @@ IPersistenceHandler::SP
 PersistenceEngine::removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType)
 {
     // TODO: Grab bucket list and treat them as modified
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.removeHandler(bucketSpace, docType);
 }
 
@@ -449,7 +448,7 @@ PersistenceEngine::createIterator(const Bucket &bucket, const document::FieldSet
     }
     entry->handler_sequence = HandlerSnapshot::release(std::move(*snapshot));
 
-    LockGuard guard(_iterators_lock);
+    std::lock_guard<std::mutex> guard(_iterators_lock);
     static IteratorId id_counter(0);
     IteratorId id(++id_counter);
     _iterators[id] = entry.release();
@@ -461,7 +460,7 @@ PersistenceEngine::IterateResult
 PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    LockGuard guard(_iterators_lock);
+    std::unique_lock<std::mutex> guard(_iterators_lock);
     auto it = _iterators.find(id);
     if (it == _iterators.end()) {
         return IterateResult(Result::PERMANENT_ERROR, make_string("Unknown iterator with id %" PRIu64, id.getValue()));
@@ -475,13 +474,13 @@ PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
     DocumentIterator &iterator = it->second->it;
     try {
         IterateResult result = iterator.iterate(maxByteSize);
-        LockGuard guard2(_iterators_lock);
+        guard.lock();
         it->second->in_use = false;
         return result;
     } catch (const std::exception & e) {
         IterateResult result(Result::PERMANENT_ERROR, make_string("Caught exception during visitor iterator.iterate() = '%s'", e.what()));
         LOG(warning, "Caught exception during visitor iterator.iterate() = '%s'", e.what());
-        LockGuard guard2(_iterators_lock);
+        guard.lock();
         it->second->in_use = false;
         return result;
     }
@@ -492,7 +491,7 @@ Result
 PersistenceEngine::destroyIterator(IteratorId id, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    LockGuard guard(_iterators_lock);
+    std::lock_guard<std::mutex> guard(_iterators_lock);
     auto it = _iterators.find(id);
     if (it == _iterators.end()) {
         return Result();
@@ -545,7 +544,7 @@ PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
     typedef BucketIdListResultV MBV;
     MBV extraModifiedBuckets;
     {
-        LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         extraModifiedBuckets.swap(_extraModifiedBuckets[bucketSpace]);
     }
     HandlerSnapshot::UP snap = getHandlerSnapshot(bucketSpace);
@@ -613,7 +612,7 @@ PersistenceEngine::destroyIterators()
     for (;;) {
         IteratorId id;
         {
-            LockGuard guard(_iterators_lock);
+            std::lock_guard<std::mutex> guard(_iterators_lock);
             if (_iterators.empty())
                 break;
             id = _iterators.begin()->first;
@@ -632,7 +631,7 @@ PersistenceEngine::saveClusterState(const ClusterState &calc)
 {
     auto clusterState = std::make_shared<ClusterState>(calc);
     {
-        LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         clusterState.swap(_clusterState);
     }
 }
@@ -640,7 +639,7 @@ PersistenceEngine::saveClusterState(const ClusterState &calc)
 PersistenceEngine::ClusterState::SP
 PersistenceEngine::savedClusterState() const
 {
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _clusterState;
 }
 
@@ -663,7 +662,7 @@ PersistenceEngine::grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenc
     BucketIdListResultHandler resultHandler;
     handler.handleListBuckets(resultHandler);
     auto result = std::make_shared<BucketIdListResult>(resultHandler.getResult());
-    LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _extraModifiedBuckets[bucketSpace].push_back(result);
 }
 
