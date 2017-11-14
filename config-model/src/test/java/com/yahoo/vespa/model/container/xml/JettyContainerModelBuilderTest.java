@@ -3,13 +3,18 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.SimpleComponent;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import org.junit.Test;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.List;
 
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
@@ -180,6 +185,32 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                         clusterComponentsConfig(),
                         com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()),
                 is(not(nullValue())));
+    }
+
+    @Test
+    public void ssl_keystore_configurator_can_be_overriden() throws IOException, SAXException {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc id='default' version='1.0' jetty='true'>",
+                "  <http>",
+                "    <server port='9000' id='foo'>",
+                "      <ssl-keystore-configurator class='com.yahoo.MySslKeyStoreConfigurator' bundle='mybundle'/>",
+                "    </server>",
+                "    <server port='9001' id='bar'/>",
+                "  </http>",
+                nodesXml,
+                "</jdisc>");
+        createModel(root, clusterElem);
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
+        List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
+
+        ConnectorFactory firstConnector = connectorFactories.get(0);
+        SimpleComponent sslKeystoreConfigurator = firstConnector.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
+        BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
+        assertThat(spec.classId.toString(), is("com.yahoo.MySslKeyStoreConfigurator"));
+        assertThat(spec.bundle.toString(), is("mybundle"));
+
+        ConnectorFactory secondFactory = connectorFactories.get(1);
+        assertThat(secondFactory.getChildrenByTypeRecursive(SimpleComponent.class).size(), is(0));
     }
 
     private void assertJettyServerInConfig() {

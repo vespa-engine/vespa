@@ -62,6 +62,7 @@ Filtering = element filtering {
 HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger } &
     ComponentId &
+    element ssl-keystore-configurator { BundleSpec }? &
     GenericConfig*
 }
 

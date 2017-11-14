@@ -201,7 +201,7 @@ public class Container extends AbstractService implements
     }
 
     private void initDefaultJettyConnector() {
-        defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", getSearchPort(), null));
+        defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", getSearchPort()));
     }
 
     private boolean hasDocproc() {
