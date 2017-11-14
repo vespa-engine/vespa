@@ -154,7 +154,7 @@ const DistributorBucketSpace& Distributor::getDefaultBucketSpace() const noexcep
 BucketOwnership
 Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
 {
-    return _bucketDBUpdater.checkOwnershipInPendingState(b.getBucketId());
+    return _bucketDBUpdater.checkOwnershipInPendingState(b);
 }
 
 void
@@ -455,7 +455,7 @@ Distributor::storageDistributionChanged()
 
 void
 Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) {
-    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket.getBucketId());
+    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket);
 }
 
 namespace {
@@ -553,7 +553,7 @@ Distributor::enableNextDistribution()
         _distribution = _nextDistribution;
         propagateDefaultDistribution(_distribution);
         _nextDistribution = std::shared_ptr<lib::Distribution>();
-        _bucketDBUpdater.storageDistributionChanged(getDistribution());
+        _bucketDBUpdater.storageDistributionChanged();
     }
 }
 

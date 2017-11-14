@@ -11,21 +11,15 @@ class SimpleClusterInformation : public ClusterInformation
 {
 public:
     SimpleClusterInformation(uint16_t myIndex,
-                             const lib::Distribution& distribution,
                              const lib::ClusterState& clusterState,
                              const char* storageUpStates)
         : _myIndex(myIndex),
-          _distribution(distribution.serialize()),
           _clusterState(clusterState),
           _storageUpStates(storageUpStates)
     {}
 
     uint16_t getDistributorIndex() const override {
         return _myIndex;
-    }
-
-    const lib::Distribution& getDistribution() const override {
-        return _distribution;
     }
 
     const lib::ClusterState& getClusterState() const override {
@@ -38,7 +32,6 @@ public:
 
 private:
     uint16_t _myIndex;
-    lib::Distribution _distribution;
     lib::ClusterState _clusterState;
     const char* _storageUpStates;
 };
