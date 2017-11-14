@@ -8,22 +8,24 @@ namespace metrics {
 
 // internal
 struct MergedCounter {
-    int idx;
+    unsigned int idx;
     size_t count;
-    MergedCounter(int idx);
+    MergedCounter(unsigned int idx);
     void merge(const CounterIncrement &other);
     void merge(const MergedCounter &other);
 };
 
 // internal
 struct MergedGauge {
-    int idx;
+    unsigned int idx;
     size_t observedCount;
     double sumValue;
     double minValue;
     double maxValue;
     double lastValue;
-    MergedGauge(int idx);
+
+    MergedGauge(unsigned int idx);
+
     void merge(const GaugeMeasurement &other);
     void merge(const MergedGauge &other);
 };
@@ -36,13 +38,25 @@ struct CurrentSamples {
 
 // internal
 struct Bucket {
-    clock::time_point _startTime;
-    clock::time_point _endedTime;
+    clock::time_point startTime;
+    clock::time_point endedTime;
     std::vector<MergedCounter> counters;
     std::vector<MergedGauge> gauges;
+
     void merge(const CurrentSamples &other);
     void merge(const Bucket &other);
+
+    Bucket(clock::time_point start, clock::time_point ended)
+        : startTime(start),
+          endedTime(ended),
+          counters(),
+          gauges()
+    {}
+    ~Bucket() {}
 };
+
+extern void swap(CurrentSamples& a, CurrentSamples& b);
+extern void swap(Bucket& a, Bucket& b);
 
 } // namespace vespalib::metrics
 } // namespace vespalib

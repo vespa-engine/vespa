@@ -15,7 +15,7 @@ class SimpleMetricsCollector;
 class Gauge {
 private:
     SimpleMetricsCollector &_manager;
-    const int _idx;
+    const unsigned int _idx;
 public:
     Gauge(SimpleMetricsCollector &m, int idx) : _manager(m), _idx(idx) {}
     void sample(double value);
@@ -23,18 +23,18 @@ public:
 
 class Counter {
     SimpleMetricsCollector &_manager;
-    const int _idx;
+    const unsigned int _idx;
 public:
     Counter(SimpleMetricsCollector &m, int idx) : _manager(m), _idx(idx) {}
     void add();
 };
 
 struct CounterIncrement {
-    int idx;
+    unsigned int idx;
 };
 
 struct GaugeMeasurement {
-    int idx;
+    unsigned int idx;
     double value;
 };
 

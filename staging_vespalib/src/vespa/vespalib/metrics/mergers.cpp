@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergers.h"
+#include <assert.h>
 
 namespace vespalib {
 namespace metrics {
 
-MergedCounter::MergedCounter(int id)
+MergedCounter::MergedCounter(unsigned int id)
   : idx(id), count(0)
 {}
 
@@ -21,7 +22,7 @@ MergedCounter::merge(const MergedCounter &other)
 }
 
 
-MergedGauge::MergedGauge(int id)
+MergedGauge::MergedGauge(unsigned int id)
   : idx(id),
     observedCount(0),
     sumValue(0.0),
@@ -60,6 +61,61 @@ MergedGauge::merge(const MergedGauge &other)
     sumValue += other.sumValue;
     lastValue = other.lastValue;
     observedCount += other.observedCount;
+}
+
+void Bucket::merge(const CurrentSamples &other)
+{
+    for (CounterIncrement inc : other.counterIncrements) {
+        while (counters.size() <= inc.idx) {
+            unsigned int id = counters.size();
+            counters.emplace_back(id);
+        }
+        counters[inc.idx].merge(inc);
+    }
+    for (GaugeMeasurement sample : other.gaugeMeasurements) {
+        while (gauges.size() <= sample.idx) {
+            unsigned int id = gauges.size();
+            gauges.emplace_back(id);
+        }
+        gauges[sample.idx].merge(sample);
+    }
+}
+
+void Bucket::merge(const Bucket &other)
+{
+    assert(startTime <= other.startTime);
+    assert(endedTime <= other.endedTime);
+    endedTime = other.endedTime;
+    for (const MergedCounter & entry : other.counters) {
+        while (counters.size() <= entry.idx) {
+            unsigned int id = counters.size();
+            counters.emplace_back(id);
+        }
+        counters[entry.idx].merge(entry);
+    }
+    for (const MergedGauge & entry : other.gauges) {
+        while (gauges.size() <= entry.idx) {
+            unsigned int id = gauges.size();
+            gauges.emplace_back(id);
+        }
+        gauges[entry.idx].merge(entry);
+    }
+}
+
+void swap(CurrentSamples& a, CurrentSamples& b)
+{
+    using std::swap;
+    swap(a.counterIncrements, b.counterIncrements);
+    swap(a.gaugeMeasurements, b.gaugeMeasurements);
+}
+
+void swap(Bucket& a, Bucket& b)
+{
+    using std::swap;
+    swap(a.startTime, b.startTime);
+    swap(a.endedTime, b.endedTime);
+    swap(a.counters, b.counters);
+    swap(a.gauges, b.gauges);
 }
 
 } // namespace vespalib::metrics

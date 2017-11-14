@@ -28,8 +28,11 @@ private:
     size_t _firstBucket;
     size_t _maxBuckets;
     // lots of stuff
+
 public:
     SimpleMetricsCollector(const CollectorConfig &config);
+
+    void collectCurrentBucket();
 
     Counter declareCounter(const vespalib::string &name);
     Gauge declareGauge(const vespalib::string &name);
