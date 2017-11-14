@@ -12,8 +12,6 @@ import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,7 +42,6 @@ class FileReferenceDownloader {
     private final static Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
     private final static Duration rpcTimeout = Duration.ofSeconds(10);
 
-    private final File downloadDirectory;
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(10, new DaemonThreadFactory("filereference downloader"));
     private ExecutorService readFromQueueExecutor =
@@ -54,13 +51,13 @@ class FileReferenceDownloader {
     private final Map<FileReference, FileReferenceDownload> downloads = new LinkedHashMap<>();
     private final Map<FileReference, Double> downloadStatus = new HashMap<>();
     private final Duration downloadTimeout;
+    private final FileReceiver fileReceiver;
 
     FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool, Duration timeout) {
-        this.downloadDirectory = downloadDirectory;
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
-        if (connectionPool != null)
-            readFromQueueExecutor.submit(this::readFromQueue);
+        readFromQueueExecutor.submit(this::readFromQueue);
+        this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory);
     }
 
     private synchronized Optional<File> startDownload(FileReference fileReference,
@@ -83,17 +80,7 @@ class FileReferenceDownloader {
     }
 
     void receiveFile(FileReference fileReference, String filename, byte[] content) {
-        File fileReferenceDir = new File(downloadDirectory, fileReference.value());
-        try {
-            Files.createDirectories(fileReferenceDir.toPath());
-            File file = new File(fileReferenceDir, filename);
-            log.log(LogLevel.INFO, "Writing data to " + file.getAbsolutePath());
-            Files.write(file.toPath(), content);
-            completedDownloading(fileReference, file);
-        } catch (IOException e) {
-            log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage());
-            throw new RuntimeException("Failed writing file: ", e);
-        }
+        fileReceiver.receiveFile(fileReference, filename, content);
     }
 
     synchronized Set<FileReference> queuedDownloads() {
@@ -117,7 +104,7 @@ class FileReferenceDownloader {
         } while (true);
     }
 
-    private synchronized void completedDownloading(FileReference fileReference, File file) {
+    void completedDownloading(FileReference fileReference, File file) {
         if (downloads.containsKey(fileReference))
             downloads.get(fileReference).future().set(Optional.of(file));
         downloadStatus.put(fileReference, 100.0);

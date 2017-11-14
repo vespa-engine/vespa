@@ -59,17 +59,8 @@ public class FileDistributionRpcServer {
                                      .methodDesc("set which file references to download")
                                      .paramDesc(0, "file references", "file reference to download")
                                      .returnDesc(0, "ret", "0 if success, 1 otherwise"));
-        supervisor.addMethod(new Method("filedistribution.receiveFile", "ssxlis", "i", // TODO Temporary method to get started with testing
-                                        this, "receiveFile")
-                                     .methodDesc("receive file reference content")
-                                     .paramDesc(0, "file references", "file reference to download")
-                                     .paramDesc(1, "filename", "filename")
-                                     .paramDesc(2, "content", "array of bytes")
-                                     .paramDesc(3, "hash", "xx64hash of the file content")
-                                     .paramDesc(4, "errorcode", "Error code. 0 if none")
-                                     .paramDesc(5, "error-description", "Error description.")
-                                     .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
+
 
     //---------------- RPC methods ------------------------------------
     // TODO: Duplicate of code in FileAcquirereImpl. Find out where to put it. What about C++ code using this RPC call?
@@ -132,24 +123,5 @@ public class FileDistributionRpcServer {
         req.returnValues().add(new Int32Value(0));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void receiveFile(Request req) {
-        FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-        String filename = req.parameters().get(1).asString();
-        byte[] content = req.parameters().get(2).asData();
-        long xxhash = req.parameters().get(3).asInt64();
-        int errorCode = req.parameters().get(4).asInt32();
-        String errorDescription = req.parameters().get(5).asString();
 
-        if (errorCode == 0) {
-            // TODO: Remove when system test works
-            log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
-            downloader.receiveFile(fileReference, filename, content);
-            req.returnValues().add(new Int32Value(0));
-        } else {
-            log.log(LogLevel.WARNING, "Receiving file reference '" + fileReference.value() + "' failed: " + errorDescription);
-            req.returnValues().add(new Int32Value(1));
-            // TODO: Add error description return value here too?
-        }
-    }
 }
