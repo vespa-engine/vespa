@@ -460,28 +460,31 @@ PersistenceEngine::IterateResult
 PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    std::unique_lock<std::mutex> guard(_iterators_lock);
-    auto it = _iterators.find(id);
-    if (it == _iterators.end()) {
-        return IterateResult(Result::PERMANENT_ERROR, make_string("Unknown iterator with id %" PRIu64, id.getValue()));
+    IteratorEntry *iteratorEntry;
+    {
+        std::lock_guard<std::mutex> guard(_iterators_lock);
+        auto it = _iterators.find(id);
+        if (it == _iterators.end()) {
+            return IterateResult(Result::PERMANENT_ERROR, make_string("Unknown iterator with id %" PRIu64, id.getValue()));
+        }
+        iteratorEntry = it->second;
+        if (iteratorEntry->in_use) {
+            return IterateResult(Result::TRANSIENT_ERROR, make_string("Iterator with id %" PRIu64 " is already in use", id.getValue()));
+        }
+        iteratorEntry->in_use = true;
     }
-    if (it->second->in_use) {
-        return IterateResult(Result::TRANSIENT_ERROR, make_string("Iterator with id %" PRIu64 " is already in use", id.getValue()));
-    }
-    it->second->in_use = true;
-    guard.unlock();
 
-    DocumentIterator &iterator = it->second->it;
+    DocumentIterator &iterator = iteratorEntry->it;
     try {
         IterateResult result = iterator.iterate(maxByteSize);
-        guard.lock();
-        it->second->in_use = false;
+        std::lock_guard<std::mutex> guard(_iterators_lock);
+        iteratorEntry->in_use = false;
         return result;
     } catch (const std::exception & e) {
         IterateResult result(Result::PERMANENT_ERROR, make_string("Caught exception during visitor iterator.iterate() = '%s'", e.what()));
         LOG(warning, "Caught exception during visitor iterator.iterate() = '%s'", e.what());
-        guard.lock();
-        it->second->in_use = false;
+        std::lock_guard<std::mutex> guard(_iterators_lock);
+        iteratorEntry->in_use = false;
         return result;
     }
 }
