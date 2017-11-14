@@ -107,6 +107,8 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             accessLogEntry.setPeerPort(peerPort);
         }
         accessLogEntry.setHttpVersion(request.getProtocol());
+        accessLogEntry.setScheme(request.getScheme());
+        accessLogEntry.setLocalPort(request.getLocalPort());
     }
 
     private static String getRemoteAddress(final HttpServletRequest request) {
