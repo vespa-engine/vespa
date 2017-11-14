@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,14 +31,14 @@ public class FileDownloaderTest {
 
     private MockConnection connection;
     private FileDownloader fileDownloader;
+    private File downloadDir;
 
     @Before
     public void setup() {
         try {
-            File downloadDir = Files.createTempDirectory("filedistribution").toFile();
+            downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
             fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(3000));
-            FileDistributionRpcServer rpcServer = new FileDistributionRpcServer(new Supervisor(new Transport()), fileDownloader);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -110,15 +109,15 @@ public class FileDownloaderTest {
 
     @Test
     public void setFilesToDownload() throws IOException {
+        Duration timeout = Duration.ofMillis(200);
         File downloadDir = Files.createTempDirectory("filedistribution").toFile();
-        FileDownloader fileDownloader = new FileDownloader(null, downloadDir, Duration.ofMillis(200));
+        MockConnection connectionPool = new MockConnection();
+        connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
+        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, timeout);
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
         List<FileReference> fileReferences = Arrays.asList(foo, bar);
         fileDownloader.queueForDownload(fileReferences);
-
-        // All requested file references should be in queue (since FileDownloader was created without ConnectionPool)
-        assertEquals(new LinkedHashSet<>(fileReferences), new LinkedHashSet<>(fileDownloader.queuedDownloads()));
 
         // Verify download status
         assertDownloadStatus(fileDownloader, foo, 0.0);
@@ -127,8 +126,6 @@ public class FileDownloaderTest {
 
     @Test
     public void receiveFile() throws IOException {
-        File downloadDir = Files.createTempDirectory("filedistribution").toFile();
-        FileDownloader fileDownloader = new FileDownloader(null, downloadDir, Duration.ofMillis(200));
         FileReference foo = new FileReference("foo");
         String filename = "foo.jar";
         fileDownloader.receiveFile(foo, filename, Utf8.toBytes("content"));
@@ -209,11 +206,20 @@ public class FileDownloaderTest {
             return 1;
         }
 
-        public void setResponseHandler(ResponseHandler responseHandler) {
+        @Override
+        public Supervisor getSupervisor() {
+            return new Supervisor(new Transport());
+        }
+
+        void setResponseHandler(ResponseHandler responseHandler) {
             this.responseHandler = responseHandler;
         }
 
-        static class FileReferenceFoundResponseHandler implements ResponseHandler {
+        public interface ResponseHandler {
+            void request(Request request);
+        }
+
+        static class FileReferenceFoundResponseHandler implements MockConnection.ResponseHandler {
 
             @Override
             public void request(Request request) {
@@ -224,7 +230,7 @@ public class FileDownloaderTest {
             }
         }
 
-        static class UnknownFileReferenceResponseHandler implements ResponseHandler {
+        static class UnknownFileReferenceResponseHandler implements MockConnection.ResponseHandler {
 
             @Override
             public void request(Request request) {
@@ -235,12 +241,26 @@ public class FileDownloaderTest {
             }
         }
 
-        public interface ResponseHandler {
+        static class WaitResponseHandler implements MockConnection.ResponseHandler {
 
-            void request(Request request);
+            private final Duration waitUntilAnswering;
 
+            WaitResponseHandler(Duration waitUntilAnswering) {
+                super();
+                this.waitUntilAnswering = waitUntilAnswering;
+            }
+
+            @Override
+            public void request(Request request) {
+                try { Thread.sleep(waitUntilAnswering.toMillis());} catch (InterruptedException e) { /* do nothing */ }
+
+                if (request.methodName().equals("filedistribution.serveFile")) {
+                    request.returnValues().add(new Int32Value(0));
+                    request.returnValues().add(new StringValue("OK"));
+                }
+
+            }
         }
-
     }
 
 }

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 public class JRTConnectionPool implements ConnectionPool {
+
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());
 
     private final Supervisor supervisor = new Supervisor(new Transport());
@@ -148,6 +149,11 @@ public class JRTConnectionPool implements ConnectionPool {
         synchronized (connections) {
             return connections.size();
         }
+    }
+
+    @Override
+    public Supervisor getSupervisor() {
+        return supervisor;
     }
 
 }
