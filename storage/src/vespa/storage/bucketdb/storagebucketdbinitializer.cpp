@@ -165,7 +165,7 @@ StorageBucketDBInitializer::onOpen()
         // Trigger bucket database initialization
     for (uint32_t i=0; i<_system._partitions.size(); ++i) {
         if (!_system._partitions[i].isUp()) continue;
-        assert(_readState[i].get() != nullptr);
+        assert(_readState[i]);
         const BucketSpaceReadState &spaceState = *_readState[i];
         for (const auto &stateElem : spaceState) {
             document::BucketSpace bucketSpace = stateElem.first;
@@ -242,7 +242,7 @@ notDoneCount(const StorageBucketDBInitializer::ReadState &readState)
 {
     size_t result = 0;
     for (const auto &elem : readState) {
-        if (elem.get() != nullptr) {
+        if (elem) {
             for (const auto &stateElem : *elem) {
                 if (!stateElem.second->_done) {
                     ++result;
