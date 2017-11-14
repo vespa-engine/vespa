@@ -65,6 +65,7 @@ TOKEN :
     <DIV: "/"> |
     <MUL: "*"> |
     <DOT: "."> |
+    <MOD: "%"> |
 
     <DOLLAR: "$"> |
     <COMMA: ","> |
@@ -202,7 +203,8 @@ ArithmeticOperator arithmetic() : { }
     ( <ADD> { return ArithmeticOperator.PLUS;     } |
       <SUB> { return ArithmeticOperator.MINUS;    } |
       <DIV> { return ArithmeticOperator.DIVIDE;   } |
-      <MUL> { return ArithmeticOperator.MULTIPLY; } )
+      <MUL> { return ArithmeticOperator.MULTIPLY; } |
+      <MOD> { return ArithmeticOperator.MODULO; } )
     { return null; }
 }
 

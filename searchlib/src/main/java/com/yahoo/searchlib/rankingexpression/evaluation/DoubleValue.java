@@ -98,6 +98,17 @@ public final class DoubleValue extends DoubleCompatibleValue {
     }
 
     @Override
+    public Value modulo(Value value) {
+        try {
+            return mutable(this.value % value.asDouble());
+        }
+        catch (UnsupportedOperationException e) {
+            throw unsupported("modulo",value);
+        }
+    }
+
+
+    @Override
     public Value function(Function function, Value value) {
         // use the tensor implementation of max and min if the argument is a tensor
         if ( (function.equals(Function.min) || function.equals(Function.max)) && value instanceof TensorValue)
