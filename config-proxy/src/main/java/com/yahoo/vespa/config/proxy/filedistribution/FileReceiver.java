@@ -8,9 +8,12 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.log.LogLevel;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.logging.Logger;
 
@@ -21,6 +24,7 @@ public class FileReceiver {
     private final Supervisor supervisor;
     private final FileReferenceDownloader downloader;
     private final File downloadDirectory;
+    private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
 
     public FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory) {
         this.supervisor = supervisor;
@@ -60,7 +64,7 @@ public class FileReceiver {
         if (errorCode == 0) {
             // TODO: Remove when system test works
             log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
-            receiveFile(fileReference, filename, content);
+            receiveFile(fileReference, filename, content, xxhash);
             req.returnValues().add(new Int32Value(0));
         } else {
             log.log(LogLevel.WARNING, "Receiving file reference '" + fileReference.value() + "' failed: " + errorDescription);
@@ -69,7 +73,11 @@ public class FileReceiver {
         }
     }
 
-    void receiveFile(FileReference fileReference, String filename, byte[] content) {
+    void receiveFile(FileReference fileReference, String filename, byte[] content, long xxHash) {
+        long xxHashFromContent = hasher.hash(ByteBuffer.wrap(content), 0);
+        if (xxHashFromContent != xxHash)
+            throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + xxHash + ")");
+
         File fileReferenceDir = new File(downloadDirectory, fileReference.value());
         try {
             Files.createDirectories(fileReferenceDir.toPath());
@@ -82,6 +90,5 @@ public class FileReceiver {
             throw new RuntimeException("Failed writing file: ", e);
         }
     }
-
 
 }
