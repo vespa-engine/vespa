@@ -27,30 +27,14 @@ MultiSearch::remove(size_t index)
 void
 MultiSearch::doUnpack(uint32_t docid)
 {
-    size_t sz(_children.size());
-    for (size_t i = 0; i < sz; ) {
-        if (__builtin_expect(_children[i]->getDocId() < docid, false)) {
-            _children[i]->doSeek(docid);
-            if (_children[i]->isAtEnd()) {
-                sz = deactivate(i);
-                continue;
-            }
+    for (SearchIterator *child: _children) {
+        if (__builtin_expect(child->getDocId() < docid, false)) {
+            child->doSeek(docid);
         }
-        if (__builtin_expect(_children[i]->getDocId() == docid, false)) {
-            _children[i]->doUnpack(docid);
+        if (__builtin_expect(child->getDocId() == docid, false)) {
+            child->doUnpack(docid);
         }
-        i++;
     }
-}
-
-size_t
-MultiSearch::deactivate(size_t idx)
-{
-    assert(idx < _children.size());
-    delete _children[idx];
-    _children[idx] = _children.back();
-    _children.pop_back();
-    return _children.size();
 }
 
 MultiSearch::MultiSearch(const Children & children)

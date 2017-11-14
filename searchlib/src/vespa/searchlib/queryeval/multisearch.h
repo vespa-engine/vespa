@@ -54,7 +54,6 @@ private:
     virtual void onInsert(size_t index) { (void) index; }
 
     bool isMultiSearch() const override { return true; }
-    size_t deactivate(size_t index);
     Children _children;
 };
 
