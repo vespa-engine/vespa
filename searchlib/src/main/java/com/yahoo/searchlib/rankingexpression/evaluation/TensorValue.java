@@ -81,6 +81,15 @@ public class TensorValue extends Value {
             return new TensorValue(value.map((value) -> value / argument.asDouble()));
     }
 
+    @Override
+    public Value modulo(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.fmod(((TensorValue) argument).value));
+        else
+            return new TensorValue(value.map((value) -> value % argument.asDouble()));
+    }
+
+
     private Tensor asTensor(Value value, String operationName) {
         if ( ! (value instanceof TensorValue))
             throw new UnsupportedOperationException("Could not perform " + operationName +

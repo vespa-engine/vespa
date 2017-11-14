@@ -25,8 +25,11 @@ public enum ArithmeticOperator {
     }},
     DIVIDE(3, "/") { public Value evaluate(Value x, Value y) {
         return x.divide(y);
+    }},
+    MODULO(4, "%") { public Value evaluate(Value x, Value y) {
+        return x.modulo(y);
     }};
-
+    
     /** A list of all the operators in this in order of decreasing precedence */
     public static final List<ArithmeticOperator> operatorsByPrecedence = operatorsByPrecedence();
 
@@ -52,6 +55,7 @@ public enum ArithmeticOperator {
 
     private static List<ArithmeticOperator> operatorsByPrecedence() {
         List<ArithmeticOperator> operators = new ArrayList<>();
+        operators.add(MODULO);
         operators.add(DIVIDE);
         operators.add(MULTIPLY);
         operators.add(MINUS);
