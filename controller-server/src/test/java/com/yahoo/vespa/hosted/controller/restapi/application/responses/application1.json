@@ -1,29 +1,16 @@
 {
   "application": "application1",
   "instance": "default",
+  "deploying": {
+    "version": "6.1"
+  },
   "deploymentJobs": [
-    {
-      "type": "component",
-      "success": true,
-      "lastCompleted": {
-        "id": 42,
-        "version": "(ignore)",
-        "reason": "Application commit",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 42,
-        "version": "(ignore)",
-        "reason": "Application commit",
-        "at": "(ignore)"
-      }
-    },
     {
       "type": "system-test",
       "success": true,
       "lastTriggered": {
         "id": -1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -32,12 +19,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "component completed",
+        "reason": "",
         "at": "(ignore)"
       },
       "lastCompleted": {
         "id": 42,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -46,12 +33,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "component completed",
+        "reason": "",
         "at": "(ignore)"
       },
       "lastSuccess": {
         "id": 42,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -60,7 +47,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "component completed",
+        "reason": "",
         "at": "(ignore)"
       }
     },
@@ -69,7 +56,7 @@
       "success": true,
       "lastTriggered": {
         "id": -1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -78,12 +65,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"system-test completed",
+        "reason": "system-test completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
         "id": 42,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -92,12 +79,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"system-test completed",
+        "reason": "system-test completed",
         "at": "(ignore)"
       },
       "lastSuccess": {
         "id": 42,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -106,16 +93,16 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"system-test completed",
+        "reason": "system-test completed",
         "at": "(ignore)"
       }
     },
     {
-      "type": "production-us-west-1",
-      "success": true,
+      "type": "production-corp-us-east-1",
+      "success": false,
       "lastTriggered": {
         "id": -1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -124,12 +111,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"staging-test completed",
+        "reason": "Immediate retry on failure",
         "at": "(ignore)"
       },
       "lastCompleted": {
         "id": 42,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -138,12 +125,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"staging-test completed",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       },
-      "lastSuccess": {
+      "firstFailing": {
         "id": 42,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -152,80 +139,18 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"staging-test completed",
-        "at": "(ignore)"
-      }
-    },
-    {
-      "type": "production-us-east-3",
-      "success": true,
-      "lastTriggered": {
-        "id": -1,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason":"production-us-west-1 completed",
-        "at": "(ignore)"
-      },
-      "lastCompleted": {
-        "id": 42,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason":"production-us-west-1 completed",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 42,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason":"production-us-west-1 completed",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       }
     }
   ],
-  "compileVersion": "(ignore)",
+  "compileVersion": "6.1.0",
   "globalRotations": [
     "http://fake-global-rotation-tenant1.application1"
   ],
   "instances": [
-    {
-      "environment": "prod",
-      "region": "us-west-1",
-      "instance": "default",
-      "bcpStatus": {
-        "rotationStatus": "IN"
-      },
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default"
-    },
-    {
-      "environment": "prod",
-      "region": "us-east-3",
-      "instance": "default",
-      "bcpStatus": {
-        "rotationStatus": "UNKNOWN"
-      },
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default"
-    }
+    @include(dev-us-west-1.json),
+    @include(prod-corp-us-east-1.json)
   ],
   "metrics": {
     "queryServiceQuality": 0.5,

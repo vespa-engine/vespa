@@ -99,6 +99,38 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET all tenants
         tester.assertResponse(request("/application/v4/tenant/", "", Request.Method.GET),
                               new File("tenant-list.json"));
+
+
+        // Add another Athens domain, so we can try to create more tenants
+        addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
+        // Add property info for that property id, as well, in the mock organization.
+        addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
+        // POST (add) a tenant with property ID
+        tester.assertResponse(request("/application/v4/tenant/tenant2",
+                                      "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
+                                      Request.Method.POST),
+                              new File("tenant-without-applications-with-id.json"));
+        // PUT (modify) a tenant with property ID
+        tester.assertResponse(request("/application/v4/tenant/tenant2",
+                                      "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
+                                      Request.Method.PUT),
+                              new File("tenant-without-applications-with-id.json"));
+        // GET a tenant with property ID
+        tester.assertResponse(request("/application/v4/tenant/tenant2", "", Request.Method.GET),
+                              new File("tenant-without-applications-with-id.json"));
+
+        // Test legacy OpsDB tenants
+        // POST (add) an OpsDB tenant with property ID
+        tester.assertResponse(request("/application/v4/tenant/tenant3",
+                                      "{\"userGroup\":\"group1\",\"property\":\"property1\",\"propertyId\":\"1234\"}",
+                                      Request.Method.POST),
+                              new File("opsdb-tenant-with-id-without-applications.json"));
+        // PUT (modify) the OpsDB tenant to set another property
+        tester.assertResponse(request("/application/v4/tenant/tenant3",
+                                      "{\"userGroup\":\"group1\",\"property\":\"property2\",\"propertyId\":\"4321\"}",
+                                      Request.Method.PUT),
+                              new File("opsdb-tenant-with-new-id-without-applications.json"));
+
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1",
                                       "",
@@ -183,6 +215,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
         setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", "", Request.Method.GET),
                               new File("deployment.json"));
+
+        // GET at root, with "&recursive=true", returns info about all tenants, their applications and their deployments
+        tester.assertResponse(request("/application/v4/",
+                                      "",
+                                      Request.Method.GET,
+                                      "domain1", "mytenant&recursive=true"),
+                              new File("recursive-root.json"));
+        // GET at a tenant, with "&recursive=true", returns full info about their applications and their deployments
+        tester.assertResponse(request("/application/v4/tenant/tenant1/",
+                                      "",
+                                      Request.Method.GET,
+                                      "domain1", "mytenant&recursive=true"),
+                              new File("tenant1.json"));
+        // GET at an application, with "&recursive=true", returns full info about its deployments
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/",
+                                      "",
+                                      Request.Method.GET,
+                                      "domain1", "mytenant&recursive=true"),
+                              new File("application1.json"));
+
+
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart",
                                       "",
@@ -241,36 +294,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/", "", Request.Method.OPTIONS),
                               "");
 
-        // Add another Athens domain, so we can try to create more tenants
-        addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
-        // Add property info for that property id, as well, in the mock organization.
-        addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
-        // POST (add) a tenant with property ID
-        tester.assertResponse(request("/application/v4/tenant/tenant2",
-                                      "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
-                                      Request.Method.POST),
-                              new File("tenant-without-applications-with-id.json"));
-        // PUT (modify) a tenant with property ID
-        tester.assertResponse(request("/application/v4/tenant/tenant2",
-                                      "{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}",
-                                      Request.Method.PUT),
-                              new File("tenant-without-applications-with-id.json"));
-        // GET a tenant with property ID
-        tester.assertResponse(request("/application/v4/tenant/tenant2", "", Request.Method.GET),
-                              new File("tenant-without-applications-with-id.json"));
-
-        // Test legacy OpsDB tenants
-        // POST (add) an OpsDB tenant with property ID
-        tester.assertResponse(request("/application/v4/tenant/tenant3",
-                                      "{\"userGroup\":\"group1\",\"property\":\"property1\",\"propertyId\":\"1234\"}",
-                                      Request.Method.POST),
-                              new File("opsdb-tenant-with-id-without-applications.json"));
-        // PUT (modify) the OpsDB tenant to set another property
-        tester.assertResponse(request("/application/v4/tenant/tenant3",
-                                      "{\"userGroup\":\"group1\",\"property\":\"property2\",\"propertyId\":\"4321\"}",
-                                      Request.Method.PUT),
-                              new File("opsdb-tenant-with-new-id-without-applications.json"));
-
         // GET global rotation status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation", "", Request.Method.GET),
                               new File("global-rotation.json"));
@@ -293,13 +316,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
 
         controllerTester.controller().deconstruct();
-    }
-
-    private void addPropertyData(MockOrganization organization, String propertyIdValue) {
-        PropertyId propertyId = new PropertyId(propertyIdValue);
-        organization.addProperty(propertyId);
-        organization.setContactsFor(propertyId, Arrays.asList(Collections.singletonList(User.from("alice")),
-                                                              Collections.singletonList(User.from("bob"))));
     }
 
     @Test
@@ -627,7 +643,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property1\"}",
                                       Request.Method.PUT,
                                       "domain1", authorizedUser),
-                              "{\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
+                              "{\"tenant\":\"tenant1\",\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
                               200);
 
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
@@ -787,6 +803,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 }
             }
         }
+    }
+
+    private void addPropertyData(MockOrganization organization, String propertyIdValue) {
+        PropertyId propertyId = new PropertyId(propertyIdValue);
+        organization.addProperty(propertyId);
+        organization.setContactsFor(propertyId, Arrays.asList(Collections.singletonList(User.from("alice")),
+                                                              Collections.singletonList(User.from("bob"))));
     }
 
 }

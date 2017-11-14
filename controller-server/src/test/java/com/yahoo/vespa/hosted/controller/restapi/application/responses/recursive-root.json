@@ -1,0 +1,34 @@
+[
+  {
+    "tenant": "tenant2",
+    "type": "ATHENS",
+    "athensDomain": "domain2",
+    "property": "property2",
+    "propertyId": "1234",
+    "applications": [],
+    "propertyUrl": "www.properties.tld/1234",
+    "contactsUrl": "www.contacts.tld/1234",
+    "issueCreationUrl": "www.issues.tld/1234",
+    "contacts": [
+      [
+        "alice"
+      ],
+      [
+        "bob"
+      ]
+    ]
+  },
+  {
+    "tenant": "tenant3",
+    "type": "OPSDB",
+    "property": "property2",
+    "propertyId": "4321",
+    "userGroup": "group1",
+    "applications": [],
+    "propertyUrl": "www.properties.tld/4321",
+    "contactsUrl": "www.contacts.tld/4321",
+    "issueCreationUrl": "www.issues.tld/4321",
+    "contacts": []
+  },
+  @include(tenant1.json)
+]
