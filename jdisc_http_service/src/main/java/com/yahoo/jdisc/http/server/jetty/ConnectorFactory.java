@@ -200,8 +200,7 @@ public class ConnectorFactory {
         try {
             Path certificatePath = Paths.get(pemKeyStore.certificatePath());
             Path keyPath = Paths.get(pemKeyStore.keyPath());
-            return new PemSslKeyStore(certificatePath, keyPath)
-                    .loadJavaKeyStore();
+            return new PemSslKeyStore(certificatePath, keyPath).loadJavaKeyStore();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (Exception e) {

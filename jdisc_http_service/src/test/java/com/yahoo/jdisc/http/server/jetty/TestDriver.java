@@ -7,7 +7,7 @@ import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.SslContextFactory;
-import com.yahoo.jdisc.http.ssl.jks.JksKeyStore;
+import com.yahoo.jdisc.http.JksKeyStore;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
