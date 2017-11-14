@@ -1,4 +1,6 @@
 {
+  "application": "application1",
+  "instance": "default",
   "deploying": {
     "version": "6.1"
   },
@@ -147,105 +149,8 @@
     "http://fake-global-rotation-tenant1.application1"
   ],
   "instances": [
-    {
-      "environment": "dev",
-      "region": "us-west-1",
-      "instance": "default",
-      "serviceUrls": [
-        "http://old-endpoint.vespa.yahooapis.com:4080",
-        "http://qrs-endpoint.vespa.yahooapis.com:4080",
-        "http://feeding-endpoint.vespa.yahooapis.com:4080",
-        "http://global-endpoint.vespa.yahooapis.com:4080",
-        "http://alias-endpoint.vespa.yahooapis.com:4080"
-      ],
-      "nodes": "http://localhost:8080/zone/v2/dev/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
-      "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-west-1&application=tenant1.application1",
-      "version": "6.1.0",
-      "revision": "(ignore)",
-      "deployTimeEpochMs": "(ignore)",
-      "screwdriverId": "123",
-      "cost": {
-        "tco": 0,
-        "waste": 0,
-        "utilization": 0.0,
-        "cluster": {}
-      },
-      "metrics": {
-        "queriesPerSecond": 0.0,
-        "writesPerSecond": 0.0,
-        "documentCount": 0.0,
-        "queryLatencyMillis": 0.0,
-        "writeLatencyMillis": 0.0
-      }
-    },
-    {
-      "environment": "prod",
-      "region": "corp-us-east-1",
-      "instance": "default",
-      "bcpStatus": {
-        "rotationStatus": "UNKNOWN"
-      },
-      "serviceUrls": [
-        "http://old-endpoint.vespa.yahooapis.com:4080",
-        "http://qrs-endpoint.vespa.yahooapis.com:4080",
-        "http://feeding-endpoint.vespa.yahooapis.com:4080",
-        "http://global-endpoint.vespa.yahooapis.com:4080",
-        "http://alias-endpoint.vespa.yahooapis.com:4080"
-      ],
-      "nodes": "http://localhost:8080/zone/v2/prod/corp-us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
-      "elkUrl": "http://log.prod.corp-us-east-1.test/#/discover?_g=()&_a=(columns:!(_source),index:'logstash-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'HV-tenant:%22tenant1%22%20AND%20HV-application:%22application1%22%20AND%20HV-region:%22corp-us-east-1%22%20AND%20HV-instance:%22default%22%20AND%20HV-environment:%22prod%22')),sort:!('@timestamp',desc))",
-      "yamasUrl": "http://monitoring-system.test/?environment=prod&region=corp-us-east-1&application=tenant1.application1",
-      "version": "6.1.0",
-      "revision": "(ignore)",
-      "deployTimeEpochMs": "(ignore)",
-      "screwdriverId": "123",
-      "gitRepository": "repository1",
-      "gitBranch": "master",
-      "gitCommit": "commit1",
-      "cost": {
-        "tco": 74,
-        "waste": 0,
-        "utilization": 2.999999999999999,
-        "cluster": {
-          "cluster1": {
-            "count": 2,
-            "resource": "cpu",
-            "utilization": 2.999999999999999,
-            "tco": 74,
-            "waste": 0,
-            "flavor": "flavor1",
-            "flavorCost": 37.0,
-            "flavorCpu": 2.0,
-            "flavorMem": 4.0,
-            "flavorDisk": 50.0,
-            "type": "content",
-            "util": {
-              "cpu": 2.999999999999999,
-              "mem": 0.4285714285714286,
-              "disk": 0.5714285714285715,
-              "diskBusy": 1.0
-            },
-            "usage": {
-              "cpu": 0.6,
-              "mem": 0.3,
-              "disk": 0.4,
-              "diskBusy": 0.3
-            },
-            "hostnames": [
-              "host1",
-              "host2"
-            ]
-          }
-        }
-      },
-      "metrics": {
-        "queriesPerSecond": 1.0,
-        "writesPerSecond": 2.0,
-        "documentCount": 3.0,
-        "queryLatencyMillis": 4.0,
-        "writeLatencyMillis": 5.0
-      }
-    }
+    @include(dev-us-west-1.json),
+    @include(prod-corp-us-east-1.json)
   ],
   "metrics": {
     "queryServiceQuality": 0.5,

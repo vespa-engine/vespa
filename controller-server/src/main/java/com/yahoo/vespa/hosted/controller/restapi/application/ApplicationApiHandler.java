@@ -225,11 +225,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse recursiveRoot(HttpRequest request) {
         Slime slime = new Slime();
         Cursor tenantArray = slime.setArray();
-        for (Tenant tenant : controller.tenants().asList()) {
-            Cursor tenantObject = tenantArray.addObject();
-            tenantObject.setString("tenant", tenant.getId().id());
-            toSlime(tenantObject, tenant, request, true);
-        }
+        for (Tenant tenant : controller.tenants().asList())
+            toSlime(tenantArray.addObject(), tenant, request, true);
         return new SlimeJsonResponse(slime);
     }
 
@@ -347,6 +344,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {
+        object.setString("application", application.id().application().value());
+        object.setString("instance", application.id().instance().value());
         // Currently deploying change
         if (application.deploying().isPresent()) {
             Cursor deployingObject = object.setObject("deploying");
@@ -882,6 +881,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
+        object.setString("tenant", tenant.getId().id());
         object.setString("type", tenant.tenantType().name());
         tenant.getAthensDomain().ifPresent(a -> object.setString("athensDomain", a.id()));
         tenant.getProperty().ifPresent(p -> object.setString("property", p.id()));
@@ -890,8 +890,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor applicationArray = object.setArray("applications");
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
             for (Application application : controller.applications().asList(TenantName.from(tenant.getId().id()))) {
-                if (application.id().instance().isDefault()) // TODO: Skip non-default applications until supported properly
-                    toSlime(application, applicationArray.addObject(), request);
+                if (application.id().instance().isDefault()) {// TODO: Skip non-default applications until supported properly
+                    if (request.getBooleanProperty("recursive"))
+                        toSlime(applicationArray.addObject(), application, request);
+                    else
+                        toSlime(application, applicationArray.addObject(), request);
+                }
             }
         }
         tenant.getPropertyId().ifPresent(propertyId -> {
@@ -1015,11 +1019,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Application application, Cursor object, HttpRequest request) {
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
-        if (request.getBooleanProperty("recursive"))
-            toSlime(object, application, request);
-        else
-            object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +
-                                             "/application/" + application.id().application().value(), request.getUri()).toString());
+        object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +
+                                         "/application/" + application.id().application().value(), request.getUri()).toString());
     }
 
     private Slime toSlime(ActivateResult result, long applicationZipSizeBytes) {

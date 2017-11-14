@@ -1,4 +1,5 @@
 {
+  "application": "application1",
   "deploymentJobs": [
     {
       "type": "component",

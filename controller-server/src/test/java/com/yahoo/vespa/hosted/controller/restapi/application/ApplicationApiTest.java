@@ -227,13 +227,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       "",
                                       Request.Method.GET,
                                       "domain1", "mytenant&recursive=true"),
-                              new File("recursive-tenant.json"));
+                              new File("tenant1.json"));
         // GET at an application, with "&recursive=true", returns full info about its deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/",
                                       "",
                                       Request.Method.GET,
                                       "domain1", "mytenant&recursive=true"),
-                              new File("recursive-application.json"));
+                              new File("application1.json"));
 
 
         // POST a 'restart application' command

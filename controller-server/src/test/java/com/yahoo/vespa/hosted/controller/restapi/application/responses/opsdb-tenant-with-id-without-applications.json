@@ -1,4 +1,5 @@
 {
+  "tenant": "tenant3",
   "type": "OPSDB",
   "property": "property1",
   "propertyId": "1234",
