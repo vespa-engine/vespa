@@ -59,13 +59,12 @@ public class FileReceiver {
                 .paramDesc(2, "partid", "relative part number starting at zero")
                 .paramDesc(3, "data", "bytes in this part")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
-        methods.add(new Method(RECEIVE_EOF_METHOD, "siilis", "i", handler,"receiveFileEof")
+        methods.add(new Method(RECEIVE_EOF_METHOD, "silis", "i", handler,"receiveFileEof")
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
-                .paramDesc(2, "partid", "relative part number starting at zero")
-                .paramDesc(3, "crc-code", "crc code (xxhash64)")
-                .paramDesc(4, "error-code", "Error code. 0 if none")
-                .paramDesc(5, "error-description", "Error description.")
+                .paramDesc(2, "crc-code", "crc code (xxhash64)")
+                .paramDesc(3, "error-code", "Error code. 0 if none")
+                .paramDesc(4, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 if crc mismatch, 2 otherwise"));
         // Temporary method until we have chunking
         methods.add(new Method(RECEIVE_METHOD, "ssxlis", "i", handler, "receiveFile")
