@@ -3,7 +3,7 @@
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/fastos/file.h>
-#include <vespa/persistence/spi/test.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -27,12 +27,12 @@
 
 using namespace cloud::config::filedistribution;
 using namespace proton;
-using namespace storage::spi::test;
 using namespace vespalib::slime;
 
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumenttypesConfig;
+using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
