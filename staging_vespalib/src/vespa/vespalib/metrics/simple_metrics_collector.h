@@ -2,6 +2,7 @@
 #pragma once
 
 #include "simple_metrics.h"
+#include "name_collection.h"
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
@@ -10,15 +11,6 @@ namespace metrics {
 struct CollectorConfig {
     int sliding_window_seconds;
     // possibly more config later
-};
-
-class NameCollection {
-private:
-    std::vector<vespalib::string> _names;
-public:
-    const vespalib::string &lookup(int idx) const;
-    int lookup(const vespalib::string& name) const;
-    int resolve(const vespalib::string& name);
 };
 
 class SimpleMetricsCollector {
