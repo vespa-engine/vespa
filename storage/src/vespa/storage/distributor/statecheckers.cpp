@@ -445,7 +445,7 @@ JoinBucketsStateChecker::computeJoinBucket(const Context& c) const
         --level;
         target = candidate;
     }
-    return document::Bucket(BucketSpace::placeHolder(), target);
+    return document::Bucket(c.getBucket().getBucketSpace(), target);
 }
 
 StateChecker::Result
