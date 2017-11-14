@@ -156,8 +156,8 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public URI getElkUri(Environment environment, RegionName region, DeploymentId deploymentId) {
-        return elkUrl(zoneRegistry.getLogServerUri(environment, region), deploymentId);
+    public URI getElkUri(DeploymentId deploymentId) {
+        return elkUrl(zoneRegistry.getLogServerUri(deploymentId.zone().environment(), deploymentId.zone().region()), deploymentId);
     }
 
     public List<URI> getConfigServerUris(Environment environment, RegionName region) {

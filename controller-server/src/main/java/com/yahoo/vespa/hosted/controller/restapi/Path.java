@@ -98,9 +98,6 @@ public class Path {
      */
     public String getRest() { return rest; }
 
-    /** Returns this path as a string */
-    public String asString() { return pathString; }
-    
     @Override
     public String toString() {
         return "path '" + Arrays.stream(elements).collect(Collectors.joining("/")) + "'";
