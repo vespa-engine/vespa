@@ -62,7 +62,7 @@ MatchEngine::close()
 {
     LOG(debug, "Closing search interface.");
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _closed = true;
     }
 
@@ -74,21 +74,21 @@ ISearchHandler::SP
 MatchEngine::putSearchHandler(const DocTypeName &docTypeName,
                               const ISearchHandler::SP &searchHandler)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.putHandler(docTypeName, searchHandler);
 }
 
 ISearchHandler::SP
 MatchEngine::getSearchHandler(const DocTypeName &docTypeName)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandler(docTypeName);
 }
 
 ISearchHandler::SP
 MatchEngine::removeSearchHandler(const DocTypeName &docTypeName)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.removeHandler(docTypeName);
 }
 
@@ -121,7 +121,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard<std::mutex> guard(_lock);
             DocTypeName docTypeName(*req.get());
             searchHandler = _handlers.getHandler(docTypeName);
         }
@@ -130,7 +130,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         } else {
             HandlerMap<ISearchHandler>::Snapshot::UP snapshot;
             {
-                vespalib::LockGuard guard(_lock);
+                std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
             if (snapshot->valid()) {
