@@ -103,6 +103,7 @@ public class TensorValue extends Value {
             case SMALLEREQUAL: return value.smallerOrEqual(argument);
             case EQUAL: return value.equal(argument);
             case NOTEQUAL: return value.notEqual(argument);
+            case APPROX_EQUAL: return value.approxEqual(argument);
             default: throw new UnsupportedOperationException("Tensors cannot be compared with " + operator);
         }
     }

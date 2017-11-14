@@ -177,6 +177,7 @@ public interface Tensor {
     default Tensor smallerOrEqual(Tensor argument) { return join(argument, (a, b) -> ( a <= b ? 1.0 : 0.0)); }
     default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
+    default Tensor approxEqual(Tensor argument) { return join(argument, (a, b) -> ( approxEquals(a,b) ? 1.0 : 0.0)); }
 
     default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
     default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
@@ -261,9 +262,23 @@ public interface Tensor {
             Cell aCell = aIterator.next();
             double aValue = aCell.getValue();
             double bValue = b.get(aCell.getKey());
-            if (Math.abs(aValue-bValue) > 1e-7) return false; // TODO: determine relative precision
+            if (!approxEquals(aValue, bValue, 1e-6)) return false;
         }
         return true;
+    }
+
+    static boolean approxEquals(double x, double y, double tolerance) {
+        return Math.abs(x-y) < tolerance;
+    }
+
+    static boolean approxEquals(double x, double y) {
+        if (y < -1.0 || y > 1.0) {
+            x = Math.nextAfter(x/y, 1.0);
+            y = 1.0;
+        } else {
+            x = Math.nextAfter(x, y);
+        }
+        return x==y;
     }
 
     // ----------------- Factories
