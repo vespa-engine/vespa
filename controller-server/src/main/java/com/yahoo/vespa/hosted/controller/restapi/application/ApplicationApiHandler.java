@@ -225,8 +225,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse recursiveRoot(HttpRequest request) {
         Slime slime = new Slime();
         Cursor tenantArray = slime.setArray();
-        for (Tenant tenant : controller.tenants().asList())
-            toSlime(tenantArray.addObject(), tenant, request, true);
+        for (Tenant tenant : controller.tenants().asList()) {
+            Cursor tenantObject = tenantArray.addObject();
+            tenantObject.setString("tenant", tenant.getId().id());
+            toSlime(tenantObject, tenant, request, true);
+        }
         return new SlimeJsonResponse(slime);
     }
 
