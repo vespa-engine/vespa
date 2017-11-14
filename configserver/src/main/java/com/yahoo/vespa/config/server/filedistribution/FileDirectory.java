@@ -5,7 +5,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -100,7 +99,10 @@ public class FileDirectory  {
                 destinationDir.mkdir();
                 Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
                 File destination = new File(tempDestinationDir.toFile(), source.getName());
-                IOUtils.copy(source, destination);
+                if (source.isDirectory())
+                    IOUtils.copyDirectory(source, destination);
+                else
+                    IOUtils.copy(source, destination);
                 if (!destinationDir.exists()) {
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
                         log.warning("Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
