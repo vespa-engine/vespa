@@ -39,7 +39,7 @@ public enum Function implements Serializable {
 
     atan2(2)  { public double evaluate(double x, double y) { return atan2(x,y); } },
     fmod(2)   { public double evaluate(double x, double y) { return x % y; } },
-    ldexp(2)  { public double evaluate(double x, double y) { return x*pow(2,y); } },
+    ldexp(2)  { public double evaluate(double x, double y) { return x*pow(2,(int)y); } },
     max(2)    { public double evaluate(double x, double y) { return max(x,y); } },
     min(2)    { public double evaluate(double x, double y) { return min(x,y); } },
     pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } };
