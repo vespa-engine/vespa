@@ -121,6 +121,7 @@ public class TensorValue extends Value {
             case min: return value.min(argument);
             case max: return value.max(argument);
             case atan2: return value.atan2(argument);
+            case pow: return value.pow(argument);
             default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
         }
     }
