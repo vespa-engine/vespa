@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.ssl.pem;
 
-import com.yahoo.jdisc.http.ssl.SslKeyStore;
 import com.yahoo.jdisc.http.ssl.pem.PemKeyStore.KeyStoreLoadParameter;
 import com.yahoo.jdisc.http.ssl.pem.PemKeyStore.TrustStoreLoadParameter;
 
@@ -21,7 +20,7 @@ import java.security.cert.CertificateException;
  * @author Tony Vaagenes
  * @author bjorncs
  */
-public class PemSslKeyStore implements SslKeyStore {
+public class PemSslKeyStore {
 
     static {
         Security.addProvider(new PemKeyStoreProvider());
@@ -40,9 +39,8 @@ public class PemSslKeyStore implements SslKeyStore {
         this.loadParameter = new TrustStoreLoadParameter(certificatePath);
     }
 
-    @Override
-    public KeyStore loadJavaKeyStore() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        //cached since Reader(in loadParameter) can only be used one time.
+    public KeyStore loadJavaKeyStore()
+            throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {
         if (keyStore == null) {
             keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
             keyStore.load(loadParameter);
