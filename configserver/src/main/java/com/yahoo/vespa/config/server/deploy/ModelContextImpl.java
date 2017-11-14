@@ -2,19 +2,16 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.model.api.*;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -136,7 +133,7 @@ public class ModelContextImpl implements ModelContext {
         private final ApplicationId applicationId;
         private final boolean multitenant;
         private final List<ConfigServerSpec> configServerSpecs;
-        private final String loadBalancerAddress;
+        private final URI loadBalancerAddress;
         private final boolean hostedVespa;
         private final Zone zone;
         private final Set<Rotation> rotations;
@@ -144,7 +141,7 @@ public class ModelContextImpl implements ModelContext {
         public Properties(ApplicationId applicationId,
                           boolean multitenant,
                           List<ConfigServerSpec> configServerSpecs,
-                          String loadBalancerAddress,
+                          URI loadBalancerAddress,
                           boolean hostedVespa,
                           Zone zone,
                           Set<Rotation> rotations) {
@@ -173,7 +170,7 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override
-        public String loadBalancerAddress() {
+        public URI loadBalancerAddress() {
             return loadBalancerAddress;
         }
 

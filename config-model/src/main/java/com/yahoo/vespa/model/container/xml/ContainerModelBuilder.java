@@ -7,7 +7,6 @@ import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -58,6 +57,7 @@ import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -166,10 +166,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Athenz copper argos
         // NOTE: Must be done after addNodes()
-        addIdentity(spec,
-                    cluster,
-                    context.getDeployState().getProperties().configServerSpecs(),
-                    context.getDeployState().getProperties().loadBalancerAddress());
+        addIdentity(spec, cluster, context.getDeployState().getProperties().loadBalancerAddress());
 
         //TODO: overview handler, see DomQrserverClusterBuilder
     }
@@ -697,22 +694,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentity(Element element, ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, String loadBalancerAddress) {
+    private void addIdentity(Element element, ContainerCluster cluster, URI loadBalancerAddress) {
         Element identityElement = XML.getChild(element, "identity");
         if(identityElement != null) {
             String domain = XML.getValue(XML.getChild(identityElement, "domain"));
             String service = XML.getValue(XML.getChild(identityElement, "service"));
 
-            // Set lbaddress, or use first hostname if not specified.
-            String lbAddress = Optional.ofNullable(loadBalancerAddress)
-                    .orElseGet(
-                            () -> configServerSpecs.stream()
-                                    .findFirst()
-                                    .map(ConfigServerSpec::getHostName)
-                                    .orElse("unknown") // Currently unable to test this, hence the unknown
-                    );
-
-            Identity identity = new Identity(domain.trim(), service.trim(), lbAddress);
+            Identity identity = new Identity(domain.trim(), service.trim(), loadBalancerAddress);
             cluster.addComponent(identity);
 
             cluster.getContainers().forEach(container -> {

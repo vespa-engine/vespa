@@ -27,6 +27,7 @@ import com.yahoo.config.provision.Zone;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -195,7 +196,7 @@ public class VespaModelFactoryTest {
                     }
 
                     @Override
-                    public String loadBalancerAddress() {
+                    public URI loadBalancerAddress() {
                         return null;
                     }
                 };
