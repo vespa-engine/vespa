@@ -51,6 +51,7 @@
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/config/subscription/configuri.h>
 #include <list>
+#include <unordered_map>
 
 namespace storage {
 
@@ -77,7 +78,7 @@ class StorageBucketDBInitializer : public StorageLink,
         DoneInitializeHandler& _doneInitializeHandler;
         ServiceLayerComponent _component;
         const spi::PartitionStateList& _partitions;
-        StorBucketDatabase& _bucketDatabase;
+        const ContentBucketSpaceRepo& _bucketSpaceRepo;
         uint32_t _nodeIndex;
         lib::Distribution& _distribution;
         lib::NodeState _nodeState; // Disk info for ideal state calculations
@@ -87,6 +88,8 @@ class StorageBucketDBInitializer : public StorageLink,
                DoneInitializeHandler& doneInitializeHandler,
                ServiceLayerComponentRegister&,
                const Config&);
+
+        StorBucketDatabase &getBucketDatabase(document::BucketSpace bucketSpace) const;
     };
     struct Metrics : public metrics::MetricSet {
         metrics::LongCountMetric _wrongDisk;
@@ -126,12 +129,17 @@ class StorageBucketDBInitializer : public StorageLink,
         ~GlobalState();
     };
 
+public:
+    using BucketSpaceReadState = std::unordered_map<document::BucketSpace,
+            std::unique_ptr<BucketReadState>, document::BucketSpace::hash>;
+    using ReadState = std::vector<std::unique_ptr<BucketSpaceReadState>>;
 
+private:
     Config _config;
     System _system;
     Metrics _metrics;
     GlobalState _state;
-    std::vector<std::unique_ptr<BucketReadState>> _readState;
+    ReadState _readState;
 
 public:
     StorageBucketDBInitializer(const config::ConfigUri&,
@@ -186,7 +194,7 @@ public:
      * Sends more read bucket info to a given disk. Lock must already be taken.
      * Will be released by function prior to sending messages down.
      */
-    void sendReadBucketInfo(spi::PartitionId);
+    void sendReadBucketInfo(spi::PartitionId, document::BucketSpace bucketSpace);
     /** Check whether initialization is complete. Should hold lock to call it.*/
     void checkIfDone();
 
