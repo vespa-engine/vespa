@@ -474,9 +474,9 @@ public class UpgraderTest {
     public void testBlockVersionChangeHalfwayThough() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
-        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
-                                                                                Duration.ofHours(1),
-                                                                                new JobControl(tester.controllerTester().curator()));
+        ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
+                                                                 Duration.ofHours(1),
+                                                                 new JobControl(tester.controllerTester().curator()));
 
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
@@ -506,12 +506,12 @@ public class UpgraderTest {
 
         // One hour passes, time is 19:00, still no upgrade
         tester.clock().advance(Duration.ofHours(1));
-        blockedChangeDeployer.maintain();
+        readyJobsTrigger.maintain();
         assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
 
         // Another hour pass, time is 20:00 and application upgrades
         tester.clock().advance(Duration.ofHours(1));
-        blockedChangeDeployer.maintain();
+        readyJobsTrigger.maintain();
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
@@ -528,9 +528,9 @@ public class UpgraderTest {
     public void testBlockVersionChangeHalfwayThoughThenNewVersion() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-29T16:00:00.00Z")); // Friday, 16:00
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
-        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
-                                                                                Duration.ofHours(1),
-                                                                                new JobControl(tester.controllerTester().curator()));
+        ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
+                                                                 Duration.ofHours(1),
+                                                                 new JobControl(tester.controllerTester().curator()));
 
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
@@ -565,14 +565,14 @@ public class UpgraderTest {
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
-        blockedChangeDeployer.maintain();
+        readyJobsTrigger.maintain();
         assertTrue("Nothing is scheduled", tester.buildSystem().jobs().isEmpty());
 
         // Monday morning: We are not blocked
         tester.clock().advance(Duration.ofDays(1)); // Sunday, 17:00
         tester.clock().advance(Duration.ofHours(17)); // Monday, 10:00
         tester.upgrader().maintain();
-        blockedChangeDeployer.maintain();
+        readyJobsTrigger.maintain();
         // We proceed with the new version in the expected order, not starting with the previously blocked version:
         // Test jobs are run with the new version, but not production as we are in the block window
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);

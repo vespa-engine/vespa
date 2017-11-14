@@ -1,19 +1,16 @@
 {
   "jobs": [
     {
+      "name": "ClusterInfoMaintainer"
+    },
+    {
+      "name": "ClusterUtilizationMaintainer"
+    },
+    {
       "name": "DelayedDeployer"
     },
     {
-      "name": "BlockedChangeDeployer"
-    },
-    {
-      "name": "Upgrader"
-    },
-    {
-      "name": "FailureRedeployer"
-    },
-    {
-      "name": "VersionStatusUpdater"
+      "name": "DeploymentExpirer"
     },
     {
       "name": "DeploymentIssueReporter"
@@ -22,19 +19,19 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
+      "name": "MetricsReporter"
+    },
+    {
       "name": "OutstandingChangeDeployer"
     },
     {
-      "name": "ClusterUtilizationMaintainer"
+      "name": "ReadyJobsTrigger"
     },
     {
-      "name": "ClusterInfoMaintainer"
+      "name": "Upgrader"
     },
     {
-      "name": "DeploymentExpirer"
-    },
-    {
-      "name": "MetricsReporter"
+      "name": "VersionStatusUpdater"
     }
   ],
   "inactive": [
