@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -48,15 +49,18 @@ import static com.yahoo.vespa.config.SlimeUtils.optionalString;
  */
 public class NodesApiHandler extends LoggingRequestHandler {
 
+    private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeRepositoryMaintenance maintenance;
     private final NodeFlavors nodeFlavors;
     private static final String nodeTypeKey = "type";
 
 
-    public NodesApiHandler(Executor executor, AccessLog accessLog, NodeRepository nodeRepository,
+    public NodesApiHandler(Executor executor, AccessLog accessLog, Orchestrator orchestrator,
+                           NodeRepository nodeRepository,
                            NodeRepositoryMaintenance maintenance, NodeFlavors flavors) {
         super(executor, accessLog);
+        this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.maintenance = maintenance;
         this.nodeFlavors = flavors;
@@ -89,10 +93,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.equals(    "/nodes/v2/")) return ResourcesResponse.fromStrings(request.getUri(), "state", "node", "command", "maintenance");
-        if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, nodeRepository);
-        if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, nodeRepository);
-        if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, nodeRepository);
-        if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, nodeRepository);
+        if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
+        if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
+        if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
+        if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
