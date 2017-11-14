@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "summaryengine.h"
-#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
@@ -17,9 +16,7 @@ private:
     DocsumRequest::Source _request;
 
 public:
-    DocsumTask(SummaryEngine & engine,
-               DocsumRequest::Source request,
-               DocsumClient & client)
+    DocsumTask(SummaryEngine & engine, DocsumRequest::Source request, DocsumClient & client)
         : _engine(engine),
           _client(client),
           _request(std::move(request))
@@ -62,8 +59,7 @@ SummaryEngine::close()
 }
 
 ISearchHandler::SP
-SummaryEngine::putSearchHandler(const DocTypeName &docTypeName,
-                                 const ISearchHandler::SP & searchHandler)
+SummaryEngine::putSearchHandler(const DocTypeName &docTypeName, const ISearchHandler::SP & searchHandler)
 {
     vespalib::LockGuard guard(_lock);
     return _handlers.putHandler(docTypeName, searchHandler);
@@ -72,6 +68,7 @@ SummaryEngine::putSearchHandler(const DocTypeName &docTypeName,
 ISearchHandler::SP
 SummaryEngine::getSearchHandler(const DocTypeName &docTypeName)
 {
+    vespalib::LockGuard guard(_lock);
     return _handlers.getHandler(docTypeName);
 }
 
@@ -101,17 +98,11 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 DocsumReply::UP
 SummaryEngine::getDocsums(DocsumRequest::UP req)
 {
-    DocsumReply::UP reply;
-    reply.reset(new DocsumReply());
+    DocsumReply::UP reply = std::make_unique<DocsumReply>();
 
     if (req) {
-        ISearchHandler::SP searchHandler;
-        { // try to find the summary handler corresponding to the specified search doc type
-            vespalib::LockGuard guard(_lock);
-            DocTypeName docTypeName(*req);
-            searchHandler = _handlers.getHandler(docTypeName);
-        }
-        if (searchHandler.get() != NULL) {
+        ISearchHandler::SP searchHandler = getSearchHandler(DocTypeName(*req));
+        if (searchHandler) {
             reply = searchHandler->getDocsums(*req);
         } else {
             vespalib::Sequence<ISearchHandler*>::UP snapshot;
