@@ -3,11 +3,19 @@ package com.yahoo.search.yql;
 
 import com.google.common.collect.Sets;
 
+import com.yahoo.yolean.Exceptions;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.atn.ATNConfigSet;
+import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.BitSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Provides semantic helper functions to Parser.
@@ -35,5 +43,5 @@ abstract class ParserBase extends Parser {
         }
         return name != null && arrayParameters.contains(name);
     }
-
+    
 }
