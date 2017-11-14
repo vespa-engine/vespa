@@ -14,5 +14,7 @@ vespa_add_library(filedistribution_filedistributionmodel STATIC
     zkfiledbmodel.cpp
     DEPENDS
 )
-vespa_add_target_external_dependency(filedistribution_filedistributionmodel zookeeper_mt)
+vespa_generate_config(filedistribution_filedistributionmodel filereferences.def)
 
+vespa_add_target_external_dependency(filedistribution_filedistributionmodel zookeeper_mt)
+install_config_definition(filereferences.def cloud.config.filedistribution.filereferences.def)
