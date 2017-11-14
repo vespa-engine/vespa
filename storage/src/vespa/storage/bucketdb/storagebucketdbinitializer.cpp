@@ -143,7 +143,7 @@ StorageBucketDBInitializer::StorageBucketDBInitializer(
         if (!_system._partitions[i].isUp()) continue;
         _readState[i] = std::make_unique<BucketSpaceReadState>();
         for (const auto &elem : _system._bucketSpaceRepo) {
-            _readState[i]->insert(std::make_pair(elem.first, std::make_unique<BucketReadState>()));
+            _readState[i]->emplace(elem.first, std::make_unique<BucketReadState>());
         }
         _state._dirsToList += 1;
     }
