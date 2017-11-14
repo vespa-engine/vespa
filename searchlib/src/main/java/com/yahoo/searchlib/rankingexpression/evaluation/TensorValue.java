@@ -122,6 +122,7 @@ public class TensorValue extends Value {
             case max: return value.max(argument);
             case atan2: return value.atan2(argument);
             case pow: return value.pow(argument);
+            case fmod: return value.fmod(argument);
             default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
         }
     }
