@@ -169,7 +169,7 @@ StorageBucketDBInitializer::onOpen()
         const BucketSpaceReadState &spaceState = *_readState[i];
         for (const auto &stateElem : spaceState) {
             document::BucketSpace bucketSpace = stateElem.first;
-            ReadBucketList::SP msg(new ReadBucketList(bucketSpace, spi::PartitionId(i)));
+            auto msg = std::make_shared<ReadBucketList>(bucketSpace, spi::PartitionId(i));
             _state._lists[msg->getMsgId()] = msg;
             sendDown(msg);
         }
@@ -418,8 +418,7 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
             bucketId.toString().c_str(), entry->disk, int(partition), keepOnDisk);
         entry.unlock();
         // Must not have bucket db lock while sending down
-        InternalBucketJoinCommand::SP cmd(new InternalBucketJoinCommand(
-                bucket, keepOnDisk, joinFromDisk));
+        auto cmd = std::make_shared<InternalBucketJoinCommand>(bucket, keepOnDisk, joinFromDisk);
         {
             _state._joins[cmd->getMsgId()] = cmd;
         }
@@ -518,7 +517,7 @@ StorageBucketDBInitializer::sendReadBucketInfo(spi::PartitionId disk, document::
     }
     for (uint32_t i=0; i<finder._next.size(); ++i) {
         document::Bucket bucket(bucketSpace, finder._next[i]);
-        ReadBucketInfo::SP cmd(new ReadBucketInfo(bucket));
+        auto cmd = std::make_shared<ReadBucketInfo>(bucket);
         cmd->setPriority(_config._infoReadPriority);
         state._pending.insert(finder._next[i]);
         _state._infoRequests[cmd->getMsgId()] = disk;
