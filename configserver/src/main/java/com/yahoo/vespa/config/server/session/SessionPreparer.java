@@ -35,7 +35,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +151,7 @@ public class SessionPreparer {
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
-                                                              URI.create(configserverConfig.loadBalancerAddress()),
+                                                              configserverConfig.loadBalancerAddress(),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
                                                               rotationsSet);

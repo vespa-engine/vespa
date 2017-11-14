@@ -10,7 +10,6 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
-import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,7 +41,7 @@ public interface ModelContext {
         boolean multitenant();
         ApplicationId applicationId();
         List<ConfigServerSpec> configServerSpecs();
-        URI loadBalancerAddress();
+        String loadBalancerAddress();
         boolean hostedVespa();
         Zone zone();
         Set<Rotation> rotations();
