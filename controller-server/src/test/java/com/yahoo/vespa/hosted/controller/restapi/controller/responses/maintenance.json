@@ -7,9 +7,6 @@
       "name": "ClusterUtilizationMaintainer"
     },
     {
-      "name": "DelayedDeployer"
-    },
-    {
       "name": "DeploymentExpirer"
     },
     {

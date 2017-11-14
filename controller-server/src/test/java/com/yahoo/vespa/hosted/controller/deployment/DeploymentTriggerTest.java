@@ -128,7 +128,7 @@ public class DeploymentTriggerTest {
 
         // 30 seconds pass, us-west-1 is triggered
         tester.clock().advance(Duration.ofSeconds(30));
-        tester.deploymentTrigger().triggerDelayed();
+        tester.deploymentTrigger().triggerReadyJobs();
 
         // Consume us-west-1 job without reporting completion
         assertEquals(1, buildSystem.jobs().size());
@@ -137,7 +137,7 @@ public class DeploymentTriggerTest {
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
         tester.clock().advance(Duration.ofMinutes(3));
-        tester.deploymentTrigger().triggerDelayed();
+        tester.deploymentTrigger().triggerReadyJobs();
         assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
 
         // us-west-1 completes
@@ -145,18 +145,18 @@ public class DeploymentTriggerTest {
         tester.notifyJobCompletion(JobType.productionUsWest1, application, true);
 
         // Delayed trigger does nothing as not enough time has passed after us-west-1 completion
-        tester.deploymentTrigger().triggerDelayed();
+        tester.deploymentTrigger().triggerReadyJobs();
         assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
 
         // 3 minutes pass, us-central-1 is triggered
         tester.clock().advance(Duration.ofMinutes(3));
-        tester.deploymentTrigger().triggerDelayed();
+        tester.deploymentTrigger().triggerReadyJobs();
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
 
         // Delayed trigger job runs again, with nothing to trigger
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.deploymentTrigger().triggerDelayed();
+        tester.deploymentTrigger().triggerReadyJobs();
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
     }
 

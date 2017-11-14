@@ -28,7 +28,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final VersionStatusUpdater versionStatusUpdater;
     private final Upgrader upgrader;
-    private final DelayedDeployer delayedDeployer;
     private final ReadyJobsTrigger readyJobsTrigger;
     private final ClusterInfoMaintainer clusterInfoMaintainer;
     private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
@@ -46,7 +45,6 @@ public class ControllerMaintenance extends AbstractComponent {
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, maintenanceInterval, jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(3), jobControl);
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
-        delayedDeployer = new DelayedDeployer(controller, maintenanceInterval, jobControl);
         readyJobsTrigger = new ReadyJobsTrigger(controller, maintenanceInterval, jobControl);
         clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
@@ -66,7 +64,6 @@ public class ControllerMaintenance extends AbstractComponent {
         outstandingChangeDeployer.deconstruct();
         versionStatusUpdater.deconstruct();
         upgrader.deconstruct();
-        delayedDeployer.deconstruct();
         readyJobsTrigger.deconstruct();
         clusterUtilizationMaintainer.deconstruct();
         clusterInfoMaintainer.deconstruct();

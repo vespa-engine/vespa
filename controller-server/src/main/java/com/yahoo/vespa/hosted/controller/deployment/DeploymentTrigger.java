@@ -216,33 +216,6 @@ public class DeploymentTrigger {
         return false;
     }
     
-    /** Triggers jobs that have been delayed according to deployment spec */
-    public void triggerDelayed() {
-        for (Application application : applications().asList()) {
-            if ( ! application.deploying().isPresent() ) continue;
-            if (application.deploymentJobs().hasFailures()) continue;
-            if (application.deploymentJobs().isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit())) continue;
-            if (application.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
-                continue; // Application does not have any delayed deployments
-            }
-
-            Optional<JobStatus> lastSuccessfulJob = application.deploymentJobs().jobStatus().values()
-                    .stream()
-                    .filter(j -> j.lastSuccess().isPresent())
-                    .sorted(Comparator.<JobStatus, Instant>comparing(j -> j.lastSuccess().get().at()).reversed())
-                    .findFirst();
-            if ( ! lastSuccessfulJob.isPresent() ) continue;
-
-            // Trigger next
-            try (Lock lock = applications().lock(application.id())) {
-                LockedApplication lockedApplication = applications().require(application.id(), lock);
-                lockedApplication = trigger(order.nextAfter(lastSuccessfulJob.get().type(), lockedApplication),
-                                            lockedApplication, "Resuming delayed deployment");
-                applications().store(lockedApplication);
-            }
-        }
-    }
-    
     /**
      * Triggers a change of this application
      * 
