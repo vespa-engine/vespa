@@ -3,6 +3,8 @@
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/distributor/distributortestutil.h>
@@ -13,6 +15,8 @@
 #include <vespa/config/helper/configgetter.hpp>
 
 using document::BucketId;
+using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 
 namespace storage {
 namespace distributor {
@@ -112,19 +116,19 @@ namespace {
             BucketInstanceList result(_test.getInstances(_id, true));
             BucketInstanceList all(_test.getInstances(_id, false));
             _asserter.assertEqualMsg(
-                    all.toString(), _expected, result.createTargets());
+                    all.toString(), _expected, result.createTargets(makeBucketSpace()));
             delete _asserters.back();
             _asserters.pop_back();
         }
         
         TestTargets& sendsTo(const BucketId& id, uint16_t node) {
             _expected.push_back(OperationTarget(
-                    id, lib::Node(lib::NodeType::STORAGE, node), false));
+                    makeDocumentBucket(id), lib::Node(lib::NodeType::STORAGE, node), false));
             return *this;
         }
         TestTargets& createsAt(const BucketId& id, uint16_t node) {
             _expected.push_back(OperationTarget(
-                    id, lib::Node(lib::NodeType::STORAGE, node), true));
+                    makeDocumentBucket(id), lib::Node(lib::NodeType::STORAGE, node), true));
             return *this;
         }
 
@@ -148,7 +152,8 @@ OperationTargetResolverTest::getInstances(const BucketId& id,
     idealNodeCalc.setClusterState(getExternalOperationHandler().getClusterState());
     OperationTargetResolverImpl resolver(
             getExternalOperationHandler().getBucketDatabase(), idealNodeCalc, 16,
-            getExternalOperationHandler().getDistribution().getRedundancy());
+            getExternalOperationHandler().getDistribution().getRedundancy(),
+            makeBucketSpace());
     if (stripToRedundancy) {
         return resolver.getInstances(OperationTargetResolver::PUT, id);
     } else {
