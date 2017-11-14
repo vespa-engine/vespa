@@ -7,6 +7,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vdslib/state/nodestate.h>
@@ -18,8 +19,8 @@
 
 using document::BucketId;
 using document::BucketSpace;
+using document::test::makeBucketSpace;
 using storage::spi::test::makeSpiBucket;
-using storage::spi::test::makeBucketSpace;
 
 namespace storage::spi {
 

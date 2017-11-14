@@ -9,4 +9,17 @@ BucketSpace makeBucketSpace()
     return BucketSpace::placeHolder();
 }
 
+BucketSpace makeBucketSpace(const vespalib::string &docTypeName)
+{
+    // Used by persistence conformance test to map fron document type name
+    // to bucket space.  See document::TestDocRepo for known document types.
+    if (docTypeName == "no") {
+        return BucketSpace(2);
+    } else if (docTypeName == "testdoctype2") {
+        return BucketSpace(1);
+    } else {
+        return makeBucketSpace();
+    }
+}
+
 }

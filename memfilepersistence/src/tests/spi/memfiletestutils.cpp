@@ -7,14 +7,15 @@
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sys/time.h>
 
 using document::DocumentType;
+using document::test::makeBucketSpace;
 using storage::spi::test::makeSpiBucket;
-using storage::spi::test::makeBucketSpace;
 
 namespace storage {
 namespace memfile {
