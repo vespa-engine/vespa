@@ -356,7 +356,7 @@ StorageBucketDBInitializer::reportHtmlStatus(
                 }
             }
             out << ")<br/>\n";
-            out << "      Bucked database iterator: " << state._databaseIterator
+            out << "      Bucket database iterator: " << state._databaseIterator
                 << "<br/>\n";
             out << "      Done iterating bucket database. "
                 << (state._done ? "true" : "false") << "<br/>\n";
