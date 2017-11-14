@@ -452,7 +452,7 @@ BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::Buc
 {
     auto &distributorBucketSpace(_bucketSpaceComponent.getBucketSpaceRepo().get(bucket.getBucketSpace()));
     std::vector<BucketDatabase::Entry> entries;
-                                 distributorBucketSpace.getBucketDatabase().getAll(bucket.getBucketId(), entries);
+    distributorBucketSpace.getBucketDatabase().getAll(bucket.getBucketId(), entries);
 
     for (const BucketDatabase::Entry & entry : entries) {
         addBucketInfoForNode(entry, node, existing);
