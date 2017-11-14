@@ -3,6 +3,8 @@
 
 #include "simple_metrics.h"
 #include "name_collection.h"
+#include "mergers.h"
+#include "snapshots.h"
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
@@ -17,13 +19,14 @@ class SimpleMetricsCollector {
 private:
     NameCollection _counterNames;
     NameCollection _gaugeNames;
+    CurrentSamples _currentBucket;
 
-    struct CurrentSamples {
-        std::vector<CounterIncrement> counterIncrements;
-        std::vector<GaugeMeasurement > gaugeMeasurements;
-    } _currentBucket;
+    clock::time_point _startTime;
+    clock::time_point _curTime;
 
     std::vector<Bucket> _buckets;
+    size_t _firstBucket;
+    size_t _maxBuckets;
     // lots of stuff
 public:
     SimpleMetricsCollector(const CollectorConfig &config);
