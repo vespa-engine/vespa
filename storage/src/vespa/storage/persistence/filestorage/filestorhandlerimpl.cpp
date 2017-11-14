@@ -742,7 +742,7 @@ FileStorHandlerImpl::calculateTargetBasedOnDocId(
         std::vector<RemapInfo*>& targets)
 {
     document::DocumentId id(getDocId(msg));
-    document::Bucket bucket(BucketSpace::placeHolder(), _bucketIdFactory.getBucketId(id));
+    document::Bucket bucket(msg.getBucket().getBucketSpace(), _bucketIdFactory.getBucketId(id));
 
     for (uint32_t i = 0; i < targets.size(); i++) {
         if (targets[i]->bucket.getBucketId().getRawId() != 0 &&
