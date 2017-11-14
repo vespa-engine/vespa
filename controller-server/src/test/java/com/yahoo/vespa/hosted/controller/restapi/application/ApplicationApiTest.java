@@ -643,7 +643,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       "{\"athensDomain\":\"domain2\", \"property\":\"property1\"}",
                                       Request.Method.PUT,
                                       "domain1", authorizedUser),
-                              "{\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
+                              "{\"tenant\":\"tenant1\",\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
                               200);
 
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
