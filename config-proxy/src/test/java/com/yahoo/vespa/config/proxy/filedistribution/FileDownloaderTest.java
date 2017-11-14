@@ -11,11 +11,14 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
@@ -28,6 +31,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class FileDownloaderTest {
+
+    private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
 
     private MockConnection connection;
     private FileDownloader fileDownloader;
@@ -94,7 +99,7 @@ public class FileDownloaderTest {
 
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.jar";
-            fileDownloader.receiveFile(fileReference, filename, Utf8.toBytes("some other content"));
+            receiveFile(fileReference, filename, "some other content");
             Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
@@ -128,7 +133,7 @@ public class FileDownloaderTest {
     public void receiveFile() throws IOException {
         FileReference foo = new FileReference("foo");
         String filename = "foo.jar";
-        fileDownloader.receiveFile(foo, filename, Utf8.toBytes("content"));
+        receiveFile(foo, filename, "content");
         File downloadedFile = new File(fileReferenceFullPath(downloadDir, foo), filename);
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
@@ -145,6 +150,12 @@ public class FileDownloaderTest {
     private void assertDownloadStatus(FileDownloader fileDownloader, FileReference fileReference, double expectedDownloadStatus) {
         double downloadStatus = fileDownloader.downloadStatus(fileReference);
         assertEquals(expectedDownloadStatus, downloadStatus, 0.0001);
+    }
+
+    private void receiveFile(FileReference fileReference, String filename, String content) {
+        byte[] contentBytes = Utf8.toBytes(content);
+        long xxHashFromContent = hasher.hash(ByteBuffer.wrap(contentBytes), 0);
+        fileDownloader.receiveFile(fileReference, filename, contentBytes, xxHashFromContent);
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

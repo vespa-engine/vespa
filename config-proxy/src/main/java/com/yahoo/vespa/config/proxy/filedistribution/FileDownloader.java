@@ -66,8 +66,8 @@ public class FileDownloader {
         fileReferences.forEach(this::queueForDownload);
     }
 
-    public void receiveFile(FileReference fileReference, String filename, byte[] content) {
-        fileReferenceDownloader.receiveFile(fileReference, filename, content);
+    public void receiveFile(FileReference fileReference, String filename, byte[] content, long xxHash) {
+        fileReferenceDownloader.receiveFile(fileReference, filename, content, xxHash);
     }
 
     double downloadStatus(FileReference fileReference) {
