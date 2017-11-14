@@ -88,7 +88,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * </p>
  *
  * @author Steinar Knutsen
- * @author stiankri
+ * @author Stian Kristoffersen
  * @author Simon Thoresen
  */
 @Beta
