@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class DeployProperties {
     private final boolean multitenant;
     private final ApplicationId applicationId;
     private final List<ConfigServerSpec> serverSpecs = new ArrayList<>();
-    private final String loadBalancerAddress;
+    private final URI loadBalancerAddress;
     private final boolean hostedVespa;
     private final Version vespaVersion;
     private final Zone zone;
@@ -28,7 +29,7 @@ public class DeployProperties {
     private DeployProperties(boolean multitenant,
                              ApplicationId applicationId,
                              List<ConfigServerSpec> configServerSpecs,
-                             String loadBalancerAddress,
+                             URI loadBalancerAddress,
                              boolean hostedVespa,
                              Version vespaVersion,
                              Zone zone) {
@@ -54,7 +55,7 @@ public class DeployProperties {
         return serverSpecs;
     }
 
-    public String loadBalancerAddress() {
+    public URI loadBalancerAddress() {
         return loadBalancerAddress;
     }
 
@@ -74,7 +75,7 @@ public class DeployProperties {
         private ApplicationId applicationId = ApplicationId.defaultId();
         private boolean multitenant = false;
         private List<ConfigServerSpec> configServerSpecs = new ArrayList<>();
-        private String loadBalancerAddress;
+        private URI loadBalancerAddress;
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
         private Zone zone = Zone.defaultZone();
@@ -94,7 +95,7 @@ public class DeployProperties {
             return this;
         }
 
-        public Builder loadBalancerAddress(String loadBalancerAddress) {
+        public Builder loadBalancerAddress(URI loadBalancerAddress) {
             this.loadBalancerAddress = loadBalancerAddress;
             return this;
         }
