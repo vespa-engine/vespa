@@ -278,7 +278,8 @@ public class DeploymentTrigger {
             application = application.withDeploying(Optional.of(change));
             if (change instanceof Change.ApplicationChange)
                 application = application.withOutstandingChange(false);
-            application = trigger(JobType.systemTest, application, false, "Deploying " + change);
+            application = trigger(JobType.systemTest, application, false,
+                                  (change instanceof Change.VersionChange ? "Upgrading to " + ((Change.VersionChange)change).version() : "Deploying " + change));
             applications().store(application);
         }
     }
