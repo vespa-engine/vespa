@@ -14,14 +14,14 @@ import java.time.Duration;
  * @author bratseth
  */
 @SuppressWarnings("unused")
-public class BlockedChangeDeployer extends Maintainer {
+public class ReadyJobsTrigger extends Maintainer {
     
-    public BlockedChangeDeployer(Controller controller, Duration interval, JobControl jobControl) {
+    public ReadyJobsTrigger(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl);
     }
 
     @Override
-    protected void maintain() {
+    public void maintain() {
         controller().applications().deploymentTrigger().triggerReadyJobs();
     }
 
