@@ -184,14 +184,14 @@ public class DeploymentTrigger {
         if ( ! application.deploying().isPresent()) return false;
         Change change = application.deploying().get();
 
-        if ( ! previous.lastSuccess().isPresent() && 
+        if ( ! previous.isSuccess() &&
              ! productionUpgradeHasSucceededFor(previous, change)) return false;
 
         if (change instanceof Change.VersionChange) {
             Version targetVersion = ((Change.VersionChange)change).version();
             if ( ! (targetVersion.equals(previous.lastSuccess().get().version())) )
                 return false; // version is outdated
-            if (isOnNewerVersionInProductionThan(targetVersion, application, next.type()))
+            if (next != null && isOnNewerVersionInProductionThan(targetVersion, application, next.type()))
                 return false; // Don't downgrade
         }
 
@@ -200,7 +200,7 @@ public class DeploymentTrigger {
 
         JobStatus.JobRun previousSuccess = previous.lastSuccess().get();
         JobStatus.JobRun nextSuccess = next.lastSuccess().get();
-        if (previousSuccess.revision().isPresent() &&  ! previousSuccess.revision().get().equals(nextSuccess.revision().get()))
+        if (previousSuccess.revision().isPresent() && ! previousSuccess.revision().equals(nextSuccess.revision()))
             return true;
         if ( ! previousSuccess.version().equals(nextSuccess.version()))
             return true;
