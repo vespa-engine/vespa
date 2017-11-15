@@ -12,6 +12,7 @@ import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
+import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.HttpConnection;
 
 import javax.servlet.AsyncContext;
@@ -122,7 +123,11 @@ class HttpRequestDispatch {
             boolean reportedError = false;
 
             if (error != null) {
-                if (!(error instanceof OverloadException || error instanceof BindingNotFoundException)) {
+                if (error instanceof EofException) {
+                    log.log(Level.FINE,
+                            "Network connection was unexpectedly terminated: " + parent.servletRequest.getRequestURI(),
+                            error);
+                } else if (!(error instanceof OverloadException || error instanceof BindingNotFoundException)) {
                     log.log(Level.WARNING, "Request failed: " + parent.servletRequest.getRequestURI(), error);
                 }
                 reportedError = true;
