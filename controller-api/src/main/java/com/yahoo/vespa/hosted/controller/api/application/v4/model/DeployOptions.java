@@ -14,6 +14,7 @@ import java.util.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DeployOptions {
 
+    // TODO: Add build number here, so we can replace job timeout (12 hours) with triggering timeout (a few minutes?)
     public final Optional<ScrewdriverBuildJob> screwdriverBuildJob;
     public final Optional<String> vespaVersion;
     public final boolean ignoreValidationErrors;

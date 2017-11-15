@@ -65,7 +65,11 @@ public class DeploymentTrigger {
     
     /** Returns the time in the past before which jobs are at this moment considered unresponsive */
     public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
-    
+
+    public BuildSystem buildSystem() { return buildSystem; }
+
+    public DeploymentOrder deploymentOrder() { return order; }
+
     //--- Start of methods which triggers deployment jobs -------------------------
 
     /** 
@@ -385,8 +389,4 @@ public class DeploymentTrigger {
         return false;
     }
     
-    public BuildSystem buildSystem() { return buildSystem; }
-
-    public DeploymentOrder deploymentOrder() { return order; }
-
 }
