@@ -114,7 +114,7 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         ServletHandler handler = new ServletHandler();
 
         CertificateSignerServlet certificateSignerServlet = new CertificateSignerServlet(certificateSigner);
-        handler.addServletWithMapping(new ServletHolder(certificateSignerServlet), "/sign");
+        handler.addServletWithMapping(new ServletHolder(certificateSignerServlet), config.apiPath() + "/sign");
 
         InstanceConfirmationServlet instanceConfirmationServlet = new InstanceConfirmationServlet(instanceValidator);
         handler.addServletWithMapping(new ServletHolder(instanceConfirmationServlet), config.apiPath() + "/instance");

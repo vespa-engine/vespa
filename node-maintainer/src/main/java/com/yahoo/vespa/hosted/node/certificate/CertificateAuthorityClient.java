@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.certificate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CertificateSerializedPayload;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CsrSerializedPayload;
 import org.apache.http.HttpHeaders;
@@ -16,6 +17,8 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 
 /**
@@ -27,11 +30,11 @@ class CertificateAuthorityClient {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private final String caServerPath;
+    private final URI caServerUri;
     private final CloseableHttpClient client;
 
     CertificateAuthorityClient(String caServerHostname) {
-        this.caServerPath = "https://" + caServerHostname + ":8443/sign";
+        this.caServerUri = URI.create("https://" + caServerHostname + ":8443/athenz/v1/provider/sign");
 
         // Trust all certificates
         SSLConnectionSocketFactory sslSocketFactory;
@@ -59,15 +62,15 @@ class CertificateAuthorityClient {
     private CertificateSerializedPayload sendCsr(CsrSerializedPayload csrSerialized) {
         try {
             String csrJson = mapper.writeValueAsString(csrSerialized);
-            InputStream certificateResponseStream = postJson(caServerPath, csrJson);
+            InputStream certificateResponseStream = postJson(caServerUri, csrJson);
             return mapper.readValue(certificateResponseStream, CertificateSerializedPayload.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to serialize CSR/deserialize certificate", e);
         }
     }
 
-    private InputStream postJson(String path, String json) {
-        HttpPost request = new HttpPost(path);
+    private InputStream postJson(URI uri, String json) {
+        HttpPost request = new HttpPost(uri);
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         try {
@@ -76,7 +79,8 @@ class CertificateAuthorityClient {
             int statusCode = response.getStatusLine().getStatusCode();
 
             if (statusCode != 200) {
-                throw new RuntimeException("CA responded with HTTP-" + statusCode + ", expected HTTP-200");
+                String responseBody = IOUtils.readAll(response.getEntity().getContent(), StandardCharsets.UTF_8);
+                throw new RuntimeException("CA responded with HTTP-" + statusCode + ": " + responseBody);
             }
             return response.getEntity().getContent();
         } catch (UnsupportedEncodingException e) {
