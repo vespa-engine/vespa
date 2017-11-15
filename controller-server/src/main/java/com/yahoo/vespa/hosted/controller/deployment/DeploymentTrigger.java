@@ -184,8 +184,7 @@ public class DeploymentTrigger {
         if ( ! application.deploying().isPresent()) return false;
         Change change = application.deploying().get();
 
-        if ( ! previous.isSuccess() &&
-             ! productionUpgradeHasSucceededFor(previous, change)) return false;
+        if ( ! previous.lastSuccess().isPresent()) return false;
 
         if (change instanceof Change.VersionChange) {
             Version targetVersion = ((Change.VersionChange)change).version();
@@ -446,18 +445,6 @@ public class DeploymentTrigger {
     }
 
     /**
-     * When upgrading it is ok to trigger the next job even if the previous failed if the previous has earlier succeeded
-     * on the version we are currently upgrading to
-     */
-    private boolean productionUpgradeHasSucceededFor(JobStatus jobStatus, Change change) {
-        if ( ! (change instanceof Change.VersionChange) ) return false;
-        if ( ! isProduction(jobStatus.type())) return false;
-        Optional<JobStatus.JobRun> lastSuccess = jobStatus.lastSuccess();
-        if ( ! lastSuccess.isPresent()) return false;
-        return lastSuccess.get().version().equals(((Change.VersionChange)change).version());
-    }
-
-    /** 
      * Returns whether the current deployed version in the zone given by the job
      * is newer than the given version. This may be the case even if the production job
      * in question failed, if the failure happens after deployment.
