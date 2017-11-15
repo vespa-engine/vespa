@@ -33,7 +33,7 @@ public abstract class Change {
 
         @Override
         public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
-            return  ! deploymentSpec.canChangeRevisionAt(instant);
+            return ! deploymentSpec.canChangeRevisionAt(instant);
         }
 
         @Override

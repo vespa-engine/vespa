@@ -8,6 +8,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Change.ApplicationChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -141,25 +142,15 @@ public class LockedApplication extends Application {
 
     /** Returns the version a deployment to this zone should use for this application, or empty if we don't know */
     private Optional<ApplicationRevision> currentDeployRevision(Zone zone) {
-        if (!deploying().isPresent()) {
-            return currentRevision(zone);
-        } else if (deploying().get() instanceof Change.VersionChange) {
-            return currentRevision(zone);
-        } else {
+        if (deploying().isPresent() && deploying().get() instanceof ApplicationChange)
             return ((Change.ApplicationChange) deploying().get()).revision();
-        }
+
+        return currentRevision(zone);
     }
 
-    /**
-     * Returns the current revision this application has, or if none; should use assuming no change,
-     * in the given zone. Empty if not known
-     */
+    /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
     private Optional<ApplicationRevision> currentRevision(Zone zone) {
-        Deployment currentDeployment = deployments().get(zone);
-        if (currentDeployment != null) { // Already deployed in this zone: Use that revision
-            return Optional.of(currentDeployment.revision());
-        }
-        return Optional.empty();
+        return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
     }
 
 }

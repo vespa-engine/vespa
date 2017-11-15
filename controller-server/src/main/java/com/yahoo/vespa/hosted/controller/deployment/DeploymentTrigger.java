@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
@@ -102,7 +103,7 @@ public class DeploymentTrigger {
             if (report.success())
                 application = trigger(order.nextAfter(report.jobType(), application), application,
                                       report.jobType().jobName() + " completed");
-            else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
+            else if (retryBecauseOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true,
                                       "Retrying on out of capacity");
             else if (shouldRetryNow(application, report.jobType()))
@@ -251,10 +252,6 @@ public class DeploymentTrigger {
 
     private ApplicationController applications() { return controller.applications(); }
 
-    private boolean isCapacityConstrained(JobType jobType) {
-        return jobType == JobType.stagingTest || jobType == JobType.systemTest;
-    }
-
     /** Retry immediately only if this job just started failing. Otherwise retry periodically */
     private boolean shouldRetryNow(Application application, JobType jobType) {
         JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
@@ -262,28 +259,17 @@ public class DeploymentTrigger {
     }
 
     /** Decide whether to retry due to capacity restrictions */
-    private boolean shouldRetryOnOutOfCapacity(Application application, JobType jobType) {
-        Optional<JobError> outOfCapacityError = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
-                .flatMap(JobStatus::jobError)
-                .filter(e -> e.equals(JobError.outOfCapacity));
-
-        if ( ! outOfCapacityError.isPresent()) return false;
-
+    private boolean retryBecauseOutOfCapacity(Application application, JobType jobType) {
+        JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+        if (jobStatus == null || ! jobStatus.jobError().equals(Optional.of(JobError.outOfCapacity))) return false;
         // Retry the job if it failed recently
-        return application.deploymentJobs().jobStatus().get(jobType).firstFailing().get().at()
-                .isAfter(clock.instant().minus(Duration.ofMinutes(15)));
+        return jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofMinutes(15)));
     }
 
     /** Returns whether the given job type should be triggered according to deployment spec */
     private boolean deploysTo(Application application, JobType jobType) {
-        Optional<Zone> zone = jobType.zone(controller.system());
-        if (zone.isPresent() && jobType.isProduction()) {
-            // Skip triggering of jobs for zones where the application should not be deployed
-            if ( ! application.deploymentSpec().includes(jobType.environment(), Optional.of(zone.get().region()))) {
-                return false;
-            }
-        }
-        return true;
+        if ( ! jobType.isProduction()) return true; // Deployment spec only determines this for production jobs.
+        return application.deploymentSpec().includes(jobType.environment(), jobType.region(controller.system()));
     }
 
     /**
@@ -342,16 +328,17 @@ public class DeploymentTrigger {
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
         //       fix to a version upgrade, so not doing it now
-        if (jobType.isProduction() && application.deployingBlocked(clock.instant())) return false;
+        if (application.deploying().isPresent()) {
+            Change change = application.deploying().get();
+            if (jobType.isProduction() && change.blockedBy(application.deploymentSpec(), clock.instant())) return false;
+            if (change instanceof VersionChange &&
+                    isOnNewerVersionInProductionThan(((VersionChange) change).version(), application, jobType)) return false;
+        }
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! deploysTo(application, jobType)) return false;
         // Ignore applications that are not associated with a project
         if ( ! application.deploymentJobs().projectId().isPresent()) return false;
-        if (application.deploying().isPresent() && application.deploying().get() instanceof Change.VersionChange) {
-            Version targetVersion = ((Change.VersionChange)application.deploying().get()).version();
-            if (isOnNewerVersionInProductionThan(targetVersion, application, jobType)) return false; // Don't downgrade
-        }
-        
+
         return true;
     }
     

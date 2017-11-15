@@ -143,10 +143,8 @@ public class Application {
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
     public Version currentVersion(Controller controller, Zone zone) {
-        if (deployments().containsKey(zone)) // Already deployed in this zone: Use that version
-            return deployments().get(zone).version();
-
-        return oldestDeployedVersion().orElse(controller.systemVersion());
+        return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
+                .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
     @Override
@@ -167,12 +165,6 @@ public class Application {
     @Override
     public String toString() {
         return "application '" + id + "'";
-    }
-
-    /** Returns true if there is a current change which is blocked from being deployed to production at this instant */
-    public boolean deployingBlocked(Instant instant) {
-        if ( ! deploying.isPresent()) return false;
-        return deploying.get().blockedBy(deploymentSpec, instant);
     }
 
 }
