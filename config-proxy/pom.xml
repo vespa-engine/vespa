@@ -61,6 +61,11 @@
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
       </dependency>
+      <dependency>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>filedistribution</artifactId>
+          <version>6-SNAPSHOT</version>
+      </dependency>
   </dependencies>
   <build>
     <plugins>

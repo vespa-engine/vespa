@@ -4,7 +4,43 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-lib</artifactId>
+            <version>6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
+            <version>6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>jrt</artifactId>
+            <version>6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespalog</artifactId>
+            <version>6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config</artifactId>
+            <version>6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
