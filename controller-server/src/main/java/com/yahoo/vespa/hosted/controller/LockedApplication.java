@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -127,18 +128,15 @@ public class LockedApplication extends Application {
     }
 
     private Version determineTriggerVersion(DeploymentJobs.JobType jobType, Controller controller) {
-        Optional<Zone> zone = jobType.zone(controller.system());
-        if ( ! zone.isPresent()) // a sloppy test TODO: Fix
-            return controller.systemVersion();
-        return currentDeployVersion(controller, zone.get());
+        return jobType == JobType.component
+               ? controller.systemVersion()
+               : currentDeployVersion(controller, jobType.zone(controller.system()).get());
     }
 
-    private Optional<ApplicationRevision> determineTriggerRevision(DeploymentJobs.JobType jobType,
-                                                                   Controller controller) {
-        Optional<Zone> zone = jobType.zone(controller.system());
-        if ( ! zone.isPresent()) // a sloppy test TODO: Fix
-            return Optional.empty();
-        return currentDeployRevision(jobType.zone(controller.system()).get());
+    private Optional<ApplicationRevision> determineTriggerRevision(DeploymentJobs.JobType jobType, Controller controller) {
+        return jobType == JobType.component
+               ? Optional.empty()
+               : currentDeployRevision(jobType.zone(controller.system()).get());
     }
 
     /** Returns the version a deployment to this zone should use for this application, or empty if we don't know */
