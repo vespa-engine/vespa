@@ -20,7 +20,7 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 public class ConnectorFactory extends SimpleComponent implements ConnectorConfig.Producer {
 
     private final String name;
-    private volatile int listenPort;
+    private final int listenPort;
     private final Element legacyConfig;
 
     public ConnectorFactory(String name, int listenPort) {
@@ -40,6 +40,22 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
     @Override
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
+        configureWithLegacyHttpConfig(legacyConfig, connectorBuilder);
+        connectorBuilder.listenPort(listenPort);
+        connectorBuilder.name(name);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getListenPort() {
+        return listenPort;
+    }
+
+    // TODO Remove support for legacy config in Vespa 7
+    @Deprecated
+    private static void configureWithLegacyHttpConfig(Element legacyConfig, ConnectorConfig.Builder connectorBuilder) {
         if (legacyConfig != null) {
             {
                 Element tcpKeepAliveEnabled = XML.getChild(legacyConfig, "tcpKeepAliveEnabled");
@@ -87,9 +103,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
             Element ssl = XML.getChild(legacyConfig, "ssl");
             Element sslEnabled = XML.getChild(ssl, "enabled");
-            if (ssl != null &&
-                sslEnabled != null &&
-                Boolean.parseBoolean(XML.getValue(sslEnabled).trim())) {
+            if (ssl != null && sslEnabled != null && Boolean.parseBoolean(XML.getValue(sslEnabled).trim())) {
                 ConnectorConfig.Ssl.Builder sslBuilder = new ConnectorConfig.Ssl.Builder();
                 sslBuilder.enabled(true);
                 {
@@ -131,21 +145,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
                 connectorBuilder.ssl(sslBuilder);
             }
         }
-
-        connectorBuilder.listenPort(listenPort);
-        connectorBuilder.name(name);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getListenPort() {
-        return listenPort;
-    }
-
-    public void setListenPort(int httpPort) {
-        this.listenPort = httpPort;
     }
 
     private static SimpleComponent getSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
