@@ -5,7 +5,6 @@ AdminV2 =
  element admin {
    attribute version { "2.0" } &
    element adminserver { service.attlist } &
-   element minSlobroksPerCluster { xsd:positiveInteger }? & # TODO: Remove when no applications use this
    GenericConfig* &
    LogServer? &
    (ConfigServer | ConfigServers)? &
@@ -20,7 +19,6 @@ AdminV2 =
 AdminV3 =
   element admin {
     attribute version { "3.0"  } &
-    element minSlobroksPerCluster { xsd:positiveInteger }? & # TODO: Remove when no applications use this
     GenericConfig* &
     Nodes
   }
@@ -28,7 +26,6 @@ AdminV3 =
 AdminV4 =
   element admin {
     attribute version { "4.0"  } &
-    element minSlobroksPerCluster { xsd:positiveInteger }? & # TODO: Remove when no applications use this
     AdminV4Slobroks? &
     AdminV4LogServers? &
     GenericConfig* &
