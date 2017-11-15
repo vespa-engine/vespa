@@ -86,6 +86,10 @@ TOKEN :
     <IN: "in"> |
     <F: "f"> |
 
+    <NOT: "!"> |
+    <AND: "&&"> |
+    <OR: "||"> |
+
     <ABS: "abs"> |
     <ACOS: "acos"> |
     <ASIN: "asin"> |
@@ -204,7 +208,9 @@ ArithmeticOperator arithmetic() : { }
       <SUB> { return ArithmeticOperator.MINUS;    } |
       <DIV> { return ArithmeticOperator.DIVIDE;   } |
       <MUL> { return ArithmeticOperator.MULTIPLY; } |
-      <MOD> { return ArithmeticOperator.MODULO; } )
+      <MOD> { return ArithmeticOperator.MODULO; }   |
+      <AND> { return ArithmeticOperator.AND; }      |
+      <OR>  { return ArithmeticOperator.OR; } )
     { return null; }
 }
 
@@ -224,16 +230,23 @@ ExpressionNode value() :
 {
     ExpressionNode ret;
     boolean neg = false;
+    boolean not = false;
 }
 {
-    ( [ LOOKAHEAD(2) <SUB>                                  { neg = true;     }   ]
-      (            ret = constantPrimitive()                                      |
-                   LOOKAHEAD(2) ret = ifExpression()                              |
-                   LOOKAHEAD(4) ret = function()                                  |
-                   ret = feature()                                                |
-                   ret = queryFeature()                                           |
+    (
+      [ <NOT>                                               { not = true; } ]
+      [ LOOKAHEAD(2) <SUB>                                  { neg = true; } ]
+      (            ret = constantPrimitive()                                |
+                   LOOKAHEAD(2) ret = ifExpression()                        |
+                   LOOKAHEAD(4) ret = function()                            |
+                   ret = feature()                                          |
+                   ret = queryFeature()                                     |
         ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) )
-    { return neg ? new NegativeNode(ret) : ret; }
+    {
+        ret = not ? new NotNode(ret) : ret;
+        ret = neg ? new NegativeNode(ret) : ret;
+        return ret;
+    }
 }
 
 IfNode ifExpression() :

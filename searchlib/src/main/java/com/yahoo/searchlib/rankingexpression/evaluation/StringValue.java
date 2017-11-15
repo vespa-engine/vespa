@@ -54,22 +54,37 @@ public class StringValue extends Value {
 
     @Override
     public Value subtract(Value value) {
-        throw new UnsupportedOperationException("String values ('" + value + "') does not support subtraction");
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support subtraction");
     }
 
     @Override
     public Value multiply(Value value) {
-        throw new UnsupportedOperationException("String values ('" + value + "') does not support multiplication");
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support multiplication");
     }
 
     @Override
     public Value divide(Value value) {
-        throw new UnsupportedOperationException("String values ('" + value + "') does not support division");
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support division");
     }
 
     @Override
     public Value modulo(Value value) {
-        throw new UnsupportedOperationException("String values ('" + value + "') does not support modulo");
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support modulo");
+    }
+
+    @Override
+    public Value and(Value value) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support and");
+    }
+
+    @Override
+    public Value or(Value value) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support or");
+    }
+
+    @Override
+    public Value not() {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support not");
     }
 
     @Override
