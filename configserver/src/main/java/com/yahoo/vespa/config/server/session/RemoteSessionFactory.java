@@ -6,6 +6,7 @@ import com.yahoo.path.Path;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 
@@ -19,20 +20,19 @@ public class RemoteSessionFactory {
     private final GlobalComponentRegistry componentRegistry;
     private final Curator curator;
     private final ConfigCurator configCurator;
-    private final Path sessionDirPath;
+    private final Path sessionPath;
     private final ConfigDefinitionRepo defRepo;
     private final TenantName tenant;
     private final ConfigserverConfig configserverConfig;
     private final Clock clock;
 
     public RemoteSessionFactory(GlobalComponentRegistry componentRegistry,
-                                Path sessionsPath,
                                 TenantName tenant,
                                 Clock clock) {
         this.componentRegistry = componentRegistry;
         this.curator = componentRegistry.getCurator();
         this.configCurator = componentRegistry.getConfigCurator();
-        this.sessionDirPath = sessionsPath;
+        this.sessionPath = Tenants.getSessionsPath(tenant);
         this.tenant = tenant;
         this.defRepo = componentRegistry.getConfigDefinitionRepo();
         this.configserverConfig = componentRegistry.getConfigserverConfig();
@@ -40,7 +40,7 @@ public class RemoteSessionFactory {
     }
 
     public RemoteSession createSession(long sessionId) {
-        Path sessionPath = sessionDirPath.append(String.valueOf(sessionId));
+        Path sessionPath = this.sessionPath.append(String.valueOf(sessionId));
         SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
                                                                             configCurator,
                                                                             sessionPath,
