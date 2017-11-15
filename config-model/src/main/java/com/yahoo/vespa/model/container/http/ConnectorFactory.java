@@ -148,13 +148,14 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     }
 
     private static SimpleComponent getSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
+        String idSpec = "ssl-keystore-configurator@" + name;
         if (sslKeystoreConfigurator != null) {
             String className = sslKeystoreConfigurator.getAttribute("class");
             String bundleName = sslKeystoreConfigurator.getAttribute("bundle");
-            return new SimpleComponent(new ComponentModel(name, className, bundleName));
+            return new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
         } else {
             return new SimpleComponent(
-                    new ComponentModel(name, DefaultSslKeyStoreConfigurator.class.getName(), "jdisc_http_service"));
+                    new ComponentModel(idSpec, DefaultSslKeyStoreConfigurator.class.getName(), "jdisc_http_service"));
         }
     }
 
