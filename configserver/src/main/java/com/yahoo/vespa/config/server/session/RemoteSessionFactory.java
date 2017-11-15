@@ -20,7 +20,7 @@ public class RemoteSessionFactory {
     private final GlobalComponentRegistry componentRegistry;
     private final Curator curator;
     private final ConfigCurator configCurator;
-    private final Path sessionPath;
+    private final Path sessionsPath;
     private final ConfigDefinitionRepo defRepo;
     private final TenantName tenant;
     private final ConfigserverConfig configserverConfig;
@@ -32,7 +32,7 @@ public class RemoteSessionFactory {
         this.componentRegistry = componentRegistry;
         this.curator = componentRegistry.getCurator();
         this.configCurator = componentRegistry.getConfigCurator();
-        this.sessionPath = Tenants.getSessionsPath(tenant);
+        this.sessionsPath = Tenants.getSessionsPath(tenant);
         this.tenant = tenant;
         this.defRepo = componentRegistry.getConfigDefinitionRepo();
         this.configserverConfig = componentRegistry.getConfigserverConfig();
@@ -40,7 +40,7 @@ public class RemoteSessionFactory {
     }
 
     public RemoteSession createSession(long sessionId) {
-        Path sessionPath = this.sessionPath.append(String.valueOf(sessionId));
+        Path sessionPath = this.sessionsPath.append(String.valueOf(sessionId));
         SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
                                                                             configCurator,
                                                                             sessionPath,
