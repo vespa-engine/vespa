@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -27,7 +25,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -389,10 +386,14 @@ public class DeploymentTrigger {
     
     private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
+
         if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
 
         if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
-        if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+
+        if ( ! application.deploymentSpec().canUpgradeAt(clock.instant()) ||
+             ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
         return false;
     }

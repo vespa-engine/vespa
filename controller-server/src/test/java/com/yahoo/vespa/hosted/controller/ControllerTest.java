@@ -219,7 +219,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
 
         app1 = applications.require(app1.id());
-        assertEquals("First deployment gets system version", systemVersion, app1.deployedVersion().get());
+        assertEquals("First deployment gets system version", systemVersion, app1.oldestDeployedVersion().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // Unexpected deployment
@@ -242,13 +242,13 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
 
         app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
+        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedVersion().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // A deployment to the new region gets the same version
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
         app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.deployedVersion().get());
+        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedVersion().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
         assertFalse("Change deployed", app1.deploying().isPresent());
 
@@ -261,7 +261,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
         app1 = applications.require(app1.id());
-        assertEquals("Version upgrade changes version", newSystemVersion, app1.deployedVersion().get());
+        assertEquals("Version upgrade changes version", newSystemVersion, app1.oldestDeployedVersion().get());
         assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion().get());
     }
 

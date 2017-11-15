@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 
@@ -20,7 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -121,7 +121,7 @@ public class Application {
      * Returns the oldest version this has deployed in a permanent zone (not test or staging),
      * or empty version if it is not deployed anywhere
      */
-    public Optional<Version> deployedVersion() {
+    public Optional<Version> oldestDeployedVersion() {
         return productionDeployments().values().stream()
                                                .sorted(Comparator.comparing(Deployment::version))
                                                .findFirst()
@@ -130,26 +130,23 @@ public class Application {
 
     /** The version that should be used to compile this application */
     public Version compileVersion(Controller controller) {
-        return deployedVersion().orElse(controller.systemVersion());
+        return oldestDeployedVersion().orElse(controller.systemVersion());
     }
 
     /** Returns the version a deployment to this zone should use for this application */
     public Version currentDeployVersion(Controller controller, Zone zone) {
-        if ( ! deploying().isPresent())
-            return currentVersion(controller, zone);
-        else if ( deploying().get() instanceof Change.ApplicationChange)
-            return currentVersion(controller, zone);
-        else
+        if (deploying().isPresent() && deploying().get() instanceof VersionChange)
             return ((Change.VersionChange) deploying().get()).version();
+
+        return currentVersion(controller, zone);
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
     public Version currentVersion(Controller controller, Zone zone) {
-        Deployment currentDeployment = deployments().get(zone);
-        if (currentDeployment != null) // Already deployed in this zone: Use that version
-            return currentDeployment.version();
+        if (deployments().containsKey(zone)) // Already deployed in this zone: Use that version
+            return deployments().get(zone).version();
 
-        return deployedVersion().orElse(controller.systemVersion());
+        return oldestDeployedVersion().orElse(controller.systemVersion());
     }
 
     @Override
@@ -177,9 +174,5 @@ public class Application {
         if ( ! deploying.isPresent()) return false;
         return deploying.get().blockedBy(deploymentSpec, instant);
     }
-    
-    public boolean isBlocked(Instant instant) {
-        return ! deploymentSpec.canUpgradeAt(instant) || ! deploymentSpec.canChangeRevisionAt(instant);
-    }
-    
+
 }
