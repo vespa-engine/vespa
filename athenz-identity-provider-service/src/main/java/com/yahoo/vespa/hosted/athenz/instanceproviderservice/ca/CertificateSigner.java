@@ -55,8 +55,8 @@ public class CertificateSigner {
     private static final List<ASN1ObjectIdentifier> ILLEGAL_EXTENSIONS = ImmutableList.of(
             Extension.basicConstraints, Extension.subjectAlternativeName);
 
-    private final JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
-    private final Provider provider = new BouncyCastleProvider();
+    public static final JcaX509CertificateConverter CERTIFICATE_CONVERTER = new JcaX509CertificateConverter()
+            .setProvider(new BouncyCastleProvider());
 
     private final PrivateKey caPrivateKey;
     private final X500Name issuer;
@@ -98,9 +98,7 @@ public class CertificateSigner {
 
             ContentSigner caSigner = new JcaContentSignerBuilder(SIGNER_ALGORITHM).build(caPrivateKey);
 
-            return certificateConverter
-                    .setProvider(provider)
-                    .getCertificate(caBuilder.build(caSigner));
+            return CERTIFICATE_CONVERTER.getCertificate(caBuilder.build(caSigner));
         } catch (Exception ex) {
             log.log(LogLevel.ERROR, "Failed to generate X509 Certificate", ex);
             throw new RuntimeException("Failed to generate X509 Certificate");
