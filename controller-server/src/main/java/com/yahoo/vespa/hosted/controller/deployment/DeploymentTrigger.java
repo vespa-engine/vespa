@@ -197,6 +197,7 @@ public class DeploymentTrigger {
             Version targetVersion = ((Change.VersionChange)change).version();
             if ( ! (targetVersion.equals(previous.lastSuccess().get().version())) )
                 return false; // version is outdated
+            // The below is checked again in allowedTriggering, right before actual triggering.
             if (next != null && isOnNewerVersionInProductionThan(targetVersion, application, next.type()))
                 return false; // Don't downgrade
         }
@@ -329,10 +330,9 @@ public class DeploymentTrigger {
         //       this leads to some additional corner cases, and the possibility of blocking an application
         //       fix to a version upgrade, so not doing it now
         if (application.deploying().isPresent()) {
-            Change change = application.deploying().get();
-            if (jobType.isProduction() && change.blockedBy(application.deploymentSpec(), clock.instant())) return false;
-            if (change instanceof VersionChange &&
-                    isOnNewerVersionInProductionThan(((VersionChange) change).version(), application, jobType)) return false;
+            if (jobType.isProduction() && application.deploying().get().blockedBy(application.deploymentSpec(), clock.instant())) return false;
+            if (application.deploying().get() instanceof VersionChange &&
+                    isOnNewerVersionInProductionThan(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
         }
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! deploysTo(application, jobType)) return false;

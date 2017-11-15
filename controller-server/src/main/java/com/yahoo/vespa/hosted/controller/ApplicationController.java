@@ -288,22 +288,22 @@ public class ApplicationController {
     public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
-            // Determine what we are doing
             LockedApplication application = get(applicationId, lock).orElse(new LockedApplication(
                     new Application(applicationId), lock)
             );
 
+            // Determine what we are doing
             Version version;
             if (options.deployCurrentVersion)
-                version = application.currentVersion(controller, zone);
+                version = application.currentVersionFor(zone, controller);
             else if (canDeployDirectlyTo(zone, options))
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
             else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
                 return unexpectedDeployment(applicationId, zone, applicationPackage);
             else
-                version = application.currentDeployVersion(controller, zone);
+                version = application.deployVersionFor(zone, controller);
 
-            Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
+            Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
 
             if ( ! options.deployCurrentVersion) {

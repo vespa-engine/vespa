@@ -68,8 +68,8 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(), deployments(),
                                                      deploymentJobs().withTriggering(type,
                                                                                      change,
-                                                                                     determineTriggerVersion(type, controller),
-                                                                                     determineTriggerRevision(type, controller),
+                                                                                     deployVersionFor(type, controller),
+                                                                                     deployRevisionFor(type, controller),
                                                                                      reason,
                                                                                      triggerTime),
                                                      deploying(), hasOutstandingChange()), lock);
@@ -128,28 +128,28 @@ public class LockedApplication extends Application {
                                                      deploymentJobs(), deploying(), outstandingChange), lock);
     }
 
-    private Version determineTriggerVersion(DeploymentJobs.JobType jobType, Controller controller) {
+    private Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? controller.systemVersion()
-               : currentDeployVersion(controller, jobType.zone(controller.system()).get());
+               : deployVersionFor(jobType.zone(controller.system()).get(), controller);
     }
 
-    private Optional<ApplicationRevision> determineTriggerRevision(DeploymentJobs.JobType jobType, Controller controller) {
+    private Optional<ApplicationRevision> deployRevisionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? Optional.empty()
-               : currentDeployRevision(jobType.zone(controller.system()).get());
+               : deployRevisionFor(jobType.zone(controller.system()).get());
     }
 
-    /** Returns the version a deployment to this zone should use for this application, or empty if we don't know */
-    private Optional<ApplicationRevision> currentDeployRevision(Zone zone) {
+    /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
+    private Optional<ApplicationRevision> deployRevisionFor(Zone zone) {
         if (deploying().isPresent() && deploying().get() instanceof ApplicationChange)
             return ((Change.ApplicationChange) deploying().get()).revision();
 
-        return currentRevision(zone);
+        return revisionIn(zone);
     }
 
     /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
-    private Optional<ApplicationRevision> currentRevision(Zone zone) {
+    private Optional<ApplicationRevision> revisionIn(Zone zone) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
     }
 
