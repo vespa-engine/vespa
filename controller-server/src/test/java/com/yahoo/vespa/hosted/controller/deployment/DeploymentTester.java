@@ -16,7 +16,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.maintenance.FailureRedeployer;
+import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -46,7 +46,7 @@ public class DeploymentTester {
 
     private final ControllerTester tester;
     private final Upgrader upgrader;
-    private final FailureRedeployer failureRedeployer;
+    private final ReadyJobsTrigger readyJobTrigger;
 
     public DeploymentTester() {
         this(new ControllerTester());
@@ -57,13 +57,13 @@ public class DeploymentTester {
         tester.curator().writeUpgradesPerMinute(100);
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()),
                                      tester.curator());
-        this.failureRedeployer = new FailureRedeployer(tester.controller(), maintenanceInterval,
-                                                       new JobControl(tester.curator()));
+        this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval,
+                                                    new JobControl(tester.curator()));
     }
 
     public Upgrader upgrader() { return upgrader; }
 
-    public FailureRedeployer failureRedeployer() { return failureRedeployer; }
+    public ReadyJobsTrigger readyJobTrigger() { return readyJobTrigger; }
 
     public Controller controller() { return tester.controller(); }
 
