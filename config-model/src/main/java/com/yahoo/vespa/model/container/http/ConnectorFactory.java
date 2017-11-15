@@ -26,18 +26,11 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this(name, listenPort, null, null);
     }
 
-    public ConnectorFactory(final String name,
-                            final int listenPort,
-                            final Element legacyConfig,
-                            Element sslKeystoreConfigurator) {
+    public ConnectorFactory(String name, int listenPort, Element legacyConfig, Element sslKeystoreConfigurator) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(name),
                                                      fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
-                                                     fromString("jdisc_http_service"))
-
-        ));
-
-
+                                                     fromString("jdisc_http_service"))));
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
