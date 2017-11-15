@@ -49,6 +49,8 @@ public abstract class Value {
 
     public abstract Value not();
 
+    public abstract Value power(Value value);
+
     /** Perform the comparison specified by the operator between this value and the given value */
     public abstract Value compare(TruthOperator operator, Value value);
 

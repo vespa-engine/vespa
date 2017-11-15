@@ -34,6 +34,9 @@ public enum ArithmeticOperator {
     }},
     MODULO(6, "%") { public Value evaluate(Value x, Value y) {
         return x.modulo(y);
+    }},
+    POWER(7, "^") { public Value evaluate(Value x, Value y) {
+        return x.power(y);
     }};
 
     /** A list of all the operators in this in order of decreasing precedence */
@@ -61,6 +64,7 @@ public enum ArithmeticOperator {
 
     private static List<ArithmeticOperator> operatorsByPrecedence() {
         List<ArithmeticOperator> operators = new ArrayList<>();
+        operators.add(POWER);
         operators.add(MODULO);
         operators.add(DIVIDE);
         operators.add(MULTIPLY);

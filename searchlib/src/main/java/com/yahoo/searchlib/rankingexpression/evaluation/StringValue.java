@@ -88,6 +88,11 @@ public class StringValue extends Value {
     }
 
     @Override
+    public Value power(Value value) {
+        throw new UnsupportedOperationException("String values ('" + value + "') do not support ^");
+    }
+
+    @Override
     public Value compare(TruthOperator operator, Value value) {
         if (operator.equals(TruthOperator.EQUAL))
             return new BooleanValue(this.equals(value));

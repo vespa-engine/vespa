@@ -59,6 +59,11 @@ public abstract class DoubleCompatibleValue extends Value {
     }
 
     @Override
+    public Value power(Value value) {
+        return new DoubleValue(Function.pow.evaluate(asDouble(), value.asDouble()));
+    }
+
+    @Override
     public Value compare(TruthOperator operator, Value value) {
         return new BooleanValue(operator.evaluate(asDouble(), value.asDouble()));
     }
