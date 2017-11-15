@@ -27,7 +27,6 @@ import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.container.jdisc.SslKeyStoreConfiguratorProvider;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
@@ -222,7 +221,6 @@ public final class ContainerCluster
         addSimpleComponent(SIMPLE_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
-        addSimpleComponent(SslKeyStoreConfiguratorProvider.class.getName());
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricUpdater");

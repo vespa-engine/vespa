@@ -6,6 +6,7 @@ import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -203,14 +204,20 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
 
-        ConnectorFactory firstConnector = connectorFactories.get(0);
-        SimpleComponent sslKeystoreConfigurator = firstConnector.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
-        BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
-        assertThat(spec.classId.toString(), is("com.yahoo.MySslKeyStoreConfigurator"));
-        assertThat(spec.bundle.toString(), is("mybundle"));
-
-        ConnectorFactory secondFactory = connectorFactories.get(1);
-        assertThat(secondFactory.getChildrenByTypeRecursive(SimpleComponent.class).size(), is(0));
+        {
+            ConnectorFactory firstConnector = connectorFactories.get(0);
+            SimpleComponent sslKeystoreConfigurator = firstConnector.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
+            BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
+            assertThat(spec.classId.toString(), is("com.yahoo.MySslKeyStoreConfigurator"));
+            assertThat(spec.bundle.toString(), is("mybundle"));
+        }
+        {
+            ConnectorFactory secondFactory = connectorFactories.get(1);
+            SimpleComponent sslKeystoreConfigurator = secondFactory.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
+            BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
+            assertThat(spec.classId.toString(), is(DefaultSslKeyStoreConfigurator.class.getName()));
+            assertThat(spec.bundle.toString(), is("jdisc_http_service"));
+        }
     }
 
     private void assertJettyServerInConfig() {

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -13,8 +14,8 @@ import static com.yahoo.component.ComponentSpecification.fromString;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.21.0
+ * @author Einar M R Rosenvinge
+ * @author bjorncs
  */
 public class ConnectorFactory extends SimpleComponent implements ConnectorConfig.Producer {
 
@@ -34,13 +35,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
-        if (sslKeystoreConfigurator != null) {
-            String className = sslKeystoreConfigurator.getAttribute("class");
-            String bundleName = sslKeystoreConfigurator.getAttribute("bundle");
-            SimpleComponent sslKeyStoreConfiguratorComponent =
-                    new SimpleComponent(new ComponentModel(name, className, bundleName));
-            addChild(sslKeyStoreConfiguratorComponent);
-        }
+        addChild(getSslKeyStoreConfigurator(name, sslKeystoreConfigurator));
     }
 
     @Override
@@ -151,6 +146,17 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
     public void setListenPort(int httpPort) {
         this.listenPort = httpPort;
+    }
+
+    private static SimpleComponent getSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
+        if (sslKeystoreConfigurator != null) {
+            String className = sslKeystoreConfigurator.getAttribute("class");
+            String bundleName = sslKeystoreConfigurator.getAttribute("bundle");
+            return new SimpleComponent(new ComponentModel(name, className, bundleName));
+        } else {
+            return new SimpleComponent(
+                    new ComponentModel(name, DefaultSslKeyStoreConfigurator.class.getName(), "jdisc_http_service"));
+        }
     }
 
 }
