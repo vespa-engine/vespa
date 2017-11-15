@@ -96,7 +96,7 @@ SimpleMaintenanceScannerTest::testPrioritizeSingleBucket()
 
     auto scanResult = _scanner->scanNext();
     CPPUNIT_ASSERT(!scanResult.isDone());
-    CPPUNIT_ASSERT_EQUAL(scanResult.getBucketSpace().getId(), makeBucketSpace().getId());
+    CPPUNIT_ASSERT_EQUAL(makeBucketSpace().getId(), scanResult.getBucketSpace().getId());
     CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
 
     CPPUNIT_ASSERT(_scanner->scanNext().isDone());
@@ -114,7 +114,7 @@ SimpleMaintenanceScannerTest::testPrioritizeSingleBucketAltBucketSpace()
 
     auto scanResult = _scanner->scanNext();
     CPPUNIT_ASSERT(!scanResult.isDone());
-    CPPUNIT_ASSERT_EQUAL(scanResult.getBucketSpace().getId(), bucketSpace.getId());
+    CPPUNIT_ASSERT_EQUAL(bucketSpace.getId(), scanResult.getBucketSpace().getId());
     CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
 
     CPPUNIT_ASSERT(_scanner->scanNext().isDone());
