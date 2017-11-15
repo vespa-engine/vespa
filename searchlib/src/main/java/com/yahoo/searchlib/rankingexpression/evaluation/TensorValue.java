@@ -89,6 +89,26 @@ public class TensorValue extends Value {
             return new TensorValue(value.map((value) -> value % argument.asDouble()));
     }
 
+    @Override
+    public Value and(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.join(((TensorValue)argument).value, (a, b) -> ((a!=0.0) && (b!=0.0)) ? 1.0 : 0.0 ));
+        else
+            return new TensorValue(value.map((value) -> ((value!=0.0) && argument.asBoolean()) ? 1 : 0));
+    }
+
+    @Override
+    public Value or(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.join(((TensorValue)argument).value, (a, b) -> ((a!=0.0) || (b!=0.0)) ? 1.0 : 0.0 ));
+        else
+            return new TensorValue(value.map((value) -> ((value!=0.0) || argument.asBoolean()) ? 1 : 0));
+    }
+
+    @Override
+    public Value not() {
+        return new TensorValue(value.map((value) -> (value==0.0) ? 1.0 : 0.0));
+    }
 
     private Tensor asTensor(Value value, String operationName) {
         if ( ! (value instanceof TensorValue))

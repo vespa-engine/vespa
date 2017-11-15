@@ -44,6 +44,21 @@ public abstract class DoubleCompatibleValue extends Value {
     }
 
     @Override
+    public Value and(Value value) {
+        return new BooleanValue(asBoolean() && value.asBoolean());
+    }
+
+    @Override
+    public Value or(Value value) {
+        return new BooleanValue(asBoolean() || value.asBoolean());
+    }
+
+    @Override
+    public Value not() {
+        return new BooleanValue(!asBoolean());
+    }
+
+    @Override
     public Value compare(TruthOperator operator, Value value) {
         return new BooleanValue(operator.evaluate(asDouble(), value.asDouble()));
     }
