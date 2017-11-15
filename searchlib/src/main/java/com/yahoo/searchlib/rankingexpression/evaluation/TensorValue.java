@@ -110,6 +110,14 @@ public class TensorValue extends Value {
         return new TensorValue(value.map((value) -> (value==0.0) ? 1.0 : 0.0));
     }
 
+    @Override
+    public Value power(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.pow(((TensorValue)argument).value));
+        else
+            return new TensorValue(value.map((value) -> Math.pow(value, argument.asDouble())));
+    }
+
     private Tensor asTensor(Value value, String operationName) {
         if ( ! (value instanceof TensorValue))
             throw new UnsupportedOperationException("Could not perform " + operationName +

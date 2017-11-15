@@ -66,6 +66,7 @@ TOKEN :
     <MUL: "*"> |
     <DOT: "."> |
     <MOD: "%"> |
+    <POWOP: "^"> |
 
     <DOLLAR: "$"> |
     <COMMA: ","> |
@@ -204,13 +205,14 @@ ExpressionNode arithmeticExpression() :
 
 ArithmeticOperator arithmetic() : { }
 {
-    ( <ADD> { return ArithmeticOperator.PLUS;     } |
-      <SUB> { return ArithmeticOperator.MINUS;    } |
-      <DIV> { return ArithmeticOperator.DIVIDE;   } |
-      <MUL> { return ArithmeticOperator.MULTIPLY; } |
-      <MOD> { return ArithmeticOperator.MODULO; }   |
-      <AND> { return ArithmeticOperator.AND; }      |
-      <OR>  { return ArithmeticOperator.OR; } )
+    ( <ADD>   { return ArithmeticOperator.PLUS;     } |
+      <SUB>   { return ArithmeticOperator.MINUS;    } |
+      <DIV>   { return ArithmeticOperator.DIVIDE;   } |
+      <MUL>   { return ArithmeticOperator.MULTIPLY; } |
+      <MOD>   { return ArithmeticOperator.MODULO; }   |
+      <AND>   { return ArithmeticOperator.AND; }      |
+      <OR>    { return ArithmeticOperator.OR; }       |
+      <POWOP> { return ArithmeticOperator.POWER; } )
     { return null; }
 }
 

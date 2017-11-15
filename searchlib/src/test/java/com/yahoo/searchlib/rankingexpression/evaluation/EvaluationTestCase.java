@@ -29,6 +29,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(0.75, "0.5 + 0.25");
         tester.assertEvaluates(0.75, "one_half + a_quarter");
         tester.assertEvaluates(1.25, "0.5 - 0.25 + one");
+        tester.assertEvaluates(9.0, "3 ^ 2");
 
         // String
         tester.assertEvaluates(1, "if(\"a\"==\"a\",1,0)");
@@ -38,6 +39,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates(1, "2/6+4/6");
         tester.assertEvaluates(2 * 3 * 4 + 3 * 4 * 5 - 4 * 200 / 10, "2*3*4+3*4*5-4*200/10");
         tester.assertEvaluates(3, "1 + 10 % 6 / 2");
+        tester.assertEvaluates(10.0, "3 ^ 2 + 1");
+        tester.assertEvaluates(18.0, "2 * 3 ^ 2");
 
         // Conditionals
         tester.assertEvaluates(2 * (3 * 4 + 3) * (4 * 5 - 4 * 200) / 10, "2*(3*4+3)*(4*5-4*200)/10");
