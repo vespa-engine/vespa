@@ -56,6 +56,8 @@ public class JSONFormatter {
             generator.writeStringField("version", accessLogEntry.getHttpVersion());
             generator.writeStringField("agent", accessLogEntry.getUserAgent());
             generator.writeStringField("host", accessLogEntry.getHostString());
+            generator.writeStringField("scheme", accessLogEntry.getScheme());
+            generator.writeNumberField("localport", accessLogEntry.getLocalPort());
 
             // Only add remote address/port fields if relevant
             if (remoteAddressDiffers(accessLogEntry.getIpV4Address(), accessLogEntry.getRemoteAddress())) {
