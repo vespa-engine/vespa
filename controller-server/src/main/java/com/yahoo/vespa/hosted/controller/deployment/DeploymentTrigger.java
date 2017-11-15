@@ -145,24 +145,15 @@ public class DeploymentTrigger {
         List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
 
         // Should the first step be triggered?
-        if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) ) {
-            JobStatus systemTestStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
-            if (application.deploying().get() instanceof Change.VersionChange) {
-                Version target = ((Change.VersionChange) application.deploying().get()).version();
-                if (systemTestStatus == null 
-                    || ! systemTestStatus.lastTriggered().isPresent()
-                    || ! systemTestStatus.isSuccess()
-                    || ! systemTestStatus.lastTriggered().get().version().equals(target)) {
-                    application = trigger(JobType.systemTest, application, false, "Upgrade to " + target);
-                    controller.applications().store(application);
-                }
-            }
-            else {
-                JobStatus componentStatus = application.deploymentJobs().jobStatus().get(JobType.component);
-                if (changesAvailable(application, componentStatus, systemTestStatus)) {
-                    application = trigger(JobType.systemTest, application, false, "Available change in component");
-                    controller.applications().store(application);
-                }
+        // TODO: How can the first job not be systemTest (second ccondition)?
+        if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) &&
+             application.deploying().get() instanceof Change.VersionChange) {
+            Version target = ((Change.VersionChange)application.deploying().get()).version();
+            JobStatus jobStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
+            if (jobStatus == null || ! jobStatus.lastTriggered().isPresent() 
+                || ! jobStatus.lastTriggered().get().version().equals(target)) {
+                application = trigger(JobType.systemTest, application, false, "Upgrade to " + target);
+                controller.applications().store(application);
             }
         }
 
@@ -216,6 +207,62 @@ public class DeploymentTrigger {
     }
     
     /**
+     * Called periodically to cause triggering of jobs in the background
+     */
+    public void triggerFailing(ApplicationId applicationId) {
+        try (Lock lock = applications().lock(applicationId)) {
+            LockedApplication application = applications().require(applicationId, lock);
+            if ( ! application.deploying().isPresent()) return; // No ongoing change, no need to retry
+
+            // Retry first failing job
+            for (JobType jobType : order.jobsFrom(application.deploymentSpec())) {
+                JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+                if (isFailing(application.deploying().get(), jobStatus)) {
+                    if (shouldRetryNow(jobStatus)) {
+                        application = trigger(jobType, application, false, "Retrying failing job");
+                        applications().store(application);
+                    }
+                    break;
+                }
+            }
+
+            // Retry dead job
+            Optional<JobStatus> firstDeadJob = firstDeadJob(application.deploymentJobs());
+            if (firstDeadJob.isPresent()) {
+                application = trigger(firstDeadJob.get().type(), application, false, "Retrying dead job");
+                applications().store(application);
+            }
+        }
+    }
+
+    /** Triggers jobs that have been delayed according to deployment spec */
+    public void triggerDelayed() {
+        for (Application application : applications().asList()) {
+            if ( ! application.deploying().isPresent() ) continue;
+            if (application.deploymentJobs().hasFailures()) continue;
+            if (application.deploymentJobs().isRunning(controller.applications().deploymentTrigger().jobTimeoutLimit())) continue;
+            if (application.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
+                continue; // Application does not have any delayed deployments
+            }
+
+            Optional<JobStatus> lastSuccessfulJob = application.deploymentJobs().jobStatus().values()
+                    .stream()
+                    .filter(j -> j.lastSuccess().isPresent())
+                    .sorted(Comparator.<JobStatus, Instant>comparing(j -> j.lastSuccess().get().at()).reversed())
+                    .findFirst();
+            if ( ! lastSuccessfulJob.isPresent() ) continue;
+
+            // Trigger next
+            try (Lock lock = applications().lock(application.id())) {
+                LockedApplication lockedApplication = applications().require(application.id(), lock);
+                lockedApplication = trigger(order.nextAfter(lastSuccessfulJob.get().type(), lockedApplication),
+                                            lockedApplication, "Resuming delayed deployment");
+                applications().store(lockedApplication);
+            }
+        }
+    }
+    
+    /**
      * Triggers a change of this application
      * 
      * @param applicationId the application to trigger
@@ -254,10 +301,42 @@ public class DeploymentTrigger {
 
     private ApplicationController applications() { return controller.applications(); }
 
+    /** Returns whether a job is failing for the current change in the given application */
+    private boolean isFailing(Change change, JobStatus status) {
+        return       status != null
+                && ! status.isSuccess()
+                &&   status.lastCompleted().isPresent()
+                &&   status.lastCompleted().get().lastCompletedWas(change);
+    }
+
     private boolean isCapacityConstrained(JobType jobType) {
         return jobType == JobType.stagingTest || jobType == JobType.systemTest;
     }
 
+    /** Returns the first job that has been running for more than the given timeout */
+    private Optional<JobStatus> firstDeadJob(DeploymentJobs jobs) {
+        Optional<JobStatus> oldestRunningJob = jobs.jobStatus().values().stream()
+                .filter(job -> job.isRunning(Instant.ofEpochMilli(0)))
+                .sorted(Comparator.comparing(status -> status.lastTriggered().get().at()))
+                .findFirst();
+        return oldestRunningJob.filter(job -> job.lastTriggered().get().at().isBefore(jobTimeoutLimit()));
+    }
+
+    /** Decide whether the job should be triggered by the periodic trigger */
+    private boolean shouldRetryNow(JobStatus job) {
+        if (job.isSuccess()) return false;
+        if (job.isRunning(jobTimeoutLimit())) return false;
+
+        // Retry after 10% of the time since it started failing
+        Duration aTenthOfFailTime = Duration.ofMillis( (clock.millis() - job.firstFailing().get().at().toEpochMilli()) / 10);
+        if (job.lastCompleted().get().at().isBefore(clock.instant().minus(aTenthOfFailTime))) return true;
+
+        // ... or retry anyway if we haven't tried in 4 hours
+        if (job.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.ofHours(4)))) return true;
+
+        return false;
+    }
+    
     /** Retry immediately only if this job just started failing. Otherwise retry periodically */
     private boolean shouldRetryNow(Application application, JobType jobType) {
         JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.ComponentId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -30,7 +29,6 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final ScheduledExecutorService service;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
-        initId(new ComponentId(name()));
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;

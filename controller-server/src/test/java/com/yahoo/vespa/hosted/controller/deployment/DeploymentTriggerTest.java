@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
+import com.yahoo.vespa.hosted.controller.maintenance.BlockedChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import org.junit.Test;
 
@@ -63,7 +63,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
         tester.clock().advance(Duration.ofHours(1));
         assertEquals("Nothing scheduled", 0, tester.buildSystem().jobs().size());
-        tester.readyJobTrigger().maintain(); // Causes retry of systemTests
+        tester.failureRedeployer().maintain(); // Causes retry of systemTests
 
         assertEquals("Scheduled retry", 1, tester.buildSystem().jobs().size());
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
@@ -71,7 +71,7 @@ public class DeploymentTriggerTest {
         // staging-test times out and is retried
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
-        tester.readyJobTrigger().maintain();
+        tester.failureRedeployer().maintain();
         assertEquals("Retried dead job", 1, tester.buildSystem().jobs().size());
         assertEquals(JobType.stagingTest.jobName(), tester.buildSystem().jobs().get(0).jobName());
     }
@@ -128,7 +128,7 @@ public class DeploymentTriggerTest {
 
         // 30 seconds pass, us-west-1 is triggered
         tester.clock().advance(Duration.ofSeconds(30));
-        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deploymentTrigger().triggerDelayed();
 
         // Consume us-west-1 job without reporting completion
         assertEquals(1, buildSystem.jobs().size());
@@ -137,7 +137,7 @@ public class DeploymentTriggerTest {
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
         tester.clock().advance(Duration.ofMinutes(3));
-        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deploymentTrigger().triggerDelayed();
         assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
 
         // us-west-1 completes
@@ -145,18 +145,18 @@ public class DeploymentTriggerTest {
         tester.notifyJobCompletion(JobType.productionUsWest1, application, true);
 
         // Delayed trigger does nothing as not enough time has passed after us-west-1 completion
-        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deploymentTrigger().triggerDelayed();
         assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
 
         // 3 minutes pass, us-central-1 is triggered
         tester.clock().advance(Duration.ofMinutes(3));
-        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deploymentTrigger().triggerDelayed();
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
 
         // Delayed trigger job runs again, with nothing to trigger
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deploymentTrigger().triggerDelayed();
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
     }
 
@@ -270,9 +270,9 @@ public class DeploymentTriggerTest {
     public void testBlockRevisionChange() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:30:00.00Z")); // Tuesday, 17:30
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
-        ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
-                                                                 Duration.ofHours(1),
-                                                                 new JobControl(tester.controllerTester().curator()));
+        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
+                                                                                Duration.ofHours(1),
+                                                                                new JobControl(tester.controllerTester().curator()));
 
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
@@ -291,7 +291,7 @@ public class DeploymentTriggerTest {
         
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
         
-        readyJobsTrigger.run();
+        blockedChangeDeployer.run();
         assertEquals(0, tester.buildSystem().jobs().size());
         
         String searchDefinition =
@@ -305,7 +305,7 @@ public class DeploymentTriggerTest {
 
         tester.deployTestOnly(app, changedApplication);
 
-        readyJobsTrigger.run();
+        blockedChangeDeployer.run();
         assertEquals(0, tester.buildSystem().jobs().size());
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
@@ -318,14 +318,14 @@ public class DeploymentTriggerTest {
     @Test
     public void testUpgradingButNoJobStarted() {
         DeploymentTester tester = new DeploymentTester();
-        ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
-                                                                 Duration.ofHours(1),
-                                                                 new JobControl(tester.controllerTester().curator()));
+        BlockedChangeDeployer blockedChangeDeployer = new BlockedChangeDeployer(tester.controller(),
+                                                                                Duration.ofHours(1),
+                                                                                new JobControl(tester.controllerTester().curator()));
         LockedApplication app = (LockedApplication)tester.createAndDeploy("default0", 3, "default");
         // Store that we are upgrading but don't start the system-tests job
         tester.controller().applications().store(app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.2")))));
         assertEquals(0, tester.buildSystem().jobs().size());
-        readyJobsTrigger.run();
+        blockedChangeDeployer.run();
         assertEquals(1, tester.buildSystem().jobs().size());
         assertEquals("system-test", tester.buildSystem().jobs().get(0).jobName());
     }
