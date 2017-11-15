@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
@@ -11,11 +14,13 @@
 namespace storage::distributor {
 
 using document::BucketId;
+using document::test::makeBucketSpace;
 typedef MaintenancePriority Priority;
 
 class SimpleMaintenanceScannerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(SimpleMaintenanceScannerTest);
     CPPUNIT_TEST(testPrioritizeSingleBucket);
+    CPPUNIT_TEST(testPrioritizeSingleBucketAltBucketSpace);
     CPPUNIT_TEST(testPrioritizeMultipleBuckets);
     CPPUNIT_TEST(testPendingMaintenanceOperationStatistics);
     CPPUNIT_TEST(perNodeMaintenanceStatsAreTracked);
@@ -27,10 +32,11 @@ class SimpleMaintenanceScannerTest : public CppUnit::TestFixture {
     std::string dumpPriorityDbToString(const BucketPriorityDatabase&) const;
 
     std::unique_ptr<MockMaintenancePriorityGenerator> _priorityGenerator;
-    std::unique_ptr<MapBucketDatabase> _bucketDb;
+    std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
     std::unique_ptr<SimpleBucketPriorityDatabase> _priorityDb;
     std::unique_ptr<SimpleMaintenanceScanner> _scanner;
 
+    void addBucketToDb(document::BucketSpace bucketSpace, int bucketNum);
     void addBucketToDb(int bucketNum);
 
     bool scanEntireDatabase(int expected);
@@ -39,6 +45,7 @@ class SimpleMaintenanceScannerTest : public CppUnit::TestFixture {
 
 public:
     void testPrioritizeSingleBucket();
+    void testPrioritizeSingleBucketAltBucketSpace();
     void testPrioritizeMultipleBuckets();
     void testPendingMaintenanceOperationStatistics();
     void perNodeMaintenanceStatsAreTracked();
@@ -53,16 +60,23 @@ void
 SimpleMaintenanceScannerTest::setUp()
 {
     _priorityGenerator.reset(new MockMaintenancePriorityGenerator());
-    _bucketDb.reset(new MapBucketDatabase());
+    _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>();
     _priorityDb.reset(new SimpleBucketPriorityDatabase());
-    _scanner.reset(new SimpleMaintenanceScanner(*_priorityDb, *_priorityGenerator, *_bucketDb));
+    _scanner.reset(new SimpleMaintenanceScanner(*_priorityDb, *_priorityGenerator, *_bucketSpaceRepo));
+}
+
+void
+SimpleMaintenanceScannerTest::addBucketToDb(document::BucketSpace bucketSpace, int bucketNum)
+{
+    BucketDatabase::Entry entry(BucketId(16, bucketNum), BucketInfo());
+    auto &bucketDb(_bucketSpaceRepo->get(bucketSpace).getBucketDatabase());
+    bucketDb.update(entry);
 }
 
 void
 SimpleMaintenanceScannerTest::addBucketToDb(int bucketNum)
 {
-    BucketDatabase::Entry entry(BucketId(16, bucketNum), BucketInfo());
-    _bucketDb->update(entry);
+    addBucketToDb(makeBucketSpace(), bucketNum);
 }
 
 std::string
@@ -80,7 +94,27 @@ SimpleMaintenanceScannerTest::testPrioritizeSingleBucket()
     addBucketToDb(1);
     std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
-    CPPUNIT_ASSERT(!_scanner->scanNext().isDone());
+    auto scanResult = _scanner->scanNext();
+    CPPUNIT_ASSERT(!scanResult.isDone());
+    CPPUNIT_ASSERT_EQUAL(scanResult.getBucketSpace().getId(), makeBucketSpace().getId());
+    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+
+    CPPUNIT_ASSERT(_scanner->scanNext().isDone());
+    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+}
+
+void
+SimpleMaintenanceScannerTest::testPrioritizeSingleBucketAltBucketSpace()
+{
+    document::BucketSpace bucketSpace(4);
+    _bucketSpaceRepo->add(bucketSpace, std::make_unique<DistributorBucketSpace>());
+    _scanner->reset();
+    addBucketToDb(bucketSpace, 1);
+    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000004), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
+
+    auto scanResult = _scanner->scanNext();
+    CPPUNIT_ASSERT(!scanResult.isDone());
+    CPPUNIT_ASSERT_EQUAL(scanResult.getBucketSpace().getId(), bucketSpace.getId());
     CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
 
     CPPUNIT_ASSERT(_scanner->scanNext().isDone());

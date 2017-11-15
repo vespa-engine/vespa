@@ -87,7 +87,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _bucketPriorityDb(new SimpleBucketPriorityDatabase()),
       _scanner(new SimpleMaintenanceScanner(
             *_bucketPriorityDb, _idealStateManager,
-            getDefaultBucketSpace().getBucketDatabase())),
+            *_bucketSpaceRepo)),
       _throttlingStarter(new ThrottlingOperationStarter(
             _maintenanceOperationOwner)),
       _blockingStarter(new BlockingOperationStarter(_pendingMessageTracker,
