@@ -8,27 +8,27 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-lib</artifactId>
-            <version>6-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespajlib</artifactId>
-            <version>6-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>jrt</artifactId>
-            <version>6-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespalog</artifactId>
-            <version>6-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config</artifactId>
-            <version>6-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -43,7 +43,7 @@
     <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
+    <version>${project.version}</version>
   </parent>
   <artifactId>filedistribution</artifactId>
   <version>6-SNAPSHOT</version>
