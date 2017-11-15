@@ -38,11 +38,7 @@ public class ConnectorFactoryTest {
                                      .pemKeyStore(
                                              new Ssl.PemKeyStore.Builder()
                                                      .keyPath("nonEmpty"))));
-
-        ThrowingSecretStore secretStore = new ThrowingSecretStore();
-        ConnectorFactory willThrowException = new ConnectorFactory(config,
-                                                                   secretStore,
-                                                                   new DefaultSslKeyStoreConfigurator(config, secretStore));
+        ConnectorFactory willThrowException = createConnectorFactory(config);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -53,11 +49,7 @@ public class ConnectorFactoryTest {
                                      .enabled(true)
                                      .keyStoreType(PEM)
                                      .keyStorePath("nonEmpty")));
-
-        ThrowingSecretStore secretStore = new ThrowingSecretStore();
-        ConnectorFactory willThrowException = new ConnectorFactory(config,
-                                                                   secretStore,
-                                                                   new DefaultSslKeyStoreConfigurator(config, secretStore));
+        ConnectorFactory willThrowException = createConnectorFactory(config);
     }
 
     @Test
@@ -65,10 +57,7 @@ public class ConnectorFactoryTest {
         Server server = new Server();
         try {
             ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
-            ThrowingSecretStore secretStore = new ThrowingSecretStore();
-            ConnectorFactory factory = new ConnectorFactory(config,
-                                                            secretStore,
-                                                            new DefaultSslKeyStoreConfigurator(config, secretStore));
+            ConnectorFactory factory = createConnectorFactory(config);
             JDiscServerConnector connector =
                     (JDiscServerConnector)factory.createConnector(new DummyMetric(), server, null);
             server.addConnector(connector);
@@ -96,11 +85,9 @@ public class ConnectorFactoryTest {
             serverChannel.socket().bind(new InetSocketAddress(0));
 
             ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
-            ThrowingSecretStore secretStore = new ThrowingSecretStore();
-            ConnectorFactory factory = new ConnectorFactory(config,
-                                                            secretStore,
-                                                            new DefaultSslKeyStoreConfigurator(config, secretStore));
-            JDiscServerConnector connector = (JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
+            ConnectorFactory factory = createConnectorFactory(config);
+            JDiscServerConnector connector =
+                    (JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();
@@ -116,6 +103,11 @@ public class ConnectorFactoryTest {
                 //ignore
             }
         }
+    }
+
+    private static ConnectorFactory createConnectorFactory(ConnectorConfig config) {
+        ThrowingSecretStore secretStore = new ThrowingSecretStore();
+        return new ConnectorFactory(config, secretStore, new DefaultSslKeyStoreConfigurator(config, secretStore));
     }
 
     private static class HelloWorldHandler extends AbstractHandler {
