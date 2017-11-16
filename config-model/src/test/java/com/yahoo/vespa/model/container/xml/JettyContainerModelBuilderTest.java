@@ -208,6 +208,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         {
             ConnectorFactory firstConnector = connectorFactories.get(0);
             assertThat(firstConnector.getInjectedComponentIds(), hasItem("ssl-keystore-configurator@foo"));
+            assertThat(firstConnector.getInjectedComponentIds().size(), equalTo(1));
             SimpleComponent sslKeystoreConfigurator = firstConnector.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
             BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
             assertThat(spec.classId.toString(), is("com.yahoo.MySslKeyStoreConfigurator"));
@@ -216,6 +217,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         {
             ConnectorFactory secondFactory = connectorFactories.get(1);
             assertThat(secondFactory.getInjectedComponentIds(), hasItem("ssl-keystore-configurator@bar"));
+            assertThat(secondFactory.getInjectedComponentIds().size(), equalTo(1));
             SimpleComponent sslKeystoreConfigurator = secondFactory.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
             BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
             assertThat(spec.classId.toString(), is(DefaultSslKeyStoreConfigurator.class.getName()));
