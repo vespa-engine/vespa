@@ -33,6 +33,8 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
                 legacyServerConfig = null;
             }
         }
-        return new ConnectorFactory(name, port, legacyServerConfig);
+        Element sslKeystoreConfigurator = XML.getChild(serverSpec, "ssl-keystore-configurator");
+        return new ConnectorFactory(name, port, legacyServerConfig, sslKeystoreConfigurator);
     }
+
 }
