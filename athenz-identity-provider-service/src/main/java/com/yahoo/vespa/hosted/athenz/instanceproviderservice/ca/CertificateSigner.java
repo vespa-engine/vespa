@@ -15,17 +15,13 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 
 import java.math.BigInteger;
 import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
@@ -55,8 +51,8 @@ public class CertificateSigner {
     private static final List<ASN1ObjectIdentifier> ILLEGAL_EXTENSIONS = ImmutableList.of(
             Extension.basicConstraints, Extension.subjectAlternativeName);
 
-    private final JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
-    private final Provider provider = new BouncyCastleProvider();
+    public static final JcaX509CertificateConverter CERTIFICATE_CONVERTER = new JcaX509CertificateConverter()
+            .setProvider(new BouncyCastleProvider());
 
     private final PrivateKey caPrivateKey;
     private final X500Name issuer;
@@ -89,18 +85,15 @@ public class CertificateSigner {
         Date notAfter = Date.from(clock.instant().plus(CERTIFICATE_EXPIRATION));
 
         try {
-            PublicKey publicKey = new JcaPKCS10CertificationRequest(certReq).getPublicKey();
-            X509v3CertificateBuilder caBuilder = new JcaX509v3CertificateBuilder(
-                    issuer, BigInteger.valueOf(clock.millis()), notBefore, notAfter, certReq.getSubject(), publicKey)
+            X509v3CertificateBuilder caBuilder = new X509v3CertificateBuilder(issuer, BigInteger.valueOf(clock.millis()),
+                    notBefore, notAfter, certReq.getSubject(), certReq.getSubjectPublicKeyInfo())
 
                     // Set Basic Constraints to false
                     .addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
 
             ContentSigner caSigner = new JcaContentSignerBuilder(SIGNER_ALGORITHM).build(caPrivateKey);
 
-            return certificateConverter
-                    .setProvider(provider)
-                    .getCertificate(caBuilder.build(caSigner));
+            return CERTIFICATE_CONVERTER.getCertificate(caBuilder.build(caSigner));
         } catch (Exception ex) {
             log.log(LogLevel.ERROR, "Failed to generate X509 Certificate", ex);
             throw new RuntimeException("Failed to generate X509 Certificate");
