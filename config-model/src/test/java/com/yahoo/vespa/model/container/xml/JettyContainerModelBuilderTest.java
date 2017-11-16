@@ -20,6 +20,7 @@ import java.util.List;
 
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -206,6 +207,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         {
             ConnectorFactory firstConnector = connectorFactories.get(0);
+            assertThat(firstConnector.getInjectedComponentIds(), hasItem("ssl-keystore-configurator@foo"));
             SimpleComponent sslKeystoreConfigurator = firstConnector.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
             BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
             assertThat(spec.classId.toString(), is("com.yahoo.MySslKeyStoreConfigurator"));
@@ -213,6 +215,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         }
         {
             ConnectorFactory secondFactory = connectorFactories.get(1);
+            assertThat(secondFactory.getInjectedComponentIds(), hasItem("ssl-keystore-configurator@bar"));
             SimpleComponent sslKeystoreConfigurator = secondFactory.getChildrenByTypeRecursive(SimpleComponent.class).get(0);
             BundleInstantiationSpecification spec = sslKeystoreConfigurator.model.bundleInstantiationSpec;
             assertThat(spec.classId.toString(), is(DefaultSslKeyStoreConfigurator.class.getName()));
