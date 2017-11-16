@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/storageapi/mbusprot/storagemessage.h>
@@ -176,6 +177,7 @@ protected:
     virtual SCmd::UP onDecodeBatchPutRemoveCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeBatchPutRemoveReply(const SCmd&, BBuf&) const = 0;
 
+    virtual document::Bucket getBucket(document::ByteBuffer& buf) const = 0;
     virtual api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const = 0;
     virtual void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const = 0;
 

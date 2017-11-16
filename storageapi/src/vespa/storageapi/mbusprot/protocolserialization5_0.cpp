@@ -12,6 +12,13 @@ using document::BucketSpace;
 namespace storage {
 namespace mbusprot {
 
+document::Bucket
+ProtocolSerialization5_0::getBucket(document::ByteBuffer& buf) const
+{
+    document::BucketId bucketId(SH::getLong(buf));
+    return document::Bucket(BucketSpace::placeHolder(), bucketId);
+}
+
 api::BucketInfo
 ProtocolSerialization5_0::getBucketInfo(document::ByteBuffer& buf) const
 {
@@ -103,8 +110,7 @@ api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodePutCommand(BBuf& buf) const
 {
     document::Document::SP doc(SH::getDocument(buf, getTypeRepo()));
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::Timestamp ts(SH::getLong(buf));
     api::PutCommand::UP msg(new api::PutCommand(bucket, doc, ts));
     msg->setUpdateTimestamp(SH::getLong(buf));
@@ -224,8 +230,7 @@ ProtocolSerialization5_0::onDecodeUpdateCommand(BBuf& buf) const
                                                   SERIALIZE_HEAD));
     }
 
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::Timestamp timestamp(SH::getLong(buf));
     api::UpdateCommand::UP msg(
             new api::UpdateCommand(bucket, update, timestamp));
@@ -278,8 +283,7 @@ ProtocolSerialization5_0::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodeDeleteBucketCommand(BBuf& buf) const
 {
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::DeleteBucketCommand::UP msg(new api::DeleteBucketCommand(bucket));
     onDecodeBucketInfoCommand(buf, *msg);
     if (buf.getRemaining() >= SH::BUCKET_INFO_SERIALIZED_SIZE) {
@@ -507,8 +511,7 @@ ProtocolSerialization5_0::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodeJoinBucketsCommand(BBuf& buf) const
 {
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::JoinBucketsCommand::UP msg(new api::JoinBucketsCommand(bucket));
     uint32_t size = SH::getInt(buf);
     if (size > buf.getRemaining()) {

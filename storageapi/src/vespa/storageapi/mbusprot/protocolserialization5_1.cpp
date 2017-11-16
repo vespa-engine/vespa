@@ -72,8 +72,7 @@ void ProtocolSerialization5_1::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeSetBucketStateCommand(BBuf& buf) const
 {
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::SetBucketStateCommand::BUCKET_STATE state(
             static_cast<api::SetBucketStateCommand::BUCKET_STATE>(
                     SH::getByte(buf)));
@@ -113,8 +112,7 @@ api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeGetCommand(BBuf& buf) const
 {
     document::DocumentId did(SH::getString(buf));
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
     std::string fieldSet(SH::getString(buf));
     api::GetCommand::UP msg(
@@ -216,8 +214,7 @@ void ProtocolSerialization5_1::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_1::onDecodeCreateBucketCommand(BBuf& buf) const
 {
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     bool setActive = SH::getBoolean(buf);
     api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bucket));
     msg->setActive(setActive);

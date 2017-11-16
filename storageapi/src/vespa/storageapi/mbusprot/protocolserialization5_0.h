@@ -15,6 +15,7 @@ public:
     ProtocolSerialization5_0(const document::DocumentTypeRepo::SP&,
                              const documentapi::LoadTypeSet& loadTypes);
 
+    document::Bucket getBucket(document::ByteBuffer& buf) const override;
     api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
     void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const override;
 
