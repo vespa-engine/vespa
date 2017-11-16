@@ -17,18 +17,25 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
     if (_maxBuckets < 1) _maxBuckets = 1;
 }
 
+std::shared_ptr<SimpleMetricsCollector>
+SimpleMetricsCollector::create(const CollectorConfig &config)
+{
+    return std::shared_ptr<SimpleMetricsCollector>(
+        new SimpleMetricsCollector(config));
+}
+
 Counter
 SimpleMetricsCollector::declareCounter(const vespalib::string &name)
 {
     int id = _counterNames.resolve(name);
-    return Counter(*this, id);
+    return Counter(shared_from_this(), id);
 }
 
 Gauge
 SimpleMetricsCollector::declareGauge(const vespalib::string &name)
 {
     int id = _gaugeNames.resolve(name);
-    return Gauge(*this, id);
+    return Gauge(shared_from_this(), id);
 }
 
 Snapshot

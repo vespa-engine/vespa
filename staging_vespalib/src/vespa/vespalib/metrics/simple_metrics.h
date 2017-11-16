@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <chrono>
+#include <memory>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
@@ -14,28 +15,32 @@ class SimpleMetricsCollector;
 
 class Gauge {
 private:
-    SimpleMetricsCollector &_manager;
-    const unsigned int _idx;
+    std::shared_ptr<SimpleMetricsCollector> _manager;
+    const size_t _idx;
 public:
-    Gauge(SimpleMetricsCollector &m, int idx) : _manager(m), _idx(idx) {}
+    Gauge(std::shared_ptr<SimpleMetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void sample(double value);
 };
 
 class Counter {
-    SimpleMetricsCollector &_manager;
-    const unsigned int _idx;
+    std::shared_ptr<SimpleMetricsCollector> _manager;
+    const size_t _idx;
 public:
-    Counter(SimpleMetricsCollector &m, int idx) : _manager(m), _idx(idx) {}
+    Counter(std::shared_ptr<SimpleMetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void add();
 };
 
 struct CounterIncrement {
-    unsigned int idx;
+    size_t idx;
+    CounterIncrement() = delete;
+    explicit CounterIncrement(size_t id) : idx(id) {}
 };
 
 struct GaugeMeasurement {
-    unsigned int idx;
+    size_t idx;
     double value;
+    GaugeMeasurement() = delete;
+    GaugeMeasurement(size_t id, double v) : idx(id), value(v) {}
 };
 
 } // namespace vespalib::metrics

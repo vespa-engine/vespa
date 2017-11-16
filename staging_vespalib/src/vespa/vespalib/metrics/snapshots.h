@@ -34,8 +34,8 @@ struct GaugeSnapshot {
 
 class Snapshot {
 public:
-    clock::time_point startTime();
-    clock::time_point endedTime();
+    double startTime(); // seconds since 1970
+    double endedTime(); // seconds since 1970
 
     std::vector<CounterSnapshot> counters() const;
     std::vector<GaugeSnapshot> gauges() const;

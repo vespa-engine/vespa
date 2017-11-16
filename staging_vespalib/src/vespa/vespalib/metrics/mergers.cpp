@@ -5,7 +5,7 @@
 namespace vespalib {
 namespace metrics {
 
-MergedCounter::MergedCounter(unsigned int id)
+MergedCounter::MergedCounter(size_t id)
   : idx(id), count(0)
 {}
 
@@ -22,7 +22,7 @@ MergedCounter::merge(const MergedCounter &other)
 }
 
 
-MergedGauge::MergedGauge(unsigned int id)
+MergedGauge::MergedGauge(size_t id)
   : idx(id),
     observedCount(0),
     sumValue(0.0),
@@ -67,14 +67,14 @@ void Bucket::merge(const CurrentSamples &other)
 {
     for (CounterIncrement inc : other.counterIncrements) {
         while (counters.size() <= inc.idx) {
-            unsigned int id = counters.size();
+            size_t id = counters.size();
             counters.emplace_back(id);
         }
         counters[inc.idx].merge(inc);
     }
     for (GaugeMeasurement sample : other.gaugeMeasurements) {
         while (gauges.size() <= sample.idx) {
-            unsigned int id = gauges.size();
+            size_t id = gauges.size();
             gauges.emplace_back(id);
         }
         gauges[sample.idx].merge(sample);
@@ -88,14 +88,14 @@ void Bucket::merge(const Bucket &other)
     endedTime = other.endedTime;
     for (const MergedCounter & entry : other.counters) {
         while (counters.size() <= entry.idx) {
-            unsigned int id = counters.size();
+            size_t id = counters.size();
             counters.emplace_back(id);
         }
         counters[entry.idx].merge(entry);
     }
     for (const MergedGauge & entry : other.gauges) {
         while (gauges.size() <= entry.idx) {
-            unsigned int id = gauges.size();
+            size_t id = gauges.size();
             gauges.emplace_back(id);
         }
         gauges[entry.idx].merge(entry);
@@ -105,6 +105,8 @@ void Bucket::merge(const Bucket &other)
 void swap(CurrentSamples& a, CurrentSamples& b)
 {
     using std::swap;
+    std::lock_guard<std::mutex> guardA(a.lock);
+    std::lock_guard<std::mutex> guardB(b.lock);
     swap(a.counterIncrements, b.counterIncrements);
     swap(a.gaugeMeasurements, b.gaugeMeasurements);
 }

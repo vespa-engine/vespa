@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <mutex>
 #include "simple_metrics.h"
 
 namespace vespalib {
@@ -8,23 +9,23 @@ namespace metrics {
 
 // internal
 struct MergedCounter {
-    unsigned int idx;
+    size_t idx;
     size_t count;
-    MergedCounter(unsigned int idx);
+    MergedCounter(size_t idx);
     void merge(const CounterIncrement &other);
     void merge(const MergedCounter &other);
 };
 
 // internal
 struct MergedGauge {
-    unsigned int idx;
+    size_t idx;
     size_t observedCount;
     double sumValue;
     double minValue;
     double maxValue;
     double lastValue;
 
-    MergedGauge(unsigned int idx);
+    MergedGauge(size_t idx);
 
     void merge(const GaugeMeasurement &other);
     void merge(const MergedGauge &other);
@@ -32,8 +33,18 @@ struct MergedGauge {
 
 // internal
 struct CurrentSamples {
+    std::mutex lock;
     std::vector<CounterIncrement> counterIncrements;
     std::vector<GaugeMeasurement> gaugeMeasurements;
+
+    void add(CounterIncrement inc) {
+        std::lock_guard<std::mutex> guard(lock);
+        counterIncrements.push_back(inc);
+    }
+    void sample(GaugeMeasurement value) {
+        std::lock_guard<std::mutex> guard(lock);
+        gaugeMeasurements.push_back(value);
+    }
 };
 
 // internal
@@ -55,8 +66,8 @@ struct Bucket {
     ~Bucket() {}
 };
 
-extern void swap(CurrentSamples& a, CurrentSamples& b);
-extern void swap(Bucket& a, Bucket& b);
+void swap(CurrentSamples& a, CurrentSamples& b);
+void swap(Bucket& a, Bucket& b);
 
 } // namespace vespalib::metrics
 } // namespace vespalib
