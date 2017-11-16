@@ -16,10 +16,16 @@ namespace distributor {
 DistributorBucketSpaceRepo::DistributorBucketSpaceRepo()
     : _map()
 {
-    _map.emplace(BucketSpace::placeHolder(), std::make_unique<DistributorBucketSpace>());
+    add(BucketSpace::placeHolder(), std::make_unique<DistributorBucketSpace>());
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() {
+}
+
+void
+DistributorBucketSpaceRepo::add(document::BucketSpace bucketSpace, std::unique_ptr<DistributorBucketSpace> distributorBucketSpace)
+{
+    _map.emplace(bucketSpace, std::move(distributorBucketSpace));
 }
 
 void DistributorBucketSpaceRepo::setDefaultDistribution(
@@ -33,7 +39,6 @@ void DistributorBucketSpaceRepo::setDefaultDistribution(
 DistributorBucketSpace &
 DistributorBucketSpaceRepo::get(BucketSpace bucketSpace)
 {
-    assert(bucketSpace == BucketSpace::placeHolder());
     auto itr = _map.find(bucketSpace);
     assert(itr != _map.end());
     return *itr->second;
@@ -42,7 +47,6 @@ DistributorBucketSpaceRepo::get(BucketSpace bucketSpace)
 const DistributorBucketSpace &
 DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const
 {
-    assert(bucketSpace == BucketSpace::placeHolder());
     auto itr = _map.find(bucketSpace);
     assert(itr != _map.end());
     return *itr->second;
