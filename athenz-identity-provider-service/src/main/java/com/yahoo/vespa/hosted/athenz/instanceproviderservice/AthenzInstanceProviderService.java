@@ -10,7 +10,6 @@ import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.CertificateSigner;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.CertificateSignerServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.CertificateClient;
@@ -23,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.security.KeyStore;
@@ -110,9 +108,6 @@ public class AthenzInstanceProviderService extends AbstractComponent {
         server.addConnector(connector);
 
         ServletHandler handler = new ServletHandler();
-
-        CertificateSignerServlet certificateSignerServlet = new CertificateSignerServlet(certificateSigner);
-        handler.addServletWithMapping(new ServletHolder(certificateSignerServlet), config.apiPath() + "/sign");
 
         handler.addServletWithMapping(StatusServlet.class, "/status.html");
         server.setHandler(handler);
