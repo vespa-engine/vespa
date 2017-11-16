@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProvid
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.CertificateClient;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentGenerator;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.IdentityDocumentServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceConfirmationServlet;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.InstanceValidator;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
@@ -118,9 +117,6 @@ public class AthenzInstanceProviderService extends AbstractComponent {
 
         InstanceConfirmationServlet instanceConfirmationServlet = new InstanceConfirmationServlet(instanceValidator);
         handler.addServletWithMapping(new ServletHolder(instanceConfirmationServlet), config.apiPath() + "/instance");
-
-        IdentityDocumentServlet identityDocumentServlet = new IdentityDocumentServlet(identityDocumentGenerator);
-        handler.addServletWithMapping(new ServletHolder(identityDocumentServlet), config.apiPath() + "/identity-document");
 
         handler.addServletWithMapping(StatusServlet.class, "/status.html");
         server.setHandler(handler);

@@ -41,7 +41,7 @@ public class IdentityDocumentGenerator {
         this.signingSecretVersion = zoneConfig.secretVersion();
     }
 
-    public String generateSignedIdentityDocument(String hostname) {
+    public SignedIdentityDocument generateSignedIdentityDocument(String hostname) {
         Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
         try {
             IdentityDocument identityDocument = generateIdDocument(node);
@@ -57,7 +57,7 @@ public class IdentityDocumentGenerator {
             sigGenerator.update(encodedIdentityDocument.getBytes());
             String signature = Base64.getEncoder().encodeToString(sigGenerator.sign());
 
-            SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+            return new SignedIdentityDocument(
                     encodedIdentityDocument,
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
@@ -65,9 +65,7 @@ public class IdentityDocumentGenerator {
                     toZoneDnsSuffix(zone, dnsSuffix),
                     providerDomain + "." + providerService,
                     ztsUrl,
-                    SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION
-            );
-            return Utils.getMapper().writeValueAsString(signedIdentityDocument);
+                    SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }

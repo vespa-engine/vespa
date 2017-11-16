@@ -72,11 +72,7 @@ public class IdentityDocumentGeneratorTest {
                 nodeRepository,
                 ZONE,
                 keyProvider);
-        String rawSignedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(hostname);
-
-
-        SignedIdentityDocument signedIdentityDocument =
-                Utils.getMapper().readValue(rawSignedIdentityDocument, SignedIdentityDocument.class);
+        SignedIdentityDocument signedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(hostname);
 
         // Verify attributes
         assertEquals(hostname, signedIdentityDocument.identityDocument.instanceHostname);
