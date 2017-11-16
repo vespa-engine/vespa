@@ -13,8 +13,8 @@ import com.yahoo.log.event.Event;
 import com.yahoo.system.CatchSigTerm;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
-import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionRpcServer;
+import com.yahoo.vespa.config.proxy.filedistribution.FileDownloader;
 
 import java.util.List;
 import java.util.concurrent.Executors;
