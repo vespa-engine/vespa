@@ -12,10 +12,19 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
       _curTime(_startTime),
       _buckets(),
       _firstBucket(0),
-      _maxBuckets(config.sliding_window_seconds)
+      _maxBuckets(config.sliding_window_seconds),
+      _stopFlag(false),
+      _collectorThread(doCollectLoop, this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
 }
+
+SimpleMetricsCollector::~SimpleMetricsCollector()
+{
+    _stopFlag = true;
+    _collectorThread.join();
+}
+
 
 std::shared_ptr<SimpleMetricsCollector>
 SimpleMetricsCollector::create(const CollectorConfig &config)
@@ -50,6 +59,20 @@ SimpleMetricsCollector::getSnapshot()
     return snap;
 }
 
+void
+SimpleMetricsCollector::doCollectLoop(SimpleMetricsCollector *me)
+{
+    const std::chrono::milliseconds jiffy{20};
+    const std::chrono::seconds oneSec{1};
+    while (!me->_stopFlag) {
+        std::this_thread::sleep_for(jiffy);
+        clock::time_point now = clock::now();
+        clock::duration elapsed = now - me->_curTime;
+        if (elapsed >= oneSec) {
+            me->collectCurrentBucket();
+        }
+    }
+}
 
 void
 SimpleMetricsCollector::collectCurrentBucket()

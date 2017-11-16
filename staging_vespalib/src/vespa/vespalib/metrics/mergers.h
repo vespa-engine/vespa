@@ -37,6 +37,8 @@ struct CurrentSamples {
     std::vector<CounterIncrement> counterIncrements;
     std::vector<GaugeMeasurement> gaugeMeasurements;
 
+    ~CurrentSamples() {}
+
     void add(CounterIncrement inc) {
         std::lock_guard<std::mutex> guard(lock);
         counterIncrements.push_back(inc);

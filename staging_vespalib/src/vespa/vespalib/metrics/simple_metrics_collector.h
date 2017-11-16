@@ -2,6 +2,7 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 #include <vespa/vespalib/stllike/string.h>
 #include "simple_metrics.h"
 #include "name_collection.h"
@@ -15,6 +16,7 @@ struct CollectorConfig {
     int sliding_window_seconds;
     // possibly more config later
 };
+
 
 class SimpleMetricsCollector
     : public std::enable_shared_from_this<SimpleMetricsCollector>
@@ -32,11 +34,15 @@ private:
     size_t _maxBuckets;
     // lots of stuff
 
+    bool _stopFlag;
+    std::thread _collectorThread;
+    static void doCollectLoop(SimpleMetricsCollector *me);
+    void collectCurrentBucket(); // called once per second from another thread
+
     SimpleMetricsCollector(const CollectorConfig &config);
 public:
+    ~SimpleMetricsCollector();
     static std::shared_ptr<SimpleMetricsCollector> create(const CollectorConfig &config);
-
-    void collectCurrentBucket(); // called once per second from another thread
 
     Counter counter(const vespalib::string &name); // get or create
     Gauge gauge(const vespalib::string &name); // get or create
