@@ -849,7 +849,7 @@ SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
         op->setPriority(result.priority());
         op->setDetailedReason(result.reason());
         MaintenancePriority::Priority schedPri(
-                result.needsMoveOnly() ? MaintenancePriority::VERY_LOW
+                result.needsMoveOnly() ? MaintenancePriority::LOW
                                        : MaintenancePriority::MEDIUM);
 
         return Result::createStoredResult(std::move(op), schedPri);
@@ -1142,7 +1142,7 @@ GarbageCollectionStateChecker::check(Context& c)
         op->setPriority(c.distributorConfig.getMaintenancePriorities()
                         .garbageCollection);
         op->setDetailedReason(reason.c_str());
-        return Result::createStoredResult(std::move(op), MaintenancePriority::LOW);
+        return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_LOW);
     } else {
         return Result::noMaintenanceNeeded();
     }
