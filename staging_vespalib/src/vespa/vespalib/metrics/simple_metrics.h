@@ -13,6 +13,15 @@ using clock = std::chrono::steady_clock;
 
 class SimpleMetricsCollector;
 
+class Counter {
+    std::shared_ptr<SimpleMetricsCollector> _manager;
+    const size_t _idx;
+public:
+    Counter(std::shared_ptr<SimpleMetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
+    void add();
+    void add(size_t count);
+};
+
 class Gauge {
 private:
     std::shared_ptr<SimpleMetricsCollector> _manager;
@@ -22,18 +31,11 @@ public:
     void sample(double value);
 };
 
-class Counter {
-    std::shared_ptr<SimpleMetricsCollector> _manager;
-    const size_t _idx;
-public:
-    Counter(std::shared_ptr<SimpleMetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
-    void add();
-};
-
 struct CounterIncrement {
     size_t idx;
+    size_t value;
     CounterIncrement() = delete;
-    explicit CounterIncrement(size_t id) : idx(id) {}
+    CounterIncrement(size_t id, size_t v) : idx(id), value(v) {}
 };
 
 struct GaugeMeasurement {

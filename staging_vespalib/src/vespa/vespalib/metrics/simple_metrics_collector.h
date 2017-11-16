@@ -36,10 +36,10 @@ private:
 public:
     static std::shared_ptr<SimpleMetricsCollector> create(const CollectorConfig &config);
 
-    void collectCurrentBucket();
+    void collectCurrentBucket(); // called once per second from another thread
 
-    Counter declareCounter(const vespalib::string &name);
-    Gauge declareGauge(const vespalib::string &name);
+    Counter counter(const vespalib::string &name); // get or create
+    Gauge gauge(const vespalib::string &name); // get or create
 
     Snapshot getSnapshot();
 

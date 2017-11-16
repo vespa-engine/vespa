@@ -25,14 +25,14 @@ SimpleMetricsCollector::create(const CollectorConfig &config)
 }
 
 Counter
-SimpleMetricsCollector::declareCounter(const vespalib::string &name)
+SimpleMetricsCollector::counter(const vespalib::string &name)
 {
     int id = _counterNames.resolve(name);
     return Counter(shared_from_this(), id);
 }
 
 Gauge
-SimpleMetricsCollector::declareGauge(const vespalib::string &name)
+SimpleMetricsCollector::gauge(const vespalib::string &name)
 {
     int id = _gaugeNames.resolve(name);
     return Gauge(shared_from_this(), id);

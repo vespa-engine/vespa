@@ -7,38 +7,50 @@
 namespace vespalib {
 namespace metrics {
 
-struct CounterSnapshot {
-    const vespalib::string &name;
-    const size_t count;
+class CounterSnapshot {
+private:
+    const vespalib::string &_name;
+    const size_t _count;
+public:
     CounterSnapshot(const vespalib::string &n, const MergedCounter &c)
-        : name(n), count(c.count)
+        : _name(n), _count(c.count)
     {}
+    const vespalib::string &name() const { return _name; }
+    size_t count() const { return _count; }
 };
 
-struct GaugeSnapshot {
-    const vespalib::string &name;
-    const size_t observedCount;
-    const double averageValue;
-    const double minValue;
-    const double maxValue;
-    const double lastValue;
+class GaugeSnapshot {
+private:
+    const vespalib::string &_name;
+    const size_t _observedCount;
+    const double _averageValue;
+    const double _minValue;
+    const double _maxValue;
+    const double _lastValue;
+public:
     GaugeSnapshot(const vespalib::string &n, const MergedGauge &c)
-        : name(n),
-          observedCount(c.observedCount),
-          averageValue(c.sumValue / c.observedCount),
-          minValue(c.minValue),
-          maxValue(c.maxValue),
-          lastValue(c.lastValue)
+        : _name(n),
+          _observedCount(c.observedCount),
+          _averageValue(c.sumValue / c.observedCount),
+          _minValue(c.minValue),
+          _maxValue(c.maxValue),
+          _lastValue(c.lastValue)
     {}
+    const vespalib::string &name() const { return _name; }
+    size_t observedCount() const { return _observedCount; }
+    double averageValue() const { return _averageValue; }
+    double minValue() const { return _minValue; }
+    double maxValue() const { return _maxValue; }
+    double lastValue() const { return _lastValue; }
 };
 
 class Snapshot {
 public:
     double startTime(); // seconds since 1970
-    double endedTime(); // seconds since 1970
+    double endTime(); // seconds since 1970
 
-    std::vector<CounterSnapshot> counters() const;
-    std::vector<GaugeSnapshot> gauges() const;
+    const std::vector<CounterSnapshot> &counters() const;
+    const std::vector<GaugeSnapshot> &gauges() const;
 };
 
 } // namespace vespalib::metrics

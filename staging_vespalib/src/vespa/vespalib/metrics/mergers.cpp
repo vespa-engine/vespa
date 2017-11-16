@@ -10,14 +10,16 @@ MergedCounter::MergedCounter(size_t id)
 {}
 
 void
-MergedCounter::merge(const CounterIncrement &)
+MergedCounter::merge(const CounterIncrement &increment)
 {
-    ++count;
+    assert(idx == increment.idx);
+    count += increment.value;
 }
 
 void
 MergedCounter::merge(const MergedCounter &other)
 {
+    assert(idx == other.idx);
     count += other.count;
 }
 
@@ -34,6 +36,7 @@ MergedGauge::MergedGauge(size_t id)
 void
 MergedGauge::merge(const GaugeMeasurement &other)
 {
+    assert(idx == other.idx);
     if (observedCount == 0) {
         sumValue = other.value;
         minValue = other.value;
@@ -50,7 +53,7 @@ MergedGauge::merge(const GaugeMeasurement &other)
 void
 MergedGauge::merge(const MergedGauge &other)
 {
-    // NB assumes (other.obsevedCount > 0)
+    assert(idx == other.idx);
     if (observedCount == 0) {
         minValue = other.minValue;
         maxValue = other.maxValue;
@@ -84,20 +87,20 @@ void Bucket::merge(const CurrentSamples &other)
 void Bucket::merge(const Bucket &other)
 {
     assert(startTime <= other.startTime);
-    assert(endedTime <= other.endedTime);
-    endedTime = other.endedTime;
+    assert(endTime <= other.endTime);
+    endTime = other.endTime;
+    while (counters.size() < other.counters.size()) {
+        size_t id = counters.size();
+        counters.emplace_back(id);
+    }
     for (const MergedCounter & entry : other.counters) {
-        while (counters.size() <= entry.idx) {
-            size_t id = counters.size();
-            counters.emplace_back(id);
-        }
         counters[entry.idx].merge(entry);
     }
+    while (gauges.size() < other.gauges.size()) {
+        size_t id = gauges.size();
+        gauges.emplace_back(id);
+    }
     for (const MergedGauge & entry : other.gauges) {
-        while (gauges.size() <= entry.idx) {
-            size_t id = gauges.size();
-            gauges.emplace_back(id);
-        }
         gauges[entry.idx].merge(entry);
     }
 }
@@ -115,7 +118,7 @@ void swap(Bucket& a, Bucket& b)
 {
     using std::swap;
     swap(a.startTime, b.startTime);
-    swap(a.endedTime, b.endedTime);
+    swap(a.endTime, b.endTime);
     swap(a.counters, b.counters);
     swap(a.gauges, b.gauges);
 }

@@ -50,16 +50,16 @@ struct CurrentSamples {
 // internal
 struct Bucket {
     clock::time_point startTime;
-    clock::time_point endedTime;
+    clock::time_point endTime;
     std::vector<MergedCounter> counters;
     std::vector<MergedGauge> gauges;
 
     void merge(const CurrentSamples &other);
     void merge(const Bucket &other);
 
-    Bucket(clock::time_point start, clock::time_point ended)
-        : startTime(start),
-          endedTime(ended),
+    Bucket(clock::time_point started, clock::time_point ended)
+        : startTime(started),
+          endTime(ended),
           counters(),
           gauges()
     {}
