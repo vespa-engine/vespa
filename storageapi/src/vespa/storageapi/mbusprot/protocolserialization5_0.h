@@ -16,6 +16,7 @@ public:
                              const documentapi::LoadTypeSet& loadTypes);
 
     document::Bucket getBucket(document::ByteBuffer& buf) const override;
+    void putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const override;
     document::BucketSpace getBucketSpace(document::ByteBuffer& buf) const override;
     api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
     void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const override;

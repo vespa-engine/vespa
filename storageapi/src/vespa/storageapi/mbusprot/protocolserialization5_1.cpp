@@ -64,7 +64,7 @@ ProtocolSerialization5_1::ProtocolSerialization5_1(
 void ProtocolSerialization5_1::onEncode(
         GBBuf& buf, const api::SetBucketStateCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putByte(static_cast<uint8_t>(msg.getState()));
     onEncodeCommand(buf, msg);
 }
@@ -102,7 +102,7 @@ void ProtocolSerialization5_1::onEncode(
         GBBuf& buf, const api::GetCommand& msg) const
 {
     buf.putString(msg.getDocumentId().toString());
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getBeforeTimestamp());
     buf.putString(msg.getFieldSet());
     onEncodeCommand(buf, msg);
@@ -206,7 +206,7 @@ ProtocolSerialization5_1::onDecodeCreateVisitorCommand(BBuf& buf) const
 void ProtocolSerialization5_1::onEncode(
         GBBuf& buf, const api::CreateBucketCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putBoolean(msg.getActive());
     onEncodeBucketInfoCommand(buf, msg);
 }

@@ -41,7 +41,7 @@ void ProtocolSerialization4_2::onEncode(
     char* pos = buf.allocate(docBlockSize);
     vdslib::DocumentList copy(msg.getOperations(), pos, docBlockSize);
     buf.putBoolean(msg.keepTimeStamps());
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     onEncodeBucketInfoCommand(buf, msg);
 }
 
@@ -66,7 +66,7 @@ ProtocolSerialization4_2::onEncode(
 {
     // Serialization format - allow different types of serialization depending on source.
     buf.putByte(0);
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putInt(msg.getOperationCount());
 
     for (uint32_t i = 0; i < msg.getOperationCount(); i++) {
@@ -162,7 +162,7 @@ void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::GetCommand& msg) const
 {
     buf.putString(msg.getDocumentId().toString());
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getBeforeTimestamp());
     buf.putBoolean(msg.getFieldSet() == "[header]");
     onEncodeCommand(buf, msg);
@@ -185,7 +185,7 @@ void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::RemoveCommand& msg) const
 {
     buf.putString(msg.getDocumentId().toString());
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getTimestamp());
     onEncodeBucketInfoCommand(buf, msg);
 }
@@ -204,7 +204,7 @@ ProtocolSerialization4_2::onDecodeRemoveCommand(BBuf& buf) const
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::RevertCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putInt(msg.getRevertTokens().size());
     for (uint32_t i=0, n=msg.getRevertTokens().size(); i<n; ++i) {
         buf.putLong(msg.getRevertTokens()[i]);
@@ -228,7 +228,7 @@ ProtocolSerialization4_2::onDecodeRevertCommand(BBuf& buf) const
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::CreateBucketCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     onEncodeBucketInfoCommand(buf, msg);
 }
 
@@ -244,7 +244,7 @@ ProtocolSerialization4_2::onDecodeCreateBucketCommand(BBuf& buf) const
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::MergeBucketCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     const std::vector<api::MergeBucketCommand::Node>& nodes(msg.getNodes());
     buf.putShort(nodes.size());
     for (uint32_t i=0; i<nodes.size(); ++i) {
@@ -278,7 +278,7 @@ ProtocolSerialization4_2::onDecodeMergeBucketCommand(BBuf& buf) const
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::GetBucketDiffCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     const std::vector<api::MergeBucketCommand::Node>& nodes(msg.getNodes());
     buf.putShort(nodes.size());
     for (uint32_t i=0; i<nodes.size(); ++i) {
@@ -327,7 +327,7 @@ ProtocolSerialization4_2::onDecodeGetBucketDiffCommand(BBuf& buf) const
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::ApplyBucketDiffCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     const std::vector<api::MergeBucketCommand::Node>& nodes(msg.getNodes());
     buf.putShort(nodes.size());
     for (uint32_t i=0; i<nodes.size(); ++i) {
@@ -431,7 +431,7 @@ ProtocolSerialization4_2::onDecodeRequestBucketInfoReply(const SCmd& cmd,
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::NotifyBucketChangeCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     putBucketInfo(msg.getBucketInfo(), buf);
     onEncodeCommand(buf, msg);
 }
@@ -466,7 +466,7 @@ ProtocolSerialization4_2::onDecodeNotifyBucketChangeReply(const SCmd& cmd,
 void ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::SplitBucketCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putByte(msg.getMinSplitBits());
     buf.putByte(msg.getMaxSplitBits());
     buf.putInt(msg.getMinByteSize());
@@ -627,7 +627,7 @@ void
 ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::RemoveLocationCommand& msg) const
 {
     buf.putString(msg.getDocumentSelection());
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     onEncodeCommand(buf, msg);
 }
 

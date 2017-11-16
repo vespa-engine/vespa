@@ -19,6 +19,12 @@ ProtocolSerialization5_0::getBucket(document::ByteBuffer& buf) const
     return document::Bucket(BucketSpace::placeHolder(), bucketId);
 }
 
+void
+ProtocolSerialization5_0::putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const
+{
+    buf.putLong(bucket.getBucketId().getRawId());
+}
+
 document::BucketSpace
 ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
 {
@@ -106,7 +112,7 @@ void ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::PutCommand& msg) const
 {
     SH::putDocument(msg.getDocument().get(), buf);
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getTimestamp());
     buf.putLong(msg.getUpdateTimestamp());
     onEncodeBucketInfoCommand(buf, msg);
@@ -215,7 +221,7 @@ void ProtocolSerialization5_0::onEncode(
         buf.putInt(0);
     }
 
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getTimestamp());
     buf.putLong(msg.getOldTimestamp());
     onEncodeBucketInfoCommand(buf, msg);
@@ -281,7 +287,7 @@ void
 ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::DeleteBucketCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     onEncodeBucketInfoCommand(buf, msg);
     putBucketInfo(msg.getBucketInfo(), buf);
 }
@@ -505,7 +511,7 @@ void
 ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::JoinBucketsCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putInt(msg.getSourceBuckets().size());
     for (uint32_t i=0, n=msg.getSourceBuckets().size(); i<n; ++i) {
         buf.putLong(msg.getSourceBuckets()[i].getRawId());
