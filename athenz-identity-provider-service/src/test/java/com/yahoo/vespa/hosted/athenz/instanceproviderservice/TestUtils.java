@@ -10,8 +10,6 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProvid
  */
 public class TestUtils {
 
-    private static final int PORT = 12345;
-
     public static AthenzProviderServiceConfig getAthenzProviderConfig(String domain,
                                                                       String service,
                                                                       String dnsSuffix,
@@ -25,11 +23,9 @@ public class TestUtils {
         return new AthenzProviderServiceConfig(
                 new AthenzProviderServiceConfig.Builder()
                         .zones(ImmutableMap.of(zone.environment().value() + "." + zone.region().value(), zoneConfig))
-                        .port(PORT)
                         .certDnsSuffix(dnsSuffix)
                         .ztsUrl("localhost/zts")
-                        .athenzPrincipalHeaderName("Athenz-Principal-Auth")
-                        .apiPath(""));
+                        .athenzPrincipalHeaderName("Athenz-Principal-Auth"));
     }
 
 }
