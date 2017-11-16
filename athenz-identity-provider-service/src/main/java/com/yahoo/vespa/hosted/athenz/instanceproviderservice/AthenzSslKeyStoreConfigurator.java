@@ -29,11 +29,12 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.g
 /**
  * @author bjorncs
  */
+// TODO Cache certificate on disk
 public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements SslKeyStoreConfigurator {
     private static final Logger log = Logger.getLogger(AthenzSslKeyStoreConfigurator.class.getName());
     // TODO Make expiry and update frequency configurable parameters
     private static final Duration CERTIFICATE_EXPIRY_TIME = Duration.ofDays(30);
-    private static final Duration CERTIFICATE_UPDATE_PERIOD = Duration.ofDays(1);
+    private static final Duration CERTIFICATE_UPDATE_PERIOD = Duration.ofDays(7);
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AthenzCertificateClient certificateClient;
