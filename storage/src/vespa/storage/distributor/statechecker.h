@@ -2,7 +2,7 @@
 #pragma once
 
 #include "bucketgctimecalculator.h"
-#include "maintenancebucket.h"
+#include <vespa/storage/distributor/maintenance/maintenancepriority.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>

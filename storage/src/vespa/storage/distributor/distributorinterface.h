@@ -5,7 +5,6 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/distributor/maintenancebucket.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/bucketgctimecalculator.h>
 #include <vespa/storage/distributor/distributormetricsset.h>

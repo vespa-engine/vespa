@@ -6,7 +6,6 @@
 #include "bucketdbupdater.h"
 #include "pendingmessagetracker.h"
 #include "externaloperationhandler.h"
-#include "maintenancebucket.h"
 #include "min_replica_provider.h"
 #include "distributorinterface.h"
 
