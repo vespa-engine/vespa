@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,32 +52,32 @@ public class TensorConformanceTest {
                 count++;
             }
         }
-        if (failList.size() > 0) {
-            System.out.println("Conformance test fails:");
-            System.out.println(failList);
-        }
-        
-        // Disable this for now:
-        //assertEquals(0, failList.size());
+        assertEquals(failList.size() + " conformance test fails: " + failList, 0, failList.size());
     }
 
-    private boolean testCase(String test, int count) throws IOException {
+    private boolean testCase(String test, int count) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.readTree(test);
+            
             if (node.has("num_tests")) {
                 Assert.assertEquals(node.get("num_tests").asInt(), count);
-            } else if (node.has("expression")) {
-                String expression = node.get("expression").asText();
-                MapContext context = getInput(node.get("inputs"));
-                Tensor expect = getTensor(node.get("result").get("expect").asText());
-                Tensor result = evaluate(expression, context);
-                boolean equals = Tensor.equals(result, expect);
-                if (!equals) {
-                    System.out.println(count + " : Tensors not equal. Result: " + result.toString() + " Expected: " + expect.toString() + " -> expression \"" + expression + "\"");
-                }
-                return Tensor.equals(result, expect);
+                return true;
             }
+            if (!node.has("expression")) {
+                return true; // ignore
+            }
+            
+            String expression = node.get("expression").asText();
+            MapContext context = getInput(node.get("inputs"));
+            Tensor expect = getTensor(node.get("result").get("expect").asText());
+            Tensor result = evaluate(expression, context);
+            boolean equals = Tensor.equals(result, expect);
+            if (!equals) {
+                System.out.println(count + " : Tensors not equal. Result: " + result.toString() + " Expected: " + expect.toString() + " -> expression \"" + expression + "\"");
+            }
+            return equals;
+
         } catch (Exception e) {
             System.out.println(count + " : " + e.toString());
         }
@@ -132,23 +133,6 @@ public class TensorConformanceTest {
         }
         throw new IllegalArgumentException("Hex contains illegal characters");
     }
-
-    private static String valueType(Value value) {
-        if (value instanceof StringValue) {
-            return "string";
-        }
-        if (value instanceof BooleanValue) {
-            return "boolean";
-        }
-        if (value instanceof DoubleCompatibleValue) {
-            return "double";
-        }
-        if (value instanceof TensorValue) {
-            return ((TensorValue)value).asTensor().type().toString();
-        }
-        return "unknown";
-    }
-
 
 }
 
