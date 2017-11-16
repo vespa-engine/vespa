@@ -826,7 +826,7 @@ StateCheckersTest::testSynchronizeAndMove()
     runAndVerify<SynchronizeAndMoveStateChecker>(
         CheckerParams()
             .expect("[Moving bucket to ideal node 3] "
-                    "(scheduling pri VERY_LOW)")
+                    "(scheduling pri LOW)")
             .bucketInfo("0=1,1=1,2=1")
             .clusterState("distributor:1 storage:4")
             .includeSchedulingPriority(true));
@@ -843,7 +843,7 @@ StateCheckersTest::testSynchronizeAndMove()
         CheckerParams()
             .expect("[Moving bucket to ideal node 1]"
                     "[Moving bucket to ideal node 3] (pri 165) "
-                    "(scheduling pri VERY_LOW)")
+                    "(scheduling pri LOW)")
             .clusterState("distributor:1 storage:5")
             .bucketInfo("0=1,4=1,5=1")
             .includeMessagePriority(true)
@@ -1540,7 +1540,7 @@ StateCheckersTest::testGarbageCollection()
 void StateCheckersTest::gc_ops_are_prioritized_with_low_priority_category() {
     CPPUNIT_ASSERT_EQUAL(
             std::string("[Needs garbage collection: Last check at 3, current time 4000, "
-                        "configured interval 300] (scheduling pri LOW)"),
+                        "configured interval 300] (scheduling pri VERY_LOW)"),
             testGarbageCollection(3, 4000, 300, 1, false, true));
 }
 
