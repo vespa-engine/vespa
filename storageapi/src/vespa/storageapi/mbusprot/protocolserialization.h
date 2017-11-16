@@ -180,6 +180,7 @@ protected:
     virtual document::Bucket getBucket(document::ByteBuffer& buf) const = 0;
     virtual void putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const = 0;
     virtual document::BucketSpace getBucketSpace(document::ByteBuffer& buf) const = 0;
+    virtual void putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer& buf) const = 0;
     virtual api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const = 0;
     virtual void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const = 0;
 

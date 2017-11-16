@@ -31,6 +31,11 @@ ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
     return BucketSpace::placeHolder();
 }
 
+void
+ProtocolSerialization5_0::putBucketSpace(document::BucketSpace, vespalib::GrowableByteBuffer&) const
+{
+}
+
 api::BucketInfo
 ProtocolSerialization5_0::getBucketInfo(document::ByteBuffer& buf) const
 {
@@ -636,6 +641,7 @@ void ProtocolSerialization5_0::onEncode(
     for (uint32_t i=0; i<buckets.size(); ++i) {
         buf.putLong(buckets[i].getRawId());
     }
+    putBucketSpace(msg.getBucketSpace(), buf);
     if (buckets.size() == 0) {
         buf.putShort(msg.getDistributor());
         buf.putString(msg.getSystemState().toString());

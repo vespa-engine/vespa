@@ -520,6 +520,7 @@ void
 ProtocolSerialization4_2::onEncode(
         GBBuf& buf, const api::CreateVisitorCommand& msg) const
 {
+    putBucketSpace(msg.getBucketSpace(), buf);
     buf.putString(msg.getLibraryName());
     buf.putString(msg.getInstanceId());
     buf.putString(msg.getDocumentSelection());
