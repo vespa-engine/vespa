@@ -13,6 +13,9 @@
       "name": "FailureRedeployer"
     },
     {
+      "name": "ApplicationOwnershipConfirmer"
+    },
+    {
       "name": "VersionStatusUpdater"
     },
     {

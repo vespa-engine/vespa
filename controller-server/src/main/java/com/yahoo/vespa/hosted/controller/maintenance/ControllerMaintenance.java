@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
@@ -34,11 +35,12 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ClusterInfoMaintainer clusterInfoMaintainer;
     private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
+    private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric, Chef chefClient,
-                                 DeploymentIssues deploymentIssues) {
+                                 DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -53,6 +55,7 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
+        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(1), jobControl, ownershipIssues);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -74,6 +77,7 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterUtilizationMaintainer.deconstruct();
         clusterInfoMaintainer.deconstruct();
         deploymentMetricsMaintainer.deconstruct();
+        applicationOwnershipConfirmer.deconstruct();
     }
 
 }
