@@ -50,7 +50,6 @@ public class IdentityDocumentGenerator {
                     Base64.getEncoder().encodeToString(identityDocumentString.getBytes());
             Signature sigGenerator = Signature.getInstance("SHA512withRSA");
 
-            // TODO: Get the correct version 0 ok for now
             PrivateKey privateKey = keyProvider.getPrivateKey(signingSecretVersion);
             sigGenerator.initSign(privateKey);
             sigGenerator.update(encodedIdentityDocument.getBytes());
