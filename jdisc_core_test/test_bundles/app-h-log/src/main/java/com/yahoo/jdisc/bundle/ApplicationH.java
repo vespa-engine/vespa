@@ -8,7 +8,7 @@ import com.yahoo.jdisc.application.ContainerActivator;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class ApplicationH extends AbstractApplication {
 
