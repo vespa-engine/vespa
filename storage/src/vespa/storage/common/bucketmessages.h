@@ -55,6 +55,7 @@ public:
 
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     spi::PartitionId getPartition() const { return _partition; }
+    document::Bucket getBucket() const override;
 
     spi::BucketIdListResult::List& getBuckets() { return _buckets; }
     const spi::BucketIdListResult::List& getBuckets() const {
