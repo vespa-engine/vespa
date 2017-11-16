@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.collections.ListMap;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -10,11 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import com.yahoo.collections.ListMap;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -32,6 +30,7 @@ import static java.util.stream.Collectors.toMap;
  *
  * @author tonytv
  * @author bakksjo
+ * @author bjorncs
  */
 public class AccessLogEntry {
     public enum CookieType {
@@ -91,6 +90,8 @@ public class AccessLogEntry {
     private String zDataIncrementSlotByOneRequest;
     private String hostString;
     private int statusCode;
+    private String scheme;
+    private int localPort;
 
     private ListMap<String,String> keyValues=null;
 
@@ -682,6 +683,32 @@ public class AccessLogEntry {
         }
     }
 
+    public String getScheme() {
+        synchronized (monitor) {
+            return scheme;
+        }
+    }
+
+    public void setScheme(String scheme) {
+        synchronized (monitor) {
+            requireNull(this.scheme);
+            this.scheme = scheme;
+        }
+    }
+
+    public int getLocalPort() {
+        synchronized (monitor) {
+            return localPort;
+        }
+    }
+
+    public void setLocalPort(int localPort) {
+        synchronized (monitor) {
+            requireZero(this.localPort);
+            this.localPort = localPort;
+        }
+    }
+
     @Override
     public String toString() {
         synchronized (monitor) {
@@ -708,4 +735,5 @@ public class AccessLogEntry {
             throw new IllegalStateException("Attempt to overwrite field that has been assigned. Value: " + value);
         }
     }
+
 }

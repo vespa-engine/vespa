@@ -5,7 +5,7 @@
 #include "bucketprioritydatabase.h"
 #include "maintenanceprioritygenerator.h"
 #include "node_maintenance_stats_tracker.h"
-#include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 
 namespace storage {
 namespace distributor {
@@ -31,18 +31,14 @@ public:
 private:
     BucketPriorityDatabase& _bucketPriorityDb;
     const MaintenancePriorityGenerator& _priorityGenerator;
-    const BucketDatabase& _bucketDb;
+    const DistributorBucketSpaceRepo &_bucketSpaceRepo;
+    DistributorBucketSpaceRepo::BucketSpaceMap::const_iterator _bucketSpaceItr;
     document::BucketId _bucketCursor;
     PendingMaintenanceStats _pendingMaintenance;
 public:
     SimpleMaintenanceScanner(BucketPriorityDatabase& bucketPriorityDb,
                              const MaintenancePriorityGenerator& priorityGenerator,
-                             const BucketDatabase& bucketDb)
-        : _bucketPriorityDb(bucketPriorityDb),
-          _priorityGenerator(priorityGenerator),
-          _bucketDb(bucketDb),
-          _bucketCursor()
-    {}
+                             const DistributorBucketSpaceRepo& bucketSpaceRepo);
     SimpleMaintenanceScanner(const SimpleMaintenanceScanner&) = delete;
     SimpleMaintenanceScanner& operator=(const SimpleMaintenanceScanner&) = delete;
     ~SimpleMaintenanceScanner();

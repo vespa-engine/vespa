@@ -29,6 +29,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(0.75, "0.5 + 0.25");
         tester.assertEvaluates(0.75, "one_half + a_quarter");
         tester.assertEvaluates(1.25, "0.5 - 0.25 + one");
+        tester.assertEvaluates(9.0, "3 ^ 2");
 
         // String
         tester.assertEvaluates(1, "if(\"a\"==\"a\",1,0)");
@@ -37,6 +38,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates(26, "2*3+4*5");
         tester.assertEvaluates(1, "2/6+4/6");
         tester.assertEvaluates(2 * 3 * 4 + 3 * 4 * 5 - 4 * 200 / 10, "2*3*4+3*4*5-4*200/10");
+        tester.assertEvaluates(3, "1 + 10 % 6 / 2");
+        tester.assertEvaluates(10.0, "3 ^ 2 + 1");
+        tester.assertEvaluates(18.0, "2 * 3 ^ 2");
 
         // Conditionals
         tester.assertEvaluates(2 * (3 * 4 + 3) * (4 * 5 - 4 * 200) / 10, "2*(3*4+3)*(4*5-4*200)/10");
@@ -86,6 +90,38 @@ public class EvaluationTestCase {
 
         // Combined
         tester.assertEvaluates(1.25, "5*if(1>=1.1, one_half, if(min(1,2)<max(1,2),if (\"foo\" in [\"foo\",\"bar\"],a_quarter,3000), 0.57345347))");
+    }
+
+    @Test
+    public void testBooleanEvaluation() {
+        EvaluationTester tester = new EvaluationTester();
+
+        // and
+        tester.assertEvaluates(false, "0 && 0");
+        tester.assertEvaluates(false, "0 && 1");
+        tester.assertEvaluates(false, "1 && 0");
+        tester.assertEvaluates(true, "1 && 1");
+        tester.assertEvaluates(true, "1 && 2");
+        tester.assertEvaluates(true, "1 && 0.1");
+
+        // or
+        tester.assertEvaluates(false, "0 || 0");
+        tester.assertEvaluates(true, "0 || 0.1");
+        tester.assertEvaluates(true, "0 || 1");
+        tester.assertEvaluates(true, "1 || 0");
+        tester.assertEvaluates(true, "1 || 1");
+
+        // not
+        tester.assertEvaluates(true, "!0");
+        tester.assertEvaluates(false, "!1");
+        tester.assertEvaluates(false, "!2");
+        tester.assertEvaluates(true, "!0 && 1");
+
+        // precedence
+        tester.assertEvaluates(0, "2 * (0 && 1)");
+        tester.assertEvaluates(2, "2 * (1 && 1)");
+        tester.assertEvaluates(true, "2 + 0 && 1");
+        tester.assertEvaluates(true, "1 && 0 + 2");
     }
 
     @Test

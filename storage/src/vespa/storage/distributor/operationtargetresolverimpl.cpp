@@ -129,12 +129,12 @@ BucketInstanceList::extendToEnoughCopies(
 }
 
 OperationTargetList
-BucketInstanceList::createTargets()
+BucketInstanceList::createTargets(document::BucketSpace bucketSpace)
 {
     OperationTargetList result;
     for (uint32_t i=0; i<_instances.size(); ++i) {
         BucketInstance& bi(_instances[i]);
-        result.push_back(OperationTarget(bi._bucket, bi._node, !bi._exist));
+        result.push_back(OperationTarget(document::Bucket(bucketSpace, bi._bucket), bi._node, !bi._exist));
     }
     return result;
 }

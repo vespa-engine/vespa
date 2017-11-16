@@ -15,9 +15,7 @@ public class ApplicationFileManager implements AddFileInterface {
 
     @Override
     public FileReference addFile(String relativePath, FileReference reference) {
-        // TODO Wire in when verified in system test
-        // return master.addFile(new File(applicationDir, relativePath), reference);
-        return reference;
+        return master.addFile(new File(applicationDir, relativePath), reference);
     }
 
     @Override

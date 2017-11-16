@@ -15,7 +15,7 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/persistence/spi/test.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace proton;
@@ -24,6 +24,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::GlobalId;
+using document::test::makeBucketSpace;
 using proton::bucketdb::BucketCreateNotifier;
 using search::DocumentIdT;
 using search::DocumentMetaData;
@@ -32,7 +33,6 @@ using search::index::DocBuilder;
 using search::index::Schema;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
-using storage::spi::test::makeBucketSpace;
 using vespalib::make_string;
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;

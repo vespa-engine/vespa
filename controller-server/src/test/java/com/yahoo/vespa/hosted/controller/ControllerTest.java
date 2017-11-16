@@ -467,7 +467,7 @@ public class ControllerTest {
         // back of the queue
         tester.clock().advance(Duration.ofHours(3));
         tester.clock().advance(Duration.ofMinutes(50));
-        tester.failureRedeployer().maintain();
+        tester.readyJobTrigger().maintain();
 
         List<BuildJob> nextJobs = buildSystem.takeJobsToRun();
         assertEquals(2, nextJobs.size());

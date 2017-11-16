@@ -58,8 +58,16 @@ public class EvaluationTester {
         return assertEvaluates(value, expressionString, defaultContext);
     }
 
+    public RankingExpression assertEvaluates(boolean value, String expressionString) {
+        return assertEvaluates(value, expressionString, defaultContext);
+    }
+
     public RankingExpression assertEvaluates(double value, String expressionString, Context context) {
         return assertEvaluates(new DoubleValue(value), expressionString, context, "");
+    }
+
+    public RankingExpression assertEvaluates(boolean value, String expressionString, Context context) {
+        return assertEvaluates(new BooleanValue(value), expressionString, context, "");
     }
 
     public RankingExpression assertEvaluates(Value value, String expressionString, Context context, String explanation) {

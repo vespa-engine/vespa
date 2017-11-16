@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/test.h>
@@ -21,6 +22,7 @@ using document::BucketSpace;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
+using document::test::makeBucketSpace;
 using search::DocumentMetaData;
 using storage::spi::Bucket;
 using storage::spi::BucketChecksum;
@@ -42,7 +44,6 @@ using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using storage::spi::test::makeSpiBucket;
-using storage::spi::test::makeBucketSpace;
 using namespace proton;
 using namespace vespalib;
 

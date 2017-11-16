@@ -43,6 +43,14 @@ public abstract class Value {
 
     public abstract Value modulo(Value value);
 
+    public abstract Value and(Value value);
+
+    public abstract Value or(Value value);
+
+    public abstract Value not();
+
+    public abstract Value power(Value value);
+
     /** Perform the comparison specified by the operator between this value and the given value */
     public abstract Value compare(TruthOperator operator, Value value);
 

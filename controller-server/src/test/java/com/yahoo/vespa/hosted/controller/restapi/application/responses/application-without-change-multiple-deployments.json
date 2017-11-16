@@ -1,4 +1,6 @@
 {
+  "application": "application1",
+  "instance": "default",
   "deploymentJobs": [
     {
       "type": "component",

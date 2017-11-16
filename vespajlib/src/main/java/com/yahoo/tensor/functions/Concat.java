@@ -134,9 +134,7 @@ public class Concat extends PrimitiveTensorFunction {
             if (currentDimension.equals(concatDimension))
                 concatSizes.set(i, aSize + bSize);
             else if (aSize != 0 && bSize != 0 && aSize!=bSize )
-                throw new IllegalArgumentException("Dimension " + currentDimension + " must be of the same size when " +
-                                                   "concatenating " + a.type() + " and " + b.type() + " along dimension " + 
-                                                   concatDimension + ", but was " + aSize + " and " + bSize);
+                concatSizes.set(i, Math.min(aSize, bSize));
             else
                 concatSizes.set(i, Math.max(aSize, bSize));
         }

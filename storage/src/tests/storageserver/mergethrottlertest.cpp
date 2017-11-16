@@ -313,7 +313,7 @@ MergeThrottlerTest::testChain()
         _servers[i]->setClusterState(lib::ClusterState("distributor:100 storage:100 version:123"));
     }
 
-    BucketId bid(14, 0x1337);
+    Bucket bucket(makeDocumentBucket(BucketId(14, 0x1337)));
 
     // Use different node permutations to ensure it works no matter which node is
     // set as the executor. More specifically, _all_ permutations.
@@ -321,15 +321,11 @@ MergeThrottlerTest::testChain()
         uint16_t lastNodeIdx = _storageNodeCount - 1;
         uint16_t executorNode = indices[0];
 
-        //std::cout << "\n----\n";
         std::vector<MergeBucketCommand::Node> nodes;
         for (int i = 0; i < _storageNodeCount; ++i) {
             nodes.push_back(MergeBucketCommand::Node(indices[i], (i + executorNode) % 2 == 0));
-            //std::cout << indices[i] << " ";
         }
-        //std::cout << "\n";
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(bid), nodes, UINT_MAX, 123));
+        auto cmd = std::make_shared<MergeBucketCommand>(bucket, nodes, UINT_MAX, 123);
         cmd->setPriority(7);
         cmd->setTimeout(54321);
         StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
@@ -351,8 +347,6 @@ MergeThrottlerTest::testChain()
             _topLinks[i]->sendDown(fwd);
             _topLinks[i]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
-            //std::cout << "fwd " << i << " -> " << i+1 << "\n";
-
             // Forwarded merge should not be sent down. Should not be necessary
             // to lock throttler here, since it should be sleeping like a champion
             CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[i]->getNumCommands());
@@ -363,7 +357,6 @@ MergeThrottlerTest::testChain()
             CPPUNIT_ASSERT_EQUAL(uint16_t(i + 1), fwd->getAddress()->getIndex());
             CPPUNIT_ASSERT_EQUAL(distributorIndex, dynamic_cast<const StorageCommand&>(*fwd).getSourceIndex());
             {
-                //uint16_t chain[] = { 0 };
                 std::vector<uint16_t> chain;
                 for (int j = 0; j <= i; ++j) {
                     chain.push_back(j);
@@ -416,10 +409,10 @@ MergeThrottlerTest::testChain()
             // The MergeBucketCommand that is kept in the executor node should
             // be the one from the node it initially got it from, NOT the one
             // from the last node, since the chain has looped
-            CPPUNIT_ASSERT(_throttlers[executorNode]->getActiveMerges().find(bid)
+            CPPUNIT_ASSERT(_throttlers[executorNode]->getActiveMerges().find(bucket)
                            != _throttlers[executorNode]->getActiveMerges().end());
             CPPUNIT_ASSERT_EQUAL(static_cast<StorageMessage*>(fwdToExec.get()),
-                                 _throttlers[executorNode]->getActiveMerges().find(bid)->second.getMergeCmd().get());
+                                 _throttlers[executorNode]->getActiveMerges().find(bucket)->second.getMergeCmd().get());
         }
 
         // Send reply up from persistence layer to simulate a completed
@@ -440,7 +433,7 @@ MergeThrottlerTest::testChain()
             // Merge should not be removed yet from executor, since it's pending an unwind
             CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[executorNode]->getActiveMerges().size());
             CPPUNIT_ASSERT_EQUAL(static_cast<StorageMessage*>(fwdToExec.get()),
-                                 _throttlers[executorNode]->getActiveMerges().find(bid)->second.getMergeCmd().get());
+                                 _throttlers[executorNode]->getActiveMerges().find(bucket)->second.getMergeCmd().get());
         }
         // MergeBucketReply waiting to be sent back to node 2. NOTE: we don't have any
         // transport context stuff set up here to perform the reply mapping, so we
@@ -452,8 +445,6 @@ MergeThrottlerTest::testChain()
 
         // eg: 0 -> 2 -> 1 -> 0. Or: 2 -> 1 -> 0 if no cycle
         for (int i = (executorNode != lastNodeIdx ? _storageNodeCount - 1 : _storageNodeCount - 2); i >= 0; --i) {
-            //std::cout << "unwind " << i << "\n";
-
             _topLinks[i]->sendDown(unwind);
             _topLinks[i]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
@@ -469,7 +460,7 @@ MergeThrottlerTest::testChain()
 
         CPPUNIT_ASSERT_EQUAL(ReturnCode::OK, mbr.getResult().getResult());
         CPPUNIT_ASSERT_EQUAL(vespalib::string("Great success! :D-|-<"), mbr.getResult().getMessage());
-        CPPUNIT_ASSERT_EQUAL(bid, mbr.getBucketId());
+        CPPUNIT_ASSERT_EQUAL(bucket, mbr.getBucket());
 
     } while (std::next_permutation(indices, indices + _storageNodeCount));
 

@@ -79,8 +79,8 @@ class FileReferenceDownloader {
         downloadQueue.add(fileReferenceDownload);
     }
 
-    void receiveFile(FileReference fileReference, String filename, byte[] content) {
-        fileReceiver.receiveFile(fileReference, filename, content);
+    void receiveFile(FileReference fileReference, String filename, byte[] content, long xxHash) {
+        fileReceiver.receiveFile(fileReference, filename, content, xxHash);
     }
 
     synchronized Set<FileReference> queuedDownloads() {

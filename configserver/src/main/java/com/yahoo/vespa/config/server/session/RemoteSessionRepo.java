@@ -8,10 +8,12 @@ import java.util.logging.Logger;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.server.ReloadHandler;
@@ -49,19 +51,19 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
      * @param curator              a {@link Curator} instance.
      * @param remoteSessionFactory a {@link com.yahoo.vespa.config.server.session.RemoteSessionFactory}
      * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
-     * @param sessionsPath         a {@link com.yahoo.path.Path} to the sessions dir.
-     * @param applicationRepo      an {@link TenantApplications} object.
+     * @param tenant               a {@link TenantName} instance.
+     * @param applicationRepo      a {@link TenantApplications} instance.
      * @param executorService      an {@link ExecutorService} to run callbacks from ZooKeeper.
      */
     public RemoteSessionRepo(Curator curator,
-                              RemoteSessionFactory remoteSessionFactory,
-                              ReloadHandler reloadHandler,
-                              Path sessionsPath,
-                              TenantApplications applicationRepo,
-                              MetricUpdater metricUpdater,
-                              ExecutorService executorService) {
+                             RemoteSessionFactory remoteSessionFactory,
+                             ReloadHandler reloadHandler,
+                             TenantName tenant,
+                             TenantApplications applicationRepo,
+                             MetricUpdater metricUpdater,
+                             ExecutorService executorService) {
         this.curator = curator;
-        this.sessionsPath = sessionsPath;
+        this.sessionsPath = Tenants.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;

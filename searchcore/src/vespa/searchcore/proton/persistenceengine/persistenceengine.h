@@ -8,7 +8,6 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
-#include <vespa/vespalib/util/sync.h>
 #include <mutex>
 #include <shared_mutex>
 
@@ -71,9 +70,9 @@ private:
     const ssize_t                           _defaultSerializedSize;
     const bool                              _ignoreMaxBytes;
     PersistenceHandlerMap                   _handlers;
-    vespalib::Lock                          _lock;
+    mutable std::mutex                      _lock;
     Iterators                               _iterators;
-    vespalib::Lock                          _iterators_lock;
+    mutable std::mutex                      _iterators_lock;
     IPersistenceEngineOwner                &_owner;
     const IResourceWriteFilter             &_writeFilter;
     ClusterState::SP                        _clusterState;

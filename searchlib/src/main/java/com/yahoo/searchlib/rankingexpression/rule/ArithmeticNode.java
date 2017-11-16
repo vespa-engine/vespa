@@ -77,7 +77,7 @@ public final class ArithmeticNode extends CompositeNode {
         Iterator<ExpressionNode> child = children.iterator();
 
         Deque<ValueItem> stack = new ArrayDeque<>();
-        stack.push(new ValueItem(ArithmeticOperator.PLUS, child.next().evaluate(context)));
+        stack.push(new ValueItem(ArithmeticOperator.OR, child.next().evaluate(context)));
         for (Iterator<ArithmeticOperator> it = operators.iterator(); it.hasNext() && child.hasNext();) {
             ArithmeticOperator op = it.next();
             if (!stack.isEmpty()) {

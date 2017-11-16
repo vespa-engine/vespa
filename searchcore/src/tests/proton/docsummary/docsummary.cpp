@@ -5,7 +5,7 @@
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/persistence/spi/test.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
@@ -43,9 +43,9 @@ using namespace search::engine;
 using namespace search::index;
 using namespace search::transactionlog;
 using namespace search;
-using namespace storage::spi::test;
 
 using document::DocumenttypesConfig;
+using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::schema::CollectionType;

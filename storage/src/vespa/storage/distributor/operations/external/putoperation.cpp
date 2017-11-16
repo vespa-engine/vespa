@@ -283,7 +283,8 @@ PutOperation::onStart(DistributorMessageSender& sender)
                 _bucketSpace.getBucketDatabase(),
                 idealNodeCalculator,
                 _manager.getDistributor().getConfig().getMinimalBucketSplit(),
-                _bucketSpace.getDistribution().getRedundancy());
+                _bucketSpace.getDistribution().getRedundancy(),
+                _msg->getBucket().getBucketSpace());
         OperationTargetList targets(targetResolver.getTargets(
                 OperationTargetResolver::PUT, bid));
 
