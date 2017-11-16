@@ -19,6 +19,12 @@ ProtocolSerialization5_0::getBucket(document::ByteBuffer& buf) const
     return document::Bucket(BucketSpace::placeHolder(), bucketId);
 }
 
+document::BucketSpace
+ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
+{
+    return BucketSpace::placeHolder();
+}
+
 api::BucketInfo
 ProtocolSerialization5_0::getBucketInfo(document::ByteBuffer& buf) const
 {
@@ -641,7 +647,7 @@ ProtocolSerialization5_0::onDecodeRequestBucketInfoCommand(BBuf& buf) const
         buckets[i] = document::BucketId(SH::getLong(buf));
     }
     api::RequestBucketInfoCommand::UP msg;
-    BucketSpace bucketSpace(BucketSpace::placeHolder());
+    BucketSpace bucketSpace = getBucketSpace(buf);
     if (buckets.size() != 0) {
         msg.reset(new api::RequestBucketInfoCommand(bucketSpace, buckets));
     } else {

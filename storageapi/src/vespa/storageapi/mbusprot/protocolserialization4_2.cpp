@@ -551,7 +551,7 @@ ProtocolSerialization4_2::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
 {
-    BucketSpace bucketSpace(BucketSpace::placeHolder());
+    BucketSpace bucketSpace = getBucketSpace(buf);
     vespalib::stringref libraryName = SH::getString(buf);
     vespalib::stringref instanceId = SH::getString(buf);
     vespalib::stringref selection = SH::getString(buf);
