@@ -45,5 +45,6 @@ private:
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream&, const Bucket&);
+std::ostream& operator<<(std::ostream&, const Bucket&);
 
 }
