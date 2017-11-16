@@ -35,7 +35,9 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
-        addChild(getSslKeyStoreConfigurator(name, sslKeystoreConfigurator));
+        SimpleComponent sslKeyStoreConfigurator = getSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
+        addChild(sslKeyStoreConfigurator);
+        inject(sslKeyStoreConfigurator);
     }
 
     @Override
