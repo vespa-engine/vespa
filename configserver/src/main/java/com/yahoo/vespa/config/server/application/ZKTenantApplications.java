@@ -47,6 +47,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     private ZKTenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
         this.curator = curator;
         this.applicationsPath = applicationsPath;
+        curator.create(applicationsPath);
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
@@ -54,9 +55,9 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         this.directoryCache.addListener(this);
     }
 
-    public static TenantApplications create(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
+    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
         try {
-            return new ZKTenantApplications(curator, applicationsPath, reloadHandler, tenant);
+            return new ZKTenantApplications(curator, Tenants.getApplicationsPath(tenant), reloadHandler, tenant);
         } catch (Exception e) {
             throw new RuntimeException(Tenants.logPre(tenant) + "Error creating application repo", e);
         }

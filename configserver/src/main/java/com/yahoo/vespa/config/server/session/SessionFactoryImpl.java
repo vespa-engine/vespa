@@ -16,6 +16,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostValidator;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -57,7 +58,6 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     public SessionFactoryImpl(GlobalComponentRegistry globalComponentRegistry,
                               SessionCounter sessionCounter,
-                              Path sessionsPath,
                               TenantApplications applicationRepo,
                               TenantFileSystemDirs tenantFileSystemDirs,
                               HostValidator<ApplicationId> hostRegistry,
@@ -68,7 +68,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.curator = globalComponentRegistry.getCurator();
         this.configCurator = globalComponentRegistry.getConfigCurator();
         this.sessionCounter = sessionCounter;
-        this.sessionsPath = sessionsPath;
+        this.sessionsPath = Tenants.getSessionsPath(tenant);
         this.applicationRepo = applicationRepo;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.superModelGenerationCounter = globalComponentRegistry.getSuperModelGenerationCounter();

@@ -189,7 +189,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         if (tenants.containsKey(tenantName)) return;
 
         try {
-            Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName, getTenantPath(tenantName)).build();
+            Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName).build();
             notifyNewTenant(tenant);
             tenants.put(tenantName, tenant);
         } catch (Exception e) {
@@ -351,11 +351,32 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
 
     /**
      * Gets zookeeper path for tenant data
+     *
      * @param tenantName tenant name
      * @return a {@link com.yahoo.path.Path} to the zookeeper data for a tenant
      */
     public static Path getTenantPath(TenantName tenantName) {
         return tenantsPath.append(tenantName.value());
+    }
+
+    /**
+     * Gets zookeeper path for session data for a tenant
+     *
+     * @param tenantName tenant name
+     * @return a {@link com.yahoo.path.Path} to the zookeeper sessions data for a tenant
+     */
+    public static Path getSessionsPath(TenantName tenantName) {
+        return getTenantPath(tenantName).append(Tenant.SESSIONS);
+    }
+
+    /**
+     * Gets zookeeper path for application data for a tenant
+     *
+     * @param tenantName tenant name
+     * @return a {@link com.yahoo.path.Path} to the zookeeper application data for a tenant
+     */
+    public static Path getApplicationsPath(TenantName tenantName) {
+        return getTenantPath(tenantName).append(Tenant.APPLICATIONS);
     }
 
 }
