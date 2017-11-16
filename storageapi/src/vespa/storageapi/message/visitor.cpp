@@ -68,6 +68,12 @@ CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
 
 CreateVisitorCommand::~CreateVisitorCommand() {}
 
+document::Bucket
+CreateVisitorCommand::getBucket() const
+{
+    return document::Bucket(_bucketSpace, document::BucketId());
+}
+
 void
 CreateVisitorCommand::print(std::ostream& out, bool verbose,
                             const std::string& indent) const
