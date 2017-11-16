@@ -18,6 +18,7 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +92,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
                 log.log(LogLevel.INFO, "Updating Athenz certificate from ZTS");
                 PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
                 X509Certificate certificate = certificateClient.updateCertificate(privateKey, CERTIFICATE_EXPIRY_TIME);
+                verifyActualExperiy(certificate);
 
                 String dummyPassword = "athenz";
                 KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -100,6 +102,16 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
                 log.log(LogLevel.INFO, "Athenz certificate reload successfully completed");
             } catch (Throwable e) {
                 log.log(LogLevel.ERROR, "Failed to update certificate from ZTS: " + e.getMessage(), e);
+            }
+        }
+
+        private void verifyActualExperiy(X509Certificate certificate) {
+            Instant notAfter = certificate.getNotAfter().toInstant();
+            Instant notBefore = certificate.getNotBefore().toInstant();
+            if (!notBefore.plus(CERTIFICATE_EXPIRY_TIME).equals(notAfter)) {
+                Duration actualExpiry = Duration.between(notBefore, notAfter);
+                log.log(LogLevel.WARNING,
+                        String.format("Expected expiry %s, got %s", CERTIFICATE_EXPIRY_TIME, actualExpiry));
             }
         }
     }
