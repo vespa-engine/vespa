@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.IdentityDocument;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;

@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.SuperModelProvider;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.InstanceConfirmation;
 
 import javax.ws.rs.Consumes;
@@ -17,8 +15,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
 
 /**
  * @author bjorncs
@@ -31,12 +27,8 @@ public class InstanceConfirmationResource {
     private final InstanceValidator instanceValidator;
 
     @Inject
-    public InstanceConfirmationResource(@Component AthenzProviderServiceConfig config,
-                                        @Component SecretStore secretStore,
-                                        @Component SuperModelProvider superModelProvider,
-                                        @Component Zone zone) {
-        AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
-        SecretStoreKeyProvider keyProvider = new SecretStoreKeyProvider(secretStore, zoneConfig.secretName());
+    public InstanceConfirmationResource(@Component KeyProvider keyProvider,
+                                        @Component SuperModelProvider superModelProvider) {
         this.instanceValidator = new InstanceValidator(keyProvider, superModelProvider);
     }
 

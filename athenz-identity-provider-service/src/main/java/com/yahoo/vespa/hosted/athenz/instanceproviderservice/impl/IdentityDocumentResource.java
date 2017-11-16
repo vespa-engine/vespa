@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.SignedIdentityDocument;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -35,9 +35,8 @@ public class IdentityDocumentResource {
     public IdentityDocumentResource(@Component AthenzProviderServiceConfig config,
                                     @Component Zone zone,
                                     @Component NodeRepository nodeRepository,
-                                    @Component SecretStore secretStore) {
+                                    @Component KeyProvider keyProvider) {
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
-        SecretStoreKeyProvider keyProvider = new SecretStoreKeyProvider(secretStore, zoneConfig.secretName());
         this.identityDocumentGenerator =
                 new IdentityDocumentGenerator(config, zoneConfig, nodeRepository, zone, keyProvider);
     }

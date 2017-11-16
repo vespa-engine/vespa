@@ -4,13 +4,12 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CertificateSerializedPayload;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CsrSerializedPayload;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.SecretStoreKeyProvider;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,9 +39,8 @@ public class CertificateSignerResource {
     @Inject
     public CertificateSignerResource(@Component AthenzProviderServiceConfig config,
                                      @Component Zone zone,
-                                     @Component SecretStore secretStore) {
+                                     @Component KeyProvider keyProvider) {
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
-        SecretStoreKeyProvider keyProvider = new SecretStoreKeyProvider(secretStore, zoneConfig.secretName());
         this.certificateSigner = new CertificateSigner(keyProvider, zoneConfig, HostName.getLocalhost());
     }
 
