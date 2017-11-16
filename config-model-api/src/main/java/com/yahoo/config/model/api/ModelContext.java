@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
@@ -42,10 +43,18 @@ public interface ModelContext {
         boolean multitenant();
         ApplicationId applicationId();
         List<ConfigServerSpec> configServerSpecs();
-        URI loadBalancerAddress();
+        HostName loadBalancerName();
         boolean hostedVespa();
         Zone zone();
         Set<Rotation> rotations();
+
+        /*
+         * DEPRECATED
+         * TODO: Remove when 6.172 and earlier are no longer in use
+         */
+        default URI loadBalancerAddress() {
+            return URI.create("http://localhost");
+        }
     }
 
 }

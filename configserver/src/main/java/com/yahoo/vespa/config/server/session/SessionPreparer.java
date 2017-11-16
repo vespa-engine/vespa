@@ -11,6 +11,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
@@ -35,7 +36,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +152,7 @@ public class SessionPreparer {
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
-                                                              URI.create(configserverConfig.loadBalancerAddress()),
+                                                              HostName.from(configserverConfig.loadBalancerAddress()),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
                                                               rotationsSet);

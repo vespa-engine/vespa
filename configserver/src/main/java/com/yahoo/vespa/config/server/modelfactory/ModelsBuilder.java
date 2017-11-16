@@ -6,10 +6,11 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
@@ -19,7 +20,6 @@ import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -174,7 +174,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return new ModelContextImpl.Properties(applicationId,
                                                configserverConfig.multitenant(),
                                                ConfigServerSpec.fromConfig(configserverConfig),
-                                               URI.create(configserverConfig.loadBalancerAddress()),
+                                               HostName.from(configserverConfig.loadBalancerAddress()),
                                                configserverConfig.hostedVespa(),
                                                zone,
                                                rotations);
