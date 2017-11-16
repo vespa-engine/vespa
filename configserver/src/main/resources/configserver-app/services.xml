@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0" xmlns:preprocess="properties">
-  <preprocess:include file='controller/admin.xml' required='false' />
   <jdisc id="configserver" jetty="true" version="1.0">
     <config name="container.handler.threadpool">
       <maxthreads>100</maxthreads> <!-- Reduced thread count to minimize memory consumption -->
