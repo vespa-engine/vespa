@@ -85,7 +85,7 @@ public class DeploymentTrigger {
 
             // Handle successful starting and ending
             if (report.success()) {
-                if (order.givesNewRevision(report.jobType())) {
+                if (report.jobType() == JobType.component) {
                     if (acceptNewRevisionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
                         if ( ! ( application.deploying().isPresent() &&
@@ -110,7 +110,7 @@ public class DeploymentTrigger {
             else if (retryBecauseOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true,
                                       "Retrying on out of capacity");
-            else if (shouldRetryNow(application, report.jobType()))
+            else if (retryBecauseNewFailure(application, report.jobType()))
                 application = trigger(report.jobType(), application, false,
                                       "Immediate retry on failure");
 
@@ -258,7 +258,7 @@ public class DeploymentTrigger {
     private ApplicationController applications() { return controller.applications(); }
 
     /** Retry immediately only if this job just started failing. Otherwise retry periodically */
-    private boolean shouldRetryNow(Application application, JobType jobType) {
+    private boolean retryBecauseNewFailure(Application application, JobType jobType) {
         JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
         return (jobStatus != null && jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofSeconds(10))));
     }
@@ -272,7 +272,7 @@ public class DeploymentTrigger {
     }
 
     /** Returns whether the given job type should be triggered according to deployment spec */
-    private boolean deploysTo(Application application, JobType jobType) {
+    private boolean hasJob(JobType jobType, Application application) {
         if ( ! jobType.isProduction()) return true; // Deployment spec only determines this for production jobs.
         return application.deploymentSpec().includes(jobType.environment(), jobType.region(controller.system()));
     }
@@ -339,7 +339,7 @@ public class DeploymentTrigger {
                     isOnNewerVersionInProductionThan(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
         }
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
-        if  ( ! deploysTo(application, jobType)) return false;
+        if  ( ! hasJob(jobType, application)) return false;
         // Ignore applications that are not associated with a project
         if ( ! application.deploymentJobs().projectId().isPresent()) return false;
 

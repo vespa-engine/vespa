@@ -131,17 +131,17 @@ public class LockedApplication extends Application {
     private Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? controller.systemVersion()
-               : deployVersionFor(jobType.zone(controller.system()).get(), controller);
+               : deployVersionIn(jobType.zone(controller.system()).get(), controller);
     }
 
     private Optional<ApplicationRevision> deployRevisionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? Optional.empty()
-               : deployRevisionFor(jobType.zone(controller.system()).get());
+               : deployRevisionIn(jobType.zone(controller.system()).get());
     }
 
     /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
-    private Optional<ApplicationRevision> deployRevisionFor(Zone zone) {
+    private Optional<ApplicationRevision> deployRevisionIn(Zone zone) {
         if (deploying().isPresent() && deploying().get() instanceof ApplicationChange)
             return ((Change.ApplicationChange) deploying().get()).revision();
 

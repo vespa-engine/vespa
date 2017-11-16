@@ -295,13 +295,13 @@ public class ApplicationController {
             // Determine what we are doing
             Version version;
             if (options.deployCurrentVersion)
-                version = application.currentVersionFor(zone, controller);
+                version = application.versionIn(zone, controller);
             else if (canDeployDirectlyTo(zone, options))
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
             else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
                 return unexpectedDeployment(applicationId, zone, applicationPackage);
             else
-                version = application.deployVersionFor(zone, controller);
+                version = application.deployVersionIn(zone, controller);
 
             Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);

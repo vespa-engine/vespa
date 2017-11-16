@@ -126,15 +126,15 @@ public class Application {
     }
 
     /** Returns the version a new deployment to this zone should use for this application */
-    public Version deployVersionFor(Zone zone, Controller controller) {
+    public Version deployVersionIn(Zone zone, Controller controller) {
         if (deploying().isPresent() && deploying().get() instanceof VersionChange)
             return ((Change.VersionChange) deploying().get()).version();
 
-        return currentVersionFor(zone, controller);
+        return versionIn(zone, controller);
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
-    public Version currentVersionFor(Zone zone, Controller controller) {
+    public Version versionIn(Zone zone, Controller controller) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
                 .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }

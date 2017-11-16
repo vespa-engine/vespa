@@ -46,6 +46,7 @@ public class DeploymentOrder {
 
     /** Returns a list of jobs to trigger after the given job */
     // TODO: This does too much - should just tell us the order, as advertised
+    // TODO: You're next!
     public List<JobType> nextAfter(JobType job, LockedApplication application) {
         if ( ! application.deploying().isPresent()) { // Change was cancelled
             return Collections.emptyList();
@@ -86,11 +87,6 @@ public class DeploymentOrder {
         return nextStep.zones().stream()
                 .map(this::toJob)
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
-    }
-
-    /** Returns whether the given job causes an application change */
-    public boolean givesNewRevision(JobType job) {
-        return job == JobType.component;
     }
 
     /** Returns jobs for given deployment spec, in the order they are declared */
