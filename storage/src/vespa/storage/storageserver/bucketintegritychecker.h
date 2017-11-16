@@ -98,7 +98,6 @@ private:
     bool _currentRunWithFullVerification;
     bool _verifyAllRepairs;
     SchedulingOptions _scheduleOptions;
-    lib::ClusterState _systemState;
     vespalib::Monitor _wait;
     config::ConfigFetcher _configFetcher;
     framework::MilliSecTime _maxThreadWaitTime;
@@ -130,7 +129,6 @@ private:
     void configure(std::unique_ptr<vespa::config::content::core::StorIntegritycheckerConfig>) override;
     void onDoneInit() override;
     bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
-    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
     bool onNotifyBucketChangeReply(const std::shared_ptr<api::NotifyBucketChangeReply>&) override { return true; }
     SchedulingOptions::RunState getCurrentRunState(framework::SecondTime time) const;
     void run(framework::ThreadHandle&) override;

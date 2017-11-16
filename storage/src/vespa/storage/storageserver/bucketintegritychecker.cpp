@@ -151,7 +151,7 @@ document::BucketId
 BucketIntegrityChecker::DiskData::iterate(StorBucketDatabase& bucketDatabase)
 {
     static uint32_t i=0;
-        // Resend failed buckets once in a while
+    // Resend failed buckets once in a while
     if (failedRepairs.size() > 0 && ++i % 10 == 9)
     {
         document::BucketId bid(failedRepairs.front());
@@ -162,13 +162,13 @@ BucketIntegrityChecker::DiskData::iterate(StorBucketDatabase& bucketDatabase)
         return bid;
     }
     if (state == NOT_STARTED) {
-            // Guarantueed to be before all buckets.
+        // Guaranteed to be before all buckets.
         currentBucket = document::BucketId(0, 0);
     }
     if (state != DONE) {
         std::unique_ptr<document::BucketId> bid(
                 getNextId(bucketDatabase, currentBucket, disk));
-        if (bid.get()) {
+        if (bid) {
             state = IN_PROGRESS;
             currentBucket = *bid;
             return currentBucket;
@@ -176,9 +176,9 @@ BucketIntegrityChecker::DiskData::iterate(StorBucketDatabase& bucketDatabase)
             state = DONE;
         }
     }
-        // If we didn't schedule repaired, but we ended up not having any other,
-        // take repaired once anyways
-    if (failedRepairs.size() > 0) {
+    // If we didn't schedule repaired, but we ended up not having any other,
+    // take repaired once anyways
+    if (!failedRepairs.empty()) {
         document::BucketId bid(failedRepairs.front());
         LOG(spam, "Done iterating, scheduling next bucket %s from failed "
                   "repairs list", bid.toString().c_str());
@@ -205,7 +205,6 @@ BucketIntegrityChecker::BucketIntegrityChecker(
       _currentRunWithFullVerification(false),
       _verifyAllRepairs(false),
       _scheduleOptions(),
-      _systemState(),
       _wait(),
       _configFetcher(configUri.getContext()),
       _maxThreadWaitTime(60 * 1000),
@@ -217,7 +216,7 @@ BucketIntegrityChecker::BucketIntegrityChecker(
     for (uint16_t i=0; i<_component.getDiskCount(); ++i) {
         _status[i].disk = i;
     }
-    if (_status.size() == 0) {
+    if (_status.empty()) {
         throw vespalib::IllegalStateException(
                 "Cannot have storage with no disks.", VESPA_STRLOC);
     }
@@ -254,10 +253,10 @@ BucketIntegrityChecker::~BucketIntegrityChecker()
 void
 BucketIntegrityChecker::onClose()
 {
-        // Avoid getting config during shutdown
+    // Avoid getting config during shutdown
     _configFetcher.close();
-        // Close thread to ensure we don't send anything more down after
-    if (_thread.get() != 0) {
+    // Close thread to ensure we don't send anything more down after
+    if (_thread) {
         LOG(debug, "Waiting for bucket integrity worker thread to close.");
         _thread->interruptAndJoin(&_wait);
         LOG(debug, "Bucket integrity worker thread closed.");
@@ -367,10 +366,12 @@ bool
 BucketIntegrityChecker::onInternalReply(
         const std::shared_ptr<api::InternalReply>& internalReply)
 {
-        // We only care about repair bucket replies
+    // We only care about repair bucket replies
     shared_ptr<RepairBucketReply> reply(
             std::dynamic_pointer_cast<RepairBucketReply>(internalReply));
-    if (!reply.get()) return false;
+    if (!reply) {
+        return false;
+    }
 
     vespalib::MonitorGuard monitor(_wait);
     _lastResponseTime = _component.getClock().getTimeInSeconds();
@@ -415,16 +416,6 @@ BucketIntegrityChecker::onInternalReply(
     return true;
 }
 
-bool
-BucketIntegrityChecker::onSetSystemState(
-                const std::shared_ptr<api::SetSystemStateCommand>& cmd)
-{
-    vespalib::MonitorGuard monitor(_wait);
-    _systemState = cmd->getSystemState();
-    return false;
-}
-
-
 SchedulingOptions::RunState
 BucketIntegrityChecker::getCurrentRunState(
         framework::SecondTime currentTime) const
@@ -449,9 +440,7 @@ BucketIntegrityChecker::getCurrentRunState(
         )
        )
     {   // If we're within region in day that we can run.
-//std::cerr << "We're inside time boundary. Current time: " << minutesOfDay << " (" << printMinutesOfDay(minutesOfDay) << "). Running between " << _scheduleOptions._dailyCycleStart << " (" << printMinutesOfDay(_scheduleOptions._dailyCycleStart) << ") - " << _scheduleOptions._dailyCycleStop << " (" << printMinutesOfDay(_scheduleOptions._dailyCycleStop) << ")\n";
         if (state == SchedulingOptions::CONTINUE) {
-//std::cerr << "We're in continue state.\n";
             // If we're in a continue state, set runstate if there's a current
             // run active that isn't completed yet, don't run otherwise.
             state = (_lastCycleCompleted
@@ -471,18 +460,13 @@ BucketIntegrityChecker::getCurrentRunState(
                 if (_currentRunWithFullVerification ||
                     state == SchedulingOptions::RUN_CHEAP)
                 {
-//std::cerr << "Tagging dont run since too little time passed since last run\n" << "current time: " << currentTime << ", last start " << _lastCycleStart << ", min cycle time " << _scheduleOptions._minCycleTime << "\n";
                     state = SchedulingOptions::DONT_RUN;
                 } else {
-//std::cerr << "We can start new run. Last cycle started at " << _lastCycleStart.toString() << " current time is " << currentTime.toString() << " and min cycle time is " << _scheduleOptions._minCycleTime << "\n";
                 }
-            } else {
-//std::cerr << "Enough time passed? " << currentTime.toString() << " - " << _lastCycleStart.toString() << " >= " << _scheduleOptions._minCycleTime << "\n";
             }
         }
     } else {
         // If we're outside of time of day boundaries, don't run
-//std::cerr << "We're outside time boundary. Current time: " << minutesOfDay << " (" << printMinutesOfDay(minutesOfDay) << "). Only running between " << _scheduleOptions._dailyCycleStart << " (" << printMinutesOfDay(_scheduleOptions._dailyCycleStart) << ") - " << _scheduleOptions._dailyCycleStop << " (" << printMinutesOfDay(_scheduleOptions._dailyCycleStop) << ")\n";
         state = SchedulingOptions::DONT_RUN;
     }
     return state;
