@@ -1,12 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
+package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.IdentityDocument;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.SignedIdentityDocument;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;

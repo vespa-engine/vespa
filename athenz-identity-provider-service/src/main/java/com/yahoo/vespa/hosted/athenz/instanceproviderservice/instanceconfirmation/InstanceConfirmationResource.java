@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
+package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.InstanceConfirmation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;

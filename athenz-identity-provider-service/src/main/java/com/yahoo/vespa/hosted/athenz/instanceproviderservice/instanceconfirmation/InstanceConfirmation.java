@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model;
+package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument.SignedIdentityDocument;
 
 import java.io.IOException;
 import java.util.HashMap;
