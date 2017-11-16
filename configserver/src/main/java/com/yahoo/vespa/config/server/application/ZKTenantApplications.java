@@ -144,7 +144,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void applicationRemoved(ApplicationId applicationId) {
         reloadHandler.removeApplication(applicationId);
-        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application removed: " + applicationId);
+        log.log(LogLevel.INFO, Tenants.logPre(applicationId) + "Application removed: " + applicationId);
     }
 
     private void applicationAdded(ApplicationId applicationId) {
