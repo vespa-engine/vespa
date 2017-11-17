@@ -196,19 +196,10 @@ checkNullBucketRequestBucketInfoMessage(uint16_t node,
                                         const PendingMessageTracker& tracker)
 {
     RequestBucketInfoChecker rchk;
-    for (;;) {
-        // Check messages sent to null-bucket (i.e. any bucket) for the node.
-        document::Bucket nullBucket(bucketSpace, document::BucketId());
-        tracker.checkPendingMessages(node, nullBucket, rchk);
-        if (rchk.blocked) {
-            return true;
-        }
-        if (bucketSpace == BucketSpace::placeHolder()) {
-            break;
-        }
-        bucketSpace = BucketSpace::placeHolder();
-    }
-    return false;
+    // Check messages sent to null-bucket (i.e. any bucket) for the node.
+    document::Bucket nullBucket(bucketSpace, document::BucketId());
+    tracker.checkPendingMessages(node, nullBucket, rchk);
+    return rchk.blocked;
 }
 
 }
