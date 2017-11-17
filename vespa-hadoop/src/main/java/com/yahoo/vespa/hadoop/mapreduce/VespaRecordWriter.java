@@ -35,7 +35,6 @@ import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.config.FeedParams.DataFormat;
 import com.yahoo.vespa.http.client.config.SessionParams;
-import org.apache.hadoop.mapreduce.v2.app.job.Task;
 
 /**
  * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa
@@ -133,8 +132,8 @@ public class VespaRecordWriter extends RecordWriter {
     }
     
     private void initialize() {
-        if (!configuration.dryrun() && configuration.randomSartupSleepMs() > 0) {
-            int delay = new Random().nextInt(configuration.randomSartupSleepMs());
+        if (!configuration.dryrun() && configuration.randomStartupSleepMs() > 0) {
+            int delay = new Random().nextInt(configuration.randomStartupSleepMs());
             log.info("VespaStorage: Delaying startup by " + delay + " ms");
             try {
                 Thread.sleep(delay);
