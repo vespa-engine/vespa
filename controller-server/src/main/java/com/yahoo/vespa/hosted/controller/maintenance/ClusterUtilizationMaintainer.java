@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Fetch utilization metrics and update applications with this data.
@@ -47,13 +45,14 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
-            try (Lock lock = controller().applications().lock(application.id())) {
-                Optional<LockedApplication> lockedApplication = controller.applications().get(application.id(), lock);
-                if (!lockedApplication.isPresent()) continue; // application removed
-                for (Deployment deployment : application.deployments().values()) {
-                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
-                    controller.applications().store(lockedApplication.get()
-                                                                     .with(deployment.withClusterUtils(clusterUtilization)));
+            for (Deployment deployment : application.deployments().values()) {
+
+                Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
+
+                try (Lock lock = controller().applications().lock(application.id())) {
+                    controller.applications().get(application.id(), lock)
+                            .ifPresent(lockedApplication -> controller.applications().store(
+                                    lockedApplication.withClusterUtilization(deployment.zone(), clusterUtilization)));
                 }
             }
         }

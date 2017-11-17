@@ -42,17 +42,9 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                          metrics.documentCount(), metrics.queryLatencyMillis(), metrics.writeLatencyMillis());
 
                     try (Lock lock = controller().applications().lock(application.id())) {
-
-                        // Deployment or application may have changed (or be gone) now:
-                        Optional<LockedApplication> lockedApplication = controller().applications()
-                                                                                    .get(application.id(), lock);
-                        if (!lockedApplication.isPresent()) continue;
-
-                        deployment = lockedApplication.get().deployments().get(deployment.zone());
-                        if (deployment == null) continue;
-
-                        controller().applications().store(lockedApplication.get()
-                                                                           .with(deployment.withMetrics(appMetrics)));
+                        controller().applications().get(application.id(), lock)
+                                .ifPresent(lockedApplication -> controller().applications().store(
+                                        lockedApplication.with(deployment.zone(), appMetrics)));
                     }
                 }
                 catch (UncheckedIOException e) {

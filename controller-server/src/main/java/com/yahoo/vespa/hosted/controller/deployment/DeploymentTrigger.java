@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
@@ -324,7 +323,12 @@ public class DeploymentTrigger {
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                reason));
         buildSystem.addJob(application.id(), jobType, first);
-        return application.withJobTriggering(jobType, application.deploying(), reason, clock.instant(), controller);
+        return application.withJobTriggering(jobType,
+                                             application.deploying(),
+                                             clock.instant(),
+                                             application.deployVersionFor(jobType, controller),
+                                             application.deployRevisionFor(jobType, controller),
+                                             reason);
     }
 
     /** Returns true if the given proposed job triggering should be effected */

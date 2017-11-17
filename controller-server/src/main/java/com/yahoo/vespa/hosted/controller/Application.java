@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -141,6 +142,19 @@ public class Application {
     public Version versionIn(Zone zone, Controller controller) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
                 .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
+    }
+
+    /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
+    public Optional<ApplicationRevision> deployRevisionIn(Zone zone) {
+        if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange)
+            return ((Change.ApplicationChange) deploying().get()).revision();
+
+        return revisionIn(zone);
+    }
+
+    /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
+    public Optional<ApplicationRevision> revisionIn(Zone zone) {
+        return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
     }
 
     @Override
