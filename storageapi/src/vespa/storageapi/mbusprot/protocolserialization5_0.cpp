@@ -23,6 +23,7 @@ void
 ProtocolSerialization5_0::putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const
 {
     buf.putLong(bucket.getBucketId().getRawId());
+    assert(bucket.getBucketSpace() == document::BucketSpace::placeHolder());
 }
 
 document::BucketSpace
@@ -32,8 +33,9 @@ ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
 }
 
 void
-ProtocolSerialization5_0::putBucketSpace(document::BucketSpace, vespalib::GrowableByteBuffer&) const
+ProtocolSerialization5_0::putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer&) const
 {
+    assert(bucketSpace == document::BucketSpace::placeHolder());
 }
 
 api::BucketInfo
