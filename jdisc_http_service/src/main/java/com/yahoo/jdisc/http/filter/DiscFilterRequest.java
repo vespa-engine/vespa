@@ -43,7 +43,6 @@ public abstract class DiscFilterRequest {
     protected final Map<String, List<String>> untreatedParams;
     private final HeaderFields untreatedHeaders;
     private List<Cookie> untreatedCookies = null;
-    private Principal userPrincipal = null;
     private String remoteUser = null;
     private String[] roles = null;
     private boolean overrideIsUserInRole = false;
