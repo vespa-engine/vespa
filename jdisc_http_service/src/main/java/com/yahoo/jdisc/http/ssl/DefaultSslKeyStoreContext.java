@@ -27,7 +27,7 @@ public class DefaultSslKeyStoreContext implements SslKeyStoreContext {
         updateKeyStore(sslContextFactory -> {
             sslContextFactory.setKeyStore(keyStore);
             if (password != null) {
-                sslContextFactory.setKeyStorePassword(null);
+                sslContextFactory.setKeyStorePassword(password);
             }
         });
     }
