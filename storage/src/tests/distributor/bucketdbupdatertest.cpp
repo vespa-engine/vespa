@@ -185,8 +185,9 @@ public:
             }
 
             std::vector<uint16_t> nodes;
-            getBucketDBUpdater().getDistributorComponent()
-                    .getDistribution().getIdealNodes(
+            auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
+            auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
+            distributorBucketSpace.getDistribution().getIdealNodes(
                     lib::NodeType::STORAGE,
                     state,
                     document::BucketId(16, i),
@@ -247,7 +248,9 @@ public:
         }
 
         std::vector<uint16_t> nodes;
-        getBucketDBUpdater().getDistributorComponent().getDistribution().getIdealNodes(
+        auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
+        auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
+        distributorBucketSpace.getDistribution().getIdealNodes(
                 lib::NodeType::STORAGE,
                 state,
                 document::BucketId(id),
@@ -584,8 +587,10 @@ BucketDBUpdaterTest::testNormalUsage()
     CPPUNIT_ASSERT_EQUAL(size_t(3), _sender.commands.size());
 
     // Ensure distribution hash is set correctly
+    auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
+    auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
     CPPUNIT_ASSERT_EQUAL(
-            getBucketDBUpdater().getDistributorComponent().getDistribution()
+            distributorBucketSpace.getDistribution()
             .getNodeGraph().getDistributionConfigHash(),
             dynamic_cast<const RequestBucketInfoCommand&>(
                     *_sender.commands[0]).getDistributionHash());
@@ -916,8 +921,9 @@ BucketDBUpdaterTest::testBitChange()
 
         int cnt=0;
         for (int i=0; cnt < 2; i++) {
-            lib::Distribution distribution = getBucketDBUpdater().getDistributorComponent()
-                            .getDistribution();
+            auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
+            auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
+            lib::Distribution distribution = distributorBucketSpace.getDistribution();
             std::vector<uint16_t> distributors;
             if (distribution.getIdealDistributorNode(
                     lib::ClusterState("redundancy:1 bits:14 storage:1 distributor:2"),
@@ -1835,10 +1841,11 @@ BucketDBUpdaterTest::mergeBucketLists(
     }
 
     BucketDumper dumper(includeBucketInfo);
-    getBucketDBUpdater().getDistributorComponent()
-            .getBucketDatabase().forEach(dumper);
-    getBucketDBUpdater().getDistributorComponent()
-            .getBucketDatabase().clear();
+    auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
+    auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
+    auto &bucketDb(distributorBucketSpace.getBucketDatabase());
+    bucketDb.forEach(dumper);
+    bucketDb.clear();
     return dumper.ost.str();
 }
 
