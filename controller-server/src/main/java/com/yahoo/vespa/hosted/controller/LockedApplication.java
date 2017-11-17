@@ -8,8 +8,10 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Change.ApplicationChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -66,8 +68,8 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(), deployments(),
                                                      deploymentJobs().withTriggering(type,
                                                                                      change,
-                                                                                     determineTriggerVersion(type, controller),
-                                                                                     determineTriggerRevision(type, controller),
+                                                                                     deployVersionFor(type, controller),
+                                                                                     deployRevisionFor(type, controller),
                                                                                      reason,
                                                                                      triggerTime),
                                                      deploying(), hasOutstandingChange(), ownershipIssueId()), lock);
@@ -132,42 +134,29 @@ public class LockedApplication extends Application {
                                                      hasOutstandingChange(), Optional.of(issueId)), lock);
     }
 
-    private Version determineTriggerVersion(DeploymentJobs.JobType jobType, Controller controller) {
-        Optional<Zone> zone = jobType.zone(controller.system());
-        if ( ! zone.isPresent()) // a sloppy test TODO: Fix
-            return controller.systemVersion();
-        return currentDeployVersion(controller, zone.get());
+    private Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
+        return jobType == JobType.component
+               ? controller.systemVersion()
+               : deployVersionIn(jobType.zone(controller.system()).get(), controller);
     }
 
-    private Optional<ApplicationRevision> determineTriggerRevision(DeploymentJobs.JobType jobType,
-                                                                   Controller controller) {
-        Optional<Zone> zone = jobType.zone(controller.system());
-        if ( ! zone.isPresent()) // a sloppy test TODO: Fix
-            return Optional.empty();
-        return currentDeployRevision(jobType.zone(controller.system()).get());
+    private Optional<ApplicationRevision> deployRevisionFor(DeploymentJobs.JobType jobType, Controller controller) {
+        return jobType == JobType.component
+               ? Optional.empty()
+               : deployRevisionIn(jobType.zone(controller.system()).get());
     }
 
-    /** Returns the version a deployment to this zone should use for this application, or empty if we don't know */
-    private Optional<ApplicationRevision> currentDeployRevision(Zone zone) {
-        if (!deploying().isPresent()) {
-            return currentRevision(zone);
-        } else if (deploying().get() instanceof Change.VersionChange) {
-            return currentRevision(zone);
-        } else {
+    /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
+    private Optional<ApplicationRevision> deployRevisionIn(Zone zone) {
+        if (deploying().isPresent() && deploying().get() instanceof ApplicationChange)
             return ((Change.ApplicationChange) deploying().get()).revision();
-        }
+
+        return revisionIn(zone);
     }
 
-    /**
-     * Returns the current revision this application has, or if none; should use assuming no change,
-     * in the given zone. Empty if not known
-     */
-    private Optional<ApplicationRevision> currentRevision(Zone zone) {
-        Deployment currentDeployment = deployments().get(zone);
-        if (currentDeployment != null) { // Already deployed in this zone: Use that revision
-            return Optional.of(currentDeployment.revision());
-        }
-        return Optional.empty();
+    /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
+    private Optional<ApplicationRevision> revisionIn(Zone zone) {
+        return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
     }
 
 }

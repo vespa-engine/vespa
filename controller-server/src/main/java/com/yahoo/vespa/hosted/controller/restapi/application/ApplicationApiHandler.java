@@ -373,7 +373,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", application.compileVersion(controller).toFullString());
+        object.setString("compileVersion", application.oldestDeployedVersion().orElse(controller.systemVersion()).toFullString());
 
         // Rotations
         Cursor globalRotationsArray = object.setArray("globalRotations");

@@ -607,7 +607,7 @@ public class UpgraderTest {
         Application default3 = tester.createAndDeploy("default3", 6, "default");
         Application default4 = tester.createAndDeploy("default4", 7, "default");
         
-        assertEquals(version, default0.deployedVersion().get());
+        assertEquals(version, default0.oldestDeployedVersion().get());
 
         // New version is released
         version = Version.fromString("5.1");
@@ -664,10 +664,10 @@ public class UpgraderTest {
         tester.completeUpgrade(default2, version, "default");
         tester.completeUpgrade(default3, version, "default");
 
-        assertEquals(version, tester.application(default0.id()).deployedVersion().get());
-        assertEquals(version, tester.application(default1.id()).deployedVersion().get());
-        assertEquals(version, tester.application(default2.id()).deployedVersion().get());
-        assertEquals(version, tester.application(default3.id()).deployedVersion().get());
+        assertEquals(version, tester.application(default0.id()).oldestDeployedVersion().get());
+        assertEquals(version, tester.application(default1.id()).oldestDeployedVersion().get());
+        assertEquals(version, tester.application(default2.id()).oldestDeployedVersion().get());
+        assertEquals(version, tester.application(default3.id()).oldestDeployedVersion().get());
     }
 
     @Test

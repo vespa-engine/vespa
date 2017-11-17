@@ -172,7 +172,7 @@ public class ApplicationList {
      * Applications without any deployments are ordered first.
      */
     public ApplicationList byIncreasingDeployedVersion() {
-        return listOf(list.stream().sorted(Comparator.comparing(application -> application.deployedVersion().orElse(Version.emptyVersion))));
+        return listOf(list.stream().sorted(Comparator.comparing(application -> application.oldestDeployedVersion().orElse(Version.emptyVersion))));
     }
 
     /** Returns the subset of applications that are not currently upgrading */

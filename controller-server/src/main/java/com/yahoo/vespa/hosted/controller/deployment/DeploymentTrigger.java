@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
@@ -14,8 +13,8 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -27,7 +26,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -67,7 +65,11 @@ public class DeploymentTrigger {
     
     /** Returns the time in the past before which jobs are at this moment considered unresponsive */
     public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
-    
+
+    public BuildSystem buildSystem() { return buildSystem; }
+
+    public DeploymentOrder deploymentOrder() { return order; }
+
     //--- Start of methods which triggers deployment jobs -------------------------
 
     /** 
@@ -83,7 +85,7 @@ public class DeploymentTrigger {
 
             // Handle successful starting and ending
             if (report.success()) {
-                if (order.givesNewRevision(report.jobType())) {
+                if (report.jobType() == JobType.component) {
                     if (acceptNewRevisionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
                         if ( ! ( application.deploying().isPresent() &&
@@ -105,10 +107,10 @@ public class DeploymentTrigger {
             if (report.success())
                 application = trigger(order.nextAfter(report.jobType(), application), application,
                                       report.jobType().jobName() + " completed");
-            else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
+            else if (retryBecauseOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true,
                                       "Retrying on out of capacity");
-            else if (shouldRetryNow(application, report.jobType()))
+            else if (retryBecauseNewFailure(application, report.jobType()))
                 application = trigger(report.jobType(), application, false,
                                       "Immediate retry on failure");
 
@@ -199,6 +201,7 @@ public class DeploymentTrigger {
             Version targetVersion = ((Change.VersionChange)change).version();
             if ( ! (targetVersion.equals(previous.lastSuccess().get().version())) )
                 return false; // version is outdated
+            // The below is checked again in allowedTriggering, right before actual triggering.
             if (next != null && isOnNewerVersionInProductionThan(targetVersion, application, next.type()))
                 return false; // Don't downgrade
         }
@@ -254,39 +257,24 @@ public class DeploymentTrigger {
 
     private ApplicationController applications() { return controller.applications(); }
 
-    private boolean isCapacityConstrained(JobType jobType) {
-        return jobType == JobType.stagingTest || jobType == JobType.systemTest;
-    }
-
     /** Retry immediately only if this job just started failing. Otherwise retry periodically */
-    private boolean shouldRetryNow(Application application, JobType jobType) {
+    private boolean retryBecauseNewFailure(Application application, JobType jobType) {
         JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
         return (jobStatus != null && jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofSeconds(10))));
     }
 
     /** Decide whether to retry due to capacity restrictions */
-    private boolean shouldRetryOnOutOfCapacity(Application application, JobType jobType) {
-        Optional<JobError> outOfCapacityError = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
-                .flatMap(JobStatus::jobError)
-                .filter(e -> e.equals(JobError.outOfCapacity));
-
-        if ( ! outOfCapacityError.isPresent()) return false;
-
+    private boolean retryBecauseOutOfCapacity(Application application, JobType jobType) {
+        JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+        if (jobStatus == null || ! jobStatus.jobError().equals(Optional.of(JobError.outOfCapacity))) return false;
         // Retry the job if it failed recently
-        return application.deploymentJobs().jobStatus().get(jobType).firstFailing().get().at()
-                .isAfter(clock.instant().minus(Duration.ofMinutes(15)));
+        return jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofMinutes(15)));
     }
 
     /** Returns whether the given job type should be triggered according to deployment spec */
-    private boolean deploysTo(Application application, JobType jobType) {
-        Optional<Zone> zone = jobType.zone(controller.system());
-        if (zone.isPresent() && jobType.isProduction()) {
-            // Skip triggering of jobs for zones where the application should not be deployed
-            if ( ! application.deploymentSpec().includes(jobType.environment(), Optional.of(zone.get().region()))) {
-                return false;
-            }
-        }
-        return true;
+    private boolean hasJob(JobType jobType, Application application) {
+        if ( ! jobType.isProduction()) return true; // Deployment spec only determines this for production jobs.
+        return application.deploymentSpec().includes(jobType.environment(), jobType.region(controller.system()));
     }
 
     /**
@@ -345,16 +333,18 @@ public class DeploymentTrigger {
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
         //       fix to a version upgrade, so not doing it now
-        if (jobType.isProduction() && application.deployingBlocked(clock.instant())) return false;
+
+        if (jobType.isProduction() && application.deploying().isPresent() &&
+            application.deploying().get().blockedBy(application.deploymentSpec(), clock.instant())) return false;
+
+        if (application.deploying().isPresent() && application.deploying().get() instanceof VersionChange &&
+            isOnNewerVersionInProductionThan(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
+
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
-        if  ( ! deploysTo(application, jobType)) return false;
+        if  ( ! hasJob(jobType, application)) return false;
         // Ignore applications that are not associated with a project
         if ( ! application.deploymentJobs().projectId().isPresent()) return false;
-        if (application.deploying().isPresent() && application.deploying().get() instanceof Change.VersionChange) {
-            Version targetVersion = ((Change.VersionChange)application.deploying().get()).version();
-            if (isOnNewerVersionInProductionThan(targetVersion, application, jobType)) return false; // Don't downgrade
-        }
-        
+
         return true;
     }
     
@@ -373,7 +363,7 @@ public class DeploymentTrigger {
      * downgrade production nodes which we are not guaranteed to support.
      */
     private boolean isOnNewerVersionInProductionThan(Version version, Application application, JobType job) {
-        if ( ! isProduction(job)) return false;
+        if ( ! job.isProduction()) return false;
         Optional<Zone> zone = job.zone(controller.system());
         if ( ! zone.isPresent()) return false;
         Deployment existingDeployment = application.deployments().get(zone.get());
@@ -381,24 +371,17 @@ public class DeploymentTrigger {
         return existingDeployment.version().isAfter(version);
     }
     
-    private boolean isProduction(JobType job) {
-        Optional<Zone> zone = job.zone(controller.system());
-        if ( ! zone.isPresent()) return false; // arbitrary
-        return zone.get().environment() == Environment.prod;
-    }
-    
     private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
-        if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
 
-        if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
-        if ( application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+        if (application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
+
+        if (application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
+
+        if (application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
         return false;
     }
     
-    public BuildSystem buildSystem() { return buildSystem; }
-
-    public DeploymentOrder deploymentOrder() { return order; }
-
 }

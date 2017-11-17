@@ -162,7 +162,7 @@ public class DeploymentJobs {
     /** Job types that exist in the build system */
     public enum JobType {
 
-        component              ("component")                ,
+        component              ("component"                 ),
         systemTest             ("system-test"               , zone("test"   , "us-east-1"     ), zone(SystemName.cd, "test"   , "cd-us-central-1")),
         stagingTest            ("staging-test"              , zone("staging", "us-east-3"     ), zone(SystemName.cd, "staging", "cd-us-central-1")),
         productionCorpUsEast1  ("production-corp-us-east-1" , zone("prod"   , "corp-us-east-1")),
