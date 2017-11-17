@@ -138,11 +138,6 @@ DistributorComponent::nodeAddress(uint16_t nodeIndex) const
             nodeIndex);
 }
 
-uint16_t
-DistributorComponent::getRedundancy() const {
-    return getDistribution().getRedundancy();
-}
-
 bool
 DistributorComponent::checkDistribution(
         api::StorageCommand &cmd,

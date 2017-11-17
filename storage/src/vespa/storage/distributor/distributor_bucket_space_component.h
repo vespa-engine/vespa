@@ -19,19 +19,6 @@ public:
                                     DistributorBucketSpace& bucketSpace,
                                     DistributorComponentRegister& compReg,
                                     const std::string& name);
-
-    BucketDatabase& getBucketDatabase() override {
-        return _bucketSpace.getBucketDatabase();
-    }
-
-    const BucketDatabase& getBucketDatabase() const override {
-        return _bucketSpace.getBucketDatabase();
-    }
-
-    const lib::Distribution& getDistribution() const override {
-        return _bucketSpace.getDistribution();
-    }
-
 };
 
 }

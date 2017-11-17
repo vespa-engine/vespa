@@ -89,11 +89,6 @@ public:
     bool storageNodeIsUp(uint32_t nodeIndex) const;
 
     /**
-     * Returns the current desired redundancy level.
-     */
-    uint16_t getRedundancy() const;
-
-    /**
      * Verifies that the given command has been received at the
      * correct distributor based on the current system state.
      */
@@ -156,12 +151,6 @@ public:
     const DistributorInterface& getDistributor() const {
         return _distributor;
     }
-
-    virtual BucketDatabase& getBucketDatabase() = 0;
-    virtual const BucketDatabase& getBucketDatabase() const = 0;
-    // FIXME this hides the StorageComponent::getDistribution method, which
-    // even has a different signature altogether...!
-    virtual const lib::Distribution& getDistribution() const = 0;
 
     DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
