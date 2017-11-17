@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,6 +72,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 
     private final HeaderFields trailers = new HeaderFields();
     private final Map<String, List<String>> parameters = new HashMap<>();
+    private Principal principal;
     private final long connectedAt;
     private Method method;
     private Version version;
@@ -292,6 +294,14 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             return false;
         }
         return version == Version.HTTP_1_1;
+    }
+
+    public Principal getUserPrincipal() {
+        return principal;
+    }
+
+    public void setUserPrincipal(Principal principal) {
+        this.principal = principal;
     }
 
     public static HttpRequest newServerRequest(CurrentContainer container, URI uri) {

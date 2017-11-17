@@ -7,6 +7,7 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,6 +93,7 @@ public class AccessLogEntry {
     private int statusCode;
     private String scheme;
     private int localPort;
+    private Principal principal;
 
     private ListMap<String,String> keyValues=null;
 
@@ -706,6 +708,19 @@ public class AccessLogEntry {
         synchronized (monitor) {
             requireZero(this.localPort);
             this.localPort = localPort;
+        }
+    }
+
+    public Principal getUserPrincipal() {
+        synchronized (monitor) {
+            return principal;
+        }
+    }
+
+    public void setUserPrincipal(Principal principal) {
+        synchronized (monitor) {
+            requireNull(this.principal);
+            this.principal = principal;
         }
     }
 

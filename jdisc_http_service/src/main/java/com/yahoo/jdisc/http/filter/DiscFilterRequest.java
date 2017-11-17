@@ -36,7 +36,6 @@ public abstract class DiscFilterRequest {
     protected static final String HTTPS_PREFIX = "https";
     protected static final int DEFAULT_HTTP_PORT = 80;
     protected static final int DEFAULT_HTTPS_PORT = 443;
-    private static final String JDISC_REQUEST_PRINCIPAL = "jdisc.request.principal";
 
     private final ServletOrJdiscHttpRequest parent;
     protected final InetSocketAddress localAddress;
@@ -329,9 +328,7 @@ public abstract class DiscFilterRequest {
         return port;
     }
 
-    public Principal getUserPrincipal() {
-        return (Principal) getAttribute(JDISC_REQUEST_PRINCIPAL);
-    }
+    public abstract Principal getUserPrincipal();
 
     public boolean isSecure() {
         if(getScheme().equalsIgnoreCase(HTTPS_PREFIX)) {
@@ -374,9 +371,7 @@ public abstract class DiscFilterRequest {
         this.remoteUser = remoteUser;
     }
 
-    public void setUserPrincipal(Principal principal) {
-        setAttribute(JDISC_REQUEST_PRINCIPAL, principal);
-    }
+    public abstract void setUserPrincipal(Principal principal);
 
     public void setUserRoles(String[] roles) {
         this.roles = roles;

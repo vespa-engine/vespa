@@ -5,6 +5,7 @@ import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -100,6 +101,16 @@ public class JdiscFilterRequest extends DiscFilterRequest {
     @Override
     public void setHeaders(String name, List<String> values) {
         parent.headers().put(name, values);
+    }
+
+    @Override
+    public Principal getUserPrincipal() {
+        return parent.getUserPrincipal();
+    }
+
+    @Override
+    public void setUserPrincipal(Principal principal) {
+        this.parent.setUserPrincipal(principal);
     }
 
     @Override

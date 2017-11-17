@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -36,6 +37,7 @@ import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
  * @since 5.27
  */
 public class ServletRequest extends HttpServletRequestWrapper implements ServletOrJdiscHttpRequest {
+    public static final String JDISC_REQUEST_PRINCIPAL = "jdisc.request.principal";
 
     private final HttpServletRequest request;
     private final HeaderFields headerFields;
@@ -251,5 +253,15 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
     @Override
     public long getConnectedAt(TimeUnit unit) {
         return unit.convert(connectedAt, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public Principal getUserPrincipal() {
+        // NOTE: The principal from the underlying servlet request is ignored. JDisc filters are the source-of-truth.
+        return (Principal) request.getAttribute(JDISC_REQUEST_PRINCIPAL);
+    }
+
+    public void setUserPrincipal(Principal principal) {
+        request.setAttribute(JDISC_REQUEST_PRINCIPAL, principal);
     }
 }

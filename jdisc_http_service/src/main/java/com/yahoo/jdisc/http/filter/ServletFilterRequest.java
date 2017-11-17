@@ -6,6 +6,7 @@ import com.yahoo.jdisc.http.servlet.ServletRequest;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -125,6 +126,16 @@ class ServletFilterRequest extends DiscFilterRequest {
     @Override
     public void setHeaders(String name, List<String> values) {
         parent.setHeaders(name, values);
+    }
+
+    @Override
+    public Principal getUserPrincipal() {
+        return parent.getUserPrincipal();
+    }
+
+    @Override
+    public void setUserPrincipal(Principal principal) {
+        parent.setUserPrincipal(principal);
     }
 
     @Override
