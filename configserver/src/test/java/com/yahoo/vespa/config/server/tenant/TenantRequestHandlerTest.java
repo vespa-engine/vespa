@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.GetConfigRequest;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -88,7 +86,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
 
     private void feedApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
-                                                                new PathProvider(Path.createRoot()).getSessionDir(sessionId),
+                                                                Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)),
                                                                 new TestConfigDefinitionRepo(),
                                                                 "", Optional.empty());
         zkc.writeApplicationId(appId);
@@ -104,7 +102,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
 
     private ApplicationSet reloadConfig(long id, String application, Clock clock) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
-                                                                new PathProvider(Path.createRoot()).getSessionDir(id),
+                                                                Tenants.getSessionsPath(tenant).append(String.valueOf(id)),
                                                                 new TestConfigDefinitionRepo(),
                                                                 "", Optional.empty());
         zkc.writeApplicationId(new ApplicationId.Builder().tenant(tenant).applicationName(application).build());
@@ -187,7 +185,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     public void testResolveForAppId() {
         long id = 1l;
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
-                                                                new PathProvider(Path.createRoot()).getSessionDir(id),
+                                                                Tenants.getSessionsPath(tenant).append(String.valueOf(id)),
                                                                 new TestConfigDefinitionRepo(),
                                                                 "", Optional.empty());
         ApplicationId appId = new ApplicationId.Builder()
@@ -231,7 +229,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
 
     private void feedAndReloadApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
         feedApp(appDir, sessionId, appId);
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, new PathProvider(Path.createRoot()).getSessionDir(sessionId));
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(appId);
         RemoteSession session = new RemoteSession(tenant, sessionId, componentRegistry, zkc, Clock.systemUTC());
         server.reloadConfig(session.ensureApplicationLoaded());

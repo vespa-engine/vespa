@@ -20,7 +20,6 @@ import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -149,14 +148,13 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
      */
     private RemoteSessionRepo fromLocalSessionRepo(LocalSessionRepo localRepo, Clock clock) {
         RemoteSessionRepo remoteRepo = new RemoteSessionRepo();
-        PathProvider pathProvider = new PathProvider(Path.createRoot());
         for (LocalSession ls : localRepo.listSessions()) {
 
-            zooKeeperClient = new MockSessionZKClient(curator, pathProvider.getSessionDirs().append(String.valueOf(ls.getSessionId())));
+            zooKeeperClient = new MockSessionZKClient(curator, tenant, ls.getSessionId());
             if (ls.getStatus()!=null) zooKeeperClient.writeStatus(ls.getStatus());
-            RemoteSession remSess = new RemoteSession(TenantName.from("default"), ls.getSessionId(),
+            RemoteSession remSess = new RemoteSession(tenant, ls.getSessionId(),
                                                       new TestComponentRegistry.Builder().curator(curator).build(),
-                                                      zooKeeperClient, 
+                                                      zooKeeperClient,
                                                       clock);
             remoteRepo.addSession(remSess);
         }
@@ -239,8 +237,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
         // Need different repos for 'default' tenant as opposed to the 'test' tenant
         LocalSessionRepo localRepoDefault = new LocalSessionRepo(Clock.systemUTC());
-        final TenantName tenantName = TenantName.defaultName();
-        addTenant(tenantName, localRepoDefault, new RemoteSessionRepo(), new MockSessionFactory());
+        final TenantName defaultTenant = TenantName.defaultName();
+        addTenant(defaultTenant, localRepoDefault, new RemoteSessionRepo(), new MockSessionFactory());
         addTestTenant();
         final SessionHandler handler = createHandler(builder);
 
@@ -248,7 +246,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         // Deploy with default tenant
         MockSession session = new MockSession(sessionId, null);
         localRepoDefault.addSession(session);
-        pathPrefix = "/application/v2/tenant/default/session/";
+        pathPrefix = "/application/v2/tenant/" + defaultTenant + "/session/";
 
         HttpResponse response = handler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));

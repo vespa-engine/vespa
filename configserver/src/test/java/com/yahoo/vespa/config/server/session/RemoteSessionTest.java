@@ -11,10 +11,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Version;
-import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -49,13 +47,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class RemoteSessionTest {
 
+    private static final TenantName tenantName = TenantName.from("default");
+
     private Curator curator;
-    private PathProvider pathProvider;
 
     @Before
     public void setupTest() throws Exception {
         curator = new MockCurator();
-        pathProvider = new PathProvider(Path.createRoot());
     }
 
     @Test
@@ -180,7 +178,7 @@ public class RemoteSessionTest {
         okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
         okFactory.throwOnLoad = false;
 
-        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(3), application);
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
         RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
 
@@ -189,7 +187,7 @@ public class RemoteSessionTest {
 
     @Test
     public void require_that_session_status_is_updated() throws IOException, SAXException {
-        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(3));
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3);
         RemoteSession session = createSession(3, zkc, Clock.systemUTC());
         assertThat(session.getStatus(), is(Session.Status.NEW));
         zkc.writeStatus(Session.Status.PREPARE);
@@ -203,7 +201,7 @@ public class RemoteSessionTest {
         MockModelFactory mockModelFactory = new MockModelFactory();
         try {
             int sessionId = 3;
-            SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(sessionId));
+            SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, sessionId);
             createSession(sessionId, zkc, Collections.singletonList(mockModelFactory), permanentApp, mockModelFactory.clock()).ensureApplicationLoaded();
         } catch (Exception e) {
             e.printStackTrace();
@@ -220,7 +218,7 @@ public class RemoteSessionTest {
         return createSession(sessionId, zkc, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), clock);
     }
     private RemoteSession createSession(long sessionId, List<ModelFactory> modelFactories, Clock clock) {
-        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(sessionId));
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, sessionId);
         return createSession(sessionId, zkc, modelFactories, clock);
     }
 
@@ -238,7 +236,8 @@ public class RemoteSessionTest {
         if (permanentApplicationPackage.isPresent())
             registryBuilder.permanentApplicationPackage(permanentApplicationPackage.get());
 
-        return new RemoteSession(TenantName.from("default"), sessionId,
+
+        return new RemoteSession(tenantName, sessionId,
                                  registryBuilder.build(),
                                  zkc,
                                  clock);
