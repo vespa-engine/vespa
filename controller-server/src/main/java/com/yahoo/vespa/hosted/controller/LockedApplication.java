@@ -3,15 +3,18 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.Change.ApplicationChange;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -63,19 +66,20 @@ public class LockedApplication extends Application {
                                                      deploying(), hasOutstandingChange(), ownershipIssueId()), lock);
     }
 
-    public LockedApplication withJobTriggering(DeploymentJobs.JobType type, Optional<Change> change,
-                                               String reason, Instant triggerTime, Controller controller) {
+    public LockedApplication withJobTriggering(JobType type, Optional<Change> change,
+                                               Instant triggerTime, Version version, Optional<ApplicationRevision> revision, String reason) {
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(), deployments(),
                                                      deploymentJobs().withTriggering(type,
                                                                                      change,
-                                                                                     deployVersionFor(type, controller),
-                                                                                     deployRevisionFor(type, controller),
+                                                                                     version,
+                                                                                     revision,
                                                                                      reason,
                                                                                      triggerTime),
                                                      deploying(), hasOutstandingChange(), ownershipIssueId()), lock);
     }
 
-    public LockedApplication with(Deployment deployment) {
+    /** Don't expose non-leaf sub-objects. */
+    private LockedApplication with(Deployment deployment) {
         Map<Zone, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.put(deployment.zone(), deployment);
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(),
@@ -83,10 +87,33 @@ public class LockedApplication extends Application {
                                                      hasOutstandingChange(), ownershipIssueId()), lock);
     }
 
-    public LockedApplication with(DeploymentJobs deploymentJobs) {
-        return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(),
-                                                     deployments(), deploymentJobs, deploying(),
-                                                     hasOutstandingChange(), ownershipIssueId()), lock);
+    public LockedApplication withNewDeployment(Zone zone, ApplicationRevision revision, Version version, Instant instant) {
+        // Use info from previous deployments is available
+        Deployment previousDeployment = deployments().getOrDefault(zone, new Deployment(zone, revision, version, instant));
+        Deployment newDeployment = new Deployment(zone, revision, version, instant,
+                                                  previousDeployment.clusterUtils(),
+                                                  previousDeployment.clusterInfo(),
+                                                  previousDeployment.metrics());
+        return with(newDeployment);
+    }
+
+    public LockedApplication withClusterUtilization(Zone zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
+        Deployment deployment = deployments().get(zone);
+        if (deployment == null) return this;    // No longer deployed in this zone.
+        return with(deployment.withClusterUtils(clusterUtilization));
+    }
+
+    public LockedApplication withClusterInfo(Zone zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
+        Deployment deployment = deployments().get(zone);
+        if (deployment == null) return this;    // No longer deployed in this zone.
+        return with(deployment.withClusterInfo(clusterInfo));
+
+    }
+
+    public LockedApplication with(Zone zone, DeploymentMetrics deploymentMetrics) {
+        Deployment deployment = deployments().get(zone);
+        if (deployment == null) return this;    // No longer deployed in this zone.
+        return with(deployment.withMetrics(deploymentMetrics));
     }
 
     public LockedApplication withoutDeploymentIn(Zone zone) {
@@ -134,29 +161,16 @@ public class LockedApplication extends Application {
                                                      hasOutstandingChange(), Optional.of(issueId)), lock);
     }
 
-    private Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
+    public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? controller.systemVersion()
                : deployVersionIn(jobType.zone(controller.system()).get(), controller);
     }
 
-    private Optional<ApplicationRevision> deployRevisionFor(DeploymentJobs.JobType jobType, Controller controller) {
+    public Optional<ApplicationRevision> deployRevisionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? Optional.empty()
                : deployRevisionIn(jobType.zone(controller.system()).get());
-    }
-
-    /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
-    private Optional<ApplicationRevision> deployRevisionIn(Zone zone) {
-        if (deploying().isPresent() && deploying().get() instanceof ApplicationChange)
-            return ((Change.ApplicationChange) deploying().get()).revision();
-
-        return revisionIn(zone);
-    }
-
-    /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
-    private Optional<ApplicationRevision> revisionIn(Zone zone) {
-        return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
     }
 
 }

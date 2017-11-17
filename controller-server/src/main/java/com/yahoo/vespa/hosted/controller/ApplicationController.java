@@ -319,13 +319,12 @@ public class ApplicationController {
                     // * When someone else triggered the job, we need to store a stand-in triggering event.
                     // * When this is the system test job, we need to record the new revision, for future use.
                     JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
-                    application = application.with(application.deploymentJobs()
-                                                           .withTriggering(jobType.get(),
-                                                                           application.deploying(),
-                                                                           version,
-                                                                           Optional.of(revision),
-                                                                           triggering.reason(),
-                                                                           triggering.at()));
+                    application = application.withJobTriggering(jobType.get(),
+                                                                application.deploying(),
+                                                                triggering.at(),
+                                                                version,
+                                                                Optional.of(revision),
+                                                                triggering.reason());
                 }
 
                 // Delete zones not listed in DeploymentSpec, if allowed
@@ -358,14 +357,8 @@ public class ApplicationController {
                     configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), 
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
+            application = application.withNewDeployment(zone, revision, version, clock.instant());
 
-            // Use info from previous deployments is available
-            Deployment previousDeployment = application.deployments().getOrDefault(zone, new Deployment(zone, revision, version, clock.instant()));
-            Deployment newDeployment = new Deployment(zone, revision, version, clock.instant(),
-                                                      previousDeployment.clusterUtils(), 
-                                                      previousDeployment.clusterInfo(), previousDeployment.metrics());
-
-            application = application.with(newDeployment);
             store(application);
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
