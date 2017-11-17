@@ -6,7 +6,6 @@
 #include "distributorcomponent.h"
 #include "distributormessagesender.h"
 #include "pendingclusterstate.h"
-#include "distributor_bucket_space_component.h"
 #include "outdated_nodes_map.h"
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storageapi/messageapi/returncode.h>
@@ -32,7 +31,6 @@ public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     BucketDBUpdater(Distributor& owner,
                     DistributorBucketSpaceRepo &bucketSpaceRepo,
-                    DistributorBucketSpace& bucketSpace,
                     DistributorMessageSender& sender,
                     DistributorComponentRegister& compReg);
     ~BucketDBUpdater();
@@ -52,7 +50,7 @@ public:
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
-    DistributorComponent& getDistributorComponent() { return _bucketSpaceComponent; }
+    DistributorComponent& getDistributorComponent() { return _distributorComponent; }
 
     /**
      * Returns whether the current PendingClusterState indicates that there has
@@ -66,7 +64,7 @@ public:
     }
 
 private:
-    DistributorBucketSpaceComponent _bucketSpaceComponent;
+    DistributorComponent _distributorComponent;
     class MergeReplyGuard {
     public:
         MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply)

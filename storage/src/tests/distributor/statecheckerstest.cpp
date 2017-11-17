@@ -14,6 +14,7 @@
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <tests/distributor/distributortestutil.h>

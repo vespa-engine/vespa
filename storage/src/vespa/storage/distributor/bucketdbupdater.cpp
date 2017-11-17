@@ -3,6 +3,7 @@
 #include "bucketdbupdater.h"
 #include "distributor.h"
 #include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 #include "simpleclusterinformation.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -21,13 +22,12 @@ namespace storage::distributor {
 
 BucketDBUpdater::BucketDBUpdater(Distributor& owner,
                                  DistributorBucketSpaceRepo &bucketSpaceRepo,
-                                 DistributorBucketSpace& bucketSpace,
                                  DistributorMessageSender& sender,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _bucketSpaceComponent(owner, bucketSpaceRepo, bucketSpace, compReg, "Bucket DB Updater"),
+      _distributorComponent(owner, bucketSpaceRepo, compReg, "Bucket DB Updater"),
       _sender(sender),
-      _transitionTimer(_bucketSpaceComponent.getClock())
+      _transitionTimer(_distributorComponent.getClock())
 {
 }
 
@@ -64,7 +64,7 @@ BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
 {
     if (hasPendingClusterState()) {
         const lib::ClusterState& state(_pendingClusterState->getNewClusterState());
-        if (!_bucketSpaceComponent.ownsBucketInState(state, b)) {
+        if (!_distributorComponent.ownsBucketInState(state, b)) {
             return BucketOwnership::createNotOwnedInState(state);
         }
     }
@@ -77,7 +77,7 @@ BucketDBUpdater::sendRequestBucketInfo(
         const document::Bucket& bucket,
         const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard)
 {
-    if (!_bucketSpaceComponent.storageNodeIsUp(node)) {
+    if (!_distributorComponent.storageNodeIsUp(node)) {
         return;
     }
 
@@ -95,10 +95,10 @@ BucketDBUpdater::sendRequestBucketInfo(
         node);
 
     msg->setPriority(50);
-    msg->setAddress(_bucketSpaceComponent.nodeAddress(node));
+    msg->setAddress(_distributorComponent.nodeAddress(node));
 
     _sentMessages[msg->getMsgId()] =
-        BucketRequest(node, _bucketSpaceComponent.getUniqueTimestamp(),
+        BucketRequest(node, _distributorComponent.getUniqueTimestamp(),
                       bucket, mergeReplyGuard);
     _sender.sendCommand(msg);
 }
@@ -114,19 +114,19 @@ void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterState& newState)
 {
-    for (auto &elem : _bucketSpaceComponent.getBucketSpaceRepo()) {
+    for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
         const auto &newDistribution(elem.second->getDistribution());
         auto &bucketDb(elem.second->getBucketDatabase());
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
         NodeRemover proc(
-                _bucketSpaceComponent.getClusterState(),
+                _distributorComponent.getClusterState(),
                 newState,
-                _bucketSpaceComponent.getBucketIdFactory(),
-                _bucketSpaceComponent.getIndex(),
+                _distributorComponent.getBucketIdFactory(),
+                _distributorComponent.getIndex(),
                 newDistribution,
-                _bucketSpaceComponent.getDistributor().getStorageNodeUpStates());
+                _distributorComponent.getDistributor().getStorageNodeUpStates());
         bucketDb.forEach(proc);
 
         for (const auto & entry :proc.getBucketsToRemove()) {
@@ -142,14 +142,14 @@ BucketDBUpdater::ensureTransitionTimerStarted()
     // that will make transition times appear artificially low.
     if (!hasPendingClusterState()) {
         _transitionTimer = framework::MilliSecTimer(
-                _bucketSpaceComponent.getClock());
+                _distributorComponent.getClock());
     }
 }
 
 void
 BucketDBUpdater::completeTransitionTimer()
 {
-    _bucketSpaceComponent.getDistributor().getMetrics()
+    _distributorComponent.getDistributor().getMetrics()
             .stateTransitionTime.addValue(_transitionTimer.getElapsedTimeAsDouble());
 }
 
@@ -158,18 +158,18 @@ BucketDBUpdater::storageDistributionChanged()
 {
     ensureTransitionTimerStarted();
 
-    removeSuperfluousBuckets(_bucketSpaceComponent.getClusterState());
+    removeSuperfluousBuckets(_distributorComponent.getClusterState());
 
     ClusterInformation::CSP clusterInfo(new SimpleClusterInformation(
-            _bucketSpaceComponent.getIndex(),
-            _bucketSpaceComponent.getClusterState(),
-            _bucketSpaceComponent.getDistributor().getStorageNodeUpStates()));
+            _distributorComponent.getIndex(),
+            _distributorComponent.getClusterState(),
+            _distributorComponent.getDistributor().getStorageNodeUpStates()));
     _pendingClusterState = PendingClusterState::createForDistributionChange(
-            _bucketSpaceComponent.getClock(),
+            _distributorComponent.getClock(),
             std::move(clusterInfo),
             _sender,
-            _bucketSpaceComponent.getBucketSpaceRepo(),
-            _bucketSpaceComponent.getUniqueTimestamp());
+            _distributorComponent.getBucketSpaceRepo(),
+            _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 }
 
@@ -179,7 +179,7 @@ BucketDBUpdater::replyToPreviousPendingClusterStateIfAny()
     if (_pendingClusterState.get() &&
         _pendingClusterState->getCommand().get())
     {
-        _bucketSpaceComponent.sendUp(
+        _distributorComponent.sendUp(
                 std::make_shared<api::SetSystemStateReply>(*_pendingClusterState->getCommand()));
     }
 }
@@ -192,7 +192,7 @@ BucketDBUpdater::onSetSystemState(
         "Received new cluster state %s",
         cmd->getSystemState().toString().c_str());
 
-    lib::ClusterState oldState = _bucketSpaceComponent.getClusterState();
+    lib::ClusterState oldState = _distributorComponent.getClusterState();
     const lib::ClusterState& state = cmd->getSystemState();
 
     if (state == oldState) {
@@ -205,18 +205,18 @@ BucketDBUpdater::onSetSystemState(
 
     ClusterInformation::CSP clusterInfo(
             new SimpleClusterInformation(
-                _bucketSpaceComponent.getIndex(),
-                _bucketSpaceComponent.getClusterState(),
-                _bucketSpaceComponent.getDistributor()
+                _distributorComponent.getIndex(),
+                _distributorComponent.getClusterState(),
+                _distributorComponent.getDistributor()
                 .getStorageNodeUpStates()));
     _pendingClusterState = PendingClusterState::createForClusterStateChange(
-            _bucketSpaceComponent.getClock(),
+            _distributorComponent.getClock(),
             std::move(clusterInfo),
             _sender,
-            _bucketSpaceComponent.getBucketSpaceRepo(),
+            _distributorComponent.getBucketSpaceRepo(),
             cmd,
             _outdatedNodesMap,
-            _bucketSpaceComponent.getUniqueTimestamp());
+            _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 
     if (isPendingClusterStateCompleted()) {
@@ -354,7 +354,7 @@ BucketDBUpdater::handleSingleBucketInfoFailure(
         req.targetNode, repl->getResult().toString().c_str());
 
     if (req.bucket.getBucketId() != document::BucketId(0)) {
-        framework::MilliSecTime sendTime(_bucketSpaceComponent.getClock());
+        framework::MilliSecTime sendTime(_distributorComponent.getClock());
         sendTime += framework::MilliSecTime(100);
         _delayedRequests.emplace_back(sendTime, req);
     }
@@ -367,7 +367,7 @@ BucketDBUpdater::resendDelayedMessages()
         _pendingClusterState->resendDelayedMessages();
     }
     if (_delayedRequests.empty()) return; // Don't fetch time if not needed
-    framework::MilliSecTime currentTime(_bucketSpaceComponent.getClock());
+    framework::MilliSecTime currentTime(_distributorComponent.getClock());
     while (!_delayedRequests.empty()
            && currentTime >= _delayedRequests.front().first)
     {
@@ -422,7 +422,7 @@ BucketDBUpdater::processSingleBucketInfoReply(
     BucketRequest req = iter->second;
     _sentMessages.erase(iter);
 
-    if (!_bucketSpaceComponent.storageNodeIsUp(req.targetNode)) {
+    if (!_distributorComponent.storageNodeIsUp(req.targetNode)) {
         // Ignore replies from nodes that are down.
         return true;
     }
@@ -450,7 +450,7 @@ void
 BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::Bucket& bucket,
                                               BucketListMerger::BucketList& existing)
 {
-    auto &distributorBucketSpace(_bucketSpaceComponent.getBucketSpaceRepo().get(bucket.getBucketSpace()));
+    auto &distributorBucketSpace(_distributorComponent.getBucketSpaceRepo().get(bucket.getBucketSpace()));
     std::vector<BucketDatabase::Entry> entries;
     distributorBucketSpace.getBucketDatabase().getAll(bucket.getBucketId(), entries);
 
@@ -464,12 +464,12 @@ BucketDBUpdater::updateDatabase(document::BucketSpace bucketSpace, uint16_t node
 {
     for (const document::BucketId & bucketId : merger.getRemovedEntries()) {
         document::Bucket bucket(bucketSpace, bucketId);
-        _bucketSpaceComponent.removeNodeFromDB(bucket, node);
+        _distributorComponent.removeNodeFromDB(bucket, node);
     }
 
     for (const BucketListMerger::BucketEntry& entry : merger.getAddedEntries()) {
         document::Bucket bucket(bucketSpace, entry.first);
-        _bucketSpaceComponent.updateBucketDatabase(
+        _distributorComponent.updateBucketDatabase(
                 bucket,
                 BucketCopy(merger.getTimestamp(), node, entry.second),
                 DatabaseUpdate::CREATE_IF_NONEXISTING);
@@ -489,11 +489,11 @@ BucketDBUpdater::processCompletedPendingClusterState()
 
     if (_pendingClusterState->getCommand().get()) {
         enableCurrentClusterStateInDistributor();
-        _bucketSpaceComponent.getDistributor().getMessageSender().sendDown(
+        _distributorComponent.getDistributor().getMessageSender().sendDown(
                 _pendingClusterState->getCommand());
         addCurrentStateToClusterStateHistory();
     } else {
-        _bucketSpaceComponent.getDistributor().notifyDistributionChangeEnabled();
+        _distributorComponent.getDistributor().notifyDistributionChangeEnabled();
     }
 
     _pendingClusterState.reset();
@@ -512,7 +512,7 @@ BucketDBUpdater::enableCurrentClusterStateInDistributor()
         "BucketDBUpdater finished processing state %s",
         state.toString().c_str());
 
-    _bucketSpaceComponent.getDistributor().enableClusterState(state);
+    _distributorComponent.getDistributor().enableClusterState(state);
 }
 
 void
@@ -563,7 +563,7 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
     using namespace vespalib::xml;
     xos << XmlTag("bucketdb")
         << XmlTag("systemstate_active")
-        << XmlContent(_bucketSpaceComponent.getClusterState().toString())
+        << XmlContent(_distributorComponent.getClusterState().toString())
         << XmlEndTag();
     if (_pendingClusterState) {
         xos << *_pendingClusterState;

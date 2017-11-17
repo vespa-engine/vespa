@@ -11,6 +11,7 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.queue");
@@ -25,12 +26,11 @@ namespace distributor {
 IdealStateManager::IdealStateManager(
         Distributor& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
-        DistributorBucketSpace& bucketSpace,
         DistributorComponentRegister& compReg,
         bool manageActiveBucketCopies)
     : HtmlStatusReporter("idealstateman", "Ideal state manager"),
       _metrics(new IdealStateMetricSet),
-      _distributorComponent(owner, bucketSpaceRepo, bucketSpace, compReg, "Ideal state manager"),
+      _distributorComponent(owner, bucketSpaceRepo, compReg, "Ideal state manager"),
       _bucketSpaceRepo(bucketSpaceRepo)
 {
     _distributorComponent.registerStatusPage(*this);

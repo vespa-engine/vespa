@@ -14,6 +14,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 using namespace storage::api;
