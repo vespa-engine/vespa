@@ -10,5 +10,6 @@ vespa_add_library(storageapi_mbusprot OBJECT
     protocolserialization5_0.cpp
     protocolserialization5_1.cpp
     protocolserialization5_2.cpp
+    protocolserialization6_0.cpp
     DEPENDS
 )

@@ -46,6 +46,8 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     vespalib::Version _version5_0{5, 0, 12};
     vespalib::Version _version5_1{5, 1, 0};
     vespalib::Version _version5_2{5, 93, 30};
+    // TODO: Set correct version when bucket space serialization is activated by default
+    vespalib::Version _version6_0{6, 999, 0};
     documentapi::LoadTypeSet _loadTypes;
     mbusprot::StorageProtocol _protocol;
     static std::vector<std::string> _nonVerboseMessageStrings;
@@ -58,7 +60,7 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
           _testDoc(_docMan.createDocument()),
           _testDocId(_testDoc->getId()),
           _bucket(makeDocumentBucket(document::BucketId(16, 0x51))),
-          _protocol(_docMan.getTypeRepoSP(), _loadTypes)
+          _protocol(_docMan.getTypeRepoSP(), _loadTypes, true)
     {
         _loadTypes.addLoadType(34, "foo", documentapi::Priority::PRI_NORMAL_2);
     }
@@ -102,6 +104,10 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     void testUpdateCommand52();
     void testRemoveCommand52();
 
+    void testPutCommandWithBucketSpace6_0();
+    void testCreateVisitorWithBucketSpace6_0();
+    void testRequestBucketInfoWithBucketSpace6_0();
+
     CPPUNIT_TEST_SUITE(StorageProtocolTest);
 
     // Enable to see string outputs of messages
@@ -138,6 +144,11 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testPutCommand52);
     CPPUNIT_TEST(testUpdateCommand52);
     CPPUNIT_TEST(testRemoveCommand52);
+
+    // 6.0 tests
+    CPPUNIT_TEST(testPutCommandWithBucketSpace6_0);
+    CPPUNIT_TEST(testCreateVisitorWithBucketSpace6_0);
+    CPPUNIT_TEST(testRequestBucketInfoWithBucketSpace6_0);
 
     CPPUNIT_TEST_SUITE_END();
 };
@@ -944,6 +955,44 @@ StorageProtocolTest::testRemoveCommand52()
 
     RemoveCommand::SP cmd2(copyCommand(cmd, _version5_2));
     CPPUNIT_ASSERT_EQUAL(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
+}
+
+void
+StorageProtocolTest::testPutCommandWithBucketSpace6_0()
+{
+    ScopedName test("testPutCommandWithBucketSpace6_0");
+
+    document::Bucket bucket(document::BucketSpace(5), _bucket.getBucketId());
+    auto cmd = std::make_shared<PutCommand>(bucket, _testDoc, 14);
+
+    auto cmd2 = copyCommand(cmd, _version6_0);
+    CPPUNIT_ASSERT_EQUAL(bucket, cmd2->getBucket());
+}
+
+void
+StorageProtocolTest::testCreateVisitorWithBucketSpace6_0()
+{
+    ScopedName test("testCreateVisitorWithBucketSpace6_0");
+
+    document::BucketSpace bucketSpace(5);
+    auto cmd = std::make_shared<CreateVisitorCommand>(bucketSpace, "library", "id", "doc selection");
+
+    auto cmd2 = copyCommand(cmd, _version6_0);
+    CPPUNIT_ASSERT_EQUAL(bucketSpace, cmd2->getBucketSpace());
+}
+
+void
+StorageProtocolTest::testRequestBucketInfoWithBucketSpace6_0()
+{
+    ScopedName test("testRequestBucketInfoWithBucketSpace6_0");
+
+    document::BucketSpace bucketSpace(5);
+    std::vector<document::BucketId> ids = {document::BucketId(3)};
+    auto cmd = std::make_shared<RequestBucketInfoCommand>(bucketSpace, ids);
+
+    auto cmd2 = copyCommand(cmd, _version6_0);
+    CPPUNIT_ASSERT_EQUAL(bucketSpace, cmd2->getBucketSpace());
+    CPPUNIT_ASSERT_EQUAL(ids, cmd2->getBuckets());
 }
 
 void
