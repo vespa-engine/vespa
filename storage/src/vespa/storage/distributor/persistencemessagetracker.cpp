@@ -166,12 +166,14 @@ PersistenceMessageTrackerImpl::checkCopiesDeleted()
 
     // Don't check the buckets that have been remapped here, as we will
     // create them.
+    const auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
     for (BucketInfoMap::const_iterator iter = _bucketInfo.begin();
          iter != _bucketInfo.end();
          iter++)
     {
-        BucketDatabase::Entry dbentry =
-            _manager.getBucketDatabase().get(iter->first.getBucketId());
+        const auto &bucketSpace(bucketSpaceRepo.get(iter->first.getBucketSpace()));
+        const auto &bucketDb(bucketSpace.getBucketDatabase());
+        BucketDatabase::Entry dbentry = bucketDb.get(iter->first.getBucketId());
 
         if (!dbentry.valid()) {
             continue;

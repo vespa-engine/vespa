@@ -145,6 +145,8 @@ protected:
     void adding_diverging_replica_to_existing_trusted_does_not_remove_trusted();
     void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
 
+    auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
+
     bool bucketExistsThatHasNode(int bucketCount, uint16_t node) const;
 
     ClusterInformation::CSP createClusterInfo(const std::string& clusterState) {
@@ -185,8 +187,7 @@ public:
             }
 
             std::vector<uint16_t> nodes;
-            getBucketDBUpdater().getDistributorComponent()
-                    .getDistribution().getIdealNodes(
+            defaultDistributorBucketSpace().getDistribution().getIdealNodes(
                     lib::NodeType::STORAGE,
                     state,
                     document::BucketId(16, i),
@@ -247,7 +248,7 @@ public:
         }
 
         std::vector<uint16_t> nodes;
-        getBucketDBUpdater().getDistributorComponent().getDistribution().getIdealNodes(
+        defaultDistributorBucketSpace().getDistribution().getIdealNodes(
                 lib::NodeType::STORAGE,
                 state,
                 document::BucketId(id),
@@ -585,7 +586,7 @@ BucketDBUpdaterTest::testNormalUsage()
 
     // Ensure distribution hash is set correctly
     CPPUNIT_ASSERT_EQUAL(
-            getBucketDBUpdater().getDistributorComponent().getDistribution()
+            defaultDistributorBucketSpace().getDistribution()
             .getNodeGraph().getDistributionConfigHash(),
             dynamic_cast<const RequestBucketInfoCommand&>(
                     *_sender.commands[0]).getDistributionHash());
@@ -916,8 +917,7 @@ BucketDBUpdaterTest::testBitChange()
 
         int cnt=0;
         for (int i=0; cnt < 2; i++) {
-            lib::Distribution distribution = getBucketDBUpdater().getDistributorComponent()
-                            .getDistribution();
+            lib::Distribution distribution = defaultDistributorBucketSpace().getDistribution();
             std::vector<uint16_t> distributors;
             if (distribution.getIdealDistributorNode(
                     lib::ClusterState("redundancy:1 bits:14 storage:1 distributor:2"),
@@ -1835,10 +1835,9 @@ BucketDBUpdaterTest::mergeBucketLists(
     }
 
     BucketDumper dumper(includeBucketInfo);
-    getBucketDBUpdater().getDistributorComponent()
-            .getBucketDatabase().forEach(dumper);
-    getBucketDBUpdater().getDistributorComponent()
-            .getBucketDatabase().clear();
+    auto &bucketDb(defaultDistributorBucketSpace().getBucketDatabase());
+    bucketDb.forEach(dumper);
+    bucketDb.clear();
     return dumper.ost.str();
 }
 
