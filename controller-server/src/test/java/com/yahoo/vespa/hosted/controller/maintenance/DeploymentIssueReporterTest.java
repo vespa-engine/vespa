@@ -54,7 +54,7 @@ public class DeploymentIssueReporterTest {
     public void setup() {
         tester = new DeploymentTester();
         issues = new MockDeploymentIssues();
-        reporter = new DeploymentIssueReporter(tester.controller(), issues, Duration.ofMinutes(5), new JobControl(new MockCuratorDb()));
+        reporter = new DeploymentIssueReporter(tester.controller(), issues, Duration.ofDays(1), new JobControl(new MockCuratorDb()));
     }
 
     @Test
