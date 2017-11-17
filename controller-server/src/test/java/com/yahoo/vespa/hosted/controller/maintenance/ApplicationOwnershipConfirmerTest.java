@@ -22,7 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @#author jvenstad
+ * @author jvenstad
  */
 public class ApplicationOwnershipConfirmerTest {
 
@@ -36,7 +36,6 @@ public class ApplicationOwnershipConfirmerTest {
         issues = new MockOwnershipIssues();
         confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), new JobControl(new MockCuratorDb()), issues);
     }
-
 
     @Test
     public void testConfirmation() {
