@@ -9,23 +9,25 @@ namespace metrics {
 
 // internal
 struct MergedCounter {
-    size_t idx;
+    MetricIdentifier idx;
     size_t count;
-    MergedCounter(size_t idx);
+
+    MergedCounter(MetricIdentifier id);
+
     void merge(const CounterIncrement &other);
     void merge(const MergedCounter &other);
 };
 
 // internal
 struct MergedGauge {
-    size_t idx;
+    MetricIdentifier idx;
     size_t observedCount;
     double sumValue;
     double minValue;
     double maxValue;
     double lastValue;
 
-    MergedGauge(size_t idx);
+    MergedGauge(MetricIdentifier id);
 
     void merge(const GaugeMeasurement &other);
     void merge(const MergedGauge &other);
@@ -66,6 +68,9 @@ struct Bucket {
           gauges()
     {}
     ~Bucket() {}
+private:
+    void mergeCounters(const std::vector<CounterIncrement> &other);
+    void mergeGauges(const std::vector<GaugeMeasurement> &other);
 };
 
 void swap(CurrentSamples& a, CurrentSamples& b);

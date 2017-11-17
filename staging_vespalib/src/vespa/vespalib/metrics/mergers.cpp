@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergers.h"
 #include <assert.h>
+#include <map>
 
 namespace vespalib {
 namespace metrics {
 
-MergedCounter::MergedCounter(size_t id)
+MergedCounter::MergedCounter(MetricIdentifier id)
   : idx(id), count(0)
 {}
 
@@ -24,7 +25,7 @@ MergedCounter::merge(const MergedCounter &other)
 }
 
 
-MergedGauge::MergedGauge(size_t id)
+MergedGauge::MergedGauge(MetricIdentifier id)
   : idx(id),
     observedCount(0),
     sumValue(0.0),
@@ -66,43 +67,98 @@ MergedGauge::merge(const MergedGauge &other)
     observedCount += other.observedCount;
 }
 
-void Bucket::merge(const CurrentSamples &other)
+void Bucket::mergeCounters(const std::vector<CounterIncrement> &other)
 {
-    for (CounterIncrement inc : other.counterIncrements) {
-        while (counters.size() <= inc.idx) {
-            size_t id = counters.size();
-            counters.emplace_back(id);
+    assert(counters.size() == 0);
+    using Map = std::map<MetricIdentifier, MergedCounter>;
+    Map map;
+    for (CounterIncrement inc : other) {
+        MetricIdentifier id = inc.idx;
+        if (map.find(id) == map.end()) {
+            map.insert(Map::value_type(id, MergedCounter(id)));
         }
-        counters[inc.idx].merge(inc);
+        map.find(id)->second.merge(inc);
     }
-    for (GaugeMeasurement sample : other.gaugeMeasurements) {
-        while (gauges.size() <= sample.idx) {
-            size_t id = gauges.size();
-            gauges.emplace_back(id);
-        }
-        gauges[sample.idx].merge(sample);
+    for (const Map::value_type &entry : map) {
+        counters.push_back(entry.second);
     }
 }
+
+void Bucket::mergeGauges(const std::vector<GaugeMeasurement> &other)
+{
+    assert(gauges.size() == 0);
+    using Map = std::map<MetricIdentifier, MergedGauge>;
+    Map map;
+    for (GaugeMeasurement sample : other) {
+        MetricIdentifier id = sample.idx;
+        if (map.find(id) == map.end()) {
+            map.insert(Map::value_type(id, MergedGauge(id)));
+        }
+        map.find(sample.idx)->second.merge(sample);
+    }
+    for (const Map::value_type &entry : map) {
+        gauges.push_back(entry.second);
+    }
+}
+
+void Bucket::merge(const CurrentSamples &other)
+{
+    mergeCounters(other.counterIncrements);
+    mergeGauges(other.gaugeMeasurements);
+}
+
+
+namespace {
+
+template<typename T>
+std::vector<T>
+mergeVectors(const std::vector<T> &a,
+             const std::vector<T> &b)
+{
+    std::vector<T> result;
+    auto a_iter = a.begin();
+    auto b_iter = b.begin();
+    while (a_iter != a.end() &&
+           b_iter != b.end())
+    {
+        if (a_iter->idx < b_iter->idx) {
+            result.push_back(*a_iter);
+            ++a_iter;
+        } else if (b_iter->idx < a_iter->idx) {
+            result.push_back(*b_iter);
+            ++b_iter;
+        } else {
+            T both = *a_iter;
+            both.merge(*b_iter);
+            result.push_back(both);
+            ++a_iter;
+            ++b_iter;
+        }
+    }
+    while (a_iter != a.end()) {
+        result.push_back(*a_iter);
+        ++a_iter;
+    }
+    while (b_iter != b.end()) {
+        result.push_back(*b_iter);
+        ++b_iter;
+    }
+    return result;
+}
+
+} // namespace <unnamed>
 
 void Bucket::merge(const Bucket &other)
 {
     assert(startTime <= other.startTime);
     assert(endTime <= other.endTime);
     endTime = other.endTime;
-    while (counters.size() < other.counters.size()) {
-        size_t id = counters.size();
-        counters.emplace_back(id);
-    }
-    for (const MergedCounter & entry : other.counters) {
-        counters[entry.idx].merge(entry);
-    }
-    while (gauges.size() < other.gauges.size()) {
-        size_t id = gauges.size();
-        gauges.emplace_back(id);
-    }
-    for (const MergedGauge & entry : other.gauges) {
-        gauges[entry.idx].merge(entry);
-    }
+
+    std::vector<MergedCounter> nextCounters = mergeVectors(counters, other.counters);
+    counters = std::move(nextCounters);
+
+    std::vector<MergedGauge> nextGauges = mergeVectors(gauges, other.gauges);
+    gauges = std::move(nextGauges);
 }
 
 void swap(CurrentSamples& a, CurrentSamples& b)

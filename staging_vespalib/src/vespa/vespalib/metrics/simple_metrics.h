@@ -13,37 +13,77 @@ using clock = std::chrono::steady_clock;
 
 class MetricsCollector;
 
+struct MetricIdentifier {
+    size_t name_idx;
+    size_t point_idx;
+
+    MetricIdentifier() : name_idx(-1), point_idx(0) {}
+
+    explicit MetricIdentifier(size_t id)
+      : name_idx(id), point_idx(0) {}
+
+    MetricIdentifier(size_t id, size_t pt)
+      : name_idx(id), point_idx(pt) {}
+
+    bool operator< (const MetricIdentifier &other) const {
+        if (name_idx < other.name_idx) return true;
+        if (name_idx == other.name_idx) {
+            return (point_idx < other.point_idx);
+        }
+        return false;
+    }
+    bool operator== (const MetricIdentifier &other) const {
+        return (name_idx == other.name_idx);
+    }
+};
+
+
 class Counter {
     std::shared_ptr<MetricsCollector> _manager;
-    const size_t _idx;
+    MetricIdentifier _idx;
 public:
     Counter(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void add();
     void add(size_t count);
+    MetricIdentifier id() const { return _idx; }
 };
 
 class Gauge {
 private:
     std::shared_ptr<MetricsCollector> _manager;
-    const size_t _idx;
+    MetricIdentifier _idx;
 public:
     Gauge(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void sample(double value);
+    MetricIdentifier id() const { return _idx; }
 };
 
 struct CounterIncrement {
-    size_t idx;
+    MetricIdentifier idx;
     size_t value;
     CounterIncrement() = delete;
-    CounterIncrement(size_t id, size_t v) : idx(id), value(v) {}
+    CounterIncrement(MetricIdentifier id, size_t v) : idx(id), value(v) {}
 };
 
 struct GaugeMeasurement {
-    size_t idx;
+    MetricIdentifier idx;
     double value;
     GaugeMeasurement() = delete;
-    GaugeMeasurement(size_t id, double v) : idx(id), value(v) {}
+    GaugeMeasurement(MetricIdentifier id, double v) : idx(id), value(v) {}
 };
 
 } // namespace vespalib::metrics
 } // namespace vespalib
+
+namespace std
+{
+    template<> struct hash<vespalib::metrics::MetricIdentifier>
+    {
+        typedef vespalib::metrics::MetricIdentifier argument_type;
+        typedef std::size_t result_type;
+        result_type operator()(argument_type const& ident) const noexcept
+        {
+            return (ident.point_idx << 20) + ident.name_idx;
+        }
+    };
+}

@@ -16,6 +16,7 @@ public:
     const vespalib::string &lookup(int idx) const;
     int lookup(const vespalib::string& name) const;
     int resolve(const vespalib::string& name);
+    size_t size() const;
 };
 
 } // namespace vespalib::metrics

@@ -35,5 +35,12 @@ NameCollection::resolve(const vespalib::string& name)
     return id;
 }
 
+size_t
+NameCollection::size() const
+{
+    Guard guard(_lock);
+    return _names.size();
+}
+
 } // namespace vespalib::metrics
 } // namespace vespalib

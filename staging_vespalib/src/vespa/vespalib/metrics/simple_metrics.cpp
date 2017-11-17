@@ -8,19 +8,19 @@ namespace metrics {
 void
 Counter::add()
 {
-    _manager->add(CounterIncrement(_idx, 1));
+    _manager->add(CounterIncrement(id(), 1));
 }
 
 void
 Counter::add(size_t count)
 {
-    _manager->add(CounterIncrement(_idx, count));
+    _manager->add(CounterIncrement(id(), count));
 }
 
 void
 Gauge::sample(double value)
 {
-    _manager->sample(GaugeMeasurement(_idx, value));
+    _manager->sample(GaugeMeasurement(id(), value));
 }
 
 } // namespace vespalib::metrics
