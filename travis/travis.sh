@@ -5,7 +5,7 @@ set -e
 # Workaround for Travis log output timeout (jobs without output over 10 minutes are killed)
 function bell() {
   while true; do
-    echo -e "\a"
+    echo "."
     sleep 300
   done
 }
@@ -16,4 +16,3 @@ bell &
 docker run --rm -v ${HOME}/.m2:/root/.m2 -v ${HOME}/.ccache:/root/.ccache -v $(pwd):/source \
            --entrypoint /source/travis/travis-build-full.sh ${DOCKER_IMAGE}
 exit $?
-
