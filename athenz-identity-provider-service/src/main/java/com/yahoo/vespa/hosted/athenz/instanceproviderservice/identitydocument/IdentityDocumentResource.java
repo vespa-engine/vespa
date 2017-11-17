@@ -48,10 +48,9 @@ public class IdentityDocumentResource {
             throw new BadRequestException("The 'hostname' query parameter is missing");
         }
         try {
-            log.log(LogLevel.INFO, "Generating identity document for " + hostname);
             return identityDocumentGenerator.generateSignedIdentityDocument(hostname);
         } catch (Exception e) {
-            String message = String.format("Unable to generate identity doument [%s]", e.getMessage());
+            String message = String.format("Unable to generate identity doument for '%s': %s", hostname, e.getMessage());
             log.log(LogLevel.ERROR, message, e);
             throw new InternalServerErrorException(message, e);
         }
