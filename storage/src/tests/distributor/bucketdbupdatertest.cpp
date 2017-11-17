@@ -145,6 +145,8 @@ protected:
     void adding_diverging_replica_to_existing_trusted_does_not_remove_trusted();
     void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
 
+    auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
+
     bool bucketExistsThatHasNode(int bucketCount, uint16_t node) const;
 
     ClusterInformation::CSP createClusterInfo(const std::string& clusterState) {
@@ -185,9 +187,7 @@ public:
             }
 
             std::vector<uint16_t> nodes;
-            auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
-            auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
-            distributorBucketSpace.getDistribution().getIdealNodes(
+            defaultDistributorBucketSpace().getDistribution().getIdealNodes(
                     lib::NodeType::STORAGE,
                     state,
                     document::BucketId(16, i),
@@ -248,9 +248,7 @@ public:
         }
 
         std::vector<uint16_t> nodes;
-        auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
-        auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
-        distributorBucketSpace.getDistribution().getIdealNodes(
+        defaultDistributorBucketSpace().getDistribution().getIdealNodes(
                 lib::NodeType::STORAGE,
                 state,
                 document::BucketId(id),
@@ -587,10 +585,8 @@ BucketDBUpdaterTest::testNormalUsage()
     CPPUNIT_ASSERT_EQUAL(size_t(3), _sender.commands.size());
 
     // Ensure distribution hash is set correctly
-    auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
-    auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
     CPPUNIT_ASSERT_EQUAL(
-            distributorBucketSpace.getDistribution()
+            defaultDistributorBucketSpace().getDistribution()
             .getNodeGraph().getDistributionConfigHash(),
             dynamic_cast<const RequestBucketInfoCommand&>(
                     *_sender.commands[0]).getDistributionHash());
@@ -921,9 +917,7 @@ BucketDBUpdaterTest::testBitChange()
 
         int cnt=0;
         for (int i=0; cnt < 2; i++) {
-            auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
-            auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
-            lib::Distribution distribution = distributorBucketSpace.getDistribution();
+            lib::Distribution distribution = defaultDistributorBucketSpace().getDistribution();
             std::vector<uint16_t> distributors;
             if (distribution.getIdealDistributorNode(
                     lib::ClusterState("redundancy:1 bits:14 storage:1 distributor:2"),
@@ -1841,9 +1835,7 @@ BucketDBUpdaterTest::mergeBucketLists(
     }
 
     BucketDumper dumper(includeBucketInfo);
-    auto &bucketSpaceRepo(getBucketDBUpdater().getDistributorComponent().getBucketSpaceRepo());
-    auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
-    auto &bucketDb(distributorBucketSpace.getBucketDatabase());
+    auto &bucketDb(defaultDistributorBucketSpace().getBucketDatabase());
     bucketDb.forEach(dumper);
     bucketDb.clear();
     return dumper.ost.str();
