@@ -113,7 +113,7 @@ public class VespaConfiguration {
     }
 
 
-    public int randomSartupSleepMs() {
+    public int randomStartupSleepMs() {
         return getInt(RANDOM_STARTUP_SLEEP, 30000);
     }
 
@@ -194,7 +194,7 @@ public class VespaConfiguration {
         sb.append(ROUTE + ": " +  route() +"\n");
         sb.append(MAX_SLEEP_TIME_MS + ": " +  maxSleepTimeMs() +"\n");
         sb.append(MAX_IN_FLIGHT_REQUESTS + ": " +  maxInFlightRequests() +"\n");
-        sb.append(RANDOM_STARTUP_SLEEP + ": " +  randomSartupSleepMs() +"\n");
+        sb.append(RANDOM_STARTUP_SLEEP + ": " +  randomStartupSleepMs() +"\n");
         sb.append(NUM_RETRIES + ": " +  numRetries() +"\n");
         return sb.toString();
     }
