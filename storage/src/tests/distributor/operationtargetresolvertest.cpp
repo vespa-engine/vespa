@@ -11,6 +11,7 @@
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/config/helper/configgetter.hpp>

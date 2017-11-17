@@ -20,6 +20,7 @@
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
 #include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.manager");
@@ -29,10 +30,9 @@ namespace storage::distributor {
 ExternalOperationHandler::ExternalOperationHandler(
         Distributor& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
-        DistributorBucketSpace& bucketSpace,
         const MaintenanceOperationGenerator& gen,
         DistributorComponentRegister& compReg)
-    : DistributorBucketSpaceComponent(owner, bucketSpaceRepo, bucketSpace, compReg, "External operation handler"),
+    : DistributorComponent(owner, bucketSpaceRepo, compReg, "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
 { }
