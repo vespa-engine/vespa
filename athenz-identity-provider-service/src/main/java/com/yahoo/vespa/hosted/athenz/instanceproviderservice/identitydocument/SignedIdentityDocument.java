@@ -17,7 +17,7 @@ import java.util.Objects;
 public class SignedIdentityDocument {
 
     public static final int DEFAULT_KEY_VERSION = 0;
-    public static final int DEFAILT_DOCUMENT_VERSION = 1;
+    public static final int DEFAULT_DOCUMENT_VERSION = 1;
 
     @JsonProperty("identity-document")public final String rawIdentityDocument;
     @JsonIgnore public final IdentityDocument identityDocument;

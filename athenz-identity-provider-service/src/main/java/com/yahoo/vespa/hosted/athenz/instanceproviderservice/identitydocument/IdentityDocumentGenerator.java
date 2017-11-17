@@ -63,7 +63,7 @@ public class IdentityDocumentGenerator {
                     toZoneDnsSuffix(zone, dnsSuffix),
                     providerDomain + "." + providerService,
                     ztsUrl,
-                    SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION);
+                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }
