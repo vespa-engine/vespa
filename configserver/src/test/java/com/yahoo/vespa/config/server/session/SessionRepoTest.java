@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Test;
 
@@ -34,10 +32,10 @@ public class SessionRepoTest {
     }
 
     private class TestSession extends Session {
-        public TestSession(long sessionId) {
-            super(TenantName.from("default"),
+        TestSession(long sessionId) {
+            super(TenantName.defaultName(),
                   sessionId,
-                  new MockSessionZKClient(new MockCurator(), new PathProvider(Path.createRoot()).getSessionDir(sessionId)));
+                  new MockSessionZKClient(new MockCurator(), TenantName.defaultName(), sessionId));
         }
     }
 }

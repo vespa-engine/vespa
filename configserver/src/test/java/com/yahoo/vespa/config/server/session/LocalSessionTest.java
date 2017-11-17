@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -108,13 +109,15 @@ public class LocalSessionTest {
 
     @Test
     public void require_that_session_can_be_deleted() throws Exception {
-        LocalSession session = createSession(TenantName.defaultName(), 3);
-        assertTrue(configCurator.exists("/3"));
+        TenantName tenantName = TenantName.defaultName();
+        LocalSession session = createSession(tenantName, 3);
+        String sessionNode = Tenants.getSessionsPath(tenantName).append(String.valueOf(3)).getAbsolute();
+        assertTrue(configCurator.exists(sessionNode));
         assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
         long gen = superModelGenerationCounter.get();
         session.delete();
         assertThat(superModelGenerationCounter.get(), is(gen + 1));
-        assertFalse(configCurator.exists("/3"));
+        assertFalse(configCurator.exists(sessionNode));
         assertFalse(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
     }
 
@@ -155,10 +158,9 @@ public class LocalSessionTest {
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<AllocatedHosts> allocatedHosts) throws Exception {
-        Path sessionPath = Path.fromString("/" + sessionId);
-        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, sessionPath, allocatedHosts);
+        SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenant, sessionId, allocatedHosts);
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, sessionPath);
+        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         if (allocatedHosts.isPresent()) {
             zkClient.write(allocatedHosts.get());
         }
