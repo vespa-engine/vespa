@@ -81,7 +81,10 @@ SimpleMetricsCollector::collectCurrentBucket()
     clock::time_point curr = clock::now();
 
     CurrentSamples samples;
-    swap(samples, _currentBucket);
+    {
+        std::lock_guard<std::mutex> guard(_currentBucket.lock);
+        swap(samples, _currentBucket);
+    }
 
     Bucket merger(prev, curr);
     if (_buckets.size() < _maxBuckets) {

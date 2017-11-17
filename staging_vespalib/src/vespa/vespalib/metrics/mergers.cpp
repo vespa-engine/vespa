@@ -108,8 +108,6 @@ void Bucket::merge(const Bucket &other)
 void swap(CurrentSamples& a, CurrentSamples& b)
 {
     using std::swap;
-    std::lock_guard<std::mutex> guardA(a.lock);
-    std::lock_guard<std::mutex> guardB(b.lock);
     swap(a.counterIncrements, b.counterIncrements);
     swap(a.gaugeMeasurements, b.gaugeMeasurements);
 }
