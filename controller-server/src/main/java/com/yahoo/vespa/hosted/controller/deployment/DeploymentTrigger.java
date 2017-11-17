@@ -333,11 +333,13 @@ public class DeploymentTrigger {
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
         //       fix to a version upgrade, so not doing it now
-        if (application.deploying().isPresent()) {
-            if (jobType.isProduction() && application.deploying().get().blockedBy(application.deploymentSpec(), clock.instant())) return false;
-            if (application.deploying().get() instanceof VersionChange &&
-                    isOnNewerVersionInProductionThan(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
-        }
+
+        if (jobType.isProduction() && application.deploying().isPresent() &&
+            application.deploying().get().blockedBy(application.deploymentSpec(), clock.instant())) return false;
+
+        if (application.deploying().isPresent() && application.deploying().get() instanceof VersionChange &&
+            isOnNewerVersionInProductionThan(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
+
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! hasJob(jobType, application)) return false;
         // Ignore applications that are not associated with a project
@@ -378,12 +380,11 @@ public class DeploymentTrigger {
     private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
 
-        if ( application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
+        if (application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
 
-        if ( application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
+        if (application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
 
-        if ( ! application.deploymentSpec().canUpgradeAt(clock.instant()) ||
-             ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
+        if (application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
 
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
         return false;

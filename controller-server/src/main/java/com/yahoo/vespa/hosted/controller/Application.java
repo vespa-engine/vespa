@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -160,6 +161,10 @@ public class Application {
     @Override
     public String toString() {
         return "application '" + id + "'";
+    }
+
+    public boolean isBlocked(Instant instant) {
+         return ! deploymentSpec().canUpgradeAt(instant) || ! deploymentSpec().canChangeRevisionAt(instant);
     }
 
     public Optional<IssueId> ownershipIssueId() {
