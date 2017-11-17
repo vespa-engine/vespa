@@ -363,7 +363,7 @@ public class DeploymentTrigger {
      * downgrade production nodes which we are not guaranteed to support.
      */
     private boolean isOnNewerVersionInProductionThan(Version version, Application application, JobType job) {
-        if (job.isProduction()) return false;
+        if ( ! job.isProduction()) return false;
         Optional<Zone> zone = job.zone(controller.system());
         if ( ! zone.isPresent()) return false;
         Deployment existingDeployment = application.deployments().get(zone.get());
