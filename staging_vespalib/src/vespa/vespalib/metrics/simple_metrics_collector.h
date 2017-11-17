@@ -22,8 +22,7 @@ struct CollectorConfig {
 class SimpleMetricsCollector : public MetricsCollector
 {
 private:
-    NameCollection _counterNames;
-    NameCollection _gaugeNames;
+    NameCollection _metricNames;
     CurrentSamples _currentBucket;
 
     clock::time_point _startTime;

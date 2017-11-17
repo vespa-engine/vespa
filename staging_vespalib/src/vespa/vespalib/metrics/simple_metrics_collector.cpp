@@ -5,8 +5,7 @@ namespace vespalib {
 namespace metrics {
 
 SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
-    : _counterNames(),
-      _gaugeNames(),
+    : _metricNames(),
       _currentBucket(),
       _startTime(clock::now()),
       _curTime(_startTime),
@@ -36,26 +35,47 @@ SimpleMetricsCollector::create(const CollectorConfig &config)
 Counter
 SimpleMetricsCollector::counter(const vespalib::string &name)
 {
-    int id = _counterNames.resolve(name);
+    int id = _metricNames.resolve(name);
     return Counter(shared_from_this(), id);
 }
 
 Gauge
 SimpleMetricsCollector::gauge(const vespalib::string &name)
 {
-    int id = _gaugeNames.resolve(name);
+    int id = _metricNames.resolve(name);
     return Gauge(shared_from_this(), id);
 }
 
 Snapshot
 SimpleMetricsCollector::snapshot()
 {
-    Bucket merger(_curTime, _curTime);
+    clock::time_point startTime =
+        (_buckets.size() > 0)
+        ? _buckets[_firstBucket].startTime
+        : _curTime;
+    Bucket merger(startTime, startTime);
     for (size_t i = 0; i < _buckets.size(); i++) {
         size_t off = (_firstBucket + i) % _buckets.size();
         merger.merge(_buckets[off]);
     }
-    Snapshot snap;
+    auto s = merger.startTime.time_since_epoch();
+    auto ss = std::chrono::duration_cast<std::chrono::microseconds>(s);
+    auto e = merger.endTime.time_since_epoch();
+    auto ee = std::chrono::duration_cast<std::chrono::microseconds>(e);
+
+    Snapshot snap(ss.count() * 0.000001, ee.count() * 0.000001);
+    for (const MergedCounter& entry : merger.counters) {
+        size_t ni = entry.idx.name_idx;
+        const vespalib::string &name = _metricNames.lookup(ni);
+        CounterSnapshot val(name, entry);
+        snap.add(val);
+    }
+    for (const MergedGauge& entry : merger.gauges) {
+        size_t ni = entry.idx.name_idx;
+        const vespalib::string &name = _metricNames.lookup(ni);
+        GaugeSnapshot val(name, entry);
+        snap.add(val);
+    }
     return snap;
 }
 

@@ -45,12 +45,32 @@ public:
 };
 
 class Snapshot {
+private:
+    double _start;
+    double _end;
+    std::vector<CounterSnapshot> _counters;
+    std::vector<GaugeSnapshot> _gauges;
 public:
-    double startTime(); // seconds since 1970
-    double endTime(); // seconds since 1970
+    double startTime() const { return _start; }; // seconds since 1970
+    double endTime()   const { return _end; };   // seconds since 1970
 
-    const std::vector<CounterSnapshot> &counters() const;
-    const std::vector<GaugeSnapshot> &gauges() const;
+    const std::vector<CounterSnapshot> &counters() const {
+        return _counters;
+    }
+    const std::vector<GaugeSnapshot> &gauges() const {
+        return _gauges;
+    }
+
+    // builders:
+    Snapshot(double s, double e)
+        : _start(s), _end(e), _counters(), _gauges()
+    {}
+    void add(const CounterSnapshot &entry) {
+        _counters.push_back(entry);
+    }
+    void add(const GaugeSnapshot &entry) {
+        _gauges.push_back(entry);
+    }
 };
 
 } // namespace vespalib::metrics

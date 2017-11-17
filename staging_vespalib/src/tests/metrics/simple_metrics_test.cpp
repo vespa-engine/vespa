@@ -4,13 +4,15 @@
 #include <vespa/vespalib/metrics/simple_metrics_collector.h>
 #include <vespa/vespalib/metrics/no_realloc_bunch.h>
 #include <stdio.h>
+#include <unistd.h>
 
 using namespace vespalib;
 using namespace vespalib::metrics;
 
 TEST("require that simple metrics gauge merge works")
 {
-    MergedGauge a(42), b(42), c(42);
+    MetricIdentifier id(42);
+    MergedGauge a(id), b(id), c(id);
     b.observedCount = 3;
     b.sumValue = 24.0;
     b.minValue = 7.0;
@@ -84,6 +86,42 @@ TEST("require that no_realloc_bunch works")
 
     const Foo& val = bunch.lookup(8);
     EXPECT_TRUE(Foo(55) == val);
+}
+
+TEST("use simple_metrics_collector")
+{
+    using namespace vespalib::metrics;
+    CollectorConfig cf;
+    cf.sliding_window_seconds = 5;
+    auto manager = SimpleMetricsCollector::create(cf);
+    Counter myCounter = manager->counter("foo");
+    myCounter.add();
+    myCounter.add(16);
+
+    Gauge myGauge = manager->gauge("bar");
+    myGauge.sample(42.0);
+    myGauge.sample(41.0);
+    myGauge.sample(43.0);
+    myGauge.sample(42.0);
+
+    sleep(3);
+
+    Snapshot snap = manager->snapshot();
+    fprintf(stderr, "snap begin: %15f\n", snap.startTime());
+    fprintf(stderr, "snap end: %15f\n", snap.endTime());
+
+    for (const auto& entry : snap.counters()) {
+        fprintf(stderr, "snap counter: '%s'\n", entry.name().c_str());
+        fprintf(stderr, "       count: %zd\n", entry.count());
+    }
+    for (const auto& entry : snap.gauges()) {
+        fprintf(stderr, "snap gauge: '%s'\n", entry.name().c_str());
+        fprintf(stderr, "  observed: %zd\n", entry.observedCount());
+        fprintf(stderr, "       avg: %f\n", entry.averageValue());
+        fprintf(stderr, "       min: %f\n", entry.minValue());
+        fprintf(stderr, "       max: %f\n", entry.maxValue());
+        fprintf(stderr, "      last: %f\n", entry.lastValue());
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

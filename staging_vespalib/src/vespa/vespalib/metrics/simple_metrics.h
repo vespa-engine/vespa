@@ -42,9 +42,16 @@ class Counter {
     std::shared_ptr<MetricsCollector> _manager;
     MetricIdentifier _idx;
 public:
+    Counter() : _manager(), _idx() {}
+    Counter(const Counter&) = delete;
+    Counter(Counter &&other) = default;
+    Counter& operator= (const Counter &) = delete;
+    Counter& operator= (Counter &&other) = default;
     Counter(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
+
     void add();
     void add(size_t count);
+
     MetricIdentifier id() const { return _idx; }
 };
 
