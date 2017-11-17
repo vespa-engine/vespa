@@ -2,6 +2,7 @@
 vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     SOURCES
     mergers.cpp
+    metrics_collector.cpp
     name_collection.cpp
     no_realloc_bunch.cpp
     point.cpp

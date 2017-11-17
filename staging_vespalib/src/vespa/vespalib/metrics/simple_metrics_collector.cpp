@@ -26,10 +26,10 @@ SimpleMetricsCollector::~SimpleMetricsCollector()
 }
 
 
-std::shared_ptr<SimpleMetricsCollector>
+std::shared_ptr<MetricsCollector>
 SimpleMetricsCollector::create(const CollectorConfig &config)
 {
-    return std::shared_ptr<SimpleMetricsCollector>(
+    return std::shared_ptr<MetricsCollector>(
         new SimpleMetricsCollector(config));
 }
 
@@ -48,7 +48,7 @@ SimpleMetricsCollector::gauge(const vespalib::string &name)
 }
 
 Snapshot
-SimpleMetricsCollector::getSnapshot()
+SimpleMetricsCollector::snapshot()
 {
     Bucket merger(_curTime, _curTime);
     for (size_t i = 0; i < _buckets.size(); i++) {

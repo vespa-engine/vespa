@@ -11,23 +11,23 @@ namespace metrics {
 
 using clock = std::chrono::steady_clock;
 
-class SimpleMetricsCollector;
+class MetricsCollector;
 
 class Counter {
-    std::shared_ptr<SimpleMetricsCollector> _manager;
+    std::shared_ptr<MetricsCollector> _manager;
     const size_t _idx;
 public:
-    Counter(std::shared_ptr<SimpleMetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
+    Counter(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void add();
     void add(size_t count);
 };
 
 class Gauge {
 private:
-    std::shared_ptr<SimpleMetricsCollector> _manager;
+    std::shared_ptr<MetricsCollector> _manager;
     const size_t _idx;
 public:
-    Gauge(std::shared_ptr<SimpleMetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
+    Gauge(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void sample(double value);
 };
 

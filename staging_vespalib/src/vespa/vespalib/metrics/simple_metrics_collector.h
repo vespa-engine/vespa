@@ -8,6 +8,7 @@
 #include "name_collection.h"
 #include "mergers.h"
 #include "snapshots.h"
+#include "metrics_collector.h"
 
 namespace vespalib {
 namespace metrics {
@@ -18,8 +19,7 @@ struct CollectorConfig {
 };
 
 
-class SimpleMetricsCollector
-    : public std::enable_shared_from_this<SimpleMetricsCollector>
+class SimpleMetricsCollector : public MetricsCollector
 {
 private:
     NameCollection _counterNames;
@@ -42,19 +42,19 @@ private:
     SimpleMetricsCollector(const CollectorConfig &config);
 public:
     ~SimpleMetricsCollector();
-    static std::shared_ptr<SimpleMetricsCollector> create(const CollectorConfig &config);
+    static std::shared_ptr<MetricsCollector> create(const CollectorConfig &config);
 
-    Counter counter(const vespalib::string &name); // get or create
-    Gauge gauge(const vespalib::string &name); // get or create
+    Counter counter(const vespalib::string &name) override; // get or create
+    Gauge gauge(const vespalib::string &name) override; // get or create
 
-    Snapshot getSnapshot();
+    Snapshot snapshot() override;
 
     // for use from Counter only
-    void add(CounterIncrement inc) {
+    void add(CounterIncrement inc) override {
         _currentBucket.add(inc);
     }
     // for use from Gauge only
-    void sample(GaugeMeasurement value) {
+    void sample(GaugeMeasurement value) override {
         _currentBucket.sample(value);
     }
 };
