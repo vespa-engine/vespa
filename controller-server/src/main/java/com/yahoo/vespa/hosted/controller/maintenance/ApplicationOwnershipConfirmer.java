@@ -17,6 +17,13 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.Level;
 
+/**
+ * Periodically request application ownership confirmation through filing issues.
+ *
+ * When to file new issues, escalate inactive ones, etc., is handled by the enclosed OwnershipIssues.
+ *
+ * @author jvenstad
+ */
 public class ApplicationOwnershipConfirmer extends Maintainer {
 
     private final OwnershipIssues ownershipIssues;
