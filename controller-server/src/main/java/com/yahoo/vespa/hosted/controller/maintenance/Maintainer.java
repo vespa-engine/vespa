@@ -30,7 +30,6 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final ScheduledExecutorService service;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
-        initId(new ComponentId(name()));
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;

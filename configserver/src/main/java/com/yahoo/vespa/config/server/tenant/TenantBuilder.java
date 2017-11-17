@@ -34,7 +34,6 @@ public class TenantBuilder {
     private final Path tenantPath;
     private final GlobalComponentRegistry componentRegistry;
     private final TenantName tenant;
-    private final Path sessionsPath;
     private RemoteSessionRepo remoteSessionRepo;
     private LocalSessionRepo localSessionRepo;
     private SessionFactory sessionFactory;
@@ -47,15 +46,14 @@ public class TenantBuilder {
     private TenantFileSystemDirs tenantFileSystemDirs;
     private HostValidator<ApplicationId> hostValidator;
 
-    private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant, Path zkPath) {
+    private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant) {
         this.componentRegistry = componentRegistry;
-        this.tenantPath = zkPath;
+        this.tenantPath = Tenants.getTenantPath(tenant);
         this.tenant = tenant;
-        this.sessionsPath = tenantPath.append(Tenant.SESSIONS);
     }
 
-    public static TenantBuilder create(GlobalComponentRegistry componentRegistry, TenantName tenant, Path zkPath) {
-        return new TenantBuilder(componentRegistry, tenant, zkPath);
+    public static TenantBuilder create(GlobalComponentRegistry componentRegistry, TenantName tenant) {
+        return new TenantBuilder(componentRegistry, tenant);
     }
 
     public TenantBuilder withSessionFactory(SessionFactory sessionFactory) {
@@ -123,7 +121,7 @@ public class TenantBuilder {
 
     private void createSessionFactory() {
         if (sessionFactory == null || localSessionLoader == null) {
-            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, sessionCounter, sessionsPath,
+            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, sessionCounter,
                                                              applicationRepo, tenantFileSystemDirs, hostValidator, tenant);
             if (sessionFactory == null) {
                 sessionFactory = impl;
@@ -136,13 +134,13 @@ public class TenantBuilder {
 
     private void createApplicationRepo() {
         if (applicationRepo == null) {
-            applicationRepo = ZKTenantApplications.create(componentRegistry.getCurator(), tenantPath.append(Tenant.APPLICATIONS), reloadHandler, tenant);
+            applicationRepo = ZKTenantApplications.create(componentRegistry.getCurator(), reloadHandler, tenant);
         }
     }
 
     private void createSessionCounter() {
         if (sessionCounter == null) {
-            sessionCounter = new SessionCounter(componentRegistry.getCurator(), tenantPath, sessionsPath);
+            sessionCounter = new SessionCounter(componentRegistry.getCurator(), tenant);
         }
     }
 
@@ -167,7 +165,7 @@ public class TenantBuilder {
 
     private void createRemoteSessionFactory(Clock clock) {
         if (remoteSessionFactory == null) {
-            remoteSessionFactory = new RemoteSessionFactory(componentRegistry, sessionsPath, tenant, clock);
+            remoteSessionFactory = new RemoteSessionFactory(componentRegistry, tenant, clock);
         }
     }
 
@@ -176,7 +174,7 @@ public class TenantBuilder {
             remoteSessionRepo = new RemoteSessionRepo(componentRegistry.getCurator(),
                     remoteSessionFactory,
                     reloadHandler,
-                    sessionsPath,
+                    tenant,
                     applicationRepo,
                     componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)),
                     createSingleThreadedExecutorService(RemoteSessionRepo.class.getName()));

@@ -13,6 +13,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -82,7 +83,8 @@ public class ApplicationSerializerTest {
                                                validationOverrides,
                                                deployments, deploymentJobs,
                                                Optional.of(new Change.VersionChange(Version.fromString("6.7"))),
-                                               true);
+                                               true,
+                                               Optional.of(IssueId.from("1234")));
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -107,6 +109,8 @@ public class ApplicationSerializerTest {
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
 
         assertEquals(original.hasOutstandingChange(), serialized.hasOutstandingChange());
+
+        assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
 
         assertEquals(original.deploying(), serialized.deploying());
 

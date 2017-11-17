@@ -43,6 +43,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerClientMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>" +

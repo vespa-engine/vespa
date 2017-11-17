@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.SecretStore;
+import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -23,7 +24,7 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.PEM;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class ConnectorFactoryTest {
 
@@ -37,8 +38,7 @@ public class ConnectorFactoryTest {
                                      .pemKeyStore(
                                              new Ssl.PemKeyStore.Builder()
                                                      .keyPath("nonEmpty"))));
-
-        ConnectorFactory willThrowException = new ConnectorFactory(config, new ThrowingSecretStore());
+        ConnectorFactory willThrowException = createConnectorFactory(config);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -49,16 +49,15 @@ public class ConnectorFactoryTest {
                                      .enabled(true)
                                      .keyStoreType(PEM)
                                      .keyStorePath("nonEmpty")));
-
-        ConnectorFactory willThrowException = new ConnectorFactory(config, new ThrowingSecretStore());
+        ConnectorFactory willThrowException = createConnectorFactory(config);
     }
 
     @Test
     public void requireThatNoPreBoundChannelWorks() throws Exception {
         Server server = new Server();
         try {
-            ConnectorFactory factory = new ConnectorFactory(new ConnectorConfig(new ConnectorConfig.Builder()),
-                                                            new ThrowingSecretStore());
+            ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
+            ConnectorFactory factory = createConnectorFactory(config);
             JDiscServerConnector connector =
                     (JDiscServerConnector)factory.createConnector(new DummyMetric(), server, null);
             server.addConnector(connector);
@@ -85,8 +84,10 @@ public class ConnectorFactoryTest {
             ServerSocketChannel serverChannel = ServerSocketChannel.open();
             serverChannel.socket().bind(new InetSocketAddress(0));
 
-            ConnectorFactory factory = new ConnectorFactory(new ConnectorConfig(new ConnectorConfig.Builder()), new ThrowingSecretStore());
-            JDiscServerConnector connector = (JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
+            ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
+            ConnectorFactory factory = createConnectorFactory(config);
+            JDiscServerConnector connector =
+                    (JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();
@@ -102,6 +103,11 @@ public class ConnectorFactoryTest {
                 //ignore
             }
         }
+    }
+
+    private static ConnectorFactory createConnectorFactory(ConnectorConfig config) {
+        ThrowingSecretStore secretStore = new ThrowingSecretStore();
+        return new ConnectorFactory(config, secretStore, new DefaultSslKeyStoreConfigurator(config, secretStore));
     }
 
     private static class HelloWorldHandler extends AbstractHandler {

@@ -21,6 +21,16 @@ ContentBucketSpaceRepo::get(BucketSpace bucketSpace) const
     return *itr->second;
 }
 
+ContentBucketSpaceRepo::BucketSpaces
+ContentBucketSpaceRepo::getBucketSpaces() const
+{
+    BucketSpaces result;
+    for (const auto &elem : _map) {
+        result.push_back(elem.first);
+    }
+    return result;
+}
+
 size_t
 ContentBucketSpaceRepo::getBucketMemoryUsage() const
 {

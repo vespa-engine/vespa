@@ -51,6 +51,7 @@ public class ApplicationSerializer {
     private final String deploymentJobsField = "deploymentJobs";
     private final String deployingField = "deployingField";
     private final String outstandingChangeField = "outstandingChangeField";
+    private final String ownershipIssueIdField = "ownershipIssueId";
     
     // Deployment fields
     private final String zoneField = "zone";
@@ -123,6 +124,7 @@ public class ApplicationSerializer {
         toSlime(application.deploymentJobs(), root.setObject(deploymentJobsField));
         toSlime(application.deploying(), root);
         root.setBool(outstandingChangeField, application.hasOutstandingChange());
+        application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         return slime;
     }
 
@@ -257,9 +259,10 @@ public class ApplicationSerializer {
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
         Optional<Change> deploying = changeFromSlime(root.field(deployingField));
         boolean outstandingChange = root.field(outstandingChangeField).asBool();
+        Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
 
         return new Application(id, deploymentSpec, validationOverrides, deployments, 
-                               deploymentJobs, deploying, outstandingChange);
+                               deploymentJobs, deploying, outstandingChange, ownershipIssueId);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {

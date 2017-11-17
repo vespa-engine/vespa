@@ -2,19 +2,23 @@
 package com.yahoo.config.model;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.model.api.*;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -96,7 +100,7 @@ public class MockModelContext implements ModelContext {
             }
 
             @Override
-            public URI loadBalancerAddress() {
+            public HostName loadBalancerName() {
                 return null;
             }
 

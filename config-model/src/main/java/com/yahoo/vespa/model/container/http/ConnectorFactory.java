@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -13,31 +14,50 @@ import static com.yahoo.component.ComponentSpecification.fromString;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.21.0
+ * @author Einar M R Rosenvinge
+ * @author bjorncs
  */
 public class ConnectorFactory extends SimpleComponent implements ConnectorConfig.Producer {
 
     private final String name;
-    private volatile int listenPort;
+    private final int listenPort;
     private final Element legacyConfig;
 
-    public ConnectorFactory(final String name, final int listenPort, final Element legacyConfig) {
+    public ConnectorFactory(String name, int listenPort) {
+        this(name, listenPort, null, null);
+    }
+
+    public ConnectorFactory(String name, int listenPort, Element legacyConfig, Element sslKeystoreConfigurator) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(name),
                                                      fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
-                                                     fromString("jdisc_http_service"))
-
-        ));
-
-
+                                                     fromString("jdisc_http_service"))));
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
+        SimpleComponent sslKeyStoreConfigurator = getSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
+        addChild(sslKeyStoreConfigurator);
+        inject(sslKeyStoreConfigurator);
     }
 
     @Override
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
+        configureWithLegacyHttpConfig(legacyConfig, connectorBuilder);
+        connectorBuilder.listenPort(listenPort);
+        connectorBuilder.name(name);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getListenPort() {
+        return listenPort;
+    }
+
+    // TODO Remove support for legacy config in Vespa 7
+    @Deprecated
+    private static void configureWithLegacyHttpConfig(Element legacyConfig, ConnectorConfig.Builder connectorBuilder) {
         if (legacyConfig != null) {
             {
                 Element tcpKeepAliveEnabled = XML.getChild(legacyConfig, "tcpKeepAliveEnabled");
@@ -85,9 +105,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
             Element ssl = XML.getChild(legacyConfig, "ssl");
             Element sslEnabled = XML.getChild(ssl, "enabled");
-            if (ssl != null &&
-                sslEnabled != null &&
-                Boolean.parseBoolean(XML.getValue(sslEnabled).trim())) {
+            if (ssl != null && sslEnabled != null && Boolean.parseBoolean(XML.getValue(sslEnabled).trim())) {
                 ConnectorConfig.Ssl.Builder sslBuilder = new ConnectorConfig.Ssl.Builder();
                 sslBuilder.enabled(true);
                 {
@@ -129,21 +147,18 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
                 connectorBuilder.ssl(sslBuilder);
             }
         }
-
-        connectorBuilder.listenPort(listenPort);
-        connectorBuilder.name(name);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public int getListenPort() {
-        return listenPort;
-    }
-
-    public void setListenPort(int httpPort) {
-        this.listenPort = httpPort;
+    private static SimpleComponent getSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
+        String idSpec = "ssl-keystore-configurator@" + name;
+        if (sslKeystoreConfigurator != null) {
+            String className = sslKeystoreConfigurator.getAttribute("class");
+            String bundleName = sslKeystoreConfigurator.getAttribute("bundle");
+            return new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
+        } else {
+            return new SimpleComponent(
+                    new ComponentModel(idSpec, DefaultSslKeyStoreConfigurator.class.getName(), "jdisc_http_service"));
+        }
     }
 
 }

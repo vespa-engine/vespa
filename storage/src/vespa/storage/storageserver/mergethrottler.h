@@ -13,7 +13,7 @@
 #include <vespa/storage/distributor/messageguard.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/metrics/metrics.h>
@@ -134,7 +134,7 @@ private:
         const std::string& getMergeCmdString() const { return _cmdString; }
     };
 
-    typedef std::map<document::BucketId, ChainedMergeState> ActiveMergeMap;
+    typedef std::map<document::Bucket, ChainedMergeState> ActiveMergeMap;
 
     // Use a set rather than a priority_queue, since we want to be
     // able to iterate over the collection during status rendering
@@ -371,7 +371,7 @@ private:
     bool isDiffCommand(const api::StorageMessage& msg) const;
     bool isMergeCommand(const api::StorageMessage& msg) const;
     bool isMergeReply(const api::StorageMessage& msg) const;
-    bool bucketIsUnknownOrAborted(const document::BucketId& bucket) const;
+    bool bucketIsUnknownOrAborted(const document::Bucket& bucket) const;
 
     std::shared_ptr<api::StorageMessage> makeAbortReply(
             api::StorageCommand& cmd,

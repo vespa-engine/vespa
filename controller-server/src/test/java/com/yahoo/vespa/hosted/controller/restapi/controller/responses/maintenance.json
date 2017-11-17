@@ -1,6 +1,9 @@
 {
   "jobs": [
     {
+      "name": "ApplicationOwnershipConfirmer"
+    },
+    {
       "name": "ClusterInfoMaintainer"
     },
     {

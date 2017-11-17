@@ -29,6 +29,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(0.75, "0.5 + 0.25");
         tester.assertEvaluates(0.75, "one_half + a_quarter");
         tester.assertEvaluates(1.25, "0.5 - 0.25 + one");
+        tester.assertEvaluates(9.0, "3 ^ 2");
 
         // String
         tester.assertEvaluates(1, "if(\"a\"==\"a\",1,0)");
@@ -37,6 +38,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates(26, "2*3+4*5");
         tester.assertEvaluates(1, "2/6+4/6");
         tester.assertEvaluates(2 * 3 * 4 + 3 * 4 * 5 - 4 * 200 / 10, "2*3*4+3*4*5-4*200/10");
+        tester.assertEvaluates(3, "1 + 10 % 6 / 2");
+        tester.assertEvaluates(10.0, "3 ^ 2 + 1");
+        tester.assertEvaluates(18.0, "2 * 3 ^ 2");
 
         // Conditionals
         tester.assertEvaluates(2 * (3 * 4 + 3) * (4 * 5 - 4 * 200) / 10, "2*(3*4+3)*(4*5-4*200)/10");
@@ -89,6 +93,38 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testBooleanEvaluation() {
+        EvaluationTester tester = new EvaluationTester();
+
+        // and
+        tester.assertEvaluates(false, "0 && 0");
+        tester.assertEvaluates(false, "0 && 1");
+        tester.assertEvaluates(false, "1 && 0");
+        tester.assertEvaluates(true, "1 && 1");
+        tester.assertEvaluates(true, "1 && 2");
+        tester.assertEvaluates(true, "1 && 0.1");
+
+        // or
+        tester.assertEvaluates(false, "0 || 0");
+        tester.assertEvaluates(true, "0 || 0.1");
+        tester.assertEvaluates(true, "0 || 1");
+        tester.assertEvaluates(true, "1 || 0");
+        tester.assertEvaluates(true, "1 || 1");
+
+        // not
+        tester.assertEvaluates(true, "!0");
+        tester.assertEvaluates(false, "!1");
+        tester.assertEvaluates(false, "!2");
+        tester.assertEvaluates(true, "!0 && 1");
+
+        // precedence
+        tester.assertEvaluates(0, "2 * (0 && 1)");
+        tester.assertEvaluates(2, "2 * (1 && 1)");
+        tester.assertEvaluates(true, "2 + 0 && 1");
+        tester.assertEvaluates(true, "1 && 0 + 2");
+    }
+
+    @Test
     public void testTensorEvaluation() {
         EvaluationTester tester = new EvaluationTester();
         tester.assertEvaluates("{}", "tensor0", "{}");
@@ -107,6 +143,16 @@ public class EvaluationTestCase {
                                "min(tensor0, 0)", "{ {d1:0}:-10, {d1:1}:0, {d1:2}:10 }");
         tester.assertEvaluates("{ {d1:0}:0, {d1:1}:0, {d1:2 }:10 }",
                                "max(tensor0, 0)", "{ {d1:0}:-10, {d1:1}:0, {d1:2}:10 }");
+        // operators
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
+                               "tensor0 % 2 == map(tensor0, f(x) (x % 2))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
+                               "tensor0 || 1 == map(tensor0, f(x) (x || 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
+                               "tensor0 && 1 == map(tensor0, f(x) (x && 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
+                               "!tensor0 == map(tensor0, f(x) (!x))", "{ {d1:0}:0, {d1:1}:1, {d1:2}:0 }");
+        
         // -- explicitly implemented functions (not foolproof tests as we don't bother testing float value equivalence)
         tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "abs(tensor0)",    "{ {x:0}:1, {x:1}:-2 }");
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "acos(tensor0)",   "{ {x:0}:1, {x:1}:1 }");
@@ -122,8 +168,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "isNan(tensor0)",  "{ {x:0}:1, {x:1}:2 }");
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "log(tensor0)",    "{ {x:0}:1, {x:1}:1 }");
         tester.assertEvaluates("{ {x:0}:0, {x:1}:1 }",     "log10(tensor0)",  "{ {x:0}:1, {x:1}:10 }");
-        tester.assertEvaluates("{ {x:0}:0, {x:1}:2 }",     "fmod(tensor0, 3)", "{ {x:0}:3, {x:1}:8 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:2 }",     "fmod(tensor0, 3)","{ {x:0}:3, {x:1}:8 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:8 }",     "pow(tensor0, 3)", "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:8, {x:1}:16 }",    "ldexp(tensor0,3.1)","{ {x:0}:1, {x:1}:2 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "relu(tensor0)",   "{ {x:0}:1, {x:1}:2 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "round(tensor0)",  "{ {x:0}:1, {x:1}:1.8 }");
         tester.assertEvaluates("{ {x:0}:0.5, {x:1}:0.5 }", "sigmoid(tensor0)","{ {x:0}:0, {x:1}:0 }");
@@ -201,6 +248,16 @@ public class EvaluationTestCase {
                                "max(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:3, {x:1,y:0}:5 }",
                                "min(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:243, {x:1,y:0}:16807 }",
+                               "pow(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:243, {x:1,y:0}:16807 }",
+                               "tensor0 ^ tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:3, {x:1,y:0}:2 }",
+                               "fmod(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:3, {x:1,y:0}:2 }",
+                               "tensor0 % tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:96, {x:1,y:0}:224 }",
+                               "ldexp(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5.1 }");
         tester.assertEvaluates("{ {x:0,y:0,z:0}:7, {x:0,y:0,z:1}:13, {x:1,y:0,z:0}:21, {x:1,y:0,z:1}:39, {x:0,y:1,z:0}:55, {x:0,y:1,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:0 }",
                                "tensor0 * tensor1", "{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5, {x:1,y:1}:0 }", "{ {y:0,z:0}:7, {y:1,z:0}:11, {y:0,z:1}:13, {y:1,z:1}:0 }");
         tester.assertEvaluates("{ {x:0,y:1,z:0}:35, {x:0,y:1,z:1}:65 }",
@@ -225,8 +282,13 @@ public class EvaluationTestCase {
                                "tensor0 <= tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
                                "tensor0 == tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
+        tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
+                               "tensor0 ~= tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
                                "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:0 }",
+                               "tensor0 in [1,2,3]", "{ {x:0}:3, {x:1}:7 }");
+
         // TODO
         // argmax
         // argmin

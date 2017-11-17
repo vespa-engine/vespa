@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -27,7 +28,6 @@ import com.yahoo.config.provision.Zone;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -196,7 +196,7 @@ public class VespaModelFactoryTest {
                     }
 
                     @Override
-                    public URI loadBalancerAddress() {
+                    public HostName loadBalancerName() {
                         return null;
                     }
                 };
