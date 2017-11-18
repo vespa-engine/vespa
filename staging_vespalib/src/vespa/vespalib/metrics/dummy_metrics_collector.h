@@ -28,16 +28,25 @@ public:
     Counter counter(const vespalib::string &) override {
         return Counter(shared_from_this(), 0);
     }
-
     Gauge gauge(const vespalib::string &) override {
         return Gauge(shared_from_this(), 0);
+    }
+
+    Axis axis(const vespalib::string &) override {
+        return Axis(0);
+    }
+    Coordinate coordinate(const vespalib::string &) override {
+        return Coordinate(0);
+    }
+    Point origin() override { return Point(shared_from_this(), 0); }
+    Point bind(const Point &, Axis, Coordinate) override {
+        return Point(shared_from_this(), 0);
     }
 
     Snapshot snapshot() override;
 
     // for use from Counter only
     void add(CounterIncrement) override {}
-
     // for use from Gauge only
     void sample(GaugeMeasurement) override {}
 };

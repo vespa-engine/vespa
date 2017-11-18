@@ -8,6 +8,7 @@
 #include "name_collection.h"
 #include "mergers.h"
 #include "snapshots.h"
+#include "point.h"
 
 namespace vespalib {
 namespace metrics {
@@ -20,8 +21,12 @@ public:
     virtual ~MetricsCollector() {}
 
     virtual Counter counter(const vespalib::string &name) = 0; // get or create
+    virtual  Gauge   gauge (const vespalib::string &name) = 0; // get or create
 
-    virtual Gauge gauge(const vespalib::string &name) = 0; // get or create
+    virtual Axis axis(const vespalib::string &name) = 0; // get or create
+    virtual Coordinate coordinate(const vespalib::string &value) = 0; // get or create
+    virtual Point origin() = 0; // get
+    virtual Point bind(const Point &point, Axis axis, Coordinate coord) = 0; // get or create
 
     virtual Snapshot snapshot() = 0;
 

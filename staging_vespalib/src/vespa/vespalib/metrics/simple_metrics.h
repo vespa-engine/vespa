@@ -14,8 +14,8 @@ using clock = std::chrono::steady_clock;
 class MetricsCollector;
 
 struct MetricIdentifier {
-    size_t name_idx;
-    size_t point_idx;
+    const size_t name_idx;
+    const size_t point_idx;
 
     MetricIdentifier() : name_idx(-1), point_idx(0) {}
 

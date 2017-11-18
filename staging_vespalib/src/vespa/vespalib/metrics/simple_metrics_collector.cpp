@@ -6,6 +6,9 @@ namespace metrics {
 
 SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
     : _metricNames(),
+      _axisNames(),
+      _coordValues(),
+      _pointMaps(),
       _currentBucket(),
       _startTime(clock::now()),
       _curTime(_startTime),
@@ -16,6 +19,8 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
       _collectorThread(doCollectLoop, this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
+    PointMap empty;
+    _pointMaps.push_back(empty);
 }
 
 SimpleMetricsCollector::~SimpleMetricsCollector()
@@ -116,6 +121,37 @@ SimpleMetricsCollector::collectCurrentBucket()
         _firstBucket = (_firstBucket + 1) % _buckets.size();
     }
     _curTime = curr;
+}
+
+Axis
+SimpleMetricsCollector::axis(const vespalib::string &name)
+{
+    int id = _axisNames.resolve(name);
+    return Axis(id);
+}
+
+Coordinate
+SimpleMetricsCollector::coordinate(const vespalib::string &value)
+{
+    int id = _coordValues.resolve(value);
+    return Coordinate(id);
+}
+
+Point
+SimpleMetricsCollector::origin()
+{
+    return Point(shared_from_this(), 0);
+}
+
+Point
+SimpleMetricsCollector::bind(const Point &point, Axis axis, Coordinate coord)
+{
+    PointMap pm = _pointMaps[point.id()];
+    pm.erase(axis);
+    pm.insert(PointMap::value_type(axis, coord));
+    size_t id = _pointMaps.size();
+    _pointMaps.push_back(pm);
+    return Point(shared_from_this(), id);
 }
 
 } // namespace vespalib::metrics

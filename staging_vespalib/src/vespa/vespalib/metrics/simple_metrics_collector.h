@@ -23,6 +23,13 @@ class SimpleMetricsCollector : public MetricsCollector
 {
 private:
     NameCollection _metricNames;
+    NameCollection _axisNames;
+    NameCollection _coordValues;
+    std::vector<PointMap> _pointMaps;
+
+    const vespalib::string& nameFor(Axis axis) { return _axisNames.lookup(axis.id()); }
+    const vespalib::string& valueFor(Coordinate coord) { return _coordValues.lookup(coord.id()); }
+
     CurrentSamples _currentBucket;
 
     clock::time_point _startTime;
@@ -45,6 +52,11 @@ public:
 
     Counter counter(const vespalib::string &name) override; // get or create
     Gauge gauge(const vespalib::string &name) override; // get or create
+
+    Axis axis(const vespalib::string &name) override;
+    Coordinate coordinate(const vespalib::string &value) override;
+    Point origin() override;
+    Point bind(const Point &point, Axis axis, Coordinate coord) override;
 
     Snapshot snapshot() override;
 
