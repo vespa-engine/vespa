@@ -20,7 +20,8 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
     PointMap empty;
-    _pointMaps.push_back(empty);
+    _pointMaps.vec.push_back(empty);
+    _pointMaps.map[empty] = 0;
 }
 
 SimpleMetricsCollector::~SimpleMetricsCollector()
@@ -146,11 +147,18 @@ SimpleMetricsCollector::origin()
 Point
 SimpleMetricsCollector::bind(const Point &point, Axis axis, Coordinate coord)
 {
-    PointMap pm = _pointMaps[point.id()];
+    PointMapBacking pm = _pointMaps.vec[point.id()].backing();
     pm.erase(axis);
-    pm.insert(PointMap::value_type(axis, coord));
-    size_t id = _pointMaps.size();
-    _pointMaps.push_back(pm);
+    pm.insert(PointMapBacking::value_type(axis, coord));
+    PointMap newMap(std::move(pm));
+    auto found = _pointMaps.map.find(newMap);
+    if (found != _pointMaps.map.end()) {
+        size_t id = found->second;
+        return Point(shared_from_this(), id);
+    }
+    size_t id = _pointMaps.vec.size();
+    _pointMaps.vec.push_back(newMap);
+    _pointMaps.map[newMap] = id;
     return Point(shared_from_this(), id);
 }
 

@@ -25,7 +25,10 @@ private:
     NameCollection _metricNames;
     NameCollection _axisNames;
     NameCollection _coordValues;
-    std::vector<PointMap> _pointMaps;
+    struct {
+        std::vector<PointMap> vec;
+        std::map<PointMap, size_t> map;
+    } _pointMaps;
 
     const vespalib::string& nameFor(Axis axis) { return _axisNames.lookup(axis.id()); }
     const vespalib::string& valueFor(Coordinate coord) { return _coordValues.lookup(coord.id()); }

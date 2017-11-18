@@ -39,7 +39,18 @@ public:
     Coordinate(size_t id) : _coord_idx(id) {}
 };
 
-using PointMap = std::map<Axis, Coordinate>;
+using PointMapBacking = std::map<Axis, Coordinate>;
+class PointMap {
+private:
+    const std::map<Axis, Coordinate> _map;
+    size_t _hash;
+public:
+    PointMap() : _map(), _hash(0) {}
+    PointMap(std::map<Axis, Coordinate> &&from);
+    bool operator< (const PointMap &other) const;
+
+    const std::map<Axis, Coordinate> &backing() const { return _map; }
+};
 
 class Point {
 private:
