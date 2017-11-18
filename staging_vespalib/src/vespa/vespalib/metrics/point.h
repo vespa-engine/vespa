@@ -8,17 +8,17 @@ namespace vespalib {
 namespace metrics {
 
 using AxisName = vespalib::string;
-using Coordinate = vespalib::string;
+using CoordinateName = vespalib::string;
 
-struct Point : public std::map<AxisName, Coordinate>
+struct PointName : public std::map<AxisName, CoordinateName>
 {
 public:
-    using BackingMap = std::map<AxisName, Coordinate>;
-    bool operator< (const Point &other) const;
-    Point bind(AxisName name, Coordinate value) const;
-    Point() {}
-    ~Point() {}
-    Point(BackingMap &&from);
+    using BackingMap = std::map<AxisName, CoordinateName>;
+    bool operator< (const PointName &other) const;
+    PointName bind(AxisName name, CoordinateName value) const;
+    PointName() {}
+    ~PointName() {}
+    PointName(BackingMap &&from);
 };
 
 } // namespace vespalib::metrics

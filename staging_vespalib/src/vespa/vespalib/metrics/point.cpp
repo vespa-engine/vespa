@@ -4,12 +4,12 @@
 namespace vespalib {
 namespace metrics {
 
-Point::Point(BackingMap &&from)
+PointName::PointName(BackingMap &&from)
     : BackingMap(std::move(from))
 {}
 
 bool
-Point::operator< (const Point &other) const
+PointName::operator< (const PointName &other) const
 {
     // do cheap comparisons first:
     if (size() == 0 && other.size() == 0) {
@@ -28,20 +28,14 @@ Point::operator< (const Point &other) const
     while (m_it != end()) {
         const AxisName & m_axis = m_it->first;
         const AxisName & o_axis = o_it->first;
-        if (m_axis < o_axis) {
-            return true;
-        }
-        if (o_axis < m_axis) {
-            return false;
-        }
-        const Coordinate & m_coord = m_it->second;
-        const Coordinate & o_coord = o_it->second;
-        if (m_coord < o_coord) {
-            return true;
-        }
-        if (o_coord < m_coord) {
-            return false;
-        }
+        if (m_axis < o_axis) { return true; }
+        if (o_axis < m_axis) { return false; }
+
+        const CoordinateName & m_coord = m_it->second;
+        const CoordinateName & o_coord = o_it->second;
+        if (m_coord < o_coord) { return true; }
+        if (o_coord < m_coord) { return false; }
+
         ++m_it;
         ++o_it;
     }
@@ -49,12 +43,12 @@ Point::operator< (const Point &other) const
     return false;
 }
 
-Point
-Point::bind(AxisName name, Coordinate value) const
+PointName
+PointName::bind(AxisName name, CoordinateName value) const
 {
-    std::map<AxisName, Coordinate> copy = *this;
+    std::map<AxisName, CoordinateName> copy = *this;
     copy[name] = value;
-    return Point(std::move(copy));
+    return PointName(std::move(copy));
 }
 
 
