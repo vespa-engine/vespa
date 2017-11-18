@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
@@ -62,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -157,6 +159,16 @@ public class ApplicationController {
     /** Returns all applications of a tenant */
     public List<Application> asList(TenantName tenant) {
         return db.listApplications(new TenantId(tenant.value()));
+    }
+
+    /** Returns an immutable list with the ids of all known applications. */
+    public List<ApplicationId> idList() {
+        return ImmutableList.copyOf(asList().stream().map(Application::id)::iterator);
+    }
+
+    /** Returns an immutable list with the ids of all applications of the tenant. */
+    public List<ApplicationId> idList(TenantName tenant) {
+        return ImmutableList.copyOf(asList(tenant).stream().map(Application::id)::iterator);
     }
 
     /**
@@ -534,6 +546,30 @@ public class ApplicationController {
      */
     public void store(LockedApplication application) {
         db.store(application);
+    }
+
+    /**
+     * Acquire a locked application to be modify and store, if there is an application with the given id.
+     *
+     * @param applicationId Id of the application to lock and get.
+     * @param actions Things to do with the locked application.
+     */
+    public void lockedIfPresent(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+        try (Lock lock = lock(applicationId)) {
+            get(applicationId, lock).ifPresent(actions);
+        }
+    }
+
+    /**
+     * Acquire a locked application to modify and store, or throw an exception if no application has the given id.
+     *
+     * @param applicationId Id of the application to lock and require.
+     * @param actions Things to do with the locked application.
+     */
+    public void lockedOrThrow(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+        try (Lock lock = lock(applicationId)) {
+            actions.accept(require(applicationId, lock));
+        }
     }
 
     public void notifyJobCompletion(JobReport report) {
