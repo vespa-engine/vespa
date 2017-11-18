@@ -32,6 +32,7 @@ import com.yahoo.vespa.config.server.http.*;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import org.apache.commons.lang.NullArgumentException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -315,7 +316,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void test_out_of_capacity_response() throws InterruptedException, IOException {
-        String message = "No nodes available";
+        String message = "Internal error";
         SessionThrowingException session = new SessionThrowingException(new OutOfCapacityException(message));
         localRepo.addSession(session);
         HttpResponse response = createHandler()
@@ -323,6 +324,19 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         assertEquals(400, response.getStatus());
         Slime data = getData(response);
         assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.OUT_OF_CAPACITY.name()));
+        assertThat(data.get().field("message").asString(), is(message));
+    }
+
+    @Test
+    public void test_that_nullpointerexception_gives_internal_server_error() throws InterruptedException, IOException {
+        String message = "No nodes available";
+        SessionThrowingException session = new SessionThrowingException(new NullPointerException(message));
+        localRepo.addSession(session);
+        HttpResponse response = createHandler()
+                .handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        assertEquals(500, response.getStatus());
+        Slime data = getData(response);
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR.name()));
         assertThat(data.get().field("message").asString(), is(message));
     }
 

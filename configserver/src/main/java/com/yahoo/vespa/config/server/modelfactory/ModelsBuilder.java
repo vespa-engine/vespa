@@ -17,6 +17,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
@@ -97,7 +98,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             catch (RuntimeException e) {
                 boolean isOldestMajor = i == majorVersions.size() - 1;
                 if (isOldestMajor) {
-                    throw new IllegalArgumentException(applicationId + ": Error loading model", e);
+                    if (e instanceof NullPointerException) {
+                        e.printStackTrace();
+                        throw new InternalServerException(applicationId + ": Error loading model", e);
+                    } else {
+                        throw new IllegalArgumentException(applicationId + ": Error loading model", e);
+                    }
                 } else {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
                 }
