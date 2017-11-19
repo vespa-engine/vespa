@@ -9,6 +9,7 @@
 #include "mergers.h"
 #include "snapshots.h"
 #include "metrics_collector.h"
+#include "clock.h"
 
 namespace vespalib {
 namespace metrics {
@@ -35,8 +36,8 @@ private:
 
     CurrentSamples _currentBucket;
 
-    clock::time_point _startTime;
-    clock::time_point _curTime;
+    InternalTimeStamp _startTime;
+    InternalTimeStamp _curTime;
 
     std::vector<Bucket> _buckets;
     size_t _firstBucket;

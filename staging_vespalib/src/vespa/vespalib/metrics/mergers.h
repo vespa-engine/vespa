@@ -4,6 +4,7 @@
 #include <mutex>
 #include "no_realloc_bunch.h"
 #include "simple_metrics.h"
+#include "clock.h"
 
 namespace vespalib {
 namespace metrics {
@@ -54,15 +55,15 @@ struct CurrentSamples {
 
 // internal
 struct Bucket {
-    clock::time_point startTime;
-    clock::time_point endTime;
+    InternalTimeStamp startTime;
+    InternalTimeStamp endTime;
     std::vector<MergedCounter> counters;
     std::vector<MergedGauge> gauges;
 
     void merge(const CurrentSamples &other);
     void merge(const Bucket &other);
 
-    Bucket(clock::time_point started, clock::time_point ended)
+    Bucket(InternalTimeStamp started, InternalTimeStamp ended)
         : startTime(started),
           endTime(ended),
           counters(),

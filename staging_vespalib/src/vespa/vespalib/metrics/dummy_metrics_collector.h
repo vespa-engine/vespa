@@ -9,6 +9,7 @@
 #include "mergers.h"
 #include "snapshots.h"
 #include "metrics_collector.h"
+#include "clock.h"
 
 namespace vespalib {
 namespace metrics {
@@ -16,8 +17,8 @@ namespace metrics {
 class DummyMetricsCollector : public MetricsCollector
 {
 private:
-    clock::time_point _startTime;
-    DummyMetricsCollector() : _startTime(clock::now()) {}
+    InternalTimeStamp _startTime;
+    DummyMetricsCollector() : _startTime(now_stamp()) {}
 public:
     ~DummyMetricsCollector();
 

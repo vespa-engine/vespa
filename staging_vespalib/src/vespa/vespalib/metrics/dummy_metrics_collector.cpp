@@ -7,13 +7,11 @@ namespace metrics {
 Snapshot
 DummyMetricsCollector::snapshot()
 {
-    clock::time_point endTime = clock::now();
-    auto s = _startTime.time_since_epoch();
-    auto ss = std::chrono::duration_cast<std::chrono::microseconds>(s);
-    auto e = endTime.time_since_epoch();
-    auto ee = std::chrono::duration_cast<std::chrono::microseconds>(e);
-
-    Snapshot snap(ss.count() * 0.000001, ee.count() * 0.000001);
+    InternalTimeStamp endTime = now_stamp();
+    std::chrono::microseconds s = since_epoch(_startTime);
+    std::chrono::microseconds e = since_epoch(endTime);
+    const double micro = 0.000001;
+    Snapshot snap(s.count() * micro, e.count() * micro);
     return snap;
 }
 

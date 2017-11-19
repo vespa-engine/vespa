@@ -10,7 +10,7 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
       _coordValues(),
       _pointMaps(),
       _currentBucket(),
-      _startTime(clock::now()),
+      _startTime(now_stamp()),
       _curTime(_startTime),
       _buckets(),
       _firstBucket(0),
@@ -55,7 +55,7 @@ SimpleMetricsCollector::gauge(const vespalib::string &name)
 Snapshot
 SimpleMetricsCollector::snapshot()
 {
-    clock::time_point startTime =
+    InternalTimeStamp startTime =
         (_buckets.size() > 0)
         ? _buckets[_firstBucket].startTime
         : _curTime;
@@ -64,12 +64,11 @@ SimpleMetricsCollector::snapshot()
         size_t off = (_firstBucket + i) % _buckets.size();
         merger.merge(_buckets[off]);
     }
-    auto s = merger.startTime.time_since_epoch();
-    auto ss = std::chrono::duration_cast<std::chrono::microseconds>(s);
-    auto e = merger.endTime.time_since_epoch();
-    auto ee = std::chrono::duration_cast<std::chrono::microseconds>(e);
 
-    Snapshot snap(ss.count() * 0.000001, ee.count() * 0.000001);
+    std::chrono::microseconds s = since_epoch(merger.startTime);
+    std::chrono::microseconds e = since_epoch(merger.endTime);
+    const double micro = 0.000001;
+    Snapshot snap(s.count() * micro, e.count() * micro);
     for (const MergedCounter& entry : merger.counters) {
         size_t ni = entry.idx.name_idx;
         const vespalib::string &name = _metricNames.lookup(ni);
@@ -92,8 +91,8 @@ SimpleMetricsCollector::doCollectLoop(SimpleMetricsCollector *me)
     const std::chrono::seconds oneSec{1};
     while (!me->_stopFlag) {
         std::this_thread::sleep_for(jiffy);
-        clock::time_point now = clock::now();
-        clock::duration elapsed = now - me->_curTime;
+        InternalTimeStamp now = now_stamp();
+        InternalTimeStamp::duration elapsed = now - me->_curTime;
         if (elapsed >= oneSec) {
             me->collectCurrentBucket();
         }
@@ -103,8 +102,8 @@ SimpleMetricsCollector::doCollectLoop(SimpleMetricsCollector *me)
 void
 SimpleMetricsCollector::collectCurrentBucket()
 {
-    clock::time_point prev = _curTime;
-    clock::time_point curr = clock::now();
+    InternalTimeStamp prev = _curTime;
+    InternalTimeStamp curr = now_stamp();
 
     CurrentSamples samples;
     {

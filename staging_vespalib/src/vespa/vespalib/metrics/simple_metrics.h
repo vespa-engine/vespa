@@ -9,8 +9,6 @@
 namespace vespalib {
 namespace metrics {
 
-using clock = std::chrono::steady_clock;
-
 class MetricsCollector;
 
 struct MetricIdentifier {
