@@ -38,6 +38,9 @@ struct MetricIdentifier {
 };
 
 
+class MergedCounter;
+class CounterIncrement;
+
 class Counter {
     std::shared_ptr<MetricsCollector> _manager;
     MetricIdentifier _idx;
@@ -53,7 +56,13 @@ public:
     void add(size_t count);
 
     MetricIdentifier id() const { return _idx; }
+
+    typedef MergedCounter aggregator_type;
+    typedef CounterIncrement sample_type;
 };
+
+class MergedGauge;
+class GaugeMeasurement;
 
 class Gauge {
 private:
@@ -63,6 +72,9 @@ public:
     Gauge(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
     void sample(double value);
     MetricIdentifier id() const { return _idx; }
+
+    typedef MergedGauge aggregator_type;
+    typedef GaugeMeasurement sample_type;
 };
 
 struct CounterIncrement {

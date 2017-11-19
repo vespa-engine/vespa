@@ -101,14 +101,31 @@ void Bucket::mergeGauges(const NoReallocBunch<GaugeMeasurement> &other)
     }
 }
 
-void Bucket::merge(const CurrentSamples &other)
-{
-    mergeCounters(other.counterIncrements);
-    mergeGauges(other.gaugeMeasurements);
-}
-
 
 namespace {
+
+template<typename T>
+void
+mergeWithMap(const NoReallocBunch<typename T::sample_type> &other,
+             std::vector<typename T::aggregator_type> &result)
+{
+    assert(result.size() == 0);
+    using Aggregator = typename T::aggregator_type;
+    using Sample = typename T::sample_type;
+    using Map = std::map<MetricIdentifier, Aggregator>;
+    using MapValue = typename Map::value_type;
+    Map map;
+    other.apply([&map] (const Sample &sample) {
+        MetricIdentifier id = sample.idx;
+        if (map.find(id) == map.end()) {
+            map.insert(MapValue(id, Aggregator(id)));
+        }
+        map.find(sample.idx)->second.merge(sample);
+    });
+    for (const MapValue &entry : map) {
+        result.push_back(entry.second);
+    }
+}
 
 template<typename T>
 std::vector<T>
@@ -147,6 +164,12 @@ mergeVectors(const std::vector<T> &a,
 }
 
 } // namespace <unnamed>
+
+void Bucket::merge(const CurrentSamples &other)
+{
+    mergeWithMap<Counter>(other.counterIncrements, counters);
+    mergeWithMap<Gauge>(other.gaugeMeasurements, gauges);
+}
 
 void Bucket::merge(const Bucket &other)
 {
