@@ -67,35 +67,35 @@ MergedGauge::merge(const MergedGauge &other)
     observedCount += other.observedCount;
 }
 
-void Bucket::mergeCounters(const std::vector<CounterIncrement> &other)
+void Bucket::mergeCounters(const NoReallocBunch<CounterIncrement> &other)
 {
     assert(counters.size() == 0);
     using Map = std::map<MetricIdentifier, MergedCounter>;
     Map map;
-    for (CounterIncrement inc : other) {
+    other.apply([&map] (const CounterIncrement &inc) {
         MetricIdentifier id = inc.idx;
         if (map.find(id) == map.end()) {
             map.insert(Map::value_type(id, MergedCounter(id)));
         }
         map.find(id)->second.merge(inc);
-    }
+    });
     for (const Map::value_type &entry : map) {
         counters.push_back(entry.second);
     }
 }
 
-void Bucket::mergeGauges(const std::vector<GaugeMeasurement> &other)
+void Bucket::mergeGauges(const NoReallocBunch<GaugeMeasurement> &other)
 {
     assert(gauges.size() == 0);
     using Map = std::map<MetricIdentifier, MergedGauge>;
     Map map;
-    for (GaugeMeasurement sample : other) {
+    other.apply([&map] (const GaugeMeasurement &sample) {
         MetricIdentifier id = sample.idx;
         if (map.find(id) == map.end()) {
             map.insert(Map::value_type(id, MergedGauge(id)));
         }
         map.find(sample.idx)->second.merge(sample);
-    }
+    });
     for (const Map::value_type &entry : map) {
         gauges.push_back(entry.second);
     }

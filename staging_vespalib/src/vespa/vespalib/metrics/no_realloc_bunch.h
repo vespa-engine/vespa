@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vector>
+#include <assert.h>
 
 namespace vespalib {
 
@@ -11,6 +12,8 @@ template <typename T>
 class NoReallocBunch
 {
     using MyClass = NoReallocBunch<T>;
+    template<typename U>
+    friend void swap(NoReallocBunch<U> &a, NoReallocBunch<U> &b);
 public:
     typedef std::unique_ptr<MyClass> UP;
 
@@ -20,7 +23,7 @@ public:
     void add(T t) {
         size_t sz = _mine.size();
         if (sz == _mine.capacity()) {
-            UP next(new MyClass(std::move(_more), std::move(_mine)));;
+            UP next(new MyClass(_size, std::move(_more), std::move(_mine)));;
             _mine.clear();
             _mine.reserve(sz << 1);
             _more = std::move(next);
@@ -30,7 +33,7 @@ public:
     }
 
     template<typename FUNC>
-    void apply(FUNC &&func) {
+    void apply(FUNC &&func) const {
         std::vector<const MyClass *> vv;
         dffill(vv);
         for (const MyClass *p : vv) {
@@ -43,6 +46,7 @@ public:
     size_t size() const { return _size; }
 
     const T& lookup(size_t idx) const {
+        assert(idx < _size);
         std::vector<const MyClass *> vv;
         dffill(vv);
         for (const MyClass *p : vv) {
@@ -77,7 +81,7 @@ private:
         vv.push_back(this);
     }
 
-    NoReallocBunch(UP &&more, std::vector<T> &&mine);
+    NoReallocBunch(size_t sz, UP &&more, std::vector<T> &&mine);
 
     size_t _size;
     UP _more;
@@ -94,10 +98,20 @@ NoReallocBunch<T>::NoReallocBunch()
 }
 
 template<typename T>
-NoReallocBunch<T>::NoReallocBunch(UP &&more, std::vector<T> &&mine)
-    : _size(mine.size()),
+NoReallocBunch<T>::NoReallocBunch(size_t sz, UP &&more, std::vector<T> &&mine)
+    : _size(sz),
       _more(std::move(more)),
       _mine(std::move(mine))
 {}
+
+template <typename T>
+void swap(NoReallocBunch<T> &a,
+          NoReallocBunch<T> &b)
+{
+    using std::swap;
+    swap(a._size, b._size);
+    swap(a._mine, b._mine);
+    swap(a._more, b._more);
+}
 
 } // namespace vespalib

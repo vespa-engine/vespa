@@ -2,6 +2,7 @@
 #pragma once
 
 #include <mutex>
+#include "no_realloc_bunch.h"
 #include "simple_metrics.h"
 
 namespace vespalib {
@@ -36,18 +37,18 @@ struct MergedGauge {
 // internal
 struct CurrentSamples {
     std::mutex lock;
-    std::vector<CounterIncrement> counterIncrements;
-    std::vector<GaugeMeasurement> gaugeMeasurements;
+    NoReallocBunch<CounterIncrement> counterIncrements;
+    NoReallocBunch<GaugeMeasurement> gaugeMeasurements;
 
     ~CurrentSamples() {}
 
     void add(CounterIncrement inc) {
         std::lock_guard<std::mutex> guard(lock);
-        counterIncrements.push_back(inc);
+        counterIncrements.add(inc);
     }
     void sample(GaugeMeasurement value) {
         std::lock_guard<std::mutex> guard(lock);
-        gaugeMeasurements.push_back(value);
+        gaugeMeasurements.add(value);
     }
 };
 
@@ -69,8 +70,8 @@ struct Bucket {
     {}
     ~Bucket() {}
 private:
-    void mergeCounters(const std::vector<CounterIncrement> &other);
-    void mergeGauges(const std::vector<GaugeMeasurement> &other);
+    void mergeCounters(const NoReallocBunch<CounterIncrement> &other);
+    void mergeGauges(const NoReallocBunch<GaugeMeasurement> &other);
 };
 
 void swap(CurrentSamples& a, CurrentSamples& b);
