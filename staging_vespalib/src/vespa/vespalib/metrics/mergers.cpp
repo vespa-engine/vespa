@@ -67,41 +67,6 @@ MergedGauge::merge(const MergedGauge &other)
     observedCount += other.observedCount;
 }
 
-void Bucket::mergeCounters(const NoReallocBunch<CounterIncrement> &other)
-{
-    assert(counters.size() == 0);
-    using Map = std::map<MetricIdentifier, MergedCounter>;
-    Map map;
-    other.apply([&map] (const CounterIncrement &inc) {
-        MetricIdentifier id = inc.idx;
-        if (map.find(id) == map.end()) {
-            map.insert(Map::value_type(id, MergedCounter(id)));
-        }
-        map.find(id)->second.merge(inc);
-    });
-    for (const Map::value_type &entry : map) {
-        counters.push_back(entry.second);
-    }
-}
-
-void Bucket::mergeGauges(const NoReallocBunch<GaugeMeasurement> &other)
-{
-    assert(gauges.size() == 0);
-    using Map = std::map<MetricIdentifier, MergedGauge>;
-    Map map;
-    other.apply([&map] (const GaugeMeasurement &sample) {
-        MetricIdentifier id = sample.idx;
-        if (map.find(id) == map.end()) {
-            map.insert(Map::value_type(id, MergedGauge(id)));
-        }
-        map.find(sample.idx)->second.merge(sample);
-    });
-    for (const Map::value_type &entry : map) {
-        gauges.push_back(entry.second);
-    }
-}
-
-
 namespace {
 
 template<typename T>
@@ -109,11 +74,12 @@ void
 mergeWithMap(const NoReallocBunch<typename T::sample_type> &other,
              std::vector<typename T::aggregator_type> &result)
 {
-    assert(result.size() == 0);
     using Aggregator = typename T::aggregator_type;
     using Sample = typename T::sample_type;
     using Map = std::map<MetricIdentifier, Aggregator>;
     using MapValue = typename Map::value_type;
+
+    assert(result.size() == 0);
     Map map;
     other.apply([&map] (const Sample &sample) {
         MetricIdentifier id = sample.idx;

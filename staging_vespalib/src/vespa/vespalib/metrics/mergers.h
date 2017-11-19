@@ -69,9 +69,6 @@ struct Bucket {
           gauges()
     {}
     ~Bucket() {}
-private:
-    void mergeCounters(const NoReallocBunch<CounterIncrement> &other);
-    void mergeGauges(const NoReallocBunch<GaugeMeasurement> &other);
 };
 
 void swap(CurrentSamples& a, CurrentSamples& b);
