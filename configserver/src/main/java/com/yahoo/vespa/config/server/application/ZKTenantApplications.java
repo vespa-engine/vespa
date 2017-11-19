@@ -60,8 +60,10 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
-        checkForRemovedApplicationsService.scheduleAtFixedRate(this::removeApplications, checkForRemovedApplicationsInterval.getSeconds(),
-                                                               checkForRemovedApplicationsInterval.getSeconds(), TimeUnit.SECONDS);
+        checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeApplications,
+                                                                  checkForRemovedApplicationsInterval.getSeconds(),
+                                                                  checkForRemovedApplicationsInterval.getSeconds(),
+                                                                  TimeUnit.SECONDS);
     }
 
     public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
@@ -163,7 +165,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void removeApplications() {
         ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
-        log.log(LogLevel.INFO, "Removing stale applications for tenant '" + tenant +
+        log.log(LogLevel.DEBUG, "Removing stale applications for tenant '" + tenant +
                 "', not removing these active applications: " + activeApplications);
         reloadHandler.removeApplicationsExcept(activeApplications);
     }
