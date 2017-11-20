@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simple_metrics_collector.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".simple_metrics_collector");
+
 namespace vespalib {
 namespace metrics {
 
@@ -42,6 +45,7 @@ Counter
 SimpleMetricsCollector::counter(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
+LOG(info, "metric name %s -> %d", name.c_str(), id);
     return Counter(shared_from_this(), MetricIdentifier(id));
 }
 
@@ -49,6 +53,7 @@ Gauge
 SimpleMetricsCollector::gauge(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
+LOG(info, "metric name %s -> %d", name.c_str(), id);
     return Gauge(shared_from_this(), MetricIdentifier(id));
 }
 
@@ -142,6 +147,7 @@ Axis
 SimpleMetricsCollector::axis(const vespalib::string &name)
 {
     int id = _axisNames.resolve(name);
+LOG(info, "axis name %s -> %d", name.c_str(), id);
     return Axis(id);
 }
 
@@ -149,32 +155,31 @@ Coordinate
 SimpleMetricsCollector::coordinate(const vespalib::string &value)
 {
     int id = _coordValues.resolve(value);
+LOG(info, "coord value %s -> %d", value.c_str(), id);
     return Coordinate(id);
 }
 
 Point
 SimpleMetricsCollector::origin()
 {
-    return Point(shared_from_this(), 0);
+    return Point(0);
 }
 
 Point
-SimpleMetricsCollector::bind(const Point &point, Axis axis, Coordinate coord)
+SimpleMetricsCollector::pointFrom(const PointMapBacking &map)
 {
-    std::lock_guard<std::mutex> guard(_pointMaps.lock);
-    PointMapBacking pm = _pointMaps.vec[point.id()].backing();
-    pm.erase(axis);
-    pm.insert(PointMapBacking::value_type(axis, coord));
-    PointMap newMap(std::move(pm));
+    PointMap newMap = PointMap(PointMapBacking(map));
     auto found = _pointMaps.map.find(newMap);
     if (found != _pointMaps.map.end()) {
         size_t id = found->second;
-        return Point(shared_from_this(), id);
+LOG(info, "found point map -> %zd", id);
+        return Point(id);
     }
     size_t id = _pointMaps.vec.size();
     _pointMaps.vec.push_back(newMap);
     _pointMaps.map[newMap] = id;
-    return Point(shared_from_this(), id);
+LOG(info, "new point map -> %zd", id);
+    return Point(id);
 }
 
 } // namespace vespalib::metrics

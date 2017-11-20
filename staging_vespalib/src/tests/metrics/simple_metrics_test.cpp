@@ -104,18 +104,48 @@ TEST("use simple_metrics_collector")
     myGauge.sample(43.0);
     myGauge.sample(42.0);
 
+    Point one = manager->pointBuilder()
+            .bind("chain", "default")
+            .bind("documenttype", "music")
+            .bind("thread", "0").build();
+    Point two = manager->pointBuilder()
+            .bind("chain", "vespa")
+            .bind("documenttype", "blogpost")
+            .bind("thread", "1").build();
+    EXPECT_EQUAL(one.id(), 1u);
+    EXPECT_EQUAL(two.id(), 2u);
+
+    myCounter.add(3, one);
+    myCounter.add(one);
+    myGauge.sample(14.0, two);
+
     sleep(3);
 
     Snapshot snap = manager->snapshot();
     fprintf(stderr, "snap begin: %15f\n", snap.startTime());
     fprintf(stderr, "snap end: %15f\n", snap.endTime());
 
+    for (const auto& entry : snap.points()) {
+        fprintf(stderr, "snap point: %zd dimension(s)\n", entry.dimensions.size());
+        for (const auto& dim : entry.dimensions) {
+            fprintf(stderr, "       label: [%s] = '%s'\n",
+                    dim.axisName().c_str(), dim.coordinateValue().c_str());
+        }
+    }
     for (const auto& entry : snap.counters()) {
         fprintf(stderr, "snap counter: '%s'\n", entry.name().c_str());
+        for (const auto& dim : entry.point().dimensions) {
+            fprintf(stderr, "       label: [%s] = '%s'\n",
+                    dim.axisName().c_str(), dim.coordinateValue().c_str());
+        }
         fprintf(stderr, "       count: %zd\n", entry.count());
     }
     for (const auto& entry : snap.gauges()) {
         fprintf(stderr, "snap gauge: '%s'\n", entry.name().c_str());
+        for (const auto& dim : entry.point().dimensions) {
+            fprintf(stderr, "       label: [%s] = '%s'\n",
+                    dim.axisName().c_str(), dim.coordinateValue().c_str());
+        }
         fprintf(stderr, "  observed: %zd\n", entry.observedCount());
         fprintf(stderr, "       avg: %f\n", entry.averageValue());
         fprintf(stderr, "       min: %f\n", entry.minValue());

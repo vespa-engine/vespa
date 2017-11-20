@@ -2,6 +2,7 @@
 #pragma once
 
 #include "simple_metrics.h"
+#include "point.h"
 
 namespace vespalib {
 namespace metrics {
@@ -25,12 +26,16 @@ public:
     Counter(Counter &&other) = default;
     Counter& operator= (const Counter &) = delete;
     Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsCollector> m, MetricIdentifier id) : _manager(m), _idx(id) {}
+    Counter(std::shared_ptr<MetricsCollector> &&m, MetricIdentifier id)
+        : _manager(std::move(m)), _idx(id)
+    {}
 
     void add();
     void add(size_t count);
+    void add(Point p);
+    void add(size_t count, Point p);
 
-    MetricIdentifier id() const { return _idx; }
+    MetricIdentifier ident() const { return _idx; }
 
     typedef MergedCounter aggregator_type;
     typedef CounterIncrement sample_type;

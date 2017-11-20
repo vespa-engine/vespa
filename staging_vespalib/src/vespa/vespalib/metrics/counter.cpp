@@ -8,13 +8,30 @@ namespace metrics {
 void
 Counter::add()
 {
-    _manager->add(CounterIncrement(id(), 1));
+    add(1);
+}
+
+void
+Counter::add(Point p)
+{
+    add(1, p);
 }
 
 void
 Counter::add(size_t count)
 {
-    _manager->add(CounterIncrement(id(), count));
+    if (_manager) {
+        _manager->add(CounterIncrement(ident(), count));
+    }
+}
+
+void
+Counter::add(size_t count, Point point)
+{
+    if (_manager) {
+        MetricIdentifier id(_idx.name_idx, point.id());
+        _manager->add(CounterIncrement(id, count));
+    }
 }
 
 } // namespace vespalib::metrics

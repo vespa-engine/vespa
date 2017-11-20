@@ -2,6 +2,7 @@
 #pragma once
 
 #include "simple_metrics.h"
+#include "point.h"
 
 namespace vespalib {
 namespace metrics {
@@ -21,13 +22,14 @@ private:
     std::shared_ptr<MetricsCollector> _manager;
     MetricIdentifier _idx;
 public:
-    Gauge(std::shared_ptr<MetricsCollector> m, MetricIdentifier id)
-        : _manager(m), _idx(id)
+    Gauge(std::shared_ptr<MetricsCollector> &&m, MetricIdentifier id)
+        : _manager(std::move(m)), _idx(id)
     {}
 
     void sample(double value);
+    void sample(double value, Point p);
 
-    MetricIdentifier id() const { return _idx; }
+    MetricIdentifier ident() const { return _idx; }
 
     typedef MergedGauge aggregator_type;
     typedef GaugeMeasurement sample_type;

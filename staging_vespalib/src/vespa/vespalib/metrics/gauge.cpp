@@ -8,7 +8,18 @@ namespace metrics {
 void
 Gauge::sample(double value)
 {
-    _manager->sample(GaugeMeasurement(id(), value));
+    if (_manager) {
+        _manager->sample(GaugeMeasurement(ident(), value));
+    }
+}
+
+void
+Gauge::sample(double value, Point point)
+{
+    if (_manager) {
+        MetricIdentifier id(_idx.name_idx, point.id());
+        _manager->sample(GaugeMeasurement(id, value));
+    }
 }
 
 } // namespace vespalib::metrics

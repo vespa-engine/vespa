@@ -34,7 +34,7 @@ public:
         : _name(n), _point(p), _count(c.count)
     {}
     const vespalib::string &name() const { return _name; }
-    const PointSnapshot &point() const;
+    const PointSnapshot &point() const { return _point; }
     size_t count() const { return _count; }
 };
 
@@ -58,7 +58,7 @@ public:
           _lastValue(c.lastValue)
     {}
     const vespalib::string &name() const { return _name; }
-    const PointSnapshot &point() const;
+    const PointSnapshot &point() const { return _point; }
     size_t observedCount() const { return _observedCount; }
     double averageValue() const { return _averageValue; }
     double minValue() const { return _minValue; }

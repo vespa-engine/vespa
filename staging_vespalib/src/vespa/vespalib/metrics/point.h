@@ -54,17 +54,29 @@ public:
 
 class Point {
 private:
-    std::shared_ptr<MetricsCollector> _owner;
     const size_t _point_idx;
 public:
     size_t id() const { return _point_idx; }
-    Point bind(Axis axis, Coordinate coord) const;
-    Point bind(Axis axis, CoordinateName coord) const;
-    Point bind(AxisName axis, CoordinateName coord) const;
-    Point(std::shared_ptr<MetricsCollector> m, size_t id)
-        : _owner(m), _point_idx(id)
-    {}
+
+    explicit Point(size_t id) : _point_idx(id) {}
 };
+
+class PointBuilder {
+private:
+    std::shared_ptr<MetricsCollector> _owner;
+    PointMapBacking _map;
+
+public:
+    PointBuilder(std::shared_ptr<MetricsCollector> &&m);
+    ~PointBuilder() {}
+
+    PointBuilder &bind(Axis axis, Coordinate coord);
+    PointBuilder &bind(Axis axis, CoordinateName coord);
+    PointBuilder &bind(AxisName axis, CoordinateName coord);
+
+    Point build();
+};
+
 
 } // namespace vespalib::metrics
 } // namespace vespalib

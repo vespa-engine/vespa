@@ -9,10 +9,9 @@ PointMap::PointMap(std::map<Axis, Coordinate> &&from)
     : _map(std::move(from)),
       _hash(0)
 {
-    auto it = _map.begin();
-    while (it != _map.end()) {
-        _hash = (_hash << 7) + (_hash >> 31) + it->first.id();
-        _hash = (_hash << 7) + (_hash >> 31) + it->second.id();
+    for (const PointMapBacking::value_type &entry : _map) {
+        _hash = (_hash << 7) + (_hash >> 31) + entry.first.id();
+        _hash = (_hash << 7) + (_hash >> 31) + entry.second.id();
     }
 }
 
@@ -90,26 +89,38 @@ PointName::bind(AxisName name, CoordinateName value) const
 }
 
 
-Point
-Point::bind(Axis axis, Coordinate coord) const
+PointBuilder::PointBuilder(std::shared_ptr<MetricsCollector> &&m)
+    : _owner(std::move(m)), _map()
+{}
+
+PointBuilder &
+PointBuilder::bind(Axis axis, Coordinate coord)
 {
-    return _owner->bind(*this, axis, coord);
+    _map.insert(PointMapBacking::value_type(axis, coord));
+    return *this;
 }
 
-Point
-Point::bind(Axis axis, CoordinateName coord) const
+PointBuilder &
+PointBuilder::bind(Axis axis, CoordinateName coord)
 {
     Coordinate c = _owner->coordinate(coord);
     return bind(axis, c);
 }
 
-Point
-Point::bind(AxisName axis, CoordinateName coord) const
+PointBuilder &
+PointBuilder::bind(AxisName axis, CoordinateName coord)
 {
     Axis a = _owner->axis(axis);
     Coordinate c = _owner->coordinate(coord);
     return bind(a, c);
 }
+
+Point
+PointBuilder::build()
+{
+    return _owner->pointFrom(_map);
+}
+
 
 
 } // namespace vespalib::metrics

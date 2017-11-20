@@ -39,9 +39,9 @@ public:
     Coordinate coordinate(const vespalib::string &) override {
         return Coordinate(0);
     }
-    Point origin() override { return Point(shared_from_this(), 0); }
-    Point bind(const Point &, Axis, Coordinate) override {
-        return Point(shared_from_this(), 0);
+    Point origin() override { return Point(0); }
+    Point pointFrom(const PointMapBacking &) override {
+        return Point(0);
     }
 
     Snapshot snapshot() override;
