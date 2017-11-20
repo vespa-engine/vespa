@@ -978,7 +978,7 @@ FileStorManager::updateState()
     }
     for (const auto &elem : _component.getBucketSpaceRepo()) {
         BucketSpace bucketSpace(elem.first);
-        spi::ClusterState spiState(*state, _component.getIndex(), *_component.getDistribution());
+        spi::ClusterState spiState(*state, _component.getIndex(), *elem.second->getDistribution());
         _provider->setClusterState(bucketSpace, spiState);
     }
     _nodeUpInLastNodeStateSeenByProvider = nodeUp;

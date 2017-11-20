@@ -2,8 +2,11 @@
 #pragma once
 
 #include <vespa/storage/bucketdb/storbucketdb.h>
+#include <mutex>
 
 namespace storage {
+
+namespace lib { class Distribution; }
 
 /**
  * Class representing a bucket space (with associated bucket database) on a content node.
@@ -11,11 +14,15 @@ namespace storage {
 class ContentBucketSpace {
 private:
     StorBucketDatabase _bucketDatabase;
+    mutable std::mutex _lock;
+    std::shared_ptr<const lib::Distribution> _distribution;
 
 public:
     using UP = std::unique_ptr<ContentBucketSpace>;
     ContentBucketSpace();
     StorBucketDatabase &bucketDatabase() { return _bucketDatabase; }
+    void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
+    std::shared_ptr<const lib::Distribution> getDistribution() const;
 };
 
 }

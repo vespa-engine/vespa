@@ -5,8 +5,24 @@
 namespace storage {
 
 ContentBucketSpace::ContentBucketSpace()
-    : _bucketDatabase()
+    : _bucketDatabase(),
+      _lock(),
+      _distribution()
 {
+}
+
+void
+ContentBucketSpace::setDistribution(std::shared_ptr<const lib::Distribution> distribution)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    _distribution = std::move(distribution);
+}
+
+std::shared_ptr<const lib::Distribution>
+ContentBucketSpace::getDistribution() const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    return _distribution;
 }
 
 }

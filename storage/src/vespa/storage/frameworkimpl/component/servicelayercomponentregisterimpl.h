@@ -37,6 +37,7 @@ public:
 
     void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
     void setDiskCount(uint16_t count);
+    virtual void setDistribution(lib::Distribution::SP distribution) override;
 };
 
 } // storage
