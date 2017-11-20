@@ -189,7 +189,7 @@ PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IReso
       _iterators_lock(),
       _owner(owner),
       _writeFilter(writeFilter),
-      _clusterState(),
+      _clusterStates(),
       _extraModifiedBuckets(),
       _rwMutex()
 {
@@ -272,11 +272,11 @@ PersistenceEngine::listBuckets(BucketSpace bucketSpace, PartitionId id) const
 
 
 Result
-PersistenceEngine::setClusterState(const ClusterState &calc)
+PersistenceEngine::setClusterState(BucketSpace bucketSpace, const ClusterState &calc)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    saveClusterState(calc);
-    HandlerSnapshot::UP snap = getHandlerSnapshot();
+    saveClusterState(bucketSpace, calc);
+    HandlerSnapshot::UP snap = getHandlerSnapshot(bucketSpace);
     GenericResultHandler resultHandler(snap->size());
     for (; snap->handlers().valid(); snap->handlers().next()) {
         IPersistenceHandler *handler = snap->handlers().get();
@@ -630,26 +630,27 @@ PersistenceEngine::destroyIterators()
 
 
 void
-PersistenceEngine::saveClusterState(const ClusterState &calc)
+PersistenceEngine::saveClusterState(BucketSpace bucketSpace, const ClusterState &calc)
 {
     auto clusterState = std::make_shared<ClusterState>(calc);
     {
         std::lock_guard<std::mutex> guard(_lock);
-        clusterState.swap(_clusterState);
+        clusterState.swap(_clusterStates[bucketSpace]);
     }
 }
 
 PersistenceEngine::ClusterState::SP
-PersistenceEngine::savedClusterState() const
+PersistenceEngine::savedClusterState(BucketSpace bucketSpace) const
 {
     std::lock_guard<std::mutex> guard(_lock);
-    return _clusterState;
+    auto itr(_clusterStates.find(bucketSpace));
+    return ((itr != _clusterStates.end()) ? itr->second : ClusterState::SP());
 }
 
 void
-PersistenceEngine::propagateSavedClusterState(IPersistenceHandler &handler)
+PersistenceEngine::propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler)
 {
-    ClusterState::SP clusterState(savedClusterState());
+    ClusterState::SP clusterState(savedClusterState(bucketSpace));
     if (!clusterState)
         return;
     // Propagate saved cluster state.

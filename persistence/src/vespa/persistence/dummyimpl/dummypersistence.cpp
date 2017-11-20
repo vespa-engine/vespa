@@ -370,7 +370,7 @@ DummyPersistence::getModifiedBuckets(BucketSpace) const
 }
 
 Result
-DummyPersistence::setClusterState(const ClusterState& c)
+DummyPersistence::setClusterState(BucketSpace, const ClusterState& c)
 {
     vespalib::MonitorGuard lock(_monitor);
     _clusterState.reset(new ClusterState(c));

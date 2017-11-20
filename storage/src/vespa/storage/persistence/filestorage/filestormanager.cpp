@@ -966,7 +966,6 @@ void
 FileStorManager::updateState()
 {
     lib::ClusterState::CSP state(_component.getStateUpdater().getSystemState());
-    spi::ClusterState spiState(*state, _component.getIndex(), *_component.getDistribution());
     lib::Node node(_component.getNodeType(), _component.getIndex());
     bool nodeUp = state->getNodeState(node).getState().oneOf("uir");
 
@@ -977,7 +976,11 @@ FileStorManager::updateState()
         Deactivator deactivator;
         _component.getBucketSpaceRepo().forEachBucket(deactivator, "FileStorManager::updateState");
     }
-    _provider->setClusterState(spiState);
+    for (const auto &elem : _component.getBucketSpaceRepo()) {
+        BucketSpace bucketSpace(elem.first);
+        spi::ClusterState spiState(*state, _component.getIndex(), *_component.getDistribution());
+        _provider->setClusterState(bucketSpace, spiState);
+    }
     _nodeUpInLastNodeStateSeenByProvider = nodeUp;
 }
 

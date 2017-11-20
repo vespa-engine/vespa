@@ -611,7 +611,7 @@ TEST_F("require that setClusterState() is routed to handlers", SimpleFixture)
 {
     ClusterState state(createClusterState());
 
-    f.engine.setClusterState(state);
+    f.engine.setClusterState(makeBucketSpace(), state);
     EXPECT_EQUAL(&state, f.hset.handler1.lastCalc);
     EXPECT_EQUAL(&state, f.hset.handler2.lastCalc);
 }

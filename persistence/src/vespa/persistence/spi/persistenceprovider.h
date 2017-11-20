@@ -93,7 +93,7 @@ struct PersistenceProvider
      * supplied (changes that relate to the distributor will not cause an
      * update here).
      */
-    virtual Result setClusterState(const ClusterState&) = 0;
+    virtual Result setClusterState(BucketSpace bucketSpace, const ClusterState&) = 0;
 
     /**
      * Sets the bucket state to active or inactive. After this returns,
