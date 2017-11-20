@@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
  *
  * @author bjorncs
  */
+// TODO bjorncs: Move this class into separate container-security bundle
 public class AthenzPrincipalFilter implements SecurityRequestFilter {
 
     private final ErrorResponseContentCreator responseCreator = new ErrorResponseContentCreator();
@@ -59,7 +60,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
         }
     }
 
-    private void sendUnauthorized(DiscFilterRequest request, ResponseHandler responseHandler, String message) {
+    protected void sendUnauthorized(DiscFilterRequest request, ResponseHandler responseHandler, String message) {
         try (FastContentWriter writer = ResponseDispatch.newInstance(Response.Status.UNAUTHORIZED)
                 .connectFastWriter(responseHandler)) {
             writer.write(
