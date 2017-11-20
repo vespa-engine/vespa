@@ -27,6 +27,7 @@ private:
     NameCollection _axisNames;
     NameCollection _coordValues;
     struct {
+        std::mutex lock;
         std::vector<PointMap> vec;
         std::map<PointMap, size_t> map;
     } _pointMaps;

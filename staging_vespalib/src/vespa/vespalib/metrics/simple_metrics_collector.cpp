@@ -65,20 +65,35 @@ SimpleMetricsCollector::snapshot()
         merger.merge(_buckets[off]);
     }
 
+    std::vector<PointSnapshot> points;
+
     std::chrono::microseconds s = since_epoch(merger.startTime);
     std::chrono::microseconds e = since_epoch(merger.endTime);
     const double micro = 0.000001;
     Snapshot snap(s.count() * micro, e.count() * micro);
+    {
+        std::lock_guard<std::mutex> guard(_pointMaps.lock);
+        for (const PointMap &entry : _pointMaps.vec) {
+             PointSnapshot point;
+             const PointMapBacking &map = entry.backing();
+             for (const PointMapBacking::value_type &kv : map) {
+                 point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
+             }
+             snap.add(point);
+        }
+    }
     for (const MergedCounter& entry : merger.counters) {
         size_t ni = entry.idx.name_idx;
+        size_t pi = entry.idx.point_idx;
         const vespalib::string &name = _metricNames.lookup(ni);
-        CounterSnapshot val(name, entry);
+        CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const MergedGauge& entry : merger.gauges) {
         size_t ni = entry.idx.name_idx;
+        size_t pi = entry.idx.point_idx;
         const vespalib::string &name = _metricNames.lookup(ni);
-        GaugeSnapshot val(name, entry);
+        GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     return snap;
@@ -146,6 +161,7 @@ SimpleMetricsCollector::origin()
 Point
 SimpleMetricsCollector::bind(const Point &point, Axis axis, Coordinate coord)
 {
+    std::lock_guard<std::mutex> guard(_pointMaps.lock);
     PointMapBacking pm = _pointMaps.vec[point.id()].backing();
     pm.erase(axis);
     pm.insert(PointMapBacking::value_type(axis, coord));

@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "point.h"
+#include "metrics_collector.h"
 
 namespace vespalib {
 namespace metrics {
@@ -86,6 +87,28 @@ PointName::bind(AxisName name, CoordinateName value) const
     std::map<AxisName, CoordinateName> copy = *this;
     copy[name] = value;
     return PointName(std::move(copy));
+}
+
+
+Point
+Point::bind(Axis axis, Coordinate coord) const
+{
+    return _owner->bind(*this, axis, coord);
+}
+
+Point
+Point::bind(Axis axis, CoordinateName coord) const
+{
+    Coordinate c = _owner->coordinate(coord);
+    return bind(axis, c);
+}
+
+Point
+Point::bind(AxisName axis, CoordinateName coord) const
+{
+    Axis a = _owner->axis(axis);
+    Coordinate c = _owner->coordinate(coord);
+    return bind(a, c);
 }
 
 
