@@ -27,11 +27,10 @@ public:
 
     virtual Axis axis(const vespalib::string &name) = 0; // get or create
     virtual Coordinate coordinate(const vespalib::string &value) = 0; // get or create
-    virtual Point origin() = 0; // get
     PointBuilder pointBuilder() {
         return PointBuilder(shared_from_this());
     }
-    virtual Point pointFrom(const PointMapBacking &map) = 0;
+    virtual Point pointFrom(PointMapBacking &&map) = 0;
 
     virtual Snapshot snapshot() = 0;
 

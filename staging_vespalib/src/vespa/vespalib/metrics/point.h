@@ -70,11 +70,12 @@ public:
     PointBuilder(std::shared_ptr<MetricsCollector> &&m);
     ~PointBuilder() {}
 
-    PointBuilder &bind(Axis axis, Coordinate coord);
-    PointBuilder &bind(Axis axis, CoordinateName coord);
-    PointBuilder &bind(AxisName axis, CoordinateName coord);
+    PointBuilder &&bind(Axis axis, Coordinate coord) &&;
+    PointBuilder &&bind(Axis axis, CoordinateName coord) &&;
+    PointBuilder &&bind(AxisName axis, CoordinateName coord) &&;
 
     Point build();
+    operator Point () &&;
 };
 
 

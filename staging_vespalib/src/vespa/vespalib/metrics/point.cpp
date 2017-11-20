@@ -93,34 +93,38 @@ PointBuilder::PointBuilder(std::shared_ptr<MetricsCollector> &&m)
     : _owner(std::move(m)), _map()
 {}
 
-PointBuilder &
-PointBuilder::bind(Axis axis, Coordinate coord)
+PointBuilder &&
+PointBuilder::bind(Axis axis, Coordinate coord) &&
 {
     _map.insert(PointMapBacking::value_type(axis, coord));
-    return *this;
+    return std::move(*this);
 }
 
-PointBuilder &
-PointBuilder::bind(Axis axis, CoordinateName coord)
+PointBuilder &&
+PointBuilder::bind(Axis axis, CoordinateName coord) &&
 {
     Coordinate c = _owner->coordinate(coord);
-    return bind(axis, c);
+    return std::move(*this).bind(axis, c);
 }
 
-PointBuilder &
-PointBuilder::bind(AxisName axis, CoordinateName coord)
+PointBuilder &&
+PointBuilder::bind(AxisName axis, CoordinateName coord) &&
 {
     Axis a = _owner->axis(axis);
     Coordinate c = _owner->coordinate(coord);
-    return bind(a, c);
+    return std::move(*this).bind(a, c);
 }
 
 Point
 PointBuilder::build()
 {
-    return _owner->pointFrom(_map);
+    return _owner->pointFrom(PointMapBacking(_map));
 }
 
+PointBuilder::operator Point() &&
+{
+    return _owner->pointFrom(std::move(_map));
+}
 
 
 } // namespace vespalib::metrics

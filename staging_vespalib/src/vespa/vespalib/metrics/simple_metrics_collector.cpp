@@ -159,16 +159,11 @@ LOG(info, "coord value %s -> %d", value.c_str(), id);
     return Coordinate(id);
 }
 
-Point
-SimpleMetricsCollector::origin()
-{
-    return Point(0);
-}
 
 Point
-SimpleMetricsCollector::pointFrom(const PointMapBacking &map)
+SimpleMetricsCollector::pointFrom(PointMapBacking &&map)
 {
-    PointMap newMap = PointMap(PointMapBacking(map));
+    PointMap newMap(std::move(map));
     auto found = _pointMaps.map.find(newMap);
     if (found != _pointMaps.map.end()) {
         size_t id = found->second;

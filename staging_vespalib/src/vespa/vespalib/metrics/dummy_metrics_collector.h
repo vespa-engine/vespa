@@ -39,8 +39,7 @@ public:
     Coordinate coordinate(const vespalib::string &) override {
         return Coordinate(0);
     }
-    Point origin() override { return Point(0); }
-    Point pointFrom(const PointMapBacking &) override {
+    Point pointFrom(PointMapBacking &&) override {
         return Point(0);
     }
 

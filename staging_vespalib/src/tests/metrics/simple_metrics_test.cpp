@@ -111,7 +111,7 @@ TEST("use simple_metrics_collector")
     Point two = manager->pointBuilder()
             .bind("chain", "vespa")
             .bind("documenttype", "blogpost")
-            .bind("thread", "1").build();
+            .bind("thread", "1");
     EXPECT_EQUAL(one.id(), 1u);
     EXPECT_EQUAL(two.id(), 2u);
 
