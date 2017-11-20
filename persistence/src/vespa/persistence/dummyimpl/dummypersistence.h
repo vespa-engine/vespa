@@ -142,7 +142,7 @@ public:
      */
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 
-    Result setClusterState(const ClusterState& newState) override;
+    Result setClusterState(BucketSpace bucketSpace, const ClusterState& newState) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
