@@ -47,7 +47,7 @@ Counter
 SimpleMetricsCollector::counter(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
-LOG(info, "metric name %s -> %d", name.c_str(), id);
+    LOG(debug, "metric name %s -> %d", name.c_str(), id);
     return Counter(shared_from_this(), MetricIdentifier(id));
 }
 
@@ -55,7 +55,7 @@ Gauge
 SimpleMetricsCollector::gauge(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
-LOG(info, "metric name %s -> %d", name.c_str(), id);
+    LOG(debug, "metric name %s -> %d", name.c_str(), id);
     return Gauge(shared_from_this(), MetricIdentifier(id));
 }
 
@@ -149,7 +149,7 @@ Axis
 SimpleMetricsCollector::axis(const vespalib::string &name)
 {
     int id = _axisNames.resolve(name);
-LOG(info, "axis name %s -> %d", name.c_str(), id);
+    LOG(debug, "axis name %s -> %d", name.c_str(), id);
     return Axis(id);
 }
 
@@ -157,7 +157,7 @@ Coordinate
 SimpleMetricsCollector::coordinate(const vespalib::string &value)
 {
     int id = _coordValues.resolve(value);
-LOG(info, "coord value %s -> %d", value.c_str(), id);
+    LOG(debug, "coord value %s -> %d", value.c_str(), id);
     return Coordinate(id);
 }
 
@@ -177,10 +177,10 @@ SimpleMetricsCollector::pointFrom(PointMapBacking &&map)
     size_t nextId = _pointMaps.vec.size();
     auto iter_check = _pointMaps.map.emplace(newMap, nextId);
     if (iter_check.second) {
-        LOG(info, "new point map -> %zd / %zd", nextId, iter_check.first->second);
+        LOG(debug, "new point map -> %zd / %zd", nextId, iter_check.first->second);
         _pointMaps.vec.push_back(newMap);
     } else {
-        LOG(info, "found point map -> %zd / %zd", nextId, iter_check.first->second);
+        LOG(debug, "found point map -> %zd / %zd", nextId, iter_check.first->second);
     }
     return Point(iter_check.first->second);
 }
