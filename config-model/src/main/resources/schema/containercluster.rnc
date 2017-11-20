@@ -7,8 +7,7 @@ ContainerCluster = element container | jdisc {
     ContainerServices &    
     DocumentBinding* &
     Aliases? &
-    NodesOfContainerCluster? &
-    Identity?
+    NodesOfContainerCluster?
 }
 
 ContainerServices =
@@ -225,9 +224,4 @@ DocumentBinding = element document {
     attribute type { xsd:NCName } &
     attribute class { xsd:NCName } &
     attribute bundle { xsd:NCName }
-}
-
-Identity = element identity {
-   element domain { xsd:NCName } &
-   element service { xsd:NCName }
 }

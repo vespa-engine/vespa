@@ -13,8 +13,10 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
@@ -232,6 +234,7 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.core.slobrok.SlobrokConfigurator");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addJaxProviders();
+        addIdentity();
     }
 
     public void setZone(Zone zone) {
@@ -302,6 +305,36 @@ public final class ContainerCluster
         addSimpleComponent(XMLInputFactoryProvider.class);
         addSimpleComponent(XMLOutputFactoryProvider.class);
         addSimpleComponent(XPathFactoryProvider.class);
+    }
+
+    public void addIdentity() {
+        getDeploymentSpec().ifPresent(deploymentSpec -> {
+            deploymentSpec.athenzDomain().ifPresent(domain -> {
+
+                String service = deploymentSpec.athenzService(zone.environment(), zone.region())
+                        .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
+
+                Identity identity = new Identity(domain.trim(), service.trim(), getLoadBalancerName());
+                addComponent(identity);
+
+                getContainers().forEach(container -> {
+                    container.setProp("identity.domain", domain);
+                    container.setProp("identity.service", service);
+                });
+            });
+        });
+    }
+
+    private HostName getLoadBalancerName() {
+        // Set lbaddress, or use first hostname if not specified.
+        // TODO: Remove the orElseGet part when this is set up in all zones
+        return Optional.ofNullable(getRoot().getDeployState().getProperties().loadBalancerName())
+                .orElseGet(
+                        () -> HostName.from(getRoot().getDeployState().getProperties().configServerSpecs().stream()
+                                                    .findFirst()
+                                                    .map(ConfigServerSpec::getHostName)
+                                                    .orElse("unknown") // Currently unable to test this, hence the unknown
+                        ));
     }
 
     public final void addComponent(Component<?, ?> component) {

@@ -7,7 +7,6 @@ import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -16,7 +15,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -39,7 +37,6 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.Identity;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -164,13 +161,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(spec, cluster);
         addServerProviders(spec, cluster);
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
-
-        // Athenz copper argos
-        // NOTE: Must be done after addNodes()
-        addIdentity(spec,
-                    cluster,
-                    context.getDeployState().getProperties().configServerSpecs(),
-                    context.getDeployState().getProperties().loadBalancerName());
 
         //TODO: overview handler, see DomQrserverClusterBuilder
     }
@@ -695,31 +685,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         for (Element node : XML.getChildren(spec, componentName)) {
             elementValidator.accept(node); // throws exception here if something is wrong
             cluster.addComponent(new DomComponentBuilder().build(cluster, node));
-        }
-    }
-
-    private void addIdentity(Element element, ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName) {
-        Element identityElement = XML.getChild(element, "identity");
-        if(identityElement != null) {
-            String domain = XML.getValue(XML.getChild(identityElement, "domain"));
-            String service = XML.getValue(XML.getChild(identityElement, "service"));
-
-            // Set lbaddress, or use first hostname if not specified.
-            HostName lbName = Optional.ofNullable(loadBalancerName)
-                    .orElseGet(
-                            () -> HostName.from(configServerSpecs.stream()
-                                    .findFirst()
-                                    .map(ConfigServerSpec::getHostName)
-                                    .orElse("unknown") // Currently unable to test this, hence the unknown
-                            ));
-
-            Identity identity = new Identity(domain.trim(), service.trim(), lbName);
-            cluster.addComponent(identity);
-
-            cluster.getContainers().forEach(container -> {
-                container.setProp("identity.domain", domain);
-                container.setProp("identity.service", service);
-            });
         }
     }
 

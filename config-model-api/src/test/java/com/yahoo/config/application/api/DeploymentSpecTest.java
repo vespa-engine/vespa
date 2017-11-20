@@ -367,4 +367,56 @@ public class DeploymentSpecTest {
         assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
     }
 
+    @Test
+    public void deploymentSpecWithAthenzIdentity() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.athenzDomain().get(), "domain");
+        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get(), "service");
+    }
+
+    @Test
+    public void deploymentSpecUsesServiceFromEnvironment() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>\n" +
+                "  <test/>\n" +
+                "  <prod athenz-service='prod-service'>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.athenzDomain().get(), "domain");
+        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get(), "prodservice");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void athenzDomainMissingService() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain'>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void athenzDomainMissingDomain() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                "  <prod athenz-service='service'>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
 }
