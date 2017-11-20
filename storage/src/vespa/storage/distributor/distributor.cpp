@@ -534,18 +534,6 @@ Distributor::checkBucketForSplit(document::BucketSpace bucketSpace,
     }
 }
 
-const lib::Distribution&
-Distributor::getDistribution() const
-{
-    // FIXME having _distribution be mutable for this is smelly. Is this only
-    // in place for the sake of tests?
-    if (!_distribution.get()) {
-        _distribution = _component.getDistribution();
-    }
-
-    return *_distribution;
-}
-
 void
 Distributor::enableNextDistribution()
 {
