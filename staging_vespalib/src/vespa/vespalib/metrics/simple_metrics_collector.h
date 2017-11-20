@@ -60,6 +60,7 @@ public:
 
     Axis axis(const vespalib::string &name) override;
     Coordinate coordinate(const vespalib::string &value) override;
+    PointBuilder pointBuilder(Point from) override;
     Point pointFrom(PointMapBacking &&map) override;
 
     Snapshot snapshot() override;

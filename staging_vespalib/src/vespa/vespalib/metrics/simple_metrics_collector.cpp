@@ -7,6 +7,8 @@ LOG_SETUP(".simple_metrics_collector");
 namespace vespalib {
 namespace metrics {
 
+using Guard = std::lock_guard<std::mutex>;
+
 SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
     : _metricNames(),
       _axisNames(),
@@ -77,7 +79,7 @@ SimpleMetricsCollector::snapshot()
     const double micro = 0.000001;
     Snapshot snap(s.count() * micro, e.count() * micro);
     {
-        std::lock_guard<std::mutex> guard(_pointMaps.lock);
+        Guard guard(_pointMaps.lock);
         for (const PointMap &entry : _pointMaps.vec) {
              PointSnapshot point;
              const PointMapBacking &map = entry.backing();
@@ -127,7 +129,7 @@ SimpleMetricsCollector::collectCurrentBucket()
 
     CurrentSamples samples;
     {
-        std::lock_guard<std::mutex> guard(_currentBucket.lock);
+        Guard guard(_currentBucket.lock);
         swap(samples, _currentBucket);
     }
 
@@ -159,22 +161,28 @@ LOG(info, "coord value %s -> %d", value.c_str(), id);
     return Coordinate(id);
 }
 
+PointBuilder
+SimpleMetricsCollector::pointBuilder(Point from)
+{
+    Guard guard(_pointMaps.lock);
+    const PointMap &map = _pointMaps.vec[from.id()];
+    return PointBuilder(shared_from_this(), map.backing());
+}
 
 Point
 SimpleMetricsCollector::pointFrom(PointMapBacking &&map)
 {
+    Guard guard(_pointMaps.lock);
     PointMap newMap(std::move(map));
-    auto found = _pointMaps.map.find(newMap);
-    if (found != _pointMaps.map.end()) {
-        size_t id = found->second;
-LOG(info, "found point map -> %zd", id);
-        return Point(id);
+    size_t nextId = _pointMaps.vec.size();
+    auto iter_check = _pointMaps.map.emplace(newMap, nextId);
+    if (iter_check.second) {
+        LOG(info, "new point map -> %zd / %zd", nextId, iter_check.first->second);
+        _pointMaps.vec.push_back(newMap);
+    } else {
+        LOG(info, "found point map -> %zd / %zd", nextId, iter_check.first->second);
     }
-    size_t id = _pointMaps.vec.size();
-    _pointMaps.vec.push_back(newMap);
-    _pointMaps.map[newMap] = id;
-LOG(info, "new point map -> %zd", id);
-    return Point(id);
+    return Point(iter_check.first->second);
 }
 
 } // namespace vespalib::metrics

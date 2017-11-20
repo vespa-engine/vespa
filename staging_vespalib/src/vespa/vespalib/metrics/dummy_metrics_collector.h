@@ -39,6 +39,9 @@ public:
     Coordinate coordinate(const vespalib::string &) override {
         return Coordinate(0);
     }
+    PointBuilder pointBuilder(Point) override {
+        return PointBuilder(shared_from_this());
+    }
     Point pointFrom(PointMapBacking &&) override {
         return Point(0);
     }

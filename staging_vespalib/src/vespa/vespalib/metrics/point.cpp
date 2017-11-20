@@ -2,6 +2,9 @@
 #include "point.h"
 #include "metrics_collector.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".point");
+
 namespace vespalib {
 namespace metrics {
 
@@ -47,22 +50,29 @@ PointBuilder::PointBuilder(std::shared_ptr<MetricsCollector> &&m)
     : _owner(std::move(m)), _map()
 {}
 
+PointBuilder::PointBuilder(std::shared_ptr<MetricsCollector> &&m,
+                           const PointMapBacking &copyFrom)
+    : _owner(std::move(m)), _map(copyFrom)
+{
+}
+
 PointBuilder &&
 PointBuilder::bind(Axis axis, Coordinate coord) &&
 {
+    _map.erase(axis);
     _map.insert(PointMapBacking::value_type(axis, coord));
     return std::move(*this);
 }
 
 PointBuilder &&
-PointBuilder::bind(Axis axis, CoordinateName coord) &&
+PointBuilder::bind(Axis axis, CoordinateValue coord) &&
 {
     Coordinate c = _owner->coordinate(coord);
     return std::move(*this).bind(axis, c);
 }
 
 PointBuilder &&
-PointBuilder::bind(AxisName axis, CoordinateName coord) &&
+PointBuilder::bind(AxisName axis, CoordinateValue coord) &&
 {
     Axis a = _owner->axis(axis);
     Coordinate c = _owner->coordinate(coord);

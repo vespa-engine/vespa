@@ -9,7 +9,7 @@ namespace vespalib {
 namespace metrics {
 
 using AxisName = vespalib::string;
-using CoordinateName = vespalib::string;
+using CoordinateValue = vespalib::string;
 
 class MetricsCollector;
 
@@ -57,11 +57,12 @@ private:
 
 public:
     PointBuilder(std::shared_ptr<MetricsCollector> &&m);
+    PointBuilder(std::shared_ptr<MetricsCollector> &&m, const PointMapBacking &from);
     ~PointBuilder() {}
 
     PointBuilder &&bind(Axis axis, Coordinate coord) &&;
-    PointBuilder &&bind(Axis axis, CoordinateName coord) &&;
-    PointBuilder &&bind(AxisName axis, CoordinateName coord) &&;
+    PointBuilder &&bind(Axis axis, CoordinateValue coord) &&;
+    PointBuilder &&bind(AxisName axis, CoordinateValue coord) &&;
 
     Point build();
     operator Point () &&;

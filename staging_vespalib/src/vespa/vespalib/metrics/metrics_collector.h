@@ -30,6 +30,8 @@ public:
     PointBuilder pointBuilder() {
         return PointBuilder(shared_from_this());
     }
+    virtual PointBuilder pointBuilder(Point from) = 0;
+
     virtual Point pointFrom(PointMapBacking &&map) = 0;
 
     virtual Snapshot snapshot() = 0;
