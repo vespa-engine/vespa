@@ -9,6 +9,9 @@ import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import com.yahoo.yolean.chain.Provides;
 
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
+
+import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendUnauthorized;
 
 /**
  * A variant of the {@link AthenzPrincipalFilter} to be used in combination with a cookie-based
@@ -41,7 +44,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
             case USER_COOKIE_OK:
                 return; // Authenticated using user cookie
             case USER_COOKIE_INVALID:
-                sendUnauthorized(request, responseHandler, "Your user cookie is invalid (either expired or tampered)");
+                sendUnauthorized(responseHandler, "Your user cookie is invalid (either expired or tampered)");
                 break;
         }
     }
@@ -51,12 +54,10 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
             throw new IllegalStateException("User authentication filter passthru attribute missing");
         }
         Integer statusCode = (Integer) request.getAttribute(userAuthenticationPassThruAttribute);
-        for (UserAuthenticationResult result : UserAuthenticationResult.values()) {
-            if (result.statusCode == statusCode) {
-                return result;
-            }
-        }
-        throw new IllegalStateException("Invalid status code: " + statusCode);
+        return Stream.of(UserAuthenticationResult.values())
+                .filter(uar -> uar.statusCode == statusCode)
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("Invalid status code: " + statusCode));
     }
 
     private enum UserAuthenticationResult {
