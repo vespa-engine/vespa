@@ -12,24 +12,24 @@ LOG_SETUP(".bucketmover.run");
 namespace storage {
 namespace bucketmover {
 
-Run::Run(StorBucketDatabase& db,
-         lib::Distribution::SP distribution,
+Run::Run(ContentBucketSpace& bucketSpace,
          const lib::NodeState& nodeState,
          uint16_t nodeIndex,
          framework::Clock& clock)
-    : _bucketDatabase(db),
-      _distribution(distribution),
+    : _bucketSpace(bucketSpace),
+      _distribution(bucketSpace.getDistribution()),
       _nodeState(nodeState),
       _nodeIndex(nodeIndex),
       _entries(),
       _iterationDone(false),
-      _statistics(distribution->getDiskDistribution(), clock, nodeState),
+      _statistics(_distribution->getDiskDistribution(), clock, nodeState),
       _aborted(false)
 {
 }
 
 namespace {
     struct BucketIterator {
+        document::BucketSpace _iteratedBucketSpace;
         const lib::Distribution& _distribution;
         const lib::NodeState& _nodeState;
         RunStatistics& _statistics;
@@ -39,10 +39,12 @@ namespace {
         uint32_t _bucketsVisited;
         document::BucketId _firstBucket;
 
-        BucketIterator(const lib::Distribution& d, const lib::NodeState& ns,
+        BucketIterator(document::BucketSpace iteratedBucketSpace,
+                       const lib::Distribution& d, const lib::NodeState& ns,
                        uint16_t nodeIndex, RunStatistics& stats,
                        std::list<Move>& entries)
-            : _distribution(d),
+            : _iteratedBucketSpace(iteratedBucketSpace),
+              _distribution(d),
               _nodeState(ns),
               _statistics(stats),
               _entries(entries),
@@ -57,12 +59,12 @@ namespace {
         operator()(document::BucketId::Type revId,
                    StorBucketDatabase::Entry& entry)
         {
-            document::BucketId bucket(document::BucketId::keyToBucketId(revId));
-            if (bucket == _firstBucket) {
+            document::BucketId bucketId(document::BucketId::keyToBucketId(revId));
+            if (bucketId == _firstBucket) {
                 return StorBucketDatabase::CONTINUE;
             }
             uint16_t idealDisk = _distribution.getIdealDisk(
-                    _nodeState, _nodeIndex, bucket,
+                    _nodeState, _nodeIndex, bucketId,
                     lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN);
             RunStatistics::DiskData& diskData(
                     _statistics._diskData[entry.disk]);
@@ -72,10 +74,11 @@ namespace {
                 diskData._bucketSize += entry.getBucketInfo().getTotalDocumentSize();
                 ++diskData._bucketsFoundOnCorrectDisk;
             } else {
+                document::Bucket bucket(_iteratedBucketSpace, bucketId);
                 _entries.push_back(Move(
                             entry.disk, idealDisk, bucket, entry.getBucketInfo().getTotalDocumentSize()));
             }
-            _statistics._lastBucketVisited = bucket;
+            _statistics._lastBucketVisited = bucketId;
             if (++_bucketsVisited >= _maxBucketsToIterateAtOnce) {
                 return StorBucketDatabase::ABORT;
             }
@@ -104,18 +107,16 @@ Run::getNextMove()
 
             if (!_statistics._diskData[e.getTargetDisk()]._diskDisabled) {
                 _pending.push_back(e);
-                _statistics._lastBucketProcessed = e.getBucketId();
-                _statistics._lastBucketProcessedTime
-                    = _statistics._clock->getTimeInSeconds();
+                _statistics._lastBucketProcessed = e.getBucket(); // Only used for printing
+                _statistics._lastBucketProcessedTime = _statistics._clock->getTimeInSeconds();
                 return e;
             }
         }
 
         // Cache more entries
-        BucketIterator it(*_distribution, _nodeState, _nodeIndex, _statistics,
-                          _entries);
-        _bucketDatabase.all(it, "bucketmover::Run",
-                            _statistics._lastBucketVisited.toKey());
+        BucketIterator it(document::BucketSpace::placeHolder(), *_distribution,
+                          _nodeState, _nodeIndex, _statistics, _entries);
+        _bucketSpace.bucketDatabase().all(it, "bucketmover::Run", _statistics._lastBucketVisited.toKey());
         if (it._bucketsVisited == 0) {
             _iterationDone = true;
             if (_pending.empty()) {
@@ -128,31 +129,6 @@ Run::getNextMove()
 }
 
 void
-Run::depleteMoves()
-{
-    while (true) {
-            // Cache more entries
-        BucketIterator bi(*_distribution, _nodeState, _nodeIndex, _statistics,
-                          _entries);
-        _bucketDatabase.all(bi, "bucketmover::depleteMoves",
-                            _statistics._lastBucketVisited.toKey());
-        if (bi._bucketsVisited == 0) {
-            break;
-        }
-        for (std::list<Move>::const_iterator it = _entries.begin();
-             it != _entries.end(); ++it)
-        {
-            ++_statistics._diskData[it->getSourceDisk()][it->getTargetDisk()]
-                ._bucketsLeftOnWrongDisk;
-            uint32_t size = it->getTotalDocSize();
-            _statistics._diskData[it->getSourceDisk()]._bucketSize += size;
-        }
-        _entries.clear();
-    }
-    finalize();
-}
-
-void
 Run::finalize()
 {
     _statistics._endTime = _statistics._clock->getTimeInSeconds();
@@ -162,10 +138,8 @@ void
 Run::removePending(Move& move)
 {
     bool foundPending = false;
-    for (std::list<Move>::iterator it = _pending.begin(); it != _pending.end();
-         ++it)
-    {
-        if (it->getBucketId() == move.getBucketId()) {
+    for (auto it = _pending.begin(); it != _pending.end(); ++it) {
+        if (it->getBucket() == move.getBucket()) {
             _pending.erase(it);
             foundPending = true;
             break;
@@ -173,7 +147,7 @@ Run::removePending(Move& move)
     }
     if (!foundPending) {
         LOG(warning, "Got answer for %s that was not in the pending list.",
-            move.getBucketId().toString().c_str());
+            move.getBucket().toString().c_str());
         return;
     }
     if (_iterationDone && _pending.empty()) {
