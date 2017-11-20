@@ -42,14 +42,14 @@ Counter
 SimpleMetricsCollector::counter(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
-    return Counter(shared_from_this(), id);
+    return Counter(shared_from_this(), MetricIdentifier(id));
 }
 
 Gauge
 SimpleMetricsCollector::gauge(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
-    return Gauge(shared_from_this(), id);
+    return Gauge(shared_from_this(), MetricIdentifier(id));
 }
 
 Snapshot

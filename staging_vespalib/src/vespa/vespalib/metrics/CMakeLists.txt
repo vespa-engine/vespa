@@ -2,7 +2,9 @@
 vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     SOURCES
     clock.cpp
+    counter.cpp
     dummy_metrics_collector.cpp
+    gauge.cpp
     mergers.cpp
     metrics_collector.cpp
     name_collection.cpp

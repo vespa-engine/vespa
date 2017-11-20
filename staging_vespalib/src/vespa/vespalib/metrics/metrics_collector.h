@@ -6,6 +6,8 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "simple_metrics.h"
 #include "name_collection.h"
+#include "counter.h"
+#include "gauge.h"
 #include "mergers.h"
 #include "snapshots.h"
 #include "point.h"

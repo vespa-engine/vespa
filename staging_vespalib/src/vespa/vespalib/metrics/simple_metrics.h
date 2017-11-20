@@ -31,62 +31,9 @@ struct MetricIdentifier {
         return false;
     }
     bool operator== (const MetricIdentifier &other) const {
-        return (name_idx == other.name_idx);
+        return (name_idx == other.name_idx &&
+                point_idx == other.point_idx);
     }
-};
-
-
-class MergedCounter;
-class CounterIncrement;
-
-class Counter {
-    std::shared_ptr<MetricsCollector> _manager;
-    MetricIdentifier _idx;
-public:
-    Counter() : _manager(), _idx() {}
-    Counter(const Counter&) = delete;
-    Counter(Counter &&other) = default;
-    Counter& operator= (const Counter &) = delete;
-    Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
-
-    void add();
-    void add(size_t count);
-
-    MetricIdentifier id() const { return _idx; }
-
-    typedef MergedCounter aggregator_type;
-    typedef CounterIncrement sample_type;
-};
-
-class MergedGauge;
-class GaugeMeasurement;
-
-class Gauge {
-private:
-    std::shared_ptr<MetricsCollector> _manager;
-    MetricIdentifier _idx;
-public:
-    Gauge(std::shared_ptr<MetricsCollector> m, int idx) : _manager(m), _idx(idx) {}
-    void sample(double value);
-    MetricIdentifier id() const { return _idx; }
-
-    typedef MergedGauge aggregator_type;
-    typedef GaugeMeasurement sample_type;
-};
-
-struct CounterIncrement {
-    MetricIdentifier idx;
-    size_t value;
-    CounterIncrement() = delete;
-    CounterIncrement(MetricIdentifier id, size_t v) : idx(id), value(v) {}
-};
-
-struct GaugeMeasurement {
-    MetricIdentifier idx;
-    double value;
-    GaugeMeasurement() = delete;
-    GaugeMeasurement(MetricIdentifier id, double v) : idx(id), value(v) {}
 };
 
 } // namespace vespalib::metrics

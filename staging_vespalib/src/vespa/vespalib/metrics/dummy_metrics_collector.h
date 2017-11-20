@@ -27,10 +27,10 @@ public:
     }
 
     Counter counter(const vespalib::string &) override {
-        return Counter(shared_from_this(), 0);
+        return Counter(shared_from_this(), MetricIdentifier(0));
     }
     Gauge gauge(const vespalib::string &) override {
-        return Gauge(shared_from_this(), 0);
+        return Gauge(shared_from_this(), MetricIdentifier(0));
     }
 
     Axis axis(const vespalib::string &) override {
