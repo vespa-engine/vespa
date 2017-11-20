@@ -1,20 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/document/base/testdocrepo.h>
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/documentapi/documentapi.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/documentapi/documentapi.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/document/test/make_document_bucket.h>
 
+using document::Bucket;
+using document::BucketId;
+using document::BucketSpace;
 using document::DataType;
 using document::DocIdString;
 using document::Document;
@@ -25,25 +29,40 @@ using document::test::makeDocumentBucket;
 
 namespace storage {
 
+DocumentId defaultDocId("id:test:text/html::0");
+const Bucket defaultBucket(BucketSpace(5), BucketId(0));
+
+struct MockBucketResolver : public BucketResolver {
+    virtual Bucket bucketFromId(const DocumentId &documentId) const override {
+        if (documentId.getDocType() == "text/html") {
+            return defaultBucket;
+        }
+        return Bucket(BucketSpace(0), BucketId(0));
+    }
+};
+
 struct DocumentApiConverterTest : public CppUnit::TestFixture
 {
+    MockBucketResolver _bucketResolver;
     std::unique_ptr<DocumentApiConverter> _converter;
     const DocumentTypeRepo::SP _repo;
     const DataType& _html_type;
 
     DocumentApiConverterTest()
-        : _repo(new DocumentTypeRepo(readDocumenttypesConfig(
+        : _bucketResolver(),
+          _repo(new DocumentTypeRepo(readDocumenttypesConfig(
                     TEST_PATH("config-doctypes.cfg")))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
     }
 
     void setUp() override {
-        _converter.reset(new DocumentApiConverter("raw:"));
+        _converter.reset(new DocumentApiConverter("raw:", _bucketResolver));
     };
 
     void testPut();
     void testForwardedPut();
+    void testUpdate();
     void testRemove();
     void testGet();
     void testCreateVisitor();
@@ -58,6 +77,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST_SUITE(DocumentApiConverterTest);
     CPPUNIT_TEST(testPut);
     CPPUNIT_TEST(testForwardedPut);
+    CPPUNIT_TEST(testUpdate);
     CPPUNIT_TEST(testRemove);
     CPPUNIT_TEST(testGet);
     CPPUNIT_TEST(testCreateVisitor);
@@ -75,12 +95,13 @@ CPPUNIT_TEST_SUITE_REGISTRATION(DocumentApiConverterTest);
 
 void DocumentApiConverterTest::testPut()
 {
-    Document::SP doc(new Document(_html_type, DocumentId(DocIdString("test", "test"))));
+    Document::SP doc(new Document(_html_type, defaultDocId));
 
     documentapi::PutDocumentMessage putmsg(doc);
     putmsg.setTimestamp(1234);
 
     std::unique_ptr<storage::api::StorageCommand> cmd = _converter->toStorageAPI(putmsg, _repo);
+    CPPUNIT_ASSERT_EQUAL(defaultBucket, cmd->getBucket());
     api::PutCommand* pc = dynamic_cast<api::PutCommand*>(cmd.get());
 
     CPPUNIT_ASSERT(pc);
@@ -120,15 +141,46 @@ void DocumentApiConverterTest::testForwardedPut()
     _converter->transferReplyState(*pr, *reply);
 }
 
+void DocumentApiConverterTest::testUpdate()
+{
+    auto update = std::make_shared<document::DocumentUpdate>(_html_type, defaultDocId);
+    documentapi::UpdateDocumentMessage updateMsg(update);
+    updateMsg.setOldTimestamp(1234);
+    updateMsg.setNewTimestamp(5678);
+
+    auto storageCmd = _converter->toStorageAPI(updateMsg, _repo);
+    CPPUNIT_ASSERT_EQUAL(defaultBucket, storageCmd->getBucket());
+
+    auto updateCmd = dynamic_cast<api::UpdateCommand*>(storageCmd.get());
+    CPPUNIT_ASSERT(updateCmd);
+    CPPUNIT_ASSERT_EQUAL(update.get(), updateCmd->getUpdate().get());
+    CPPUNIT_ASSERT_EQUAL(api::Timestamp(1234), updateCmd->getOldTimestamp());
+    CPPUNIT_ASSERT_EQUAL(api::Timestamp(5678), updateCmd->getTimestamp());
+
+    auto mbusReply = updateMsg.createReply();
+    CPPUNIT_ASSERT(mbusReply.get());
+    auto storageReply = _converter->toStorageAPI(static_cast<documentapi::DocumentReply&>(*mbusReply), *storageCmd);
+    auto updateReply = dynamic_cast<api::UpdateReply*>(storageReply.get());
+    CPPUNIT_ASSERT(updateReply);
+
+    auto mbusMsg = _converter->toDocumentAPI(*updateCmd, _repo);
+    auto mbusUpdate = dynamic_cast<documentapi::UpdateDocumentMessage*>(mbusMsg.get());
+    CPPUNIT_ASSERT(mbusUpdate);
+    CPPUNIT_ASSERT((&mbusUpdate->getDocumentUpdate()) == update.get());
+    CPPUNIT_ASSERT_EQUAL(api::Timestamp(1234), mbusUpdate->getOldTimestamp());
+    CPPUNIT_ASSERT_EQUAL(api::Timestamp(5678), mbusUpdate->getNewTimestamp());
+}
+
 void DocumentApiConverterTest::testRemove()
 {
-    documentapi::RemoveDocumentMessage removemsg(document::DocumentId(document::DocIdString("test", "test")));
+    documentapi::RemoveDocumentMessage removemsg(defaultDocId);
     std::unique_ptr<storage::api::StorageCommand> cmd = _converter->toStorageAPI(removemsg, _repo);
+    CPPUNIT_ASSERT_EQUAL(defaultBucket, cmd->getBucket());
 
     api::RemoveCommand* rc = dynamic_cast<api::RemoveCommand*>(cmd.get());
 
     CPPUNIT_ASSERT(rc);
-    CPPUNIT_ASSERT_EQUAL(document::DocumentId(document::DocIdString("test", "test")), rc->getDocumentId());
+    CPPUNIT_ASSERT_EQUAL(defaultDocId, rc->getDocumentId());
 
     std::unique_ptr<mbus::Reply> reply = removemsg.createReply();
     CPPUNIT_ASSERT(reply.get());
@@ -142,20 +194,20 @@ void DocumentApiConverterTest::testRemove()
 
     documentapi::RemoveDocumentMessage* mbusremove = dynamic_cast<documentapi::RemoveDocumentMessage*>(mbusmsg.get());
     CPPUNIT_ASSERT(mbusremove);
-    CPPUNIT_ASSERT_EQUAL(document::DocumentId(document::DocIdString("test", "test")), mbusremove->getDocumentId());
+    CPPUNIT_ASSERT_EQUAL(defaultDocId, mbusremove->getDocumentId());
 };
 
 void DocumentApiConverterTest::testGet()
 {
-    documentapi::GetDocumentMessage getmsg(
-            document::DocumentId(document::DocIdString("test", "test")), "foo bar");
+    documentapi::GetDocumentMessage getmsg(defaultDocId, "foo bar");
 
     std::unique_ptr<storage::api::StorageCommand> cmd = _converter->toStorageAPI(getmsg, _repo);
+    CPPUNIT_ASSERT_EQUAL(defaultBucket, cmd->getBucket());
 
     api::GetCommand* rc = dynamic_cast<api::GetCommand*>(cmd.get());
 
     CPPUNIT_ASSERT(rc);
-    CPPUNIT_ASSERT_EQUAL(document::DocumentId(document::DocIdString("test", "test")), rc->getDocumentId());
+    CPPUNIT_ASSERT_EQUAL(defaultDocId, rc->getDocumentId());
     CPPUNIT_ASSERT_EQUAL(vespalib::string("foo bar"), rc->getFieldSet());
 };
 

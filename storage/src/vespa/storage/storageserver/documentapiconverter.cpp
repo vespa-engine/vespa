@@ -1,18 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "documentapiconverter.h"
 #include "priorityconverter.h"
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/storageapi/message/visitor.h>
+#include <vespa/storage/common/bucket_resolver.h>
+#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/searchresult.h>
-#include <vespa/storageapi/message/queryresult.h>
 #include <vespa/storageapi/message/documentsummary.h>
 #include <vespa/storageapi/message/multioperation.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/queryresult.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/searchresult.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/storageapi/message/batch.h>
-#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/storageapi/message/visitor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentapiconverter");
@@ -21,8 +23,10 @@ using document::BucketSpace;
 
 namespace storage {
 
-DocumentApiConverter::DocumentApiConverter(const config::ConfigUri & configUri)
-    : _priConverter(std::make_unique<PriorityConverter>(configUri))
+DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
+                                           const BucketResolver &bucketResolver)
+    : _priConverter(std::make_unique<PriorityConverter>(configUri)),
+      _bucketResolver(bucketResolver)
 {}
 
 DocumentApiConverter::~DocumentApiConverter() {}
@@ -38,7 +42,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
     {
         documentapi::PutDocumentMessage& from(static_cast<documentapi::PutDocumentMessage&>(fromMsg));
-        auto to = std::make_unique<api::PutCommand>(document::Bucket(BucketSpace::placeHolder(), document::BucketId(0)), from.stealDocument(), from.getTimestamp());
+        document::Bucket bucket = _bucketResolver.bucketFromId(from.getDocument().getId());
+        auto to = std::make_unique<api::PutCommand>(bucket, from.stealDocument(), from.getTimestamp());
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
         break;
@@ -46,8 +51,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
     {
         documentapi::UpdateDocumentMessage& from(static_cast<documentapi::UpdateDocumentMessage&>(fromMsg));
-        auto to = std::make_unique<api::UpdateCommand>(document::Bucket(BucketSpace::placeHolder(), document::BucketId(0)), from.stealDocumentUpdate(),
-                                                       from.getNewTimestamp());
+        document::Bucket bucket = _bucketResolver.bucketFromId(from.getDocumentUpdate().getId());
+        auto to = std::make_unique<api::UpdateCommand>(bucket, from.stealDocumentUpdate(), from.getNewTimestamp());
         to->setOldTimestamp(from.getOldTimestamp());
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
@@ -56,7 +61,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
     {
         documentapi::RemoveDocumentMessage& from(static_cast<documentapi::RemoveDocumentMessage&>(fromMsg));
-        auto to = std::make_unique<api::RemoveCommand>(document::Bucket(BucketSpace::placeHolder(), document::BucketId(0)), from.getDocumentId(), 0);
+        auto to = std::make_unique<api::RemoveCommand>(_bucketResolver.bucketFromId(from.getDocumentId()), from.getDocumentId(), 0);
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
         break;
@@ -64,7 +69,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
     {
         documentapi::GetDocumentMessage& from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
-        auto to = std::make_unique<api::GetCommand>(document::Bucket(BucketSpace::placeHolder(), document::BucketId(0)), from.getDocumentId(), from.getFieldSet());
+        auto to = std::make_unique<api::GetCommand>(_bucketResolver.bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
         toMsg.reset(to.release());
         break;
     }
