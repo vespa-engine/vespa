@@ -1,0 +1,47 @@
+[
+  {
+    "tenant": "tenant2",
+    "type": "ATHENS",
+    "athensDomain": "domain2",
+    "property": "property2",
+    "propertyId": "1234",
+    "applications": [],
+    "propertyUrl": "www.properties.tld/1234",
+    "contactsUrl": "www.contacts.tld/1234",
+    "issueCreationUrl": "www.issues.tld/1234",
+    "contacts": [
+      [
+        "alice"
+      ],
+      [
+        "bob"
+      ]
+    ]
+  },
+  {
+    "tenant": "tenant3",
+    "type": "OPSDB",
+    "property": "property2",
+    "propertyId": "4321",
+    "userGroup": "group1",
+    "applications": [],
+    "propertyUrl": "www.properties.tld/4321",
+    "contactsUrl": "www.contacts.tld/4321",
+    "issueCreationUrl": "www.issues.tld/4321",
+    "contacts": []
+  },
+  {
+    "tenant": "tenant1",
+    "type": "ATHENS",
+    "athensDomain": "domain1",
+    "property": "property1",
+    "applications": [
+      {
+        "application": "application1",
+        "instance": "default",
+        "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1"
+      }
+    ]
+  }
+]
+

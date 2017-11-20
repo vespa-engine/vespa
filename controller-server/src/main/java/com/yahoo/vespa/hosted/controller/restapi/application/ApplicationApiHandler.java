@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -231,7 +232,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse root(HttpRequest request) {
-        return request.getBooleanProperty("recursive")
+        return recurseOverTenants(request)
                 ? recursiveRoot(request)
                 : new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain", "property", "cookiefreshness");
     }
@@ -397,7 +398,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if ( ! rotations.isEmpty())
                 setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
 
-            if (request.getBooleanProperty("recursive")) // List full deployment information when recursive.
+            if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
             else
                 deploymentObject.setString("url", withPath(request.getUri().getPath() +
@@ -891,7 +892,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
             for (Application application : controller.applications().asList(TenantName.from(tenant.getId().id()))) {
                 if (application.id().instance().isDefault()) {// TODO: Skip non-default applications until supported properly
-                    if (request.getBooleanProperty("recursive"))
+                    if (recurseOverApplications(request))
                         toSlime(applicationArray.addObject(), application, request);
                     else
                         toSlime(application, applicationArray.addObject(), request);
@@ -1161,4 +1162,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         return name;
     }
+
+    private static boolean recurseOverTenants(HttpRequest request) {
+        return recurseOverApplications(request) || "tenant".equals(request.getProperty("recursive"));
+    }
+
+    private static boolean recurseOverApplications(HttpRequest request) {
+        return recurseOverDeployments(request) || "application".equals(request.getProperty("recursive"));
+    }
+
+    private static boolean recurseOverDeployments(HttpRequest request) {
+        return ImmutableSet.of("all", "true", "deployment").contains(request.getProperty("recursive"));
+    }
+
 }
