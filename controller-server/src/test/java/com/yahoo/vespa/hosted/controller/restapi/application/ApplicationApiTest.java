@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -200,11 +201,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET tenant screwdriver projects
         tester.assertResponse(request("/application/v4/tenant-pipeline/", GET),
                               new File("tenant-pipelines.json"));
+        setDeploymentMaintainedInfo(controllerTester);
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET),
                               new File("application.json"));
         // GET an application deployment
-        setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", GET),
                               new File("deployment.json"));
 
@@ -227,7 +228,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/", GET)
                                       .domain("domain1").user("mytenant")
                                       .recursive("true"),
-                              new File("application1.json"));
+                              new File("application1-recursive.json"));
 
 
         // POST a 'restart application' command
@@ -385,6 +386,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
 
+        setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET),
                               new File("application-without-change-multiple-deployments.json"));
     }
@@ -725,7 +727,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     /**
-     * Cluster info, utilization and deployment metrics are maintained async by maintainers.
+     * Cluster info, utilization and application and deployment metrics are maintained async by maintainers.
      *
      * This sets these values as if the maintainers has been ran.
      *
@@ -736,6 +738,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
             try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
                 LockedApplication lockedApplication = controllerTester.controller().applications()
                                                                       .require(application.id(), lock);
+                lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
+
                 for (Deployment deployment : application.deployments().values()) {
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
                     List<String> hostnames = new ArrayList<>();
@@ -746,11 +750,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                     DeploymentMetrics metrics = new DeploymentMetrics(1,2,3,4,5);
 
-                    controllerTester.controller().applications().store(lockedApplication
-                                                                               .withClusterInfo(deployment.zone(), clusterInfo)
-                                                                               .withClusterUtilization(deployment.zone(), clusterUtils)
-                                                                               .with(deployment.zone(), metrics));
+                    lockedApplication = lockedApplication
+                            .withClusterInfo(deployment.zone(), clusterInfo)
+                            .withClusterUtilization(deployment.zone(), clusterUtils)
+                            .with(deployment.zone(), metrics);
                 }
+
+                controllerTester.controller().applications().store(lockedApplication);
             }
         }
     }

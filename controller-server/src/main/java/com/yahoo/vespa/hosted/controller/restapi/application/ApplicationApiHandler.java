@@ -51,7 +51,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -363,7 +362,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
-            Cursor jobObject = deploymentsArray.addObject();            
+            Cursor jobObject = deploymentsArray.addObject();
             jobObject.setString("type", job.type().jobName());
             jobObject.setBool("success", job.isSuccess());
 
@@ -407,17 +406,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                            "/instance/" + application.id().instance().value(),
                                                            request.getUri()).toString());
         }
-        
+
         // Metrics
-        try {
-            MetricsService.ApplicationMetrics metrics = controller.metricsService().getApplicationMetrics(application.id());
-            Cursor metricsObject = object.setObject("metrics");
-            metricsObject.setDouble("queryServiceQuality", metrics.queryServiceQuality());
-            metricsObject.setDouble("writeServiceQuality", metrics.writeServiceQuality());
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed getting Yamas metrics", Exceptions.toMessageString(e));
-        }
+        Cursor metricsObject = object.setObject("metrics");
+        metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
+        metricsObject.setDouble("writeServiceQuality", application.metrics().writeServiceQuality());
+
     }
 
     private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {

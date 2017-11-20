@@ -15,6 +15,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -52,7 +53,9 @@ public class ApplicationSerializer {
     private final String deployingField = "deployingField";
     private final String outstandingChangeField = "outstandingChangeField";
     private final String ownershipIssueIdField = "ownershipIssueId";
-    
+    private final String writeQualityField = "writeQuality";
+    private final String queryQualityField = "queryQuality";
+
     // Deployment fields
     private final String zoneField = "zone";
     private final String environmentField = "environment";
@@ -125,6 +128,8 @@ public class ApplicationSerializer {
         toSlime(application.deploying(), root);
         root.setBool(outstandingChangeField, application.hasOutstandingChange());
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
+        root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
+        root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         return slime;
     }
 
@@ -260,9 +265,11 @@ public class ApplicationSerializer {
         Optional<Change> deploying = changeFromSlime(root.field(deployingField));
         boolean outstandingChange = root.field(outstandingChangeField).asBool();
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
+        ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
+                                                            root.field(writeQualityField).asDouble());
 
-        return new Application(id, deploymentSpec, validationOverrides, deployments, 
-                               deploymentJobs, deploying, outstandingChange, ownershipIssueId);
+        return new Application(id, deploymentSpec, validationOverrides, deployments,
+                               deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
