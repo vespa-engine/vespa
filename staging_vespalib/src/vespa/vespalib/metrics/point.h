@@ -11,17 +11,6 @@ namespace metrics {
 using AxisName = vespalib::string;
 using CoordinateName = vespalib::string;
 
-struct PointName : public std::map<AxisName, CoordinateName>
-{
-public:
-    using BackingMap = std::map<AxisName, CoordinateName>;
-    bool operator< (const PointName &other) const;
-    PointName bind(AxisName name, CoordinateName value) const;
-    PointName() {}
-    ~PointName() {}
-    PointName(BackingMap &&from);
-};
-
 class MetricsCollector;
 
 class Axis {
@@ -42,14 +31,14 @@ public:
 using PointMapBacking = std::map<Axis, Coordinate>;
 class PointMap {
 private:
-    const std::map<Axis, Coordinate> _map;
+    const PointMapBacking _map;
     size_t _hash;
 public:
     PointMap() : _map(), _hash(0) {}
-    PointMap(std::map<Axis, Coordinate> &&from);
+    PointMap(PointMapBacking &&from);
     bool operator< (const PointMap &other) const;
 
-    const std::map<Axis, Coordinate> &backing() const { return _map; }
+    const PointMapBacking &backing() const { return _map; }
 };
 
 class Point {
