@@ -15,6 +15,7 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -99,7 +100,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 boolean isOldestMajor = i == majorVersions.size() - 1;
                 if (isOldestMajor) {
                     if (e instanceof NullPointerException) {
-                        e.printStackTrace();
+                        log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
                         throw new InternalServerException(applicationId + ": Error loading model", e);
                     } else {
                         throw new IllegalArgumentException(applicationId + ": Error loading model", e);
