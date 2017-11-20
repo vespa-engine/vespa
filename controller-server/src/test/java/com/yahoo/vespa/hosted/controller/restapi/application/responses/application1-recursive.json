@@ -155,5 +155,7 @@
   "metrics": {
     "queryServiceQuality": 0.5,
     "writeServiceQuality": 0.7
-  }
+  },
+  "ownershipIssueId": "321",
+  "deploymentIssueId": "123"
 }

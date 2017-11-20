@@ -52,7 +52,7 @@ public class LockedApplication extends Application {
                                                      hasOutstandingChange(), ownershipIssueId(), metrics()), lock);
     }
 
-    public LockedApplication with(IssueId issueId) {
+    public LockedApplication withDeploymentIssueId(IssueId issueId) {
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(), deployments(),
                                                      deploymentJobs().with(issueId), deploying(),
                                                      hasOutstandingChange(), ownershipIssueId(), metrics()), lock);

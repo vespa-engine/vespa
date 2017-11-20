@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -209,6 +210,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", GET),
                               new File("deployment.json"));
 
+        addIssues(controllerTester, ApplicationId.from("tenant1", "application1", "default"));
         // GET at root, with "&recursive=deployment", returns info about all tenants, their applications and their deployments
         tester.assertResponse(request("/application/v4/", GET)
                                       .domain("domain1").user("mytenant")
@@ -301,6 +303,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
 
         controllerTester.controller().deconstruct();
+    }
+
+    private void addIssues(ContainerControllerTester tester, ApplicationId id) {
+        try (Lock lock = tester.controller().applications().lock(id)) {
+            tester.controller().applications().store(tester.controller().applications().require(id, lock)
+                                                    .withDeploymentIssueId(IssueId.from("123"))
+                                                    .withOwnershipIssueId(IssueId.from("321")));
+        }
     }
 
     @Test
