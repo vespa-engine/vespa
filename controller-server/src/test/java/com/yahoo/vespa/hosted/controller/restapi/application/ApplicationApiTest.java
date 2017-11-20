@@ -222,7 +222,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/", GET)
                                       .domain("domain1").user("mytenant")
                                       .recursive("true"),
-                              new File("tenant1.json"));
+                              new File("tenant1-recursive.json"));
         // GET at an application, with "&recursive=true", returns full info about its deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/", GET)
                                       .domain("domain1").user("mytenant")
