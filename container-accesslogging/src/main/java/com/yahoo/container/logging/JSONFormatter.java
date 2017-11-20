@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
+import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,14 @@ public class JSONFormatter {
             generator.writeStringField("host", accessLogEntry.getHostString());
             generator.writeStringField("scheme", accessLogEntry.getScheme());
             generator.writeNumberField("localport", accessLogEntry.getLocalPort());
+
+            Principal principal = accessLogEntry.getUserPrincipal();
+            if (principal != null) {
+                generator.writeObjectFieldStart("user-principal");
+                generator.writeStringField("name", principal.getName());
+                generator.writeStringField("type", principal.getClass().getName());
+                generator.writeEndObject();
+            }
 
             // Only add remote address/port fields if relevant
             if (remoteAddressDiffers(accessLogEntry.getIpV4Address(), accessLogEntry.getRemoteAddress())) {
