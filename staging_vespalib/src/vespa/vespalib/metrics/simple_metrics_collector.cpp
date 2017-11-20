@@ -24,9 +24,8 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
       _collectorThread(doCollectLoop, this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
-    PointMap empty;
-    _pointMaps.vec.push_back(empty);
-    _pointMaps.map[empty] = 0;
+    Point empty = pointFrom(PointMapBacking());
+    assert(empty.id() == 0);
 }
 
 SimpleMetricsCollector::~SimpleMetricsCollector()
@@ -80,9 +79,9 @@ SimpleMetricsCollector::snapshot()
     Snapshot snap(s.count() * micro, e.count() * micro);
     {
         Guard guard(_pointMaps.lock);
-        for (const PointMap &entry : _pointMaps.vec) {
+        for (auto entry : _pointMaps.vec) {
+             const PointMapBacking &map = entry->first.backing();
              PointSnapshot point;
-             const PointMapBacking &map = entry.backing();
              for (const PointMapBacking::value_type &kv : map) {
                  point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
              }
@@ -165,7 +164,7 @@ PointBuilder
 SimpleMetricsCollector::pointBuilder(Point from)
 {
     Guard guard(_pointMaps.lock);
-    const PointMap &map = _pointMaps.vec[from.id()];
+    const PointMap &map = _pointMaps.vec[from.id()]->first;
     return PointBuilder(shared_from_this(), map.backing());
 }
 
@@ -173,14 +172,13 @@ Point
 SimpleMetricsCollector::pointFrom(PointMapBacking &&map)
 {
     Guard guard(_pointMaps.lock);
-    PointMap newMap(std::move(map));
     size_t nextId = _pointMaps.vec.size();
-    auto iter_check = _pointMaps.map.emplace(newMap, nextId);
+    auto iter_check = _pointMaps.map.emplace(std::move(map), nextId);
     if (iter_check.second) {
         LOG(debug, "new point map -> %zd / %zd", nextId, iter_check.first->second);
-        _pointMaps.vec.push_back(newMap);
+        _pointMaps.vec.push_back(iter_check.first);
     } else {
-        LOG(debug, "found point map -> %zd / %zd", nextId, iter_check.first->second);
+        LOG(debug, "found point map -> %zd", iter_check.first->second);
     }
     return Point(iter_check.first->second);
 }

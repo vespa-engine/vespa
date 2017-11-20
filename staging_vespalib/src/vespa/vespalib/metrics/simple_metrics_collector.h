@@ -26,10 +26,11 @@ private:
     NameCollection _metricNames;
     NameCollection _axisNames;
     NameCollection _coordValues;
+    using PointMapMap = std::map<PointMap, size_t>;
     struct {
         std::mutex lock;
-        std::vector<PointMap> vec;
-        std::map<PointMap, size_t> map;
+        PointMapMap map;
+        std::vector<PointMapMap::const_iterator> vec;
     } _pointMaps;
 
     const vespalib::string& nameFor(Axis axis) { return _axisNames.lookup(axis.id()); }
