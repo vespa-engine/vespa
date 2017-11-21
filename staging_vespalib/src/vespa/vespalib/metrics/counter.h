@@ -20,6 +20,7 @@ struct CounterIncrement {
 class Counter {
     std::shared_ptr<MetricsCollector> _manager;
     MetricIdentifier _idx;
+    MetricIdentifier ident() const { return _idx; }
 public:
     Counter() : _manager(), _idx() {}
     Counter(const Counter&) = delete;
@@ -34,8 +35,6 @@ public:
     void add(size_t count);
     void add(Point p);
     void add(size_t count, Point p);
-
-    MetricIdentifier ident() const { return _idx; }
 
     typedef MergedCounter aggregator_type;
     typedef CounterIncrement sample_type;
