@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.KeyProvider;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;

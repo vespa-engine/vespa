@@ -113,10 +113,10 @@ Impl::listBuckets(BucketSpace bucketSpace, PartitionId v1) const
 }
 
 Result
-Impl::setClusterState(const ClusterState& v1)
+Impl::setClusterState(BucketSpace bucketSpace, const ClusterState& v1)
 {
     PRE_PROCESS(3);
-    Result r(_next->setClusterState(v1));
+    Result r(_next->setClusterState(bucketSpace, v1));
     POST_PROCESS(3, r);
     return r;
 }

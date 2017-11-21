@@ -232,6 +232,7 @@ public class NodeAdminStateUpdater {
                 nodesToSuspend.addAll(nodesInActiveState);
                 nodesToSuspend.add(dockerHostHostName);
                 orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+                log.info("Orchestrator allows suspension of " + nodesToSuspend);
 
                 // The node agent services are stopped by this thread, which is OK only
                 // because the node agents are frozen (see above).

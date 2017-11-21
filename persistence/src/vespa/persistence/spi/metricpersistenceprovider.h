@@ -35,7 +35,7 @@ public:
     Result initialize() override;
     PartitionStateListResult getPartitionStates() const override;
     BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
-    Result setClusterState(const ClusterState&) override;
+    Result setClusterState(BucketSpace bucketSpace, const ClusterState&) override;
     Result setActiveState(const Bucket&, BucketInfo::ActiveState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;

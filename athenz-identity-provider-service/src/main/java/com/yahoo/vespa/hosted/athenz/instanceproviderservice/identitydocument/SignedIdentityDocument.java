@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model;
+package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -17,7 +17,7 @@ import java.util.Objects;
 public class SignedIdentityDocument {
 
     public static final int DEFAULT_KEY_VERSION = 0;
-    public static final int DEFAILT_DOCUMENT_VERSION = 1;
+    public static final int DEFAULT_DOCUMENT_VERSION = 1;
 
     @JsonProperty("identity-document")public final String rawIdentityDocument;
     @JsonIgnore public final IdentityDocument identityDocument;

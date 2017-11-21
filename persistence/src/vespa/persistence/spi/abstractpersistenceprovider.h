@@ -55,7 +55,7 @@ public:
     /**
      * Default impl empty.
      */
-    Result setClusterState(const ClusterState&) override { return Result(); }
+    Result setClusterState(BucketSpace, const ClusterState&) override { return Result(); }
 
     /**
      * Default impl empty.

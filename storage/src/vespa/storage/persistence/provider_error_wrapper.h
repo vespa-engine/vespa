@@ -44,7 +44,7 @@ public:
     spi::Result initialize() override;
     spi::PartitionStateListResult getPartitionStates() const override;
     spi::BucketIdListResult listBuckets(BucketSpace bucketSpace, spi::PartitionId) const override;
-    spi::Result setClusterState(const spi::ClusterState&)  override;
+    spi::Result setClusterState(BucketSpace bucketSpace, const spi::ClusterState&)  override;
     spi::Result setActiveState(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState) override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
     spi::Result put(const spi::Bucket&, spi::Timestamp, const spi::DocumentSP&, spi::Context&) override;

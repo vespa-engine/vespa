@@ -13,6 +13,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -84,7 +85,8 @@ public class ApplicationSerializerTest {
                                                deployments, deploymentJobs,
                                                Optional.of(new Change.VersionChange(Version.fromString("6.7"))),
                                                true,
-                                               Optional.of(IssueId.from("1234")));
+                                               Optional.of(IssueId.from("1234")),
+                                               new MetricsService.ApplicationMetrics(0.5, 0.9));
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -132,6 +134,9 @@ public class ApplicationSerializerTest {
         assertEquals(50, serialized.deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorDisk(), Double.MIN_VALUE);
 
         // Test metrics
+        assertEquals(original.metrics().queryServiceQuality(), serialized.metrics().queryServiceQuality(), Double.MIN_VALUE);
+        assertEquals(original.metrics().writeServiceQuality(), serialized.metrics().writeServiceQuality(), Double.MIN_VALUE);
+
         assertEquals(2, serialized.deployments().get(zone2).metrics().queriesPerSecond(), Double.MIN_VALUE);
         assertEquals(3, serialized.deployments().get(zone2).metrics().writesPerSecond(), Double.MIN_VALUE);
         assertEquals(4, serialized.deployments().get(zone2).metrics().documentCount(), Double.MIN_VALUE);

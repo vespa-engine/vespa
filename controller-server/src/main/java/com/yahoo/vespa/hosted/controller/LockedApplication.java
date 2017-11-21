@@ -7,6 +7,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -32,8 +34,9 @@ import java.util.Optional;
 public class LockedApplication extends Application {
 
     private LockedApplication(Builder builder) {
-        super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides, builder.deployments,
-              builder.deploymentJobs, builder.deploying, builder.hasOutstandingChange, builder.ownershipIssueId);
+        super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides,
+              builder.deployments, builder.deploymentJobs, builder.deploying,
+              builder.hasOutstandingChange, builder.ownershipIssueId, builder.metrics);
     }
 
     /**
@@ -122,6 +125,10 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).withOwnershipIssueId(Optional.ofNullable(issueId)));
     }
 
+    public LockedApplication with(MetricsService.ApplicationMetrics metrics) {
+        return new LockedApplication(new Builder(this).with(metrics));
+    }
+
     public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? controller.systemVersion()
@@ -152,6 +159,7 @@ public class LockedApplication extends Application {
         private Optional<Change> deploying;
         private boolean hasOutstandingChange;
         private Optional<IssueId> ownershipIssueId;
+        private ApplicationMetrics metrics;
 
         private Builder(Application application) {
             this.applicationId = application.id();
@@ -162,6 +170,7 @@ public class LockedApplication extends Application {
             this.deploying = application.deploying();
             this.hasOutstandingChange = application.hasOutstandingChange();
             this.ownershipIssueId = application.ownershipIssueId();
+            this.metrics = application.metrics();
         }
 
         private Builder with(DeploymentSpec deploymentSpec) { this.deploymentSpec = deploymentSpec; return this; }
@@ -171,6 +180,7 @@ public class LockedApplication extends Application {
         private Builder withDeploying(Optional<Change> deploying) { this.deploying = deploying; return this; }
         private Builder with(boolean hasOutstandingChange) { this.hasOutstandingChange = hasOutstandingChange; return this; }
         private Builder withOwnershipIssueId(Optional<IssueId> ownershipIssueId) { this.ownershipIssueId = ownershipIssueId; return this; }
+        private Builder with(ApplicationMetrics metrics) { this.metrics = metrics; return this; }
 
     }
 

@@ -55,9 +55,9 @@ ProviderErrorWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionId part
 }
 
 spi::Result
-ProviderErrorWrapper::setClusterState(const spi::ClusterState& state)
+ProviderErrorWrapper::setClusterState(BucketSpace bucketSpace, const spi::ClusterState& state)
 {
-    return checkResult(_impl.setClusterState(state));
+    return checkResult(_impl.setClusterState(bucketSpace, state));
 }
 
 spi::Result

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,8 +53,16 @@ public class ContainerTester {
         controller.updateVersionStatus(VersionStatus.compute(controller, version));
     }
 
+    public void assertResponse(Supplier<Request> request, File responseFile) throws IOException {
+        assertResponse(request.get(), responseFile);
+    }
+
     public void assertResponse(Request request, File responseFile) throws IOException {
         assertResponse(request, responseFile, 200);
+    }
+
+    public void assertResponse(Supplier<Request> request, File responseFile, int expectedStatusCode) throws IOException {
+        assertResponse(request.get(), responseFile, expectedStatusCode);
     }
 
     public void assertResponse(Request request, File responseFile, int expectedStatusCode) throws IOException {
@@ -72,8 +81,16 @@ public class ContainerTester {
                      replace(new String(SlimeUtils.toJsonBytes(responseSlime), StandardCharsets.UTF_8), replaceStrings));
     }
 
+    public void assertResponse(Supplier<Request> request, String expectedResponse) throws IOException {
+        assertResponse(request.get(), expectedResponse, 200);
+    }
+
     public void assertResponse(Request request, String expectedResponse) throws IOException {
         assertResponse(request, expectedResponse, 200);
+    }
+
+    public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) throws IOException {
+        assertResponse(request.get(), expectedResponse, expectedStatusCode);
     }
 
     public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {

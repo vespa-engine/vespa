@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -42,26 +43,27 @@ public class Application {
     private final Optional<Change> deploying;
     private final boolean outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
+    private final ApplicationMetrics metrics;
 
     /** Creates an empty application */
     public Application(ApplicationId id) {
         this(id, DeploymentSpec.empty, ValidationOverrides.empty, ImmutableMap.of(),
              new DeploymentJobs(Optional.empty(), Collections.emptyList(), Optional.empty()),
-             Optional.empty(), false, Optional.empty());
+             Optional.empty(), false, Optional.empty(), new ApplicationMetrics(0, 0));
     }
 
     /** Used from persistence layer: Do not use */
     public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides, 
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
-                       boolean outstandingChange, Optional<IssueId> ownershipIssueId) {
+                       boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics) {
         this(id, deploymentSpec, validationOverrides, 
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
-             deploymentJobs, deploying, outstandingChange, ownershipIssueId);
+             deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics);
     }
 
     Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<Zone, Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
-                boolean outstandingChange, Optional<IssueId> ownershipIssueId) {
+                boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics) {
         Objects.requireNonNull(id, "id cannot be null");
         Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
         Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
@@ -76,6 +78,7 @@ public class Application {
         this.deploying = deploying;
         this.outstandingChange = outstandingChange;
         this.ownershipIssueId = ownershipIssueId;
+        this.metrics = metrics;
     }
 
     public ApplicationId id() { return id; }
@@ -120,7 +123,15 @@ public class Application {
      */
     public boolean hasOutstandingChange() { return outstandingChange; }
 
-    /** 
+    public Optional<IssueId> ownershipIssueId() {
+        return ownershipIssueId;
+    }
+
+    public ApplicationMetrics metrics() {
+        return metrics;
+    }
+
+    /**
      * Returns the oldest version this has deployed in a permanent zone (not test or staging),
      * or empty version if it is not deployed anywhere
      */
@@ -179,10 +190,6 @@ public class Application {
 
     public boolean isBlocked(Instant instant) {
          return ! deploymentSpec().canUpgradeAt(instant) || ! deploymentSpec().canChangeRevisionAt(instant);
-    }
-
-    public Optional<IssueId> ownershipIssueId() {
-        return ownershipIssueId;
     }
 
 }

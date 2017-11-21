@@ -45,7 +45,7 @@ DownPersistence::listBuckets(BucketSpace, PartitionId) const
 }
 
 Result
-DownPersistence:: setClusterState(const ClusterState&)
+DownPersistence:: setClusterState(BucketSpace, const ClusterState&)
 {
     return Result();
 }
