@@ -94,7 +94,7 @@ public class Simplifier extends ExpressionTransformer {
     private ExpressionNode transformIf(IfNode node) {
         if ( ! isConstant(node.getCondition())) return node;
 
-        if (((BooleanValue)node.getCondition().evaluate(null)).asBoolean())
+        if ((node.getCondition().evaluate(null)).asBoolean())
             return node.getTrueExpression();
         else
             return node.getFalseExpression();
