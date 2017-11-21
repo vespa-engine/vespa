@@ -559,7 +559,7 @@ Distributor::enableNextDistribution()
 
 void
 Distributor::propagateDefaultDistribution(
-        std::shared_ptr<lib::Distribution> distribution)
+        std::shared_ptr<const lib::Distribution> distribution)
 {
     _bucketSpaceRepo->setDefaultDistribution(std::move(distribution));
 }
