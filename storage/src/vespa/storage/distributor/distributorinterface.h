@@ -20,7 +20,6 @@ class DistributorInterface : public DistributorMessageSender
 {
 public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;
-    virtual const lib::Distribution& getDistribution() const = 0;
 
     virtual DistributorMetricSet& getMetrics() = 0;
 
