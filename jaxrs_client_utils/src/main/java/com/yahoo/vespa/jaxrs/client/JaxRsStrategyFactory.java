@@ -34,15 +34,13 @@ import java.util.Set;
 public class JaxRsStrategyFactory {
     private final Set<HostName> hostNames;
     private int port;
-    private final String scheme;
     private final JaxRsClientFactory jaxRsClientFactory;
 
     // TODO: We might need to support per-host port specification.
     public JaxRsStrategyFactory(
             final Set<HostName> hostNames,
             final int port,
-            final JaxRsClientFactory jaxRsClientFactory,
-            String scheme) {
+            final JaxRsClientFactory jaxRsClientFactory) {
         if (hostNames.isEmpty()) {
             throw new IllegalArgumentException("hostNames argument must not be empty");
         }
@@ -50,20 +48,19 @@ public class JaxRsStrategyFactory {
         this.hostNames = hostNames;
         this.port = port;
         this.jaxRsClientFactory = jaxRsClientFactory;
-        this.scheme = scheme;
     }
 
     public <T> JaxRsStrategy<T> apiWithRetries(final Class<T> apiClass, final String pathPrefix) {
         Objects.requireNonNull(apiClass, "apiClass argument may not be null");
         Objects.requireNonNull(pathPrefix, "pathPrefix argument may not be null");
-        return new RetryingJaxRsStrategy<T>(hostNames, port, jaxRsClientFactory, apiClass, pathPrefix, scheme);
+        return new RetryingJaxRsStrategy<T>(hostNames, port, jaxRsClientFactory, apiClass, pathPrefix);
     }
 
     public <T> JaxRsStrategy<T> apiNoRetries(final Class<T> apiClass, final String pathPrefix) {
         Objects.requireNonNull(apiClass, "apiClass argument may not be null");
         Objects.requireNonNull(pathPrefix, "pathPrefix argument may not be null");
         final HostName hostName = getRandom(hostNames);
-        return new NoRetryJaxRsStrategy<T>(hostName, port, jaxRsClientFactory, apiClass, pathPrefix, scheme);
+        return new NoRetryJaxRsStrategy<T>(hostName, port, jaxRsClientFactory, apiClass, pathPrefix);
     }
 
     private static final Random random = new Random();

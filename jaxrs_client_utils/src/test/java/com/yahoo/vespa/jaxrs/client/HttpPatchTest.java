@@ -70,7 +70,7 @@ public class HttpPatchTest extends JerseyTest {
 
         final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
         final JaxRsStrategyFactory factory = new JaxRsStrategyFactory(
-                Collections.singleton(apiHost), apiPort, jaxRsClientFactory, "http");
+                Collections.singleton(apiHost), apiPort, jaxRsClientFactory);
         final JaxRsStrategy<TestResourceApi> client = factory.apiNoRetries(TestResourceApi.class, apiPath);
 
         final String responseBody;

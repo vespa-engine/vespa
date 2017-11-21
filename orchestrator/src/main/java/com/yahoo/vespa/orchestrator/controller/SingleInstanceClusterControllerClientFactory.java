@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 public class SingleInstanceClusterControllerClientFactory implements ClusterControllerClientFactory {
 
     public static final int CLUSTERCONTROLLER_HARDCODED_PORT = 19050;
-    public static final String CLUSTERCONTROLLER_HARDCODED_SCHEME = "http";
     public static final String CLUSTERCONTROLLER_API_PATH = "/";
 
     private static final Logger log = Logger.getLogger(SingleInstanceClusterControllerClientFactory.class.getName());
@@ -45,8 +44,7 @@ public class SingleInstanceClusterControllerClientFactory implements ClusterCont
                 port,
                 jaxRsClientFactory,
                 ClusterControllerJaxRsApi.class,
-                CLUSTERCONTROLLER_API_PATH,
-                CLUSTERCONTROLLER_HARDCODED_SCHEME);
+                CLUSTERCONTROLLER_API_PATH);
 
         return new ClusterControllerClientImpl(strategy, clusterName);
     }

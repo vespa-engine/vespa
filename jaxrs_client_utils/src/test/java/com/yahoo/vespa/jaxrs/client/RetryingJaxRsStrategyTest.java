@@ -48,11 +48,11 @@ public class RetryingJaxRsStrategyTest {
     private final JaxRsClientFactory jaxRsClientFactory = mock(JaxRsClientFactory.class);
     private final TestJaxRsApi mockApi = mock(TestJaxRsApi.class);
     private final JaxRsStrategy<TestJaxRsApi> jaxRsStrategy = new RetryingJaxRsStrategy<>(
-            SERVER_HOSTS, REST_PORT, jaxRsClientFactory, TestJaxRsApi.class, API_PATH, "http");
+            SERVER_HOSTS, REST_PORT, jaxRsClientFactory, TestJaxRsApi.class, API_PATH);
 
     @Before
     public void setup() {
-        when(jaxRsClientFactory.createClient(eq(TestJaxRsApi.class), any(HostName.class), anyInt(), anyString(), anyString()))
+        when(jaxRsClientFactory.createClient(eq(TestJaxRsApi.class), any(HostName.class), anyInt(), anyString()))
                 .thenReturn(mockApi);
     }
 
@@ -65,7 +65,7 @@ public class RetryingJaxRsStrategyTest {
         // Check that one of the supplied hosts is contacted.
         final ArgumentCaptor<HostName> hostNameCaptor = ArgumentCaptor.forClass(HostName.class);
         verify(jaxRsClientFactory, times(1))
-                .createClient(eq(TestJaxRsApi.class), hostNameCaptor.capture(), eq(REST_PORT), eq(API_PATH), eq("http"));
+                .createClient(eq(TestJaxRsApi.class), hostNameCaptor.capture(), eq(REST_PORT), eq(API_PATH));
         assertThat(SERVER_HOSTS.contains(hostNameCaptor.getValue()), is(true));
     }
 
@@ -135,7 +135,7 @@ public class RetryingJaxRsStrategyTest {
             final JaxRsClientFactory jaxRsClientFactory) {
         final ArgumentCaptor<HostName> hostNameCaptor = ArgumentCaptor.forClass(HostName.class);
         verify(jaxRsClientFactory, atLeast(SERVER_HOSTS.size()))
-                .createClient(eq(TestJaxRsApi.class), hostNameCaptor.capture(), eq(REST_PORT), eq(API_PATH), eq("http"));
+                .createClient(eq(TestJaxRsApi.class), hostNameCaptor.capture(), eq(REST_PORT), eq(API_PATH));
         final Set<HostName> actualServerHostsContacted = new HashSet<>(hostNameCaptor.getAllValues());
         assertThat(actualServerHostsContacted, equalTo(SERVER_HOSTS));
     }

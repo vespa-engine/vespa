@@ -36,8 +36,8 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
      *   https://jersey.java.net/apidocs/latest/jersey/org/glassfish/jersey/client/HttpUrlConnectorProvider.html#SET_METHOD_WORKAROUND
      */
     @Override
-    public <T> T createClient(final Class<T> apiClass, final HostName hostName, final int port, final String pathPrefix, String scheme) {
-        final UriBuilder uriBuilder = UriBuilder.fromPath(pathPrefix).host(hostName.s()).port(port).scheme(scheme);
+    public <T> T createClient(final Class<T> apiClass, final HostName hostName, final int port, final String pathPrefix) {
+        final UriBuilder uriBuilder = UriBuilder.fromPath(pathPrefix).host(hostName.s()).port(port).scheme("http");
         final Client webClient = ClientBuilder.newClient()
                 .property(ClientProperties.CONNECT_TIMEOUT, connectTimeoutMs)
                 .property(ClientProperties.READ_TIMEOUT, readTimeoutMs)
