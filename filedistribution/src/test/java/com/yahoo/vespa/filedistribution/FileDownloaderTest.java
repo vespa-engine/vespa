@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +46,7 @@ public class FileDownloaderTest {
         try {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
-            fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(3000));
+            fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(2000));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -112,6 +113,38 @@ public class FileDownloaderTest {
             // Verify download status when downloaded
             assertDownloadStatus(fileDownloader, fileReference, 100.0);
         }
+    }
+
+    @Test
+    public void getFileWhenConnectionError() throws IOException {
+        fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(3000));
+        File downloadDir = fileDownloader.downloadDirectory();
+
+        int timesToFail = 2;
+        MockConnection.ConnectionErrorResponseHandler responseHandler = new MockConnection.ConnectionErrorResponseHandler(timesToFail);
+        connection.setResponseHandler(responseHandler);
+
+        FileReference fileReference = new FileReference("fileReference");
+        File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
+        assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
+
+        // Verify download status
+        assertDownloadStatus(fileDownloader, fileReference, 0.0);
+
+        // Receives fileReference, should return and make it available to caller
+        String filename = "abc.jar";
+        receiveFile(fileReference, filename, "some other content");
+        Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
+
+        assertTrue(downloadedFile.isPresent());
+        File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
+        assertEquals(downloadedFileFullPath.getAbsolutePath(), downloadedFile.get().getAbsolutePath());
+        assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
+
+        // Verify download status when downloaded
+        assertDownloadStatus(fileDownloader, fileReference, 100.0);
+
+        assertEquals(timesToFail, responseHandler.failedTimes);
     }
 
     @Test
@@ -271,7 +304,30 @@ public class FileDownloaderTest {
                     request.returnValues().add(new Int32Value(0));
                     request.returnValues().add(new StringValue("OK"));
                 }
+            }
+        }
 
+        static class ConnectionErrorResponseHandler implements MockConnection.ResponseHandler {
+
+            private final int timesToFail;
+            private int failedTimes = 0;
+
+            ConnectionErrorResponseHandler(int timesToFail) {
+                super();
+                this.timesToFail = timesToFail;
+            }
+
+            @Override
+            public void request(Request request) {
+                if (request.methodName().equals("filedistribution.serveFile")) {
+                    if (failedTimes < timesToFail) {
+                        request.setError(CONNECTION, "Connection error");
+                        failedTimes++;
+                    } else {
+                        request.returnValues().add(new Int32Value(0));
+                        request.returnValues().add(new StringValue("OK"));
+                    }
+                }
             }
         }
     }
