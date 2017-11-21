@@ -29,7 +29,8 @@ import java.util.Optional;
  * A combination of an application instance and a lock for that application. Provides methods for updating application
  * fields.
  *
- * @author mpolden, jvenstad
+ * @author mpolden
+ * @author jvenstad
  */
 public class LockedApplication extends Application {
 
