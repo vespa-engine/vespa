@@ -11,6 +11,7 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     name_collection.cpp
     no_realloc_bunch.cpp
     point.cpp
+    producer.cpp
     simple_metrics_collector.cpp
     simple_metrics.cpp
     snapshots.cpp
