@@ -36,11 +36,11 @@ public class NoRetryJaxRsStrategyTest {
     private final JaxRsClientFactory jaxRsClientFactory = mock(JaxRsClientFactory.class);
     private final TestJaxRsApi mockApi = mock(TestJaxRsApi.class);
     private final JaxRsStrategy<TestJaxRsApi> jaxRsStrategy = new NoRetryJaxRsStrategy<>(
-            SERVER_HOST, REST_PORT, jaxRsClientFactory, TestJaxRsApi.class, API_PATH);
+            SERVER_HOST, REST_PORT, jaxRsClientFactory, TestJaxRsApi.class, API_PATH, "http");
 
     @Before
     public void setup() {
-        when(jaxRsClientFactory.createClient(eq(TestJaxRsApi.class), any(HostName.class), anyInt(), anyString()))
+        when(jaxRsClientFactory.createClient(eq(TestJaxRsApi.class), any(HostName.class), anyInt(), anyString(), anyString()))
                 .thenReturn(mockApi);
     }
 
@@ -51,7 +51,7 @@ public class NoRetryJaxRsStrategyTest {
         verify(mockApi, times(1)).doSomething();
 
         verify(jaxRsClientFactory, times(1))
-                .createClient(eq(TestJaxRsApi.class), eq(SERVER_HOST), eq(REST_PORT), eq(API_PATH));
+                .createClient(eq(TestJaxRsApi.class), eq(SERVER_HOST), eq(REST_PORT), eq(API_PATH), eq("http"));
     }
 
     @Test

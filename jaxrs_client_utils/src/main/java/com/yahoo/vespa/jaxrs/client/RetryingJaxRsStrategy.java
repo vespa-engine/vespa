@@ -28,13 +28,15 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private final JaxRsClientFactory jaxRsClientFactory;
     private final Class<T> apiClass;
     private String pathPrefix;
+    private final String scheme;
 
     public RetryingJaxRsStrategy(
             final Set<HostName> hostNames,
             final int port,
             final JaxRsClientFactory jaxRsClientFactory,
             final Class<T> apiClass,
-            final String pathPrefix) {
+            final String pathPrefix,
+            String scheme) {
         if (hostNames.isEmpty()) {
             throw new IllegalArgumentException("hostNames argument must not be empty");
         }
@@ -47,6 +49,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
         this.jaxRsClientFactory = jaxRsClientFactory;
         this.apiClass = apiClass;
         this.pathPrefix = pathPrefix;
+        this.scheme = scheme;
     }
 
     @Override
@@ -55,7 +58,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
 
         for (int i = 0; i < NUM_LOOP_ATTEMPTS; ++i) {
             for (final HostName hostName : hostNames) {
-                final T jaxRsClient = jaxRsClientFactory.createClient(apiClass, hostName, port, pathPrefix);
+                final T jaxRsClient = jaxRsClientFactory.createClient(apiClass, hostName, port, pathPrefix, scheme);
                 try {
                     return function.apply(jaxRsClient);
                 } catch (ProcessingException e) {
