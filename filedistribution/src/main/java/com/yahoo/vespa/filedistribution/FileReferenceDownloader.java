@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
-import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.log.LogLevel;
@@ -36,6 +35,7 @@ import java.util.stream.Collectors;
  *
  * @author hmusum
  */
+// TODO: Add retries when a config server does not have a file reference
 // TODO: Handle shutdown of executors
 class FileReferenceDownloader {
 
@@ -66,20 +66,10 @@ class FileReferenceDownloader {
             throws ExecutionException, InterruptedException, TimeoutException {
         downloads.put(fileReference, fileReferenceDownload);
         setDownloadStatus(fileReference.value(), 0.0);
-
-        int numAttempts = 0;
-        boolean downloadStarted = false;
-        do {
-            if (startDownloadRpc(fileReference))
-                downloadStarted = true;
-            else
-                Thread.sleep(100);
-        } while (!downloadStarted && ++numAttempts <= 10);  // TODO: How long/many times to retry?
-
-        if (downloadStarted) {
+        if (startDownloadRpc(fileReference))
             return fileReferenceDownload.future().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } else {
-            fileReferenceDownload.future().setException(new RuntimeException("Failed getting file reference '" + fileReference.value() + "'"));
+        else {
+            fileReferenceDownload.future().setException(new RuntimeException("Failed getting file"));
             downloads.remove(fileReference);
             return Optional.empty();
         }
@@ -128,17 +118,15 @@ class FileReferenceDownloader {
         execute(request, connection);
         if (validateResponse(request)) {
             log.log(LogLevel.DEBUG, "Request callback, OK. Req: " + request + "\nSpec: " + connection);
-            if (request.returnValues().get(0).asInt32() == 0) {
+            if (request.returnValues().get(0).asInt32() == 0)
                 log.log(LogLevel.INFO, "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
-                return true;
-            } else {
+            else
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
-                return false;
-            }
+            return true;
         } else {
             log.log(LogLevel.WARNING, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress());
-            if (request.isError() && request.errorCode() == ErrorCode.CONNECTION)
-                connection.setError(request.errorCode());
+            connection.setError(request.errorCode());
+            // TODO: Retry with another config server
             return false;
         }
     }
