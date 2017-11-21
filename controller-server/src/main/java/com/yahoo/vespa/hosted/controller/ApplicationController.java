@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
@@ -118,12 +117,6 @@ public class ApplicationController {
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Application> get(ApplicationId id) {
         return db.getApplication(id);
-    }
-
-
-    /** Returns an locked application with the given id that be updated and stored */
-    private Optional<LockedApplication> get(ApplicationId id, Lock lock) {
-        return get(id).map(application -> new LockedApplication(application, lock));
     }
 
     /**
@@ -276,9 +269,9 @@ public class ApplicationController {
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // TODO: Shouldn't this go through the above method? Seems you can cheat the checks here ... ?
-            LockedApplication application = get(applicationId, lock).orElse(new LockedApplication(
+            LockedApplication application = get(applicationId).map(application1 -> new LockedApplication(application1, lock)).orElse(new LockedApplication(
                     new Application(applicationId), lock)
-            );
+                                                                                                                                    );
 
             // Determine what we are doing
             Version version;
@@ -532,7 +525,7 @@ public class ApplicationController {
      */
     public void lockedIfPresent(ApplicationId applicationId, Consumer<LockedApplication> actions) {
         try (Lock lock = lock(applicationId)) {
-            get(applicationId, lock).ifPresent(actions);
+            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(actions);
         }
     }
 
@@ -544,7 +537,7 @@ public class ApplicationController {
      */
     public void lockedOrThrow(ApplicationId applicationId, Consumer<LockedApplication> actions) {
         try (Lock lock = lock(applicationId)) {
-            actions.accept(get(applicationId, lock).orElseThrow(() -> new IllegalArgumentException(applicationId + " not found")));
+            actions.accept(new LockedApplication(require(applicationId), lock));
         }
     }
 
