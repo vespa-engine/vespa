@@ -50,7 +50,7 @@ public class ArithmeticNode implements ExpressionNode {
             Object val = item.node.evaluate(context);
 
             if (val == null) {
-                throw new IllegalStateException("Null value found!");
+                throw new IllegalArgumentException("Can not perform arithmetic on null value (referencing missing field?)");
             }
 
             if (val instanceof AttributeNode.VariableValueList) {

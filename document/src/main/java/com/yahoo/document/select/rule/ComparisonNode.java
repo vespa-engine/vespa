@@ -215,8 +215,8 @@ public class ComparisonNode implements ExpressionNode {
     public Object evaluate(Context context) {
         Object oLeft = lhs.evaluate(context);
         Object oRight = rhs.evaluate(context);
-        if (oLeft == null && oRight == null) {
-            return new ResultList(Result.TRUE);
+        if (oLeft == null || oRight == null) {
+            return evaluateWithAtLeastOneNullSide(oLeft, oRight);
         }
         if (oLeft == Result.INVALID || oRight == Result.INVALID) {
             return new ResultList(Result.INVALID);
@@ -235,6 +235,23 @@ public class ComparisonNode implements ExpressionNode {
             return evaluateListAndSingle((AttributeNode.VariableValueList)oRight, oLeft);
         }
         return new ResultList(evaluateBool(oLeft, oRight));
+    }
+
+    /**
+     * Evaluates a binary comparison where one or both operands are null.
+     * Boolean outcomes are only defined for (in)equality relations, all others
+     * return Result.INVALID.
+     *
+     * Precondition: lhs AND/OR rhs is null.
+     */
+    private ResultList evaluateWithAtLeastOneNullSide(Object lhs, Object rhs) {
+        if (operator.equals("==") || operator.equals("=")) { // Glob (=) operator falls back to equality for non-strings
+            return ResultList.fromBoolean(lhs == rhs);
+        } else if (operator.equals("!=")) {
+            return ResultList.fromBoolean(lhs != rhs);
+        } else {
+            return new ResultList(Result.INVALID);
+        }
     }
 
     public ResultList evaluateListsTrue(AttributeNode.VariableValueList lhs, AttributeNode.VariableValueList rhs) {
