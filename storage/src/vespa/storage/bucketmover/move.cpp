@@ -9,13 +9,13 @@ namespace bucketmover {
 Move::Move()
     : _sourceDisk(0),
       _targetDisk(0),
-      _bucket(0),
+      _bucket(document::BucketSpace::placeHolder(), document::BucketId(0)),
       _totalDocSize(0),
       _priority(255)
 {
 }
 
-Move::Move(uint16_t source, uint16_t target, const document::BucketId& bucket,
+Move::Move(uint16_t source, uint16_t target, const document::Bucket& bucket,
            uint32_t totalDocSize)
     : _sourceDisk(source),
       _targetDisk(target),

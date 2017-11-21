@@ -4,6 +4,7 @@
 #include "htmltable.h"
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/bucketmessages.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/config/common/exceptions.h>
@@ -27,7 +28,7 @@ BucketMover::BucketMover(const config::ConfigUri & configUri,
       _cycleCount(0),
       _nextRun(0),
       _configFetcher(configUri.getContext()),
-      _diskDistribution(_component.getDistribution()->getDiskDistribution()),
+      _diskDistribution(currentDiskDistribution()),
       _maxSleepTime(60 * 60)
 {
     if (!configUri.empty()) {
@@ -40,7 +41,7 @@ BucketMover::BucketMover(const config::ConfigUri & configUri,
 
 BucketMover::~BucketMover()
 {
-    if (_thread.get() != 0) {
+    if (_thread) {
         LOG(error, "BucketMover deleted without calling close() first");
        onClose();
     }
@@ -61,10 +62,10 @@ BucketMover::onClose()
     // Avoid getting config during shutdown
     _configFetcher.close();
     // Close thread to ensure we don't send anything more down after
-    if (_thread.get()) {
+    if (_thread) {
         _thread->interruptAndJoin(&_wait);
         LOG(debug, "Bucket mover worker thread closed.");
-        _thread.reset(0);
+        _thread.reset();
     }
 }
 
@@ -111,12 +112,14 @@ BucketMover::startNewRun()
     // If not in a run but time to start another one, do so
     LOG(debug, "Starting new move cycle at time %s.",
         _component.getClock().getTimeInSeconds().toString().c_str());
-    _currentRun.reset(new bucketmover::Run(
-            _component.getBucketDatabase(BucketSpace::placeHolder()),
-            _component.getDistribution(),
+    // TODO consider if we should invoke bucket moving across all bucket spaces. Not likely to ever be needed.
+    // If so, we have to spawn off an individual Run per space, as it encompasses
+    // both a (disk) distribution and a bucket database.
+    _currentRun = std::make_unique<bucketmover::Run>(
+            _component.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()),
             *_component.getStateUpdater().getReportedNodeState(),
             _component.getIndex(),
-            _component.getClock()));
+            _component.getClock());
 }
 
 void
@@ -124,8 +127,7 @@ BucketMover::queueNewMoves()
 {
     // If we have too few pending, send some new moves, if there are more
     // moves to perform.
-    while (_pendingMoves.size() < uint32_t(_config->maxPending))
-    {
+    while (_pendingMoves.size() < uint32_t(_config->maxPending)) {
         Move nextMove = _currentRun->getNextMove();
 
         // If no more moves to do, stop attempting to send more.
@@ -133,11 +135,8 @@ BucketMover::queueNewMoves()
             break;
         }
         _pendingMoves.push_back(nextMove);
-        document::Bucket bucket(BucketSpace::placeHolder(), nextMove.getBucketId());
-        std::shared_ptr<BucketDiskMoveCommand> cmd(
-                new BucketDiskMoveCommand(bucket,
-                                          nextMove.getSourceDisk(),
-                                          nextMove.getTargetDisk()));
+        auto cmd = std::make_shared<BucketDiskMoveCommand>(
+                nextMove.getBucket(), nextMove.getSourceDisk(), nextMove.getTargetDisk());
         cmd->setPriority(nextMove.getPriority());
         _newMoves.push_back(cmd);
     }
@@ -171,11 +170,9 @@ BucketMover::finishCurrentRun()
 void
 BucketMover::sendNewMoves()
 {
-    for (std::list<BucketDiskMoveCommand::SP>::iterator it
-             = _newMoves.begin(); it != _newMoves.end(); ++it)
-    {
-        LOG(debug, "Moving bucket: %s", (**it).toString().c_str());
-        sendDown(*it);
+    for (auto& move : _newMoves) {
+        LOG(debug, "Moving bucket: %s", move->toString().c_str());
+        sendDown(move);
 
         // Be able to sleep a bit between moves for debugging to see
         // what is happening. (Cannot use wait() here as reply of
@@ -196,7 +193,7 @@ BucketMover::tick()
 
         framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
 
-        if (_currentRun.get() == 0) {
+        if (!_currentRun) {
             if (currentTime >= _nextRun) {
                 startNewRun();
             } else {
@@ -287,25 +284,24 @@ bool
 BucketMover::onInternalReply(
         const std::shared_ptr<api::InternalReply>& internalReply)
 {
-        // We only care about move disk bucket replies
-    std::shared_ptr<BucketDiskMoveReply> reply(
-            std::dynamic_pointer_cast<BucketDiskMoveReply>(internalReply));
-    if (!reply.get()) return false;
+    // We only care about move disk bucket replies
+    auto reply = std::dynamic_pointer_cast<BucketDiskMoveReply>(internalReply);
+    if (!reply) {
+        return false;
+    }
 
-        // Warn if we see move replies outside of a run. Should not be possible.
+    // Warn if we see move replies outside of a run. Should not be possible.
     vespalib::MonitorGuard monitor(_wait);
-    if (_currentRun.get() == 0) {
+    if (!_currentRun) {
         LOG(warning, "Got a bucket disk move reply while no run is active. "
                      "This should not happen, as runs should stay active until "
                      "all requests are answered.");
         return true;
     }
-        // Match move against pending ones
+    // Match move against pending ones
     Move move;
-    for (std::list<Move>::iterator it = _pendingMoves.begin();
-         it != _pendingMoves.end(); ++it)
-    {
-        if (it->getBucketId() == reply->getBucketId()
+    for (auto it = _pendingMoves.begin(); it != _pendingMoves.end(); ++it) {
+        if (it->getBucket() == reply->getBucket()
             && it->getSourceDisk() == reply->getSrcDisk()
             && it->getTargetDisk() == reply->getDstDisk())
         {
@@ -338,18 +334,20 @@ BucketMover::onInternalReply(
     return true;
 }
 
+// TODO if we start supporting disk moves for other spaces than the default space
+// we also have to check all disk distributions here.
 void
 BucketMover::storageDistributionChanged()
 {
-    lib::Distribution::SP distribution = _component.getDistribution();
+    // Verify that the actual disk distribution changed, if not ignore
+    lib::Distribution::DiskDistribution newDistr(currentDiskDistribution());
 
-        // Verify that the actual disk distribution changed, if not ignore
-    lib::Distribution::DiskDistribution newDistr(distribution->getDiskDistribution());
-
-    if (_diskDistribution == newDistr) return;
+    if (_diskDistribution == newDistr) {
+        return;
+    }
 
     vespalib::MonitorGuard monitor(_wait);
-    if (_currentRun.get() != 0) {
+    if (_currentRun) {
         LOG(info, "Aborting bucket mover run as disk distribution changed "
                   "from %s to %s.",
             lib::Distribution::getDiskDistributionName(_diskDistribution).c_str(),
@@ -365,9 +363,14 @@ BucketMover::storageDistributionChanged()
     _nextRun = framework::SecondTime(0);
 }
 
+lib::Distribution::DiskDistribution BucketMover::currentDiskDistribution() const {
+    auto distribution = _component.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()).getDistribution();
+    return distribution->getDiskDistribution();
+}
+
 bool BucketMover::isWorkingOnCycle() const {
     vespalib::MonitorGuard monitor(_wait);
-    return (_currentRun.get() != 0);
+    return (_currentRun.get() != nullptr);
 }
 
 uint32_t BucketMover::getCycleCount() const {
@@ -382,7 +385,7 @@ BucketMover::print(std::ostream& out, bool verbose,
     (void) verbose; (void) indent;
     vespalib::MonitorGuard monitor(_wait);
     out << "BucketMover() {";
-    if (_currentRun.get() != 0) {
+    if (_currentRun) {
         out << "\n" << indent << "  ";
         _currentRun->print(out, verbose, indent + "  ");
     } else {
@@ -390,11 +393,9 @@ BucketMover::print(std::ostream& out, bool verbose,
     }
     if (verbose && !_history.empty()) {
         out << "\n" << indent << "  History:";
-        for (std::list<RunStatistics>::const_iterator it = _history.begin();
-             it != _history.end(); ++it)
-        {
+        for (auto& entry : _history) {
             out << "\n" << indent << "    ";
-            it->print(out, true, indent + "    ");
+            entry.print(out, true, indent + "    ");
         }
     }
     out << "\n" << indent << "}";
@@ -412,17 +413,14 @@ BucketMover::reportHtmlStatus(std::ostream& out,
         printCurrentStatus(out, *_history.begin());
     }
     out << "<h2>Current move cycle</h2>\n";
-    if (_currentRun.get() != 0) {
+    if (_currentRun) {
         printRunHtml(out, *_currentRun);
         if (_currentRun->getPendingMoves().empty()) {
             out << "<blockquote>No pending moves.</blockquote>\n";
         } else {
             out << "<blockquote>Pending bucket moves:<ul>\n";
-            for (std::list<Move>::const_iterator it
-                    = _currentRun->getPendingMoves().begin();
-                 it != _currentRun->getPendingMoves().end(); ++it)
-            {
-                out << "<li>" << *it << "</li>\n";
+            for (auto& entry : _currentRun->getPendingMoves()) {
+                out << "<li>" << entry << "</li>\n";
             }
             out << "</ul></blockquote>\n";
         }
@@ -432,7 +430,7 @@ BucketMover::reportHtmlStatus(std::ostream& out,
         framework::SecondTime currentTime(
                 _component.getClock().getTimeInSeconds());
         if (_nextRun <= currentTime) {
-            if (_thread.get() != 0) {
+            if (_thread) {
                 out << "Next run to start immediately.";
                     // Wake up thread, so user sees it starts immediately :)
                 monitor.signal();
@@ -454,10 +452,8 @@ BucketMover::reportHtmlStatus(std::ostream& out,
     }
     if (!_history.empty()) {
         out << "<h2>Statistics from previous bucket mover cycles</h2>\n";
-        for (std::list<RunStatistics>::const_iterator it = _history.begin();
-             it != _history.end(); ++it)
-        {
-            printRunStatisticsHtml(out, *it);
+        for (auto& entry : _history) {
+            printRunStatisticsHtml(out, entry);
         }
     }
 }

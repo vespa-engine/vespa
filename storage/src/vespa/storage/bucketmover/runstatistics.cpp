@@ -39,7 +39,7 @@ RunStatistics::RunStatistics(DiskDistribution d, framework::Clock& clock,
                              const lib::NodeState& ns)
     : _clock(&clock),
       _distribution(d),
-      _lastBucketProcessed(0),
+      _lastBucketProcessed(),
       _lastBucketVisited(0),
       _diskData(ns.getDiskCount(), DiskData(ns.getDiskCount())),
       _startTime(_clock->getTimeInSeconds()),
@@ -149,13 +149,14 @@ RunStatistics::getWronglyPlacedRatio() const
     return static_cast<double>(wrong) / total;
 }
 
+// FIXME does not cover multiple spaces (but only used for printing)
 double
 RunStatistics::getProgress() const
 {
     if (_endTime.isSet()) return 1.0;
     double result = 0;
     double weight = 0.5;
-    uint64_t key = _lastBucketProcessed.toKey();
+    uint64_t key = _lastBucketProcessed.getBucketId().toKey();
     for (uint16_t i=0; i<64; ++i) {
         uint64_t flag = uint64_t(1) << (63 - i);
         if ((key & flag) == flag) {

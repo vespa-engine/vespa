@@ -4,8 +4,9 @@
 
 namespace storage {
 
-ContentBucketSpace::ContentBucketSpace()
-    : _bucketDatabase(),
+ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace)
+    : _bucketSpace(bucketSpace),
+      _bucketDatabase(),
       _lock(),
       _distribution()
 {

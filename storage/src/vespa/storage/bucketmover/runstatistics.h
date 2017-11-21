@@ -38,7 +38,7 @@
 
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/storageframework/generic/clock/time.h>
 
@@ -76,7 +76,7 @@ struct RunStatistics : public document::Printable {
 
     framework::Clock* _clock;
     DiskDistribution _distribution;
-    document::BucketId _lastBucketProcessed;
+    document::Bucket _lastBucketProcessed;
     document::BucketId _lastBucketVisited; // Invalid bucket for starting point
     std::vector<DiskData> _diskData;
     framework::SecondTime _startTime;
