@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -123,8 +122,8 @@ public class ApplicationController {
 
 
     /** Returns an locked application with the given id that be updated and stored */
-    public Optional<LockedApplication> get(ApplicationId id, Lock lock) {
-        return db.getApplication(id).map(application -> new LockedApplication(application, lock));
+    private Optional<LockedApplication> get(ApplicationId id, Lock lock) {
+        return get(id).map(application -> new LockedApplication(application, lock));
     }
 
     /**
@@ -136,16 +135,6 @@ public class ApplicationController {
         return get(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
     }
 
-    /**
-     * Returns a locked application that be updated and stored
-     *
-     * @throws IllegalArgumentException if it does not exist
-     *
-     */
-    public LockedApplication require(ApplicationId id, Lock lock) {
-        return get(id, lock).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
-    }
-
     /** Returns a snapshot of all applications */
     public List<Application> asList() { 
         return db.listApplications();
@@ -154,16 +143,6 @@ public class ApplicationController {
     /** Returns all applications of a tenant */
     public List<Application> asList(TenantName tenant) {
         return db.listApplications(new TenantId(tenant.value()));
-    }
-
-    /** Returns an immutable list with the ids of all known applications. */
-    public List<ApplicationId> idList() {
-        return ImmutableList.copyOf(asList().stream().map(Application::id)::iterator);
-    }
-
-    /** Returns an immutable list with the ids of all applications of the tenant. */
-    public List<ApplicationId> idList(TenantName tenant) {
-        return ImmutableList.copyOf(asList(tenant).stream().map(Application::id)::iterator);
     }
 
     /**
@@ -565,7 +544,7 @@ public class ApplicationController {
      */
     public void lockedOrThrow(ApplicationId applicationId, Consumer<LockedApplication> actions) {
         try (Lock lock = lock(applicationId)) {
-            actions.accept(require(applicationId, lock));
+            actions.accept(get(applicationId, lock).orElseThrow(() -> new IllegalArgumentException(applicationId + " not found")));
         }
     }
 
@@ -608,20 +587,17 @@ public class ApplicationController {
 
     private void deactivate(Application application, Zone zone, Optional<Deployment> deployment,
                             boolean requireThatDeploymentHasExpired) {
-        try (Lock lock = lock(application.id())) {
-            LockedApplication lockedApplication = controller.applications().require(application.id(), lock);
-            if (deployment.isPresent() && requireThatDeploymentHasExpired && 
-                ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant())) {
-                return;
-            }
-            lockedApplication = deactivate(lockedApplication, zone);
-            store(lockedApplication);
-        }
+        if (requireThatDeploymentHasExpired && deployment.isPresent()
+            && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
+            return;
+
+        lockedOrThrow(application.id(), lockedApplication ->
+                store(deactivate(lockedApplication, zone)));
     }
 
-    /** 
+    /**
      * Deactivates a locked application without storing it
-     * 
+     *
      * @return the application with the deployment in the given zone removed
      */
     private LockedApplication deactivate(LockedApplication application, Zone zone) {
@@ -637,19 +613,19 @@ public class ApplicationController {
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
 
     private ApplicationId dashToUnderscore(ApplicationId id) {
-        return ApplicationId.from(id.tenant().value(), 
+        return ApplicationId.from(id.tenant().value(),
                                   id.application().value().replaceAll("-", "_"),
                                   id.instance().value());
     }
-    
+
     public ConfigServerClient configserverClient() { return configserverClient; }
-    
-    /** 
+
+    /**
      * Returns a lock which provides exclusive rights to changing this application.
      * Any operation which stores an application need to first acquire this lock, then read, modify
      * and store the application, and finally release (close) the lock.
      */
-    public Lock lock(ApplicationId application) {
+    Lock lock(ApplicationId application) {
         return curator.lock(application, Duration.ofMinutes(10));
     }
 
@@ -661,18 +637,18 @@ public class ApplicationController {
     }
 
     private static final class ApplicationRotation {
-        
+
         private final ImmutableSet<String> cnames;
         private final ImmutableSet<Rotation> rotations;
-        
+
         public ApplicationRotation(Set<String> cnames, Set<Rotation> rotations) {
             this.cnames = ImmutableSet.copyOf(cnames);
             this.rotations = ImmutableSet.copyOf(rotations);
         }
-        
+
         public Set<String> cnames() { return cnames; }
         public Set<Rotation> rotations() { return rotations; }
-        
+
     }
-    
+
 }

@@ -53,7 +53,7 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withProjectId(projectId)));
     }
 
-    public LockedApplication with(IssueId issueId) {
+    public LockedApplication withDeploymentIssueId(IssueId issueId) {
         return new LockedApplication(new Builder(this).with(deploymentJobs().with(issueId)));
     }
 

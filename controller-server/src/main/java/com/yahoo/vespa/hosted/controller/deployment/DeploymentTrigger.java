@@ -238,12 +238,10 @@ public class DeploymentTrigger {
      * @param applicationId the application to trigger
      */
     public void cancelChange(ApplicationId applicationId) {
-        try (Lock lock = applications().lock(applicationId)) {
-            LockedApplication application = applications().require(applicationId, lock);
+        applications().lockedOrThrow(applicationId, application -> {
             buildSystem.removeJobs(application.id());
-            application = application.withDeploying(Optional.empty());
-            applications().store(application);
-        }
+            applications().store(application.withDeploying(Optional.empty()));
+        });
     }
 
     //--- End of methods which triggers deployment jobs ----------------------------

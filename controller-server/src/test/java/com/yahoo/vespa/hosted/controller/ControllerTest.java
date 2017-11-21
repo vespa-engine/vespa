@@ -552,11 +552,7 @@ public class ControllerTest {
         // Load test data data
         ApplicationSerializer serializer = new ApplicationSerializer();
         byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/canary-with-stale-data.json"));
-        Slime slime = SlimeUtils.jsonToSlime(json);
-        Application application = serializer.fromSlime(slime);
-        try (Lock lock = tester.controller().applications().lock(application.id())) {
-            tester.controller().applications().store(new LockedApplication(application, lock));
-        }
+        Application application = tester.controllerTester().createApplication(SlimeUtils.jsonToSlime(json));
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")

@@ -306,11 +306,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
-        try (Lock lock = tester.controller().applications().lock(id)) {
-            tester.controller().applications().store(tester.controller().applications().require(id, lock)
-                                                    .withDeploymentIssueId(IssueId.from("123"))
-                                                    .withOwnershipIssueId(IssueId.from("321")));
-        }
+        tester.controller().applications().lockedOrThrow(id, application ->
+                tester.controller().applications().store(application
+                                                                 .withDeploymentIssueId(IssueId.from("123"))
+                                                                 .withOwnershipIssueId(IssueId.from("321"))));
     }
 
     @Test
