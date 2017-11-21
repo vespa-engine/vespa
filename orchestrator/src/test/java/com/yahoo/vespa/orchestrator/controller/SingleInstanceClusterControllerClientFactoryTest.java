@@ -43,6 +43,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
                         eq(ClusterControllerJaxRsApi.class),
                         any(HostName.class),
                         anyInt(),
+                        anyString(),
                         anyString()))
                 .thenReturn(mockApi);
     }
@@ -70,7 +71,8 @@ public class SingleInstanceClusterControllerClientFactoryTest {
                 ClusterControllerJaxRsApi.class,
                 HOST_NAME_1,
                 PORT,
-                PATH);
+                PATH,
+                "http");
     }
 
     @Test
@@ -99,7 +101,8 @@ public class SingleInstanceClusterControllerClientFactoryTest {
                         equalTo(HOST_NAME_2),
                         equalTo(HOST_NAME_3)))),
                 eq(PORT),
-                eq(PATH));
+                eq(PATH),
+                eq("http"));
     }
 
     private static ConfigId clusterControllerConfigId(final int index) {
