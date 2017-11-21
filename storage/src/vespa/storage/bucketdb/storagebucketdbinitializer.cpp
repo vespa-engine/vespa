@@ -68,7 +68,6 @@ StorageBucketDBInitializer::System::System(
       _partitions(partitions),
       _bucketSpaceRepo(_component.getBucketSpaceRepo()),
       _nodeIndex(_component.getIndex()),
-      _distribution(*_component.getDistribution()),
       _nodeState()
 {
     // Is this correct? We should get the node state from the node state updater
@@ -372,6 +371,7 @@ StorageBucketDBInitializer::reportHtmlStatus(
 // Always called from worker thread. Worker monitor already grabbed
 void
 StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
+                                           const lib::Distribution &distribution,
                                            spi::PartitionId partition,
                                            api::BucketInfo bucketInfo)
 {
@@ -403,7 +403,7 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
             return;
         }
         uint32_t keepOnDisk, joinFromDisk;
-        if (_system._distribution.getPreferredAvailableDisk(
+        if (distribution.getPreferredAvailableDisk(
                 _system._nodeState, _system._nodeIndex,
                 bucketId.stripUnused()) == partition)
         {
@@ -429,7 +429,7 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
             bucketId.toString().c_str(), int(partition));
         entry->disk = partition;
         entry.write();
-        uint16_t disk(_system._distribution.getIdealDisk(
+        uint16_t disk(distribution.getIdealDisk(
                 _system._nodeState, _system._nodeIndex, bucketId.stripUnused(),
                 lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN));
         if (disk != partition) {
@@ -621,8 +621,10 @@ StorageBucketDBInitializer::handleReadBucketListReply(
     const spi::BucketIdListResult::List& list(reply.getBuckets());
     api::BucketInfo info;
     assert(!info.valid());
+    const auto &contentBucketSpace(_system._bucketSpaceRepo.get(reply.getBucketSpace()));
+    auto distribution(contentBucketSpace.getDistribution());
     for (uint32_t i=0, n=list.size(); i<n; ++i) {
-        registerBucket(document::Bucket(reply.getBucketSpace(), list[i]), reply.getPartition(), info);
+        registerBucket(document::Bucket(reply.getBucketSpace(), list[i]), *distribution, reply.getPartition(), info);
     }
     if (++_state._dirsListed == _state._dirsToList) {
         handleListingCompleted();

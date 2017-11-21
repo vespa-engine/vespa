@@ -80,7 +80,6 @@ class StorageBucketDBInitializer : public StorageLink,
         const spi::PartitionStateList& _partitions;
         const ContentBucketSpaceRepo& _bucketSpaceRepo;
         uint32_t _nodeIndex;
-        lib::Distribution& _distribution;
         lib::NodeState _nodeState; // Disk info for ideal state calculations
         framework::Thread::UP _thread;
 
@@ -188,6 +187,7 @@ public:
                            std::vector<uint32_t>& path);
     /** Register a bucket in the bucket database. */
     void registerBucket(const document::Bucket &bucket,
+                        const lib::Distribution &distribution,
                         spi::PartitionId,
                         api::BucketInfo bucketInfo);
     /**
