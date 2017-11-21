@@ -14,6 +14,7 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using document::Bucket;
@@ -29,8 +30,9 @@ using document::test::makeDocumentBucket;
 
 namespace storage {
 
-DocumentId defaultDocId("id:test:text/html::0");
+const DocumentId defaultDocId("id:test:text/html::0");
 const BucketSpace defaultBucketSpace(5);
+const vespalib::string defaultSpaceName("myspace");
 const Bucket defaultBucket(defaultBucketSpace, BucketId(0));
 
 struct MockBucketResolver : public BucketResolver {
@@ -41,14 +43,14 @@ struct MockBucketResolver : public BucketResolver {
         return Bucket(BucketSpace(0), BucketId(0));
     }
     virtual BucketSpace bucketSpaceFromName(const vespalib::string &bucketSpace) const override {
-        if (bucketSpace == "myspace") {
+        if (bucketSpace == defaultSpaceName) {
             return defaultBucketSpace;
         }
         return BucketSpace(0);
     }
     virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
         if (bucketSpace == defaultBucketSpace) {
-            return "myspace";
+            return defaultSpaceName;
         }
         return "";
     }
@@ -74,6 +76,15 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     };
 
     template <typename T>
+    std::unique_ptr<T> toStorageAPI(documentapi::DocumentMessage &msg) {
+        auto result = _converter->toStorageAPI(msg, _repo);
+        auto ptr = dynamic_cast<T*>(result.get());
+        CPPUNIT_ASSERT(ptr);
+        result.release();
+        return std::unique_ptr<T>(ptr);
+    }
+
+    template <typename T>
     std::unique_ptr<T> toDocumentAPI(api::StorageCommand &cmd) {
         auto result = _converter->toDocumentAPI(cmd, _repo);
         auto ptr = dynamic_cast<T*>(result.get());
@@ -95,6 +106,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testVisitorInfo();
     void testMultiOperation();
     void testBatchDocumentUpdate();
+    void testStatBucket();
 
     CPPUNIT_TEST_SUITE(DocumentApiConverterTest);
     CPPUNIT_TEST(testPut);
@@ -110,6 +122,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testVisitorInfo);
     CPPUNIT_TEST(testMultiOperation);
     CPPUNIT_TEST(testBatchDocumentUpdate);
+    CPPUNIT_TEST(testStatBucket);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -143,7 +156,7 @@ void DocumentApiConverterTest::testPut()
     CPPUNIT_ASSERT(mbusput);
     CPPUNIT_ASSERT(mbusput->getDocumentSP().get() == doc.get());
     CPPUNIT_ASSERT(mbusput->getTimestamp() == 1234);
-};
+}
 
 void DocumentApiConverterTest::testForwardedPut()
 {
@@ -236,7 +249,7 @@ void DocumentApiConverterTest::testGet()
 void DocumentApiConverterTest::testCreateVisitor()
 {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
-    cv.setBucketSpace("myspace");
+    cv.setBucketSpace(defaultSpaceName);
     cv.setTimeRemaining(123456);
 
     std::unique_ptr<storage::api::StorageCommand> cmd = _converter->toStorageAPI(cv, _repo);
@@ -251,7 +264,7 @@ void DocumentApiConverterTest::testCreateVisitor()
     CPPUNIT_ASSERT_EQUAL(123456u, pc->getTimeout());
 
     auto msg = toDocumentAPI<documentapi::CreateVisitorMessage>(*cmd);
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("myspace"), msg->getBucketSpace());
+    CPPUNIT_ASSERT_EQUAL(defaultSpaceName, msg->getBucketSpace());
 }
 
 void DocumentApiConverterTest::testCreateVisitorHighTimeout()
@@ -461,6 +474,20 @@ DocumentApiConverterTest::testBatchDocumentUpdate()
     CPPUNIT_ASSERT(mbusBatchReply->getDocumentsNotFound()[0] == true);
     CPPUNIT_ASSERT(mbusBatchReply->getDocumentsNotFound()[1] == false);
     CPPUNIT_ASSERT(mbusBatchReply->getDocumentsNotFound()[2] == true);
+}
+
+void
+DocumentApiConverterTest::testStatBucket()
+{
+    documentapi::StatBucketMessage msg(BucketId(123), "");
+    msg.setBucketSpace(defaultSpaceName);
+
+    auto cmd = toStorageAPI<api::StatBucketCommand>(msg);
+    CPPUNIT_ASSERT_EQUAL(Bucket(defaultBucketSpace, BucketId(123)), cmd->getBucket());
+
+    auto mbusMsg = toDocumentAPI<documentapi::StatBucketMessage>(*cmd);
+    CPPUNIT_ASSERT_EQUAL(BucketId(123), mbusMsg->getBucketId());
+    CPPUNIT_ASSERT_EQUAL(defaultSpaceName, mbusMsg->getBucketSpace());
 }
 
 }

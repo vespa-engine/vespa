@@ -110,7 +110,7 @@ void Test::get_document_message_is_not_sequenced() {
 }
 
 void Test::stat_bucket_message_is_not_sequenced() {
-    StatBucketMessage message(makeDocumentBucket(document::BucketId(16, 1)), "");
+    StatBucketMessage message(document::BucketId(16, 1), "");
     EXPECT_FALSE(message.hasSequenceId());
 }
 
