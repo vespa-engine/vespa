@@ -42,6 +42,8 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
         _use_logserver = newconf.logserver.use;
         _newConf = true;
     }
+    _statePort = newconf.stateport;
+
     ForwardMap forwardMap;
     forwardMap[Logger::fatal] = newconf.loglevel.fatal.forward;
     forwardMap[Logger::error] = newconf.loglevel.error.forward;
@@ -145,6 +147,7 @@ ConfSub::closeConn()
 ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
     : _logPort(0),
       _logserverfd(-1),
+      _statePort(0),
       _rotate_size(INT_MAX),
       _rotate_age(INT_MAX),
       _remove_meg(INT_MAX),

@@ -5,6 +5,7 @@
 #include <logd/forward.h>
 #include <logd/conf.h>
 #include <logd/watch.h>
+#include <logd/state.h>
 #include <vespa/config/common/exceptions.h>
 #include <csignal>
 #include <unistd.h>
@@ -29,9 +30,8 @@ int main(int, char**)
     const char *cfid = getenv("VESPA_CONFIG_ID");
 
     try {
-        std::unique_ptr<ConfSub> subscriberP;
-        subscriberP.reset(new ConfSub(fwd, config::ConfigUri(cfid)));
-        ConfSub & subscriber(*subscriberP);
+        ConfSub subscriber(fwd, config::ConfigUri(cfid));
+        StateReporter stateReporter;
 
         int sleepcount = 0;
         while (true) {
@@ -39,6 +39,8 @@ int main(int, char**)
 
             try {
                 subscriber.latch();
+                stateReporter.setStatePort(subscriber.getStatePort());
+                stateReporter.gotConf(subscriber.generation());
                 int fd = subscriber.getservfd();
                 if (fd >= 0) {
                     sleepcount = 0 ; // connection OK, reset sleep time

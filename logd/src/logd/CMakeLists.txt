@@ -8,6 +8,7 @@ vespa_add_library(logd STATIC
     service.cpp
     cmdbuf.cpp
     perform.cpp
+    state.cpp
     DEPENDS
 )
 vespa_generate_config(logd ../main/resources/configdefinitions/logd.def)
