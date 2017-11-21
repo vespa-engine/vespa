@@ -107,6 +107,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testMultiOperation();
     void testBatchDocumentUpdate();
     void testStatBucket();
+    void testGetBucketList();
 
     CPPUNIT_TEST_SUITE(DocumentApiConverterTest);
     CPPUNIT_TEST(testPut);
@@ -123,6 +124,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testMultiOperation);
     CPPUNIT_TEST(testBatchDocumentUpdate);
     CPPUNIT_TEST(testStatBucket);
+    CPPUNIT_TEST(testGetBucketList);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -488,6 +490,16 @@ DocumentApiConverterTest::testStatBucket()
     auto mbusMsg = toDocumentAPI<documentapi::StatBucketMessage>(*cmd);
     CPPUNIT_ASSERT_EQUAL(BucketId(123), mbusMsg->getBucketId());
     CPPUNIT_ASSERT_EQUAL(defaultSpaceName, mbusMsg->getBucketSpace());
+}
+
+void
+DocumentApiConverterTest::testGetBucketList()
+{
+    documentapi::GetBucketListMessage msg(BucketId(123));
+    msg.setBucketSpace(defaultSpaceName);
+
+    auto cmd = toStorageAPI<api::GetBucketListCommand>(msg);
+    CPPUNIT_ASSERT_EQUAL(Bucket(defaultBucketSpace, BucketId(123)), cmd->getBucket());
 }
 
 }
