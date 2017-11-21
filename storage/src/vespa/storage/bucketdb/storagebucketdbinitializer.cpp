@@ -68,7 +68,6 @@ StorageBucketDBInitializer::System::System(
       _partitions(partitions),
       _bucketSpaceRepo(_component.getBucketSpaceRepo()),
       _nodeIndex(_component.getIndex()),
-      _distribution(*_component.getDistribution()),
       _nodeState()
 {
     // Is this correct? We should get the node state from the node state updater
@@ -376,6 +375,7 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
                                            api::BucketInfo bucketInfo)
 {
     document::BucketId bucketId(bucket.getBucketId());
+    const auto &contentBucketSpace(_system._bucketSpaceRepo.get(bucket.getBucketSpace()));
     StorBucketDatabase::WrappedEntry entry(_system.getBucketDatabase(bucket.getBucketSpace()).get(
                 bucketId, "StorageBucketDBInitializer::registerBucket",
                 StorBucketDatabase::CREATE_IF_NONEXISTING));
@@ -403,7 +403,8 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
             return;
         }
         uint32_t keepOnDisk, joinFromDisk;
-        if (_system._distribution.getPreferredAvailableDisk(
+        auto distribution(contentBucketSpace.getDistribution());
+        if (distribution->getPreferredAvailableDisk(
                 _system._nodeState, _system._nodeIndex,
                 bucketId.stripUnused()) == partition)
         {
@@ -429,7 +430,8 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
             bucketId.toString().c_str(), int(partition));
         entry->disk = partition;
         entry.write();
-        uint16_t disk(_system._distribution.getIdealDisk(
+        auto distribution(contentBucketSpace.getDistribution());
+        uint16_t disk(distribution->getIdealDisk(
                 _system._nodeState, _system._nodeIndex, bucketId.stripUnused(),
                 lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN));
         if (disk != partition) {
