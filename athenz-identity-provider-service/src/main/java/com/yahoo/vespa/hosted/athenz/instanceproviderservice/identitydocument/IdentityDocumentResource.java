@@ -2,12 +2,8 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
@@ -17,8 +13,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
 
 /**
  * @author bjorncs
@@ -31,13 +25,8 @@ public class IdentityDocumentResource {
     private final IdentityDocumentGenerator identityDocumentGenerator;
 
     @Inject
-    public IdentityDocumentResource(@Component AthenzProviderServiceConfig config,
-                                    @Component Zone zone,
-                                    @Component NodeRepository nodeRepository,
-                                    @Component KeyProvider keyProvider) {
-        AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
-        this.identityDocumentGenerator =
-                new IdentityDocumentGenerator(config, zoneConfig, nodeRepository, zone, keyProvider);
+    public IdentityDocumentResource(@Component IdentityDocumentGenerator identityDocumentGenerator) {
+        this.identityDocumentGenerator = identityDocumentGenerator;
     }
 
     @GET

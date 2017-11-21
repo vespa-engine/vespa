@@ -1,9 +1,12 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -38,6 +41,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
+
 
 /**
  * Signs Certificate Signing Reqest from tenant nodes. This certificate will be used
@@ -62,10 +67,9 @@ public class CertificateSigner {
     private final X500Name issuer;
     private final Clock clock;
 
-    public CertificateSigner(KeyProvider keyProvider,
-                             AthenzProviderServiceConfig.Zones zoneConfig,
-                             String configServerHostname) {
-        this(keyProvider.getPrivateKey(zoneConfig.secretVersion()), configServerHostname, Clock.systemUTC());
+    @Inject
+    public CertificateSigner(KeyProvider keyProvider, AthenzProviderServiceConfig config, Zone zone) {
+        this(getPrivateKey(keyProvider, config, zone), HostName.getLocalhost(), Clock.systemUTC());
     }
 
     CertificateSigner(PrivateKey caPrivateKey, String configServerHostname, Clock clock) {
@@ -137,5 +141,10 @@ public class CertificateSigner {
         if (! illegalExt.isEmpty()) {
             throw new IllegalArgumentException("CSR contains illegal extensions: " + String.join(", ", illegalExt));
         }
+    }
+
+    private static PrivateKey getPrivateKey(KeyProvider keyProvider, AthenzProviderServiceConfig config, Zone zone) {
+        AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
+        return keyProvider.getPrivateKey(zoneConfig.secretVersion());
     }
 }

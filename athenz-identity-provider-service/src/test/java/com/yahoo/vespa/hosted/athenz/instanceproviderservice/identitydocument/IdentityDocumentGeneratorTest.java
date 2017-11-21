@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.TestUtils.getAthenzProviderConfig;
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
@@ -65,12 +64,8 @@ public class IdentityDocumentGeneratorTest {
 
         String dnsSuffix = "vespa.dns.suffix";
         AthenzProviderServiceConfig config = getAthenzProviderConfig("domain", "service", dnsSuffix, ZONE);
-        IdentityDocumentGenerator identityDocumentGenerator = new IdentityDocumentGenerator(
-                config,
-                getZoneConfig(config, ZONE),
-                nodeRepository,
-                ZONE,
-                keyProvider);
+        IdentityDocumentGenerator identityDocumentGenerator =
+                new IdentityDocumentGenerator(config, nodeRepository, ZONE, keyProvider);
         SignedIdentityDocument signedIdentityDocument = identityDocumentGenerator.generateSignedIdentityDocument(hostname);
 
         // Verify attributes

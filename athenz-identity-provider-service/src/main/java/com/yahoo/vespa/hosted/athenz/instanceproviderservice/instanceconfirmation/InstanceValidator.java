@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
+import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
@@ -33,6 +34,7 @@ public class InstanceValidator {
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
 
+    @Inject
     public InstanceValidator(KeyProvider keyProvider, SuperModelProvider superModelProvider) {
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
