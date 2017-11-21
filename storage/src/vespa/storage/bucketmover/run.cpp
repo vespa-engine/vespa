@@ -114,7 +114,7 @@ Run::getNextMove()
         }
 
         // Cache more entries
-        BucketIterator it(document::BucketSpace::placeHolder(), *_distribution,
+        BucketIterator it(_bucketSpace.bucketSpace(), *_distribution,
                           _nodeState, _nodeIndex, _statistics, _entries);
         _bucketSpace.bucketDatabase().all(it, "bucketmover::Run", _statistics._lastBucketVisited.toKey());
         if (it._bucketsVisited == 0) {

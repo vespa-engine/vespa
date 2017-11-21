@@ -9,7 +9,7 @@ namespace storage {
 ContentBucketSpaceRepo::ContentBucketSpaceRepo()
     : _map()
 {
-    _map.emplace(BucketSpace::placeHolder(), std::make_unique<ContentBucketSpace>());
+    _map.emplace(BucketSpace::placeHolder(), std::make_unique<ContentBucketSpace>(BucketSpace::placeHolder()));
 }
 
 ContentBucketSpace &
