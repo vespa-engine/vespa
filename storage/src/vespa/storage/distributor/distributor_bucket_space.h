@@ -26,7 +26,7 @@ namespace distributor {
  */
 class DistributorBucketSpace {
     MapBucketDatabase _bucketDatabase;
-    std::shared_ptr<lib::Distribution> _distribution;
+    std::shared_ptr<const lib::Distribution> _distribution;
 public:
     DistributorBucketSpace();
     ~DistributorBucketSpace();
@@ -43,7 +43,7 @@ public:
         return _bucketDatabase;
     }
 
-    void setDistribution(lib::Distribution::SP distribution) {
+    void setDistribution(std::shared_ptr<const lib::Distribution> distribution) {
         _distribution = std::move(distribution);
     }
 

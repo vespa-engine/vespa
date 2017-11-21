@@ -34,7 +34,7 @@ public:
     DistributorBucketSpace &get(document::BucketSpace bucketSpace);
     const DistributorBucketSpace &get(document::BucketSpace bucketSpace) const;
 
-    void setDefaultDistribution(std::shared_ptr<lib::Distribution> distr);
+    void setDefaultDistribution(std::shared_ptr<const lib::Distribution> distr);
     BucketSpaceMap::const_iterator begin() const { return _map.begin(); }
     BucketSpaceMap::const_iterator end() const { return _map.end(); }
     void add(document::BucketSpace bucketSpace, std::unique_ptr<DistributorBucketSpace> distributorBucketSpace);

@@ -29,7 +29,7 @@ DistributorBucketSpaceRepo::add(document::BucketSpace bucketSpace, std::unique_p
 }
 
 void DistributorBucketSpaceRepo::setDefaultDistribution(
-        std::shared_ptr<lib::Distribution> distr)
+        std::shared_ptr<const lib::Distribution> distr)
 {
     LOG(debug, "Got new default distribution '%s'", distr->toString().c_str());
     // TODO all spaces, per-space config transforms
