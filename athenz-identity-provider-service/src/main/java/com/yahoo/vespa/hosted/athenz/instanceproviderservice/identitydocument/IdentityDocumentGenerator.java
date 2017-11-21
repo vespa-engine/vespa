@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
@@ -28,8 +29,12 @@ public class IdentityDocumentGenerator {
     private final String providerDomain;
     private final int signingSecretVersion;
 
-    public IdentityDocumentGenerator(AthenzProviderServiceConfig config, AthenzProviderServiceConfig.Zones zoneConfig,
-                                     NodeRepository nodeRepository, Zone zone, KeyProvider keyProvider) {
+    @Inject
+    public IdentityDocumentGenerator(AthenzProviderServiceConfig config,
+                                     NodeRepository nodeRepository,
+                                     Zone zone,
+                                     KeyProvider keyProvider) {
+        AthenzProviderServiceConfig.Zones zoneConfig = Utils.getZoneConfig(config, zone);
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;

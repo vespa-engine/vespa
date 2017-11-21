@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
 import com.google.inject.Inject;
-import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -26,9 +24,8 @@ public class InstanceConfirmationResource {
     private final InstanceValidator instanceValidator;
 
     @Inject
-    public InstanceConfirmationResource(@Component KeyProvider keyProvider,
-                                        @Component SuperModelProvider superModelProvider) {
-        this.instanceValidator = new InstanceValidator(keyProvider, superModelProvider);
+    public InstanceConfirmationResource(@Component InstanceValidator instanceValidator) {
+        this.instanceValidator = instanceValidator;
     }
 
     @POST
