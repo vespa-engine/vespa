@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
  * @author bjorncs
  */
 public enum TenantType {
-    OPSDB,
+    @Deprecated OPSDB,
     USER,
     ATHENS
 }

@@ -5,10 +5,8 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -25,8 +23,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -122,16 +120,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET),
                               new File("tenant-without-applications-with-id.json"));
-
-        // Test legacy OpsDB tenants
-        // POST (add) an OpsDB tenant with property ID
-        tester.assertResponse(request("/application/v4/tenant/tenant3", POST)
-                                      .data("{\"userGroup\":\"group1\",\"property\":\"property1\",\"propertyId\":\"1234\"}"),
-                              new File("opsdb-tenant-with-id-without-applications.json"));
-        // PUT (modify) the OpsDB tenant to set another property
-        tester.assertResponse(request("/application/v4/tenant/tenant3", PUT)
-                                      .data("{\"userGroup\":\"group1\",\"property\":\"property2\",\"propertyId\":\"4321\"}"),
-                              new File("opsdb-tenant-with-new-id-without-applications.json"));
 
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST),
