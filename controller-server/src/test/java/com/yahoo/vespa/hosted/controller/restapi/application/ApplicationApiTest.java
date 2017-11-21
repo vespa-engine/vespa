@@ -306,11 +306,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
-        try (Lock lock = tester.controller().applications().lock(id)) {
-            tester.controller().applications().store(tester.controller().applications().require(id, lock)
-                                                    .withDeploymentIssueId(IssueId.from("123"))
-                                                    .withOwnershipIssueId(IssueId.from("321")));
-        }
+        tester.controller().applications().lockedOrThrow(id, application ->
+                tester.controller().applications().store(application
+                                                                 .withDeploymentIssueId(IssueId.from("123"))
+                                                                 .withOwnershipIssueId(IssueId.from("321"))));
     }
 
     @Test
@@ -745,9 +744,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
-            try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
-                LockedApplication lockedApplication = controllerTester.controller().applications()
-                                                                      .require(application.id(), lock);
+            controllerTester.controller().applications().lockedOrThrow(application.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
                 for (Deployment deployment : application.deployments().values()) {
@@ -765,9 +762,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                             .withClusterUtilization(deployment.zone(), clusterUtils)
                             .with(deployment.zone(), metrics);
                 }
-
                 controllerTester.controller().applications().store(lockedApplication);
-            }
+            });
         }
     }
 

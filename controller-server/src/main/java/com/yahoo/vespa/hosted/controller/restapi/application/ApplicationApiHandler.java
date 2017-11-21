@@ -623,8 +623,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
             case OPSDB: {
                 UserGroup userGroup = new UserGroup(mandatory("userGroup", requestData).asString());
-                updatedTenant = Tenant.createOpsDbTenant(new TenantId(tenantName), 
-                                                         userGroup, 
+                updatedTenant = Tenant.createOpsDbTenant(new TenantId(tenantName),
+                                                         userGroup,
                                                          new Property(mandatory("property", requestData).asString()),
                                                          optional("propertyId", requestData).map(PropertyId::new));
                 throwIfNotSuperUserOrPartOfOpsDbGroup(userGroup, request);
@@ -634,7 +634,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case ATHENS: {
                 if (requestData.field("userGroup").valid())
                     throw new BadRequestException("Cannot set OpsDB user group to Athens tenant");
-                updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName), 
+                updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName),
                                                           new AthenzDomain(mandatory("athensDomain", requestData).asString()),
                                                           new Property(mandatory("property", requestData).asString()),
                                                           optional("propertyId", requestData).map(PropertyId::new));
@@ -663,7 +663,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throwIfNotSuperUserOrPartOfOpsDbGroup(new UserGroup(mandatory("userGroup", requestData).asString()), request);
         if (tenant.isAthensTenant())
             throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
- 
+
         controller.tenants().addTenant(tenant, authorizer.getNToken(request));
         return tenant(tenant, request, true);
     }
@@ -679,7 +679,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         throwIfNotAthenzDomainAdmin(tenantDomain, request);
         NToken nToken = authorizer.getNToken(request)
                 .orElseThrow(() ->
-                        new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
+                                     new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
         Tenant tenant = controller.tenants().migrateTenantToAthenz(tenantid, tenantDomain, propertyId, property, nToken);
         return tenant(tenant, request, true);
     }
@@ -704,36 +704,35 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Trigger deployment of the last built application package, on a given version */
     private HttpResponse deploy(String tenantName, String applicationName, HttpRequest request) {
+        Version version = decideDeployVersion(request);
+        if ( ! systemHasVersion(version))
+            throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
+                                                       "Version is not active in this system. " +
+                                                       "Active versions: " + controller.versionStatus().versions());
+
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        try (Lock lock = controller.applications().lock(id)) {
-            Application application = controller.applications().require(id);
+        controller.applications().lockedOrThrow(id, application -> {
             if (application.deploying().isPresent())
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
-                                                   application.deploying().get() + " is in progress");
-
-            Version version = decideDeployVersion(request);
-            if ( ! systemHasVersion(version))
-                throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
-                                                   "Version is not active in this system. " +
-                                                   "Active versions: " + controller.versionStatus().versions());
+                                                           application.deploying().get() + " is in progress");
 
             controller.applications().deploymentTrigger().triggerChange(application.id(), new Change.VersionChange(version));
-            return new MessageResponse("Triggered deployment of " + application + " on version " + version);
-        }
+        });
+        return new MessageResponse("Triggered deployment of application '" + id + "' on version " + version);
     }
 
     /** Cancel any ongoing change for given application */
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        try (Lock lock = controller.applications().lock(id)) {
-            Application application = controller.applications().require(id);
-            Optional<Change> change = application.deploying();
-            if (!change.isPresent()) {
-                return new MessageResponse("No deployment in progress for " + application + " at this time");
-            }
-            controller.applications().deploymentTrigger().cancelChange(id);
-            return new MessageResponse("Cancelled " + change.get() + " for " + application);
-        }
+        Application application = controller.applications().require(id);
+        Optional<Change> change = application.deploying();
+        if ( ! change.isPresent())
+            return new MessageResponse("No deployment in progress for " + application + " at this time");
+
+        controller.applications().lockedOrThrow(id, lockedApplication ->
+            controller.applications().deploymentTrigger().cancelChange(id));
+
+        return new MessageResponse("Cancelled " + change.get() + " for " + application);
     }
 
     /** Schedule restart of deployment, or specific host in a deployment */
@@ -816,9 +815,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         authorizer.throwIfUnauthorized(new TenantId(tenantName), request);
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        Application deleted = controller.applications().deleteApplication(id, authorizer.getNToken(request));
-        if (deleted == null)
-            return ErrorResponse.notFoundError("Could not delete application '" + id + "': Application not found");
+        controller.applications().deleteApplication(id, authorizer.getNToken(request));
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 

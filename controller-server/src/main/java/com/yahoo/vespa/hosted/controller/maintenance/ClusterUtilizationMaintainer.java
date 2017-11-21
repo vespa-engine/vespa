@@ -50,11 +50,8 @@ public class ClusterUtilizationMaintainer extends Maintainer {
 
                 Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
 
-                try (Lock lock = controller().applications().lock(application.id())) {
-                    controller.applications().get(application.id(), lock)
-                            .ifPresent(lockedApplication -> controller.applications().store(
-                                    lockedApplication.withClusterUtilization(deployment.zone(), clusterUtilization)));
-                }
+                controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                    controller().applications().store(lockedApplication.withClusterUtilization(deployment.zone(), clusterUtilization)));
             }
         }
     }

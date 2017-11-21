@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -78,8 +79,7 @@ public class DeploymentTrigger {
      * @param report information about the job that just completed
      */
     public void triggerFromCompletion(JobReport report) {
-        try (Lock lock = applications().lock(report.applicationId())) {
-            LockedApplication application = applications().require(report.applicationId(), lock);
+        applications().lockedOrThrow(report.applicationId(), application -> {
             application = application.withJobCompletion(report, clock.instant(), controller);
 
             // Handle successful starting and ending
@@ -114,7 +114,7 @@ public class DeploymentTrigger {
                                       "Immediate retry on failure");
 
             applications().store(application);
-        }
+        });
     }
 
     /** Returns whether all production zones listed in deployment spec last were successful on the currently deploying change. */
@@ -131,13 +131,8 @@ public class DeploymentTrigger {
     public void triggerReadyJobs() {
         ApplicationList applications = ApplicationList.from(applications().asList());
         applications = applications.notPullRequest();
-        for (Application application : applications.asList()) {
-            try (Lock lock = applications().lock(application.id())) {
-                Optional<LockedApplication> lockedApplication = controller.applications().get(application.id(), lock);
-                if ( ! lockedApplication.isPresent()) continue; // application removed
-                triggerReadyJobs(lockedApplication.get());
-            }
-        }
+        for (Application application : applications.asList())
+            applications().lockedIfPresent(application.id(), this::triggerReadyJobs);
     }
 
     /** Find the next step to trigger if any, and triggers it */
@@ -224,10 +219,9 @@ public class DeploymentTrigger {
      * @throws IllegalArgumentException if this application already have an ongoing change
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
-        try (Lock lock = applications().lock(applicationId)) {
-            LockedApplication application = applications().require(applicationId, lock);
+        applications().lockedOrThrow(applicationId, application -> {
             if (application.deploying().isPresent()  && ! application.deploymentJobs().hasFailures())
-                throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " + 
+                throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.deploying().get() + " is already in progress");
             application = application.withDeploying(Optional.of(change));
             if (change instanceof Change.ApplicationChange)
@@ -235,7 +229,7 @@ public class DeploymentTrigger {
             application = trigger(JobType.systemTest, application, false,
                                   (change instanceof Change.VersionChange ? "Upgrading to " + ((Change.VersionChange)change).version() : "Deploying " + change));
             applications().store(application);
-        }
+        });
     }
 
     /**
@@ -244,12 +238,10 @@ public class DeploymentTrigger {
      * @param applicationId the application to trigger
      */
     public void cancelChange(ApplicationId applicationId) {
-        try (Lock lock = applications().lock(applicationId)) {
-            LockedApplication application = applications().require(applicationId, lock);
+        applications().lockedOrThrow(applicationId, application -> {
             buildSystem.removeJobs(application.id());
-            application = application.withDeploying(Optional.empty());
-            applications().store(application);
-        }
+            applications().store(application.withDeploying(Optional.empty()));
+        });
     }
 
     //--- End of methods which triggers deployment jobs ----------------------------

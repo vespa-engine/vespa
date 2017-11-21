@@ -43,6 +43,9 @@ public class ApplicationList {
     /** Returns the applications in this as an immutable list */
     public List<Application> asList() { return list; }
 
+    /** Returns the ids of the applications in this as an immutable list */
+    public List<ApplicationId> idList() { return ImmutableList.copyOf(list.stream().map(Application::id)::iterator); }
+
     public boolean isEmpty() { return list.isEmpty(); }
 
     public int size() { return list.size(); }

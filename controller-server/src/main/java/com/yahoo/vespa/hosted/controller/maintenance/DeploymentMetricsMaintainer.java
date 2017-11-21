@@ -34,11 +34,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         boolean hasWarned = false;
         for (Application application : ApplicationList.from(controller().applications().asList()).notPullRequest().asList()) {
             try {
-                try (Lock lock = controller().applications().lock(application.id())) {
-                    controller().applications().get(application.id(), lock)
-                            .ifPresent(lockedApplication -> controller().applications().store(
-                                    lockedApplication.with(controller().metricsService().getApplicationMetrics(application.id()))));
-                }
+                controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                        controller().applications().store(lockedApplication.with(controller().metricsService().getApplicationMetrics(application.id()))));
 
                 for (Deployment deployment : application.deployments().values()) {
                     MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
@@ -49,11 +46,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                          deploymentMetrics.queryLatencyMillis(),
                                                                          deploymentMetrics.writeLatencyMillis());
 
-                    try (Lock lock = controller().applications().lock(application.id())) {
-                        controller().applications().get(application.id(), lock)
-                                .ifPresent(lockedApplication -> controller().applications().store(
-                                        lockedApplication.with(deployment.zone(), appMetrics)));
-                    }
+                    controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                            controller().applications().store(lockedApplication.with(deployment.zone(), appMetrics)));
                 }
             }
             catch (UncheckedIOException e) {

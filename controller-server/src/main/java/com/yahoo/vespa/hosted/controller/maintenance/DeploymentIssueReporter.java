@@ -131,11 +131,8 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     private void store(ApplicationId id, IssueId issueId) {
-        try (Lock lock = controller().applications().lock(id)) {
-            controller().applications().get(id, lock).ifPresent(
-                    application -> controller().applications().store(application.withDeploymentIssueId(issueId))
-            );
-        }
+        controller().applications().lockedIfPresent(id, application ->
+                controller().applications().store(application.withDeploymentIssueId(issueId)));
     }
 
 }

@@ -148,11 +148,8 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         tester.containerTester().updateSystemVersion();
 
         Application app = tester.createApplication();
-        try (Lock lock = tester.controller().applications().lock(app.id())) {
-            tester.controller().applications().store(
-                    tester.controller().applications().require(app.id(), lock).withProjectId(1)
-            );
-        }
+        tester.controller().applications().lockedOrThrow(app.id(), application ->
+                tester.controller().applications().store(application.withProjectId(1)));
 
         // Unknown application
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/foo/application/bar",
