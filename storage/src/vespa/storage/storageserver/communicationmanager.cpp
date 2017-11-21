@@ -1,18 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "communicationmanager.h"
 #include "fnetlistener.h"
 #include "rpcrequestwrapper.h"
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
+#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/storage/common/bucket_resolver.h>
+#include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storageapi/message/state.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".communication.manager");
@@ -267,6 +269,16 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
     }
 }
 
+namespace {
+
+struct PlaceHolderBucketResolver : public BucketResolver {
+    virtual document::Bucket bucketFromId(const document::DocumentId &) const override {
+        return document::Bucket(document::BucketSpace::placeHolder(), document::BucketId(0));
+    }
+};
+
+}
+
 CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
     : StorageLink("Communication manager"),
       _component(compReg, "communicationmanager"),
@@ -277,7 +289,8 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _count(0),
       _configUri(configUri),
       _closed(false),
-      _docApiConverter(configUri),
+      _bucketResolver(std::make_unique<PlaceHolderBucketResolver>()),
+      _docApiConverter(configUri, *_bucketResolver),
       _messageAllocTypes(_component.getMemoryManager())
 {
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
