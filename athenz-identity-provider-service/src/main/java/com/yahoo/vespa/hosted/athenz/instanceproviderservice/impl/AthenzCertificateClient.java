@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author bjorncs
  */
-public class AthenzCertificateClient implements CertificateClient {
+public class AthenzCertificateClient {
 
     private final AthenzProviderServiceConfig config;
     private final AthenzPrincipalAuthority authority;
@@ -29,7 +29,6 @@ public class AthenzCertificateClient implements CertificateClient {
         this.zoneConfig = zoneConfig;
     }
 
-    @Override
     public X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime) {
         SimpleServiceIdentityProvider identityProvider = new SimpleServiceIdentityProvider(
                 authority, zoneConfig.domain(), zoneConfig.serviceName(),

@@ -5,13 +5,11 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreContext;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.SecretStoreKeyProvider;
 
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -31,6 +29,7 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.g
  * @author bjorncs
  */
 // TODO Cache certificate on disk
+@SuppressWarnings("unused") // Component injected into Jetty connector factory
 public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements SslKeyStoreConfigurator {
     private static final Logger log = Logger.getLogger(AthenzSslKeyStoreConfigurator.class.getName());
     // TODO Make expiry and update frequency configurable parameters
@@ -39,18 +38,18 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AthenzCertificateClient certificateClient;
-    private final SecretStoreKeyProvider keyProvider;
+    private final KeyProvider keyProvider;
     private final AthenzProviderServiceConfig.Zones zoneConfig;
     private final AtomicBoolean alreadyConfigured = new AtomicBoolean();
     private final Zone zone;
 
     @Inject
-    public AthenzSslKeyStoreConfigurator(SecretStore secretStore,
+    public AthenzSslKeyStoreConfigurator(KeyProvider keyProvider,
                                          AthenzProviderServiceConfig config,
                                          Zone zone) {
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
         this.certificateClient = new AthenzCertificateClient(config, zoneConfig);
-        this.keyProvider = new SecretStoreKeyProvider(secretStore, zoneConfig.secretName());
+        this.keyProvider = keyProvider;
         this.zoneConfig = zoneConfig;
         this.zone = zone;
     }

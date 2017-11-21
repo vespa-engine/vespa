@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
+package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.IdentityDocument;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.ProviderUniqueId;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.model.SignedIdentityDocument;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -41,7 +40,7 @@ public class IdentityDocumentGenerator {
         this.signingSecretVersion = zoneConfig.secretVersion();
     }
 
-    public String generateSignedIdentityDocument(String hostname) {
+    public SignedIdentityDocument generateSignedIdentityDocument(String hostname) {
         Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
         try {
             IdentityDocument identityDocument = generateIdDocument(node);
@@ -51,13 +50,12 @@ public class IdentityDocumentGenerator {
                     Base64.getEncoder().encodeToString(identityDocumentString.getBytes());
             Signature sigGenerator = Signature.getInstance("SHA512withRSA");
 
-            // TODO: Get the correct version 0 ok for now
             PrivateKey privateKey = keyProvider.getPrivateKey(signingSecretVersion);
             sigGenerator.initSign(privateKey);
             sigGenerator.update(encodedIdentityDocument.getBytes());
             String signature = Base64.getEncoder().encodeToString(sigGenerator.sign());
 
-            SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+            return new SignedIdentityDocument(
                     encodedIdentityDocument,
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
@@ -65,9 +63,7 @@ public class IdentityDocumentGenerator {
                     toZoneDnsSuffix(zone, dnsSuffix),
                     providerDomain + "." + providerService,
                     ztsUrl,
-                    SignedIdentityDocument.DEFAILT_DOCUMENT_VERSION
-            );
-            return Utils.getMapper().writeValueAsString(signedIdentityDocument);
+                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }

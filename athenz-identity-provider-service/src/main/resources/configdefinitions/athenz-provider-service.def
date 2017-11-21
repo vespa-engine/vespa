@@ -13,12 +13,6 @@ zones{}.secretName                        string
 # Secret version
 zones{}.secretVersion                     int
 
-# HTTPS port for Athenz Provider Service endpoint
-port                                      int           default=8443
-
-# InstanceConfirmation API path
-apiPath                                   string        default="/athenz/v1/provider"
-
 # Athenz principal authority header name
 athenzPrincipalHeaderName                 string        default="Athenz-Principal-Auth"
 
