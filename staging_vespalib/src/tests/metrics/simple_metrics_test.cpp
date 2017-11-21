@@ -3,6 +3,7 @@
 #include <vespa/vespalib/metrics/simple_metrics.h>
 #include <vespa/vespalib/metrics/simple_metrics_collector.h>
 #include <vespa/vespalib/metrics/no_realloc_bunch.h>
+#include <vespa/vespalib/metrics/json_formatter.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -86,6 +87,11 @@ TEST("require that no_realloc_bunch works")
 
     const Foo& val = bunch.lookup(8);
     EXPECT_TRUE(Foo(55) == val);
+
+    for (int i = 0; i < 20000; ++i) {
+        bunch.add(Foo(i));
+    }
+    EXPECT_TRUE(Foo(19999) == bunch.lookup(20009));
 }
 
 TEST("use simple_metrics_collector")
@@ -129,7 +135,7 @@ TEST("use simple_metrics_collector")
     myGauge.sample(14.0, two);
     myGauge.sample(11.0, three);
 
-    sleep(3);
+    sleep(2);
 
     Snapshot snap = manager->snapshot();
     fprintf(stderr, "snap begin: %15f\n", snap.startTime());
@@ -162,6 +168,9 @@ TEST("use simple_metrics_collector")
         fprintf(stderr, "       max: %f\n", entry.maxValue());
         fprintf(stderr, "      last: %f\n", entry.lastValue());
     }
+
+    JsonFormatter fmt(snap);
+    fprintf(stderr, "JSON format:\n>>>\n%s\n<<<\n", fmt.asString().c_str());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -5,6 +5,7 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     counter.cpp
     dummy_metrics_collector.cpp
     gauge.cpp
+    json_formatter.cpp
     mergers.cpp
     metrics_collector.cpp
     name_collection.cpp
