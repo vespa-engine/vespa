@@ -64,6 +64,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -111,14 +112,8 @@ public class ApplicationController {
 
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
-        for (Application application : db.listApplications()) {
-            try (Lock lock = lock(application.id())) {
-                Optional<LockedApplication> lockedApplication = db.getApplication(application.id())
-                        .map(app -> new LockedApplication(app, lock));
-                if ( ! lockedApplication.isPresent()) continue; // was removed since listing; ok
-                store(lockedApplication.get()); // re-write all applications to update storage format
-            }
-        }
+        for (Application application : db.listApplications())
+            lockedIfPresent(application.id(), this::store);
     }
 
     /** Returns the application with the given id, or null if it is not present */
@@ -263,6 +258,7 @@ public class ApplicationController {
         if ( ! (id.instance().value().equals("default") || id.instance().value().startsWith("default-pr"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
         try (Lock lock = lock(id)) {
+            // TODO: Throwing is duplicated below.
             if (get(id).isPresent())
                 throw new IllegalArgumentException("An application with id '" + id + "' already exists");
 
@@ -300,6 +296,7 @@ public class ApplicationController {
     public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
+            // TODO: Shouldn't this go through the above method? Seems you can cheat the checks here ... ?
             LockedApplication application = get(applicationId, lock).orElse(new LockedApplication(
                     new Application(applicationId), lock)
             );
@@ -514,14 +511,15 @@ public class ApplicationController {
     /**
      * Deletes the application with this id
      * 
-     * @return the deleted application, or null if it did not exist
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
+     * @throws NotExistsException if the application does not exist
      */
-    public Application deleteApplication(ApplicationId id, Optional<NToken> token) {
-        try (Lock lock = lock(id)) {
-            Optional<Application> application = get(id);
-            if ( ! application.isPresent()) return null;
-            if ( ! application.get().deployments().isEmpty())
+    public void deleteApplication(ApplicationId id, Optional<NToken> token) {
+        if ( ! controller.applications().get(id).isPresent())
+            throw new NotExistsException("Could not delete application '" + id + "': Application not found");
+
+        lockedOrThrow(id, application -> {
+            if ( ! application.deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
             
             Tenant tenant = controller.tenants().tenant(new TenantId(id.tenant().value())).get();
@@ -534,9 +532,8 @@ public class ApplicationController {
                         .deleteApplication(tenant.getAthensDomain().get(), new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             db.deleteApplication(id);
 
-            log.info("Deleted " + application.get());
-            return application.get();
-        }
+            log.info("Deleted " + application);
+        });
     }
 
     /** 
@@ -549,7 +546,7 @@ public class ApplicationController {
     }
 
     /**
-     * Acquire a locked application to be modify and store, if there is an application with the given id.
+     * Acquire a locked application to modify and store, if there is an application with the given id.
      *
      * @param applicationId Id of the application to lock and get.
      * @param actions Things to do with the locked application.

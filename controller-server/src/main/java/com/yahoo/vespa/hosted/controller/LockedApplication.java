@@ -47,20 +47,20 @@ public class LockedApplication extends Application {
     }
 
     public LockedApplication withProjectId(long projectId) {
-        return new Builder(this).with(deploymentJobs().withProjectId(projectId)).build();
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withProjectId(projectId)));
     }
 
     public LockedApplication with(IssueId issueId) {
-        return new Builder(this).with(deploymentJobs().with(issueId)).build();
+        return new LockedApplication(new Builder(this).with(deploymentJobs().with(issueId)));
     }
 
     public LockedApplication withJobCompletion(DeploymentJobs.JobReport report, Instant notificationTime, Controller controller) {
-        return new Builder(this).with(deploymentJobs().withCompletion(report, notificationTime, controller)).build();
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(report, notificationTime, controller)));
     }
 
     public LockedApplication withJobTriggering(JobType type, Optional<Change> change, Instant triggerTime,
                                                Version version, Optional<ApplicationRevision> revision, String reason) {
-        return new Builder(this).with(deploymentJobs().withTriggering(type, change, version, revision, reason, triggerTime)).build();
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, revision, reason, triggerTime)));
     }
 
     public LockedApplication withNewDeployment(Zone zone, ApplicationRevision revision, Version version, Instant instant) {
@@ -95,31 +95,31 @@ public class LockedApplication extends Application {
     public LockedApplication withoutDeploymentIn(Zone zone) {
         Map<Zone, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.remove(zone);
-        return new Builder(this).with(deployments).build();
+        return new LockedApplication(new Builder(this).with(deployments));
     }
 
     public LockedApplication withoutDeploymentJob(DeploymentJobs.JobType jobType) {
-        return new Builder(this).with(deploymentJobs().without(jobType)).build();
+        return new LockedApplication(new Builder(this).with(deploymentJobs().without(jobType)));
     }
 
     public LockedApplication with(DeploymentSpec deploymentSpec) {
-        return new Builder(this).with(deploymentSpec).build();
+        return new LockedApplication(new Builder(this).with(deploymentSpec));
     }
 
     public LockedApplication with(ValidationOverrides validationOverrides) {
-        return new Builder(this).with(validationOverrides).build();
+        return new LockedApplication(new Builder(this).with(validationOverrides));
     }
 
     public LockedApplication withDeploying(Optional<Change> deploying) {
-        return new Builder(this).withDeploying(deploying).build();
+        return new LockedApplication(new Builder(this).withDeploying(deploying));
     }
 
     public LockedApplication withOutstandingChange(boolean outstandingChange) {
-        return new Builder(this).with(outstandingChange).build();
+        return new LockedApplication(new Builder(this).with(outstandingChange));
     }
 
     public LockedApplication withOwnershipIssueId(IssueId issueId) {
-        return new Builder(this).withOwnershipIssueId(Optional.ofNullable(issueId)).build();
+        return new LockedApplication(new Builder(this).withOwnershipIssueId(Optional.ofNullable(issueId)));
     }
 
     public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
@@ -138,7 +138,7 @@ public class LockedApplication extends Application {
     private LockedApplication with(Deployment deployment) {
         Map<Zone, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.put(deployment.zone(), deployment);
-        return new Builder(this).with(deployments).build();
+        return new LockedApplication(new Builder(this).with(deployments));
     }
 
 
@@ -163,8 +163,6 @@ public class LockedApplication extends Application {
             this.hasOutstandingChange = application.hasOutstandingChange();
             this.ownershipIssueId = application.ownershipIssueId();
         }
-
-        private LockedApplication build() { return new LockedApplication(this); }
 
         private Builder with(DeploymentSpec deploymentSpec) { this.deploymentSpec = deploymentSpec; return this; }
         private Builder with(ValidationOverrides validationOverrides) { this.validationOverrides = validationOverrides; return this; }

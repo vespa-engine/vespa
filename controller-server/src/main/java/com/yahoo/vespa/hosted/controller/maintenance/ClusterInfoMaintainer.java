@@ -92,11 +92,8 @@ public class ClusterInfoMaintainer extends Maintainer {
                 try {
                     NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
-                    try (Lock lock = controller().applications().lock(application.id())) {
-                        controller.applications().get(application.id(), lock)
-                                .ifPresent(lockedApplication -> controller.applications().store(
-                                        lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));
-                    }
+                    controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                        controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));
                 }
                 catch (IOException | IllegalArgumentException e) {
                     log.log(Level.WARNING, "Failing getting cluster info of for " + deploymentId, e);

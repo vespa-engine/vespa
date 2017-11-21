@@ -523,8 +523,7 @@ public class ControllerTest {
         TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
-        try (Lock lock = tester.controller().applications().lock(app.id())) {
-            LockedApplication application = tester.controller().applications().require(app.id(), lock);
+        tester.controller().applications().lockedOrThrow(app.id(), application -> {
             application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
             applications.store(application);
             try {
@@ -533,7 +532,7 @@ public class ControllerTest {
             } catch (IllegalArgumentException e) {
                 assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
             }
-        }
+        });
     }
 
     @Test

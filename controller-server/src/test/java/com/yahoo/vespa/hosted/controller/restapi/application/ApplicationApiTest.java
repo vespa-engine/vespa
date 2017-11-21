@@ -785,9 +785,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
-            try (Lock lock = controllerTester.controller().applications().lock(application.id())) {
-                LockedApplication lockedApplication = controllerTester.controller().applications()
-                                                                      .require(application.id(), lock);
+            controllerTester.controller().applications().lockedOrThrow(application.id(), lockedApplication -> {
                 for (Deployment deployment : application.deployments().values()) {
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
                     List<String> hostnames = new ArrayList<>();
@@ -803,7 +801,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                .withClusterUtilization(deployment.zone(), clusterUtils)
                                                                                .with(deployment.zone(), metrics));
                 }
-            }
+            });
         }
     }
 

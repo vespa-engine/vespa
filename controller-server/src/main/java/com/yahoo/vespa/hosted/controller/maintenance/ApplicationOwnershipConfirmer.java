@@ -84,9 +84,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     protected void store(IssueId issueId, ApplicationId applicationId) {
-        try (Lock lock = controller().applications().lock(applicationId)) {
-            controller().applications().get(applicationId, lock)
-                    .ifPresent(application -> controller().applications().store(application.withOwnershipIssueId(issueId)));
-        }
+        controller().applications().lockedIfPresent(applicationId, application ->
+                controller().applications().store(application.withOwnershipIssueId(issueId)));
     }
 }
