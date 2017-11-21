@@ -76,7 +76,8 @@ public class DelayedConfigResponses {
         }
 
         public synchronized void run() {
-            remove();
+            removeFromQueue();
+            removeWatcher();
             rpcServer.addToRequestQueue(request, true, null);
             if (log.isLoggable(LogLevel.DEBUG)) {
                 log.log(LogLevel.DEBUG, logPre()+"DelayedConfigResponse. putting on queue: " + request.getShortDescription());
@@ -86,9 +87,8 @@ public class DelayedConfigResponses {
         /**
          * Remove delayed response from its queue
          */
-        private void remove() {
+        private void removeFromQueue() {
             delayedResponsesQueue.remove(this);
-            removeWatcher();
         }
 
         public JRTServerConfigRequest getRequest() {
@@ -107,8 +107,13 @@ public class DelayedConfigResponses {
             return Tenants.logPre(app);
         }
 
-        public synchronized boolean cancel() {
-            remove();
+        synchronized void cancelAndRemove() {
+            removeFromQueue();
+            cancel();
+        }
+
+        synchronized boolean cancel() {
+            removeWatcher();
             if (future == null) {
                 throw new IllegalStateException("Cannot cancel a task that has not been scheduled");
             }
@@ -129,7 +134,7 @@ public class DelayedConfigResponses {
          */
         @Override
         public void notifyTargetInvalid(Target target) {
-            cancel();
+            cancelAndRemove();
         }
 
         private void addWatcher() {
