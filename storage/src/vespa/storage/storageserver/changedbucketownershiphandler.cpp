@@ -5,6 +5,7 @@
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -20,10 +21,9 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
       _metrics(),
       _configFetcher(configUri.getContext()),
       _stateLock(),
-      _currentDistribution(_component.getDistribution()),
       _currentState(), // Not set yet, so ownership will not be valid
       _currentOwnership(std::make_shared<OwnershipState>(
-            _currentDistribution, _currentState)),
+            _component.getBucketSpaceRepo(), _currentState)),
       _abortQueuedAndPendingOnStateChange(false),
       _abortMutatingIdealStateOps(false),
       _abortMutatingExternalLoadOps(false)
@@ -66,7 +66,7 @@ ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(
 {
     _currentState = std::make_shared<lib::ClusterState>(newState);
     _currentOwnership = std::make_shared<OwnershipState>(
-            _currentDistribution, _currentState);
+            _component.getBucketSpaceRepo(), _currentState);
 }
 
 namespace {
@@ -94,21 +94,32 @@ ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
 {}
 ChangedBucketOwnershipHandler::Metrics::~Metrics() { }
 
-ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const lib::Distribution::SP& distribution,
+ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
                                                               const lib::ClusterState::CSP& state)
-    : _distribution(distribution),
+    : _distributions(),
       _state(state)
 {
+    for (const auto &elem : contentBucketSpaceRepo) {
+        auto distribution = elem.second->getDistribution();
+        if (distribution) {
+            _distributions.emplace(elem.first, std::move(distribution));
+        }
+    }
 }
+
+
 ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() {}
 
 
 uint16_t
 ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
-        const document::BucketId& bucket) const
+        const document::Bucket& bucket) const
 {
+    auto distributionItr = _distributions.find(bucket.getBucketSpace());
+    assert(distributionItr != _distributions.end());
+    const auto &distribution = *distributionItr->second;
     try {
-        return _distribution->getIdealDistributorNode(*_state, bucket);
+        return distribution.getIdealDistributorNode(*_state, bucket.getBucketId());
     } catch (lib::TooFewBucketBitsInUseException& e) {
         LOGBP(debug,
               "Too few bucket bits used for %s to be assigned to "
@@ -121,7 +132,7 @@ ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
               "for available distributors before reaching this code path! "
               "Cluster state is '%s', distribution is '%s'",
               _state->toString().c_str(),
-              _distribution->toString().c_str());
+              distribution.toString().c_str());
     } catch (const std::exception& e) {
         LOG(error,
             "Got unknown exception while resolving distributor: %s",
@@ -159,8 +170,8 @@ class StateDiffLazyAbortPredicate
         if (_allDistributorsHaveGoneDown) {
             return true;
         }
-        uint16_t oldOwner(_oldState.ownerOf(bucket.getBucketId()));
-        uint16_t newOwner(_newState.ownerOf(bucket.getBucketId()));
+        uint16_t oldOwner(_oldState.ownerOf(bucket));
+        uint16_t newOwner(_newState.ownerOf(bucket));
         if (oldOwner != newOwner) {
             LOG(spam, "Owner of %s was %u, now %u. Operation should be aborted",
                 bucket.toString().c_str(), oldOwner, newOwner);
@@ -262,9 +273,8 @@ void
 ChangedBucketOwnershipHandler::storageDistributionChanged()
 {
     vespalib::LockGuard guard(_stateLock);
-    _currentDistribution = _component.getDistribution();
     _currentOwnership = std::make_shared<OwnershipState>(
-            _currentDistribution, _currentState);
+            _component.getBucketSpaceRepo(), _currentState);
 }
 
 bool
@@ -324,7 +334,7 @@ ChangedBucketOwnershipHandler::sendingDistributorOwnsBucketInCurrentState(
 
     try {
         document::Bucket opBucket(getStorageMessageBucket(cmd));
-        return (current->ownerOf(opBucket.getBucketId()) == cmd.getSourceIndex());
+        return (current->ownerOf(opBucket) == cmd.getSourceIndex());
     } catch (vespalib::IllegalArgumentException& e) {
         LOG(error,
             "Precondition violation: unable to get bucket from "

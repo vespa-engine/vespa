@@ -13,6 +13,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <atomic>
 #include <vector>
+#include <unordered_map>
 
 namespace storage {
 
@@ -63,7 +64,7 @@ public:
     };
 
     /**
-     * Wrapper around the distribution & state pair that decides how to
+     * Wrapper around the distribution & state pairs that decides how to
      * compute the owner distributor for a bucket. It's possible to have
      * an ownership state with a nullptr cluster state when the node
      * initially starts up, which is why no owership state must be used unless
@@ -71,21 +72,21 @@ public:
      */
     class OwnershipState
     {
-        lib::Distribution::SP _distribution;
+        using BucketSpace = document::BucketSpace;
+        std::unordered_map<BucketSpace, std::shared_ptr<const lib::Distribution>, BucketSpace::hash> _distributions;
         lib::ClusterState::CSP _state;
     public:
         using SP = std::shared_ptr<OwnershipState>;
         using CSP = std::shared_ptr<const OwnershipState>;
 
-        OwnershipState(const lib::Distribution::SP& distribution,
+        OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
                        const lib::ClusterState::CSP& state);
         ~OwnershipState();
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
 
         bool valid() const {
-            return ((_distribution.get() != nullptr)
-                    && (_state.get() != nullptr));
+            return (!_distributions.empty() && _state);
         }
 
         /**
@@ -96,7 +97,7 @@ public:
             return *_state;
         }
 
-        uint16_t ownerOf(const document::BucketId& bucket) const;
+        uint16_t ownerOf(const document::Bucket& bucket) const;
     };
 
     /**
@@ -111,7 +112,6 @@ private:
     Metrics _metrics;
     config::ConfigFetcher _configFetcher;
     vespalib::Lock _stateLock;
-    lib::Distribution::SP _currentDistribution;
     lib::ClusterState::CSP _currentState;
     OwnershipState::CSP _currentOwnership;
 
