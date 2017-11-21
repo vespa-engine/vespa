@@ -12,8 +12,6 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.GetConfigContext;
-import com.yahoo.vespa.config.server.rpc.DelayedConfigResponses;
-import com.yahoo.vespa.config.server.rpc.MockRpc;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -58,7 +56,7 @@ public class DelayedConfigResponseTest {
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         responses.delayResponse(createRequest("foolio", "md5", "myid", "mymd5", 3, 100000, "bar"), context);
         assertThat(responses.size(), is(1));
-        responses.allDelayedResponses().get(0).cancel();
+        responses.allDelayedResponses().get(0).cancelAndRemove();
         assertThat(responses.size(), is(0));
     }
 
