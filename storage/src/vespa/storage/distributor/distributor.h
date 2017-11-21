@@ -113,8 +113,6 @@ public:
      */
     void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority) override;
 
-    const lib::Distribution& getDistribution() const override;
-
     const lib::ClusterState& getClusterState() const override {
         return _clusterState;
     }
@@ -233,7 +231,7 @@ private:
                            Operation::SP& operation);
 
     void enableNextDistribution();
-    void propagateDefaultDistribution(std::shared_ptr<lib::Distribution>);
+    void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
 
     lib::ClusterState _clusterState;
 
@@ -252,7 +250,7 @@ private:
     IdealStateManager _idealStateManager;
     ExternalOperationHandler _externalOperationHandler;
 
-    mutable std::shared_ptr<lib::Distribution> _distribution;
+    std::shared_ptr<lib::Distribution> _distribution;
     std::shared_ptr<lib::Distribution> _nextDistribution;
 
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;

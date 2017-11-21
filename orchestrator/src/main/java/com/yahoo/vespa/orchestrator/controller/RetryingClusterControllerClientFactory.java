@@ -20,6 +20,7 @@ public class RetryingClusterControllerClientFactory implements ClusterController
     // TODO: Figure this port out dynamically.
     public static final int HARDCODED_CLUSTERCONTROLLER_PORT = 19050;
     public static final String CLUSTERCONTROLLER_API_PATH = "/";
+    public static final String CLUSTERCONTROLLER_SCHEME = "http";
     private static final int CLUSTER_CONTROLLER_CONNECT_TIMEOUT_MS = 1000;
     private static final int CLUSTER_CONTROLLER_READ_TIMEOUT_MS = 1000;
 
@@ -39,7 +40,7 @@ public class RetryingClusterControllerClientFactory implements ClusterController
                                                 String clusterName) {
         Set<HostName> clusterControllerSet = clusterControllers.stream().collect(Collectors.toSet());
         JaxRsStrategy<ClusterControllerJaxRsApi> jaxRsApi
-                = new JaxRsStrategyFactory(clusterControllerSet, HARDCODED_CLUSTERCONTROLLER_PORT, jaxRsClientFactory)
+                = new JaxRsStrategyFactory(clusterControllerSet, HARDCODED_CLUSTERCONTROLLER_PORT, jaxRsClientFactory, CLUSTERCONTROLLER_SCHEME)
                 .apiWithRetries(ClusterControllerJaxRsApi.class, CLUSTERCONTROLLER_API_PATH);
         return new ClusterControllerClientImpl(jaxRsApi, clusterName);
     }

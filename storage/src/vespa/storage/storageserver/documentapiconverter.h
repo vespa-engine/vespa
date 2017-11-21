@@ -13,6 +13,7 @@ namespace api {
     class StorageReply;
 }
 
+class BucketResolver;
 class PriorityConverter;
 /**
    Converts messages from storageapi to documentapi and
@@ -21,7 +22,8 @@ class PriorityConverter;
 class DocumentApiConverter
 {
 public:
-    DocumentApiConverter(const config::ConfigUri & configUri);
+    DocumentApiConverter(const config::ConfigUri &configUri,
+                         const BucketResolver &bucketResolver);
     ~DocumentApiConverter();
 
     std::unique_ptr<api::StorageCommand> toStorageAPI(documentapi::DocumentMessage& msg, const document::DocumentTypeRepo::SP &repo);
@@ -31,6 +33,7 @@ public:
     const PriorityConverter& getPriorityConverter() const { return *_priConverter; }
 private:
     std::unique_ptr<PriorityConverter> _priConverter;
+    const BucketResolver &_bucketResolver;
 };
 
 }  // namespace storage

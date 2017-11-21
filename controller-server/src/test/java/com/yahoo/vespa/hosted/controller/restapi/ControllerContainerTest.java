@@ -70,6 +70,10 @@ public class ControllerContainerTest {
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.screwdriver.ScrewdriverApiHandler'>" +
             "    <binding>http://*/screwdriver/v1/*</binding>" +
             "  </handler>" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>" +
+            "    <binding>http://*/zone/v1</binding>" +
+            "    <binding>http://*/zone/v1/*</binding>" +
+            "  </handler>" +
             "</jdisc>";
 
     protected void assertResponse(Request request, int responseStatus, String responseMessage) throws IOException {

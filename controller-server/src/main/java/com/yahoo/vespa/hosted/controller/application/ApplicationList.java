@@ -116,7 +116,7 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> ! failingOn(version, application)));
     }
 
-    /** Returns the subset of applications which have at least one deployment */
+    /** Returns the subset of applications which have at least one production deployment */
     public ApplicationList hasDeployment() {
         return listOf(list.stream().filter(a -> !a.productionDeployments().isEmpty()));
     }

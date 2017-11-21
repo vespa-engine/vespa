@@ -1,6 +1,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
@@ -9,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,26 +32,25 @@ public class ApplicationOwnershipConfirmerTest {
 
     private MockOwnershipIssues issues;
     private ApplicationOwnershipConfirmer confirmer;
-    private ControllerTester tester;
+    private DeploymentTester tester;
 
     @Before
     public void setup() {
-        tester = new ControllerTester();
+        tester = new DeploymentTester();
         issues = new MockOwnershipIssues();
         confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), new JobControl(new MockCuratorDb()), issues);
     }
 
     @Test
     public void testConfirmation() {
-        TenantId property = tester.createTenant("tenant", "domain", 1L);
-        ApplicationId propertyAppId = tester.createApplication(property, "application", "default", 1).id();
-        Supplier<Application> propertyApp = () -> tester.controller().applications().require(propertyAppId);
+        TenantId property = tester.controllerTester().createTenant("property", "domain", 1L);
+        tester.createAndDeploy(property, "application", 1, "default");
+        Supplier<Application> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
 
         TenantId user = new TenantId("by-user");
-        tester.controller().tenants().addTenant(Tenant.createUserTenant(new TenantId("by-user")), Optional.empty());
-        assertTrue(tester.controller().tenants().tenant(user).isPresent());
-        ApplicationId userAppId = tester.createApplication(user, "application", "default", 1).id();
-        Supplier<Application> userApp = () -> tester.controller().applications().require(userAppId);
+        tester.controller().tenants().addTenant(Tenant.createUserTenant(user), Optional.empty());
+        tester.createAndDeploy(user, "application", 2, "default");
+        Supplier<Application> userApp = () -> tester.controller().applications().require(ApplicationId.from("by-user", "application", "default"));
 
         assertFalse("No issue is initially stored for a new application.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is initially stored for a new application.", userApp.get().ownershipIssueId().isPresent());
@@ -59,8 +62,8 @@ public class ApplicationOwnershipConfirmerTest {
         confirmer.maintain();
         confirmer.maintain();
 
-        assertEquals("Confirmation issue has been filed for property owned application.", propertyApp.get().ownershipIssueId(), issueId);
-        assertEquals("Confirmation issue has been filed for user owned application.", userApp.get().ownershipIssueId(), issueId);
+        assertEquals("Confirmation issue has been filed for property owned application.", issueId, propertyApp.get().ownershipIssueId());
+        assertEquals("Confirmation issue has been filed for user owned application.", issueId, userApp.get().ownershipIssueId());
         assertTrue("Both applications have had their responses ensured.", issues.escalatedForProperty && issues.escalatedForUser);
 
         // No new issue is created, so return empty now.
@@ -68,15 +71,27 @@ public class ApplicationOwnershipConfirmerTest {
         confirmer.maintain();
         confirmer.maintain();
 
-        assertEquals("Confirmation issue reference is not updated when no issue id is returned.", propertyApp.get().ownershipIssueId(), issueId);
+        assertEquals("Confirmation issue reference is not updated when no issue id is returned.", issueId, propertyApp.get().ownershipIssueId());
+        assertEquals("Confirmation issue reference is not updated when no issue id is returned.", issueId, userApp.get().ownershipIssueId());
 
-        // Time has passed, and a new confirmation issue is in order.
+        // The user deletes its production deployment — see that the issue is forgotten.
+        assertEquals("Confirmation issue for user is sitll open.", issueId, userApp.get().ownershipIssueId());
+        tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
+        assertTrue("No production deployments are listed for user.", userApp.get().productionDeployments().isEmpty());
+        confirmer.maintain();
+        confirmer.maintain();
+
+        assertEquals("Confirmation issue has been forgotten for application without production deployments.", Optional.empty(), userApp.get().ownershipIssueId());
+
+        // Time has passed, and a new confirmation issue is in order for the property which is still in production.
         Optional<IssueId> issueId2 = Optional.of(IssueId.from("2"));
         issues.response = issueId2;
         confirmer.maintain();
         confirmer.maintain();
 
-        assertEquals("A new confirmation issue id is stored when something is returned to the maintainer.", propertyApp.get().ownershipIssueId(), issueId2);
+        assertEquals("A new confirmation issue id is stored when something is returned to the maintainer.", issueId2, propertyApp.get().ownershipIssueId());
+        assertEquals("Confirmation issue for application without production deployments has not been filed.", Optional.empty(), userApp.get().ownershipIssueId());
+
     }
 
     private class MockOwnershipIssues implements OwnershipIssues {

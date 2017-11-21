@@ -9,5 +9,5 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * @author bakksjo
  */
 public interface JaxRsClientFactory {
-    <T> T createClient(Class<T> apiClass, HostName hostName, int port, String pathPrefix);
+    <T> T createClient(Class<T> apiClass, HostName hostName, int port, String pathPrefix, String scheme);
 }

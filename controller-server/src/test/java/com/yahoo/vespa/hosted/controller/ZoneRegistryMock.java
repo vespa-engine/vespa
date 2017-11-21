@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -10,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,15 +22,37 @@ import java.util.Optional;
 /**
  * @author mpolden
  */
-public class ZoneRegistryMock implements ZoneRegistry {
+public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry {
 
     private final Map<Zone, Duration> deploymentTimeToLive = new HashMap<>();
+    private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
+    private List<Zone> zones = new ArrayList<>();
+    private SystemName system = SystemName.main;
 
-    public void setDeploymentTimeToLive(Zone zone, Duration duration) {
-        deploymentTimeToLive.put(zone, duration);
+    @Inject
+    public ZoneRegistryMock() {
+        this.zones.add(new Zone(SystemName.main, Environment.from("prod"), RegionName.from("corp-us-east-1")));
     }
 
-    private SystemName system = SystemName.main;
+    public ZoneRegistryMock setDeploymentTimeToLive(Zone zone, Duration duration) {
+        deploymentTimeToLive.put(zone, duration);
+        return this;
+    }
+
+    public ZoneRegistryMock setDefaultRegionForEnvironment(Environment environment, RegionName region) {
+        defaultRegionForEnvironment.put(environment, region);
+        return this;
+    }
+
+    public ZoneRegistryMock setZones(List<Zone> zones) {
+        this.zones = zones;
+        return this;
+    }
+
+    public ZoneRegistryMock setSystem(SystemName system) {
+        this.system = system;
+        return this;
+    }
 
     @Override
     public SystemName system() {
@@ -36,12 +61,13 @@ public class ZoneRegistryMock implements ZoneRegistry {
 
     @Override
     public List<Zone> zones() {
-        return Collections.singletonList(new Zone(SystemName.main, Environment.from("prod"), RegionName.from("corp-us-east-1")));
+        return Collections.unmodifiableList(zones);
     }
 
     @Override
     public Optional<Zone> getZone(Environment environment, RegionName region) {
-        return zones().stream().filter(z -> z.environment().equals(environment) && z.region().equals(region)).findFirst();
+        return zones().stream().filter(z -> z.environment().equals(environment) &&
+                                            z.region().equals(region)).findFirst();
     }
 
     @Override
@@ -64,6 +90,11 @@ public class ZoneRegistryMock implements ZoneRegistry {
     }
 
     @Override
+    public Optional<RegionName> getDefaultRegion(Environment environment) {
+        return Optional.ofNullable(defaultRegionForEnvironment.get(environment));
+    }
+
+    @Override
     public URI getMonitoringSystemUri(Environment environment, RegionName name, ApplicationId application) {
         return URI.create("http://monitoring-system.test/?environment=" + environment.value() + "&region="
                                   + name.value() + "&application=" + application.toShortString());
@@ -74,7 +105,4 @@ public class ZoneRegistryMock implements ZoneRegistry {
         return URI.create("http://dashboard.test");
     }
 
-    public void setSystem(SystemName system) {
-        this.system = system;
-    }
 }
