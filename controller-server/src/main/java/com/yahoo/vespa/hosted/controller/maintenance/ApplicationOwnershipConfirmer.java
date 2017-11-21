@@ -42,7 +42,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
         for (Application application : controller().applications().asList())
-            if (application.productionDeployments().isEmpty())
+            if (application.id().instance().value().startsWith("default-pr") || application.productionDeployments().isEmpty())
                 store(null, application.id());
             else
                 try {
