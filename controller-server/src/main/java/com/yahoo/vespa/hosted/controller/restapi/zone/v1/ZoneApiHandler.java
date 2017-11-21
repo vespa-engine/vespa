@@ -115,16 +115,17 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("name", region.value());
-        root.setString("url", request.getUri().resolve("region").resolve(region.value()).toString());
+        root.setString("url", request.getUri()
+                                     .resolve("/zone/v2/environment/")
+                                     .resolve(environment.value() + "/")
+                                     .resolve("region/")
+                                     .resolve(region.value())
+                                     .toString());
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse notFound(Path path) {
         return ErrorResponse.notFoundError("Nothing at " + path);
-    }
-
-    private static String url(HttpRequest request, String path) {
-        return request.getUri().resolve(path).toString();
     }
 
 }

@@ -28,23 +28,38 @@ public class ZoneApiTest extends ControllerContainerTest {
             new Zone(Environment.staging, RegionName.from("us-north-4"))
     );
 
+    private ContainerControllerTester tester;
+
     @Before
     public void before() {
         ZoneRegistryMock zoneRegistry = (ZoneRegistryMock) container.components()
                                                                     .getComponent(ZoneRegistryMock.class.getName());
         zoneRegistry.setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
                     .setZones(zones);
+        this.tester = new ContainerControllerTester(container, responseFiles);
     }
 
     @Test
-    public void test_requests_v1() throws Exception {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+    public void test_requests() throws Exception {
+        // GET /zone/v1
         tester.containerTester().assertResponse(new Request("http://localhost:8080/zone/v1"),
                                                 new File("root.json"));
+
+        // GET /zone/v1/environment/prod
         tester.containerTester().assertResponse(new Request("http://localhost:8080/zone/v1/environment/prod"),
                                                 new File("prod.json"));
+
+        // GET /zone/v1/environment/dev/default
         tester.containerTester().assertResponse(new Request("http://localhost:8080/zone/v1/environment/dev/default"),
                                                 new File("default-for-region.json"));
+    }
+
+    @Test
+    public void test_invalid_requests() throws Exception {
+        // GET /zone/v1/environment/prod/default: No default region
+        tester.containerTester().assertResponse(new Request("http://localhost:8080/zone/v1/environment/prod/default"),
+                                                new File("no-default-region.json"),
+                                                400);
     }
 
 }
