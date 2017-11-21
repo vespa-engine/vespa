@@ -145,7 +145,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_REMOVELOCATION:
     {
         documentapi::RemoveLocationMessage& from(static_cast<documentapi::RemoveLocationMessage&>(fromMsg));
-        api::RemoveLocationCommand::UP to(new api::RemoveLocationCommand(from.getDocumentSelection(), document::Bucket(BucketSpace::placeHolder(), document::BucketId(0))));
+        document::Bucket bucket(_bucketResolver.bucketSpaceFromName(from.getBucketSpace()), document::BucketId(0));
+        api::RemoveLocationCommand::UP to(new api::RemoveLocationCommand(from.getDocumentSelection(), bucket));
         toMsg.reset(to.release());
         break;
     }

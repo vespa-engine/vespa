@@ -5,6 +5,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/select/parser.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -14,6 +15,7 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
@@ -108,6 +110,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testBatchDocumentUpdate();
     void testStatBucket();
     void testGetBucketList();
+    void testRemoveLocation();
 
     CPPUNIT_TEST_SUITE(DocumentApiConverterTest);
     CPPUNIT_TEST(testPut);
@@ -125,6 +128,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testBatchDocumentUpdate);
     CPPUNIT_TEST(testStatBucket);
     CPPUNIT_TEST(testGetBucketList);
+    CPPUNIT_TEST(testRemoveLocation);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -500,6 +504,18 @@ DocumentApiConverterTest::testGetBucketList()
 
     auto cmd = toStorageAPI<api::GetBucketListCommand>(msg);
     CPPUNIT_ASSERT_EQUAL(Bucket(defaultBucketSpace, BucketId(123)), cmd->getBucket());
+}
+
+void
+DocumentApiConverterTest::testRemoveLocation()
+{
+    document::BucketIdFactory factory;
+    document::select::Parser parser(*_repo, factory);
+    documentapi::RemoveLocationMessage msg(factory, parser, "id.group == \"mygroup\"");
+    msg.setBucketSpace(defaultSpaceName);
+
+    auto cmd = toStorageAPI<api::RemoveLocationCommand>(msg);
+    CPPUNIT_ASSERT_EQUAL(defaultBucket, cmd->getBucket());
 }
 
 }
