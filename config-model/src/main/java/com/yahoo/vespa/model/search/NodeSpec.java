@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 /**
- * Represents the row id and partition id of a search interface node.
+ * Represents the group and partition id of a search interface node.
  *
  * @author geirst
  */
