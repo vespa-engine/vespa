@@ -159,7 +159,7 @@ public class LockedApplication extends Application {
     public LockedApplication withOwnershipIssueId(IssueId issueId) {
         return new LockedApplication(new Application(id(), deploymentSpec(), validationOverrides(),
                                                      deployments(), deploymentJobs(), deploying(),
-                                                     hasOutstandingChange(), Optional.of(issueId), metrics()), lock);
+                                                     hasOutstandingChange(), Optional.ofNullable(issueId), metrics()), lock);
     }
 
     public LockedApplication with(MetricsService.ApplicationMetrics metrics) {
