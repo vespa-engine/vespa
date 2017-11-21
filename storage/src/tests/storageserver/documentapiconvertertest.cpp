@@ -30,7 +30,8 @@ using document::test::makeDocumentBucket;
 namespace storage {
 
 DocumentId defaultDocId("id:test:text/html::0");
-const Bucket defaultBucket(BucketSpace(5), BucketId(0));
+const BucketSpace defaultBucketSpace(5);
+const Bucket defaultBucket(defaultBucketSpace, BucketId(0));
 
 struct MockBucketResolver : public BucketResolver {
     virtual Bucket bucketFromId(const DocumentId &documentId) const override {
@@ -38,6 +39,18 @@ struct MockBucketResolver : public BucketResolver {
             return defaultBucket;
         }
         return Bucket(BucketSpace(0), BucketId(0));
+    }
+    virtual BucketSpace bucketSpaceFromName(const vespalib::string &bucketSpace) const override {
+        if (bucketSpace == "myspace") {
+            return defaultBucketSpace;
+        }
+        return BucketSpace(0);
+    }
+    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+        if (bucketSpace == defaultBucketSpace) {
+            return "myspace";
+        }
+        return "";
     }
 };
 
@@ -59,6 +72,15 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void setUp() override {
         _converter.reset(new DocumentApiConverter("raw:", _bucketResolver));
     };
+
+    template <typename T>
+    std::unique_ptr<T> toDocumentAPI(api::StorageCommand &cmd) {
+        auto result = _converter->toDocumentAPI(cmd, _repo);
+        auto ptr = dynamic_cast<T*>(result.get());
+        CPPUNIT_ASSERT(ptr);
+        result.release();
+        return std::unique_ptr<T>(ptr);
+    }
 
     void testPut();
     void testForwardedPut();
@@ -214,9 +236,11 @@ void DocumentApiConverterTest::testGet()
 void DocumentApiConverterTest::testCreateVisitor()
 {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
-
+    cv.setBucketSpace("myspace");
     cv.setTimeRemaining(123456);
+
     std::unique_ptr<storage::api::StorageCommand> cmd = _converter->toStorageAPI(cv, _repo);
+    CPPUNIT_ASSERT_EQUAL(defaultBucketSpace, cmd->getBucket().getBucketSpace());
     api::CreateVisitorCommand* pc = dynamic_cast<api::CreateVisitorCommand*>(cmd.get());
 
     CPPUNIT_ASSERT(pc);
@@ -225,6 +249,9 @@ void DocumentApiConverterTest::testCreateVisitor()
     CPPUNIT_ASSERT_EQUAL(vespalib::string("control-dest"), pc->getControlDestination());
     CPPUNIT_ASSERT_EQUAL(vespalib::string("data-dest"), pc->getDataDestination());
     CPPUNIT_ASSERT_EQUAL(123456u, pc->getTimeout());
+
+    auto msg = toDocumentAPI<documentapi::CreateVisitorMessage>(*cmd);
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("myspace"), msg->getBucketSpace());
 }
 
 void DocumentApiConverterTest::testCreateVisitorHighTimeout()

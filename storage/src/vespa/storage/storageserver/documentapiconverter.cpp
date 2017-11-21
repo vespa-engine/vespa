@@ -76,7 +76,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_CREATEVISITOR:
     {
         documentapi::CreateVisitorMessage& from(static_cast<documentapi::CreateVisitorMessage&>(fromMsg));
-        auto to = std::make_unique<api::CreateVisitorCommand>(BucketSpace::placeHolder(),
+        auto to = std::make_unique<api::CreateVisitorCommand>(_bucketResolver.bucketSpaceFromName(from.getBucketSpace()),
                                                               from.getLibraryName(), from.getInstanceId(),
                                                               from.getDocumentSelection());
 
@@ -295,6 +295,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
         documentapi::CreateVisitorMessage::UP to(
                 new documentapi::CreateVisitorMessage(from.getLibraryName(), from.getInstanceId(),
                                                       from.getControlDestination(), from.getDataDestination()));
+        to->setBucketSpace(_bucketResolver.nameFromBucketSpace(from.getBucketSpace()));
         to->setDocumentSelection(from.getDocumentSelection());
         to->setMaximumPendingReplyCount(from.getMaximumPendingReplyCount());
         to->setParameters(from.getParameters());
