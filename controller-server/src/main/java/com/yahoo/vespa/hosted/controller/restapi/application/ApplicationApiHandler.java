@@ -21,7 +21,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -53,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -660,7 +658,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                    optional("athensDomain", requestData).map(AthenzDomain::new),
                                    optional("propertyId", requestData).map(PropertyId::new));
         if (tenant.isOpsDbTenant())
-            throwIfNotSuperUserOrPartOfOpsDbGroup(new UserGroup(mandatory("userGroup", requestData).asString()), request);
+            throw new ForbiddenException("Creating OpsDb tenant is no longer supported");
         if (tenant.isAthensTenant())
             throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
 
@@ -793,7 +791,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool()); 
-        ActivateResult result = controller.applications().deployApplication(applicationId, 
+        ActivateResult result = controller.applications(). deployApplication(applicationId,
                                                                             zone, 
                                                                             new ApplicationPackage(dataParts.get("applicationZip")),
                                                                             deployOptionsJsonClass);

@@ -97,6 +97,10 @@ public class Tenant {
                           Optional.ofNullable(athensDomain), propertyId);
     }
 
+    /**
+     * @deprecated OpsDb tenants are deprecated - new tenants should use Athenz
+     */
+    @Deprecated
     public static Tenant createOpsDbTenant(TenantId id, UserGroup userGroup, Property property, Optional<PropertyId> propertyId) {
         if (id.isUser()) {
             throw new IllegalArgumentException("Invalid id for non-user tenant: " + id);
@@ -104,6 +108,10 @@ public class Tenant {
         return new Tenant(id, Optional.ofNullable(userGroup), Optional.ofNullable(property), Optional.empty(), propertyId);
     }
 
+    /**
+     * @deprecated OpsDb tenants are deprecated - new tenants should use Athenz
+     */
+    @Deprecated
     public static Tenant createOpsDbTenant(TenantId id, UserGroup userGroup, Property property) {
         return createOpsDbTenant(id, userGroup, property, Optional.empty());
     }
