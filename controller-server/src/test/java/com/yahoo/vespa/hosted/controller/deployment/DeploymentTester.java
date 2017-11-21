@@ -119,8 +119,13 @@ public class DeploymentTester {
 
     /** Simulate the full lifecycle of an application deployment as declared in given application package */
     public Application createAndDeploy(String applicationName, int projectId, ApplicationPackage applicationPackage) {
-        tester.createTenant("tenant1", "domain1", 1L);
-        Application application = tester.createApplication(new TenantId("tenant1"), applicationName, "default", projectId);
+        TenantId tenantId = tester.createTenant("tenant1", "domain1", 1L);
+        return createAndDeploy(tenantId, applicationName, projectId, applicationPackage);
+    }
+
+    /** Simulate the full lifecycle of an application deployment as declared in given application package */
+    public Application createAndDeploy(TenantId tenantId, String applicationName, int projectId, ApplicationPackage applicationPackage) {
+        Application application = tester.createApplication(tenantId, applicationName, "default", projectId);
         deployCompletely(application, applicationPackage);
         return applications().require(application.id());
     }
@@ -128,6 +133,11 @@ public class DeploymentTester {
     /** Simulate the full lifecycle of an application deployment to prod.us-west-1 with the given upgrade policy */
     public Application createAndDeploy(String applicationName, int projectId, String upgradePolicy) {
         return createAndDeploy(applicationName, projectId, applicationPackage(upgradePolicy));
+    }
+
+    /** Simulate the full lifecycle of an application deployment to prod.us-west-1 with the given upgrade policy */
+    public Application createAndDeploy(TenantId tenantId, String applicationName, int projectId, String upgradePolicy) {
+        return createAndDeploy(tenantId, applicationName, projectId, applicationPackage(upgradePolicy));
     }
 
     /** Complete an ongoing deployment */
