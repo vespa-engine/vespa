@@ -43,7 +43,7 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.Identity;
+import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -174,17 +174,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Athenz copper argos
         // NOTE: Must be done after addNodes()
-        addIdentity(cluster,
-                    context.getDeployState().getProperties().configServerSpecs(),
-                    context.getDeployState().getProperties().loadBalancerName(),
-                    context.getDeployState().zone());
+        addIdentityProvider(cluster,
+                            context.getDeployState().getProperties().configServerSpecs(),
+                            context.getDeployState().getProperties().loadBalancerName(),
+                            context.getDeployState().zone());
 
-        addRotationInfo(cluster, context.getDeployState().zone(), context.getDeployState().getRotations());
+        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations());
 
         //TODO: overview handler, see DomQrserverClusterBuilder
     }
 
-    private void addRotationInfo(ContainerCluster cluster, Zone zone, Set<Rotation> rotations) {
+    private void addRotationProperties(ContainerCluster cluster, Zone zone, Set<Rotation> rotations) {
         Optional<String> globalServiceId = deploymentSpec.flatMap(DeploymentSpec::globalServiceId);
         cluster.getContainers().forEach(container -> {
             setRotations(container, rotations, globalServiceId, cluster.getName());
@@ -732,13 +732,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentity(ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName, Zone zone) {
+    private void addIdentityProvider(ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName, Zone zone) {
         deploymentSpec.ifPresent(spec -> {
             spec.athenzDomain().ifPresent(domain -> {
                 AthenzService service = spec.athenzService(zone.environment(), zone.region())
                         .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
-                Identity identity = new Identity(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs));
-                cluster.addComponent(identity);
+                IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs));
+                cluster.addComponent(identityProvider);
 
                 cluster.getContainers().forEach(container -> {
                     container.setProp("identity.domain", domain.value());

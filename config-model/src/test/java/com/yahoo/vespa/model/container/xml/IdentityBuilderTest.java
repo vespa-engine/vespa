@@ -7,7 +7,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.core.identity.IdentityConfig;
-import com.yahoo.vespa.model.container.Identity;
+import com.yahoo.vespa.model.container.IdentityProvider;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -39,7 +39,7 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
         root = new MockRoot("root", applicationPackage);
         createModel(root, DeployState.createTestState(applicationPackage), clusterElem);
 
-        IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default/component/" + Identity.CLASS);
+        IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default/component/" + IdentityProvider.CLASS);
         assertEquals("domain", identityConfig.domain());
         assertEquals("service", identityConfig.service());
     }
