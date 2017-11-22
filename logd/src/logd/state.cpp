@@ -4,10 +4,25 @@
 LOG_SETUP("");
 
 #include "state.h"
+#include <vespa/vespalib/metrics/simple_metrics_collector.h>
 
 namespace logdemon {
 
+vespalib::metrics::CollectorConfig minute()
+{
+    vespalib::metrics::CollectorConfig conf;
+    conf.sliding_window_seconds = 60;
+    return conf;
+}
+
+
 StateReporter::StateReporter()
+    : _port(-1),
+      _server(),
+      _health(),
+      _components(),
+      _metrics(vespalib::metrics::SimpleMetricsCollector::create(minute())),
+      _producer(_metrics)
 {
 }
 
@@ -16,7 +31,7 @@ StateReporter::setStatePort(int statePort)
 {
     if (statePort != _port) {
         _port = statePort;
-        _server.reset(new vespalib::StateServer(_port, _health, _metrics, _components));
+        _server.reset(new vespalib::StateServer(_port, _health, _producer, _components));
         LOG(info, "state server listening on port %d", _server->getListenPort());
     }
 }
