@@ -2,13 +2,21 @@
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.google.inject.Inject;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
+import com.yahoo.vespa.hosted.controller.restapi.application.Authorizer;
 import com.yahoo.yolean.chain.Provides;
 
+import java.security.Principal;
 import java.util.concurrent.Executor;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendUnauthorized;
@@ -23,6 +31,8 @@ import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtil
 @Provides("UserAuthWithAthenzPrincipalFilter")
 // TODO Remove this filter once migrated to Okta
 public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
+
+    private static final Logger log = Logger.getLogger(UserAuthWithAthenzPrincipalFilter.class.getName());
 
     private final String userAuthenticationPassThruAttribute;
 
@@ -42,6 +52,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
                 super.filter(request, responseHandler); // Cookie-based authentication failed, delegate to Athenz
                 break;
             case USER_COOKIE_OK:
+                rewriteUserPrincipalToAthenz(request);
                 return; // Authenticated using user cookie
             case USER_COOKIE_INVALID:
                 sendUnauthorized(responseHandler, "Your user cookie is invalid (either expired or tampered)");
@@ -58,6 +69,19 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
                 .filter(uar -> uar.statusCode == statusCode)
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Invalid status code: " + statusCode));
+    }
+
+    /**
+     * NOTE: The Bouncer user roles ({@link DiscFilterRequest#roles} are still intact as they are required
+     * for {@link Authorizer#isMemberOfVespaBouncerGroup(HttpRequest)}.
+     */
+    private static void rewriteUserPrincipalToAthenz(DiscFilterRequest request) {
+        Principal userPrincipal = request.getUserPrincipal();
+        log.log(LogLevel.DEBUG, () -> "Original user principal: " + userPrincipal.toString());
+        UserId userId = new UserId(userPrincipal.getName());
+        AthenzPrincipal athenzPrincipal = AthenzUtils.createPrincipal(userId);
+        request.setUserPrincipal(athenzPrincipal);
+        request.setRemoteUser(athenzPrincipal.toYRN());
     }
 
     private enum UserAuthenticationResult {
