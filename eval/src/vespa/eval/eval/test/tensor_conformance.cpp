@@ -59,7 +59,7 @@ struct Eval {
         }
         const TensorSpec &tensor() const {
             EXPECT_TRUE(is_tensor());
-            return _tensor;            
+            return _tensor;
         }
     };
     virtual Result eval(const TensorEngine &) const {
@@ -174,7 +174,7 @@ struct ImmediateReduce : Eval {
     std::vector<vespalib::string> dimensions;
     ImmediateReduce(Aggr aggr_in) : aggr(aggr_in), dimensions() {}
     ImmediateReduce(Aggr aggr_in, const vespalib::string &dimension)
-        : aggr(aggr_in), dimensions({dimension}) {}    
+        : aggr(aggr_in), dimensions({dimension}) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
@@ -488,6 +488,7 @@ struct TestContext {
         TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan)));
         TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div10(N()))));
         TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("elu(a)", operation::Elu::f, Sub2(Div10(N()))));
         TEST_DO(test_map_op("a in [1,5,7,13,42]", MyIn::f, N()));
         TEST_DO(test_map_op("(a+1)*2", MyOp::f, Div10(N())));
     }
@@ -728,7 +729,7 @@ struct TestContext {
             TEST_STATE(make_string("lhs shape: %s, rhs shape: %s",
                                    lhs_input.type().c_str(),
                                    rhs_input.type().c_str()).c_str());
-            Eval::Result expect = ImmediateJoin(op).eval(ref_engine, lhs_input, rhs_input); 
+            Eval::Result expect = ImmediateJoin(op).eval(ref_engine, lhs_input, rhs_input);
             TEST_DO(verify_result(safe(eval).eval(engine, lhs_input, rhs_input), expect));
         }
         TEST_DO(test_fixed_sparse_cases_apply_op(eval, op));
