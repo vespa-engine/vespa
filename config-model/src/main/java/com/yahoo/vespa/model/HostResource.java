@@ -7,7 +7,9 @@ import com.yahoo.config.provision.Flavor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -262,6 +264,29 @@ public class HostResource implements Comparable<HostResource> {
     @Override
     public int compareTo(HostResource other) {
         return this.host.compareTo(other.host);
+    }
+
+    /**
+     * Picks hosts by some mixture of host name and index 
+     * (where the mix of one or the other is decided by the last parameter).
+     */
+    public static List<HostResource> pickHosts(Collection<HostResource> hosts, int count, int targetHostsSortedByIndex) {
+        targetHostsSortedByIndex = Math.min(Math.min(targetHostsSortedByIndex, count), hosts.size());
+
+        List<HostResource> hostsSortedByName = new ArrayList<>(hosts);
+        Collections.sort(hostsSortedByName);
+
+        List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
+        hostsSortedByIndex.sort(Comparator.comparingInt(host -> host.primaryClusterMembership().get().index()));
+
+        hostsSortedByName = hostsSortedByName.subList(0, Math.min(count - targetHostsSortedByIndex, hostsSortedByName.size()));
+        hostsSortedByIndex.removeAll(hostsSortedByName);
+        hostsSortedByIndex = hostsSortedByIndex.subList(0, Math.min(targetHostsSortedByIndex, hostsSortedByIndex.size()));
+
+        List<HostResource> finalHosts = new ArrayList<>();
+        finalHosts.addAll(hostsSortedByName);
+        finalHosts.addAll(hostsSortedByIndex);
+        return finalHosts;
     }
 
 }

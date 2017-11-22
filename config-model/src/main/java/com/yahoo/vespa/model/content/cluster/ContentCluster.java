@@ -416,24 +416,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                     .map(StorageNode::getHostResource).collect(Collectors.toList()));
             }
 
-            int targetHostsSortedByIndex = 0;
-
-            targetHostsSortedByIndex = Math.min(Math.min(targetHostsSortedByIndex, count), hosts.size());
-
-            List<HostResource> hostsSortedByName = new ArrayList<>(hosts);
-            Collections.sort(hostsSortedByName);
-
-            List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
-            hostsSortedByIndex.sort(Comparator.comparingInt(host -> host.primaryClusterMembership().get().index()));
-
-            hostsSortedByName = hostsSortedByName.subList(0, Math.min(count - targetHostsSortedByIndex, hostsSortedByName.size()));
-            hostsSortedByIndex.removeAll(hostsSortedByName);
-            hostsSortedByIndex = hostsSortedByIndex.subList(0, Math.min(targetHostsSortedByIndex, hostsSortedByIndex.size()));
-
-            List<HostResource> finalHosts = new ArrayList<>();
-            finalHosts.addAll(hostsSortedByName);
-            finalHosts.addAll(hostsSortedByIndex);
-            return finalHosts;
+            return HostResource.pickHosts(hosts, count, 0);
         }
 
         private ContainerCluster createClusterControllers(AbstractConfigProducer parent, Collection<HostResource> hosts, String name, boolean multitenant) {
