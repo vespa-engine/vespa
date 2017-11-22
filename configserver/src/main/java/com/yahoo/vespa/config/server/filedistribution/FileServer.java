@@ -4,10 +4,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.google.inject.Inject;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.config.JRTConnectionPool;
-import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +16,6 @@ public class FileServer {
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
     private final FileDirectory root;
     private final ExecutorService executor;
-    private final FileDownloader downloader = new FileDownloader(new JRTConnectionPool(ConfigSourceSet.createDefault()));
 
     public static class ReplayStatus {
         private final int code;
@@ -89,9 +85,5 @@ public class FileServer {
                 new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
         // TODO remove once verified in system tests.
         log.info("Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
-    }
-
-    public void download(FileReference fileReference) {
-        downloader.getFile(fileReference);
     }
 }
