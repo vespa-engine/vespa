@@ -12,7 +12,9 @@ RemoveLocationMessage::RemoveLocationMessage(
         const document::BucketIdFactory& factory,
         document::select::Parser& parser,
         const string& documentSelection)
-    : _documentSelection(documentSelection)
+    : _documentSelection(documentSelection),
+      _bucketId(),
+      _bucketSpace()
 {
     document::BucketSelector bucketSel(factory);
     std::unique_ptr<document::BucketSelector::BucketVector> exprResult(

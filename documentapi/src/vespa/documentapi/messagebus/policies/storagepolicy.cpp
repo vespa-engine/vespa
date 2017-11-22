@@ -139,11 +139,11 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
             break;
 
         case DocumentProtocol::MESSAGE_STATBUCKET:
-            id = static_cast<const StatBucketMessage&>(msg).getBucket().getBucketId();
+            id = static_cast<const StatBucketMessage&>(msg).getBucketId();
             break;
 
         case DocumentProtocol::MESSAGE_GETBUCKETLIST:
-            id = static_cast<const GetBucketListMessage&>(msg).getBucket().getBucketId();
+            id = static_cast<const GetBucketListMessage&>(msg).getBucketId();
             break;
 
         case DocumentProtocol::MESSAGE_CREATEVISITOR:

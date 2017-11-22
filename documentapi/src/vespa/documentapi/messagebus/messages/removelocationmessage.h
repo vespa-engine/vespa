@@ -20,6 +20,8 @@ public:
 
     const string& getDocumentSelection() const { return _documentSelection; }
     const document::BucketId& getBucketId() const { return _bucketId; };
+    const string &getBucketSpace() const { return _bucketSpace; }
+    void setBucketSpace(const string &value) { _bucketSpace = value; }
     uint32_t getType() const override;
     string toString() const override { return "removelocationmessage"; }
 protected:
@@ -28,6 +30,7 @@ protected:
 private:
     string _documentSelection;
     document::BucketId _bucketId;
+    string _bucketSpace;
 };
 
 }

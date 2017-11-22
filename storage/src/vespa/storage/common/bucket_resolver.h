@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/document/bucket/bucket.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document { class DocumentId; }
 
@@ -13,6 +14,8 @@ namespace storage {
 struct BucketResolver {
     virtual ~BucketResolver() {}
     virtual document::Bucket bucketFromId(const document::DocumentId &documentId) const = 0;
+    virtual document::BucketSpace bucketSpaceFromName(const vespalib::string &bucketSpace) const = 0;
+    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const = 0;
 };
 
 }

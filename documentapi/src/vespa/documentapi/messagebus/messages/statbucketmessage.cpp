@@ -3,20 +3,20 @@
 #include "statbucketreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 
-using document::BucketSpace;
-
 namespace documentapi {
 
 StatBucketMessage::StatBucketMessage() :
     DocumentMessage(),
-    _bucket(BucketSpace::placeHolder(), document::BucketId()),
-    _documentSelection()
+    _bucketId(document::BucketId()),
+    _documentSelection(),
+    _bucketSpace()
 {}
 
-StatBucketMessage::StatBucketMessage(document::Bucket bucket, const string& documentSelection) :
+StatBucketMessage::StatBucketMessage(document::BucketId bucketId, const string& documentSelection) :
     DocumentMessage(),
-    _bucket(bucket),
-    _documentSelection(documentSelection)
+    _bucketId(bucketId),
+    _documentSelection(documentSelection),
+    _bucketSpace()
 {}
 
 StatBucketMessage::~StatBucketMessage() {

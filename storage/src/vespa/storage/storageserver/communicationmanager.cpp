@@ -275,6 +275,12 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     virtual document::Bucket bucketFromId(const document::DocumentId &) const override {
         return document::Bucket(document::BucketSpace::placeHolder(), document::BucketId(0));
     }
+    virtual document::BucketSpace bucketSpaceFromName(const vespalib::string &) const override {
+        return document::BucketSpace::placeHolder();
+    }
+    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &) const override {
+        return "";
+    }
 };
 
 }

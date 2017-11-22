@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messages50test.h"
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/select/parser.h>
+#include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
-#include <vespa/document/update/fieldpathupdates.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/select/parser.h>
-#include <vespa/document/test/make_document_bucket.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;
-using document::test::makeDocumentBucket;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -90,7 +88,7 @@ createDoc(const DocumentTypeRepo &repo, const string &type_name, const string &i
 bool
 Messages50Test::testGetBucketListMessage()
 {
-    GetBucketListMessage msg(makeDocumentBucket(document::BucketId(16, 123)));
+    GetBucketListMessage msg(document::BucketId(16, 123));
     msg.setLoadType(_loadTypes["foo"]);
     EXPECT_EQUAL(string("foo"), msg.getLoadType().getName());
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 12u, serialize("GetBucketListMessage", msg));
@@ -100,7 +98,7 @@ Messages50Test::testGetBucketListMessage()
         if (EXPECT_TRUE(obj.get() != NULL)) {
             GetBucketListMessage &ref = static_cast<GetBucketListMessage&>(*obj);
             EXPECT_EQUAL(string("foo"), ref.getLoadType().getName());
-            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucket().getBucketId());
+            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
         }
     }
     return true;
@@ -134,7 +132,7 @@ Messages50Test::testEmptyBucketsMessage()
 bool
 Messages50Test::testStatBucketMessage()
 {
-    StatBucketMessage msg(makeDocumentBucket(document::BucketId(16, 123)), "id.user=123");
+    StatBucketMessage msg(document::BucketId(16, 123), "id.user=123");
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 27u, serialize("StatBucketMessage", msg));
 
@@ -142,7 +140,7 @@ Messages50Test::testStatBucketMessage()
         mbus::Routable::UP obj = deserialize("StatBucketMessage", DocumentProtocol::MESSAGE_STATBUCKET, lang);
         if (EXPECT_TRUE(obj.get() != NULL)) {
             StatBucketMessage &ref = static_cast<StatBucketMessage&>(*obj);
-            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucket().getBucketId());
+            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
             EXPECT_EQUAL("id.user=123", ref.getDocumentSelection());
         }
     }

@@ -6,11 +6,11 @@
 
 namespace documentapi {
 
-GetBucketListMessage::GetBucketListMessage(const document::Bucket &bucket) :
+GetBucketListMessage::GetBucketListMessage(const document::BucketId &bucketId) :
     DocumentMessage(),
-    _bucket(bucket)
+    _bucketId(bucketId),
+    _bucketSpace()
 {
-    // empty
 }
 
 DocumentReply::UP
