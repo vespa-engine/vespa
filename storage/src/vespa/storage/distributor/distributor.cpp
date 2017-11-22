@@ -6,6 +6,7 @@
 #include "idealstatemetricsset.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
@@ -672,9 +673,10 @@ Distributor::scanNextBucket()
         updateInternalMetricsForCompletedScan();
         _scanner->reset();
     } else {
+        const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
         _bucketDBMetricUpdater.visit(
                 scanResult.getEntry(),
-                _component.getDistribution()->getRedundancy());
+                distribution.getRedundancy());
     }
     return scanResult;
 }
