@@ -91,11 +91,13 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         LOG(spam, "Config was updated from %ld to %ld", _currentGeneration, lastGeneration);
         _currentGeneration = lastGeneration;
         _state = CONFIGURED;
-        for (SubscriptionList::iterator it(_subscriptionList.begin()), mt(_subscriptionList.end());
-             it != mt;
-             it++) {
-          LOG(debug, "Updated config id(%s), has changed: %s, lastGenerationChanged: %ld", key.getConfigId().c_str(), ((*it)->hasChanged() ? "true" : "false"), (*it)->getLastGenerationChanged());
-          (*it)->flip();
+        for (const auto & subscription : _subscriptionList) {
+            const ConfigKey & key(subscription->getKey());
+            LOG(debug, "Updated config id(%s), has changed: %s, lastGenerationChanged: %ld",
+                key.getConfigId().c_str(),
+                (subscription->hasChanged() ? "true" : "false"),
+                subscription->getLastGenerationChanged());
+            subscription->flip();
         }
     }
     return updated;
