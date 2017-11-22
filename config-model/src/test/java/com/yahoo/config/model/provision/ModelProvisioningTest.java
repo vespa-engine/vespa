@@ -393,7 +393,7 @@ public class ModelProvisioningTest {
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default28", clusterControllers.getContainers().get(0).getHostName());
         assertEquals("default31", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default34", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default54", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(9, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
@@ -432,7 +432,7 @@ public class ModelProvisioningTest {
         assertEquals("baz-controllers", clusterControllers.getName());
         assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
         assertEquals("default02", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default03", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default27", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(27, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
@@ -485,7 +485,7 @@ public class ModelProvisioningTest {
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
         assertEquals("default02", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("default03", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default08", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(8, cluster.getRootGroup().getSubgroups().size());
         assertEquals(8, cluster.distributionBits());
@@ -538,16 +538,51 @@ public class ModelProvisioningTest {
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals( 8, cluster.distributionBits());
-        assertEquals("We get the closest odd numer", 5, clusterControllers.getContainers().size());
+        assertEquals("We get the closest odd number", 5, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
         assertEquals("default02", clusterControllers.getContainers().get(1).getHostName());
         assertEquals("default04", clusterControllers.getContainers().get(2).getHostName());
-        assertEquals("default05", clusterControllers.getContainers().get(3).getHostName()); // Should be 16 for perfect distribution ...
+        assertEquals("default05", clusterControllers.getContainers().get(3).getHostName());
+        assertEquals("default07", clusterControllers.getContainers().get(4).getHostName());
         assertEquals("default09", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
         assertEquals("default08", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(1).getHostName());
         assertEquals("default06", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
         assertEquals("default03", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
+    }
+
+    @Test
+    public void testClusterControllersWithGroupSize2() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='10'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='8' groups='4'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 18;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        // Check content clusters
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        assertEquals("We get the closest odd number", 3, clusterControllers.getContainers().size());
+        assertEquals("bar-controllers", clusterControllers.getName());
+        assertEquals("default01", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default03", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default08", clusterControllers.getContainers().get(2).getHostName());
     }
 
     @Test
@@ -614,7 +649,7 @@ public class ModelProvisioningTest {
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("Skipping retired default09", "default01", clusterControllers.getContainers().get(0).getHostName());
         assertEquals("Skipping retired default03", "default04", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("Skipping retired default06", "default07", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("Skipping retired default06", "default08", clusterControllers.getContainers().get(2).getHostName());
     }
 
     @Test

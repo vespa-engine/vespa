@@ -270,22 +270,25 @@ public class HostResource implements Comparable<HostResource> {
      * Picks hosts by some mixture of host name and index 
      * (where the mix of one or the other is decided by the last parameter).
      */
-    public static List<HostResource> pickHosts(Collection<HostResource> hosts, int count, int targetHostsSortedByIndex) {
-        targetHostsSortedByIndex = Math.min(Math.min(targetHostsSortedByIndex, count), hosts.size());
+    public static List<HostResource> pickHosts(Collection<HostResource> hosts, int count, int targetHostsSelectedByIndex) {
+        targetHostsSelectedByIndex = Math.min(Math.min(targetHostsSelectedByIndex, count), hosts.size());
 
         List<HostResource> hostsSortedByName = new ArrayList<>(hosts);
         Collections.sort(hostsSortedByName);
 
         List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
         hostsSortedByIndex.sort(Comparator.comparingInt(host -> host.primaryClusterMembership().get().index()));
-
-        hostsSortedByName = hostsSortedByName.subList(0, Math.min(count - targetHostsSortedByIndex, hostsSortedByName.size()));
-        hostsSortedByIndex.removeAll(hostsSortedByName);
-        hostsSortedByIndex = hostsSortedByIndex.subList(0, Math.min(targetHostsSortedByIndex, hostsSortedByIndex.size()));
+        return pickHosts(hostsSortedByName, hostsSortedByIndex, count, targetHostsSelectedByIndex);
+    }
+    public static List<HostResource> pickHosts(List<HostResource> hostsSelectedByName, List<HostResource> hostsSelectedByIndex, 
+                                               int count, int targetHostsSelectedByIndex) {
+        hostsSelectedByName = hostsSelectedByName.subList(0, Math.min(count - targetHostsSelectedByIndex, hostsSelectedByName.size()));
+        hostsSelectedByIndex.removeAll(hostsSelectedByName);
+        hostsSelectedByIndex = hostsSelectedByIndex.subList(0, Math.min(targetHostsSelectedByIndex, hostsSelectedByIndex.size()));
 
         List<HostResource> finalHosts = new ArrayList<>();
-        finalHosts.addAll(hostsSortedByName);
-        finalHosts.addAll(hostsSortedByIndex);
+        finalHosts.addAll(hostsSelectedByName);
+        finalHosts.addAll(hostsSelectedByIndex);
         return finalHosts;
     }
 
