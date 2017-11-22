@@ -638,7 +638,7 @@ public class ModelProvisioningTest {
         assertEquals("Includes retired node", 1+3, model.getAdmin().getSlobroks().size());
         assertEquals("default01", model.getAdmin().getSlobroks().get(0).getHostName());
         assertEquals("default02", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("default03", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("default10", model.getAdmin().getSlobroks().get(2).getHostName());
         assertEquals("Included in addition because it is retired", "default09", model.getAdmin().getSlobroks().get(3).getHostName());
     }
 
@@ -663,7 +663,7 @@ public class ModelProvisioningTest {
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());
         assertEquals("default01", model.getAdmin().getSlobroks().get(0).getHostName());
         assertEquals("default02", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("default03", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("default10", model.getAdmin().getSlobroks().get(2).getHostName());
         assertEquals("Included in addition because it is retired", "default08", model.getAdmin().getSlobroks().get(3).getHostName());
         assertEquals("Included in addition because it is retired", "default09", model.getAdmin().getSlobroks().get(4).getHostName());
     }
@@ -692,7 +692,7 @@ public class ModelProvisioningTest {
         // ... from cluster default
         assertEquals("Includes retired node", 3+3, model.getAdmin().getSlobroks().size());
         assertEquals("default04", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("default05", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("default13", model.getAdmin().getSlobroks().get(1).getHostName());
         assertEquals("Included in addition because it is retired", "default12", model.getAdmin().getSlobroks().get(2).getHostName());
         // ... from cluster bar
         assertEquals("default01", model.getAdmin().getSlobroks().get(3).getHostName());
