@@ -73,7 +73,7 @@ public class IdentityDocumentService {
             return new URIBuilder()
                     .setScheme("https")
                     .setHost(loadBalancerName)
-                    .setPort(8443)
+                    .setPort(4443)
                     .setPath("/athenz/v1/provider/identity-document")
                     .addParameter("hostname", Defaults.getDefaults().vespaHostname())
                     .build();
