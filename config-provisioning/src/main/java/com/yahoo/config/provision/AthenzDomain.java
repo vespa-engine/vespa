@@ -19,6 +19,13 @@ public class AthenzDomain {
     public String value() { return name; }
 
     @Override
+    public String toString() {
+        return "AthenzDomain{" +
+               "name='" + name + '\'' +
+               '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
