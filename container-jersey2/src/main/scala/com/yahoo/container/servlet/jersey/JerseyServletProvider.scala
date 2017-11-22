@@ -97,7 +97,9 @@ class JerseyServletProvider(restApiContext: RestApiContext) extends Provider[Ser
   def jacksonDatatypeJdk8Provider: JacksonJaxbJsonProvider = {
     val provider = new JacksonJaxbJsonProvider()
     provider.setMapper(
-      new ObjectMapper().registerModule(new Jdk8Module).registerModule(new JavaTimeModule))
+      new ObjectMapper()
+        .registerModule(new Jdk8Module)
+        .registerModule(new JavaTimeModule))
     provider
   }
 
