@@ -49,6 +49,7 @@ double Max::f(double a, double b) { return std::max(a, b); }
 double IsNan::f(double a) { return std::isnan(a) ? 1.0 : 0.0; }
 double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
+double Elu::f(double a) { return (a < 0) ? std::exp(a) - 1 : a; }
 } // namespace vespalib::eval::operation
 
 } // namespace vespalib::eval

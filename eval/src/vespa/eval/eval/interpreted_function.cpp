@@ -112,7 +112,7 @@ void op_tensor_concat(State &state, uint64_t param) {
 //-----------------------------------------------------------------------------
 
 template <typename T>
-const T &undef_cref() {   
+const T &undef_cref() {
     const T *undef = nullptr;
     assert(undef);
     return *undef;
@@ -422,6 +422,9 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const Sigmoid &node) override {
         make_map_op(node, operation::Sigmoid::f);
+    }
+    void visit(const Elu &node) override {
+        make_map_op(node, operation::Elu::f);
     }
 
     //-------------------------------------------------------------------------

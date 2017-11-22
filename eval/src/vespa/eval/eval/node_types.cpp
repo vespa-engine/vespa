@@ -164,6 +164,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const IsNan &node) override { resolve_op1(node); }
     void visit(const Relu &node) override { resolve_op1(node); }
     void visit(const Sigmoid &node) override { resolve_op1(node); }
+    void visit(const Elu &node) override { resolve_op1(node); }
 
     //-------------------------------------------------------------------------
 
