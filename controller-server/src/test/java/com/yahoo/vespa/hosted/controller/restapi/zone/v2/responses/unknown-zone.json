@@ -1,0 +1,4 @@
+{
+  "error-code": "BAD_REQUEST",
+  "message": "No such zone: prod.us-north-42"
+}

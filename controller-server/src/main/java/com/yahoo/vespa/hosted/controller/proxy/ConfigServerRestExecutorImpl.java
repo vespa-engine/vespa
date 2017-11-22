@@ -14,6 +14,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -165,6 +166,12 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 return put;
             case DELETE:
                 return new HttpDelete(uri);
+            case PATCH:
+                HttpPatch patch = new HttpPatch(uri);
+                if (data != null) {
+                    patch.setEntity(new InputStreamEntity(data));
+                }
+                return patch;
             default:
                 throw new ProxyException(ErrorResponse.methodNotAllowed("Will not proxy such calls."));
         }
