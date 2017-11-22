@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -628,6 +629,17 @@ public class ApplicationController {
                options.screwdriverBuildJob.get().screwdriverId == null ||
                zone.environment().isManuallyDeployed();
     }
+
+    /** Verify that each of the production zones listed in the deployment spec exist in this system. */
+    public void validate(DeploymentSpec deploymentSpec) {
+        deploymentSpec.zones().stream()
+                .filter(zone -> zone.environment() == Environment.prod)
+                .forEach(zone -> {
+                    if ( ! controller.zoneRegistry().getZone(zone.environment(), zone.region().orElse(null)).isPresent())
+                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
+                });
+    }
+
 
     private static final class ApplicationRotation {
 

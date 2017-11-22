@@ -32,6 +32,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Inject
     public ZoneRegistryMock() {
         this.zones.add(new Zone(SystemName.main, Environment.from("prod"), RegionName.from("corp-us-east-1")));
+        this.zones.add(new Zone(SystemName.main, Environment.from("prod"), RegionName.from("us-east-3")));
+        this.zones.add(new Zone(SystemName.main, Environment.from("prod"), RegionName.from("us-west-1")));
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(Zone zone, Duration duration) {

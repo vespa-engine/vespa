@@ -792,10 +792,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
-                                                                 deployOptions.field("deployCurrentVersion").asBool()); 
-        ActivateResult result = controller.applications().deployApplication(applicationId, 
-                                                                            zone, 
-                                                                            new ApplicationPackage(dataParts.get("applicationZip")),
+                                                                 deployOptions.field("deployCurrentVersion").asBool());
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get("applicationZip"));
+        controller.applications().validate(applicationPackage.deploymentSpec());
+        ActivateResult result = controller.applications().deployApplication(applicationId,
+                                                                            zone,
+                                                                            applicationPackage,
                                                                             deployOptionsJsonClass);
         return new SlimeJsonResponse(toSlime(result, dataParts.get("applicationZip").length));
     }
