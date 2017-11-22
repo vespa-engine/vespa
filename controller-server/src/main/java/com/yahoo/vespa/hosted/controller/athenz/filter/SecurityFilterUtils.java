@@ -17,8 +17,8 @@ class SecurityFilterUtils {
 
     private SecurityFilterUtils() {}
 
-    static void sendUnauthorized(ResponseHandler responseHandler, String message) {
-        Response response = new Response(Response.Status.UNAUTHORIZED);
+    static void sendErrorResponse(ResponseHandler responseHandler, int statusCode, String message) {
+        Response response = new Response(statusCode);
         response.headers().put("Content-Type", "application/json");
         ObjectNode errorMessage = mapper.createObjectNode();
         errorMessage.put("message", message);
