@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import com.yahoo.vespa.hosted.controller.restapi.application.Authorizer;
-import com.yahoo.yolean.chain.Provides;
 
 import java.security.Principal;
 import java.util.concurrent.Executor;
@@ -29,7 +28,6 @@ import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtil
  *
  * @author bjorncs
  */
-@Provides("UserAuthWithAthenzPrincipalFilter")
 // TODO Remove this filter once migrated to Okta
 public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
 
