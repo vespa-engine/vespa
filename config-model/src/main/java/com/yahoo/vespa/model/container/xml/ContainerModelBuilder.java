@@ -173,14 +173,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Athenz copper argos
         // NOTE: Must be done after addNodes()
         app.getDeployment().map(DeploymentSpec::fromXml)
-                .ifPresent(deplspec -> {
+                .ifPresent(deploymentSpec -> {
                     addIdentityProvider(cluster,
                                         context.getDeployState().getProperties().configServerSpecs(),
                                         context.getDeployState().getProperties().loadBalancerName(),
                                         context.getDeployState().zone(),
-                                        deplspec);
+                                        deploymentSpec);
 
-                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deplspec);
+                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deploymentSpec);
                 });
 
         //TODO: overview handler, see DomQrserverClusterBuilder
