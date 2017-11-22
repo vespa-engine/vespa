@@ -94,7 +94,8 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         for (SubscriptionList::iterator it(_subscriptionList.begin()), mt(_subscriptionList.end());
              it != mt;
              it++) {
-            (*it)->flip();
+          LOG(debug, "Updated config id(%s), has changed: %s, lastGenerationChanged: %ld", key.getConfigId().c_str(), ((*it)->hasChanged() ? "true" : "false"), (*it)->getLastGenerationChanged());
+          (*it)->flip();
         }
     }
     return updated;
