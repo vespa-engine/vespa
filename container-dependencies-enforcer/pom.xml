@@ -72,6 +72,8 @@
                                                 <include>com.fasterxml.jackson.core:jackson-core:[${jackson2.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.core:jackson-databind:[${jackson2.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:[${jackson2.version}]:jar:provided</include>
+                                                <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:[${jackson2.version}]:jar:provided</include>
+
 
                                                 <!-- Use version range for jax deps, because jersey and junit affect the versions. -->
                                                 <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:[2.5.4, ${jackson2.version}]:jar:provided</include>
