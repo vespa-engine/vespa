@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import org.junit.Test;
@@ -35,8 +34,6 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
                 .withDeploymentSpec(deploymentXml)
                 .build();
 
-        // Override root
-        root = new MockRoot("root", applicationPackage);
         createModel(root, DeployState.createTestState(applicationPackage), clusterElem);
 
         IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default/component/" + IdentityProvider.CLASS);
