@@ -93,7 +93,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean standaloneBuilder;
     private final Networking networking;
     protected DeployLogger log;
-    private Optional<DeploymentSpec> deploymentSpec;
 
     public static final List<ConfigModelId> configModelIds =  
             ImmutableList.of(ConfigModelId.fromName("container"), ConfigModelId.fromName("jdisc"));
@@ -117,7 +116,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
         app = modelContext.getApplicationPackage();
-        deploymentSpec = app.getDeployment().map(DeploymentSpec::fromXml);
         checkVersion(spec);
 
         this.log = modelContext.getDeployLogger();
@@ -174,30 +172,31 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Athenz copper argos
         // NOTE: Must be done after addNodes()
-        addIdentityProvider(cluster,
-                            context.getDeployState().getProperties().configServerSpecs(),
-                            context.getDeployState().getProperties().loadBalancerName(),
-                            context.getDeployState().zone());
+        app.getDeployment().map(DeploymentSpec::fromXml)
+                .ifPresent(deplspec -> {
+                    addIdentityProvider(cluster,
+                                        context.getDeployState().getProperties().configServerSpecs(),
+                                        context.getDeployState().getProperties().loadBalancerName(),
+                                        context.getDeployState().zone(),
+                                        deplspec);
 
-        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations());
+                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deplspec);
+                });
 
         //TODO: overview handler, see DomQrserverClusterBuilder
     }
 
-    private void addRotationProperties(ContainerCluster cluster, Zone zone, Set<Rotation> rotations) {
-        Optional<String> globalServiceId = deploymentSpec.flatMap(DeploymentSpec::globalServiceId);
+    private void addRotationProperties(ContainerCluster cluster, Zone zone, Set<Rotation> rotations, DeploymentSpec spec) {
         cluster.getContainers().forEach(container -> {
-            setRotations(container, rotations, globalServiceId, cluster.getName());
-            container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone)));
+            setRotations(container, rotations, spec.globalServiceId(), cluster.getName());
+            container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
         });
     }
 
-    private boolean zoneHasActiveRotation(Zone zone) {
-        return deploymentSpec.map(DeploymentSpec::zones)
-                .map(List::stream)
-                .map(x -> x.anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
-                                                     declaredZone.active()))
-                .orElse(false);
+    private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
+        return spec.zones().stream()
+                .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
+                                                     declaredZone.active());
     }
 
     private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
@@ -732,18 +731,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentityProvider(ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName, Zone zone) {
-        deploymentSpec.ifPresent(spec -> {
-            spec.athenzDomain().ifPresent(domain -> {
-                AthenzService service = spec.athenzService(zone.environment(), zone.region())
-                        .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
-                IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs));
-                cluster.addComponent(identityProvider);
+    private void addIdentityProvider(ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName, Zone zone, DeploymentSpec spec) {
+        spec.athenzDomain().ifPresent(domain -> {
+            AthenzService service = spec.athenzService(zone.environment(), zone.region())
+                    .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
+            IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs));
+            cluster.addComponent(identityProvider);
 
-                cluster.getContainers().forEach(container -> {
-                    container.setProp("identity.domain", domain.value());
-                    container.setProp("identity.service", service.value());
-                });
+            cluster.getContainers().forEach(container -> {
+                container.setProp("identity.domain", domain.value());
+                container.setProp("identity.service", service.value());
             });
         });
     }
