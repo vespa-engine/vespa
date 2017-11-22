@@ -71,7 +71,7 @@ public class MetricsReporterTest {
         metricsReporter.maintain();
         assertEquals(0.0, metricsMock.getMetric(MetricsReporter.deploymentFailMetric));
 
-        // Deploy 3 apps successfully
+        // Deploy all apps successfully
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
         Application app2 = tester.createApplication("app2", "tenant1", 2, 22L);
         Application app3 = tester.createApplication("app3", "tenant1", 3, 33L);
@@ -79,6 +79,7 @@ public class MetricsReporterTest {
         tester.deployCompletely(app1, applicationPackage);
         tester.deployCompletely(app2, applicationPackage);
         tester.deployCompletely(app3, applicationPackage);
+        tester.deployCompletely(app4, applicationPackage);
 
         metricsReporter.maintain();
         assertEquals(0.0, metricsMock.getMetric(MetricsReporter.deploymentFailMetric));
