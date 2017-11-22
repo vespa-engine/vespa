@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CertificateSerializedPayload;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca.model.CsrSerializedPayload;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.servlet.http.HttpServletRequest;
