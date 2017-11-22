@@ -9,15 +9,10 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
-import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -87,7 +82,6 @@ import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.io.Reader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -234,7 +228,6 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.core.slobrok.SlobrokConfigurator");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addJaxProviders();
-        addIdentity();
     }
 
     public void setZone(Zone zone) {
@@ -305,36 +298,6 @@ public final class ContainerCluster
         addSimpleComponent(XMLInputFactoryProvider.class);
         addSimpleComponent(XMLOutputFactoryProvider.class);
         addSimpleComponent(XPathFactoryProvider.class);
-    }
-
-    public void addIdentity() {
-        getDeploymentSpec().ifPresent(deploymentSpec -> {
-            deploymentSpec.athenzDomain().ifPresent(domain -> {
-
-                String service = deploymentSpec.athenzService(zone.environment(), zone.region())
-                        .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
-
-                Identity identity = new Identity(domain.trim(), service.trim(), getLoadBalancerName());
-                addComponent(identity);
-
-                getContainers().forEach(container -> {
-                    container.setProp("identity.domain", domain);
-                    container.setProp("identity.service", service);
-                });
-            });
-        });
-    }
-
-    private HostName getLoadBalancerName() {
-        // Set lbaddress, or use first hostname if not specified.
-        // TODO: Remove the orElseGet part when this is set up in all zones
-        return Optional.ofNullable(getRoot().getDeployState().getProperties().loadBalancerName())
-                .orElseGet(
-                        () -> HostName.from(getRoot().getDeployState().getProperties().configServerSpecs().stream()
-                                                    .findFirst()
-                                                    .map(ConfigServerSpec::getHostName)
-                                                    .orElse("unknown") // Currently unable to test this, hence the unknown
-                        ));
     }
 
     public final void addComponent(Component<?, ?> component) {
@@ -415,63 +378,12 @@ public final class ContainerCluster
         container.setClusterName(name);
         container.setProp("clustername", name)
                 .setProp("index", this.containers.size());
-        setRotations(container, getRotations(), getGlobalServiceId(), name);
-        container.setProp("activeRotation", Boolean.toString(getActiveRotation()));
         containers.add(container);
     }
 
     public void addContainers(Collection<Container> containers) {
         for (Container container : containers) {
             addContainer(container);
-        }
-    }
-
-    private Optional<String> getGlobalServiceId() {
-        Optional<DeploymentSpec> deploymentSpec = getDeploymentSpec();
-        if (deploymentSpec.isPresent()) return deploymentSpec.get().globalServiceId();
-        return Optional.empty();
-    }
-
-    private Set<Rotation> getRotations() {
-        return Optional.ofNullable(getRoot())
-                .map(root -> root.getDeployState().getRotations())
-                .orElse(Collections.emptySet());
-    }
-
-    private boolean getActiveRotation() {
-        return Optional.ofNullable(getRoot())
-                .map(root -> root.getDeployState().getProperties().zone())
-                .map(this::zoneHasActiveRotation)
-                .orElse(false);
-    }
-
-    private boolean zoneHasActiveRotation(Zone zone) {
-        Optional<DeploymentSpec> spec = getDeploymentSpec();
-        if (!spec.isPresent()) {
-            return false;
-        }
-        return spec.get().zones().stream()
-                .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
-                                          declaredZone.active());
-    }
-
-    private Optional<DeploymentSpec> getDeploymentSpec() {
-        Optional<DeploymentSpec> deploymentSpec = Optional.empty();
-        AbstractConfigProducerRoot root = getRoot();
-        if (root != null) {
-            final Optional<Reader> deployment = root.getDeployState().getApplicationPackage().getDeployment();
-            if (deployment.isPresent()) {
-                deploymentSpec = Optional.of(DeploymentSpec.fromXml(deployment.get()));
-            }
-        }
-        return deploymentSpec;
-    }
-
-    private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
-        if ( ! rotations.isEmpty() && globalServiceId.isPresent()) {
-            if (containerClusterName.equals(globalServiceId.get())) {
-                container.setProp("rotations", rotations.stream().map(Rotation::getId).collect(Collectors.joining(",")));
-            }
         }
     }
 

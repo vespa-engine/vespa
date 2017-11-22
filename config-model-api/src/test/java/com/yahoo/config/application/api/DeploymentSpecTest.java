@@ -368,7 +368,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void deploymentSpecWithAthenzIdentity() {
+    public void athenz_config_is_read_from_deployment() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>\n" +
                 "  <prod>\n" +
@@ -382,7 +382,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void deploymentSpecUsesServiceFromEnvironment() {
+    public void athenz_service_is_overridden_from_environment() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>\n" +
                 "  <test/>\n" +
@@ -397,7 +397,7 @@ public class DeploymentSpecTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void athenzDomainMissingService() {
+    public void it_fails_when_athenz_service_is_not_defined() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>\n" +
                 "  <prod>\n" +
@@ -409,7 +409,7 @@ public class DeploymentSpecTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void athenzDomainMissingDomain() {
+    public void it_fails_when_athenz_service_is_configured_but_not_athenz_domain() {
         StringReader r = new StringReader(
                 "<deployment>\n" +
                 "  <prod athenz-service='service'>\n" +

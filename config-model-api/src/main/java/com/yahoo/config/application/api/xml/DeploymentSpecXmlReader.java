@@ -7,6 +7,8 @@ import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.application.api.TimeWindow;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.io.IOUtils;
@@ -72,7 +74,7 @@ public class DeploymentSpecXmlReader {
 
             if (environment == Environment.prod) {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
-                    Optional<String> athenzService = stringAttribute("athenz-service", environmentTag);
+                    Optional<AthenzService> athenzService = stringAttribute("athenz-service", environmentTag).map(AthenzService::from);
                     if (stepTag.getTagName().equals("delay")) {
                         steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
                                                                longAttribute("minutes", stepTag) * 60 +
@@ -97,8 +99,8 @@ public class DeploymentSpecXmlReader {
                 throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
 
         }
-        Optional<String> athenzDomain = stringAttribute("athenz-domain", root);
-        Optional<String> athenzService = stringAttribute("athenz-service", root);
+        Optional<AthenzDomain> athenzDomain = stringAttribute("athenz-domain", root).map(AthenzDomain::from);
+        Optional<AthenzService> athenzService = stringAttribute("athenz-service", root).map(AthenzService::from);
         return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readChangeBlockers(root), steps, xmlForm, athenzDomain, athenzService);
     }
 
@@ -146,7 +148,7 @@ public class DeploymentSpecXmlReader {
         return tagName.equals(testTag) || tagName.equals(stagingTag) || tagName.equals(prodTag);
     }
 
-    private DeclaredZone readDeclaredZone(Environment environment, Optional<String> athenzService, Element regionTag) {
+    private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
                                 readActive(regionTag), athenzService);
     }

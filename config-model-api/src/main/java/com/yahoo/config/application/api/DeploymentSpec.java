@@ -3,6 +3,8 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 
@@ -48,8 +50,8 @@ public class DeploymentSpec {
     private final List<ChangeBlocker> changeBlockers;
     private final List<Step> steps;
     private final String xmlForm;
-    private final Optional<String> athenzDomain;
-    private final Optional<String> athenzService;
+    private final Optional<AthenzDomain> athenzDomain;
+    private final Optional<AthenzService> athenzService;
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
                           List<ChangeBlocker> changeBlockers, List<Step> steps) {
@@ -58,7 +60,7 @@ public class DeploymentSpec {
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<String> athenzDomain, Optional<String> athenzService) {
+                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
@@ -103,7 +105,7 @@ public class DeploymentSpec {
                     throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
                 }
             }
-        // if athenz domain is configured, athenz service must be set implicitly or directly on all zones.
+        // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
         } else if(! athenzService.isPresent()) {
             for (DeclaredZone zone : zones()) {
                 if(! zone.athenzService().isPresent()) {
@@ -244,17 +246,18 @@ public class DeploymentSpec {
     }
 
     /** Returns the athenz domain if configured */
-    public Optional<String> athenzDomain() {
+    public Optional<AthenzDomain> athenzDomain() {
         return athenzDomain;
     }
 
     /** Returns the athenz service for environment/region if configured */
-    public Optional<String> athenzService(Environment environment, RegionName region) {
-        return zones().stream()
+    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
+        AthenzService athenzService = zones().stream()
                 .filter(zone -> zone.deploysTo(environment, Optional.of(region)))
                 .findFirst()
-                .map(DeclaredZone::athenzService)
-                .orElse(athenzService);
+                .flatMap(DeclaredZone::athenzService)
+                .orElse(this.athenzService.orElse(null));
+        return Optional.ofNullable(athenzService);
     }
 
     /** This may be invoked by a continuous build */
@@ -321,7 +324,7 @@ public class DeploymentSpec {
 
         private final boolean active;
 
-        private Optional<String> athenzService;
+        private Optional<AthenzService> athenzService;
 
         public DeclaredZone(Environment environment) {
             this(environment, Optional.empty(), false);
@@ -331,7 +334,7 @@ public class DeploymentSpec {
             this(environment, region, active, Optional.empty());
         }
 
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<String> athenzService) {
+        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<AthenzService> athenzService) {
             if (environment != Environment.prod && region.isPresent())
                 throw new IllegalArgumentException("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && ! region.isPresent())
@@ -350,7 +353,7 @@ public class DeploymentSpec {
         /** Returns whether this zone should receive production traffic */
         public boolean active() { return active; }
 
-        public Optional<String> athenzService() { return athenzService; }
+        public Optional<AthenzService> athenzService() { return athenzService; }
 
         @Override
         public List<DeclaredZone> zones() { return Collections.singletonList(this); }

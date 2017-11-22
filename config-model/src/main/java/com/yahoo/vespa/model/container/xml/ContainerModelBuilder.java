@@ -6,16 +6,22 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Rotation;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
@@ -37,6 +43,7 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.Identity;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -61,6 +68,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -85,6 +93,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean standaloneBuilder;
     private final Networking networking;
     protected DeployLogger log;
+    private Optional<DeploymentSpec> deploymentSpec;
 
     public static final List<ConfigModelId> configModelIds =  
             ImmutableList.of(ConfigModelId.fromName("container"), ConfigModelId.fromName("jdisc"));
@@ -108,6 +117,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
         app = modelContext.getApplicationPackage();
+        deploymentSpec = app.getDeployment().map(DeploymentSpec::fromXml);
         checkVersion(spec);
 
         this.log = modelContext.getDeployLogger();
@@ -162,7 +172,41 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addServerProviders(spec, cluster);
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
+        // Athenz copper argos
+        // NOTE: Must be done after addNodes()
+        addIdentity(cluster,
+                    context.getDeployState().getProperties().configServerSpecs(),
+                    context.getDeployState().getProperties().loadBalancerName(),
+                    context.getDeployState().zone());
+
+        addRotationInfo(cluster, context.getDeployState().zone(), context.getDeployState().getRotations());
+
         //TODO: overview handler, see DomQrserverClusterBuilder
+    }
+
+    private void addRotationInfo(ContainerCluster cluster, Zone zone, Set<Rotation> rotations) {
+        Optional<String> globalServiceId = deploymentSpec.flatMap(DeploymentSpec::globalServiceId);
+        cluster.getContainers().forEach(container -> {
+            setRotations(container, rotations, globalServiceId, cluster.getName());
+            container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone)));
+        });
+    }
+
+    private boolean zoneHasActiveRotation(Zone zone) {
+        return deploymentSpec.map(DeploymentSpec::zones)
+                .map(List::stream)
+                .map(x -> x.anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
+                                                     declaredZone.active()))
+                .orElse(false);
+    }
+
+    private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
+
+        if ( ! rotations.isEmpty() && globalServiceId.isPresent()) {
+            if (containerClusterName.equals(globalServiceId.get())) {
+                container.setProp("rotations", rotations.stream().map(Rotation::getId).collect(Collectors.joining(",")));
+            }
+        }
     }
 
     private void addRoutingAliases(ContainerCluster cluster, Element spec, Environment environment) {
@@ -687,6 +731,35 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addComponent(new DomComponentBuilder().build(cluster, node));
         }
     }
+
+    private void addIdentity(ContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName, Zone zone) {
+        deploymentSpec.ifPresent(spec -> {
+            spec.athenzDomain().ifPresent(domain -> {
+                AthenzService service = spec.athenzService(zone.environment(), zone.region())
+                        .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
+                Identity identity = new Identity(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs));
+                cluster.addComponent(identity);
+
+                cluster.getContainers().forEach(container -> {
+                    container.setProp("identity.domain", domain.value());
+                    container.setProp("identity.service", service.value());
+                });
+            });
+        });
+    }
+
+    private HostName getLoadBalancerName(HostName loadbalancerName, List<ConfigServerSpec> configServerSpecs) {
+        // Set lbaddress, or use first hostname if not specified.
+        // TODO: Remove this method and use the loadbalancerName directly
+        return Optional.ofNullable(loadbalancerName)
+                .orElseGet(
+                        () -> HostName.from(configServerSpecs.stream()
+                                                    .findFirst()
+                                                    .map(ConfigServerSpec::getHostName)
+                                                    .orElse("unknown") // Currently unable to test this, hence the unknown
+                        ));
+    }
+
 
     /**
      * Disallow renderers named "DefaultRenderer" or "JsonRenderer"

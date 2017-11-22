@@ -23,7 +23,7 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void identity_config_produced_from_deployment_spec() throws IOException, SAXException {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'/>");
+                "<jdisc id='default' version='1.0'><search /></jdisc>");
         String deploymentXml = "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
                                "    <test/>\n" +
                                "    <prod>\n" +
