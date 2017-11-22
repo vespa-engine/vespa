@@ -5,6 +5,7 @@ import java.io.{IOException, InputStream}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider
 import com.yahoo.container.di.componentgraph.Provider
 import com.yahoo.container.di.config.RestApiContext
@@ -21,7 +22,6 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.objectweb.asm.ClassReader
 
 import scala.collection.JavaConverters._
-
 import scala.util.control.Exception
 
 
@@ -96,7 +96,8 @@ class JerseyServletProvider(restApiContext: RestApiContext) extends Provider[Ser
 
   def jacksonDatatypeJdk8Provider: JacksonJaxbJsonProvider = {
     val provider = new JacksonJaxbJsonProvider()
-    provider.setMapper(new ObjectMapper().registerModule(new Jdk8Module))
+    provider.setMapper(
+      new ObjectMapper().registerModule(new Jdk8Module).registerModule(new JavaTimeModule))
     provider
   }
 
