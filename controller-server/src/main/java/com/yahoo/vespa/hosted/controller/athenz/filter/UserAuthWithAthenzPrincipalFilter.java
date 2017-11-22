@@ -55,7 +55,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
                 rewriteUserPrincipalToAthenz(request);
                 return; // Authenticated using user cookie
             case USER_COOKIE_INVALID:
-                sendUnauthorized(responseHandler, "Your user cookie is invalid (either expired or tampered)");
+                sendUnauthorized(responseHandler, "Your user cookie is invalid (either expired, tampered or invalid ip)");
                 break;
         }
     }
