@@ -46,7 +46,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     public void filter(DiscFilterRequest request, ResponseHandler responseHandler) {
         if (request.getMethod().equals("OPTIONS")) return; // Skip authentication on OPTIONS - required for Javascript CORS
 
-        switch (fromHttpRequest(request)) {
+        switch (getUserAuthenticationResult(request)) {
             case USER_COOKIE_MISSING:
             case USER_COOKIE_ALTERNATIVE_MISSING:
                 super.filter(request, responseHandler); // Cookie-based authentication failed, delegate to Athenz
@@ -60,7 +60,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
         }
     }
 
-    private UserAuthenticationResult fromHttpRequest(DiscFilterRequest request) {
+    private UserAuthenticationResult getUserAuthenticationResult(DiscFilterRequest request) {
         if (!request.containsAttribute(userAuthenticationPassThruAttribute)) {
             throw new IllegalStateException("User authentication filter passthru attribute missing");
         }
