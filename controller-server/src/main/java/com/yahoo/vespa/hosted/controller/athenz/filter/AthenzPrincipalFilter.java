@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.google.inject.Inject;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
@@ -13,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.util.concurrent.Executor;
 
-import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendUnauthorized;
+import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
  * Performs authentication by validating the principal token (NToken) header.
@@ -44,7 +45,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
     public void filter(DiscFilterRequest request, ResponseHandler responseHandler) {
         String rawToken = request.getHeader(principalTokenHeader);
         if (rawToken == null || rawToken.isEmpty()) {
-            sendUnauthorized(responseHandler, "NToken is missing");
+            sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, "NToken is missing");
             return;
         }
         try {
@@ -52,7 +53,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
             request.setUserPrincipal(principal);
             request.setRemoteUser(principal.getName());
         } catch (InvalidTokenException e) {
-            sendUnauthorized(responseHandler, e.getMessage());
+            sendErrorResponse(responseHandler,Response.Status.UNAUTHORIZED, e.getMessage());
         }
     }
 
