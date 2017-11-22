@@ -67,7 +67,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
 
     DocumentApiConverterTest()
         : _bucketResolver(),
-          _repo(new DocumentTypeRepo(readDocumenttypesConfig(
+          _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(
                     TEST_PATH("config-doctypes.cfg")))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
@@ -136,7 +136,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(DocumentApiConverterTest);
 
 void DocumentApiConverterTest::testPut()
 {
-    Document::SP doc(new Document(_html_type, defaultDocId));
+    auto doc = std::make_shared<Document>(_html_type, defaultDocId);
 
     documentapi::PutDocumentMessage putmsg(doc);
     putmsg.setTimestamp(1234);
@@ -166,7 +166,7 @@ void DocumentApiConverterTest::testPut()
 
 void DocumentApiConverterTest::testForwardedPut()
 {
-    Document::SP doc(new Document(_html_type, DocumentId(DocIdString("test", "test"))));
+    auto doc = std::make_shared<Document>(_html_type, DocumentId(DocIdString("test", "test")));
 
     documentapi::PutDocumentMessage* putmsg = new documentapi::PutDocumentMessage(doc);
     std::unique_ptr<mbus::Reply> reply(((documentapi::DocumentMessage*)putmsg)->createReply());
@@ -366,8 +366,7 @@ DocumentApiConverterTest::testVisitorInfo()
 void
 DocumentApiConverterTest::testMultiOperation()
 {
-    //create a document
-    Document::SP doc(new Document(_html_type, DocumentId(DocIdString("test", "test"))));
+    auto doc = std::make_shared<Document>(_html_type, DocumentId(DocIdString("test", "test")));
 
     document::BucketIdFactory fac;
     document::BucketId bucketId = fac.getBucketId(doc->getId());
@@ -394,7 +393,7 @@ DocumentApiConverterTest::testMultiOperation()
         CPPUNIT_ASSERT_EQUAL(*doc, *dynamic_cast<document::Document*>(list.begin()->getDocument().get()));
 
         // Create Storage API Reply
-        std::unique_ptr<api::MultiOperationReply> moreply = std::unique_ptr<api::MultiOperationReply>(new api::MultiOperationReply(*mocmd));
+        auto moreply = std::make_unique<api::MultiOperationReply>(*mocmd);
         CPPUNIT_ASSERT(moreply.get());
 
         // convert storage api reply to mbus reply.....
@@ -435,19 +434,19 @@ DocumentApiConverterTest::testBatchDocumentUpdate()
 
     {
         document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test1"));
-        document::DocumentUpdate::SP update(new document::DocumentUpdate(_html_type, docId));
+        auto update = std::make_shared<document::DocumentUpdate>(_html_type, docId);
         updates.push_back(update);
     }
 
     {
         document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test2"));
-        document::DocumentUpdate::SP update(new document::DocumentUpdate(_html_type, docId));
+        auto update = std::make_shared<document::DocumentUpdate>(_html_type, docId);
         updates.push_back(update);
     }
 
     {
         document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test3"));
-        document::DocumentUpdate::SP update(new document::DocumentUpdate(_html_type, docId));
+        auto update = std::make_shared<document::DocumentUpdate>(_html_type, docId);
         updates.push_back(update);
     }
 
