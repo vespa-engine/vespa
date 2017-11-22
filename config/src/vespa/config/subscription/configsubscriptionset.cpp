@@ -38,10 +38,8 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
-    for (SubscriptionList::iterator it(_subscriptionList.begin()), mt(_subscriptionList.end());
-         it != mt;
-         it++) {
-        (*it)->reset();
+    for (const auto & subscription : _subscriptionList) {
+        subscription->reset();
     }
 
     LOG(debug, "Going into nextConfig loop, time left is %d", timeLeft);
@@ -52,10 +50,7 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         int64_t generation = -1;
 
         // Run nextUpdate on all subscribers to get them in sync.
-        for (SubscriptionList::iterator it(_subscriptionList.begin()), mt(_subscriptionList.end());
-             it != mt;
-             it++) {
-            ConfigSubscription::SP subscription = *it;
+        for (const auto & subscription : _subscriptionList) {
 
             if (!subscription->nextUpdate(_currentGeneration, timeLeft))
                 break;
@@ -107,9 +102,9 @@ void
 ConfigSubscriptionSet::close()
 {
     _state = CLOSED;
-    for (SubscriptionList::iterator it(_subscriptionList.begin()), mt(_subscriptionList.end()); it != mt; it++) {
-        _mgr.unsubscribe(*it);
-        (*it)->close();
+    for (const auto & subscription : _subscriptionList) {
+        _mgr.unsubscribe(subscription);
+        subscription->close();
     }
 }
 
