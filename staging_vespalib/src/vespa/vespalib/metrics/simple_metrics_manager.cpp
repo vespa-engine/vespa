@@ -2,7 +2,7 @@
 #include "simple_metrics_manager.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".simple_metrics_collector");
+LOG_SETUP(".vespalib.metrics.simple_metrics_manager");
 
 namespace vespalib {
 namespace metrics {
@@ -46,6 +46,7 @@ Counter
 SimpleMetricsManager::counter(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
+    _metricTypes.check(id, name, MetricTypes::COUNTER);
     LOG(debug, "metric name %s -> %d", name.c_str(), id);
     return Counter(shared_from_this(), MetricIdentifier(id));
 }
@@ -54,6 +55,7 @@ Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
+    _metricTypes.check(id, name, MetricTypes::GAUGE);
     LOG(debug, "metric name %s -> %d", name.c_str(), id);
     return Gauge(shared_from_this(), MetricIdentifier(id));
 }

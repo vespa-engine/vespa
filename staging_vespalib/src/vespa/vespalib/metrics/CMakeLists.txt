@@ -11,12 +11,13 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     mergers.cpp
     metric_identifier.cpp
     metrics_manager.cpp
+    metric_types.cpp
     name_collection.cpp
     no_realloc_bunch.cpp
     point.cpp
     producer.cpp
-    simple_metrics_manager.cpp
     simple_metrics.cpp
+    simple_metrics_manager.cpp
     snapshots.cpp
 
     DEPENDS

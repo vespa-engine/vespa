@@ -3,7 +3,7 @@
 #include "metrics_manager.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".point");
+LOG_SETUP(".vespalib.metrics.point");
 
 namespace vespalib {
 namespace metrics {

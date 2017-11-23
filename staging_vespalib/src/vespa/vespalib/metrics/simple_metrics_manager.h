@@ -8,6 +8,7 @@
 #include "mergers.h"
 #include "snapshots.h"
 #include "metrics_manager.h"
+#include "metric_types.h"
 #include "clock.h"
 
 namespace vespalib {
@@ -23,6 +24,7 @@ class SimpleMetricsManager : public MetricsManager
 {
 private:
     NameCollection _metricNames;
+    MetricTypes _metricTypes;
     NameCollection _axisNames;
     NameCollection _coordValues;
     using PointMapMap = std::map<PointMap, size_t>;
