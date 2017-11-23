@@ -367,4 +367,56 @@ public class DeploymentSpecTest {
         assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
     }
 
+    @Test
+    public void athenz_config_is_read_from_deployment() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.athenzDomain().get().value(), "domain");
+        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get().value(), "service");
+    }
+
+    @Test
+    public void athenz_service_is_overridden_from_environment() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>\n" +
+                "  <test/>\n" +
+                "  <prod athenz-service='prod-service'>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.athenzDomain().get().value(), "domain");
+        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get().value(), "prod-service");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void it_fails_when_athenz_service_is_not_defined() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain'>\n" +
+                "  <prod>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void it_fails_when_athenz_service_is_configured_but_not_athenz_domain() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                "  <prod athenz-service='service'>\n" +
+                "    <region active='true'>us-west-1</region>\n" +
+                "  </prod>\n" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
 }

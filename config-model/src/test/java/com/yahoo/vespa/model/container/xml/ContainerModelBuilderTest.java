@@ -26,7 +26,6 @@ import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
@@ -46,6 +45,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
