@@ -77,7 +77,7 @@ pairAsRange(Pair pair)
 std::vector<uint64_t>
 PendingMessageTracker::clearMessagesForNode(uint16_t node)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     MessagesByNodeAndBucket& idx(boost::multi_index::get<1>(_messages));
     auto range = pairAsRange(idx.equal_range(boost::make_tuple(node)));
 
@@ -95,7 +95,7 @@ void
 PendingMessageTracker::insert(
         const std::shared_ptr<api::StorageMessage>& msg)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     if (msg->getAddress()) {
         _messages.insert(
                 MessageEntry(currentTime(),
@@ -118,7 +118,7 @@ PendingMessageTracker::insert(
 document::Bucket
 PendingMessageTracker::reply(const api::StorageReply& r)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     document::Bucket bucket;
 
     LOG(debug, "Got reply: %s", r.toString().c_str());
@@ -171,7 +171,7 @@ PendingMessageTracker::updateOperationStats(OperationStats& opStats,
 NodeStatsSnapshot
 PendingMessageTracker::getLatencyStatistics() const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     NodeStatsSnapshot snapshot;
     // Conveniently, snapshot data structure is exactly the same as our own.
     snapshot.nodeToStats = _nodeIndexToStats;
@@ -205,7 +205,7 @@ PendingMessageTracker::checkPendingMessages(uint16_t node,
                                             const document::Bucket &bucket,
                                             Checker& checker) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
     auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bucket)));
@@ -216,7 +216,7 @@ void
 PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket,
                                             Checker& checker) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     const MessagesByBucketAndType& msgs(boost::multi_index::get<2>(_messages));
 
     auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bucket)));
@@ -228,7 +228,7 @@ PendingMessageTracker::hasPendingMessage(uint16_t node,
                                          const document::Bucket &bucket,
                                          uint32_t messageType) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
     auto range = msgs.equal_range(boost::make_tuple(node, bucket, messageType));
@@ -247,7 +247,7 @@ PendingMessageTracker::getStatusStartPage(std::ostream& out) const
 void
 PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
     using BucketMap = std::map<document::Bucket,
                                std::vector<vespalib::string>>;
@@ -285,7 +285,7 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 void
 PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
     int lastNode = -1;
     for (MessagesByNodeAndBucket::const_iterator iter =
@@ -337,7 +337,7 @@ PendingMessageTracker::print(std::ostream& /*out*/,
 NodeStats
 PendingMessageTracker::getNodeStats(uint16_t node) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     auto nodeIter = _nodeIndexToStats.find(node);
     return (nodeIter != _nodeIndexToStats.end() ? nodeIter->second
                                                 : NodeStats());
