@@ -908,7 +908,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 }
             }
             catch (RuntimeException e) {
-                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + propertyId, e);
+                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + propertyId + ": " +
+                        Exceptions.toMessageString(e));
             }
         });
     }
