@@ -3,7 +3,7 @@
 
 #include <mutex>
 #include "no_realloc_bunch.h"
-#include "simple_metrics.h"
+#include "metric_identifier.h"
 #include "counter.h"
 #include "gauge.h"
 #include "clock.h"

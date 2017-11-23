@@ -4,7 +4,6 @@
 #include <memory>
 #include <thread>
 #include <vespa/vespalib/stllike/string.h>
-#include "simple_metrics.h"
 #include "name_collection.h"
 #include "mergers.h"
 #include "snapshots.h"
