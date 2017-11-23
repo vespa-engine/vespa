@@ -8,7 +8,7 @@ namespace vespalib {
 namespace metrics {
 
 class MetricsCollector;
-class MergedCounter;
+class CounterAggregator;
 
 struct CounterIncrement {
     MetricIdentifier idx;
@@ -36,7 +36,7 @@ public:
     void add(Point p) const;
     void add(size_t count, Point p) const;
 
-    typedef MergedCounter aggregator_type;
+    typedef CounterAggregator aggregator_type;
     typedef CounterIncrement sample_type;
 };
 

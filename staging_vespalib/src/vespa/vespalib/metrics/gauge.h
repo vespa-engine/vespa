@@ -8,7 +8,7 @@ namespace vespalib {
 namespace metrics {
 
 class MetricsCollector;
-class MergedGauge;
+class GaugeAggregator;
 
 struct GaugeMeasurement {
     MetricIdentifier idx;
@@ -30,7 +30,7 @@ public:
     void sample(double value) const;
     void sample(double value, Point p) const;
 
-    typedef MergedGauge aggregator_type;
+    typedef GaugeAggregator aggregator_type;
     typedef GaugeMeasurement sample_type;
 };
 

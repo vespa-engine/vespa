@@ -88,14 +88,14 @@ SimpleMetricsCollector::snapshot()
              snap.add(point);
         }
     }
-    for (const MergedCounter& entry : merger.counters) {
+    for (const CounterAggregator& entry : merger.counters) {
         size_t ni = entry.idx.name_idx;
         size_t pi = entry.idx.point_idx;
         const vespalib::string &name = _metricNames.lookup(ni);
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
-    for (const MergedGauge& entry : merger.gauges) {
+    for (const GaugeAggregator& entry : merger.gauges) {
         size_t ni = entry.idx.name_idx;
         size_t pi = entry.idx.point_idx;
         const vespalib::string &name = _metricNames.lookup(ni);

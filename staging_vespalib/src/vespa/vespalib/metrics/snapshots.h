@@ -29,7 +29,7 @@ private:
     const PointSnapshot &_point;
     const size_t _count;
 public:
-    CounterSnapshot(const vespalib::string &n, const PointSnapshot &p, const MergedCounter &c)
+    CounterSnapshot(const vespalib::string &n, const PointSnapshot &p, const CounterAggregator &c)
         : _name(n), _point(p), _count(c.count)
     {}
     const vespalib::string &name() const { return _name; }
@@ -47,7 +47,7 @@ private:
     const double _maxValue;
     const double _lastValue;
 public:
-    GaugeSnapshot(const vespalib::string &n, const PointSnapshot &p, const MergedGauge &c)
+    GaugeSnapshot(const vespalib::string &n, const PointSnapshot &p, const GaugeAggregator &c)
         : _name(n),
           _point(p),
           _observedCount(c.observedCount),

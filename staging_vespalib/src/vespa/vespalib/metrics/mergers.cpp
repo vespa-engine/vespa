@@ -6,26 +6,26 @@
 namespace vespalib {
 namespace metrics {
 
-MergedCounter::MergedCounter(MetricIdentifier id)
+CounterAggregator::CounterAggregator(MetricIdentifier id)
   : idx(id), count(0)
 {}
 
 void
-MergedCounter::merge(const CounterIncrement &increment)
+CounterAggregator::merge(const CounterIncrement &increment)
 {
     assert(idx == increment.idx);
     count += increment.value;
 }
 
 void
-MergedCounter::merge(const MergedCounter &other)
+CounterAggregator::merge(const CounterAggregator &other)
 {
     assert(idx == other.idx);
     count += other.count;
 }
 
 
-MergedGauge::MergedGauge(MetricIdentifier id)
+GaugeAggregator::GaugeAggregator(MetricIdentifier id)
   : idx(id),
     observedCount(0),
     sumValue(0.0),
@@ -35,7 +35,7 @@ MergedGauge::MergedGauge(MetricIdentifier id)
 {}
 
 void
-MergedGauge::merge(const GaugeMeasurement &other)
+GaugeAggregator::merge(const GaugeMeasurement &other)
 {
     assert(idx == other.idx);
     if (observedCount == 0) {
@@ -52,7 +52,7 @@ MergedGauge::merge(const GaugeMeasurement &other)
 }
 
 void
-MergedGauge::merge(const MergedGauge &other)
+GaugeAggregator::merge(const GaugeAggregator &other)
 {
     assert(idx == other.idx);
     if (observedCount == 0) {
@@ -143,10 +143,10 @@ void Bucket::merge(const Bucket &other)
     assert(endTime <= other.endTime);
     endTime = other.endTime;
 
-    std::vector<MergedCounter> nextCounters = mergeVectors(counters, other.counters);
+    std::vector<CounterAggregator> nextCounters = mergeVectors(counters, other.counters);
     counters = std::move(nextCounters);
 
-    std::vector<MergedGauge> nextGauges = mergeVectors(gauges, other.gauges);
+    std::vector<GaugeAggregator> nextGauges = mergeVectors(gauges, other.gauges);
     gauges = std::move(nextGauges);
 }
 

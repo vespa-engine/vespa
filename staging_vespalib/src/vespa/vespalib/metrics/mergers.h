@@ -12,18 +12,18 @@ namespace vespalib {
 namespace metrics {
 
 // internal
-struct MergedCounter {
+struct CounterAggregator {
     MetricIdentifier idx;
     size_t count;
 
-    MergedCounter(MetricIdentifier id);
+    CounterAggregator(MetricIdentifier id);
 
     void merge(const CounterIncrement &other);
-    void merge(const MergedCounter &other);
+    void merge(const CounterAggregator &other);
 };
 
 // internal
-struct MergedGauge {
+struct GaugeAggregator {
     MetricIdentifier idx;
     size_t observedCount;
     double sumValue;
@@ -31,10 +31,10 @@ struct MergedGauge {
     double maxValue;
     double lastValue;
 
-    MergedGauge(MetricIdentifier id);
+    GaugeAggregator(MetricIdentifier id);
 
     void merge(const GaugeMeasurement &other);
-    void merge(const MergedGauge &other);
+    void merge(const GaugeAggregator &other);
 };
 
 // internal
@@ -59,8 +59,8 @@ struct CurrentSamples {
 struct Bucket {
     InternalTimeStamp startTime;
     InternalTimeStamp endTime;
-    std::vector<MergedCounter> counters;
-    std::vector<MergedGauge> gauges;
+    std::vector<CounterAggregator> counters;
+    std::vector<GaugeAggregator> gauges;
 
     void merge(const CurrentSamples &other);
     void merge(const Bucket &other);
