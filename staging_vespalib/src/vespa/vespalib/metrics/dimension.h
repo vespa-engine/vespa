@@ -6,13 +6,14 @@
 namespace vespalib {
 namespace metrics {
 
-using CoordinateValue = vespalib::string;
+using DimensionName = vespalib::string;
 
-class Coordinate {
-    const size_t _coord_idx;
+class Dimension {
+    const size_t _dimension_idx;
 public:
-    size_t id() const { return _coord_idx; }
-    Coordinate(size_t id) : _coord_idx(id) {}
+    size_t id() const { return _dimension_idx; }
+    Dimension(size_t id) : _dimension_idx(id) {}
+    bool operator< (const Dimension &other) const { return id() < other.id(); }
 };
 
 } // namespace vespalib::metrics

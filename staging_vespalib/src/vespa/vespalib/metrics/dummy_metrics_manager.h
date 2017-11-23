@@ -32,11 +32,11 @@ public:
         return Gauge(shared_from_this(), MetricIdentifier(0));
     }
 
-    Axis axis(const vespalib::string &) override {
-        return Axis(0);
+    Dimension dimension(const vespalib::string &) override {
+        return Dimension(0);
     }
-    Coordinate coordinate(const vespalib::string &) override {
-        return Coordinate(0);
+    Label label(const vespalib::string &) override {
+        return Label(0);
     }
     PointBuilder pointBuilder(Point) override {
         return PointBuilder(shared_from_this());

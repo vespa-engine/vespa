@@ -9,14 +9,14 @@ namespace metrics {
 
 class AxisMeasure {
 private:
-    const vespalib::string &_axisName;
-    const vespalib::string &_coordValue;
+    const vespalib::string &_dimensionName;
+    const vespalib::string &_labelValue;
 public:
-    const vespalib::string &axisName() const { return _axisName; }
-    const vespalib::string &coordinateValue() const { return _coordValue; }
+    const vespalib::string &dimensionName() const { return _dimensionName; }
+    const vespalib::string &labelValue() const { return _labelValue; }
     AxisMeasure(const vespalib::string &a,
                 const vespalib::string &v)
-        : _axisName(a), _coordValue(v)
+        : _dimensionName(a), _labelValue(v)
     {}
 };
 

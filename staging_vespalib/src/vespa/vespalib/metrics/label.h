@@ -6,14 +6,13 @@
 namespace vespalib {
 namespace metrics {
 
-using AxisName = vespalib::string;
+using LabelValue = vespalib::string;
 
-class Axis {
-    const size_t _axis_idx;
+class Label {
+    const size_t _coord_idx;
 public:
-    size_t id() const { return _axis_idx; }
-    Axis(size_t id) : _axis_idx(id) {}
-    bool operator< (const Axis &other) const { return id() < other.id(); }
+    size_t id() const { return _coord_idx; }
+    Label(size_t id) : _coord_idx(id) {}
 };
 
 } // namespace vespalib::metrics

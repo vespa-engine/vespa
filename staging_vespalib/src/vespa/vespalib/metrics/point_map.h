@@ -2,13 +2,13 @@
 #pragma once
 
 #include <map>
-#include "axis.h"
-#include "coordinate.h"
+#include "dimension.h"
+#include "label.h"
 
 namespace vespalib {
 namespace metrics {
 
-using PointMapBacking = std::map<Axis, Coordinate>;
+using PointMapBacking = std::map<Dimension, Label>;
 
 class PointMap {
 private:

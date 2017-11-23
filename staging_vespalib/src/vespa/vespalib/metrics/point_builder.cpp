@@ -15,25 +15,25 @@ PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> m,
 {}
 
 PointBuilder &&
-PointBuilder::bind(Axis axis, Coordinate coord) &&
+PointBuilder::bind(Dimension dimension, Label label) &&
 {
-    _map.erase(axis);
-    _map.insert(PointMapBacking::value_type(axis, coord));
+    _map.erase(dimension);
+    _map.insert(PointMapBacking::value_type(dimension, label));
     return std::move(*this);
 }
 
 PointBuilder &&
-PointBuilder::bind(Axis axis, CoordinateValue coord) &&
+PointBuilder::bind(Dimension dimension, LabelValue label) &&
 {
-    Coordinate c = _owner->coordinate(coord);
-    return std::move(*this).bind(axis, c);
+    Label c = _owner->label(label);
+    return std::move(*this).bind(dimension, c);
 }
 
 PointBuilder &&
-PointBuilder::bind(AxisName axis, CoordinateValue coord) &&
+PointBuilder::bind(DimensionName dimension, LabelValue label) &&
 {
-    Axis a = _owner->axis(axis);
-    Coordinate c = _owner->coordinate(coord);
+    Dimension a = _owner->dimension(dimension);
+    Label c = _owner->label(label);
     return std::move(*this).bind(a, c);
 }
 

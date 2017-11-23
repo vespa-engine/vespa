@@ -11,8 +11,8 @@
 #include "snapshots.h"
 #include "point.h"
 #include "point_builder.h"
-#include "axis.h"
-#include "coordinate.h"
+#include "dimension.h"
+#include "label.h"
 
 namespace vespalib {
 namespace metrics {
@@ -27,8 +27,8 @@ public:
     virtual Counter counter(const vespalib::string &name) = 0; // get or create
     virtual  Gauge   gauge (const vespalib::string &name) = 0; // get or create
 
-    virtual Axis axis(const vespalib::string &name) = 0; // get or create
-    virtual Coordinate coordinate(const vespalib::string &value) = 0; // get or create
+    virtual Dimension dimension(const vespalib::string &name) = 0; // get or create
+    virtual Label label(const vespalib::string &value) = 0; // get or create
     PointBuilder pointBuilder() {
         return PointBuilder(shared_from_this());
     }

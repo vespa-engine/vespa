@@ -11,8 +11,8 @@ using Guard = std::lock_guard<std::mutex>;
 
 SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config)
     : _metricNames(),
-      _axisNames(),
-      _coordValues(),
+      _dimensionNames(),
+      _labelValues(),
       _pointMaps(),
       _currentBucket(),
       _startTime(now_stamp()),
@@ -146,20 +146,20 @@ SimpleMetricsManager::collectCurrentBucket()
     _curTime = curr;
 }
 
-Axis
-SimpleMetricsManager::axis(const vespalib::string &name)
+Dimension
+SimpleMetricsManager::dimension(const vespalib::string &name)
 {
-    size_t id = _axisNames.resolve(name);
-    LOG(debug, "axis name %s -> %zd", name.c_str(), id);
-    return Axis(id);
+    size_t id = _dimensionNames.resolve(name);
+    LOG(debug, "dimension name %s -> %zd", name.c_str(), id);
+    return Dimension(id);
 }
 
-Coordinate
-SimpleMetricsManager::coordinate(const vespalib::string &value)
+Label
+SimpleMetricsManager::label(const vespalib::string &value)
 {
-    size_t id = _coordValues.resolve(value);
-    LOG(debug, "coord value %s -> %zd", value.c_str(), id);
-    return Coordinate(id);
+    size_t id = _labelValues.resolve(value);
+    LOG(debug, "label value %s -> %zd", value.c_str(), id);
+    return Label(id);
 }
 
 PointBuilder

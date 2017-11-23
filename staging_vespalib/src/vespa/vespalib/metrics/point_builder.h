@@ -22,9 +22,9 @@ public:
     PointBuilder(std::shared_ptr<MetricsManager> m, const PointMapBacking &from);
     ~PointBuilder() {}
 
-    PointBuilder &&bind(Axis axis, Coordinate coord) &&;
-    PointBuilder &&bind(Axis axis, CoordinateValue coord) &&;
-    PointBuilder &&bind(AxisName axis, CoordinateValue coord) &&;
+    PointBuilder &&bind(Dimension dimension, Label label) &&;
+    PointBuilder &&bind(Dimension dimension, LabelValue label) &&;
+    PointBuilder &&bind(DimensionName dimension, LabelValue label) &&;
 
     Point build();
     operator Point () &&;

@@ -145,14 +145,14 @@ TEST("use simple_metrics_collector")
  //     fprintf(stderr, "snap point: %zd dimension(s)\n", entry.dimensions.size());
  //     for (const auto& dim : entry.dimensions) {
  //         fprintf(stderr, "       label: [%s] = '%s'\n",
- //                 dim.axisName().c_str(), dim.coordinateValue().c_str());
+ //                 dim.dimensionName().c_str(), dim.labelValue().c_str());
  //     }
  // }
     for (const auto& entry : snap.counters()) {
         fprintf(stderr, "snap counter: '%s'\n", entry.name().c_str());
         for (const auto& dim : entry.point().dimensions) {
             fprintf(stderr, "       label: [%s] = '%s'\n",
-                    dim.axisName().c_str(), dim.coordinateValue().c_str());
+                    dim.dimensionName().c_str(), dim.labelValue().c_str());
         }
         fprintf(stderr, "       count: %zd\n", entry.count());
     }
@@ -160,7 +160,7 @@ TEST("use simple_metrics_collector")
         fprintf(stderr, "snap gauge: '%s'\n", entry.name().c_str());
         for (const auto& dim : entry.point().dimensions) {
             fprintf(stderr, "       label: [%s] = '%s'\n",
-                    dim.axisName().c_str(), dim.coordinateValue().c_str());
+                    dim.dimensionName().c_str(), dim.labelValue().c_str());
         }
         fprintf(stderr, "  observed: %zd\n", entry.observedCount());
         fprintf(stderr, "       avg: %f\n", entry.averageValue());
