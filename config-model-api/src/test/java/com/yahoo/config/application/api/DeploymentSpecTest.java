@@ -377,8 +377,8 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(spec.athenzDomain().get(), "domain");
-        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get(), "service");
+        assertEquals(spec.athenzDomain().get().value(), "domain");
+        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get().value(), "service");
     }
 
     @Test
@@ -392,8 +392,8 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(spec.athenzDomain().get(), "domain");
-        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get(), "prodservice");
+        assertEquals(spec.athenzDomain().get().value(), "domain");
+        assertEquals(spec.athenzService(Environment.prod, RegionName.from("us-west-1")).get().value(), "prod-service");
     }
 
     @Test(expected = IllegalArgumentException.class)
