@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -10,16 +10,19 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author lulf
@@ -37,6 +40,7 @@ public class CompressedApplicationInputStreamTest {
         File app = new File("src/test/resources/deploy/validapp");
         writeFileToTar(taos, new File(app, "services.xml"));
         writeFileToTar(taos, new File(app, "hosts.xml"));
+        writeFileToTar(taos, new File(app, "deployment.xml"));
         taos.close();
         return outFile;
     }
@@ -55,14 +59,8 @@ public class CompressedApplicationInputStreamTest {
 
     void assertTestApp(File outApp) {
         String [] files = outApp.list();
-        assertThat(files.length, is(2));
-        if ("hosts.xml".equals(files[0])) {
-            assertThat(files[1], is("services.xml"));
-        } else if ("hosts.xml".equals(files[1])) {
-            assertThat(files[0], is("services.xml"));
-        } else {
-            fail("Both services.xml and hosts.xml should be contained in the unpacked application");
-        }
+        assertThat(files.length, is(3));
+        assertThat(Arrays.asList(files), containsInAnyOrder(ImmutableList.of(is("hosts.xml"), is("services.xml"), is("deployment.xml"))));
     }
 
     @Test
@@ -85,6 +83,10 @@ public class CompressedApplicationInputStreamTest {
         ByteStreams.copy(new FileInputStream(file), archiveOutputStream);
         archiveOutputStream.closeArchiveEntry();
         file = new File(app, "hosts.xml");
+        archiveOutputStream.putArchiveEntry(archiveOutputStream.createArchiveEntry(file, "application/" + file.getName()));
+        ByteStreams.copy(new FileInputStream(file), archiveOutputStream);
+        archiveOutputStream.closeArchiveEntry();
+        file = new File(app, "deployment.xml");
         archiveOutputStream.putArchiveEntry(archiveOutputStream.createArchiveEntry(file, "application/" + file.getName()));
         ByteStreams.copy(new FileInputStream(file), archiveOutputStream);
         archiveOutputStream.closeArchiveEntry();
@@ -134,9 +136,10 @@ public class CompressedApplicationInputStreamTest {
                 new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(gzFile))));
         File outApp = unpacked.decompress();
         List<File> files = Arrays.asList(outApp.listFiles());
-        assertThat(files.size(), is(4));
+        assertThat(files.size(), is(5));
         assertTrue(files.contains(new File(outApp, "services.xml")));
         assertTrue(files.contains(new File(outApp, "hosts.xml")));
+        assertTrue(files.contains(new File(outApp, "deployment.xml")));
         assertTrue(files.contains(new File(outApp, "searchdefinitions")));
         assertTrue(files.contains(new File(outApp, "external")));
         File sd = files.get(files.indexOf(new File(outApp, "searchdefinitions")));
