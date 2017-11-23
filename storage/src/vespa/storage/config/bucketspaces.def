@@ -1,0 +1,11 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+## This config contains the document types handled by a given content cluster
+## and the bucket space they belong to.
+
+## The name of a document type.
+documenttype[].name string
+
+## The bucket space this document type belongs to.
+documenttype[].bucketspace string
