@@ -21,6 +21,8 @@ import java.util.Map;
  */
 class ConstantTensorTransformer extends ExpressionTransformer {
 
+    public static final String CONSTANT = "constant";
+
     private final Map<String, Value> constants;
     private final Map<String, String> rankPropertiesOutput;
 
@@ -64,7 +66,7 @@ class ConstantTensorTransformer extends ExpressionTransformer {
             return node;
         }
         TensorValue tensorValue = (TensorValue)value;
-        String featureName = "constant(" + node.getName() + ")";
+        String featureName = CONSTANT + "(" + node.getName() + ")";
         String tensorType = tensorValue.asTensor().type().toString();
         rankPropertiesOutput.put(featureName + ".value", tensorValue.toString());
         rankPropertiesOutput.put(featureName + ".type", tensorType);

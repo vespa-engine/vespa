@@ -20,6 +20,7 @@ import com.yahoo.tensor.functions.Reduce;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Transforms and simplifies tensor expressions.
@@ -81,28 +82,31 @@ public class TensorTransformer extends ExpressionTransformer {
             return node;
         }
         ExpressionNode arg1 = node.children().get(0);
-        ExpressionNode arg2 = node.children().get(1);
-        if (!potentialDimensionName(arg2)) {
-            return node;
-        }
-        try {
-            String dimension = ((ReferenceNode) arg2).getName();
-            Context context = buildContext(arg1);
-            Value value = arg1.evaluate(context);
-            if (verifyTensorAndDimension(value, dimension)) {
-                return replaceMaxAndMinFunction(node);
+        Optional<String> dimension = dimensionName(node.children().get(1));
+        if (dimension.isPresent()) {
+            try {
+                Context context = buildContext(arg1);
+                Value value = arg1.evaluate(context);
+                if (isTensorWithDimension(value, dimension.get())) {
+                    return replaceMaxAndMinFunction(node);
+                }
+            } catch (IllegalArgumentException e) {
+                // Thrown from evaluate if some variables are not bound, for
+                // instance for a backend rank feature. Means we don't have
+                // enough information to replace expression.
             }
-        } catch (Exception e) {
-            // Don't replace the expression in case of any errors, e.g. unknown values or rank features
         }
         return node;
     }
 
-    private boolean potentialDimensionName(ExpressionNode arg) {
-        return arg instanceof ReferenceNode && ((ReferenceNode) arg).children().size() == 0;
+    private Optional<String> dimensionName(ExpressionNode arg) {
+        if (arg instanceof ReferenceNode && ((ReferenceNode)arg).children().size() == 0) {
+            return Optional.of(((ReferenceNode) arg).getName());
+        }
+        return Optional.empty();
     }
 
-    private boolean verifyTensorAndDimension(Value value, String dimension) {
+    private boolean isTensorWithDimension(Value value, String dimension) {
         if (value instanceof TensorValue) {
             Tensor tensor = ((TensorValue) value).asTensor();
             TensorType type = tensor.type();
@@ -175,6 +179,9 @@ public class TensorTransformer extends ExpressionTransformer {
         }
         String attribute = node.children().get(0).toString();
         Attribute a = search.getAttribute(attribute);
+        if (a == null) {
+            return;
+        }
         Value v;
         if (a.getType() == Attribute.Type.STRING) {
             v = emptyStringValue();
@@ -187,7 +194,7 @@ public class TensorTransformer extends ExpressionTransformer {
     }
 
     private void addIfConstant(ReferenceNode node, Context context) {
-        if (!node.getName().equals("constant")) {
+        if (!node.getName().equals(ConstantTensorTransformer.CONSTANT)) {
             return;
         }
         if (node.children().size() != 1) {
