@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -99,7 +100,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             catch (RuntimeException e) {
                 boolean isOldestMajor = i == majorVersions.size() - 1;
                 if (isOldestMajor) {
-                    if (e instanceof NullPointerException) {
+                    if (e instanceof NullPointerException || e instanceof NoSuchElementException) {
                         log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
                         throw new InternalServerException(applicationId + ": Error loading model", e);
                     } else {
