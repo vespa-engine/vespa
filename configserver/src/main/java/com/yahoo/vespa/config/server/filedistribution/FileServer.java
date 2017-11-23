@@ -2,24 +2,29 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.io.IOUtils;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.JRTConnectionPool;
+import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class FileServer {
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
     private final FileDirectory root;
     private final ExecutorService executor;
-    private final FileDownloader downloader = new FileDownloader(new JRTConnectionPool(ConfigSourceSet.createDefault()));
+    private final FileDownloader downloader;
 
     public static class ReplayStatus {
         private final int code;
@@ -38,15 +43,21 @@ public class FileServer {
     }
 
     @Inject
-    public FileServer() {
-        this(FileDistribution.getDefaultFileDBPath());
+    public FileServer(ConfigserverConfig configserverConfig) {
+        this(createConnectionPool(ConfigServerSpec.fromConfig(configserverConfig)), FileDistribution.getDefaultFileDBPath());
     }
 
+    // For testing only
     public FileServer(File rootDir) {
-        this(rootDir, Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+        this(new JRTConnectionPool(new ConfigSourceSet("tcp/localhost:19090")), rootDir);
     }
 
-    public FileServer(File rootDir, ExecutorService executor) {
+    public FileServer(JRTConnectionPool jrtConnectionPool, File rootDir) {
+        this(jrtConnectionPool, rootDir, Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+    }
+
+    public FileServer(JRTConnectionPool jrtConnectionPool, File rootDir, ExecutorService executor) {
+        this.downloader = new FileDownloader(jrtConnectionPool);
         this.root = new FileDirectory(rootDir);
         this.executor = executor;
     }
@@ -93,5 +104,15 @@ public class FileServer {
 
     public void download(FileReference fileReference) {
         downloader.getFile(fileReference);
+    }
+
+    // Connection pool with all config servers except this one
+    private static JRTConnectionPool createConnectionPool(List<com.yahoo.config.model.api.ConfigServerSpec> configServerSpecs) {
+        return new JRTConnectionPool(
+                new ConfigSourceSet(configServerSpecs
+                                            .stream()
+                                            .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
+                                            .map(spec -> "tcp/" + spec.getHostName() + ":" + spec.getConfigServerPort())
+                                            .collect(Collectors.toList())));
     }
 }
