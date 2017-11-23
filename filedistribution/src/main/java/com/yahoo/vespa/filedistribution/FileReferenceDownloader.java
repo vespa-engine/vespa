@@ -133,6 +133,7 @@ class FileReferenceDownloader {
                 return true;
             } else {
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
+                connectionPool.setNewCurrentConnection();
                 return false;
             }
         } else {
