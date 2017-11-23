@@ -6,6 +6,7 @@
 #include <logd/conf.h>
 #include <logd/watch.h>
 #include <logd/state.h>
+#include <logd/metrics.h>
 #include <vespa/config/common/exceptions.h>
 #include <csignal>
 #include <unistd.h>
@@ -21,7 +22,9 @@ using config::FileSpec;
 
 int main(int, char**)
 {
-    Forwarder fwd;
+    StateReporter stateReporter;
+    Metrics metrics(stateReporter.metrics());
+    Forwarder fwd(metrics);
 
     EV_STARTED("logdemon");
 
@@ -31,7 +34,6 @@ int main(int, char**)
 
     try {
         ConfSub subscriber(fwd, config::ConfigUri(cfid));
-        StateReporter stateReporter;
 
         int sleepcount = 0;
         while (true) {
