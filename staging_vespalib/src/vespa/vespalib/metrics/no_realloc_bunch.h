@@ -60,21 +60,6 @@ public:
         return *((T*)nullptr);
     }
 
-    int lookup(const T& value) const {
-        int idx = 0;
-        std::vector<const MyClass *> vv;
-        dffill(vv);
-        for (const MyClass *p : vv) {
-            for (const T& elem : p->_mine) {
-                if (elem == value) {
-                    return idx;
-                }
-                ++idx;
-            }
-        }
-        return -1;
-    }
-
 private:
     void dffill(std::vector<const MyClass *> &vv) const {
         if (_more) { _more->dffill(vv); }

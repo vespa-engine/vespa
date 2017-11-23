@@ -82,12 +82,6 @@ TEST("require that no_realloc_bunch works")
     bunch.apply([&sum](const Foo& value) { sum += value.a; });
     EXPECT_EQUAL(231, sum);
 
-    int idx = bunch.lookup(Foo(6));
-    EXPECT_EQUAL(-1, idx);
-
-    idx = bunch.lookup(Foo(13));
-    EXPECT_EQUAL(5, idx);
-
     const Foo& val = bunch.lookup(8);
     EXPECT_TRUE(Foo(55) == val);
 
