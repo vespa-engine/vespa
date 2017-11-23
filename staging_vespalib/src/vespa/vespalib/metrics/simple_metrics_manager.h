@@ -21,6 +21,13 @@ struct SimpleManagerConfig {
 };
 
 
+/**
+ * Simple manager class that puts everything into a
+ * single global repo with std::mutex locks used around
+ * most operations.  Only implements sliding window
+ * and a fixed (1 Hz) collecting interval.
+ * Consider renaming to "LockingManager" or "SlidingWindowManager".
+ **/
 class SimpleMetricsManager : public MetricsManager
 {
 private:
@@ -43,29 +50,28 @@ private:
     InternalTimeStamp _startTime;
     InternalTimeStamp _curTime;
 
+    std::mutex _bucketsLock;
     std::vector<Bucket> _buckets;
     size_t _firstBucket;
     size_t _maxBuckets;
-    // lots of stuff
 
     bool _stopFlag;
     std::thread _collectorThread;
     static void doCollectLoop(SimpleMetricsManager *me);
     void collectCurrentBucket(); // called once per second from another thread
+    Bucket mergeBuckets();
 
     SimpleMetricsManager(const SimpleManagerConfig &config);
 public:
     ~SimpleMetricsManager();
     static std::shared_ptr<MetricsManager> create(const SimpleManagerConfig &config);
 
-    Counter counter(const vespalib::string &name) override; // get or create
-    Gauge gauge(const vespalib::string &name) override; // get or create
-
+    Counter counter(const vespalib::string &name) override;
+    Gauge gauge(const vespalib::string &name) override;
     Dimension dimension(const vespalib::string &name) override;
     Label label(const vespalib::string &value) override;
     PointBuilder pointBuilder(Point from) override;
     Point pointFrom(PointMapBacking &&map) override;
-
     Snapshot snapshot() override;
 
     // for use from Counter only

@@ -13,6 +13,11 @@
 namespace vespalib {
 namespace metrics {
 
+/**
+ * Dummy manager that discards everything, use
+ * for unit tests where you don't care about
+ * metrics.
+ **/
 class DummyMetricsManager : public MetricsManager
 {
 private:

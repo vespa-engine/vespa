@@ -60,23 +60,31 @@ SimpleMetricsManager::gauge(const vespalib::string &name)
     return Gauge(shared_from_this(), MetricIdentifier(id));
 }
 
+Bucket
+SimpleMetricsManager::mergeBuckets()
+{
+    Guard bucketsGuard(_bucketsLock);
+    if (_buckets.size() > 0) {
+        InternalTimeStamp startTime = _buckets[_firstBucket].startTime;
+        Bucket merger(startTime, startTime);
+        for (size_t i = 0; i < _buckets.size(); i++) {
+            size_t off = (_firstBucket + i) % _buckets.size();
+            merger.merge(_buckets[off]);
+        }
+        return merger;
+    }
+    // no data
+    return Bucket(_startTime, _curTime);
+}
+
 Snapshot
 SimpleMetricsManager::snapshot()
 {
-    InternalTimeStamp startTime =
-        (_buckets.size() > 0)
-        ? _buckets[_firstBucket].startTime
-        : _curTime;
-    Bucket merger(startTime, startTime);
-    for (size_t i = 0; i < _buckets.size(); i++) {
-        size_t off = (_firstBucket + i) % _buckets.size();
-        merger.merge(_buckets[off]);
-    }
-
+    Bucket merged = mergeBuckets();
     std::vector<PointSnapshot> points;
 
-    std::chrono::microseconds s = since_epoch(merger.startTime);
-    std::chrono::microseconds e = since_epoch(merger.endTime);
+    std::chrono::microseconds s = since_epoch(merged.startTime);
+    std::chrono::microseconds e = since_epoch(merged.endTime);
     const double micro = 0.000001;
     Snapshot snap(s.count() * micro, e.count() * micro);
     {
@@ -90,14 +98,14 @@ SimpleMetricsManager::snapshot()
              snap.add(point);
         }
     }
-    for (const CounterAggregator& entry : merger.counters) {
+    for (const CounterAggregator& entry : merged.counters) {
         size_t ni = entry.idx.name_idx;
         size_t pi = entry.idx.point_idx;
         const vespalib::string &name = _metricNames.lookup(ni);
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
-    for (const GaugeAggregator& entry : merger.gauges) {
+    for (const GaugeAggregator& entry : merged.gauges) {
         size_t ni = entry.idx.name_idx;
         size_t pi = entry.idx.point_idx;
         const vespalib::string &name = _metricNames.lookup(ni);
@@ -135,6 +143,7 @@ SimpleMetricsManager::collectCurrentBucket()
     }
 
     Bucket merger(prev, curr);
+    Guard guard(_bucketsLock);
     if (_buckets.size() < _maxBuckets) {
         _buckets.push_back(merger);
         _buckets.back().merge(samples);
