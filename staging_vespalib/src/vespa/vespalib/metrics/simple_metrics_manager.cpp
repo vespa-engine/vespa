@@ -45,18 +45,18 @@ SimpleMetricsManager::create(const SimpleManagerConfig &config)
 Counter
 SimpleMetricsManager::counter(const vespalib::string &name)
 {
-    int id = _metricNames.resolve(name);
+    size_t id = _metricNames.resolve(name);
     _metricTypes.check(id, name, MetricTypes::COUNTER);
-    LOG(debug, "metric name %s -> %d", name.c_str(), id);
+    LOG(debug, "metric name %s -> %zd", name.c_str(), id);
     return Counter(shared_from_this(), MetricIdentifier(id));
 }
 
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name)
 {
-    int id = _metricNames.resolve(name);
+    size_t id = _metricNames.resolve(name);
     _metricTypes.check(id, name, MetricTypes::GAUGE);
-    LOG(debug, "metric name %s -> %d", name.c_str(), id);
+    LOG(debug, "metric name %s -> %zd", name.c_str(), id);
     return Gauge(shared_from_this(), MetricIdentifier(id));
 }
 
@@ -149,16 +149,16 @@ SimpleMetricsManager::collectCurrentBucket()
 Axis
 SimpleMetricsManager::axis(const vespalib::string &name)
 {
-    int id = _axisNames.resolve(name);
-    LOG(debug, "axis name %s -> %d", name.c_str(), id);
+    size_t id = _axisNames.resolve(name);
+    LOG(debug, "axis name %s -> %zd", name.c_str(), id);
     return Axis(id);
 }
 
 Coordinate
 SimpleMetricsManager::coordinate(const vespalib::string &value)
 {
-    int id = _coordValues.resolve(value);
-    LOG(debug, "coord value %s -> %d", value.c_str(), id);
+    size_t id = _coordValues.resolve(value);
+    LOG(debug, "coord value %s -> %zd", value.c_str(), id);
     return Coordinate(id);
 }
 

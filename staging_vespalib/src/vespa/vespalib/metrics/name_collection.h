@@ -2,7 +2,8 @@
 #pragma once
 
 #include <mutex>
-#include "no_realloc_bunch.h"
+#include <map>
+#include <vector>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
@@ -10,13 +11,17 @@ namespace metrics {
 
 class NameCollection {
 private:
-    NoReallocBunch<vespalib::string> _names;
+    using Map = std::map<vespalib::string, size_t>;
     mutable std::mutex _lock;
+    Map _names;
+    std::vector<Map::const_iterator> _names_by_id;
 public:
     const vespalib::string &lookup(int idx) const;
-    int lookup(const vespalib::string& name) const;
-    int resolve(const vespalib::string& name);
+    size_t resolve(const vespalib::string& name);
     size_t size() const;
+
+    NameCollection() = default;
+    ~NameCollection() {}
 };
 
 } // namespace vespalib::metrics

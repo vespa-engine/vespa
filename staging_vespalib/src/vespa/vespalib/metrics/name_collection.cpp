@@ -12,34 +12,31 @@ NameCollection::lookup(int idx) const
 {
     size_t id = idx;
     Guard guard(_lock);
-    assert(id < _names.size());
-    return _names.lookup(id);
+    assert(id < _names_by_id.size());
+    return _names_by_id[id]->first;
 }
 
-int
-NameCollection::lookup(const vespalib::string& name) const
-{
-    Guard guard(_lock);
-    return _names.lookup(name);
-}
-
-int
+size_t
 NameCollection::resolve(const vespalib::string& name)
 {
     Guard guard(_lock);
-    int id = _names.lookup(name);
-    if (id < 0) {
-        id = _names.size();
-        _names.add(name);
+    Map::const_iterator iter = _names.find(name);
+    if (iter != _names.end()) {
+        return iter->second;
+    } else {
+        size_t id = _names_by_id.size();
+        auto iter_check = _names.insert(Map::value_type(name, id));
+        assert(iter_check.second);
+        _names_by_id.push_back(iter_check.first);
+        return id;
     }
-    return id;
 }
 
 size_t
 NameCollection::size() const
 {
     Guard guard(_lock);
-    return _names.size();
+    return _names_by_id.size();
 }
 
 } // namespace vespalib::metrics
