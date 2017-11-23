@@ -31,10 +31,10 @@ public:
         : _manager(std::move(m)), _idx(id)
     {}
 
-    void add();
-    void add(size_t count);
-    void add(Point p);
-    void add(size_t count, Point p);
+    void add() const;
+    void add(size_t count) const;
+    void add(Point p) const;
+    void add(size_t count, Point p) const;
 
     typedef MergedCounter aggregator_type;
     typedef CounterIncrement sample_type;

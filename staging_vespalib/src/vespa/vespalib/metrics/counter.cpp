@@ -6,19 +6,19 @@ namespace vespalib {
 namespace metrics {
 
 void
-Counter::add()
+Counter::add() const
 {
     add(1);
 }
 
 void
-Counter::add(Point p)
+Counter::add(Point p) const
 {
     add(1, p);
 }
 
 void
-Counter::add(size_t count)
+Counter::add(size_t count) const
 {
     if (_manager) {
         _manager->add(CounterIncrement(ident(), count));
@@ -26,7 +26,7 @@ Counter::add(size_t count)
 }
 
 void
-Counter::add(size_t count, Point point)
+Counter::add(size_t count, Point point) const
 {
     if (_manager) {
         MetricIdentifier id(_idx.name_idx, point.id());

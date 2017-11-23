@@ -27,8 +27,8 @@ public:
         : _manager(std::move(m)), _idx(id)
     {}
 
-    void sample(double value);
-    void sample(double value, Point p);
+    void sample(double value) const;
+    void sample(double value, Point p) const;
 
     typedef MergedGauge aggregator_type;
     typedef GaugeMeasurement sample_type;
