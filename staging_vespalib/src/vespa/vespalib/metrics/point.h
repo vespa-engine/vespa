@@ -5,30 +5,14 @@
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
 
+#include "axis.h"
+#include "coordinate.h"
+
 namespace vespalib {
 namespace metrics {
 
-using AxisName = vespalib::string;
-using CoordinateValue = vespalib::string;
-
-class MetricsCollector;
-
-class Axis {
-    const size_t _axis_idx;
-public:
-    size_t id() const { return _axis_idx; }
-    Axis(size_t id) : _axis_idx(id) {}
-    bool operator< (const Axis &other) const { return id() < other.id(); }
-};
-
-class Coordinate {
-    const size_t _coord_idx;
-public:
-    size_t id() const { return _coord_idx; }
-    Coordinate(size_t id) : _coord_idx(id) {}
-};
-
 using PointMapBacking = std::map<Axis, Coordinate>;
+
 class PointMap {
 private:
     const PointMapBacking _map;
@@ -49,6 +33,8 @@ public:
 
     explicit Point(size_t id) : _point_idx(id) {}
 };
+
+class MetricsCollector;
 
 class PointBuilder {
 private:
