@@ -77,7 +77,10 @@ TEST("require that no_realloc_bunch works")
 
     EXPECT_EQUAL(bunch.size(), 10u);
 
-    bunch.apply([](const Foo& value) { fprintf(stderr, "foo %d\n", value.a); });
+    int sum = 0;
+
+    bunch.apply([&sum](const Foo& value) { sum += value.a; });
+    EXPECT_EQUAL(231, sum);
 
     int idx = bunch.lookup(Foo(6));
     EXPECT_EQUAL(-1, idx);
@@ -135,42 +138,42 @@ TEST("use simple_metrics_collector")
     myGauge.sample(14.0, two);
     myGauge.sample(11.0, three);
 
-    sleep(2);
+ // sleep(2);
 
     Snapshot snap = manager->snapshot();
-    fprintf(stderr, "snap begin: %15f\n", snap.startTime());
-    fprintf(stderr, "snap end: %15f\n", snap.endTime());
+    fprintf(stdout, "snap begin: %15f\n", snap.startTime());
+    fprintf(stdout, "snap end: %15f\n", snap.endTime());
 
  // for (const auto& entry : snap.points()) {
- //     fprintf(stderr, "snap point: %zd dimension(s)\n", entry.dimensions.size());
+ //     fprintf(stdout, "snap point: %zd dimension(s)\n", entry.dimensions.size());
  //     for (const auto& dim : entry.dimensions) {
- //         fprintf(stderr, "       label: [%s] = '%s'\n",
+ //         fprintf(stdout, "       label: [%s] = '%s'\n",
  //                 dim.dimensionName().c_str(), dim.labelValue().c_str());
  //     }
  // }
     for (const auto& entry : snap.counters()) {
-        fprintf(stderr, "snap counter: '%s'\n", entry.name().c_str());
+        fprintf(stdout, "snap counter: '%s'\n", entry.name().c_str());
         for (const auto& dim : entry.point().dimensions) {
-            fprintf(stderr, "       label: [%s] = '%s'\n",
+            fprintf(stdout, "       label: [%s] = '%s'\n",
                     dim.dimensionName().c_str(), dim.labelValue().c_str());
         }
-        fprintf(stderr, "       count: %zd\n", entry.count());
+        fprintf(stdout, "       count: %zd\n", entry.count());
     }
     for (const auto& entry : snap.gauges()) {
-        fprintf(stderr, "snap gauge: '%s'\n", entry.name().c_str());
+        fprintf(stdout, "snap gauge: '%s'\n", entry.name().c_str());
         for (const auto& dim : entry.point().dimensions) {
-            fprintf(stderr, "       label: [%s] = '%s'\n",
+            fprintf(stdout, "       label: [%s] = '%s'\n",
                     dim.dimensionName().c_str(), dim.labelValue().c_str());
         }
-        fprintf(stderr, "  observed: %zd\n", entry.observedCount());
-        fprintf(stderr, "       avg: %f\n", entry.averageValue());
-        fprintf(stderr, "       min: %f\n", entry.minValue());
-        fprintf(stderr, "       max: %f\n", entry.maxValue());
-        fprintf(stderr, "      last: %f\n", entry.lastValue());
+        fprintf(stdout, "  observed: %zd\n", entry.observedCount());
+        fprintf(stdout, "       avg: %f\n", entry.averageValue());
+        fprintf(stdout, "       min: %f\n", entry.minValue());
+        fprintf(stdout, "       max: %f\n", entry.maxValue());
+        fprintf(stdout, "      last: %f\n", entry.lastValue());
     }
 
     JsonFormatter fmt(snap);
-    fprintf(stderr, "JSON format:\n>>>\n%s\n<<<\n", fmt.asString().c_str());
+    fprintf(stdout, "JSON format:\n>>>\n%s\n<<<\n", fmt.asString().c_str());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
