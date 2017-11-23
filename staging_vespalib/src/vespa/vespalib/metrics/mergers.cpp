@@ -83,10 +83,14 @@ mergeWithMap(const NoReallocBunch<typename T::sample_type> &other,
     Map map;
     other.apply([&map] (const Sample &sample) {
         MetricIdentifier id = sample.idx;
-        if (map.find(id) == map.end()) {
-            map.insert(MapValue(id, Aggregator(id)));
+        auto iter = map.find(id);
+        if (iter != map.end()) {
+            iter->second.merge(sample);
+        } else {
+            auto check_iter = map.insert(MapValue(id, Aggregator(id)));
+            assert(check_iter.second);
+            check_iter.first->second.merge(sample);
         }
-        map.find(sample.idx)->second.merge(sample);
     });
     for (const MapValue &entry : map) {
         result.push_back(entry.second);
