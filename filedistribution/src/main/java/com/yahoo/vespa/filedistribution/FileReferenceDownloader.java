@@ -54,6 +54,7 @@ class FileReferenceDownloader {
     private final FileReceiver fileReceiver;
 
     FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool, Duration timeout) {
+        log.log(LogLevel.DEBUG, "FileReferenceDownloader connection pool:\n" + connectionPool);
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
         readFromQueueExecutor.submit(this::readFromQueue);
@@ -107,8 +108,7 @@ class FileReferenceDownloader {
                     Thread.sleep(10);
                 } catch (InterruptedException e) { /* ignore for now */}
             } else {
-                log.log(LogLevel.INFO, "Polling queue, found file reference '" +
-                        fileReferenceDownload.fileReference().value() + "' to download");
+                log.log(LogLevel.INFO, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "'");
                 downloadExecutor.submit(() -> startDownload(fileReferenceDownload.fileReference(), downloadTimeout, fileReferenceDownload));
             }
         } while (true);
@@ -133,12 +133,16 @@ class FileReferenceDownloader {
                 return true;
             } else {
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
+                connectionPool.setNewCurrentConnection();
                 return false;
             }
         } else {
-            log.log(LogLevel.WARNING, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress());
-            if (request.isError() && request.errorCode() == ErrorCode.CONNECTION)
-                connection.setError(request.errorCode());
+            log.log(LogLevel.WARNING, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
+                    ", error code: " + request.errorCode());
+            if (request.isError() && request.errorCode() == ErrorCode.CONNECTION || request.errorCode() == ErrorCode.TIMEOUT) {
+                log.log(LogLevel.WARNING, "Setting error for connection " + connection.getAddress());
+                connectionPool.setError(connection, request.errorCode());
+            }
             return false;
         }
     }
