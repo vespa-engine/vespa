@@ -3,7 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>6-SNAPSHOT</version>
+   </parent>
+
+    <artifactId>filedistribution</artifactId>
+    <version>6-SNAPSHOT</version>
+    <packaging>container-plugin</packaging>
+    <name>${project.artifactId}</name>
+
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -29,6 +41,13 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-lib</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -40,13 +59,15 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <parent>
-    <groupId>com.yahoo.vespa</groupId>
-    <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
-  </parent>
-  <artifactId>filedistribution</artifactId>
-  <version>6-SNAPSHOT</version>
-  <packaging>jar</packaging>
-  <name>${project.artifactId}</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

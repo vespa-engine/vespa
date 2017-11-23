@@ -21,7 +21,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.Value;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
@@ -249,7 +248,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
 
         for (int i = 0; i < responsesSent; i++) {
-
             try {
                 completionService.take();
             } catch (InterruptedException e) {
@@ -469,6 +467,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                     : FileApiErrorCodes.NOT_FOUND;
             if (result == FileApiErrorCodes.OK) {
                 fileServer.startFileServing(fileReference, new FileReceiver(request.target()));
+            } else {
+                fileServer.download(new FileReference(fileReference));
             }
         } catch (IllegalArgumentException e) {
             result = FileApiErrorCodes.NOT_FOUND;
