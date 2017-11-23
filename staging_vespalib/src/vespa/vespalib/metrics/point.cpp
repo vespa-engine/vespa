@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "point.h"
-#include "metrics_collector.h"
+#include "metrics_manager.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".point");
@@ -46,11 +46,11 @@ PointMap::operator< (const PointMap &other) const
 
 
 
-PointBuilder::PointBuilder(std::shared_ptr<MetricsCollector> &&m)
+PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> &&m)
     : _owner(std::move(m)), _map()
 {}
 
-PointBuilder::PointBuilder(std::shared_ptr<MetricsCollector> &&m,
+PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> &&m,
                            const PointMapBacking &copyFrom)
     : _owner(std::move(m)), _map(copyFrom)
 {

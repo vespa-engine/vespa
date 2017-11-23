@@ -7,7 +7,7 @@
 #include "name_collection.h"
 #include "mergers.h"
 #include "snapshots.h"
-#include "metrics_collector.h"
+#include "metrics_manager.h"
 #include "clock.h"
 
 namespace vespalib {
@@ -19,7 +19,7 @@ struct CollectorConfig {
 };
 
 
-class SimpleMetricsCollector : public MetricsCollector
+class SimpleMetricsManager : public MetricsManager
 {
 private:
     NameCollection _metricNames;
@@ -47,13 +47,13 @@ private:
 
     bool _stopFlag;
     std::thread _collectorThread;
-    static void doCollectLoop(SimpleMetricsCollector *me);
+    static void doCollectLoop(SimpleMetricsManager *me);
     void collectCurrentBucket(); // called once per second from another thread
 
-    SimpleMetricsCollector(const CollectorConfig &config);
+    SimpleMetricsManager(const CollectorConfig &config);
 public:
-    ~SimpleMetricsCollector();
-    static std::shared_ptr<MetricsCollector> create(const CollectorConfig &config);
+    ~SimpleMetricsManager();
+    static std::shared_ptr<MetricsManager> create(const CollectorConfig &config);
 
     Counter counter(const vespalib::string &name) override; // get or create
     Gauge gauge(const vespalib::string &name) override; // get or create

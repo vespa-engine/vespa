@@ -7,7 +7,7 @@
 namespace vespalib {
 namespace metrics {
 
-class MetricsCollector;
+class MetricsManager;
 class GaugeAggregator;
 
 struct GaugeMeasurement {
@@ -19,11 +19,11 @@ struct GaugeMeasurement {
 
 class Gauge {
 private:
-    std::shared_ptr<MetricsCollector> _manager;
+    std::shared_ptr<MetricsManager> _manager;
     MetricIdentifier _idx;
     MetricIdentifier ident() const { return _idx; }
 public:
-    Gauge(std::shared_ptr<MetricsCollector> m, MetricIdentifier id)
+    Gauge(std::shared_ptr<MetricsManager> m, MetricIdentifier id)
         : _manager(std::move(m)), _idx(id)
     {}
 

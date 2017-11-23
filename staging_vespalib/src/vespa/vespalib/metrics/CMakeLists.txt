@@ -5,17 +5,17 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     clock.cpp
     coordinate.cpp
     counter.cpp
-    dummy_metrics_collector.cpp
+    dummy_metrics_manager.cpp
     gauge.cpp
     json_formatter.cpp
     mergers.cpp
     metric_identifier.cpp
-    metrics_collector.cpp
+    metrics_manager.cpp
     name_collection.cpp
     no_realloc_bunch.cpp
     point.cpp
     producer.cpp
-    simple_metrics_collector.cpp
+    simple_metrics_manager.cpp
     simple_metrics.cpp
     snapshots.cpp
 

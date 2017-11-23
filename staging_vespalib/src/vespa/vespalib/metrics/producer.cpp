@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "producer.h"
-#include "metrics_collector.h"
+#include "metrics_manager.h"
 #include "json_formatter.h"
 
 namespace vespalib {
 namespace metrics {
 
-Producer::Producer(std::shared_ptr<MetricsCollector> m)
+Producer::Producer(std::shared_ptr<MetricsManager> m)
     : _manager(m)
 {}
 

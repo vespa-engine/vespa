@@ -34,16 +34,16 @@ public:
     explicit Point(size_t id) : _point_idx(id) {}
 };
 
-class MetricsCollector;
+class MetricsManager;
 
 class PointBuilder {
 private:
-    std::shared_ptr<MetricsCollector> _owner;
+    std::shared_ptr<MetricsManager> _owner;
     PointMapBacking _map;
 
 public:
-    PointBuilder(std::shared_ptr<MetricsCollector> &&m);
-    PointBuilder(std::shared_ptr<MetricsCollector> &&m, const PointMapBacking &from);
+    PointBuilder(std::shared_ptr<MetricsManager> &&m);
+    PointBuilder(std::shared_ptr<MetricsManager> &&m, const PointMapBacking &from);
     ~PointBuilder() {}
 
     PointBuilder &&bind(Axis axis, Coordinate coord) &&;

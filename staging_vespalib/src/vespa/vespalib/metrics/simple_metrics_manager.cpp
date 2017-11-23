@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "simple_metrics_collector.h"
+#include "simple_metrics_manager.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".simple_metrics_collector");
@@ -9,7 +9,7 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
-SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
+SimpleMetricsManager::SimpleMetricsManager(const CollectorConfig &config)
     : _metricNames(),
       _axisNames(),
       _coordValues(),
@@ -28,22 +28,22 @@ SimpleMetricsCollector::SimpleMetricsCollector(const CollectorConfig &config)
     assert(empty.id() == 0);
 }
 
-SimpleMetricsCollector::~SimpleMetricsCollector()
+SimpleMetricsManager::~SimpleMetricsManager()
 {
     _stopFlag = true;
     _collectorThread.join();
 }
 
 
-std::shared_ptr<MetricsCollector>
-SimpleMetricsCollector::create(const CollectorConfig &config)
+std::shared_ptr<MetricsManager>
+SimpleMetricsManager::create(const CollectorConfig &config)
 {
-    return std::shared_ptr<MetricsCollector>(
-        new SimpleMetricsCollector(config));
+    return std::shared_ptr<MetricsManager>(
+        new SimpleMetricsManager(config));
 }
 
 Counter
-SimpleMetricsCollector::counter(const vespalib::string &name)
+SimpleMetricsManager::counter(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
     LOG(debug, "metric name %s -> %d", name.c_str(), id);
@@ -51,7 +51,7 @@ SimpleMetricsCollector::counter(const vespalib::string &name)
 }
 
 Gauge
-SimpleMetricsCollector::gauge(const vespalib::string &name)
+SimpleMetricsManager::gauge(const vespalib::string &name)
 {
     int id = _metricNames.resolve(name);
     LOG(debug, "metric name %s -> %d", name.c_str(), id);
@@ -59,7 +59,7 @@ SimpleMetricsCollector::gauge(const vespalib::string &name)
 }
 
 Snapshot
-SimpleMetricsCollector::snapshot()
+SimpleMetricsManager::snapshot()
 {
     InternalTimeStamp startTime =
         (_buckets.size() > 0)
@@ -106,7 +106,7 @@ SimpleMetricsCollector::snapshot()
 }
 
 void
-SimpleMetricsCollector::doCollectLoop(SimpleMetricsCollector *me)
+SimpleMetricsManager::doCollectLoop(SimpleMetricsManager *me)
 {
     const std::chrono::milliseconds jiffy{20};
     const std::chrono::seconds oneSec{1};
@@ -121,7 +121,7 @@ SimpleMetricsCollector::doCollectLoop(SimpleMetricsCollector *me)
 }
 
 void
-SimpleMetricsCollector::collectCurrentBucket()
+SimpleMetricsManager::collectCurrentBucket()
 {
     InternalTimeStamp prev = _curTime;
     InternalTimeStamp curr = now_stamp();
@@ -145,7 +145,7 @@ SimpleMetricsCollector::collectCurrentBucket()
 }
 
 Axis
-SimpleMetricsCollector::axis(const vespalib::string &name)
+SimpleMetricsManager::axis(const vespalib::string &name)
 {
     int id = _axisNames.resolve(name);
     LOG(debug, "axis name %s -> %d", name.c_str(), id);
@@ -153,7 +153,7 @@ SimpleMetricsCollector::axis(const vespalib::string &name)
 }
 
 Coordinate
-SimpleMetricsCollector::coordinate(const vespalib::string &value)
+SimpleMetricsManager::coordinate(const vespalib::string &value)
 {
     int id = _coordValues.resolve(value);
     LOG(debug, "coord value %s -> %d", value.c_str(), id);
@@ -161,7 +161,7 @@ SimpleMetricsCollector::coordinate(const vespalib::string &value)
 }
 
 PointBuilder
-SimpleMetricsCollector::pointBuilder(Point from)
+SimpleMetricsManager::pointBuilder(Point from)
 {
     Guard guard(_pointMaps.lock);
     const PointMap &map = _pointMaps.vec[from.id()]->first;
@@ -169,7 +169,7 @@ SimpleMetricsCollector::pointBuilder(Point from)
 }
 
 Point
-SimpleMetricsCollector::pointFrom(PointMapBacking &&map)
+SimpleMetricsManager::pointFrom(PointMapBacking &&map)
 {
     Guard guard(_pointMaps.lock);
     size_t nextId = _pointMaps.vec.size();

@@ -7,7 +7,7 @@
 namespace vespalib {
 namespace metrics {
 
-class MetricsCollector;
+class MetricsManager;
 class CounterAggregator;
 
 struct CounterIncrement {
@@ -18,7 +18,7 @@ struct CounterIncrement {
 };
 
 class Counter {
-    std::shared_ptr<MetricsCollector> _manager;
+    std::shared_ptr<MetricsManager> _manager;
     MetricIdentifier _idx;
     MetricIdentifier ident() const { return _idx; }
 public:
@@ -27,7 +27,7 @@ public:
     Counter(Counter &&other) = default;
     Counter& operator= (const Counter &) = delete;
     Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsCollector> &&m, MetricIdentifier id)
+    Counter(std::shared_ptr<MetricsManager> &&m, MetricIdentifier id)
         : _manager(std::move(m)), _idx(id)
     {}
 

@@ -15,11 +15,11 @@ namespace vespalib {
 namespace metrics {
 
 
-class MetricsCollector
-    : public std::enable_shared_from_this<MetricsCollector>
+class MetricsManager
+    : public std::enable_shared_from_this<MetricsManager>
 {
 public:
-    virtual ~MetricsCollector() {}
+    virtual ~MetricsManager() {}
 
     virtual Counter counter(const vespalib::string &name) = 0; // get or create
     virtual  Gauge   gauge (const vespalib::string &name) = 0; // get or create

@@ -7,22 +7,22 @@
 #include "name_collection.h"
 #include "mergers.h"
 #include "snapshots.h"
-#include "metrics_collector.h"
+#include "metrics_manager.h"
 #include "clock.h"
 
 namespace vespalib {
 namespace metrics {
 
-class DummyMetricsCollector : public MetricsCollector
+class DummyMetricsManager : public MetricsManager
 {
 private:
     InternalTimeStamp _startTime;
-    DummyMetricsCollector() : _startTime(now_stamp()) {}
+    DummyMetricsManager() : _startTime(now_stamp()) {}
 public:
-    ~DummyMetricsCollector();
+    ~DummyMetricsManager();
 
-    static std::shared_ptr<MetricsCollector> create() {
-        return std::shared_ptr<MetricsCollector>(new DummyMetricsCollector());
+    static std::shared_ptr<MetricsManager> create() {
+        return std::shared_ptr<MetricsManager>(new DummyMetricsManager());
     }
 
     Counter counter(const vespalib::string &) override {
