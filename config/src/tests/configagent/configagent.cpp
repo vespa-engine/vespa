@@ -22,6 +22,7 @@ public:
     bool abort() override { return false; }
     bool isAborted() const override { return false; }
     void setError(int errorCode) override { (void) errorCode; }
+    bool verifyState(const ConfigState &) const override { return false; }
     const ConfigKey _key;
 };
 
@@ -176,7 +177,7 @@ TEST("require that important(the change) request is delivered to holder even if 
     ASSERT_TRUE(latch->poll());
     update = latch->provide();
     ASSERT_TRUE(update);
-    ASSERT_FALSE(update->hasChanged());  // This is a bug. We are loosing the change on generation 1->2
+    ASSERT_TRUE(update->hasChanged());
     MyConfig cfg2(update->getValue());
     ASSERT_EQUAL("l34t", cfg2.myField);
 }

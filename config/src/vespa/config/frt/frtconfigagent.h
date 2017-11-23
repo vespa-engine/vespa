@@ -33,7 +33,7 @@ public:
     const ConfigState & getConfigState() const override;
 private:
     void handleUpdatedGeneration(const ConfigKey & key, const ConfigState & newState, const ConfigValue & configValue);
-    void handleOKResponse(ConfigResponse::UP response);
+    void handleOKResponse(const ConfigRequest & request, ConfigResponse::UP response);
     void handleErrorResponse(const ConfigRequest & request, ConfigResponse::UP response);
     void setWaitTime(uint64_t delay, int multiplier);
 
