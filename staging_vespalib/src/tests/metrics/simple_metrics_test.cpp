@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
-#include <vespa/vespalib/metrics/simple_metrics_collector.h>
+#include <vespa/vespalib/metrics/simple_metrics_manager.h>
 #include <vespa/vespalib/metrics/no_realloc_bunch.h>
 #include <vespa/vespalib/metrics/json_formatter.h>
 #include <stdio.h>
@@ -13,7 +13,7 @@ using namespace vespalib::metrics;
 TEST("require that simple metrics gauge merge works")
 {
     MetricIdentifier id(42);
-    MergedGauge a(id), b(id), c(id);
+    GaugeAggregator a(id), b(id), c(id);
     b.observedCount = 3;
     b.sumValue = 24.0;
     b.minValue = 7.0;
@@ -97,9 +97,9 @@ TEST("require that no_realloc_bunch works")
 TEST("use simple_metrics_collector")
 {
     using namespace vespalib::metrics;
-    CollectorConfig cf;
+    SimpleManagerConfig cf;
     cf.sliding_window_seconds = 5;
-    auto manager = SimpleMetricsCollector::create(cf);
+    auto manager = SimpleMetricsManager::create(cf);
     Counter myCounter = manager->counter("foo");
     myCounter.add();
     myCounter.add(16);

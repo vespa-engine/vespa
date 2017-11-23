@@ -9,7 +9,7 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
-SimpleMetricsManager::SimpleMetricsManager(const CollectorConfig &config)
+SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config)
     : _metricNames(),
       _axisNames(),
       _coordValues(),
@@ -36,7 +36,7 @@ SimpleMetricsManager::~SimpleMetricsManager()
 
 
 std::shared_ptr<MetricsManager>
-SimpleMetricsManager::create(const CollectorConfig &config)
+SimpleMetricsManager::create(const SimpleManagerConfig &config)
 {
     return std::shared_ptr<MetricsManager>(
         new SimpleMetricsManager(config));

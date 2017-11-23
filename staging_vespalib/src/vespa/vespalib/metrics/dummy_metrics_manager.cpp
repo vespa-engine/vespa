@@ -4,6 +4,8 @@
 namespace vespalib {
 namespace metrics {
 
+DummyMetricsManager::~DummyMetricsManager() {}
+
 Snapshot
 DummyMetricsManager::snapshot()
 {

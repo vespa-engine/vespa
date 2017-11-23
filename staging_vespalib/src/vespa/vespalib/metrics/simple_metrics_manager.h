@@ -14,9 +14,10 @@
 namespace vespalib {
 namespace metrics {
 
-struct CollectorConfig {
+struct SimpleManagerConfig {
     int sliding_window_seconds;
     // possibly more config later
+    SimpleManagerConfig() : sliding_window_seconds(60) {}
 };
 
 
@@ -52,10 +53,10 @@ private:
     static void doCollectLoop(SimpleMetricsManager *me);
     void collectCurrentBucket(); // called once per second from another thread
 
-    SimpleMetricsManager(const CollectorConfig &config);
+    SimpleMetricsManager(const SimpleManagerConfig &config);
 public:
     ~SimpleMetricsManager();
-    static std::shared_ptr<MetricsManager> create(const CollectorConfig &config);
+    static std::shared_ptr<MetricsManager> create(const SimpleManagerConfig &config);
 
     Counter counter(const vespalib::string &name) override; // get or create
     Gauge gauge(const vespalib::string &name) override; // get or create
