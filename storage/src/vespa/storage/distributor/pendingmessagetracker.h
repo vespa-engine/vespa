@@ -10,7 +10,6 @@
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/util/sync.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
@@ -22,6 +21,7 @@
 #include <set>
 #include <unordered_map>
 #include <chrono>
+#include <mutex>
 
 namespace storage {
 namespace distributor {
@@ -220,7 +220,7 @@ private:
     // Since distributor is currently single-threaded, this will only
     // contend when status page is being accessed. It is, however, required
     // to be present for that exact purpose.
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
 
     /**
      * Increment latency and operation count stats for the node the message
