@@ -15,6 +15,8 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     name_collection.cpp
     no_realloc_bunch.cpp
     point.cpp
+    point_builder.cpp
+    point_map.cpp
     producer.cpp
     simple_metrics.cpp
     simple_metrics_manager.cpp

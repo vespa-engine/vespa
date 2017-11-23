@@ -10,6 +10,9 @@
 #include "mergers.h"
 #include "snapshots.h"
 #include "point.h"
+#include "point_builder.h"
+#include "axis.h"
+#include "coordinate.h"
 
 namespace vespalib {
 namespace metrics {
