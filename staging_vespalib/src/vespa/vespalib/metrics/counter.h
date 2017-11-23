@@ -27,7 +27,7 @@ public:
     Counter(Counter &&other) = default;
     Counter& operator= (const Counter &) = delete;
     Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsManager> &&m, MetricIdentifier id)
+    Counter(std::shared_ptr<MetricsManager> m, MetricIdentifier id)
         : _manager(std::move(m)), _idx(id)
     {}
 

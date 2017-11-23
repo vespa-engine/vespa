@@ -46,11 +46,11 @@ PointMap::operator< (const PointMap &other) const
 
 
 
-PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> &&m)
+PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> m)
     : _owner(std::move(m)), _map()
 {}
 
-PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> &&m,
+PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> m,
                            const PointMapBacking &copyFrom)
     : _owner(std::move(m)), _map(copyFrom)
 {

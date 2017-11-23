@@ -42,8 +42,8 @@ private:
     PointMapBacking _map;
 
 public:
-    PointBuilder(std::shared_ptr<MetricsManager> &&m);
-    PointBuilder(std::shared_ptr<MetricsManager> &&m, const PointMapBacking &from);
+    PointBuilder(std::shared_ptr<MetricsManager> m);
+    PointBuilder(std::shared_ptr<MetricsManager> m, const PointMapBacking &from);
     ~PointBuilder() {}
 
     PointBuilder &&bind(Axis axis, Coordinate coord) &&;
