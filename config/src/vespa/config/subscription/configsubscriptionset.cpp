@@ -88,8 +88,9 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         _state = CONFIGURED;
         for (const auto & subscription : _subscriptionList) {
             const ConfigKey & key(subscription->getKey());
-            LOG(debug, "Updated config id(%s), has changed: %s, lastGenerationChanged: %ld",
+            LOG(debug, "Updated config id(%s), defname(%s), has changed: %s, lastGenerationChanged: %ld",
                 key.getConfigId().c_str(),
+                key.getDefName().c_str(),
                 (subscription->hasChanged() ? "true" : "false"),
                 subscription->getLastGenerationChanged());
             subscription->flip();
