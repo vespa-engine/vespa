@@ -11,22 +11,24 @@ using vespalib::metrics::MetricsManager;
 using vespalib::metrics::Point;
 
 struct Metrics {
-    MetricsManager &metrics;
+    std::shared_ptr<MetricsManager> metrics;
     const Dimension loglevel;
     const Dimension servicename;
     const Counter loglines;
 
-    Metrics(MetricsManager &m)
+    Metrics(std::shared_ptr<MetricsManager> m)
         : metrics(m),
-          loglevel(m.dimension("loglevel")),
-          servicename(m.dimension("servicename")),
-          loglines(m.counter("loglines"))
+          loglevel(metrics->dimension("loglevel")),
+          servicename(metrics->dimension("service")),
+          loglines(metrics->counter("logd.processed.lines"))
     {}
+
+    ~Metrics() {}
 
     void countLine(const vespalib::string &level,
                    const vespalib::string &service) const
     {
-        Point p = metrics.pointBuilder()
+        Point p = metrics->pointBuilder()
                   .bind(loglevel, level)
                   .bind(servicename, service);
         loglines.add(1, p);

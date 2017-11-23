@@ -51,7 +51,7 @@ struct ForwardFixture {
 };
 
 std::shared_ptr<vespalib::metrics::MetricsManager> dummy = vespalib::metrics::DummyMetricsManager::create();
-Metrics m(*dummy);
+Metrics m(dummy);
 
 TEST_FF("require that forwarder forwards if set", Forwarder(m), ForwardFixture(f1, "forward.txt")) {
     ForwardMap forwardMap;
