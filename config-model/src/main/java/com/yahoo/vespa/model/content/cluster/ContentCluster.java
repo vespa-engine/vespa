@@ -531,6 +531,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
      */
     public Map<String, NewDocumentType> getDocumentDefinitions() { return documentDefinitions; }
 
+    public boolean isGloballyDistributed(NewDocumentType docType) {
+        return globallyDistributedDocuments.contains(docType);
+    }
+
     public final ContentSearchCluster getSearch() { return search; }
 
     public Redundancy redundancy() { return redundancy; }
