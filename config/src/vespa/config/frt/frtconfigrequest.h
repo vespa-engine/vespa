@@ -40,19 +40,5 @@ private:
     const ConfigKey _key;
 };
 
-class FRTConfigRequestV1 : public FRTConfigRequest {
-public:
-    FRTConfigRequestV1(const ConfigKey & key,
-                     Connection * connection,
-                     const vespalib::string & configMd5,
-                     int64_t generation,
-                     int64_t serverTimeout);
-    bool verifyKey(const ConfigKey & key) const override;
-    bool verifyState(const ConfigState & state) const override;
-    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override;
-private:
-    static const vespalib::string REQUEST_TYPES;
-};
-
 }
 
