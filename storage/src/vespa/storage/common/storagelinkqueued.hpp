@@ -69,14 +69,6 @@ void StorageLinkQueued::Dispatcher<Message>::add(
 }
 
 template<typename Message>
-void StorageLinkQueued::Dispatcher<Message>::addWithoutLocking(
-        const std::shared_ptr<Message>& m)
-{
-    if (_thread.get() == 0) start();
-    _messages.push_back(m);
-}
-
-template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
 {
     while (!h.interrupted()) {

@@ -92,11 +92,6 @@ private:
 
         void add(const std::shared_ptr<Message>&);
         void flush();
-            // You can use the given functions if you need to keep the
-            // dispatcher thread locked while you process a message. Bucket
-            // manager does this during bucket dumps
-        vespalib::Monitor& getMonitor() { return _sync; }
-        void addWithoutLocking(const std::shared_ptr<Message>&);
 
         virtual void send(const std::shared_ptr<Message> & ) = 0;
     };
