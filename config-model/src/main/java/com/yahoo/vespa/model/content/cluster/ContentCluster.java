@@ -10,7 +10,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -329,11 +328,9 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
-            List<HostResource> hostsByName = drawContentHostsRecursively(count, false, rootGroup);
-            List<HostResource> hostsByIndex = drawContentHostsRecursively(count, true, rootGroup);
+            List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
             // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
             //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
-            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 1);
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -406,24 +403,20 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
          */
         // Note: This method cannot be changed to draw different nodes without ensuring that it will draw nodes
         //       which overlaps with previously drawn nodes as this will prevent rolling upgrade
-        private List<HostResource> drawContentHostsRecursively(int count, boolean byIndex, StorageGroup group) {
+        private List<HostResource> drawContentHostsRecursively(int count, StorageGroup group) {
             Set<HostResource> hosts = new HashSet<>();
             if (group.getNodes().isEmpty()) {
                 int hostsPerSubgroup = (int)Math.ceil((double)count / group.getSubgroups().size());
                 for (StorageGroup subgroup : group.getSubgroups())
-                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, byIndex, subgroup));
+                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, subgroup));
             }
             else {
                 hosts.addAll(group.getNodes().stream()
-                     .filter(node -> ! node.isRetired()) // Avoid retired controllers to avoid surprises on expiry
-                     .map(StorageNode::getHostResource).collect(Collectors.toList()));
+                    .filter(node -> ! node.isRetired()) // Avoid retired controllers to avoid surprises on expiry
+                    .map(StorageNode::getHostResource).collect(Collectors.toList()));
             }
-
             List<HostResource> sortedHosts = new ArrayList<>(hosts);
-            if (byIndex)
-                sortedHosts.sort(Comparator.comparingInt(host -> host.primaryClusterMembership().get().index()));
-            else // by name
-                Collections.sort(sortedHosts);
+            Collections.sort(sortedHosts);
             sortedHosts = sortedHosts.subList(0, Math.min(count, hosts.size()));
             return sortedHosts;
         }
