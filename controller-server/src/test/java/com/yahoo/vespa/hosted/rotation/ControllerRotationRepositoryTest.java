@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.rotation;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RotationId;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
@@ -22,6 +22,10 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Oyvind Gronnesby
@@ -100,12 +104,13 @@ public class ControllerRotationRepositoryTest {
 
     private ControllerRotationRepository repository;
     private ControllerRotationRepository repositoryWhitespaces;
-
+    private Metric metric;
     
     @Before
     public void setup_repository() {
-        repository = new ControllerRotationRepository(rotationsConfig, controllerDb, MetricReceiver.nullImplementation);
-        repositoryWhitespaces = new ControllerRotationRepository(rotationsConfigWhitespaces, controllerDb, MetricReceiver.nullImplementation);
+        metric = mock(Metric.class);
+        repository = new ControllerRotationRepository(rotationsConfig, controllerDb, metric);
+        repositoryWhitespaces = new ControllerRotationRepository(rotationsConfigWhitespaces, controllerDb, metric);
         controllerDb.assignRotation(new RotationId("foo-1"), applicationId);
     }
 
@@ -129,6 +134,7 @@ public class ControllerRotationRepositoryTest {
         Set<Rotation> rotations = repository.getOrAssignRotation(other, deploymentSpec);
         Rotation assignedRotation = new Rotation(new RotationId("foo-2"), "foo-2.com");
         assertContainsOnly(assignedRotation, rotations);
+        verify(metric).set(eq(ControllerRotationRepository.REMAINING_ROTATIONS_METRIC_NAME), eq(1), any());
     }
 
     @Test
@@ -140,6 +146,7 @@ public class ControllerRotationRepositoryTest {
         thrown.expectMessage("no rotations available");
 
         repository.getOrAssignRotation(third, deploymentSpec);
+        verify(metric).set(eq(ControllerRotationRepository.REMAINING_ROTATIONS_METRIC_NAME), eq(0), any());
     }
 
     @Test
