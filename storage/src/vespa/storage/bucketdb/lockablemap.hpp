@@ -69,6 +69,7 @@ template<typename Map>
 LockableMap<Map>::LockableMap()
     : _map(),
       _lock(),
+      _cond(),
       _lockedKeys(),
       _lockWaiters()
 {}
@@ -80,8 +81,8 @@ template<typename Map>
 bool
 LockableMap<Map>::operator==(const LockableMap<Map>& other) const
 {
-    vespalib::LockGuard guard(_lock);
-    vespalib::LockGuard guard2(other._lock);
+    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard2(other._lock);
     return (_map == other._map);
 }
 
@@ -89,8 +90,8 @@ template<typename Map>
 bool
 LockableMap<Map>::operator<(const LockableMap<Map>& other) const
 {
-    vespalib::LockGuard guard(_lock);
-    vespalib::LockGuard guard2(other._lock);
+    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard2(other._lock);
     return (_map < other._map);
 }
 
@@ -98,7 +99,7 @@ template<typename Map>
 typename Map::size_type
 LockableMap<Map>::size() const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _map.size();
 }
 
@@ -106,17 +107,16 @@ template<typename Map>
 typename Map::size_type
 LockableMap<Map>::getMemoryUsage() const
 {
-    vespalib::MonitorGuard guard(_lock);
-    return _map.getMemoryUsage()
-            + _lockedKeys.getMemoryUsage()
-            + sizeof(vespalib::Monitor);
+    std::lock_guard<std::mutex> guard(_lock);
+    return _map.getMemoryUsage() + _lockedKeys.getMemoryUsage() +
+        sizeof(std::mutex) + sizeof(std::condition_variable);
 }
 
 template<typename Map>
 bool
 LockableMap<Map>::empty() const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _map.empty();
 }
 
@@ -124,18 +124,18 @@ template<typename Map>
 void
 LockableMap<Map>::swap(LockableMap<Map>& other)
 {
-    vespalib::LockGuard guard(_lock);
-    vespalib::LockGuard guard2(other._lock);
+    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard2(other._lock);
     return _map.swap(other._map);
 }
 
 template<typename Map>
-void LockableMap<Map>::ackquireKey(const LockId & lid, vespalib::MonitorGuard & guard)
+void LockableMap<Map>::acquireKey(const LockId & lid, std::unique_lock<std::mutex> &guard)
 {
     if (_lockedKeys.exist(lid)) {
         typename LockWaiters::Key waitId(_lockWaiters.insert(lid));
         while (_lockedKeys.exist(lid)) {
-            guard.wait();
+            _cond.wait(guard);
         }
         _lockWaiters.erase(waitId);
     }
@@ -148,8 +148,8 @@ LockableMap<Map>::get(const key_type& key, const char* clientId,
                       bool lockIfNonExistingAndNotCreating)
 {
     LockId lid(key, clientId);
-    vespalib::MonitorGuard guard(_lock);
-    ackquireKey(lid, guard);
+    std::unique_lock<std::mutex> guard(_lock);
+    acquireKey(lid, guard);
     bool preExisted = false;
     typename Map::iterator it =
         _map.find(key, createIfNonExisting, preExisted);
@@ -197,9 +197,9 @@ bool
 LockableMap<Map>::erase(const key_type& key, const char* clientId, bool haslock)
 {
     LockId lid(key, clientId);
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     if (!haslock) {
-        ackquireKey(lid, guard);
+        acquireKey(lid, guard);
     }
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     debug::logBucketDbErase(key, debug::TypeTag<mapped_type>());
@@ -213,9 +213,9 @@ LockableMap<Map>::insert(const key_type& key, const mapped_type& value,
                          const char* clientId, bool haslock, bool& preExisted)
 {
     LockId lid(key, clientId);
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     if (!haslock) {
-        ackquireKey(lid, guard);
+        acquireKey(lid, guard);
     }
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     debug::logBucketDbInsert(key, value);
@@ -227,7 +227,7 @@ template<typename Map>
 void
 LockableMap<Map>::clear()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _map.clear();
 }
 
@@ -235,13 +235,13 @@ template<typename Map>
 bool
 LockableMap<Map>::findNextKey(key_type& key, mapped_type& val,
                               const char* clientId,
-                              vespalib::MonitorGuard& guard)
+                              std::unique_lock<std::mutex> &guard)
 {
     // Wait for next value to unlock.
     typename Map::iterator it(_map.lower_bound(key));
     while (it != _map.end() && _lockedKeys.exist(LockId(it->first, ""))) {
         typename LockWaiters::Key waitId(_lockWaiters.insert(LockId(it->first, clientId)));
-        guard.wait();
+        _cond.wait(guard);
         _lockWaiters.erase(waitId);
         it = _map.lower_bound(key);
     }
@@ -279,16 +279,16 @@ LockableMap<Map>::each(Functor& functor, const char* clientId,
     mapped_type val;
     Decision decision;
     {
-        vespalib::MonitorGuard guard(_lock);
+        std::unique_lock<std::mutex> guard(_lock);
         if (findNextKey(key, val, clientId, guard) || key > last) return;
         _lockedKeys.insert(LockId(key, clientId));
     }
     try{
         while (true) {
             decision = functor(const_cast<const key_type&>(key), val);
-            vespalib::MonitorGuard guard(_lock);
+            std::unique_lock<std::mutex> guard(_lock);
             _lockedKeys.erase(LockId(key, clientId));
-            guard.broadcast();
+            _cond.notify_all();
             if (handleDecision(key, val, decision)) return;
             ++key;
             if (findNextKey(key, val, clientId, guard) || key > last) return;
@@ -297,9 +297,9 @@ LockableMap<Map>::each(Functor& functor, const char* clientId,
     } catch (...) {
             // Assuming only the functor call can throw exceptions, we need
             // to unlock the current key before exiting
-        vespalib::MonitorGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _lockedKeys.erase(LockId(key, clientId));
-        guard.broadcast();
+        _cond.notify_all();
         throw;
     }
 }
@@ -314,16 +314,16 @@ LockableMap<Map>::each(const Functor& functor, const char* clientId,
     mapped_type val;
     Decision decision;
     {
-        vespalib::MonitorGuard guard(_lock);
+        std::unique_lock<std::mutex> guard(_lock);
         if (findNextKey(key, val, clientId, guard) || key > last) return;
         _lockedKeys.insert(LockId(key, clientId));
     }
     try{
         while (true) {
             decision = functor(const_cast<const key_type&>(key), val);
-            vespalib::MonitorGuard guard(_lock);
+            std::unique_lock<std::mutex> guard(_lock);
             _lockedKeys.erase(LockId(key, clientId));
-            guard.broadcast();
+            _cond.notify_all();
             if (handleDecision(key, val, decision)) return;
             ++key;
             if (findNextKey(key, val, clientId, guard) || key > last) return;
@@ -332,9 +332,9 @@ LockableMap<Map>::each(const Functor& functor, const char* clientId,
     } catch (...) {
             // Assuming only the functor call can throw exceptions, we need
             // to unlock the current key before exiting
-        vespalib::MonitorGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _lockedKeys.erase(LockId(key, clientId));
-        guard.broadcast();
+        _cond.notify_all();
         throw;
     }
 }
@@ -347,7 +347,7 @@ LockableMap<Map>::all(Functor& functor, const char* clientId,
 {
     key_type key = first;
     mapped_type val;
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     while (true) {
         if (findNextKey(key, val, clientId, guard) || key > last) return;
         Decision d(functor(const_cast<const key_type&>(key), val));
@@ -364,7 +364,7 @@ LockableMap<Map>::all(const Functor& functor, const char* clientId,
 {
     key_type key = first;
     mapped_type val;
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     while (true) {
         if (findNextKey(key, val, clientId, guard) || key > last) return;
         Decision d(functor(const_cast<const key_type&>(key), val));
@@ -383,7 +383,7 @@ LockableMap<Map>::processNextChunk(Functor& functor,
                                    const uint32_t chunkSize)
 {
     mapped_type val;
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     for (uint32_t processed = 0; processed < chunkSize; ++processed) {
         if (findNextKey(key, val, clientId, guard)) {
             return false;
@@ -422,7 +422,7 @@ void
 LockableMap<Map>::print(std::ostream& out, bool verbose,
                         const std::string& indent) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     out << "LockableMap {\n" << indent << "  ";
 
     if (verbose) {
@@ -462,9 +462,9 @@ template<typename Map>
 void
 LockableMap<Map>::unlock(const key_type& key)
 {
-    vespalib::MonitorGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _lockedKeys.erase(LockId(key, ""));
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 /**
@@ -550,7 +550,7 @@ LockableMap<Map>::addAndLockResults(
         const std::vector<BucketId::Type> keys,
         const char* clientId,
         std::map<BucketId, WrappedEntry>& results,
-        vespalib::MonitorGuard& guard)
+        std::unique_lock<std::mutex> &guard)
 {
     // Wait until all buckets are free to be added, then add them all.
     while (true) {
@@ -567,7 +567,7 @@ LockableMap<Map>::addAndLockResults(
 
         if (!allOk) {
             typename LockWaiters::Key waitId(_lockWaiters.insert(LockId(waitingFor, clientId)));
-            guard.wait();
+            _cond.wait(guard);
             _lockWaiters.erase(waitId);
         } else {
             for (uint32_t i=0; i<keys.size(); i++) {
@@ -593,7 +593,7 @@ LockableMap<Map>::createAppropriateBucket(
         const char* clientId,
         const BucketId& bucket)
 {
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     typename Map::const_iterator iter = _map.lower_bound(bucket.toKey());
 
     // Find the two buckets around the possible new bucket. The new
@@ -613,7 +613,7 @@ LockableMap<Map>::createAppropriateBucket(
     BucketId::Type key = newBucket.stripUnused().toKey();
 
     LockId lid(key, clientId);
-    ackquireKey(lid, guard);
+    acquireKey(lid, guard);
     bool preExisted;
     typename Map::iterator it = _map.find(key, true, preExisted);
     _lockedKeys.insert(LockId(key, clientId));
@@ -625,7 +625,7 @@ std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
 LockableMap<Map>::getContained(const BucketId& bucket,
                                const char* clientId)
 {
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     std::map<BucketId, WrappedEntry> results;
 
     BucketId result;
@@ -718,7 +718,7 @@ std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
 LockableMap<Map>::getAll(const BucketId& bucket, const char* clientId,
                          const BucketId& sibling)
 {
-    vespalib::MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
 
     std::map<BucketId, WrappedEntry> results;
     std::vector<BucketId::Type> keys;
@@ -734,7 +734,7 @@ template<typename Map>
 bool
 LockableMap<Map>::isConsistent(const typename LockableMap<Map>::WrappedEntry& entry)
 {
-    vespalib::MonitorGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
 
     BucketId sibling(0);
     std::vector<BucketId::Type> keys;
@@ -750,7 +750,7 @@ template<typename Map>
 void
 LockableMap<Map>::showLockClients(vespalib::asciistream & out) const
 {
-    vespalib::MonitorGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     out << "Currently grabbed locks:";
     for (typename LockIdSet::const_iterator it = _lockedKeys.begin();
          it != _lockedKeys.end(); ++it)
