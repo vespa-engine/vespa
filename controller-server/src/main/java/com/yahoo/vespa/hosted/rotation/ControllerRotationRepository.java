@@ -4,13 +4,12 @@ package com.yahoo.vespa.hosted.rotation;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
-import com.yahoo.metrics.simple.Gauge;
-import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.controller.api.identifiers.RotationId;
 import com.yahoo.vespa.hosted.controller.api.ApplicationAlias;
-import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
+import com.yahoo.vespa.hosted.controller.api.identifiers.RotationId;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,17 +30,16 @@ import java.util.stream.Collectors;
 public class ControllerRotationRepository implements RotationRepository {
 
     private static final Logger log = Logger.getLogger(ControllerRotationRepository.class.getName());
-
-    private static final String REMAINING_ROTATIONS_METRIC_NAME = "remaining_rotations";
-    private final Gauge remainingRotations;
+    public static final String REMAINING_ROTATIONS_METRIC_NAME = "remaining_rotations";
 
     private final ControllerDb controllerDb;
     private final Map<RotationId, Rotation> rotationsMap;
+    private final Metric metric;
 
-    public ControllerRotationRepository(RotationsConfig rotationConfig, ControllerDb controllerDb, MetricReceiver metricReceiver) {
+    public ControllerRotationRepository(RotationsConfig rotationConfig, ControllerDb controllerDb, Metric metric) {
         this.controllerDb = controllerDb;
         this.rotationsMap = buildRotationsMap(rotationConfig);
-        this.remainingRotations = metricReceiver.declareGauge(REMAINING_ROTATIONS_METRIC_NAME);
+        this.metric = metric;
     }
 
     private static Map<RotationId, Rotation> buildRotationsMap(RotationsConfig rotationConfig) {
@@ -73,7 +71,7 @@ public class ControllerRotationRepository implements RotationRepository {
                 .collect(Collectors.toSet());
         }
 
-        if( ! deploymentSpec.globalServiceId().isPresent()) {
+        if (!deploymentSpec.globalServiceId().isPresent()) {
             return Collections.emptySet();
         }
 
@@ -84,13 +82,12 @@ public class ControllerRotationRepository implements RotationRepository {
 
         if (productionZoneCount >= 2) {
             return assignRotation(applicationId);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
         }
     }
 
-    private boolean isCorp(DeploymentSpec.DeclaredZone zone) {
+    private static boolean isCorp(DeploymentSpec.DeclaredZone zone) {
         return zone.region().isPresent() && zone.region().get().value().contains("corp");
     }
 
@@ -139,7 +136,8 @@ public class ControllerRotationRepository implements RotationRepository {
         try {
             int freeRotationsCount = availableRotations().size();
             log.log(LogLevel.INFO, "Rotation: {0} global rotations remaining", freeRotationsCount);
-            remainingRotations.sample(freeRotationsCount);
+            metric.set(REMAINING_ROTATIONS_METRIC_NAME, freeRotationsCount,
+                       metric.createContext(Collections.emptyMap()));
         } catch (Exception e) {
             log.log(LogLevel.INFO, "Failed to report rotations metric", e);
         }
