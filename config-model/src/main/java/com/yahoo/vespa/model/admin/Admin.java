@@ -215,7 +215,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                                        fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
         }
 
-        FileDistributorService fds = new FileDistributorService(fileDistribution, host.getHost().getHostName(),
+        FileDistributorService fds = new FileDistributorService(fileDistribution, host.getHost().getHostname(),
             fileDistribution.getFileDistributor(), fileDistribution.getOptions(), host == deployHost);
         fds.setHostResource(host);
         fds.initService();

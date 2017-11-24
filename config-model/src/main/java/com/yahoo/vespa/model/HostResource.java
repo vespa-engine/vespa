@@ -207,7 +207,7 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     public HostInfo getHostInfo() {
-        return new HostInfo(getHostName(), services.values().stream()
+        return new HostInfo(getHostname(), services.values().stream()
                 .map(Service::getServiceInfo)
                 .collect(Collectors.toSet()));
     }
@@ -244,11 +244,11 @@ public class HostResource implements Comparable<HostResource> {
 
     @Override
     public String toString() {
-        return "host '" + host.getHostName() + "'";
+        return "host '" + host.getHostname() + "'";
     }
 
-    public String getHostName() {
-        return host.getHostName();
+    public String getHostname() {
+        return host.getHostname();
     }
 
     @Override
@@ -267,6 +267,19 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     /**
+     * Compares by the index of the primary membership, if both hosts are members in at least one cluster at this time.
+     * Compare by hostname otherwise.
+     */
+    public int comparePrimarilyByIndexTo(HostResource other) {
+        Optional<ClusterMembership> thisMembership = this.primaryClusterMembership();
+        Optional<ClusterMembership> otherMembership = other.primaryClusterMembership();
+        if (thisMembership.isPresent() && otherMembership.isPresent())
+            return Integer.compare(thisMembership.get().index(), otherMembership.get().index());
+        else
+            return this.getHostname().compareTo(other.getHostname());
+    }
+
+    /**
      * Picks hosts by some mixture of host name and index 
      * (where the mix of one or the other is decided by the last parameter).
      */
@@ -277,7 +290,7 @@ public class HostResource implements Comparable<HostResource> {
         Collections.sort(hostsSortedByName);
 
         List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
-        hostsSortedByIndex.sort(Comparator.comparingInt(host -> host.primaryClusterMembership().get().index()));
+        hostsSortedByIndex.sort((a, b) -> a.comparePrimarilyByIndexTo(b));
         return pickHosts(hostsSortedByName, hostsSortedByIndex, count, targetHostsSelectedByIndex);
     }
     public static List<HostResource> pickHosts(List<HostResource> hostsSelectedByName, List<HostResource> hostsSelectedByIndex, 

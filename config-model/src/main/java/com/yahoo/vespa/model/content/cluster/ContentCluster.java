@@ -7,10 +7,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -360,7 +357,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             // have one cluster controller
             List<HostResource> uniqueHostsWithoutClusterController = allHosts.stream()
                     .filter(h -> ! usedHosts.contains(h))
-                    .filter(h -> ! hostHasClusterController(h.getHostName(), allHosts))
+                    .filter(h -> ! hostHasClusterController(h.getHostname(), allHosts))
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -384,7 +381,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         /** Returns whether any host having the given hostname has a cluster controller */
         private boolean hostHasClusterController(String hostname, List<HostResource> hosts) {
             for (HostResource host : hosts) {
-                if ( ! host.getHostName().equals(hostname)) continue;
+                if ( ! host.getHostname().equals(hostname)) continue;
 
                 if (hasClusterController(host))
                     return true;
@@ -421,7 +418,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             List<HostResource> sortedHosts = new ArrayList<>(hosts);
             if (byIndex)
-                sortedHosts.sort(Comparator.comparingInt(host -> host.primaryClusterMembership().get().index()));
+                sortedHosts.sort((a, b) -> (a.comparePrimarilyByIndexTo(b)));
             else // by name
                 Collections.sort(sortedHosts);
             sortedHosts = sortedHosts.subList(0, Math.min(count, hosts.size()));

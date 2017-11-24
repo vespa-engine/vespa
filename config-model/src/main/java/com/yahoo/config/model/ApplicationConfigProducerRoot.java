@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 
@@ -207,7 +206,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
         builder.vespaVersion(vespaVersion.toSerializedForm());
         for (HostResource modelHost : getHostSystem().getHosts()) {
             builder.hosts(new Hosts.Builder()
-                    .name(modelHost.getHostName())
+                    .name(modelHost.getHostname())
                     .services(getServices(modelHost))
             );
         }
