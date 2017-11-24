@@ -22,7 +22,6 @@ public:
     typedef std::unique_ptr<FRTConfigRequest> UP;
     FRTConfigRequest(Connection * connection, const ConfigKey & key);
     ~FRTConfigRequest();
-    virtual bool verifyKey(const ConfigKey & key) const = 0;
 
     bool abort() override;
     bool isAborted() const override;
