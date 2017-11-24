@@ -28,6 +28,9 @@
       "name":"OperatorChangeApplicationMaintainer"
     },
     {
+      "name":"ProvisionedExpirer"
+    },
+    {
       "name":"RetiredEarlyExpirer"
     },
     {
