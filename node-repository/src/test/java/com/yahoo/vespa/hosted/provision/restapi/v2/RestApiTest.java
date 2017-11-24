@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -40,9 +39,20 @@ public class RestApiTest {
 
     private final static String responsesPath = "src/test/java/com/yahoo/vespa/hosted/provision/restapi/v2/responses/";
 
+    private JDisc container;
+
+    @Before
+    public void startContainer() {
+        container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(0), Networking.disable);
+    }
+
+    @After
+    public void stopContainer() {
+        container.close();
+    }
+
     /** This test gives examples of all the requests that can be made to nodes/v2 */
     @Test
-    @Ignore /** TODO re-enable this and verify correctness */
     public void test_requests() throws Exception {
         // GET
         assertFile(new Request("http://localhost:8080/nodes/v2/"), "root.json");
@@ -54,28 +64,28 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
 
         // GET with filters
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host2.yahoo.com%20host1.yahoo.com"), "application2-nodes.json");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterType=content"), "active-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host6.yahoo.com%20host2.yahoo.com"), "application2-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterType=content"), "content-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterId=id2"), "application2-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&application=tenant2.application2.instance2"), "application2-nodes.json");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=parent1.yahoo.com,parent.host.yahoo.com"), "parent-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=dockerhost1.yahoo.com"), "child-nodes.json");
 
         // POST restart command
         assertRestart(1, new Request("http://localhost:8080/nodes/v2/command/restart?hostname=host2.yahoo.com",
                          new byte[0], Request.Method.POST));
         assertRestart(2, new Request("http://localhost:8080/nodes/v2/command/restart?application=tenant2.application2.instance2",
                          new byte[0], Request.Method.POST));
-        assertRestart(4, new Request("http://localhost:8080/nodes/v2/command/restart",
+        assertRestart(9, new Request("http://localhost:8080/nodes/v2/command/restart",
                          new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"restartGeneration\":3");
 
         // POST reboot command
-        assertReboot(5, new Request("http://localhost:8080/nodes/v2/command/reboot?state=failed%20active",
+        assertReboot(10, new Request("http://localhost:8080/nodes/v2/command/reboot?state=failed%20active",
                         new byte[0], Request.Method.POST));
         assertReboot(2, new Request("http://localhost:8080/nodes/v2/command/reboot?application=tenant2.application2.instance2",
                         new byte[0], Request.Method.POST));
-        assertReboot(10, new Request("http://localhost:8080/nodes/v2/command/reboot",
+        assertReboot(15, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":4");
@@ -106,9 +116,9 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
         // DELETE a provisioned node
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Removed host11.yahoo.com\"}");
+                       "{\"message\":\"Removed host9.yahoo.com\"}");
 
         // PUT nodes ready
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host8.yahoo.com",
@@ -125,15 +135,15 @@ public class RestApiTest {
                        "{\"message\":\"Moved host8.yahoo.com to ready\"}");
 
         // PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host3.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host3.yahoo.com to failed\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host3.yahoo.com"),
+                       "{\"message\":\"Moved host2.yahoo.com to failed\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"state\":\"failed\"");
         // ... and put it back in active (after fixing). This is useful to restore data when multiple nodes fail.
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host3.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host3.yahoo.com to active\"}");
+                       "{\"message\":\"Moved host2.yahoo.com to active\"}");
 
         // PUT a node in parked ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/host8.yahoo.com",
@@ -147,30 +157,29 @@ public class RestApiTest {
                        "{\"message\":\"Removed host8.yahoo.com\"}");
 
         // or, PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host6.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-container-1",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host6.yahoo.com to failed\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"),
+                       "{\"message\":\"Moved test-container-1 to failed\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-container-1"),
                                            "\"state\":\"failed\"");
         // ... and deallocate it such that it moves to dirty and is recycled
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host6.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-container-1",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host6.yahoo.com to dirty\"}");
+                       "{\"message\":\"Moved test-container-1 to dirty\"}");
 
         // ... and set it back to ready as if this was from the node-admin with the temporary state rest api
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/availablefornewallocations/host6.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/availablefornewallocations/test-container-1",
                         new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved host6.yahoo.com to ready\"}");
+                "{\"message\":\"Marked following nodes as available for new allocation: test-container-1\"}");
 
         // Put a host in failed and make sure it's children are also failed
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/parent1.yahoo.com", new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved host10.yahoo.com, host5.yahoo.com, parent1.yahoo.com to failed\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved dockerhost1.yahoo.com, host4.yahoo.com to failed\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed"), "{\"nodes\":[" +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/parent1.yahoo.com\"}," +
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}," +
                 "{\"url\":\"http://localhost:8080/nodes/v2/node/host5.yahoo.com\"}," +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/host10.yahoo.com\"}]}");
-
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/host4.yahoo.com\"}]}");
 
         // Update (PATCH) a node (multiple fields can also be sent in one request body)
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -513,13 +522,6 @@ public class RestApiTest {
             assertFile(new Request("http://localhost:8080/nodes/v2/node/host" + i + ".yahoo.com"), "node" + i + ".json");
         }
     }
-
-    private JDisc container;
-    @Before
-    public void startContainer() {
-        container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(0), Networking.disable); }
-    @After
-    public void stopContainer() { container.close(); }
 
     private String asDockerNodeJson(String hostname, String parentHostname, int additionalIpCount, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
