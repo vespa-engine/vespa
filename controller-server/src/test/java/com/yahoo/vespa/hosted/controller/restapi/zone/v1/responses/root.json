@@ -1,18 +1,18 @@
 [
   {
     "name": "dev",
-    "url": "http://localhost:8080/zone/v2/environment/dev"
+    "url": "http://localhost:8080/zone/v1/environment/dev"
   },
   {
     "name": "prod",
-    "url": "http://localhost:8080/zone/v2/environment/prod"
+    "url": "http://localhost:8080/zone/v1/environment/prod"
   },
   {
     "name": "staging",
-    "url": "http://localhost:8080/zone/v2/environment/staging"
+    "url": "http://localhost:8080/zone/v1/environment/staging"
   },
   {
     "name": "test",
-    "url": "http://localhost:8080/zone/v2/environment/test"
+    "url": "http://localhost:8080/zone/v1/environment/test"
   }
 ]

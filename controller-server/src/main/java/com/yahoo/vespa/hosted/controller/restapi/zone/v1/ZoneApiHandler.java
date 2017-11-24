@@ -79,9 +79,8 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         environments.forEach(environment -> {
             Cursor object = root.addObject();
             object.setString("name", environment.value());
-            // Returning /zone/v2 is a bit strange, but that's what the original Jersey implementation did
             object.setString("url", request.getUri()
-                                           .resolve("/zone/v2/environment/")
+                                           .resolve("/zone/v1/environment/")
                                            .resolve(environment.value())
                                            .toString());
         });
@@ -97,12 +96,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         zones.forEach(zone -> {
             Cursor object = root.addObject();
             object.setString("name", zone.region().value());
-            object.setString("url", request.getUri()
-                                           .resolve("/zone/v2/environment/")
-                                           .resolve(environment.value() + "/")
-                                           .resolve("region/")
-                                           .resolve(zone.region().value())
-                                           .toString());
+            object.setString("url", request.getUri().toString());
         });
         return new SlimeJsonResponse(slime);
     }
@@ -115,12 +109,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("name", region.value());
-        root.setString("url", request.getUri()
-                                     .resolve("/zone/v2/environment/")
-                                     .resolve(environment.value() + "/")
-                                     .resolve("region/")
-                                     .resolve(region.value())
-                                     .toString());
+        root.setString("url", request.getUri().toString());
         return new SlimeJsonResponse(slime);
     }
 
