@@ -23,9 +23,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -121,4 +123,16 @@ public class ContainerControllerTester {
         containerTester.assertResponse(request, expectedResponse, expectedStatusCode);
     }
 
+    /*
+     * Authorize action on tenantDomain/application for a given screwdriverId
+     */
+    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, Application application) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
+
+        mock.getSetup()
+                .domains.get(tenantDomain)
+                .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.id().application().value()))
+                .addRoleMember(action, AthenzUtils.createPrincipal(screwdriverId));
+    }
 }

@@ -3,12 +3,14 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -21,10 +23,11 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -596,6 +599,55 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .domain("domain1").user(unauthorizedUser),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"User othertenant does not have write access to tenant tenant1\"}",
                               403);
+    }
+
+    @Test
+    public void deployment_fails_on_illegal_domain_in_deployment_spec() throws IOException {
+        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
+        ContainerTester tester = controllerTester.containerTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("invalid.domain"), AthenzService.from("service"))
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        long screwdriverProjectId = 123;
+        AthenzDomain domain = addTenantAthenzDomain(athenzUserDomain, "mytenant");
+
+        Application application = controllerTester.createApplication(athenzUserDomain, "tenant1", "application1");
+        controllerTester.authorize(domain, new ScrewdriverId(Long.toString(screwdriverProjectId)), ApplicationAction.deploy, application);
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .domain(athenzScrewdriverDomain).user("sd" + screwdriverProjectId),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Athenz domain in deployment.xml: [invalid.domain] must match tenant domain: [domain1]\"}",
+                              403);
+
+    }
+
+    @Test
+    public void deployment_succeeds_when_correct_domain_is_used() throws IOException {
+        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
+        ContainerTester tester = controllerTester.containerTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), AthenzService.from("service"))
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        long screwdriverProjectId = 123;
+        AthenzDomain domain = addTenantAthenzDomain(athenzUserDomain, "mytenant");
+
+        Application application = controllerTester.createApplication(athenzUserDomain, "tenant1", "application1");
+        controllerTester.authorize(domain, new ScrewdriverId(Long.toString(screwdriverProjectId)), ApplicationAction.deploy, application);
+
+        // Allow systemtest to succeed by notifying completion of system test
+        controllerTester.notifyJobCompletion(application.id(), screwdriverProjectId, true, DeploymentJobs.JobType.component);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .domain(athenzScrewdriverDomain).user("sd" + screwdriverProjectId),
+                              new File("deploy-result.json"));
+
     }
 
     private HttpEntity createApplicationDeployData(ApplicationPackage applicationPackage, Optional<Long> screwdriverJobId) {
