@@ -19,8 +19,9 @@ public class Issue {
     private final String label;
     private final User assignee;
     private final PropertyId propertyId;
+    private final Type type;
 
-    private Issue(String summary, String description, String label, User assignee, PropertyId propertyId) {
+    private Issue(String summary, String description, String label, User assignee, PropertyId propertyId, Type type) {
         if (summary.isEmpty()) throw new IllegalArgumentException("Issue summary can not be empty!");
         if (description.isEmpty()) throw new IllegalArgumentException("Issue description can not be empty!");
         Objects.requireNonNull(propertyId, "An issue must belong to a property!");
@@ -30,26 +31,31 @@ public class Issue {
         this.label = label;
         this.assignee = assignee;
         this.propertyId = propertyId;
+        this.type = type;
     }
 
     public Issue(String summary, String description, PropertyId propertyId) {
-        this(summary, description, null, null, propertyId);
+        this(summary, description, null, null, propertyId, Type.defect);
     }
 
     public Issue append(String appendage) {
-        return new Issue(summary, description + appendage, label, assignee, propertyId);
+        return new Issue(summary, description + appendage, label, assignee, propertyId, type);
     }
 
-    public Issue withLabel(String label) {
-        return new Issue(summary, description, label, assignee, propertyId);
+    public Issue with(String label) {
+        return new Issue(summary, description, label, assignee, propertyId, type);
     }
 
-    public Issue withAssignee(User assignee) {
-        return new Issue(summary, description, label, assignee, propertyId);
+    public Issue with(User assignee) {
+        return new Issue(summary, description, label, assignee, propertyId, type);
     }
 
-    public Issue withPropertyId(PropertyId propertyId) {
-        return new Issue(summary, description, label, assignee, propertyId);
+    public Issue with(PropertyId propertyId) {
+        return new Issue(summary, description, label, assignee, propertyId, type);
+    }
+
+    public Issue with(Type type) {
+        return new Issue(summary, description, label, assignee, propertyId, type);
     }
 
     public String summary() {
@@ -70,6 +76,18 @@ public class Issue {
 
     public PropertyId propertyId() {
         return propertyId;
+    }
+
+    public Type type() {
+        return type;
+    }
+
+
+    public enum Type {
+
+        defect, // A defect which needs fixing.
+        task    // A task the humans must perform.
+
     }
 
 }
