@@ -8,7 +8,9 @@ vespa_add_library(config_frt OBJECT
     frtconfigresponse.cpp
     frtsourcefactory.cpp
     frtconfigagent.cpp
+    frtconfigrequestv2.cpp
     frtconfigrequestfactory.cpp
+    frtconfigresponsev2.cpp
     protocol.cpp
     slimeconfigrequest.cpp
     slimeconfigresponse.cpp
