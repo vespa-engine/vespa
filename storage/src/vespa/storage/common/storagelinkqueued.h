@@ -19,6 +19,8 @@
 #include <vespa/vespalib/util/document_runnable.h>
 #include <deque>
 #include <limits>
+#include <mutex>
+#include <condition_variable>
 
 namespace storage {
 
@@ -75,7 +77,8 @@ private:
     protected:
         StorageLinkQueued& _parent;
         unsigned int _maxQueueSize;
-        vespalib::Monitor _sync;
+        std::mutex              _sync;
+        std::condition_variable _syncCond;
         std::deque< std::shared_ptr<Message> > _messages;
         bool _replyDispatcher;
         std::unique_ptr<framework::Component> _component;
