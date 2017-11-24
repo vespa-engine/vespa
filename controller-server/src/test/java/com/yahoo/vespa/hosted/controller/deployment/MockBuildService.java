@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -27,18 +28,16 @@ import static com.yahoo.vespa.hosted.controller.deployment.MockBuildService.JobR
  */
 public class MockBuildService implements BuildService {
 
-    private final ControllerTester tester;
+    private final ApplicationController applications;
     private final MockTimeline timeline;
     private final Map<String, Job> jobs;
     private final Map<String, JobRunStatus> jobStatuses;
-    private Version version;
 
     public MockBuildService(ControllerTester tester, MockTimeline timeline) {
-        this.tester = tester;
+        this.applications = tester.controller().applications();
         this.timeline = timeline;
         jobs = new HashMap<>();
         jobStatuses = new HashMap<>();
-        version = new Version(6, 86);
     }
 
     /** Simulates the triggering of a Screwdriver job, where jobs are queued if already running. */
@@ -150,11 +149,11 @@ public class MockBuildService implements BuildService {
 
             JobError jobError = this.error.get();
             System.err.println(timeline.now() + ": Job " + projectId + ":" + jobType + " reports " + (jobError == null ? " success " : jobError));
-            tester.controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId,
-                                                                                                jobType,
-                                                                                                projectId,
-                                                                                                ++buildNumber,
-                                                                                                Optional.ofNullable(jobError)));
+            applications.notifyJobCompletion(new DeploymentJobs.JobReport(applicationId,
+                                                                          jobType,
+                                                                          projectId,
+                                                                          ++buildNumber,
+                                                                          Optional.ofNullable(jobError)));
         }
 
         private BuildJob buildJob() { return new BuildJob(projectId, jobType.jobName()); }

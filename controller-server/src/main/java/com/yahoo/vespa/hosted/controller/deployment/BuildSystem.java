@@ -11,16 +11,17 @@ import java.util.List;
  * @author jvenstad
  * @author mpolden
  */
+// TODO: Remove, and let PushingBuildSystem take its place, with a mock BuildService for testing.
 public interface BuildSystem {
 
     /**
      * Add a job for the given application to the build system
      *
-     * @param application the application owning the job
+     * @param applicationId the ID of the application owning the job
      * @param jobType the job type to be queued
      * @param first whether the job should be added to the front of the queue
      */
-    void addJob(ApplicationId application, JobType jobType, boolean first);
+    void addJob(ApplicationId applicationId, JobType jobType, boolean first);
 
     /** Remove and return a list of jobs which should be run now */
     List<BuildJob> takeJobsToRun();

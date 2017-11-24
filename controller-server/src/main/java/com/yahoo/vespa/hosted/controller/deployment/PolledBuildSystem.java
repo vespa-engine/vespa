@@ -38,14 +38,14 @@ public class PolledBuildSystem implements BuildSystem {
     }
 
     @Override
-    public void addJob(ApplicationId application, JobType jobType, boolean first) {
+    public void addJob(ApplicationId applicationId, JobType jobType, boolean first) {
         try (Lock lock = curator.lockJobQueues()) {
             Deque<ApplicationId> queue = curator.readJobQueue(jobType);
-            if ( ! queue.contains(application)) {
+            if ( ! queue.contains(applicationId)) {
                 if (first) {
-                    queue.addFirst(application);
+                    queue.addFirst(applicationId);
                 } else {
-                    queue.add(application);
+                    queue.add(applicationId);
                 }
             }
             curator.writeJobQueue(jobType, queue);
