@@ -5,16 +5,21 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.io.IOUtils;
+import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.logging.Logger;
 
 public class FileDirectory  {
@@ -94,6 +99,7 @@ public class FileDirectory  {
     public FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
         try {
+            logfileInfo(source);
             File destinationDir = new File(root, reference.value());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
@@ -102,7 +108,7 @@ public class FileDirectory  {
                 if (source.isDirectory())
                     IOUtils.copyDirectory(source, destination);
                 else
-                    IOUtils.copy(source, destination);
+                    copyFile(source, destination);
                 if (!destinationDir.exists()) {
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
                         log.warning("Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
@@ -115,6 +121,20 @@ public class FileDirectory  {
             return reference;
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    private void logfileInfo(File file ) throws IOException {
+        BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+        log.log(LogLevel.DEBUG, "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
+                ", modified " + basicFileAttributes.lastModifiedTime() +
+                ", size " + basicFileAttributes.size() + ")");
+    }
+
+    private static void copyFile(File source, File dest) throws IOException {
+        try (FileChannel sourceChannel = new FileInputStream(source).getChannel();
+             FileChannel destChannel = new FileOutputStream(dest).getChannel()) {
+            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
         }
     }
 }
