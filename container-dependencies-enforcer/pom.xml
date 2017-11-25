@@ -62,8 +62,9 @@
                                     <rules>
                                         <bannedDependencies>
                                             <excludes>
-                                                <!-- Only allow explicitly listed deps in provided scope -->
+                                                <!-- Only allow explicitly listed deps in provided and compile scope -->
                                                 <exclude>*:*:*:jar:provided:*</exclude>
+                                                <exclude>*:*:*:jar:compile:*</exclude>
                                             </excludes>
                                             <includes>
                                                 <include>com.yahoo.vespa</include>
