@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
 #include <vespa/vespalib/metrics/simple_metrics_manager.h>
-#include <vespa/vespalib/metrics/no_realloc_bunch.h>
+#include <vespa/vespalib/metrics/stable_store.h>
 #include <vespa/vespalib/metrics/json_formatter.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -12,7 +12,7 @@ using namespace vespalib::metrics;
 
 TEST("require that simple metrics gauge merge works")
 {
-    MetricIdentifier id(42);
+    MetricIdentifier id(MetricName(42));
     GaugeAggregator a(id), b(id), c(id);
     b.observedCount = 3;
     b.sumValue = 24.0;
@@ -52,44 +52,6 @@ TEST("require that simple metrics gauge merge works")
     EXPECT_EQUAL(a.lastValue, 1.0);
 }
 
-struct Foo {
-    int a;
-    char *p;
-    explicit Foo(int v) : a(v), p(nullptr) {}
-    bool operator==(const Foo &other) const {
-        return a == other.a;
-    }
-};
-
-TEST("require that no_realloc_bunch works")
-{
-    vespalib::NoReallocBunch<Foo> bunch;
-    bunch.add(Foo(1));
-    bunch.add(Foo(2));
-    bunch.add(Foo(3));
-    bunch.add(Foo(5));
-    bunch.add(Foo(8));
-    bunch.add(Foo(13));
-    bunch.add(Foo(21));
-    bunch.add(Foo(34));
-    bunch.add(Foo(55));
-    bunch.add(Foo(89));
-
-    EXPECT_EQUAL(bunch.size(), 10u);
-
-    int sum = 0;
-
-    bunch.apply([&sum](const Foo& value) { sum += value.a; });
-    EXPECT_EQUAL(231, sum);
-
-    const Foo& val = bunch.lookup(8);
-    EXPECT_TRUE(Foo(55) == val);
-
-    for (int i = 0; i < 20000; ++i) {
-        bunch.add(Foo(i));
-    }
-    EXPECT_TRUE(Foo(19999) == bunch.lookup(20009));
-}
 
 TEST("use simple_metrics_collector")
 {
@@ -132,9 +94,11 @@ TEST("use simple_metrics_collector")
     myGauge.sample(14.0, two);
     myGauge.sample(11.0, three);
 
- // sleep(2);
+    for (int i = 0; i < 61; ++i) {
+        ((SimpleMetricsManager &)*manager).tick();
+    }
 
-    Snapshot snap = manager->snapshot();
+    Snapshot snap = manager->totalSnapshot();
     fprintf(stdout, "snap begin: %15f\n", snap.startTime());
     fprintf(stdout, "snap end: %15f\n", snap.endTime());
 

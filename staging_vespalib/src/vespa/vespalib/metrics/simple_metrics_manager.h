@@ -5,11 +5,14 @@
 #include <thread>
 #include <vespa/vespalib/stllike/string.h>
 #include "name_collection.h"
-#include "mergers.h"
+#include "current_samples.h"
 #include "snapshots.h"
 #include "metrics_manager.h"
 #include "metric_types.h"
 #include "clock.h"
+#include "point_map_collection.h"
+#include "bucket.h"
+#include "ticker_thread.h"
 
 namespace vespalib {
 namespace metrics {
@@ -26,7 +29,7 @@ struct SimpleManagerConfig {
  * single global repo with std::mutex locks used around
  * most operations.  Only implements sliding window
  * and a fixed (1 Hz) collecting interval.
- * Consider renaming to "LockingManager" or "SlidingWindowManager".
+ * XXX: Consider renaming this to "SlidingWindowManager".
  **/
 class SimpleMetricsManager : public MetricsManager
 {
@@ -35,12 +38,7 @@ private:
     MetricTypes _metricTypes;
     NameCollection _dimensionNames;
     NameCollection _labelValues;
-    using PointMapMap = std::map<PointMap, size_t>;
-    struct {
-        std::mutex lock;
-        PointMapMap map;
-        std::vector<PointMapMap::const_iterator> vec;
-    } _pointMaps;
+    PointMapCollection _pointMaps;
 
     const vespalib::string& nameFor(Dimension dimension) { return _dimensionNames.lookup(dimension.id()); }
     const vespalib::string& valueFor(Label label) { return _labelValues.lookup(label.id()); }
@@ -54,12 +52,12 @@ private:
     std::vector<Bucket> _buckets;
     size_t _firstBucket;
     size_t _maxBuckets;
+    Bucket _totalsBucket;
 
-    bool _stopFlag;
-    std::thread _collectorThread;
-    static void doCollectLoop(SimpleMetricsManager *me);
+    TickerThread _ticker;
     void collectCurrentBucket(); // called once per second from another thread
     Bucket mergeBuckets();
+    Snapshot snapshotFrom(const Bucket &bucket);
 
     SimpleMetricsManager(const SimpleManagerConfig &config);
 public:
@@ -71,17 +69,20 @@ public:
     Dimension dimension(const vespalib::string &name) override;
     Label label(const vespalib::string &value) override;
     PointBuilder pointBuilder(Point from) override;
-    Point pointFrom(PointMapBacking &&map) override;
+    Point pointFrom(PointMap::BackingMap map) override;
     Snapshot snapshot() override;
+    Snapshot totalSnapshot() override;
 
     // for use from Counter only
-    void add(CounterIncrement inc) override {
+    void add(Counter::Increment inc) override {
         _currentBucket.add(inc);
     }
     // for use from Gauge only
-    void sample(GaugeMeasurement value) override {
+    void sample(Gauge::Measurement value) override {
         _currentBucket.sample(value);
     }
+
+    void tick() { collectCurrentBucket(); }
 };
 
 } // namespace vespalib::metrics

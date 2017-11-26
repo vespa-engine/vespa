@@ -9,16 +9,16 @@
 namespace vespalib {
 
 template <typename T>
-class NoReallocBunch
+class StableStore
 {
-    using MyClass = NoReallocBunch<T>;
+    using MyClass = StableStore<T>;
     template<typename U>
-    friend void swap(NoReallocBunch<U> &a, NoReallocBunch<U> &b);
+    friend void swap(StableStore<U> &a, StableStore<U> &b);
 public:
     typedef std::unique_ptr<MyClass> UP;
 
-    NoReallocBunch();
-    ~NoReallocBunch() {}
+    StableStore();
+    ~StableStore() {}
 
     void add(T t) {
         size_t sz = _mine.size();
@@ -33,7 +33,7 @@ public:
     }
 
     template<typename FUNC>
-    void apply(FUNC &&func) const {
+    void for_each(FUNC &&func) const {
         std::vector<const MyClass *> vv;
         dffill(vv);
         for (const MyClass *p : vv) {
@@ -45,28 +45,13 @@ public:
 
     size_t size() const { return _size; }
 
-    const T& lookup(size_t idx) const {
-        assert(idx < _size);
-        std::vector<const MyClass *> vv;
-        dffill(vv);
-        for (const MyClass *p : vv) {
-            size_t sz = p->_mine.size();
-            if (idx < sz) {
-                return p->_mine[idx];
-            }
-            idx -= sz;
-        }
-        // assert:
-        return *((T*)nullptr);
-    }
-
 private:
     void dffill(std::vector<const MyClass *> &vv) const {
         if (_more) { _more->dffill(vv); }
         vv.push_back(this);
     }
 
-    NoReallocBunch(size_t sz, UP &&more, std::vector<T> &&mine);
+    StableStore(size_t sz, UP &&more, std::vector<T> &&mine);
 
     size_t _size;
     UP _more;
@@ -74,7 +59,7 @@ private:
 };
 
 template<typename T>
-NoReallocBunch<T>::NoReallocBunch()
+StableStore<T>::StableStore()
     : _size(0),
       _more(),
       _mine()
@@ -83,15 +68,15 @@ NoReallocBunch<T>::NoReallocBunch()
 }
 
 template<typename T>
-NoReallocBunch<T>::NoReallocBunch(size_t sz, UP &&more, std::vector<T> &&mine)
+StableStore<T>::StableStore(size_t sz, UP &&more, std::vector<T> &&mine)
     : _size(sz),
       _more(std::move(more)),
       _mine(std::move(mine))
 {}
 
 template <typename T>
-void swap(NoReallocBunch<T> &a,
-          NoReallocBunch<T> &b)
+void swap(StableStore<T> &a,
+          StableStore<T> &b)
 {
     using std::swap;
     swap(a._size, b._size);

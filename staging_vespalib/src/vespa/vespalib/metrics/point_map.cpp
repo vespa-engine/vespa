@@ -5,11 +5,11 @@
 namespace vespalib {
 namespace metrics {
 
-PointMap::PointMap(PointMapBacking &&from)
+PointMap::PointMap(BackingMap &&from)
     : _map(std::move(from)),
       _hash(0)
 {
-    for (const PointMapBacking::value_type &entry : _map) {
+    for (const BackingMap::value_type &entry : _map) {
         _hash = (_hash << 7) + (_hash >> 31) + entry.first.id();
         _hash = (_hash << 7) + (_hash >> 31) + entry.second.id();
     }
@@ -19,21 +19,26 @@ bool
 PointMap::operator< (const PointMap &other) const
 {
     // cheap comparison first
-    if (_hash < other._hash) return true;
-    if (_hash > other._hash) return false;
+    if (_hash != other._hash) {
+        return _hash < other._hash;
+    }
+    if (_map.size() != other._map.size()) {
+        return _map.size() < other._map.size();
+    }
+    // sizes equal, iterate in parallel
     auto m = _map.begin();
     auto o = other._map.begin();
     while (m != _map.end()) {
-         size_t my_f = m->first.id();
-         size_t ot_f = o->first.id();
-         if (my_f < ot_f) return true;
-         if (my_f > ot_f) return false;
-
-         size_t my_s = m->second.id();
-         size_t ot_s = o->second.id();
-         if (my_s < ot_s) return true;
-         if (my_s > ot_s) return false;
-
+         const Dimension& d1 = m->first;
+         const Dimension& d2 = o->first;
+         if (d1 != d2) {
+             return d1 < d2;
+         }
+         const Label &l1 = m->second;
+         const Label &l2 = o->second;
+         if (l1 != l2) {
+             return l1 != l2;
+         }
          ++m;
          ++o;
     }

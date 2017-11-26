@@ -9,11 +9,14 @@ DummyMetricsManager::~DummyMetricsManager() {}
 Snapshot
 DummyMetricsManager::snapshot()
 {
-    InternalTimeStamp endTime = now_stamp();
-    std::chrono::microseconds s = since_epoch(_startTime);
-    std::chrono::microseconds e = since_epoch(endTime);
-    const double micro = 0.000001;
-    Snapshot snap(s.count() * micro, e.count() * micro);
+    Snapshot snap(0, 0);
+    return snap;
+}
+
+Snapshot
+DummyMetricsManager::totalSnapshot()
+{
+    Snapshot snap(0, 0);
     return snap;
 }
 

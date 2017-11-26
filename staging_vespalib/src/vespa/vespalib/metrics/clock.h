@@ -4,6 +4,7 @@
 #include <chrono>
 
 namespace vespalib {
+namespace metrics {
 
 using InternalClock = std::chrono::steady_clock;
 using InternalTimeStamp = std::chrono::time_point<std::chrono::steady_clock,
@@ -20,4 +21,5 @@ inline InternalTimeStamp now_stamp()
 
 std::chrono::microseconds since_epoch(InternalTimeStamp stamp);
 
+} // namespace metrics
 } // namespace vespalib

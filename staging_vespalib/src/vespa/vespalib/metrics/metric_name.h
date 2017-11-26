@@ -7,12 +7,11 @@ namespace vespalib {
 namespace metrics {
 
 /**
- * Opaque handle representing an unique N-dimensional point
+ * Opaque handle representing an uniquely named metric.
  **/
-class Point : public Handle<Point> {
+class MetricName : public Handle<MetricName> {
 public:
-    static Point empty;
-    explicit Point(size_t id) : Handle<Point>(id) {}
+    explicit MetricName(size_t id) : Handle<MetricName>(id) {}
 };
 
 } // namespace vespalib::metrics

@@ -66,7 +66,7 @@ JsonFormatter::handle(const PointSnapshot &snapshot, vespalib::slime::Cursor &ta
         return;
     }
     Cursor& inner = target.setObject("dimensions");
-    for (const AxisMeasure &entry : snapshot.dimensions) {
+    for (const DimensionBinding &entry : snapshot.dimensions) {
         inner.setString(entry.dimensionName(), entry.labelValue());
     }
 }

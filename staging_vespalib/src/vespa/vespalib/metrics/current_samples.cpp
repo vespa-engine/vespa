@@ -1,18 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "counter.h"
-#include "metrics_manager.h"
+#include "current_samples.h"
 
 namespace vespalib {
 namespace metrics {
 
-
-void
-Counter::add(size_t count, Point point) const
+void swap(CurrentSamples& a, CurrentSamples& b)
 {
-    if (_manager) {
-        MetricIdentifier fullId(_id, point);
-        _manager->add(Increment(fullId, count));
-    }
+    using std::swap;
+    swap(a.counterIncrements, b.counterIncrements);
+    swap(a.gaugeMeasurements, b.gaugeMeasurements);
 }
 
 } // namespace vespalib::metrics

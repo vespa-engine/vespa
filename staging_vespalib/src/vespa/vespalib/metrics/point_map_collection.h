@@ -4,24 +4,25 @@
 #include <mutex>
 #include <map>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
+#include "point_map.h"
 
 namespace vespalib {
 namespace metrics {
 
-class NameCollection {
+class PointMapCollection {
 private:
-    using Map = std::map<vespalib::string, size_t>;
+    using PointMapMap = std::map<PointMap, size_t>;
+
     mutable std::mutex _lock;
-    Map _names;
-    std::vector<Map::const_iterator> _names_by_id;
+    PointMapMap _map;
+    std::vector<PointMapMap::const_iterator> _vec;
 public:
-    const vespalib::string &lookup(size_t id) const;
-    size_t resolve(const vespalib::string& name);
+    const PointMap &lookup(size_t id);
+    size_t resolve(PointMap map);
     size_t size() const;
 
-    NameCollection() = default;
-    ~NameCollection() {}
+    PointMapCollection() = default;
+    ~PointMapCollection() {}
 };
 
 } // namespace vespalib::metrics

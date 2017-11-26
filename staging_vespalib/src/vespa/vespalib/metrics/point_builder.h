@@ -15,11 +15,11 @@ class MetricsManager;
 class PointBuilder {
 private:
     std::shared_ptr<MetricsManager> _owner;
-    PointMapBacking _map;
+    PointMap::BackingMap _map;
 
 public:
     PointBuilder(std::shared_ptr<MetricsManager> m);
-    PointBuilder(std::shared_ptr<MetricsManager> m, const PointMapBacking &from);
+    PointBuilder(std::shared_ptr<MetricsManager> m, const PointMap::BackingMap &from);
     ~PointBuilder() {}
 
     PointBuilder &&bind(Dimension dimension, Label label) &&;

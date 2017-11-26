@@ -11,34 +11,33 @@ namespace metrics {
 class MetricsManager;
 class CounterAggregator;
 
-struct CounterIncrement {
-    MetricIdentifier idx;
-    size_t value;
-    CounterIncrement() = delete;
-    CounterIncrement(MetricIdentifier id, size_t v) : idx(id), value(v) {}
-};
 
 class Counter {
     std::shared_ptr<MetricsManager> _manager;
-    MetricIdentifier _idx;
-    MetricIdentifier ident() const { return _idx; }
+    MetricName _id;
 public:
-    Counter() : _manager(), _idx() {}
+    Counter() : _manager(), _id(0) {}
     Counter(const Counter&) = delete;
     Counter(Counter &&other) = default;
     Counter& operator= (const Counter &) = delete;
     Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsManager> m, MetricIdentifier id)
-        : _manager(std::move(m)), _idx(id)
+    Counter(std::shared_ptr<MetricsManager> m, MetricName id)
+        : _manager(std::move(m)), _id(id)
     {}
 
-    void add() const;
-    void add(size_t count) const;
-    void add(Point p) const;
-    void add(size_t count, Point p) const;
+    void add() const { add(1, Point::empty); }
+    void add(Point p) { add(1, p); }
+    void add(size_t count, Point p = Point::empty) const;
+
+    struct Increment {
+        MetricIdentifier idx;
+        size_t value;
+        Increment() = delete;
+        Increment(MetricIdentifier id, size_t v) : idx(id), value(v) {}
+    };
 
     typedef CounterAggregator aggregator_type;
-    typedef CounterIncrement sample_type;
+    typedef Increment sample_type;
 };
 
 } // namespace vespalib::metrics
