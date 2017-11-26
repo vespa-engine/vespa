@@ -2,37 +2,41 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include "mergers.h"
+#include <vector>
+#include "counter_aggregator.h"
+#include "gauge_aggregator.h"
 
 namespace vespalib {
 namespace metrics {
 
-class AxisMeasure {
+class DimensionBinding {
 private:
-    const vespalib::string &_dimensionName;
-    const vespalib::string &_labelValue;
+    const vespalib::string _dimensionName;
+    const vespalib::string _labelValue;
 public:
     const vespalib::string &dimensionName() const { return _dimensionName; }
     const vespalib::string &labelValue() const { return _labelValue; }
-    AxisMeasure(const vespalib::string &a,
-                const vespalib::string &v)
+    DimensionBinding(const vespalib::string &a,
+                     const vespalib::string &v)
         : _dimensionName(a), _labelValue(v)
     {}
+    ~DimensionBinding() {}
 };
 
 struct PointSnapshot {
-    std::vector<AxisMeasure> dimensions;
+    std::vector<DimensionBinding> dimensions;
 };
 
 class CounterSnapshot {
 private:
-    const vespalib::string &_name;
+    const vespalib::string _name;
     const PointSnapshot &_point;
     const size_t _count;
 public:
     CounterSnapshot(const vespalib::string &n, const PointSnapshot &p, const CounterAggregator &c)
         : _name(n), _point(p), _count(c.count)
     {}
+    ~CounterSnapshot() {}
     const vespalib::string &name() const { return _name; }
     const PointSnapshot &point() const { return _point; }
     size_t count() const { return _count; }
@@ -40,7 +44,7 @@ public:
 
 class GaugeSnapshot {
 private:
-    const vespalib::string &_name;
+    const vespalib::string _name;
     const PointSnapshot &_point;
     const size_t _observedCount;
     const double _averageValue;
@@ -57,6 +61,7 @@ public:
           _maxValue(c.maxValue),
           _lastValue(c.lastValue)
     {}
+    ~GaugeSnapshot() {}
     const vespalib::string &name() const { return _name; }
     const PointSnapshot &point() const { return _point; }
     size_t observedCount() const { return _observedCount; }
@@ -91,6 +96,7 @@ public:
     Snapshot(double s, double e)
         : _start(s), _end(e), _counters(), _gauges()
     {}
+    ~Snapshot() {}
     void add(const PointSnapshot &entry)   { _points.push_back(entry); }
     void add(const CounterSnapshot &entry) { _counters.push_back(entry); }
     void add(const GaugeSnapshot &entry)   { _gauges.push_back(entry); }

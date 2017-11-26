@@ -12,7 +12,7 @@ class MetricTypes {
     static const char *_typeNames[];
 public:
     enum MetricType {
-        NONE,
+        INVALID,
         COUNTER,
         GAUGE,
         HISTOGRAM,

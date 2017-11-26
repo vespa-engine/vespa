@@ -20,18 +20,17 @@ SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config)
       _buckets(),
       _firstBucket(0),
       _maxBuckets(config.sliding_window_seconds),
-      _stopFlag(false),
-      _collectorThread(doCollectLoop, this)
+      _totalsBucket(_startTime, _startTime),
+      _ticker(this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
-    Point empty = pointFrom(PointMapBacking());
+    Point empty = pointFrom(PointMap::BackingMap());
     assert(empty.id() == 0);
 }
 
 SimpleMetricsManager::~SimpleMetricsManager()
 {
-    _stopFlag = true;
-    _collectorThread.join();
+    _ticker.stop();
 }
 
 
@@ -46,18 +45,18 @@ Counter
 SimpleMetricsManager::counter(const vespalib::string &name)
 {
     size_t id = _metricNames.resolve(name);
-    _metricTypes.check(id, name, MetricTypes::COUNTER);
-    LOG(debug, "metric name %s -> %zd", name.c_str(), id);
-    return Counter(shared_from_this(), MetricIdentifier(id));
+    _metricTypes.check(id, name, MetricTypes::MetricType::COUNTER);
+    LOG(debug, "counter with metric name %s -> %zd", name.c_str(), id);
+    return Counter(shared_from_this(), MetricName(id));
 }
 
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name)
 {
     size_t id = _metricNames.resolve(name);
-    _metricTypes.check(id, name, MetricTypes::GAUGE);
-    LOG(debug, "metric name %s -> %zd", name.c_str(), id);
-    return Gauge(shared_from_this(), MetricIdentifier(id));
+    _metricTypes.check(id, name, MetricTypes::MetricType::GAUGE);
+    LOG(debug, "gauge with metric name %s -> %zd", name.c_str(), id);
+    return Gauge(shared_from_this(), MetricName(id));
 }
 
 Bucket
@@ -78,36 +77,34 @@ SimpleMetricsManager::mergeBuckets()
 }
 
 Snapshot
-SimpleMetricsManager::snapshot()
+SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
 {
-    Bucket merged = mergeBuckets();
     std::vector<PointSnapshot> points;
 
-    std::chrono::microseconds s = since_epoch(merged.startTime);
-    std::chrono::microseconds e = since_epoch(merged.endTime);
+    std::chrono::microseconds s = since_epoch(bucket.startTime);
+    std::chrono::microseconds e = since_epoch(bucket.endTime);
     const double micro = 0.000001;
     Snapshot snap(s.count() * micro, e.count() * micro);
     {
-        Guard guard(_pointMaps.lock);
-        for (auto entry : _pointMaps.vec) {
-             const PointMapBacking &map = entry->first.backing();
+        for (size_t i = 0; i < _pointMaps.size(); ++i) {
+             const PointMap::BackingMap &map = _pointMaps.lookup(i).backingMap();
              PointSnapshot point;
-             for (const PointMapBacking::value_type &kv : map) {
+             for (const PointMap::BackingMap::value_type &kv : map) {
                  point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
              }
              snap.add(point);
         }
     }
-    for (const CounterAggregator& entry : merged.counters) {
-        size_t ni = entry.idx.name_idx;
-        size_t pi = entry.idx.point_idx;
+    for (const CounterAggregator& entry : bucket.counters) {
+        size_t ni = entry.idx.name().id();
+        size_t pi = entry.idx.point().id();
         const vespalib::string &name = _metricNames.lookup(ni);
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
-    for (const GaugeAggregator& entry : merged.gauges) {
-        size_t ni = entry.idx.name_idx;
-        size_t pi = entry.idx.point_idx;
+    for (const GaugeAggregator& entry : bucket.gauges) {
+        size_t ni = entry.idx.name().id();
+        size_t pi = entry.idx.point().id();
         const vespalib::string &name = _metricNames.lookup(ni);
         GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
@@ -115,19 +112,18 @@ SimpleMetricsManager::snapshot()
     return snap;
 }
 
-void
-SimpleMetricsManager::doCollectLoop(SimpleMetricsManager *me)
+Snapshot
+SimpleMetricsManager::snapshot()
 {
-    const std::chrono::milliseconds jiffy{20};
-    const std::chrono::seconds oneSec{1};
-    while (!me->_stopFlag) {
-        std::this_thread::sleep_for(jiffy);
-        InternalTimeStamp now = now_stamp();
-        InternalTimeStamp::duration elapsed = now - me->_curTime;
-        if (elapsed >= oneSec) {
-            me->collectCurrentBucket();
-        }
-    }
+    Bucket merged = mergeBuckets();
+    return snapshotFrom(merged);
+}
+
+Snapshot
+SimpleMetricsManager::totalSnapshot()
+{
+    Guard guard(_bucketsLock);
+    return snapshotFrom(_totalsBucket);
 }
 
 void
@@ -141,15 +137,15 @@ SimpleMetricsManager::collectCurrentBucket()
         Guard guard(_currentBucket.lock);
         swap(samples, _currentBucket);
     }
+    Bucket newBucket(prev, curr);
+    newBucket.merge(samples);
 
-    Bucket merger(prev, curr);
     Guard guard(_bucketsLock);
+    _totalsBucket.merge(newBucket);
     if (_buckets.size() < _maxBuckets) {
-        _buckets.push_back(merger);
-        _buckets.back().merge(samples);
+        _buckets.emplace_back(std::move(newBucket));
     } else {
-        merger.merge(samples);
-        swap(_buckets[_firstBucket], merger);
+        _buckets[_firstBucket] = std::move(newBucket);
         _firstBucket = (_firstBucket + 1) % _buckets.size();
     }
     _curTime = curr;
@@ -174,24 +170,15 @@ SimpleMetricsManager::label(const vespalib::string &value)
 PointBuilder
 SimpleMetricsManager::pointBuilder(Point from)
 {
-    Guard guard(_pointMaps.lock);
-    const PointMap &map = _pointMaps.vec[from.id()]->first;
-    return PointBuilder(shared_from_this(), map.backing());
+    const PointMap &map = _pointMaps.lookup(from.id());
+    return PointBuilder(shared_from_this(), map.backingMap());
 }
 
 Point
-SimpleMetricsManager::pointFrom(PointMapBacking &&map)
+SimpleMetricsManager::pointFrom(PointMap::BackingMap map)
 {
-    Guard guard(_pointMaps.lock);
-    size_t nextId = _pointMaps.vec.size();
-    auto iter_check = _pointMaps.map.emplace(std::move(map), nextId);
-    if (iter_check.second) {
-        LOG(debug, "new point map -> %zd / %zd", nextId, iter_check.first->second);
-        _pointMaps.vec.push_back(iter_check.first);
-    } else {
-        LOG(debug, "found point map -> %zd", iter_check.first->second);
-    }
-    return Point(iter_check.first->second);
+    size_t id = _pointMaps.resolve(PointMap(std::move(map)));
+    return Point(id);
 }
 
 } // namespace vespalib::metrics

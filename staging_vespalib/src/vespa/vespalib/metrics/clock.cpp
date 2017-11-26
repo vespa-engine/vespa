@@ -2,6 +2,7 @@
 #include "clock.h"
 
 namespace vespalib {
+namespace metrics {
 
 std::chrono::microseconds since_epoch(InternalTimeStamp stamp)
 {
@@ -24,4 +25,5 @@ std::chrono::microseconds since_epoch(InternalTimeStamp stamp)
     return microseconds(stampms + difference + adjust);
 }
 
+} // namespace metrics
 } // namespace vespalib

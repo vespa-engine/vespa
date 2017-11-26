@@ -2,18 +2,19 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include "handle.h"
 
 namespace vespalib {
 namespace metrics {
 
 using DimensionName = vespalib::string;
 
-class Dimension {
-    const size_t _dimension_idx;
+/**
+ * Opaque handle representing an uniquely named dimension.
+ **/
+class Dimension : public Handle<Dimension> {
 public:
-    size_t id() const { return _dimension_idx; }
-    Dimension(size_t id) : _dimension_idx(id) {}
-    bool operator< (const Dimension &other) const { return id() < other.id(); }
+    explicit Dimension(size_t id) : Handle<Dimension>(id) {}
 };
 
 } // namespace vespalib::metrics

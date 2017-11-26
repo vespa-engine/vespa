@@ -2,17 +2,19 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include "handle.h"
 
 namespace vespalib {
 namespace metrics {
 
 using LabelValue = vespalib::string;
 
-class Label {
-    const size_t _coord_idx;
+/**
+ * Opaque handle representing an uniquely named label.
+ **/
+class Label : public Handle<Label> {
 public:
-    size_t id() const { return _coord_idx; }
-    Label(size_t id) : _coord_idx(id) {}
+    explicit Label(size_t id) : Handle<Label>(id) {}
 };
 
 } // namespace vespalib::metrics

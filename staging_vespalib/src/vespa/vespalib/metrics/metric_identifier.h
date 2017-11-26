@@ -1,35 +1,39 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstddef>
+#include "metric_name.h"
+#include "point.h"
 #include <functional>
 
 namespace vespalib {
 namespace metrics {
 
 struct MetricIdentifier {
-    const size_t name_idx;
-    const size_t point_idx;
+    const MetricName _name;
+    const Point _point;
 
-    MetricIdentifier() : name_idx(-1), point_idx(0) {}
+    MetricIdentifier() = delete;
 
-    explicit MetricIdentifier(size_t id)
-      : name_idx(id), point_idx(0) {}
+    explicit MetricIdentifier(MetricName name)
+      : _name(name), _point(0) {}
 
-    MetricIdentifier(size_t id, size_t pt)
-      : name_idx(id), point_idx(pt) {}
+    MetricIdentifier(MetricName name, Point point)
+      : _name(name), _point(point) {}
 
     bool operator< (const MetricIdentifier &other) const {
-        if (name_idx < other.name_idx) return true;
-        if (name_idx == other.name_idx) {
-            return (point_idx < other.point_idx);
+        if (_name != other._name) {
+            return _name < other._name;
         }
-        return false;
+        return _point < other._point;
     }
     bool operator== (const MetricIdentifier &other) const {
-        return (name_idx == other.name_idx &&
-                point_idx == other.point_idx);
+        return (_name == other._name &&
+                _point == other._point);
     }
+
+    MetricName name() const { return _name; }
+    Point point() const { return _point; }
+
 };
 
 } // namespace vespalib::metrics
@@ -43,7 +47,7 @@ namespace std
         typedef std::size_t result_type;
         result_type operator()(argument_type const& ident) const noexcept
         {
-            return (ident.point_idx << 20) + ident.name_idx;
+            return (ident.point().id() << 20) + ident.name().id();
         }
     };
 }

@@ -6,19 +6,11 @@ namespace vespalib {
 namespace metrics {
 
 void
-Gauge::sample(double value) const
-{
-    if (_manager) {
-        _manager->sample(GaugeMeasurement(ident(), value));
-    }
-}
-
-void
 Gauge::sample(double value, Point point) const
 {
     if (_manager) {
-        MetricIdentifier id(_idx.name_idx, point.id());
-        _manager->sample(GaugeMeasurement(id, value));
+        MetricIdentifier fullId(_id, point);
+        _manager->sample(Measurement(fullId, value));
     }
 }
 

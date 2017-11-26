@@ -11,28 +11,26 @@ namespace metrics {
 class MetricsManager;
 class GaugeAggregator;
 
-struct GaugeMeasurement {
-    MetricIdentifier idx;
-    double value;
-    GaugeMeasurement() = delete;
-    GaugeMeasurement(MetricIdentifier id, double v) : idx(id), value(v) {}
-};
-
 class Gauge {
 private:
     std::shared_ptr<MetricsManager> _manager;
-    MetricIdentifier _idx;
-    MetricIdentifier ident() const { return _idx; }
+    MetricName _id;
 public:
-    Gauge(std::shared_ptr<MetricsManager> m, MetricIdentifier id)
-        : _manager(std::move(m)), _idx(id)
+    Gauge(std::shared_ptr<MetricsManager> m, MetricName id)
+        : _manager(std::move(m)), _id(id)
     {}
 
-    void sample(double value) const;
-    void sample(double value, Point p) const;
+    void sample(double value, Point p = Point::empty) const;
+
+    struct Measurement {
+        MetricIdentifier idx;
+        double value;
+        Measurement() = delete;
+        Measurement(MetricIdentifier id, double v) : idx(id), value(v) {}
+    };
 
     typedef GaugeAggregator aggregator_type;
-    typedef GaugeMeasurement sample_type;
+    typedef Measurement sample_type;
 };
 
 } // namespace vespalib::metrics

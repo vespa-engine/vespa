@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "metric_types.h"
+#include <assert.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.metrics.metric_types");
@@ -24,16 +25,10 @@ MetricTypes::check(size_t id, const vespalib::string &name, MetricType ty)
         if (old == ty) {
             return;
         }
-        if (old == NONE) {
-            _seen[id] = ty;
-            return;
-        }
         LOG(warning, "metric '%s' with different types %s and %s, this will be confusing",
             name.c_str(), _typeNames[ty], _typeNames[old]);
     }
-    while (_seen.size() < id) {
-        _seen.push_back(NONE);
-    }
+    assert (_seen.size() == id);
     _seen.push_back(ty);
 }
 

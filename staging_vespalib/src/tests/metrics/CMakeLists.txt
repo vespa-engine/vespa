@@ -6,3 +6,11 @@ vespa_add_executable(staging_vespalib_metrics_test_app TEST
     staging_vespalib
 )
 vespa_add_test(NAME staging_vespalib_metrics_test_app COMMAND staging_vespalib_metrics_test_app)
+
+vespa_add_executable(staging_vespalib_stablestore_test_app TEST
+    SOURCES
+    stable_store_test.cpp
+    DEPENDS
+    staging_vespalib
+)
+vespa_add_test(NAME staging_vespalib_stablestore_test_app COMMAND staging_vespalib_stablestore_test_app)
