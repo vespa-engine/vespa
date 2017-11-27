@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
 import java.security.Principal;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.restapi.application.Authorizer.environmentRequiresAuthorization;
@@ -38,7 +40,21 @@ public class DeployAuthorizer {
     public void throwIfUnauthorizedForDeploy(Principal principal,
                                              Environment environment,
                                              Tenant tenant,
-                                             ApplicationId applicationId) {
+                                             ApplicationId applicationId,
+                                             ApplicationPackage applicationPackage) {
+        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
+        applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
+            AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
+            if (! Objects.equals(tenantDomain.id(), identityDomain.value())) {
+                throw new ForbiddenException(
+                        String.format(
+                                "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                identityDomain.value(),
+                                tenantDomain.id()
+                        ));
+            }
+        });
+
         if (!environmentRequiresAuthorization(environment)) {
             return;
         }

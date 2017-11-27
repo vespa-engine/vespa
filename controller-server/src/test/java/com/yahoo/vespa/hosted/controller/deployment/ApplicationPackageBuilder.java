@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
@@ -29,6 +31,7 @@ public class ApplicationPackageBuilder {
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
+    private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
@@ -83,6 +86,11 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
+        this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(), service.value());
+        return this;
+    }
+
     /** Sets the content of the search definition test.sd */
     public ApplicationPackageBuilder searchDefinition(String testSearchDefinition) {
         this.searchDefinition = testSearchDefinition;
@@ -90,7 +98,12 @@ public class ApplicationPackageBuilder {
     }
     
     private byte[] deploymentSpec() {
-        StringBuilder xml = new StringBuilder("<deployment version='1.0'>\n");
+        StringBuilder xml = new StringBuilder();
+        xml.append("<deployment version='1.0' ");
+        if(athenzIdentityAttributes != null) {
+            xml.append(athenzIdentityAttributes);
+        }
+        xml.append(">\n");
         if (upgradePolicy != null) {
             xml.append("<upgrade policy='");
             xml.append(upgradePolicy);
