@@ -2,10 +2,10 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <map>
 #include <list>
+#include <mutex>
 
 /**
  * Enable this to log most slotfile operations (such as all mutations) as
@@ -85,7 +85,7 @@ struct BucketOperationLogger
 
     typedef std::map<document::BucketId, State> BucketMapType;
 
-    vespalib::Lock _logLock;
+    std::mutex    _logLock;
     BucketMapType _bucketMap;
 
     void log(const document::BucketId& id,

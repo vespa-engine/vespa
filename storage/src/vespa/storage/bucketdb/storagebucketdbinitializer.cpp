@@ -13,11 +13,13 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config/helper/configgetter.hpp>
 #include <iomanip>
+#include <chrono>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.initializer");
 
 using document::BucketSpace;
+using namespace std::chrono_literals;
 
 namespace storage {
 
@@ -117,10 +119,11 @@ StorageBucketDBInitializer::Metrics::Metrics(framework::Component& component)
 StorageBucketDBInitializer::Metrics::~Metrics() {}
 
 StorageBucketDBInitializer::GlobalState::GlobalState()
-        : _insertedCount(0), _infoReadCount(0),
-          _infoSetByLoad(0), _dirsListed(0), _dirsToList(0),
-          _gottenInitProgress(false), _doneListing(false),
-          _doneInitializing(false)
+    : _lists(), _joins(), _infoRequests(), _replies(),
+      _insertedCount(0), _infoReadCount(0),
+      _infoSetByLoad(0), _dirsListed(0), _dirsToList(0),
+      _gottenInitProgress(false), _doneListing(false),
+      _doneInitializing(false), _workerLock(), _workerCond(), _replyLock()
 { }
 StorageBucketDBInitializer::GlobalState::~GlobalState() { }
 
@@ -183,7 +186,7 @@ void
 StorageBucketDBInitializer::onClose()
 {
     if (_system._thread.get() != 0) {
-        _system._thread->interruptAndJoin(&_state._workerMonitor);
+        _system._thread->interruptAndJoin(_state._workerLock, _state._workerCond);
         _system._thread.reset(0);
     }
 }
@@ -191,11 +194,11 @@ StorageBucketDBInitializer::onClose()
 void
 StorageBucketDBInitializer::run(framework::ThreadHandle& thread)
 {
-    vespalib::MonitorGuard monitor(_state._workerMonitor);
+    std::unique_lock<std::mutex> guard(_state._workerLock);
     while (!thread.interrupted() && !_state._doneInitializing) {
         std::list<api::StorageMessage::SP> replies;
         {
-            vespalib::LockGuard lock(_state._replyLock);
+            std::lock_guard<std::mutex> replyGuard(_state._replyLock);
             _state._replies.swap(replies);
         }
         for (std::list<api::StorageMessage::SP>::iterator it = replies.begin();
@@ -218,7 +221,7 @@ StorageBucketDBInitializer::run(framework::ThreadHandle& thread)
             updateInitProgress();
         }
         if (replies.empty()) {
-            monitor.wait(10);
+            _state._workerCond.wait_for(guard, 10ms);
             thread.registerTick(framework::WAIT_CYCLE);
         } else {
             thread.registerTick(framework::PROCESS_CYCLE);
@@ -258,7 +261,7 @@ void
 StorageBucketDBInitializer::reportHtmlStatus(
         std::ostream& out, const framework::HttpUrlPath&) const
 {
-    vespalib::Monitor monitor(_state._workerMonitor);
+    std::lock_guard<std::mutex> guard(_state._workerLock);
     out << "\n  <h2>Config</h2>\n"
         << "    <table>\n"
         << "      <tr><td>Max pending info reads per disk</td><td>"
@@ -583,7 +586,7 @@ StorageBucketDBInitializer::onInternalReply(
         case ReadBucketInfoReply::ID:
         case InternalBucketJoinReply::ID:
         {
-            vespalib::LockGuard lock(_state._replyLock);
+            std::lock_guard<std::mutex> guard(_state._replyLock);
             _state._replies.push_back(reply);
             return true;
         }

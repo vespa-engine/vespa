@@ -14,6 +14,8 @@
 
 #include "runnable.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace vespalib {
     class Monitor;
@@ -58,6 +60,8 @@ public:
      * through a monitor after the signalling face.
      */
     void interruptAndJoin(vespalib::Monitor* m);
+
+    void interruptAndJoin(std::mutex &m, std::condition_variable &cv);
 };
 
 }

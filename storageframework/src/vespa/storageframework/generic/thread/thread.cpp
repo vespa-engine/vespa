@@ -17,5 +17,16 @@ Thread::interruptAndJoin(vespalib::Monitor* m)
     join();
 }
 
+void
+Thread::interruptAndJoin(std::mutex &m, std::condition_variable &cv)
+{
+    interrupt();
+    {
+        std::lock_guard<std::mutex> guard(m);
+        cv.notify_all();
+    }
+    join();
+}
+
 } // framework
 } // storage

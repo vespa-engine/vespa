@@ -27,6 +27,8 @@
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
+#include <condition_variable>
 
 namespace storage {
 
@@ -45,21 +47,21 @@ private:
     config::ConfigUri _configUri;
 
     uint32_t _chunkLevel;
-    mutable vespalib::Lock _stateAccess;
     framework::MemoryToken::UP _bucketDBMemoryToken;
     BucketInfoRequestMap _bucketInfoRequests;
 
     /**
      * We have our own thread running, which we use to send messages down.
-     * Take worker monitor, add to list and signal for messages to be sent.
+     * Take worker lock, add to list and signal for messages to be sent.
      */
-    mutable vespalib::Monitor _workerMonitor;
+    mutable std::mutex      _workerLock;
+    std::condition_variable _workerCond;
     /**
      * Lock kept for access to 3 values below concerning cluster state.
      */
-    vespalib::Lock _clusterStateLock;
+    std::mutex         _clusterStateLock;
 
-    vespalib::Lock _queueProcessingLock;
+    mutable std::mutex _queueProcessingLock;
     using ReplyQueue = std::vector<api::StorageReply::SP>;
     using ConflictingBuckets = std::unordered_set<document::BucketId,
                                                   document::BucketId::hash>;
