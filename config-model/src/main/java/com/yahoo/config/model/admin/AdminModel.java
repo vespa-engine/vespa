@@ -75,7 +75,11 @@ public class AdminModel extends ConfigModel {
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
             AbstractConfigProducer parent = modelContext.getParentProducer();
             DeployProperties properties = modelContext.getDeployState().getProperties();
-            DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(), modelContext.getDeployState().getFileRegistry(), properties.multitenant(), properties.configServerSpecs());
+            DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),
+                                                                 modelContext.getDeployState().getFileRegistry(),
+                                                                 properties.multitenant(),
+                                                                 properties.configServerSpecs(),
+                                                                 modelContext.getDeployState().disableFiledistributor());
             model.admin = domBuilder.build(parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
@@ -101,7 +105,11 @@ public class AdminModel extends ConfigModel {
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
             AbstractConfigProducer parent = modelContext.getParentProducer();
             DeployProperties properties = modelContext.getDeployState().getProperties();
-            DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext, properties.multitenant(), properties.configServerSpecs(), model.getContainerModels());
+            DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext,
+                                                                 properties.multitenant(),
+                                                                 properties.configServerSpecs(),
+                                                                 model.getContainerModels(),
+                                                                 modelContext.getDeployState().disableFiledistributor());
             model.admin = domBuilder.build(parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {

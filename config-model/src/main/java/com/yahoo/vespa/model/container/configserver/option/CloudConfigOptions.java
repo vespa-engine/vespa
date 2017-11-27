@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.configserver.option;
 import java.util.Optional;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface CloudConfigOptions {
 
@@ -44,4 +44,5 @@ public interface CloudConfigOptions {
     Optional<String> dockerRegistry();
     Optional<String> dockerVespaBaseImage();
     Optional<String> loadBalancerAddress();
+    Optional<Boolean> disableFiledistributor();
 }

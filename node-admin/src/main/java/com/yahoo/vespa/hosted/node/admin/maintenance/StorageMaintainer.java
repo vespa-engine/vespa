@@ -139,7 +139,7 @@ public class StorageMaintainer {
         Process duCommand = new ProcessBuilder().command(command).start();
         if (!duCommand.waitFor(60, TimeUnit.SECONDS)) {
             duCommand.destroy();
-            throw new RuntimeException("Disk usage command timedout, aborting.");
+            throw new RuntimeException("Disk usage command timed out, aborting.");
         }
         String output = IOUtils.readAll(new InputStreamReader(duCommand.getInputStream()));
         String[] results = output.split("\t");

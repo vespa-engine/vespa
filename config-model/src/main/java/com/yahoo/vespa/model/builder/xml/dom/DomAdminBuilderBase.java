@@ -37,16 +37,19 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private final ApplicationType applicationType;
     private final List<ConfigServerSpec> configServerSpecs;
     private final FileRegistry fileRegistry;
+    private final boolean disableFiledistributor;
     protected final boolean multitenant;
 
-    public DomAdminBuilderBase(ApplicationType applicationType, FileRegistry fileRegistry, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
+    DomAdminBuilderBase(ApplicationType applicationType, FileRegistry fileRegistry, boolean multitenant,
+                        List<ConfigServerSpec> configServerSpecs, boolean disableFiledistributor) {
         this.applicationType = applicationType;
         this.fileRegistry = fileRegistry;
         this.multitenant = multitenant;
         this.configServerSpecs = configServerSpecs;
+        this.disableFiledistributor = disableFiledistributor;
     }
 
-    protected List<Configserver> getConfigServersFromSpec(AbstractConfigProducer parent) {
+    List<Configserver> getConfigServersFromSpec(AbstractConfigProducer parent) {
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.getHostSystem();
@@ -76,7 +79,9 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
         new ModelConfigProvider(admin);
 
-        FileDistributionOptions fileDistributionOptions = new DomFileDistributionOptionsBuilder().build(XML.getChild(adminElement, "filedistribution"));
+        FileDistributionOptions fileDistributionOptions = FileDistributionOptions.defaultOptions();
+        fileDistributionOptions.disabled(disableFiledistributor);
+        fileDistributionOptions = new DomFileDistributionOptionsBuilder(fileDistributionOptions).build(XML.getChild(adminElement, "filedistribution"));
         admin.setFileDistribution(new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry));
         return admin;
     }
