@@ -185,7 +185,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                HostName.from(configserverConfig.loadBalancerAddress()),
                                                configserverConfig.hostedVespa(),
                                                zone,
-                                               rotations);
+                                               rotations,
+                                               configserverConfig.disableFiledistributor());
     }
 
     /** 

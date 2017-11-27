@@ -55,6 +55,7 @@ public interface ModelContext {
         default URI loadBalancerAddress() {
             return URI.create("http://localhost");
         }
+        default boolean disableFileDistributor() { return false; }
     }
 
 }
