@@ -11,6 +11,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
@@ -147,7 +148,8 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
         try {
             Document doc = XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(servicesXml)));
-            setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, deployState.getFileRegistry(), false, new ArrayList<>()).
+            setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, deployState.getFileRegistry(),
+                                           false, new ArrayList<>(), deployState.disableFiledistributor()).
                     build(this, XML.getChildren(doc.getDocumentElement(), "admin").get(0)));
         } catch (SAXException | IOException e) {
             throw new RuntimeException(e);
