@@ -535,14 +535,10 @@ public class NodeAgentImpl implements NodeAgent {
 
         lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
 
-        // CPU usage by a container as percentage of total host CPU, cpuPercentageOfHost, is given by dividing used
-        // CPU time used by the container with CPU time used by the entire system.
-        double cpuUsageRatioOfHost = lastCpuMetric.getCpuUsageRatio();
-
-        // CPU usage by a container as percentage of total CPU allocated to it is given by dividing the
-        // cpuPercentageOfHost with the ratio of container minCpuCores by total number of CPU cores.
-        double cpuUsageRatioOfAllocated = totalNumCpuCores * cpuUsageRatioOfHost / nodeSpec.minCpuCores;
-        double cpuKernelUsageRatioOfAllocated = cpuUsageRatioOfAllocated * lastCpuMetric.getCpuKernelUsageRatio();
+        // Ratio of CPU cores allocated to this container to total number of CPU cores on this host
+        final double allocatedCpuRatio = nodeSpec.minCpuCores / totalNumCpuCores;
+        double cpuUsageRatioOfAllocated = lastCpuMetric.getCpuUsageRatio() / allocatedCpuRatio;
+        double cpuKernelUsageRatioOfAllocated = lastCpuMetric.getCpuKernelUsageRatio() / allocatedCpuRatio;
 
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryUsageRatio = (double) memoryTotalBytesUsed / memoryTotalBytes;
@@ -637,12 +633,17 @@ public class NodeAgentImpl implements NodeAgent {
             this.containerKernelUsage = containerKernelUsage;
         }
 
-        double getCpuKernelUsageRatio() {
-            return deltaContainerUsage == 0 ? 0 : (double) deltaContainerKernelUsage / deltaContainerUsage;
-        }
-
+        /**
+         * Returns the CPU usage ratio for the docker container that this NodeAgent is managing
+         * in the time between the last two times updateCpuDeltas() was called. This is calculated
+         * by dividing the CPU time used by the container with the CPU time used by the entire system.
+         */
         double getCpuUsageRatio() {
             return deltaSystemUsage == 0 ? 0 : (double) deltaContainerUsage / deltaSystemUsage;
+        }
+
+        double getCpuKernelUsageRatio() {
+            return deltaSystemUsage == 0 ? 0 : (double) deltaContainerKernelUsage / deltaSystemUsage;
         }
     }
 
