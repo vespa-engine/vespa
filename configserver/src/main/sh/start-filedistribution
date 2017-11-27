@@ -63,7 +63,7 @@ ROOT=${VESPA_HOME%/}
 VESPA_CONFIG_ID="dir:${ROOT}/conf/filedistributor"
 export VESPA_CONFIG_ID
 
-if [ "$multitenant" = "true" -a "$disable_filedistributor" = "false" ]; then
+if [ "$multitenant" = "true" ] && [ "$disable_filedistributor" = ""  ] || [ "$disable_filedistributor" = "false" ]; then
     foo=`${ROOT}/libexec/vespa/vespa-config.pl -mkfiledistributorconfig`
     PIDFILE_FILEDISTRIBUTOR=var/run/filedistributor.pid
     LOGFILE="${ROOT}/logs/vespa/vespa.log"
