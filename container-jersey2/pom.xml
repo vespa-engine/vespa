@@ -9,6 +9,7 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
+    <relativePath>../parent</relativePath>
   </parent>
   <artifactId>container-jersey2</artifactId>
   <version>6-SNAPSHOT</version>

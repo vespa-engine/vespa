@@ -9,7 +9,8 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
-   </parent>
+        <relativePath>../parent</relativePath>
+  </parent>
 
     <artifactId>filedistribution</artifactId>
     <version>6-SNAPSHOT</version>
