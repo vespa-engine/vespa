@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -107,10 +108,12 @@ public class FileReceiver {
 
         File fileReferenceDir = new File(downloadDirectory, fileReference.value());
         try {
+            File tempFile = new File(Files.createTempDirectory("downloaded").toFile(), filename);
+            Files.write(tempFile.toPath(), content);
             Files.createDirectories(fileReferenceDir.toPath());
             File file = new File(fileReferenceDir, filename);
-            log.log(LogLevel.INFO, "Writing data to " + file.getAbsolutePath());
-            Files.write(file.toPath(), content);
+            Files.move(tempFile.toPath(), file.toPath());
+            log.log(LogLevel.INFO, "Data written to " + file.getAbsolutePath());
             downloader.completedDownloading(fileReference, file);
         } catch (IOException e) {
             log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage());
