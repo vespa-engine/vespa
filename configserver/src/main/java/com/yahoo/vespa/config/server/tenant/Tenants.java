@@ -96,18 +96,17 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     /**
-     * New instance containing the given tenants. This will not create Zookeeper watches. For testing only
+     * New instance containing the given tenants. Creates no system tenants and noZookeeper watches. For testing only.
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry} instance
      * @param tenants a collection of {@link Tenant}s
      */
+    // TODO: Get rid of the second argument and let callers use addTenant() instead
     public Tenants(GlobalComponentRegistry globalComponentRegistry, Collection<Tenant> tenants) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.create(tenantsPath);
-        createSystemTenants(globalComponentRegistry.getConfigserverConfig());
-        createTenants();
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.tenants.putAll(addTenants(tenants));
     }
@@ -120,13 +119,13 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
 
     // Pre-condition: tenants path needs to exist in zk
     private LinkedHashMap<TenantName, Tenant> addTenants(Collection<Tenant> newTenants) {
-        LinkedHashMap<TenantName, Tenant> sessionTenants = new LinkedHashMap<>();
+        LinkedHashMap<TenantName, Tenant> tenants = new LinkedHashMap<>();
         for (Tenant t : newTenants) {
-            sessionTenants.put(t.getName(), t);
+            tenants.put(t.getName(), t);
         }
-        log.log(LogLevel.DEBUG, "Tenants at startup: " + sessionTenants);
-        metricUpdater.setTenants(tenants.size());
-        return sessionTenants;
+        log.log(LogLevel.DEBUG, "Tenants at startup: " + tenants);
+        metricUpdater.setTenants(this.tenants.size());
+        return tenants;
     }
     
     public synchronized void addTenant(TenantName tenantName) throws Exception {
@@ -191,7 +190,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         try {
             Tenant tenant = TenantBuilder.create(globalComponentRegistry, tenantName).build();
             notifyNewTenant(tenant);
-            tenants.put(tenantName, tenant);
+            tenants.putIfAbsent(tenantName, tenant);
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Error loading tenant '" + tenantName + "', skipping.", e);
         }

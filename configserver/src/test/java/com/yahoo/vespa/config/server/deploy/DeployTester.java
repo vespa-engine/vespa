@@ -23,6 +23,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -56,6 +57,8 @@ import java.util.Optional;
  * @author bratseth
  */
 public class DeployTester {
+
+    private static final TenantName tenantName = TenantName.from("deploytester");
 
     private final Clock clock;
     private final Tenants tenants;
@@ -95,6 +98,7 @@ public class DeployTester {
         try {
             this.testApp = new File(appPath);
             this.tenants = new Tenants(componentRegistry, Collections.emptySet());
+            tenants.addTenant(tenantName);
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);
@@ -103,7 +107,7 @@ public class DeployTester {
     }
 
     public Tenant tenant() {
-        return tenants.defaultTenant();
+        return tenants.getTenant(tenantName);
     }
     
     /** Create a model factory for the version of this source*/
