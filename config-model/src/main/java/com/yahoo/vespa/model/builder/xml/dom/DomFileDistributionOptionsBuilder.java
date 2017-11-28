@@ -42,7 +42,8 @@ public class DomFileDistributionOptionsBuilder {
         if (fileDistributionElement != null) {
             getAmount("uploadbitrate", fileDistributionElement).ifPresent(fileDistributionOptions::uploadBitRate);
             getAmount("downloadbitrate", fileDistributionElement).ifPresent(fileDistributionOptions::downloadBitRate);
-            Element disable = XML.getChild(fileDistributionElement, "disableFiledistributor");
+            Element disable = XML.getChild(fileDistributionElement, "disabled");
+            if (disable == null) disable = XML.getChild(fileDistributionElement, "disableFiledistributor");
             if (disable != null) {
                 fileDistributionOptions.disableFiledistributor(Boolean.valueOf(XML.getValue(disable)));
             }
