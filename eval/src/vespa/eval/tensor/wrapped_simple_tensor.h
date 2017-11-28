@@ -37,11 +37,7 @@ public:
     void print(std::ostream &out) const override;
     Tensor::UP clone() const override;
     // functions below should not be used for this implementation
-    Tensor::UP add(const Tensor &) const override;
-    Tensor::UP subtract(const Tensor &) const override;
     Tensor::UP multiply(const Tensor &) const override;
-    Tensor::UP min(const Tensor &) const override;
-    Tensor::UP max(const Tensor &) const override;
     Tensor::UP match(const Tensor &) const override;
     Tensor::UP apply(const CellFunction &) const override;
     Tensor::UP sum(const vespalib::string &) const override;

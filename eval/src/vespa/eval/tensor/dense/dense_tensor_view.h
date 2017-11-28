@@ -49,11 +49,7 @@ public:
 
     virtual const eval::ValueType &type() const override;
     virtual double as_double() const override;
-    virtual Tensor::UP add(const Tensor &arg) const override;
-    virtual Tensor::UP subtract(const Tensor &arg) const override;
     virtual Tensor::UP multiply(const Tensor &arg) const override;
-    virtual Tensor::UP min(const Tensor &arg) const override;
-    virtual Tensor::UP max(const Tensor &arg) const override;
     virtual Tensor::UP match(const Tensor &arg) const override;
     virtual Tensor::UP apply(const CellFunction &func) const override;
     virtual Tensor::UP sum(const vespalib::string &dimension) const override;

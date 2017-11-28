@@ -114,28 +114,6 @@ SparseTensor::as_double() const
 }
 
 Tensor::UP
-SparseTensor::add(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-                         { return lhsValue + rhsValue; });
-}
-
-Tensor::UP
-SparseTensor::subtract(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-                         { return lhsValue - rhsValue; });
-}
-
-Tensor::UP
 SparseTensor::multiply(const Tensor &arg) const
 {
     const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
@@ -144,28 +122,6 @@ SparseTensor::multiply(const Tensor &arg) const
     }
     return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
                          { return lhsValue * rhsValue; });
-}
-
-Tensor::UP
-SparseTensor::min(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-                         { return std::min(lhsValue, rhsValue); });
-}
-
-Tensor::UP
-SparseTensor::max(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-                         { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP

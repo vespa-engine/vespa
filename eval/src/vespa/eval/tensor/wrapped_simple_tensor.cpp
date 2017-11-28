@@ -69,35 +69,7 @@ WrappedSimpleTensor::clone() const
 //-----------------------------------------------------------------------------
 
 Tensor::UP
-WrappedSimpleTensor::add(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::subtract(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
 WrappedSimpleTensor::multiply(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::min(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::max(const Tensor &) const
 {
     abort();
     return Tensor::UP();

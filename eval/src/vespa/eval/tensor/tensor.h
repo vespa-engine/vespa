@@ -30,11 +30,7 @@ struct Tensor : public eval::Tensor
 
     Tensor();
     virtual ~Tensor() {}
-    virtual Tensor::UP add(const Tensor &arg) const = 0;
-    virtual Tensor::UP subtract(const Tensor &arg) const = 0;
     virtual Tensor::UP multiply(const Tensor &arg) const = 0;
-    virtual Tensor::UP min(const Tensor &arg) const = 0;
-    virtual Tensor::UP max(const Tensor &arg) const = 0;
     virtual Tensor::UP match(const Tensor &arg) const = 0;
     virtual Tensor::UP apply(const CellFunction &func) const = 0;
     virtual Tensor::UP sum(const vespalib::string &dimension) const = 0;

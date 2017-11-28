@@ -161,43 +161,11 @@ DenseTensorView::as_double() const
 }
 
 Tensor::UP
-DenseTensorView::add(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue + rhsValue; });
-}
-
-Tensor::UP
-DenseTensorView::subtract(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue - rhsValue; });
-}
-
-Tensor::UP
 DenseTensorView::multiply(const Tensor &arg) const
 {
     return dense::apply(*this, arg,
                         [](double lhsValue, double rhsValue)
                         { return lhsValue * rhsValue; });
-}
-
-Tensor::UP
-DenseTensorView::min(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return std::min(lhsValue, rhsValue); });
-}
-
-Tensor::UP
-DenseTensorView::max(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
