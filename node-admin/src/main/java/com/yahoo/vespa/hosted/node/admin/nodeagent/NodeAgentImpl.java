@@ -624,7 +624,7 @@ public class NodeAgentImpl implements NodeAgent {
         private long deltaSystemUsage;
 
         private void updateCpuDeltas(long totalSystemUsage, long totalContainerUsage, long containerKernelUsage) {
-            deltaSystemUsage = totalSystemUsage - this.totalSystemUsage;
+            deltaSystemUsage = this.totalSystemUsage == 0 ? 0 : (totalSystemUsage - this.totalSystemUsage);
             deltaContainerUsage = totalContainerUsage - this.totalContainerUsage;
             deltaContainerKernelUsage = containerKernelUsage - this.containerKernelUsage;
 
@@ -639,11 +639,11 @@ public class NodeAgentImpl implements NodeAgent {
          * by dividing the CPU time used by the container with the CPU time used by the entire system.
          */
         double getCpuUsageRatio() {
-            return deltaSystemUsage == 0 ? 0 : (double) deltaContainerUsage / deltaSystemUsage;
+            return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerUsage / deltaSystemUsage;
         }
 
         double getCpuKernelUsageRatio() {
-            return deltaSystemUsage == 0 ? 0 : (double) deltaContainerKernelUsage / deltaSystemUsage;
+            return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerKernelUsage / deltaSystemUsage;
         }
     }
 
