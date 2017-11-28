@@ -4,9 +4,10 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.*;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -212,7 +213,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                                       root.getDeployState().getFileRegistry(), multitenant,
                                       configServerSpecs, root.getDeployState().disableFiledistributor());
         Admin admin = domAdminBuilder.build(root, xml);
-        admin.addPerHostServices(root.getHostSystem().getHosts(), new DeployProperties.Builder().build());
+        admin.addPerHostServices(root.getHostSystem().getHosts(), ApplicationId.defaultId(), Zone.defaultZone());
         return admin;
     }
 

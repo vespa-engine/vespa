@@ -7,8 +7,6 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -45,7 +43,16 @@ import com.yahoo.vespa.model.search.MultilevelDispatchValidator;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -110,7 +117,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
                                                   globallyDistributedDocuments, routingSelection, redundancy,
-                                                  context.getDeployState().getProperties().zone());
+                                                  context.getDeployState().zone());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
@@ -266,8 +273,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             }
         }
 
-        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context, 
-                                           StorageGroup rootGroup, ModelElement contentElement, 
+        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context,
+                                           StorageGroup rootGroup, ModelElement contentElement,
                                            String contentClusterName, ContentCluster contentCluster) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;

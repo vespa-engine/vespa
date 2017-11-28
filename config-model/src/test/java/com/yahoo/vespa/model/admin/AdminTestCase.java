@@ -8,7 +8,6 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.ApplicationId;
@@ -24,11 +23,9 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -44,9 +41,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class AdminTestCase {
 
-    protected static final String TESTDIR = "src/test/cfg/admin/";
+    private static final String TESTDIR = "src/test/cfg/admin/";
 
-    protected VespaModel getVespaModel(String configPath) {
+    private VespaModel getVespaModel(String configPath) {
         return new VespaModelCreatorWithFilePkg(configPath).create();
     }
 
@@ -149,9 +146,9 @@ public class AdminTestCase {
 
     @Test
     public void testTenantAndAppInSentinelConfig() {
-        DeployState state = new DeployState.Builder().properties(
-                new DeployProperties.Builder().
-                        zone(new Zone(Environment.dev, RegionName.from("baz"))).
+        DeployState state = new DeployState.Builder().zone(
+                        new Zone(Environment.dev, RegionName.from("baz"))).
+                        properties(new DeployProperties.Builder().
                 applicationId(new ApplicationId.Builder().
                         tenant("quux").
                         applicationName("foo").instanceName("bim").build()).build()).build();
@@ -312,9 +309,9 @@ public class AdminTestCase {
     public void testDisableFileDistributorForAllApps() {
         DeployState state = new DeployState.Builder()
                 .disableFiledistributor(true)
+                .zone(new Zone(Environment.dev, RegionName.from("baz")))
                 .properties(
                         new DeployProperties.Builder().
-                                zone(new Zone(Environment.dev, RegionName.from("baz"))).
                                 applicationId(new ApplicationId.Builder().
                                         tenant("quux").
                                         applicationName("foo").instanceName("bim").build()).build()).build();
