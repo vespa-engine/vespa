@@ -35,10 +35,7 @@ public:
     void accept(TensorVisitor &visitor) const override;
     Tensor::UP clone() const override;
     // functions below should not be used for this implementation
-    Tensor::UP multiply(const Tensor &) const override;
-    Tensor::UP match(const Tensor &) const override;
     Tensor::UP apply(const CellFunction &) const override;
-    Tensor::UP sum(const vespalib::string &) const override;
     Tensor::UP join(join_fun_t, const Tensor &) const override;
     Tensor::UP reduce(join_fun_t, const std::vector<vespalib::string> &) const override;
 };

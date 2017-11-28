@@ -161,22 +161,6 @@ DenseTensorView::as_double() const
 }
 
 Tensor::UP
-DenseTensorView::multiply(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue * rhsValue; });
-}
-
-Tensor::UP
-DenseTensorView::match(const Tensor &arg) const
-{
-    return joinDenseTensors(*this, arg, "match",
-                            [](double lhsValue, double rhsValue)
-                            { return (lhsValue * rhsValue); });
-}
-
-Tensor::UP
 DenseTensorView::apply(const CellFunction &func) const
 {
     Cells newCells(_cellsRef.size());
@@ -187,14 +171,6 @@ DenseTensorView::apply(const CellFunction &func) const
     }
     assert(itr == newCells.end());
     return std::make_unique<DenseTensor>(_typeRef, std::move(newCells));
-}
-
-Tensor::UP
-DenseTensorView::sum(const vespalib::string &dimension) const
-{
-    return dense::reduce(*this, { dimension },
-                          [](double lhsValue, double rhsValue)
-                          { return lhsValue + rhsValue; });
 }
 
 bool
@@ -265,6 +241,17 @@ DenseTensorView::accept(TensorVisitor &visitor) const
 Tensor::UP
 DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 {
+    if (function == eval::operation::Mul::f) {
+        if (fast_type() == arg.type()) {
+            return joinDenseTensors(*this, arg, "match",
+                                    [](double lhsValue, double rhsValue)
+                                    { return (lhsValue * rhsValue); });
+        } else {
+            return dense::apply(*this, arg,
+                                [](double lhsValue, double rhsValue)
+                                { return lhsValue * rhsValue; });
+        }
+    }
     return dense::apply(*this, arg, function);
 }
 

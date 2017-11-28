@@ -93,38 +93,9 @@ SparseTensor::as_double() const
 }
 
 Tensor::UP
-SparseTensor::multiply(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-                         { return lhsValue * rhsValue; });
-}
-
-Tensor::UP
-SparseTensor::match(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return SparseTensorMatch(*this, *rhs).result();
-}
-
-Tensor::UP
 SparseTensor::apply(const CellFunction &func) const
 {
     return TensorApply<SparseTensor>(*this, func).result();
-}
-
-Tensor::UP
-SparseTensor::sum(const vespalib::string &dimension) const
-{
-    return sparse::reduce(*this, { dimension },
-                          [](double lhsValue, double rhsValue)
-                          { return lhsValue + rhsValue; });
 }
 
 bool
@@ -202,6 +173,14 @@ SparseTensor::join(join_fun_t function, const Tensor &arg) const
     const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
+    }
+    if (function == eval::operation::Mul::f) {
+        if (fast_type() == rhs->fast_type()) {
+            return SparseTensorMatch(*this, *rhs).result();
+        } else {
+            return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+                                 { return lhsValue * rhsValue; });
+        }
     }
     return sparse::apply(*this, *rhs, function);
 }

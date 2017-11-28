@@ -57,28 +57,7 @@ WrappedSimpleTensor::clone() const
 //-----------------------------------------------------------------------------
 
 Tensor::UP
-WrappedSimpleTensor::multiply(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::match(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
 WrappedSimpleTensor::apply(const CellFunction &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::sum(const vespalib::string &) const
 {
     abort();
     return Tensor::UP();

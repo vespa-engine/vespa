@@ -30,15 +30,9 @@ struct Tensor : public eval::Tensor
 
     Tensor();
     virtual ~Tensor() {}
-    virtual Tensor::UP multiply(const Tensor &arg) const = 0;
-    virtual Tensor::UP match(const Tensor &arg) const = 0;
     virtual Tensor::UP apply(const CellFunction &func) const = 0;
-    virtual Tensor::UP sum(const vespalib::string &dimension) const = 0;
-    virtual Tensor::UP join(join_fun_t function,
-                            const Tensor &arg) const = 0;
-    virtual Tensor::UP reduce(join_fun_t op,
-                              const std::vector<vespalib::string> &dimensions)
-        const = 0;
+    virtual Tensor::UP join(join_fun_t function, const Tensor &arg) const = 0;
+    virtual Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const = 0;
     virtual bool equals(const Tensor &arg) const = 0; // want to remove, but needed by document
     virtual Tensor::UP clone() const = 0; // want to remove, but needed by document
     virtual eval::TensorSpec toSpec() const = 0;

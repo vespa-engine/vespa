@@ -260,15 +260,7 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
             if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
                 return fallback_join(a, b, function, stash);
             }
-            if (function == eval::operation::Mul::f) {
-                if (my_a.type() == my_b.type()) {
-                    return to_value(my_a.match(my_b), stash);
-                } else {
-                    return to_value(my_a.multiply(my_b), stash);
-                }
-            } else {
-                return to_value(my_a.join(function, my_b), stash);
-            }
+            return to_value(my_a.join(function, my_b), stash);
         } else {
             return ErrorValue::instance;
         }
@@ -299,8 +291,6 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
         case Aggr::SUM:
             if (dimensions.empty()) {
                 return stash.create<eval::DoubleValue>(my_a.as_double());
-            } else if (dimensions.size() == 1) {
-                return to_value(my_a.sum(dimensions[0]), stash);
             } else {
                 return to_value(my_a.reduce(eval::operation::Add::f, dimensions), stash);
             }
