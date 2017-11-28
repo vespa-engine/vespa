@@ -12,6 +12,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/operation.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
 
@@ -42,8 +43,9 @@ const Value &to_simple(const Value &value, Stash &stash) {
         if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(tensor)) {
             return wrapped->get();
         }
-        TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return *stash.create<Value::UP>(eval::SimpleTensor::create(spec));
+        nbostream data;
+        tensor->engine().encode(*tensor, data);
+        return *stash.create<Value::UP>(eval::SimpleTensor::decode(data));
     }
     return value;
 }
@@ -57,8 +59,9 @@ const Value &to_default(const Value &value, Stash &stash) {
                 return stash.create<WrappedSimpleTensor>(*simple);
             }
         }
-        TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return *stash.create<Value::UP>(default_engine().from_spec(spec));
+        nbostream data;
+        tensor->engine().encode(*tensor, data);
+        return *stash.create<Value::UP>(default_engine().decode(data));
     }
     return value;
 }
