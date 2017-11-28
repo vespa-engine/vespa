@@ -12,9 +12,7 @@ struct CounterAggregator {
     MetricIdentifier idx;
     size_t count;
 
-    CounterAggregator(MetricIdentifier id);
-
-    void merge(const Counter::Increment &other);
+    CounterAggregator(const Counter::Increment &other);
     void merge(const CounterAggregator &other);
 };
 

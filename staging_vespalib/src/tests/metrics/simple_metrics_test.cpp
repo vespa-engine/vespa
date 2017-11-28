@@ -12,40 +12,55 @@ using namespace vespalib::metrics;
 
 TEST("require that simple metrics gauge merge works")
 {
-    MetricIdentifier id(MetricName(42));
-    GaugeAggregator a(id), b(id), c(id);
-    b.observedCount = 3;
-    b.sumValue = 24.0;
-    b.minValue = 7.0;
-    b.maxValue = 9.0;
-    b.lastValue = 8.0;
+    MetricIdentifier id(MetricName(42), Point(17));
+    Gauge::Measurement a1(id, 0.0);
+    Gauge::Measurement b1(id, 7.0);
+    Gauge::Measurement b2(id, 9.0);
+    Gauge::Measurement b3(id, 8.0);
+    Gauge::Measurement c1(id, 10.0);
+    Gauge::Measurement c2(id, 1.0);
 
-    EXPECT_EQUAL(a.observedCount, 0u);
+    GaugeAggregator a(a1), b(b1), c(c1);
+    b.merge(b2);
+    b.merge(b3);
+    c.merge(c2);
+
+    EXPECT_EQUAL(a.observedCount, 1u);
     EXPECT_EQUAL(a.sumValue, 0.0);
     EXPECT_EQUAL(a.minValue, 0.0);
     EXPECT_EQUAL(a.maxValue, 0.0);
     EXPECT_EQUAL(a.lastValue, 0.0);
+
+    EXPECT_EQUAL(b.observedCount, 3u);
+    EXPECT_EQUAL(b.sumValue, 24.0);
+    EXPECT_EQUAL(b.minValue, 7.0);
+    EXPECT_EQUAL(b.maxValue, 9.0);
+    EXPECT_EQUAL(b.lastValue, 8.0);
+
+    EXPECT_EQUAL(c.observedCount, 2u);
+    EXPECT_EQUAL(c.sumValue, 11.0);
+    EXPECT_EQUAL(c.minValue, 1.0);
+    EXPECT_EQUAL(c.maxValue, 10.0);
+    EXPECT_EQUAL(c.lastValue, 1.0);
+
+    a.minValue = 8;
+
     a.merge(b);
-    EXPECT_EQUAL(a.observedCount, 3u);
+    EXPECT_EQUAL(a.observedCount, 4u);
     EXPECT_EQUAL(a.sumValue, 24.0);
     EXPECT_EQUAL(a.minValue, 7.0);
     EXPECT_EQUAL(a.maxValue, 9.0);
     EXPECT_EQUAL(a.lastValue, 8.0);
+
     a.merge(b);
-    EXPECT_EQUAL(a.observedCount, 6u);
+    EXPECT_EQUAL(a.observedCount, 7u);
     EXPECT_EQUAL(a.sumValue, 48.0);
     EXPECT_EQUAL(a.minValue, 7.0);
     EXPECT_EQUAL(a.maxValue, 9.0);
     EXPECT_EQUAL(a.lastValue, 8.0);
 
-    c.observedCount = 2;
-    c.sumValue = 11.0;
-    c.minValue = 1.0;
-    c.maxValue = 10.0;
-    c.lastValue = 1.0;
-
     a.merge(c);
-    EXPECT_EQUAL(a.observedCount, 8u);
+    EXPECT_EQUAL(a.observedCount, 9u);
     EXPECT_EQUAL(a.sumValue, 59.0);
     EXPECT_EQUAL(a.minValue, 1.0);
     EXPECT_EQUAL(a.maxValue, 10.0);

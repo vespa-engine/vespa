@@ -25,9 +25,12 @@ public:
         : _manager(std::move(m)), _id(id)
     {}
 
+    // convenience methods:
     void add() const { add(1, Point::empty); }
     void add(Point p) { add(1, p); }
-    void add(size_t count, Point p = Point::empty) const;
+    void add(size_t count) const { add(count, Point::empty); }
+
+    void add(size_t count, Point p) const;
 
     struct Increment {
         MetricIdentifier idx;

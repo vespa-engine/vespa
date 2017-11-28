@@ -14,9 +14,6 @@ struct MetricIdentifier {
 
     MetricIdentifier() = delete;
 
-    explicit MetricIdentifier(MetricName name)
-      : _name(name), _point(0) {}
-
     MetricIdentifier(MetricName name, Point point)
       : _name(name), _point(point) {}
 
@@ -38,16 +35,3 @@ struct MetricIdentifier {
 
 } // namespace vespalib::metrics
 } // namespace vespalib
-
-namespace std
-{
-    template<> struct hash<vespalib::metrics::MetricIdentifier>
-    {
-        typedef vespalib::metrics::MetricIdentifier argument_type;
-        typedef std::size_t result_type;
-        result_type operator()(argument_type const& ident) const noexcept
-        {
-            return (ident.point().id() << 20) + ident.name().id();
-        }
-    };
-}

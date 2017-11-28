@@ -16,9 +16,7 @@ struct GaugeAggregator {
     double maxValue;
     double lastValue;
 
-    GaugeAggregator(MetricIdentifier id);
-
-    void merge(const Gauge::Measurement &other);
+    GaugeAggregator(const Gauge::Measurement &other);
     void merge(const GaugeAggregator &other);
 };
 

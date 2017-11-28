@@ -10,12 +10,6 @@ namespace vespalib {
 namespace metrics {
 
 void
-TickerThread::doTickerLoop(TickerThread *me)
-{
-    me->tickerLoop();
-}
-
-void
 TickerThread::tickerLoop()
 {
     const std::chrono::seconds oneSec{1};
@@ -31,11 +25,13 @@ TickerThread::tickerLoop()
 void
 TickerThread::stop()
 {
-    std::unique_lock<std::mutex> locker(_lock);
-    _runFlag.store(false);
-    _cond.notify_all();
-    locker.unlock();
-    _thread.join();
+    if (_runFlag) {
+        std::unique_lock<std::mutex> locker(_lock);
+        _runFlag.store(false);
+        _cond.notify_all();
+        locker.unlock();
+        _thread.join();
+    }
 }
 
 

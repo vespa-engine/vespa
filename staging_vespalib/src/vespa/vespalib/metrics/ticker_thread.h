@@ -19,15 +19,14 @@ private:
     std::condition_variable _cond;
     std::thread _thread;
 
-    static void doTickerLoop(TickerThread *me);
     void tickerLoop();
 public:
     TickerThread(SimpleMetricsManager * owner)
         : _owner(owner),
           _runFlag(true),
-          _thread(doTickerLoop, this)
+          _thread(&TickerThread::tickerLoop, this)
     {}
-    ~TickerThread() {}
+    ~TickerThread() { stop(); }
 
     void stop();
 };

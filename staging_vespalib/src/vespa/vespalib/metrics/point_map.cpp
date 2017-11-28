@@ -26,9 +26,10 @@ PointMap::operator< (const PointMap &other) const
         return _map.size() < other._map.size();
     }
     // sizes equal, iterate in parallel
-    auto m = _map.begin();
-    auto o = other._map.begin();
-    while (m != _map.end()) {
+    for (auto m = _map.begin(), o = other._map.begin();
+         m != _map.end();
+         ++m, ++o)
+    {
          const Dimension& d1 = m->first;
          const Dimension& d2 = o->first;
          if (d1 != d2) {
@@ -37,10 +38,8 @@ PointMap::operator< (const PointMap &other) const
          const Label &l1 = m->second;
          const Label &l2 = o->second;
          if (l1 != l2) {
-             return l1 != l2;
+             return l1 < l2;
          }
-         ++m;
-         ++o;
     }
     // equal
     return false;

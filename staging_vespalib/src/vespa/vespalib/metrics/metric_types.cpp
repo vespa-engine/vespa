@@ -9,7 +9,7 @@ namespace vespalib {
 namespace metrics {
 
 const char* MetricTypes::_typeNames[] = {
-    "NONE",
+    "INVALID",
     "Counter",
     "Gauge",
     "Histogram",
@@ -25,10 +25,15 @@ MetricTypes::check(size_t id, const vespalib::string &name, MetricType ty)
         if (old == ty) {
             return;
         }
+        if (old == MetricType::INVALID) {
+            _seen[id] = ty;
+        }
         LOG(warning, "metric '%s' with different types %s and %s, this will be confusing",
             name.c_str(), _typeNames[ty], _typeNames[old]);
     }
-    assert (_seen.size() == id);
+    while (_seen.size() < id) {
+        _seen.push_back(MetricType::INVALID);
+    }
     _seen.push_back(ty);
 }
 

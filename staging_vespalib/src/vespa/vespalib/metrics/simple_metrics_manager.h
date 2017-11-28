@@ -49,14 +49,17 @@ private:
     InternalTimeStamp _curTime;
 
     std::mutex _bucketsLock;
+    size_t _collectCnt;
     std::vector<Bucket> _buckets;
     size_t _firstBucket;
     size_t _maxBuckets;
     Bucket _totalsBucket;
 
+    std::mutex _tickLock;
     TickerThread _ticker;
-    void collectCurrentBucket(); // called once per second from another thread
+    void collectCurrentBucket(InternalTimeStamp prev, InternalTimeStamp curr);
     Bucket mergeBuckets();
+    Bucket totalsBucket();
     Snapshot snapshotFrom(const Bucket &bucket);
 
     SimpleMetricsManager(const SimpleManagerConfig &config);
@@ -82,7 +85,7 @@ public:
         _currentBucket.sample(value);
     }
 
-    void tick() { collectCurrentBucket(); }
+    void tick(); // called once per second from another thread
 };
 
 } // namespace vespalib::metrics

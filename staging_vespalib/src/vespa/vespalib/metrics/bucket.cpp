@@ -20,8 +20,10 @@ mergeFromSamples(const StableStore<typename T::sample_type> &source)
     Map map;
     source.for_each([&map] (const Sample &sample) {
         MetricIdentifier id = sample.idx;
-        auto iter_check = map.emplace(id, Aggregator(id));
-        iter_check.first->second.merge(sample);
+        auto iter_check = map.emplace(id, sample);
+        if (!iter_check.second) {
+            iter_check.first->second.merge(sample);
+        }
     });
     std::vector<typename T::aggregator_type> result;
     for (const MapValue &entry : map) {
@@ -75,9 +77,10 @@ void Bucket::merge(const CurrentSamples &samples)
 
 void Bucket::merge(const Bucket &other)
 {
-    assert(startTime <= other.startTime);
-    assert(endTime <= other.endTime);
-    endTime = other.endTime;
+    assert(genCnt < other.genCnt);
+    genCnt = other.genCnt;
+    startTime = std::min(startTime, other.startTime);
+    endTime = std::max(endTime, other.endTime);
 
     std::vector<CounterAggregator> nextCounters = mergeVectors(counters, other.counters);
     counters = std::move(nextCounters);

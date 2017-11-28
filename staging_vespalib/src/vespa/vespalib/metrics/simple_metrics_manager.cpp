@@ -9,18 +9,21 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
+WallclockTimeSupplier timeSupplier;
+
 SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config)
     : _metricNames(),
       _dimensionNames(),
       _labelValues(),
       _pointMaps(),
       _currentBucket(),
-      _startTime(now_stamp()),
+      _startTime(timeSupplier.now_stamp()),
       _curTime(_startTime),
+      _collectCnt(0),
       _buckets(),
       _firstBucket(0),
       _maxBuckets(config.sliding_window_seconds),
-      _totalsBucket(_startTime, _startTime),
+      _totalsBucket(0, _startTime, _startTime),
       _ticker(this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
@@ -65,7 +68,7 @@ SimpleMetricsManager::mergeBuckets()
     Guard bucketsGuard(_bucketsLock);
     if (_buckets.size() > 0) {
         InternalTimeStamp startTime = _buckets[_firstBucket].startTime;
-        Bucket merger(startTime, startTime);
+        Bucket merger(0, startTime, startTime);
         for (size_t i = 0; i < _buckets.size(); i++) {
             size_t off = (_firstBucket + i) % _buckets.size();
             merger.merge(_buckets[off]);
@@ -73,7 +76,14 @@ SimpleMetricsManager::mergeBuckets()
         return merger;
     }
     // no data
-    return Bucket(_startTime, _curTime);
+    return Bucket(0, _startTime, _curTime);
+}
+
+Bucket
+SimpleMetricsManager::totalsBucket()
+{
+    Guard bucketsGuard(_bucketsLock);
+    return _totalsBucket;
 }
 
 Snapshot
@@ -81,10 +91,9 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
 {
     std::vector<PointSnapshot> points;
 
-    std::chrono::microseconds s = since_epoch(bucket.startTime);
-    std::chrono::microseconds e = since_epoch(bucket.endTime);
-    const double micro = 0.000001;
-    Snapshot snap(s.count() * micro, e.count() * micro);
+    double s = timeSupplier.stamp_to_s(bucket.startTime);
+    double e = timeSupplier.stamp_to_s(bucket.endTime);
+    Snapshot snap(s, e);
     {
         for (size_t i = 0; i < _pointMaps.size(); ++i) {
              const PointMap::BackingMap &map = _pointMaps.lookup(i).backingMap();
@@ -122,33 +131,27 @@ SimpleMetricsManager::snapshot()
 Snapshot
 SimpleMetricsManager::totalSnapshot()
 {
-    Guard guard(_bucketsLock);
-    return snapshotFrom(_totalsBucket);
+    Bucket totals = totalsBucket();
+    return snapshotFrom(totals);
 }
 
 void
-SimpleMetricsManager::collectCurrentBucket()
+SimpleMetricsManager::collectCurrentBucket(InternalTimeStamp prev,
+                                           InternalTimeStamp curr)
 {
-    InternalTimeStamp prev = _curTime;
-    InternalTimeStamp curr = now_stamp();
-
     CurrentSamples samples;
-    {
-        Guard guard(_currentBucket.lock);
-        swap(samples, _currentBucket);
-    }
-    Bucket newBucket(prev, curr);
+    _currentBucket.extract(samples);
+    Bucket newBucket(++_collectCnt, prev, curr);
     newBucket.merge(samples);
 
     Guard guard(_bucketsLock);
     _totalsBucket.merge(newBucket);
     if (_buckets.size() < _maxBuckets) {
-        _buckets.emplace_back(std::move(newBucket));
+        _buckets.push_back(std::move(newBucket));
     } else {
         _buckets[_firstBucket] = std::move(newBucket);
         _firstBucket = (_firstBucket + 1) % _buckets.size();
     }
-    _curTime = curr;
 }
 
 Dimension
@@ -179,6 +182,16 @@ SimpleMetricsManager::pointFrom(PointMap::BackingMap map)
 {
     size_t id = _pointMaps.resolve(PointMap(std::move(map)));
     return Point(id);
+}
+
+void
+SimpleMetricsManager::tick()
+{
+    Guard guard(_tickLock);
+    InternalTimeStamp prev = _curTime;
+    InternalTimeStamp curr = timeSupplier.now_stamp();
+    collectCurrentBucket(prev, curr);
+    _curTime = curr;
 }
 
 } // namespace vespalib::metrics

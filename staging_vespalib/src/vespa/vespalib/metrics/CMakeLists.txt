@@ -8,6 +8,7 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     current_samples.cpp
     dimension.cpp
     dummy_metrics_manager.cpp
+    dummy_time_supplier.cpp
     gauge_aggregator.cpp
     gauge.cpp
     handle.cpp
@@ -27,7 +28,10 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     simple_metrics_manager.cpp
     snapshots.cpp
     stable_store.cpp
+    test_time_supplier.cpp
     ticker_thread.cpp
+    time_supplier.cpp
+    wallclock_time_supplier.cpp
 
     DEPENDS
 )

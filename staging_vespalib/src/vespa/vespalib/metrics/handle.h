@@ -23,28 +23,28 @@ public:
 
 template <typename T>
 bool
-operator< (const Handle<T> &a, const Handle<T> &b)
+operator< (const Handle<T> &a, const Handle<T> &b) noexcept
 {
     return a.id() < b.id();
 }
 
 template <typename T>
 bool
-operator> (const Handle<T> &a, const Handle<T> &b)
+operator> (const Handle<T> &a, const Handle<T> &b) noexcept
 {
     return a.id() > b.id();
 }
 
 template <typename T>
 bool
-operator== (const Handle<T> &a, const Handle<T> &b)
+operator== (const Handle<T> &a, const Handle<T> &b) noexcept
 {
     return a.id() == b.id();
 }
 
 template <typename T>
 bool
-operator!= (const Handle<T> &a, const Handle<T> &b)
+operator!= (const Handle<T> &a, const Handle<T> &b) noexcept
 {
     return a.id() != b.id();
 }

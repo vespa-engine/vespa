@@ -6,16 +6,9 @@
 namespace vespalib {
 namespace metrics {
 
-CounterAggregator::CounterAggregator(MetricIdentifier id)
-  : idx(id), count(0)
+CounterAggregator::CounterAggregator(const Counter::Increment &increment)
+  : idx(increment.idx), count(increment.value)
 {}
-
-void
-CounterAggregator::merge(const Counter::Increment &increment)
-{
-    assert(idx == increment.idx);
-    count += increment.value;
-}
 
 void
 CounterAggregator::merge(const CounterAggregator &other)
