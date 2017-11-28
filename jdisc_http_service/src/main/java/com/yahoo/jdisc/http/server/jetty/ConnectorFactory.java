@@ -7,7 +7,9 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreContext;
+import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreContext;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
+import com.yahoo.jdisc.http.ssl.SslTrustStoreConfigurator;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -26,27 +28,16 @@ import java.nio.channels.ServerSocketChannel;
 public class ConnectorFactory {
 
     private final ConnectorConfig connectorConfig;
-    private final SecretStore secretStore;
     private final SslKeyStoreConfigurator sslKeyStoreConfigurator;
+    private final SslTrustStoreConfigurator sslTrustStoreConfigurator;
 
     @Inject
     public ConnectorFactory(ConnectorConfig connectorConfig,
-                            SecretStore secretStore,
-                            SslKeyStoreConfigurator sslKeyStoreConfigurator) {
+                            SslKeyStoreConfigurator sslKeyStoreConfigurator,
+                            SslTrustStoreConfigurator sslTrustStoreConfigurator) {
         this.connectorConfig = connectorConfig;
-        this.secretStore = secretStore;
         this.sslKeyStoreConfigurator = sslKeyStoreConfigurator;
-
-        if (connectorConfig.ssl().enabled())
-            validateSslConfig(connectorConfig);
-    }
-
-    // TODO: can be removed when we have dedicated SSL config in services.xml
-    private static void validateSslConfig(ConnectorConfig config) {
-        ConnectorConfig.Ssl ssl = config.ssl();
-        if (!ssl.trustStorePath().isEmpty() && ssl.useTrustStorePassword() && ssl.keyDbKey().isEmpty()) {
-            throw new IllegalArgumentException("Missing password for JKS truststore");
-        }
+        this.sslTrustStoreConfigurator = sslTrustStoreConfigurator;
     }
 
     public ConnectorConfig getConnectorConfig() {
@@ -93,13 +84,13 @@ public class ConnectorFactory {
         return new HttpConnectionFactory(httpConfig);
     }
 
-    //TODO: does not support loading non-yahoo readable JKS key stores.
     private SslConnectionFactory newSslConnectionFactory() {
         Ssl sslConfig = connectorConfig.ssl();
 
         SslContextFactory factory = new SslContextFactory();
 
         sslKeyStoreConfigurator.configure(new DefaultSslKeyStoreContext(factory));
+        sslTrustStoreConfigurator.configure(new DefaultSslTrustStoreContext(factory));
 
         switch (sslConfig.clientAuth()) {
             case NEED_AUTH:
@@ -142,16 +133,6 @@ public class ConnectorFactory {
                 ciphs[i] = sslConfig.includeCipherSuite(i).name();
             }
             factory.setIncludeCipherSuites(ciphs);
-        }
-
-        String keyDbPassword = sslConfig.keyDbKey();
-
-        if (!sslConfig.trustStorePath().isEmpty()) {
-            factory.setTrustStorePath(sslConfig.trustStorePath());
-            factory.setTrustStoreType(sslConfig.trustStoreType().toString());      
-            if (sslConfig.useTrustStorePassword()) {
-                factory.setTrustStorePassword(secretStore.getSecret(keyDbPassword));
-            }
         }
 
         factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
