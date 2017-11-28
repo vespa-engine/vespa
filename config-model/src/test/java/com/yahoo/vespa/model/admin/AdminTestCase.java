@@ -307,4 +307,24 @@ public class AdminTestCase {
         assertThat(sentinelConfig.service(2).name(), is("logd"));
         // No filedistributor service
     }
+
+    @Test
+    public void testDisableFileDistributorForAllApps() {
+        DeployState state = new DeployState.Builder()
+                .disableFiledistributor(true)
+                .properties(
+                        new DeployProperties.Builder().
+                                zone(new Zone(Environment.dev, RegionName.from("baz"))).
+                                applicationId(new ApplicationId.Builder().
+                                        tenant("quux").
+                                        applicationName("foo").instanceName("bim").build()).build()).build();
+        TestRoot root = new TestDriver().buildModel(state);
+        String localhost = HostName.getLocalhost();
+        SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
+        assertThat(sentinelConfig.service().size(), is(3));
+        assertThat(sentinelConfig.service(0).name(), is("logserver"));
+        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
+        assertThat(sentinelConfig.service(2).name(), is("logd"));
+    }
+
 }
