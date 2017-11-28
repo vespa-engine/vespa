@@ -22,8 +22,6 @@ public:
     typedef std::unique_ptr<FRTConfigRequest> UP;
     FRTConfigRequest(Connection * connection, const ConfigKey & key);
     ~FRTConfigRequest();
-    virtual bool verifyKey(const ConfigKey & key) const = 0;
-    virtual bool verifyState(const ConfigState & state) const = 0;
 
     bool abort() override;
     bool isAborted() const override;
@@ -33,25 +31,11 @@ public:
     FRT_RPCRequest* getRequest() { return _request; }
     virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const = 0;
 protected:
-    FRT_RPCRequest *_request;
-    FRT_Values & _parameters;
+    FRT_RPCRequest * _request;
+    FRT_Values     & _parameters;
 private:
-    Connection * _connection;
-    const ConfigKey _key;
-};
-
-class FRTConfigRequestV1 : public FRTConfigRequest {
-public:
-    FRTConfigRequestV1(const ConfigKey & key,
-                     Connection * connection,
-                     const vespalib::string & configMd5,
-                     int64_t generation,
-                     int64_t serverTimeout);
-    bool verifyKey(const ConfigKey & key) const override;
-    bool verifyState(const ConfigState & state) const override;
-    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override;
-private:
-    static const vespalib::string REQUEST_TYPES;
+    Connection     * _connection;
+    const ConfigKey  _key;
 };
 
 }
