@@ -11,6 +11,7 @@
 
 <handler id="com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler" bundle="node-repository">
     <binding>http://*/nodes/v2/*</binding>
+    <binding>https://*/nodes/v2/*</binding>
 </handler>
 
 <preprocess:include file="node-flavors.xml" required="false" />
