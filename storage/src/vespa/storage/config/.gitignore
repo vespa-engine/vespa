@@ -9,3 +9,5 @@ config-stor-*.cpp
 config-stor-*.h
 /config-rpc-provider.cpp
 /config-rpc-provider.h
+/config-bucketspaces.cpp
+/config-bucketspaces.h
