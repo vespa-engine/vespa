@@ -26,14 +26,13 @@ public class InstanceRegisterInformation {
     @JsonProperty("csr")
     private final String csr;
     @JsonProperty("token")
-    private final boolean token;
+    private final boolean token = true;
 
-    public InstanceRegisterInformation(String provider, String domain, String service, String attestationData, String csr, boolean token) {
+    public InstanceRegisterInformation(String provider, String domain, String service, String attestationData, String csr) {
         this.provider = provider;
         this.domain = domain;
         this.service = service;
         this.attestationData = attestationData;
         this.csr = csr;
-        this.token = token;
     }
 }

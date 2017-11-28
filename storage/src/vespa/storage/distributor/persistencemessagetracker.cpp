@@ -4,6 +4,8 @@
 #include <vespa/storage/common/vectorprinter.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
+#include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 
@@ -123,8 +125,9 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
         LOG(spam, "Can't return early because we have already replied or failed");
         return false;
     }
-
-    const lib::Distribution& distribution = _manager.getDistribution();
+    auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
+    auto &bucketSpace(bucketSpaceRepo.get(_reply->getBucket().getBucketSpace()));
+    const lib::Distribution& distribution = bucketSpace.getDistribution();
 
     if (distribution.getInitialRedundancy() == 0) {
         LOG(spam, "Not returning early because initial redundancy wasn't set");
@@ -163,12 +166,14 @@ PersistenceMessageTrackerImpl::checkCopiesDeleted()
 
     // Don't check the buckets that have been remapped here, as we will
     // create them.
+    const auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
     for (BucketInfoMap::const_iterator iter = _bucketInfo.begin();
          iter != _bucketInfo.end();
          iter++)
     {
-        BucketDatabase::Entry dbentry =
-            _manager.getBucketDatabase().get(iter->first.getBucketId());
+        const auto &bucketSpace(bucketSpaceRepo.get(iter->first.getBucketSpace()));
+        const auto &bucketDb(bucketSpace.getBucketDatabase());
+        BucketDatabase::Entry dbentry = bucketDb.get(iter->first.getBucketId());
 
         if (!dbentry.valid()) {
             continue;

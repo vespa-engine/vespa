@@ -81,6 +81,43 @@ public class TensorValue extends Value {
             return new TensorValue(value.map((value) -> value / argument.asDouble()));
     }
 
+    @Override
+    public Value modulo(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.fmod(((TensorValue) argument).value));
+        else
+            return new TensorValue(value.map((value) -> value % argument.asDouble()));
+    }
+
+    @Override
+    public Value and(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.join(((TensorValue)argument).value, (a, b) -> ((a!=0.0) && (b!=0.0)) ? 1.0 : 0.0 ));
+        else
+            return new TensorValue(value.map((value) -> ((value!=0.0) && argument.asBoolean()) ? 1 : 0));
+    }
+
+    @Override
+    public Value or(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.join(((TensorValue)argument).value, (a, b) -> ((a!=0.0) || (b!=0.0)) ? 1.0 : 0.0 ));
+        else
+            return new TensorValue(value.map((value) -> ((value!=0.0) || argument.asBoolean()) ? 1 : 0));
+    }
+
+    @Override
+    public Value not() {
+        return new TensorValue(value.map((value) -> (value==0.0) ? 1.0 : 0.0));
+    }
+
+    @Override
+    public Value power(Value argument) {
+        if (argument instanceof TensorValue)
+            return new TensorValue(value.pow(((TensorValue)argument).value));
+        else
+            return new TensorValue(value.map((value) -> Math.pow(value, argument.asDouble())));
+    }
+
     private Tensor asTensor(Value value, String operationName) {
         if ( ! (value instanceof TensorValue))
             throw new UnsupportedOperationException("Could not perform " + operationName +
@@ -103,6 +140,7 @@ public class TensorValue extends Value {
             case SMALLEREQUAL: return value.smallerOrEqual(argument);
             case EQUAL: return value.equal(argument);
             case NOTEQUAL: return value.notEqual(argument);
+            case APPROX_EQUAL: return value.approxEqual(argument);
             default: throw new UnsupportedOperationException("Tensors cannot be compared with " + operator);
         }
     }
@@ -120,6 +158,9 @@ public class TensorValue extends Value {
             case min: return value.min(argument);
             case max: return value.max(argument);
             case atan2: return value.atan2(argument);
+            case pow: return value.pow(argument);
+            case fmod: return value.fmod(argument);
+            case ldexp: return value.ldexp(argument);
             default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
         }
     }

@@ -287,7 +287,7 @@ public class Request extends AbstractResource {
     }
 
     /**
-     * <p>Returns the allocated number of milliseconds that this Request is allowed to exist. If no timeout has been set
+     * <p>Returns the allocated number of time units that this Request is allowed to exist. If no timeout has been set
      * for this Request, this method returns <em>null</em>.</p>
      *
      * @param unit The unit to return the timeout in.
@@ -306,13 +306,23 @@ public class Request extends AbstractResource {
      * <em>null</em>.</p>
      *
      * @param unit The unit to return the time in.
-     * @return The number of milliseconds left until this Request times out, or <em>null</em>.
+     * @return The number of time units left until this Request times out, or <em>null</em>.
      */
     public Long timeRemaining(TimeUnit unit) {
         if (timeout == null) {
             return null;
         }
         return unit.convert(timeout - (container().currentTimeMillis() - creationTime), TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * <p>Returns the time that this Request has existed so far.
+     *
+     * @param unit The unit to return the time in.
+     * @return The number of time units elapsed since this Request was created.
+     */
+    public long timeElapsed(TimeUnit unit) {
+        return unit.convert(container().currentTimeMillis() - creationTime, TimeUnit.MILLISECONDS);
     }
 
     /**

@@ -178,8 +178,8 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyDockerNodes(5, "docker1",
-                dockerHostNodeUnderTest.hostname());
+        List<Node> dockerNodes = tester.makeReadyDockerNodes(5, "dockerSmall",
+                                                             dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);
 

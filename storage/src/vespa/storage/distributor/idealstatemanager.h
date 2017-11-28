@@ -4,7 +4,7 @@
 #include <deque>
 #include <map>
 #include <set>
-#include <vespa/storage/distributor/distributor_bucket_space_component.h>
+#include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/statechecker.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
@@ -41,7 +41,6 @@ public:
 
     IdealStateManager(Distributor& owner,
                       DistributorBucketSpaceRepo& bucketSpaceRepo,
-                      DistributorBucketSpace& bucketSpace,
                       DistributorComponentRegister& compReg,
                       bool manageActiveBucketCopies);
 
@@ -68,6 +67,7 @@ public:
      * with higher priority than the given one.
      */
     IdealStateOperation::SP generateInterceptingSplit(
+            document::BucketSpace bucketSpace,
             const BucketDatabase::Entry& e,
             api::StorageMessage::Priority pri);
 
@@ -85,6 +85,8 @@ public:
         return _distributorComponent; }
     StorageComponent::LoadTypeSetSP getLoadTypes() {
         return _distributorComponent.getLoadTypes(); }
+    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
+    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
 
 private:
     void fillParentAndChildBuckets(StateChecker::Context& c) const;
@@ -111,7 +113,8 @@ private:
     std::vector<StateChecker::SP> _stateCheckers;
     SplitBucketStateChecker* _splitBucketStateChecker;
 
-    DistributorBucketSpaceComponent _distributorComponent;
+    DistributorComponent            _distributorComponent;
+    DistributorBucketSpaceRepo     &_bucketSpaceRepo;
 
     std::vector<IdealStateOperation::SP> generateOperationsForBucket(
             StateChecker::Context& c) const;
@@ -140,7 +143,6 @@ private:
                          const BucketDatabase::Entry& entry,
                          NodeMaintenanceStatsTracker& statsTracker,
                          std::ostream& out) const;
-
 };
 
 } // distributor

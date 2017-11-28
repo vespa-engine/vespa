@@ -39,6 +39,31 @@ public abstract class DoubleCompatibleValue extends Value {
     }
 
     @Override
+    public Value modulo(Value value) {
+        return new DoubleValue(asDouble() % value.asDouble());
+    }
+
+    @Override
+    public Value and(Value value) {
+        return new BooleanValue(asBoolean() && value.asBoolean());
+    }
+
+    @Override
+    public Value or(Value value) {
+        return new BooleanValue(asBoolean() || value.asBoolean());
+    }
+
+    @Override
+    public Value not() {
+        return new BooleanValue(!asBoolean());
+    }
+
+    @Override
+    public Value power(Value value) {
+        return new DoubleValue(Function.pow.evaluate(asDouble(), value.asDouble()));
+    }
+
+    @Override
     public Value compare(TruthOperator operator, Value value) {
         return new BooleanValue(operator.evaluate(asDouble(), value.asDouble()));
     }

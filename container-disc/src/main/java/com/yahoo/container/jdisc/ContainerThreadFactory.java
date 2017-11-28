@@ -8,7 +8,7 @@ import com.yahoo.jdisc.application.MetricConsumer;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class ContainerThreadFactory implements ThreadFactory {
 

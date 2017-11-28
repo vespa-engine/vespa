@@ -4,8 +4,10 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
@@ -22,17 +24,17 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     private Optional<AllocatedHosts> info = Optional.empty();
     private Session.Status sessionStatus;
 
-    public MockSessionZKClient(Curator curator, Path sessionPath) {
-        this(curator, sessionPath, (ApplicationPackage)null);
+    public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId) {
+        this(curator, tenantName, sessionId, (ApplicationPackage)null);
     }
 
-    public MockSessionZKClient(Curator curator, Path sessionPath, Optional<AllocatedHosts> allocatedHosts) {
-        this(curator, sessionPath);
+    public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, Optional<AllocatedHosts> allocatedHosts) {
+        this(curator, tenantName, sessionId);
         this.info = allocatedHosts;
     }
 
-    public MockSessionZKClient(Curator curator, Path sessionPath, ApplicationPackage application) {
-        super(curator, sessionPath);
+    public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, ApplicationPackage application) {
+        super(curator, Tenants.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
         this.app = application;
     }
 

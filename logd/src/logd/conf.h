@@ -10,6 +10,7 @@ private:
     char _logServer[256];
     int _logPort;
     int _logserverfd;
+    int _statePort;
     int _rotate_size;
     int _rotate_age;
     int _remove_meg;
@@ -31,6 +32,7 @@ public:
     ConfSub(Forwarder &fw, const config::ConfigUri & configUri);
     ~ConfSub();
 
+    int getStatePort() const { return _statePort; }
     int getservfd() const { return _logserverfd; }
     int getRotateSize() const { return _rotate_size; }
     int getRotateAge() const { return _rotate_age; }
@@ -39,6 +41,7 @@ public:
     bool useLogserver() const { return _use_logserver; }
 
     void configure(std::unique_ptr<cloud::config::log::LogdConfig> cfg);
+    size_t generation() const { return _subscriber.getGeneration(); }
 };
 
 } // namespace

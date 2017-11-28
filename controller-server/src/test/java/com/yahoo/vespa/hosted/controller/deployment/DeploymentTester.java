@@ -16,17 +16,19 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.maintenance.FailureRedeployer;
+import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.unknown;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -44,7 +46,7 @@ public class DeploymentTester {
 
     private final ControllerTester tester;
     private final Upgrader upgrader;
-    private final FailureRedeployer failureRedeployer;
+    private final ReadyJobsTrigger readyJobTrigger;
 
     public DeploymentTester() {
         this(new ControllerTester());
@@ -55,18 +57,20 @@ public class DeploymentTester {
         tester.curator().writeUpgradesPerMinute(100);
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, new JobControl(tester.curator()),
                                      tester.curator());
-        this.failureRedeployer = new FailureRedeployer(tester.controller(), maintenanceInterval,
-                                                       new JobControl(tester.curator()));
+        this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval,
+                                                    new JobControl(tester.curator()));
     }
 
     public Upgrader upgrader() { return upgrader; }
 
-    public FailureRedeployer failureRedeployer() { return failureRedeployer; }
+    public ReadyJobsTrigger readyJobTrigger() { return readyJobTrigger; }
 
     public Controller controller() { return tester.controller(); }
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
+    // TODO: This thing simulates the wrong thing: the build system won't hold the jobs that are running,
+    // and so these should be consumed immediately upon triggering, and be "somewhere else" while running.
     public BuildSystem buildSystem() { return tester.controller().applications().deploymentTrigger().buildSystem(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
@@ -115,8 +119,13 @@ public class DeploymentTester {
 
     /** Simulate the full lifecycle of an application deployment as declared in given application package */
     public Application createAndDeploy(String applicationName, int projectId, ApplicationPackage applicationPackage) {
-        tester.createTenant("tenant1", "domain1", 1L);
-        Application application = tester.createApplication(new TenantId("tenant1"), applicationName, "default", projectId);
+        TenantId tenantId = tester.createTenant("tenant1", "domain1", 1L);
+        return createAndDeploy(tenantId, applicationName, projectId, applicationPackage);
+    }
+
+    /** Simulate the full lifecycle of an application deployment as declared in given application package */
+    public Application createAndDeploy(TenantId tenantId, String applicationName, int projectId, ApplicationPackage applicationPackage) {
+        Application application = tester.createApplication(tenantId, applicationName, "default", projectId);
         deployCompletely(application, applicationPackage);
         return applications().require(application.id());
     }
@@ -124,6 +133,11 @@ public class DeploymentTester {
     /** Simulate the full lifecycle of an application deployment to prod.us-west-1 with the given upgrade policy */
     public Application createAndDeploy(String applicationName, int projectId, String upgradePolicy) {
         return createAndDeploy(applicationName, projectId, applicationPackage(upgradePolicy));
+    }
+
+    /** Simulate the full lifecycle of an application deployment to prod.us-west-1 with the given upgrade policy */
+    public Application createAndDeploy(TenantId tenantId, String applicationName, int projectId, String upgradePolicy) {
+        return createAndDeploy(tenantId, applicationName, projectId, applicationPackage(upgradePolicy));
     }
 
     /** Complete an ongoing deployment */
@@ -137,6 +151,20 @@ public class DeploymentTester {
         notifyJobCompletion(JobType.component, application, true);
         assertTrue(applications().require(application.id()).deploying().isPresent());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
+    }
+
+    public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType, boolean success) {
+        return jobReport(application, jobType, Optional.ofNullable(success ? null : unknown));
+    }
+
+    public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType, Optional<DeploymentJobs.JobError> jobError) {
+        return new DeploymentJobs.JobReport(
+                application.id(),
+                jobType,
+                application.deploymentJobs().projectId().get(),
+                42,
+                jobError
+        );
     }
 
     /** Deploy application using the given application package, but expecting to stop after test phases */
@@ -154,7 +182,7 @@ public class DeploymentTester {
             jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
-            deployAndNotify(application, applicationPackage, !failJob, false, job);
+            deployAndNotify(application, applicationPackage, ! failJob, false, job);
             if (failJob) {
                 break;
             }
@@ -171,10 +199,11 @@ public class DeploymentTester {
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, boolean success) {
-        notifyJobCompletion(jobType, application, DeploymentJobs.JobError.from(success));
+        notifyJobCompletion(jobType, application, Optional.ofNullable(success ? null : unknown));
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, Optional<DeploymentJobs.JobError> jobError) {
+        clock().advance(Duration.ofMillis(1));
         applications().notifyJobCompletion(jobReport(application, jobType, jobError));
     }
 
@@ -211,7 +240,7 @@ public class DeploymentTester {
         deployAndNotify(application, applicationPackage, success, true, jobs);
     }
 
-    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success, 
+    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
                                 boolean expectOnlyTheseJobs, JobType... jobs) {
         consumeJobs(application, expectOnlyTheseJobs, jobs);
         for (JobType job : jobs) {
@@ -225,21 +254,20 @@ public class DeploymentTester {
     /** Assert that the sceduled jobs of this application are exactly those given, and take them */
     private void consumeJobs(Application application, boolean expectOnlyTheseJobs, JobType... jobs) {
         for (JobType job : jobs) {
-            Optional<BuildService.BuildJob> buildJob = findJob(application, job);
-            assertTrue(String.format("Job %s is scheduled for %s", job, application), buildJob.isPresent());
-            assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.get().projectId());
-            assertEquals(job.id(), buildJob.get().jobName());
+            BuildService.BuildJob buildJob = findJob(application, job);
+            assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.projectId());
+            assertEquals(job.jobName(), buildJob.jobName());
         }
         if (expectOnlyTheseJobs)
             assertEquals(jobs.length, countJobsOf(application));
         buildSystem().removeJobs(application.id());
     }
 
-    private Optional<BuildService.BuildJob> findJob(Application application, JobType jobType) {
+    private BuildService.BuildJob findJob(Application application, JobType jobType) {
         for (BuildService.BuildJob job : buildSystem().jobs())
-            if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.id()))
-                return Optional.of(job);
-        return Optional.empty();
+            if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.jobName()))
+                return job;
+        throw new NoSuchElementException(jobType + " is not scheduled for " + application);
     }
 
     private int countJobsOf(Application application) {
@@ -247,17 +275,8 @@ public class DeploymentTester {
                                         .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
                                         .count();
     }
-    private DeploymentJobs.JobReport jobReport(Application application, JobType jobType, Optional<DeploymentJobs.JobError> jobError) {
-        return new DeploymentJobs.JobReport(
-                application.id(),
-                jobType,
-                application.deploymentJobs().projectId().get(),
-                42,
-                jobError
-        );
-    }
 
-    private static ApplicationPackage applicationPackage(String upgradePolicy) {
+    public static ApplicationPackage applicationPackage(String upgradePolicy) {
         return new ApplicationPackageBuilder()
                 .upgradePolicy(upgradePolicy)
                 .environment(Environment.prod)

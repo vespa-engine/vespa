@@ -9,6 +9,7 @@
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
+#include <mutex>
 
 namespace proton {
 
@@ -16,7 +17,7 @@ class MatchEngine : public search::engine::SearchServer,
                     public vespalib::StateExplorer
 {
 private:
-    vespalib::Lock                     _lock;
+    std::mutex                         _lock;
     const uint32_t                     _distributionKey;
     bool                               _closed;
     HandlerMap<ISearchHandler>         _handlers;

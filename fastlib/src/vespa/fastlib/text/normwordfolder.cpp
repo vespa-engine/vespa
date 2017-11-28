@@ -29,7 +29,7 @@ Fast_NormalizeWordFolder::Setup(uint32_t flags)
 {
     // Only allow setting these when not initialized or initializing...
     {
-        std::unique_lock<std::mutex> initGuard(_initMutex);
+        std::lock_guard<std::mutex> initGuard(_initMutex);
         _doAccentRemoval         = (DO_ACCENT_REMOVAL           & flags) != 0;
 //        _doSmallToNormalKana     = (DO_SMALL_TO_NORMAL_KANA     & flags) != 0;
 //        _doKatakanaToHiragana    = (DO_KATAKANA_TO_HIRAGANA     & flags) != 0;
@@ -48,7 +48,7 @@ Fast_NormalizeWordFolder::Initialize()
 {
     unsigned int i;
     if (!_isInitialized) {
-        std::unique_lock<std::mutex> initGuard(_initMutex);
+        std::lock_guard<std::mutex> initGuard(_initMutex);
         if (!_isInitialized) {
 
             for (i = 0; i < 128; i++)

@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/storage/config/config-stor-integritychecker.h>
@@ -67,17 +68,20 @@ public:
          */
         enum State { NOT_STARTED, IN_PROGRESS, DONE };
 
+        size_t currentBucketSpaceIndex;
         document::BucketId currentBucket;
         uint32_t pendingCount;
         State state;
         uint8_t disk;
-        std::list<document::BucketId> failedRepairs;
+        std::list<document::Bucket> failedRepairs;
         uint32_t checkedBuckets;
         uint32_t retriedBuckets;
 
-        DiskData() : currentBucket(0), pendingCount(0),
-                     state(NOT_STARTED), disk(255),
-                     checkedBuckets(0), retriedBuckets(0) {}
+        DiskData()
+            : currentBucketSpaceIndex(0), currentBucket(0),
+              pendingCount(0), state(NOT_STARTED), disk(255),
+              checkedBuckets(0), retriedBuckets(0)
+        {}
 
         bool done() const; // Whether we're still working on this disk
         bool working() const; // Whether we've stated and not finished
@@ -85,11 +89,14 @@ public:
          * Get the next bucket to repair. If no more to iterate, random bucket
          * is returned. Check if done() afterwards.
          */
-        document::BucketId iterate(StorBucketDatabase&);
+        document::Bucket iterate(const ContentBucketSpaceRepo::BucketSpaces& bucketSpaces,
+                                 const ContentBucketSpaceRepo& bucketSpaceRepo);
     };
 
 private:
+    ServiceLayerComponent _component;
     uint32_t _cycleCount;
+    ContentBucketSpaceRepo::BucketSpaces _bucketSpaces;
     std::vector<DiskData> _status;
     framework::SecondTime _lastCycleStart;
     uint32_t _cycleStartBucketCount;
@@ -98,11 +105,9 @@ private:
     bool _currentRunWithFullVerification;
     bool _verifyAllRepairs;
     SchedulingOptions _scheduleOptions;
-    lib::ClusterState _systemState;
     vespalib::Monitor _wait;
     config::ConfigFetcher _configFetcher;
     framework::MilliSecTime _maxThreadWaitTime;
-    ServiceLayerComponent _component;
     framework::Thread::UP _thread;
 
     BucketIntegrityChecker(const BucketIntegrityChecker &);
@@ -130,7 +135,6 @@ private:
     void configure(std::unique_ptr<vespa::config::content::core::StorIntegritycheckerConfig>) override;
     void onDoneInit() override;
     bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
-    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
     bool onNotifyBucketChangeReply(const std::shared_ptr<api::NotifyBucketChangeReply>&) override { return true; }
     SchedulingOptions::RunState getCurrentRunState(framework::SecondTime time) const;
     void run(framework::ThreadHandle&) override;

@@ -185,8 +185,8 @@ public class NodeFailTester {
     }
 
     public void allNodesMakeAConfigRequestExcept(List<Node> deadNodes) {
-        for (Node node : nodeRepository.getNodes(NodeType.tenant)) {
-            if ( ! deadNodes.contains(node) && node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+        for (Node node : nodeRepository.getNodes()) {
+            if ( ! deadNodes.contains(node))
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }
     }

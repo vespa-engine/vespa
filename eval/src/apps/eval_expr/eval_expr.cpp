@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     if (result.is_double()) {
         fprintf(stdout, "%.32g\n", result.as_double());
     } else if (result.is_tensor()) {
-        vespalib::string str = SimpleTensorEngine::ref().to_spec(*result.as_tensor()).to_string();
+        vespalib::string str = SimpleTensorEngine::ref().to_spec(result).to_string();
         fprintf(stdout, "%s\n", str.c_str());
     } else {
         fprintf(stdout, "error\n");

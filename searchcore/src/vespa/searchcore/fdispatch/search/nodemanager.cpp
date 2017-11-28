@@ -125,7 +125,7 @@ FastS_NodeManager::CheckTempFail()
     _checkTempFailScheduled = false;
     tempfail = false;
     {
-        std::unique_lock<std::mutex> mangerGuard(_managerLock);
+        std::lock_guard<std::mutex> mangerGuard(_managerLock);
         FastS_DataSetCollection *dsc = PeekDataSetCollection();
         for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
             FastS_DataSetBase *ds;
@@ -166,7 +166,7 @@ uint32_t
 FastS_NodeManager::SetPartMap(const PartitionsConfig& partmap,
                               unsigned int waitms)
 {
-    std::unique_lock<std::mutex> configGuard(_configLock);
+    std::lock_guard<std::mutex> configGuard(_configLock);
     FastS_DataSetCollDesc *configDesc = new FastS_DataSetCollDesc();
     if (!configDesc->ReadConfig(partmap)) {
         LOG(error, "NodeManager::SetPartMap: Failed to load configuration");
@@ -275,7 +275,7 @@ FastS_NodeManager::SetDataSetCollection(FastS_DataSetCollection *dsc)
 
     } else {
         {
-            std::unique_lock<std::mutex> managerGuard(_managerLock);
+            std::lock_guard<std::mutex> managerGuard(_managerLock);
             _gencnt++;
             gencnt = _gencnt;
 
@@ -304,7 +304,7 @@ FastS_NodeManager::GetDataSetCollection()
 {
     FastS_DataSetCollection *ret;
 
-    std::unique_lock<std::mutex> managerGuard(_managerLock);
+    std::lock_guard<std::mutex> managerGuard(_managerLock);
     ret = _datasetCollection;
     FastS_assert(ret != NULL);
     ret->addRef();
@@ -320,8 +320,8 @@ FastS_NodeManager::ShutdownConfig()
     FastS_DataSetCollection *old_dsc;
 
     {
-        std::unique_lock<std::mutex> configGuard(_configLock);
-        std::unique_lock<std::mutex> managerGuard(_managerLock);
+        std::lock_guard<std::mutex> configGuard(_configLock);
+        std::lock_guard<std::mutex> managerGuard(_managerLock);
         _shutdown = true;           // disallow SetPartMap
         dsc = _datasetCollection;
         _datasetCollection = new FastS_DataSetCollection(_appCtx);
@@ -347,7 +347,7 @@ FastS_NodeManager::GetTotalPartitions()
     uint32_t ret;
 
     ret = 0;
-    std::unique_lock<std::mutex> managerGuard(_managerLock);
+    std::lock_guard<std::mutex> managerGuard(_managerLock);
     FastS_DataSetCollection *dsc = PeekDataSetCollection();
     for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
         FastS_DataSetBase *ds;
@@ -429,7 +429,7 @@ FastS_NodeManager::CheckEvents(FastS_TimeKeeper *timeKeeper)
     FastS_DataSetCollection *tmp;
 
     {
-        std::unique_lock<std::mutex> managerGuard(_managerLock);
+        std::lock_guard<std::mutex> managerGuard(_managerLock);
         old_dsc = _oldDSCList;
     }
 

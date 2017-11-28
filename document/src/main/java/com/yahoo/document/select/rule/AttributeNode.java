@@ -127,12 +127,14 @@ public class AttributeNode implements ExpressionNode {
             FieldPath fieldPath = doc.getDataType().buildFieldPath(fieldPth);
             IteratorHandler handler = new IteratorHandler();
             doc.iterateNested(fieldPath, 0, handler);
+            if (handler.values.isEmpty()) {
+                return null;
+            }
             return handler.values;
         } else if (value instanceof DocumentUpdate) {
             return Result.INVALID;
         }
         return Result.FALSE;
-        //throw new IllegalStateException("Attributes are only available for document types for value '" + value + "'. Looking for " + fieldPth);
     }
 
     private static Object evaluateFunction(String function, Object value) {

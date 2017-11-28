@@ -192,14 +192,15 @@ public abstract class IndexedSearchCluster extends SearchCluster
      */
     public void addTldsWithSameIdsAsContainers(AbstractConfigProducer tldParent, ContainerCluster containerCluster) {
         for (Container container : containerCluster.getContainers()) {
-            final String containerSubId = container.getSubId();
-            if (!containerSubId.contains(".")) {
+            String containerSubId = container.getSubId();
+            if ( ! containerSubId.contains(".")) {
                 throw new RuntimeException("Expected container sub id to be of the form string.number");
             }
             int containerIndex = Integer.parseInt(containerSubId.split("\\.")[1]);
-            final String containerClusterName = containerCluster.getName();
+            String containerClusterName = containerCluster.getName();
             log.log(LogLevel.DEBUG, "Adding tld with index " + containerIndex + " for content cluster " + this.getClusterName() +
-                    ", container cluster " + containerClusterName + " (container id " + containerSubId + ") on host " + container.getHostResource().getHostName());
+                                    ", container cluster " + containerClusterName + " (container id " + containerSubId +
+                                    ") on host " + container.getHostResource().getHostName());
             rootDispatch.addDispatcher(createTld(tldParent, container.getHostResource(), containerClusterName, containerIndex));
         }
     }

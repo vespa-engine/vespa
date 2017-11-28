@@ -76,8 +76,8 @@ public class Path {
             StringBuilder rest = new StringBuilder();
             for (int i = specElements.length; i < this.elements.length; i++)
                 rest.append(elements[i]).append("/");
-            if ( ! pathString.endsWith("/"))
-                rest.setLength(rest.length() -1);
+            if ( ! pathString.endsWith("/") && rest.length() > 0)
+                rest.setLength(rest.length() - 1);
             this.rest = rest.toString();
         }
         
@@ -98,9 +98,6 @@ public class Path {
      */
     public String getRest() { return rest; }
 
-    /** Returns this path as a string */
-    public String asString() { return pathString; }
-    
     @Override
     public String toString() {
         return "path '" + Arrays.stream(elements).collect(Collectors.joining("/")) + "'";

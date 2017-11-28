@@ -297,9 +297,10 @@ public class RequestTestCase {
         public RequestHandler resolveHandler(Request request) {
             this.asServer = request.isServerRequest();
             RequestHandler requestHandler = new MyRequestHandler();
-            request.setBindingMatch(new BindingMatch<>(
-                    new UriPattern("http://*/*").match(request.getUri()),
-                    requestHandler));
+            UriPattern pattern = new UriPattern("http://*/*");
+            request.setBindingMatch(new BindingMatch<>(pattern.match(request.getUri()),
+                                                       requestHandler,
+                                                       pattern));
             return requestHandler;
         }
 

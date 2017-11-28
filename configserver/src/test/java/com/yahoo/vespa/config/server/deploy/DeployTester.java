@@ -69,26 +69,19 @@ public class DeployTester {
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
-        this(appPath, modelFactories, new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                     .configServerDBDir(Files.createTempDir()
-                                                                                             .getAbsolutePath())
-                                                                     .configDefinitionsDir(Files.createTempDir()
-                                                                                                .getAbsolutePath())),
+        this(appPath, modelFactories,
+             new ConfigserverConfig(new ConfigserverConfig.Builder()
+                     .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                     .configDefinitionsDir(Files.createTempDir().getAbsolutePath())),
              Clock.systemUTC());
     }
 
     public DeployTester(String appPath, ConfigserverConfig configserverConfig) {
-        this(appPath,
-             Collections.singletonList(createModelFactory(Clock.systemUTC())),
-             configserverConfig,
-             Clock.systemUTC());
+        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
     }
 
     public DeployTester(String appPath, ConfigserverConfig configserverConfig, Clock clock) {
-        this(appPath,
-             Collections.singletonList(createModelFactory(clock)),
-             configserverConfig,
-             clock);
+        this(appPath, Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
@@ -96,24 +89,22 @@ public class DeployTester {
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
-        Metrics metrics = Metrics.createTestMetrics();
-        Curator curator = new MockCurator();
         this.clock = clock;
-        TestComponentRegistry componentRegistry = createComponentRegistry(curator, metrics, modelFactories,
-                                                                          configserverConfig, clock);
+        TestComponentRegistry componentRegistry = createComponentRegistry(new MockCurator(), Metrics.createTestMetrics(),
+                                                                          modelFactories, configserverConfig, clock);
         try {
             this.testApp = new File(appPath);
-            this.tenants = new Tenants(componentRegistry, metrics);
+            this.tenants = new Tenants(componentRegistry, Collections.emptySet());
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        applicationRepository = new ApplicationRepository(tenants,
-                                                          createHostProvisioner(),
-                                                          clock);
+        applicationRepository = new ApplicationRepository(tenants, createHostProvisioner(), clock);
     }
 
-    public Tenant tenant() { return tenants.defaultTenant(); }
+    public Tenant tenant() {
+        return tenants.defaultTenant();
+    }
     
     /** Create a model factory for the version of this source*/
     public static ModelFactory createModelFactory(Clock clock) { 
@@ -139,6 +130,7 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
+
         Tenant tenant = tenant();
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(clock, Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());

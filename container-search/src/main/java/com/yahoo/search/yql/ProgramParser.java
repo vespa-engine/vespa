@@ -127,9 +127,10 @@ final class ProgramParser {
     }
 
 
-    private yqlplusParser prepareParser(final String programName, CharStream input) {
-        yqlplusLexer lex = new yqlplusLexer(input);
-        lex.addErrorListener(new BaseErrorListener() {
+    private yqlplusParser prepareParser(String programName, CharStream input) {
+        yqlplusLexer lexer = new yqlplusLexer(input);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new BaseErrorListener() {
 
           @Override
           public void syntaxError(@NotNull Recognizer<?, ?> recognizer,
@@ -142,8 +143,10 @@ final class ProgramParser {
           }
 
         });
-        TokenStream tokens = new CommonTokenStream(lex);
+        TokenStream tokens = new CommonTokenStream(lexer);
+
         yqlplusParser parser = new yqlplusParser(tokens);
+        parser.removeErrorListeners();
         parser.addErrorListener(new BaseErrorListener() {
 
           @Override
@@ -224,6 +227,7 @@ final class ProgramParser {
     }
 
     static class Binding {
+
         private final List<String> binding;
 
         Binding(String moduleName, String exportName) {
@@ -245,9 +249,11 @@ final class ProgramParser {
         public List<String> toPathWith(List<String> rest) {
             return ImmutableList.copyOf(Iterables.concat(toPath(), rest));
         }
+
     }
 
     static class Scope {
+
         final Scope root;
         final Scope parent;
         Set<String> cursors = ImmutableSet.of();

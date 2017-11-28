@@ -9,7 +9,7 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
-#include <vespa/persistence/spi/test.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -34,7 +34,6 @@ LOG_SETUP("persistenceconformance_test");
 using namespace config;
 using namespace proton;
 using namespace cloud::config::filedistribution;
-using namespace storage::spi::test;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
@@ -45,6 +44,7 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumenttypesConfig;
 using document::TestDocMan;
+using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;

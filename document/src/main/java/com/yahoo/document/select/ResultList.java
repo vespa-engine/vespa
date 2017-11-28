@@ -60,6 +60,10 @@ public class ResultList {
         return results;
     }
 
+    public static ResultList fromBoolean(boolean result) {
+        return new ResultList(result ? Result.TRUE : Result.FALSE);
+    }
+
     public Result toResult() {
         if (results.isEmpty()) {
             return Result.FALSE;

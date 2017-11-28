@@ -5,13 +5,16 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Spec;
 
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.system.CatchSigTerm;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import com.yahoo.vespa.config.proxy.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
+import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -40,6 +43,7 @@ public class ProxyServer implements Runnable {
 
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
+    private final Supervisor supervisor = new Supervisor(new Transport());
     private final ClientUpdater clientUpdater;
     private ScheduledFuture<?> delayedResponseScheduler;
 
@@ -83,7 +87,8 @@ public class ProxyServer implements Runnable {
         this.rpcServer = createRpcServer(spec);
         clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
         this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
-        this.fileDownloader = new FileDownloader(source);
+        this.fileDownloader = new FileDownloader(new JRTConnectionPool(source));
+        new FileDistributionRpcServer(supervisor, fileDownloader);
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {
@@ -162,7 +167,7 @@ public class ProxyServer implements Runnable {
     }
 
     private ConfigProxyRpcServer createRpcServer(Spec spec) {
-        return  (spec == null) ? null : new ConfigProxyRpcServer(this, spec); // TODO: Try to avoid first argument being 'this'
+        return  (spec == null) ? null : new ConfigProxyRpcServer(this, supervisor, spec); // TODO: Try to avoid first argument being 'this'
     }
 
     private RpcConfigSourceClient createRpcClient() {

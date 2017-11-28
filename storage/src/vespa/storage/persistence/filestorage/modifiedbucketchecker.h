@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelink.h>
@@ -49,9 +50,36 @@ private:
     bool moreChunksRemaining() const {
         return !_rechecksNotStarted.empty();
     }
-    bool requestModifiedBucketsFromProvider();
+    bool requestModifiedBucketsFromProvider(document::BucketSpace bucketSpace);
     void nextRecheckChunk(std::vector<RecheckBucketInfoCommand::SP>&);
     void dispatchAllToPersistenceQueues(const std::vector<RecheckBucketInfoCommand::SP>&);
+
+    class CyclicBucketSpaceIterator {
+    private:
+        ContentBucketSpaceRepo::BucketSpaces _bucketSpaces;
+        size_t _idx;
+    public:
+        using UP = std::unique_ptr<CyclicBucketSpaceIterator>;
+        CyclicBucketSpaceIterator(const ContentBucketSpaceRepo::BucketSpaces &bucketSpaces);
+        document::BucketSpace next() {
+            return _bucketSpaces[(_idx++)%_bucketSpaces.size()];
+        }
+    };
+
+    class BucketIdListResult {
+    private:
+        document::BucketSpace _bucketSpace;
+        document::bucket::BucketIdList _buckets;
+    public:
+        BucketIdListResult();
+        void reset(document::BucketSpace bucketSpace,
+                   document::bucket::BucketIdList &buckets);
+        const document::BucketSpace &bucketSpace() const { return _bucketSpace; }
+        size_t size() const { return _buckets.size(); }
+        bool empty() const { return _buckets.empty(); }
+        const document::BucketId &back() const { return _buckets.back(); }
+        void pop_back() { _buckets.pop_back(); }
+    };
 
     spi::PersistenceProvider& _provider;
     ServiceLayerComponent::UP _component;
@@ -59,7 +87,8 @@ private:
     config::ConfigFetcher _configFetcher;
     vespalib::Monitor _monitor;
     vespalib::Lock _stateLock;
-    document::bucket::BucketIdList  _rechecksNotStarted;
+    CyclicBucketSpaceIterator::UP _bucketSpaces;
+    BucketIdListResult  _rechecksNotStarted;
     size_t _pendingRequests;
     size_t _maxPendingChunkSize;
     bool _singleThreadMode; // For unit testing only

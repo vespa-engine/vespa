@@ -16,10 +16,12 @@
 
 #include <map>
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <mutex>
+#include <condition_variable>
+#include <cassert>
 
 namespace storage {
 
@@ -238,7 +240,8 @@ private:
     };
 
     Map               _map;
-    vespalib::Monitor _lock;
+    mutable std::mutex      _lock;
+    std::condition_variable _cond;
     LockIdSet         _lockedKeys;
     LockWaiters       _lockWaiters;
 
@@ -247,9 +250,9 @@ private:
                 const char* clientId, bool haslock, bool& preExisted);
     void unlock(const key_type& key);
     bool findNextKey(key_type& key, mapped_type& val, const char* clientId,
-                     vespalib::MonitorGuard& guard);
+                     std::unique_lock<std::mutex> &guard);
     bool handleDecision(key_type& key, mapped_type& val, Decision decision);
-    void ackquireKey(const LockId & lid, vespalib::MonitorGuard & guard);
+    void acquireKey(const LockId & lid, std::unique_lock<std::mutex> &guard);
 
     /**
      * Process up to `chunkSize` bucket database entries from--and possibly
@@ -304,7 +307,7 @@ private:
     void addAndLockResults(const std::vector<BucketId::Type> keys,
                            const char* clientId,
                            std::map<BucketId, WrappedEntry>& results,
-                           vespalib::MonitorGuard& guard);
+                           std::unique_lock<std::mutex> &guard);
 };
 
 } // storage

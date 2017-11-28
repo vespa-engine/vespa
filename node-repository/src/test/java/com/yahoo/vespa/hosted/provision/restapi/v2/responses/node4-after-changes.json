@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com",
   "id": "host4.yahoo.com",
-  "state": "reserved",
+  "state": "failed",
   "type": "tenant",
   "hostname": "host4.yahoo.com",
   "parentHostname": "parent.yahoo.com",
@@ -12,35 +12,36 @@
   "minMainMemoryAvailableGb": 12.0,
   "description": "Flavor-name-is-medium-disk",
   "minCpuCores": 6.0,
-  "fastDisk":true,
+  "fastDisk": true,
   "environment": "BARE_METAL",
   "owner": {
-    "tenant": "tenant1",
-    "application": "application1",
-    "instance": "instance1"
+    "tenant": "tenant3",
+    "application": "application3",
+    "instance": "instance3"
   },
   "membership": {
-    "clustertype": "container",
-    "clusterid": "id1",
+    "clustertype": "content",
+    "clusterid": "id3",
     "group": "0",
-    "index": 1,
+    "index": 0,
     "retired": false
   },
-  "restartGeneration": 0,
+  "restartGeneration": 1,
   "currentRestartGeneration": 1,
   "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
   "wantedVespaVersion": "6.42.0",
-  "rebootGeneration": 2,
+  "allowedToBeDown": false,
+  "rebootGeneration": 3,
   "currentRebootGeneration": 1,
   "vespaVersion": "6.43.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.43.0",
   "hostedVersion": "6.43.0",
   "convergedStateVersion": "6.43.0",
-  "failCount": 0,
+  "failCount": 1,
   "hardwareFailure": true,
   "hardwareFailureDescription": "memory_mcelog",
-  "wantToRetire" : true,
-  "wantToDeprovision" : true,
+  "wantToRetire": true,
+  "wantToDeprovision": true,
   "history": [
     {
       "event": "provisioned",
@@ -50,7 +51,7 @@
     {
       "event": "readied",
       "at": 123,
-      "agent": "system"    
+      "agent": "system"
     },
     {
       "event": "reserved",
@@ -58,11 +59,24 @@
       "agent": "application"
     },
     {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "failed",
+      "at": 123,
+      "agent": "operator"
+    },
+    {
       "event": "rebooted",
       "at": 123,
       "agent": "system"
     }
   ],
-  "ipAddresses":["127.0.0.1", "::1"],
-  "additionalIpAddresses":[]
+  "ipAddresses": [
+    "127.0.0.1",
+    "::1"
+  ],
+  "additionalIpAddresses": []
 }

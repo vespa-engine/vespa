@@ -15,6 +15,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -51,7 +52,10 @@ public class ApplicationSerializer {
     private final String deploymentJobsField = "deploymentJobs";
     private final String deployingField = "deployingField";
     private final String outstandingChangeField = "outstandingChangeField";
-    
+    private final String ownershipIssueIdField = "ownershipIssueId";
+    private final String writeQualityField = "writeQuality";
+    private final String queryQualityField = "queryQuality";
+
     // Deployment fields
     private final String zoneField = "zone";
     private final String environmentField = "environment";
@@ -123,6 +127,9 @@ public class ApplicationSerializer {
         toSlime(application.deploymentJobs(), root.setObject(deploymentJobsField));
         toSlime(application.deploying(), root);
         root.setBool(outstandingChangeField, application.hasOutstandingChange());
+        application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
+        root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
+        root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         return slime;
     }
 
@@ -202,9 +209,7 @@ public class ApplicationSerializer {
     }
     
     private void toSlime(DeploymentJobs deploymentJobs, Cursor cursor) {
-        deploymentJobs.projectId()
-                .filter(id -> id > 0) // TODO: Discards invalid data. Remove filter after October 2017
-                .ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
+        deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
         deploymentJobs.issueId().ifPresent(jiraIssueId -> cursor.setString(issueIdField, jiraIssueId.value()));
     }
@@ -215,7 +220,7 @@ public class ApplicationSerializer {
     }
     
     private void toSlime(JobStatus jobStatus, Cursor object) {
-        object.setString(jobTypeField, jobStatus.type().id());
+        object.setString(jobTypeField, jobStatus.type().jobName());
         if (jobStatus.jobError().isPresent())
             object.setString(errorField, jobStatus.jobError().get().name());
 
@@ -259,9 +264,12 @@ public class ApplicationSerializer {
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
         Optional<Change> deploying = changeFromSlime(root.field(deployingField));
         boolean outstandingChange = root.field(outstandingChangeField).asBool();
+        Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
+        ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
+                                                            root.field(writeQualityField).asDouble());
 
-        return new Application(id, deploymentSpec, validationOverrides, deployments, 
-                               deploymentJobs, deploying, outstandingChange);
+        return new Application(id, deploymentSpec, validationOverrides, deployments,
+                               deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -347,8 +355,7 @@ public class ApplicationSerializer {
     }
 
     private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
-        Optional<Long> projectId = optionalLong(object.field(projectIdField))
-                .filter(id -> id > 0); // TODO: Discards invalid data. Remove filter after October 2017
+        Optional<Long> projectId = optionalLong(object.field(projectIdField));
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
         Optional<IssueId> issueId = optionalString(object.field(issueIdField)).map(IssueId::from);
 
@@ -373,7 +380,7 @@ public class ApplicationSerializer {
     }
     
     private JobStatus jobStatusFromSlime(Inspector object) {
-        DeploymentJobs.JobType jobType = DeploymentJobs.JobType.fromId(object.field(jobTypeField).asString());
+        DeploymentJobs.JobType jobType = DeploymentJobs.JobType.fromJobName(object.field(jobTypeField).asString());
 
         Optional<JobError> jobError = Optional.empty();
         if (object.field(errorField).valid())
@@ -388,7 +395,7 @@ public class ApplicationSerializer {
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017
+        return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017 -- what about lastTriggered?
                                                 new Version(object.field(versionField).asString()),
                                                 applicationRevisionFromSlime(object.field(revisionField)),
                                                 object.field(upgradeField).asBool(),

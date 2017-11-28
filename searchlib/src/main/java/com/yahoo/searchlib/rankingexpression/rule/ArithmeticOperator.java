@@ -14,17 +14,29 @@ import java.util.List;
  */
 public enum ArithmeticOperator {
 
-    PLUS(0, "+") { public Value evaluate(Value x, Value y) {
+    OR(0, "||") { public Value evaluate(Value x, Value y) {
+        return x.or(y);
+    }},
+    AND(1, "&&") { public Value evaluate(Value x, Value y) {
+        return x.and(y);
+    }},
+    PLUS(2, "+") { public Value evaluate(Value x, Value y) {
         return x.add(y);
     }},
-    MINUS(1, "-") { public Value evaluate(Value x, Value y) {
+    MINUS(3, "-") { public Value evaluate(Value x, Value y) {
         return x.subtract(y);
     }},
-    MULTIPLY(2, "*") { public Value evaluate(Value x, Value y) {
+    MULTIPLY(4, "*") { public Value evaluate(Value x, Value y) {
         return x.multiply(y);
     }},
-    DIVIDE(3, "/") { public Value evaluate(Value x, Value y) {
+    DIVIDE(5, "/") { public Value evaluate(Value x, Value y) {
         return x.divide(y);
+    }},
+    MODULO(6, "%") { public Value evaluate(Value x, Value y) {
+        return x.modulo(y);
+    }},
+    POWER(7, "^") { public Value evaluate(Value x, Value y) {
+        return x.power(y);
     }};
 
     /** A list of all the operators in this in order of decreasing precedence */
@@ -52,10 +64,14 @@ public enum ArithmeticOperator {
 
     private static List<ArithmeticOperator> operatorsByPrecedence() {
         List<ArithmeticOperator> operators = new ArrayList<>();
+        operators.add(POWER);
+        operators.add(MODULO);
         operators.add(DIVIDE);
         operators.add(MULTIPLY);
         operators.add(MINUS);
         operators.add(PLUS);
+        operators.add(AND);
+        operators.add(OR);
         return Collections.unmodifiableList(operators);
     }
 

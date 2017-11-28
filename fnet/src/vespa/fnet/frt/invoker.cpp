@@ -32,7 +32,7 @@ void
 FRT_SingleReqWait::RequestDone(FRT_RPCRequest *req)
 {
     (void) req;
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _done = true;
     if (_waiting) {
         _cond.notify_one();

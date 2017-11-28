@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestWithCurator;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import org.junit.Before;
 
 /**
@@ -19,8 +18,7 @@ public class TestWithTenant extends TestWithCurator {
 
     @Before
     public void setupTenant() throws Exception {
-        final Metrics metrics = Metrics.createTestMetrics();
-        tenants = new Tenants(new TestComponentRegistry.Builder().curator(curator).metrics(metrics).build(), metrics);
+        tenants = new Tenants(new TestComponentRegistry.Builder().curator(curator).build());
         tenant = tenants.defaultTenant();
     }
 

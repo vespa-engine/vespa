@@ -38,18 +38,17 @@ struct Eval {
         double _number;
         TensorSpec _tensor;
     public:
-        Result(const Value &value) : _type(Type::ERROR), _number(error_value), _tensor("error") {
+        Result() : _type(Type::ERROR), _number(error_value), _tensor("error") {}
+        Result(const TensorEngine &engine, const Value &value) : _type(Type::ERROR), _number(error_value), _tensor("error") {
             if (value.is_double()) {
                 _type = Type::NUMBER;
-                _number = value.as_double();
-                _tensor = TensorSpec("double").add({}, _number);
-            } else if (value.is_tensor()) {
-                _type = Type::TENSOR;
-                _tensor = value.as_tensor()->engine().to_spec(*value.as_tensor());
-                if (_tensor.type() == "double") {
-                    _number = as_double(_tensor);
-                }
             }
+            if (value.is_tensor()) {
+                EXPECT_TRUE(_type == Type::ERROR);
+                _type = Type::TENSOR;
+            }
+            _number = value.as_double();
+            _tensor = engine.to_spec(value);
         }
         bool is_error() const { return (_type == Type::ERROR); }
         bool is_number() const { return (_type == Type::NUMBER); }
@@ -60,20 +59,20 @@ struct Eval {
         }
         const TensorSpec &tensor() const {
             EXPECT_TRUE(is_tensor());
-            return _tensor;            
+            return _tensor;
         }
     };
     virtual Result eval(const TensorEngine &) const {
         TEST_ERROR("wrong signature");
-        return Result(ErrorValue());
+        return Result();
     }
     virtual Result eval(const TensorEngine &, const TensorSpec &) const {
         TEST_ERROR("wrong signature");
-        return Result(ErrorValue());
+        return Result();
     }
     virtual Result eval(const TensorEngine &, const TensorSpec &, const TensorSpec &) const {
         TEST_ERROR("wrong signature");
-        return Result(ErrorValue());
+        return Result();
     }
     virtual ~Eval() {}
 };
@@ -87,7 +86,7 @@ struct SafeEval : Eval {
             return unsafe.eval(engine);
         } catch (std::exception &e) {
             TEST_ERROR(e.what());
-            return Result(ErrorValue());
+            return Result();
         }
     }
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
@@ -95,7 +94,7 @@ struct SafeEval : Eval {
             return unsafe.eval(engine, a);
         } catch (std::exception &e) {
             TEST_ERROR(e.what());
-            return Result(ErrorValue());
+            return Result();
         }
 
     }
@@ -104,7 +103,7 @@ struct SafeEval : Eval {
             return unsafe.eval(engine, a, b);
         } catch (std::exception &e) {
             TEST_ERROR(e.what());
-            return Result(ErrorValue());
+            return Result();
         }
     }
 };
@@ -125,7 +124,7 @@ struct Expr_V : Eval {
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
         InterpretedFunction::SimpleObjectParams params({});
-        return Result(check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
+        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
 
@@ -139,9 +138,9 @@ struct Expr_T : Eval {
         NodeTypes types(fun, {a_type});
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
-        TensorValue va(engine.create(a));
-        InterpretedFunction::SimpleObjectParams params({va});
-        return Result(check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
+        Value::UP va = engine.from_spec(a);
+        InterpretedFunction::SimpleObjectParams params({*va});
+        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
 
@@ -156,19 +155,15 @@ struct Expr_TT : Eval {
         NodeTypes types(fun, {a_type, b_type});
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
-        TensorValue va(engine.create(a));
-        TensorValue vb(engine.create(b));
-        InterpretedFunction::SimpleObjectParams params({va,vb});
-        return Result(check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
+        Value::UP va = engine.from_spec(a);
+        Value::UP vb = engine.from_spec(b);
+        InterpretedFunction::SimpleObjectParams params({*va,*vb});
+        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
 
 const Value &make_value(const TensorEngine &engine, const TensorSpec &spec, Stash &stash) {
-    if (spec.type() == "double") {
-        double number = as_double(spec);
-        return stash.create<DoubleValue>(number);
-    }
-    return stash.create<TensorValue>(engine.create(spec));
+    return *stash.create<Value::UP>(engine.from_spec(spec));
 }
 
 //-----------------------------------------------------------------------------
@@ -179,11 +174,11 @@ struct ImmediateReduce : Eval {
     std::vector<vespalib::string> dimensions;
     ImmediateReduce(Aggr aggr_in) : aggr(aggr_in), dimensions() {}
     ImmediateReduce(Aggr aggr_in, const vespalib::string &dimension)
-        : aggr(aggr_in), dimensions({dimension}) {}    
+        : aggr(aggr_in), dimensions({dimension}) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
-        return Result(engine.reduce(lhs, aggr, dimensions, stash));
+        return Result(engine, engine.reduce(lhs, aggr, dimensions, stash));
     }
 };
 
@@ -195,7 +190,7 @@ struct ImmediateMap : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
-        return Result(engine.map(lhs, function, stash));
+        return Result(engine, engine.map(lhs, function, stash));
     }
 };
 
@@ -208,7 +203,7 @@ struct ImmediateJoin : Eval {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
         const auto &rhs = make_value(engine, b, stash);
-        return Result(engine.join(lhs, rhs, function, stash));
+        return Result(engine, engine.join(lhs, rhs, function, stash));
     }
 };
 
@@ -220,7 +215,7 @@ struct ImmediateConcat : Eval {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
         const auto &rhs = make_value(engine, b, stash);
-        return Result(engine.concat(lhs, rhs, dimension, stash));
+        return Result(engine, engine.concat(lhs, rhs, dimension, stash));
     }
 };
 
@@ -233,7 +228,7 @@ struct ImmediateRename : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         const auto &lhs = make_value(engine, a, stash);
-        return Result(engine.rename(lhs, from, to, stash));
+        return Result(engine, engine.rename(lhs, from, to, stash));
     }
 };
 
@@ -243,20 +238,28 @@ const size_t tensor_id_a = 11;
 const size_t tensor_id_b = 12;
 
 // input used when evaluating in retained mode
-struct Input : TensorFunction::Input {
-    std::vector<TensorValue> tensors;
-    Input(std::unique_ptr<Tensor> a) : tensors() {
-        tensors.emplace_back(std::move(a));
+struct Input {
+    std::vector<Value::UP> tensors;
+    std::vector<Value::CREF> params;
+    ~Input() {}
+    void pad_params() {
+        for (size_t i = 0; i < tensor_id_a; ++i) {
+            params.push_back(ErrorValue::instance);
+        }
     }
-    Input(std::unique_ptr<Tensor> a, std::unique_ptr<Tensor> b) : tensors() {
-        tensors.emplace_back(std::move(a));
-        tensors.emplace_back(std::move(b));
+    Input(Value::UP a) : tensors() {
+        pad_params();
+        tensors.push_back(std::move(a));
+        params.emplace_back(*tensors.back());
     }
-    const Value &get_tensor(size_t id) const override {
-        size_t offset = (id - tensor_id_a);
-        ASSERT_GREATER(tensors.size(), offset);
-        return tensors[offset];
+    Input(Value::UP a, Value::UP b) : tensors() {
+        pad_params();
+        tensors.push_back(std::move(a));
+        params.emplace_back(*tensors.back());
+        tensors.push_back(std::move(b));
+        params.emplace_back(*tensors.back());
     }
+    ConstArrayRef<Value::CREF> get() const { return params; }
 };
 
 // evaluate tensor reduce operation using tensor engine retained api
@@ -267,13 +270,13 @@ struct RetainedReduce : Eval {
     RetainedReduce(Aggr aggr_in, const vespalib::string &dimension)
         : aggr(aggr_in), dimensions({dimension}) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
-        auto a_type = ValueType::from_spec(a.type());
-        auto ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a), aggr, dimensions);
-        ValueType expect_type = ir->result_type;
-        auto fun = engine.compile(std::move(ir));
-        Input input(engine.create(a));
         Stash stash;
-        return Result(check_type(fun->eval(input, stash), expect_type));
+        auto a_type = ValueType::from_spec(a.type());
+        const auto &ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a, stash), aggr, dimensions, stash);
+        ValueType expect_type = ir.result_type;
+        const auto &fun = engine.compile(ir, stash);
+        Input input(engine.from_spec(a));
+        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
     }
 };
 
@@ -282,13 +285,13 @@ struct RetainedMap : Eval {
     map_fun_t function;
     RetainedMap(map_fun_t function_in) : function(function_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
-        auto a_type = ValueType::from_spec(a.type());
-        auto ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a), function);
-        ValueType expect_type = ir->result_type;
-        auto fun = engine.compile(std::move(ir));
-        Input input(engine.create(a));
         Stash stash;
-        return Result(check_type(fun->eval(input, stash), expect_type));
+        auto a_type = ValueType::from_spec(a.type());
+        const auto &ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a, stash), function, stash);
+        ValueType expect_type = ir.result_type;
+        const auto &fun = engine.compile(ir, stash);
+        Input input(engine.from_spec(a));
+        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
     }
 };
 
@@ -297,16 +300,16 @@ struct RetainedJoin : Eval {
     join_fun_t function;
     RetainedJoin(join_fun_t function_in) : function(function_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        Stash stash;
         auto a_type = ValueType::from_spec(a.type());
         auto b_type = ValueType::from_spec(b.type());
-        auto ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a),
-                                        tensor_function::inject(b_type, tensor_id_b),
-                                        function);
-        ValueType expect_type = ir->result_type;
-        auto fun = engine.compile(std::move(ir));
-        Input input(engine.create(a), engine.create(b));
-        Stash stash;
-        return Result(check_type(fun->eval(input, stash), expect_type));
+        const auto &ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a, stash),
+                                               tensor_function::inject(b_type, tensor_id_b, stash),
+                                               function, stash);
+        ValueType expect_type = ir.result_type;
+        const auto &fun = engine.compile(ir, stash);
+        Input input(engine.from_spec(a), engine.from_spec(b));
+        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
     }
 };
 
@@ -369,21 +372,15 @@ struct TestContext {
     TestContext(const vespalib::string &module_path_in, const TensorEngine &engine_in)
         : module_path(module_path_in), ref_engine(SimpleTensorEngine::ref()), engine(engine_in) {}
 
-    std::unique_ptr<Tensor> tensor(const TensorSpec &spec) {
-        auto result = engine.create(spec);
-        EXPECT_EQUAL(spec.type(), engine.type_of(*result).to_spec());
-        return result;
-    }
-
     //-------------------------------------------------------------------------
 
     void verify_create_type(const vespalib::string &type_spec) {
-        auto tensor = engine.create(TensorSpec(type_spec));
-        EXPECT_TRUE(&engine == &tensor->engine());
-        EXPECT_EQUAL(type_spec, engine.type_of(*tensor).to_spec());
+        Value::UP value = engine.from_spec(TensorSpec(type_spec));
+        EXPECT_EQUAL(type_spec, value->type().to_spec());
     }
 
     void test_tensor_create_type() {
+        TEST_DO(verify_create_type("error"));
         TEST_DO(verify_create_type("double"));
         TEST_DO(verify_create_type("tensor(x{})"));
         TEST_DO(verify_create_type("tensor(x{},y{})"));
@@ -491,6 +488,7 @@ struct TestContext {
         TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan)));
         TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div10(N()))));
         TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("elu(a)", operation::Elu::f, Sub2(Div10(N()))));
         TEST_DO(test_map_op("a in [1,5,7,13,42]", MyIn::f, N()));
         TEST_DO(test_map_op("(a+1)*2", MyOp::f, Div10(N())));
     }
@@ -731,7 +729,7 @@ struct TestContext {
             TEST_STATE(make_string("lhs shape: %s, rhs shape: %s",
                                    lhs_input.type().c_str(),
                                    rhs_input.type().c_str()).c_str());
-            Eval::Result expect = ImmediateJoin(op).eval(ref_engine, lhs_input, rhs_input); 
+            Eval::Result expect = ImmediateJoin(op).eval(ref_engine, lhs_input, rhs_input);
             TEST_DO(verify_result(safe(eval).eval(engine, lhs_input, rhs_input), expect));
         }
         TEST_DO(test_fixed_sparse_cases_apply_op(eval, op));
@@ -867,8 +865,8 @@ struct TestContext {
     {
         Stash stash;
         nbostream data;
-        encode_engine.encode(make_value(encode_engine, spec, stash), data, stash);
-        TEST_DO(verify_result(Eval::Result(decode_engine.decode(data, stash)), spec));
+        encode_engine.encode(make_value(encode_engine, spec, stash), data);
+        TEST_DO(verify_result(Eval::Result(decode_engine, *decode_engine.decode(data)), spec));
     }
 
     void verify_encode_decode(const TensorSpec &spec) {
@@ -884,13 +882,13 @@ struct TestContext {
         const Inspector &binary = test["binary"];
         EXPECT_GREATER(binary.entries(), 0u);
         nbostream encoded;
-        engine.encode(make_value(engine, spec, stash), encoded, stash);
+        engine.encode(make_value(engine, spec, stash), encoded);
         test.setData("encoded", Memory(encoded.peek(), encoded.size()));
         bool matched_encode = false;
         for (size_t i = 0; i < binary.entries(); ++i) {
             nbostream data = extract_data(binary[i].asString());
             matched_encode = (matched_encode || is_same(encoded, data));
-            TEST_DO(verify_result(Eval::Result(engine.decode(data, stash)), spec));
+            TEST_DO(verify_result(Eval::Result(engine, *engine.decode(data)), spec));
             EXPECT_EQUAL(data.size(), 0u);
         }
         EXPECT_TRUE(matched_encode);

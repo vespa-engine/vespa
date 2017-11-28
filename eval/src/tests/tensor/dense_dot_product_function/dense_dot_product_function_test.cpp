@@ -50,34 +50,26 @@ asDenseTensor(const tensor::Tensor &tensor)
     return dynamic_cast<const DenseTensor &>(tensor);
 }
 
-class FunctionInput : public TensorFunction::Input
+class FunctionInput
 {
 private:
     tensor::Tensor::UP _lhsTensor;
     tensor::Tensor::UP _rhsTensor;
     const DenseTensor &_lhsDenseTensor;
     const DenseTensor &_rhsDenseTensor;
-    TensorValue _lhsValue;
-    TensorValue _rhsValue;
+    std::vector<Value::CREF> _params;
 
 public:
     FunctionInput(size_t lhsNumCells, size_t rhsNumCells)
         : _lhsTensor(makeTensor(lhsNumCells, 3.0)),
           _rhsTensor(makeTensor(rhsNumCells, 5.0)),
           _lhsDenseTensor(asDenseTensor(*_lhsTensor)),
-          _rhsDenseTensor(asDenseTensor(*_rhsTensor)),
-          _lhsValue(std::make_unique<DenseTensor>(_lhsDenseTensor.type(),
-                                                  _lhsDenseTensor.cells())),
-          _rhsValue(std::make_unique<DenseTensor>(_rhsDenseTensor.type(),
-                                                  _rhsDenseTensor.cells()))
-    {}
-    virtual const Value &get_tensor(size_t id) const override {
-        if (id == 0) {
-            return _lhsValue;
-        } else {
-            return _rhsValue;
-        }
+          _rhsDenseTensor(asDenseTensor(*_rhsTensor))
+    {
+        _params.emplace_back(_lhsDenseTensor);
+        _params.emplace_back(_rhsDenseTensor);
     }
+    ConstArrayRef<Value::CREF> get() const { return _params; }
     double expectedDotProduct() const {
         return calcDotProduct(_lhsDenseTensor, _rhsDenseTensor);
     }
@@ -91,11 +83,11 @@ struct Fixture
     ~Fixture();
     double eval() const {
         Stash stash;
-        const Value &result = function.eval(input, stash);
+        const Value &result = function.eval(input.get(), stash);
         ASSERT_TRUE(result.is_double());
         LOG(info, "eval(): (%s) * (%s) = %f",
-            input.get_tensor(0).type().to_spec().c_str(),
-            input.get_tensor(1).type().to_spec().c_str(),
+            input.get()[0].get().type().to_spec().c_str(),
+            input.get()[1].get().type().to_spec().c_str(),
             result.as_double());
         return result.as_double();
     }

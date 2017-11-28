@@ -3,6 +3,7 @@
 #include "removebucketoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 
@@ -15,7 +16,7 @@ RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
 {
     std::vector<std::pair<uint16_t, std::shared_ptr<api::DeleteBucketCommand> > > msgs;
 
-    BucketDatabase::Entry entry = _manager->getDistributorComponent().getBucketDatabase().get(getBucketId());
+    BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
 
     for (uint32_t i = 0; i < getNodes().size(); ++i) {
         uint16_t node = getNodes()[i];

@@ -18,6 +18,7 @@
 
 #include "move.h"
 #include "runstatistics.h"
+#include <vespa/storage/common/content_bucket_space.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <list>
@@ -33,8 +34,8 @@ class Clock;
 namespace bucketmover {
 
 class Run : public document::Printable {
-    StorBucketDatabase& _bucketDatabase;
-    lib::Distribution::SP _distribution;
+    ContentBucketSpace& _bucketSpace;
+    std::shared_ptr<const lib::Distribution> _distribution;
     lib::NodeState _nodeState;
     uint16_t _nodeIndex;
     uint32_t _maxEntriesToKeep;
@@ -48,8 +49,7 @@ class Run : public document::Printable {
 public:
     Run(const Run &) = delete;
     Run & operator = (const Run &) = delete;
-    Run(StorBucketDatabase&,
-        lib::Distribution::SP,
+    Run(ContentBucketSpace& bucketSpace,
         const lib::NodeState&,
         uint16_t nodeIndex,
         framework::Clock&);
@@ -77,12 +77,6 @@ public:
      *         The whole database have been iterated through.
      */
     Move getNextMove();
-
-    /**
-     * Run through the database not doing any moves. Useful to do a run only
-     * to gather statistics of current state.
-     */
-    void depleteMoves();
 
     void moveOk(Move& move);
     void moveFailedBucketNotFound(Move& move);

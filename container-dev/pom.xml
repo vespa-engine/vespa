@@ -81,12 +81,9 @@
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.main</artifactId>
     </dependency>
-    <!-- This version is exported by jdisc via jcl-over-slf4j, so should be the one used by customer bundles -->
-    <!-- Set explicitly here because org.apache.httpcomponents 4.3 wants to pull in 1.1.3 instead. -->
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
-      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>

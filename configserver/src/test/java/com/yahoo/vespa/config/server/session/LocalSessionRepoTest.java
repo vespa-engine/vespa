@@ -2,10 +2,11 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.io.IOUtils;
@@ -20,13 +21,12 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class LocalSessionRepoTest extends TestWithCurator {
@@ -51,10 +51,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
-                new SessionCounter(globalComponentRegistry.getCurator(),
-                        Path.fromString("counter"),
-                        Path.fromString("sessions")),
-                Path.createRoot(),
+                new SessionCounter(globalComponentRegistry.getCurator(), tenantName),
                 new MemoryTenantApplications(),
                 tenantFileSystemDirs, new HostRegistry<>(),
                 tenantName);

@@ -13,6 +13,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
  */
 public class JRTConnection implements Connection {
+    public final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
 
     private final String address;
     private final Supervisor supervisor;
@@ -30,17 +31,20 @@ public class JRTConnection implements Connection {
         yyyyMMddz.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
+
+    public JRTConnection(String address, Supervisor supervisor) {
+        this.address = address;
+        this.supervisor = supervisor;
+    }
+
     @Override
     public void invokeAsync(Request request, double jrtTimeout, RequestWaiter requestWaiter) {
         getTarget().invokeAsync(request, jrtTimeout, requestWaiter);
     }
 
-    public final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
-
-
-    public JRTConnection(String address, Supervisor supervisor) {
-        this.address = address;
-        this.supervisor = supervisor;
+    @Override
+    public void invokeSync(Request request, double jrtTimeout) {
+        getTarget().invokeSync(request, jrtTimeout);
     }
 
     public String getAddress() {

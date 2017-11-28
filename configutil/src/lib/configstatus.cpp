@@ -165,7 +165,8 @@ ConfigStatus::action()
                     if (!upToDate) {
                         if (svc.type == "searchnode" ||
                             svc.type == "filedistributorservice" ||
-                            svc.type == "topleveldispatch")
+                            svc.type == "topleveldispatch" ||
+                            svc.type == "logd")
                         {
                             std::cerr << "[generation not up-to-date ignored]" << std::endl;
                         } else {

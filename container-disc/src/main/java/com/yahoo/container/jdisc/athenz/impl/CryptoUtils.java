@@ -6,6 +6,9 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -23,12 +26,15 @@ import java.io.UncheckedIOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
  * @author bjorncs
  */
 class CryptoUtils {
+
+    private static final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
 
     private CryptoUtils() {}
 
@@ -45,7 +51,7 @@ class CryptoUtils {
                                                 String identityService,
                                                 String dnsSuffix,
                                                 String providerUniqueId,
-                                                KeyPair keyPair) throws IOException {
+                                                KeyPair keyPair) {
         try {
             // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
             // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
@@ -71,6 +77,8 @@ class CryptoUtils {
             return requestBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate()));
         } catch (OperatorCreationException e) {
             throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -87,12 +95,19 @@ class CryptoUtils {
     static X509Certificate parseCertificate(String pemEncodedCertificate) {
         try (PEMParser parser = new PEMParser(new StringReader(pemEncodedCertificate))) {
             Object pemObject = parser.readObject();
-            if (!(pemObject instanceof X509Certificate)) {
-                throw new IllegalArgumentException("Expeceted X509Certificate instance, got " + pemObject);
+            if (pemObject instanceof X509Certificate) {
+                return (X509Certificate) pemObject;
             }
-            return (X509Certificate) pemObject;
+            if (pemObject instanceof X509CertificateHolder) {
+                return new JcaX509CertificateConverter()
+                        .setProvider(bouncyCastleProvider)
+                        .getCertificate((X509CertificateHolder) pemObject);
+            }
+            throw new IllegalArgumentException("Invalid type of PEM object: " + pemObject);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
         }
     }
 }

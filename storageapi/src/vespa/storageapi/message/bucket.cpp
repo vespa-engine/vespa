@@ -475,6 +475,12 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 {
 }
 
+document::Bucket
+RequestBucketInfoCommand::getBucket() const
+{
+    return document::Bucket(_bucketSpace, document::BucketId());
+}
+
 void
 RequestBucketInfoCommand::print(std::ostream& out, bool verbose,
                                 const std::string& indent) const

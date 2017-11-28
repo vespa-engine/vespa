@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergeoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <array>
 
 #include <vespa/log/bufferedlogger.h>
@@ -104,7 +105,7 @@ struct NodeIndexComparator
 void
 MergeOperation::onStart(DistributorMessageSender& sender)
 {
-    BucketDatabase::Entry entry = _manager->getDistributorComponent().getBucketDatabase().get(getBucketId());
+    BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     if (!entry.valid()) {
         LOGBP(debug, "Unable to merge nonexisting bucket %s", getBucketId().toString().c_str());
         _ok = false;
@@ -126,7 +127,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
     }
     _infoBefore = entry.getBucketInfo();
 
-    generateSortedNodeList(_manager->getDistributorComponent().getDistribution(),
+    generateSortedNodeList(_bucketSpace->getDistribution(),
                            clusterState,
                            getBucketId(),
                            _limiter,
@@ -273,7 +274,7 @@ MergeOperation::onReceive(DistributorMessageSender& sender,
     _ok = result.success();
     if (_ok) {
         BucketDatabase::Entry entry(
-                _manager->getDistributorComponent().getBucketDatabase().get(getBucketId()));
+                _bucketSpace->getBucketDatabase().get(getBucketId()));
         if (!entry.valid()) {
             LOG(debug, "Bucket %s no longer exists after merge",
                 getBucketId().toString().c_str());

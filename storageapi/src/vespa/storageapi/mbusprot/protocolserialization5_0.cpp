@@ -12,6 +12,32 @@ using document::BucketSpace;
 namespace storage {
 namespace mbusprot {
 
+document::Bucket
+ProtocolSerialization5_0::getBucket(document::ByteBuffer& buf) const
+{
+    document::BucketId bucketId(SH::getLong(buf));
+    return document::Bucket(BucketSpace::placeHolder(), bucketId);
+}
+
+void
+ProtocolSerialization5_0::putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const
+{
+    buf.putLong(bucket.getBucketId().getRawId());
+    assert(bucket.getBucketSpace() == document::BucketSpace::placeHolder());
+}
+
+document::BucketSpace
+ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
+{
+    return BucketSpace::placeHolder();
+}
+
+void
+ProtocolSerialization5_0::putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer&) const
+{
+    assert(bucketSpace == document::BucketSpace::placeHolder());
+}
+
 api::BucketInfo
 ProtocolSerialization5_0::getBucketInfo(document::ByteBuffer& buf) const
 {
@@ -93,7 +119,7 @@ void ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::PutCommand& msg) const
 {
     SH::putDocument(msg.getDocument().get(), buf);
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getTimestamp());
     buf.putLong(msg.getUpdateTimestamp());
     onEncodeBucketInfoCommand(buf, msg);
@@ -103,8 +129,7 @@ api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodePutCommand(BBuf& buf) const
 {
     document::Document::SP doc(SH::getDocument(buf, getTypeRepo()));
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::Timestamp ts(SH::getLong(buf));
     api::PutCommand::UP msg(new api::PutCommand(bucket, doc, ts));
     msg->setUpdateTimestamp(SH::getLong(buf));
@@ -203,7 +228,7 @@ void ProtocolSerialization5_0::onEncode(
         buf.putInt(0);
     }
 
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getTimestamp());
     buf.putLong(msg.getOldTimestamp());
     onEncodeBucketInfoCommand(buf, msg);
@@ -224,8 +249,7 @@ ProtocolSerialization5_0::onDecodeUpdateCommand(BBuf& buf) const
                                                   SERIALIZE_HEAD));
     }
 
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::Timestamp timestamp(SH::getLong(buf));
     api::UpdateCommand::UP msg(
             new api::UpdateCommand(bucket, update, timestamp));
@@ -270,7 +294,7 @@ void
 ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::DeleteBucketCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     onEncodeBucketInfoCommand(buf, msg);
     putBucketInfo(msg.getBucketInfo(), buf);
 }
@@ -278,8 +302,7 @@ ProtocolSerialization5_0::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodeDeleteBucketCommand(BBuf& buf) const
 {
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::DeleteBucketCommand::UP msg(new api::DeleteBucketCommand(bucket));
     onDecodeBucketInfoCommand(buf, *msg);
     if (buf.getRemaining() >= SH::BUCKET_INFO_SERIALIZED_SIZE) {
@@ -495,7 +518,7 @@ void
 ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::JoinBucketsCommand& msg) const
 {
-    buf.putLong(msg.getBucketId().getRawId());
+    putBucket(msg.getBucket(), buf);
     buf.putInt(msg.getSourceBuckets().size());
     for (uint32_t i=0, n=msg.getSourceBuckets().size(); i<n; ++i) {
         buf.putLong(msg.getSourceBuckets()[i].getRawId());
@@ -507,8 +530,7 @@ ProtocolSerialization5_0::onEncode(
 api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodeJoinBucketsCommand(BBuf& buf) const
 {
-    document::BucketId bucketId(SH::getLong(buf));
-    document::Bucket bucket(BucketSpace::placeHolder(), bucketId);
+    document::Bucket bucket = getBucket(buf);
     api::JoinBucketsCommand::UP msg(new api::JoinBucketsCommand(bucket));
     uint32_t size = SH::getInt(buf);
     if (size > buf.getRemaining()) {
@@ -621,6 +643,7 @@ void ProtocolSerialization5_0::onEncode(
     for (uint32_t i=0; i<buckets.size(); ++i) {
         buf.putLong(buckets[i].getRawId());
     }
+    putBucketSpace(msg.getBucketSpace(), buf);
     if (buckets.size() == 0) {
         buf.putShort(msg.getDistributor());
         buf.putString(msg.getSystemState().toString());
@@ -638,7 +661,7 @@ ProtocolSerialization5_0::onDecodeRequestBucketInfoCommand(BBuf& buf) const
         buckets[i] = document::BucketId(SH::getLong(buf));
     }
     api::RequestBucketInfoCommand::UP msg;
-    BucketSpace bucketSpace(BucketSpace::placeHolder());
+    BucketSpace bucketSpace = getBucketSpace(buf);
     if (buckets.size() != 0) {
         msg.reset(new api::RequestBucketInfoCommand(bucketSpace, buckets));
     } else {

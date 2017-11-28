@@ -76,6 +76,9 @@ public class Flavor {
     }
 
     public Type getType() { return type; }
+    
+    /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
+    public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
 
     /** The free capacity we would like to preserve for this flavor */
     public int getIdealHeadroom() {
@@ -130,6 +133,14 @@ public class Flavor {
     /** Irreversibly freezes the content of this */
     public void freeze() {
         replacesFlavors = ImmutableList.copyOf(replacesFlavors);
+    }
+    
+    /** Returns whether this flavor has at least as much as each hardware resource as the given flavor */
+    public boolean isLargerThan(Flavor other) {
+        return this.minCpuCores >= other.minCpuCores &&
+               this.minDiskAvailableGb >= other.minDiskAvailableGb &&
+               this.minMainMemoryAvailableGb >= other.minMainMemoryAvailableGb &&
+               this.fastDisk || ! other.fastDisk;
     }
 
     @Override

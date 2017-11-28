@@ -7,6 +7,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vdslib/state/nodestate.h>
@@ -18,8 +19,8 @@
 
 using document::BucketId;
 using document::BucketSpace;
+using document::test::makeBucketSpace;
 using storage::spi::test::makeSpiBucket;
-using storage::spi::test::makeBucketSpace;
 
 namespace storage::spi {
 
@@ -2136,7 +2137,7 @@ void ConformanceTest::testBucketActivation()
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
 
-    spi->setClusterState(createClusterState());
+    spi->setClusterState(makeBucketSpace(), createClusterState());
     spi->createBucket(bucket, context);
     CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
@@ -2155,9 +2156,9 @@ void ConformanceTest::testBucketActivation()
     CPPUNIT_ASSERT(spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
         // Setting node down should clear active flag.
-    spi->setClusterState(createClusterState(lib::State::DOWN));
+    spi->setClusterState(makeBucketSpace(), createClusterState(lib::State::DOWN));
     CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
-    spi->setClusterState(createClusterState(lib::State::UP));
+    spi->setClusterState(makeBucketSpace(), createClusterState(lib::State::UP));
     CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
         // Actively clearing it should of course also clear it
@@ -2184,7 +2185,7 @@ void ConformanceTest::testBucketActivationSplitAndJoin()
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x06, 2);
 
-    spi->setClusterState(createClusterState());
+    spi->setClusterState(makeBucketSpace(), createClusterState());
     spi->createBucket(bucketC, context);
     spi->put(bucketC, Timestamp(1), doc1, context);
     spi->put(bucketC, Timestamp(2), doc2, context);

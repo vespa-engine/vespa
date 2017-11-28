@@ -16,8 +16,6 @@ public interface Docker {
         CreateContainerCommand withLabel(String name, String value);
         CreateContainerCommand withEnvironment(String name, String value);
         CreateContainerCommand withVolume(String path, String volumePath);
-        CreateContainerCommand withMemoryInMb(long megaBytes);
-        CreateContainerCommand withCpuShares(int shares);
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
@@ -31,6 +29,7 @@ public interface Docker {
 
     CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
+            ContainerResources containerResources,
             ContainerName containerName,
             String hostName);
 

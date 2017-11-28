@@ -25,6 +25,7 @@ double vespalib_eval_isnan(double a) { return (std::isnan(a) ? 1.0 : 0.0); }
 double vespalib_eval_approx(double a, double b) { return (vespalib::approx_equal(a, b) ? 1.0 : 0.0); }
 double vespalib_eval_relu(double a) { return std::max(a, 0.0); }
 double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
+double vespalib_eval_elu(double a) { return (a < 0) ? std::exp(a) - 1.0 : a; }
 
 using vespalib::eval::gbdt::Forest;
 using resolve_function = double (*)(void *ctx, size_t idx);
@@ -586,6 +587,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Sigmoid &) override {
         make_call_1("vespalib_eval_sigmoid");
     }
+    void visit(const Elu &) override {
+        make_call_1("vespalib_eval_elu");
+    }
 };
 
 FunctionBuilder::~FunctionBuilder() { }
@@ -628,7 +632,7 @@ LLVMWrapper::LLVMWrapper()
 size_t
 LLVMWrapper::make_function(size_t num_params, PassParams pass_params, const Node &root,
                            const gbdt::Optimize::Chain &forest_optimizers)
-{ 
+{
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     size_t function_id = _functions.size();
     FunctionBuilder builder(*_context, *_module,

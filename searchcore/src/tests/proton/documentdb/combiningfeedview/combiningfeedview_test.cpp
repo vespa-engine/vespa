@@ -2,7 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("combiningfeedview_test");
 
-#include <vespa/persistence/spi/test.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/test/test.h>
@@ -11,10 +11,10 @@ LOG_SETUP("combiningfeedview_test");
 
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
+using document::test::makeBucketSpace;
 using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::Timestamp;
-using storage::spi::test::makeBucketSpace;
 using namespace proton;
 
 typedef std::vector<IFeedView::SP> FeedViewVector;

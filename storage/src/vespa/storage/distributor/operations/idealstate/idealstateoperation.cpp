@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 
 #include <vespa/log/log.h>
@@ -25,7 +26,8 @@ const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
 };
 
 IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
-        : _manager(NULL),
+        : _manager(nullptr),
+          _bucketSpace(nullptr),
           _bucketAndNodes(bucketAndNodes),
           _ok(true),
           _priority(255)
@@ -76,6 +78,12 @@ BucketAndNodes::toString() const
     ost <<  _bucket.toString();
     return ost.str();
 }
+
+void
+IdealStateOperation::setIdealStateManager(IdealStateManager* manager) {
+    _manager = manager;
+    _bucketSpace = &_manager->getBucketSpaceRepo().get(getBucket().getBucketSpace());
+};
 
 void
 IdealStateOperation::done()
@@ -188,19 +196,10 @@ checkNullBucketRequestBucketInfoMessage(uint16_t node,
                                         const PendingMessageTracker& tracker)
 {
     RequestBucketInfoChecker rchk;
-    for (;;) {
-        // Check messages sent to null-bucket (i.e. any bucket) for the node.
-        document::Bucket nullBucket(bucketSpace, document::BucketId());
-        tracker.checkPendingMessages(node, nullBucket, rchk);
-        if (rchk.blocked) {
-            return true;
-        }
-        if (bucketSpace == BucketSpace::placeHolder()) {
-            break;
-        }
-        bucketSpace = BucketSpace::placeHolder();
-    }
-    return false;
+    // Check messages sent to null-bucket (i.e. any bucket) for the node.
+    document::Bucket nullBucket(bucketSpace, document::BucketId());
+    tracker.checkPendingMessages(node, nullBucket, rchk);
+    return rchk.blocked;
 }
 
 }

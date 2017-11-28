@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.After;
 import org.junit.Before;
@@ -20,6 +19,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -46,7 +46,7 @@ public class TenantsTestCase extends TestWithCurator {
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         tenantListener.tenantsLoaded = false;
-        tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics());
+        tenants = new Tenants(globalComponentRegistry);
         assertTrue(tenantListener.tenantsLoaded);
         tenants.addTenant(tenant1);
         tenants.addTenant(tenant2);
@@ -105,19 +105,28 @@ public class TenantsTestCase extends TestWithCurator {
     }
     
     @Test
-    public void testRemove() throws Exception {
+    public void testDelete() throws Exception {
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant1)));
         tenants.deleteTenant(tenant1);
         assertFalse(tenants.getAllTenantNames().contains(tenant1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeleteOfDefaultTenant()  {
+        try {
+            assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(TenantName.defaultName())));
+        } catch (Exception e) {
+            fail("default tenant does not exist");
+        }
+        tenants.deleteTenant(TenantName.defaultName());
     }
     
     @Test
     public void testTenantsChanged() throws Exception {
         tenants.close(); // close the Tenants instance created in setupSession, we do not want to use one with a PatchChildrenCache listener
-        tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics(), new ArrayList<>());
+        tenants = new Tenants(globalComponentRegistry, new ArrayList<>());
         TenantName defaultTenant = TenantName.defaultName();
         tenants.addTenant(tenant2);
-        tenants.addTenant(defaultTenant);
         tenants.createTenants();
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
@@ -125,12 +134,10 @@ public class TenantsTestCase extends TestWithCurator {
         assertTrue(allTenants.contains(defaultTenant));
         tenants.deleteTenant(tenant1);
         tenants.deleteTenant(tenant2);
-        tenants.deleteTenant(defaultTenant);
         tenants.createTenants();
         allTenants = tenants.getAllTenantNames();
         assertFalse(allTenants.contains(tenant1));
         assertFalse(allTenants.contains(tenant2));
-        assertFalse(allTenants.contains(defaultTenant));
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
         tenants.addTenant(tenant2);
@@ -145,25 +152,24 @@ public class TenantsTestCase extends TestWithCurator {
     
     @Test
     public void testTenantWatching() throws Exception {
-        TestComponentRegistry reg = new TestComponentRegistry.Builder().curator(curator).build();
-        Tenants t = new Tenants(reg, Metrics.createTestMetrics());
+        TenantName newTenant = TenantName.from("newTenant");
+        List<TenantName> expectedTenants = Arrays.asList(TenantName.defaultName(), newTenant);
         try {
-            assertTrue(t.getAllTenantNames().contains(TenantName.defaultName()));
-            reg.getCurator().framework().create().forPath(tenants.tenantZkPath(TenantName.from("newTenant")));
+            tenants.addTenant(newTenant);
             // Poll for the watcher to pick up the tenant from zk, and add it
             int tries=0;
             while(true) {
-                if (tries > 500) fail("Didn't react on watch");
-                if (t.getAllTenantNames().contains(TenantName.from("newTenant"))) {
-                    return;
+                if (tries > 5000) fail("Didn't react on watch");
+                if (tenants.getAllTenantNames().containsAll(expectedTenants)) {
+                    break;
                 }
                 tries++;
-                Thread.sleep(100);
+                Thread.sleep(10);
             }
         } finally {
-            t.close();
+            assertTrue(tenants.getAllTenantNames().containsAll(expectedTenants));
+            tenants.close();
         }
     }
-
 
 }

@@ -43,10 +43,12 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerClientMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>" +
+            "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerProxyMock'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.MockMetricsService'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>" +
@@ -68,6 +70,14 @@ public class ControllerContainerTest {
             "  </handler>" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.screwdriver.ScrewdriverApiHandler'>" +
             "    <binding>http://*/screwdriver/v1/*</binding>" +
+            "  </handler>" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>" +
+            "    <binding>http://*/zone/v1</binding>" +
+            "    <binding>http://*/zone/v1/*</binding>" +
+            "  </handler>" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>" +
+            "    <binding>http://*/zone/v2</binding>" +
+            "    <binding>http://*/zone/v2/*</binding>" +
             "  </handler>" +
             "</jdisc>";
 

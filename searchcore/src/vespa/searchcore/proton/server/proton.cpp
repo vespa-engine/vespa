@@ -568,7 +568,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         std::unique_lock<std::shared_timed_mutex> persistenceWGuard(_persistenceEngine->getWLock());
         auto persistenceHandler = std::make_shared<PersistenceHandlerProxy>(ret);
         if (!_isInitializing) {
-            _persistenceEngine->propagateSavedClusterState(*persistenceHandler);
+            _persistenceEngine->propagateSavedClusterState(bucketSpace, *persistenceHandler);
             _persistenceEngine->populateInitialBucketDB(bucketSpace, *persistenceHandler);
         }
         // TODO: Fix race with new cluster state setting.
@@ -655,7 +655,8 @@ PrepareRestartFlushStrategy::Config
 createPrepareRestartConfig(const ProtonConfig &protonConfig)
 {
     return PrepareRestartFlushStrategy::Config(protonConfig.flush.preparerestart.replaycost,
-            protonConfig.flush.preparerestart.writecost);
+                                               protonConfig.flush.preparerestart.replayoperationcost,
+                                               protonConfig.flush.preparerestart.writecost);
 }
 
 }

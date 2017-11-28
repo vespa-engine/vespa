@@ -21,10 +21,11 @@ import java.util.logging.Logger;
  * The current connection is available with {@link #getCurrent()}.
  * When calling {@link #setError(Connection, int)}, {#link #setNewCurrentConnection} will always be called.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  * @author hmusum
  */
 public class JRTConnectionPool implements ConnectionPool {
+
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());
 
     private final Supervisor supervisor = new Supervisor(new Transport());
@@ -148,6 +149,11 @@ public class JRTConnectionPool implements ConnectionPool {
         synchronized (connections) {
             return connections.size();
         }
+    }
+
+    @Override
+    public Supervisor getSupervisor() {
+        return supervisor;
     }
 
 }

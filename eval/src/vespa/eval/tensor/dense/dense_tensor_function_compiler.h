@@ -5,6 +5,9 @@
 #include <vespa/eval/eval/tensor_function.h>
 
 namespace vespalib {
+
+class Stash;
+
 namespace tensor {
 
 /**
@@ -13,7 +16,7 @@ namespace tensor {
  */
 struct DenseTensorFunctionCompiler
 {
-    static eval::TensorFunction::UP compile(eval::tensor_function::Node_UP expr);
+    static const eval::TensorFunction &compile(const eval::tensor_function::Node &expr, Stash &stash);
 };
 
 } // namespace tensor

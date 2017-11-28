@@ -275,4 +275,36 @@ public class AdminTestCase {
         // 1 logforwarder on each host
         assertTrue(configIds.toString(), configIds.contains("admin/logforwarder.0"));
     }
+
+    @Test
+    public void disableFiledistributorService() throws Exception {
+        String hosts = "<hosts>"
+                + "  <host name=\"localhost\">"
+                + "    <alias>node0</alias>"
+                + "  </host>"
+                + "</hosts>";
+
+        String services = "<services>" +
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='node0' />" +
+                "    <filedistribution>" +
+                "      <disabled>true</disabled>" +
+                "    </filedistribution>" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
+        String localhost = HostName.getLocalhost();
+        String localhostConfigId = "hosts/" + localhost;
+
+        // Verify services in the sentinel config
+        SentinelConfig.Builder b = new SentinelConfig.Builder();
+        vespaModel.getConfig(b, localhostConfigId);
+        SentinelConfig sentinelConfig = new SentinelConfig(b);
+        assertThat(sentinelConfig.service().size(), is(3));
+        assertThat(sentinelConfig.service(0).name(), is("logserver"));
+        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
+        assertThat(sentinelConfig.service(2).name(), is("logd"));
+        // No filedistributor service
+    }
 }

@@ -2,6 +2,7 @@
 
 #include "joinoperation.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <climits>
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.join");
@@ -42,7 +43,7 @@ JoinOperation::NodeToBuckets
 JoinOperation::resolveSourceBucketsPerTargetNode() const
 {
     NodeToBuckets nodeToBuckets;
-    const auto& db(_manager->getDistributorComponent().getBucketDatabase());
+    const auto& db(_bucketSpace->getBucketDatabase());
     for (const auto& bucket : _bucketsToJoin) {
         BucketDatabase::Entry entry(db.get(bucket));
 
@@ -117,7 +118,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
             LOG(spam, "Adding joined bucket %s", getBucketId().toString().c_str());
         }
     } else if (rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
-            && _manager->getDistributorComponent().getBucketDatabase().get(getBucketId())->getNode(node) != 0)
+            && _bucketSpace->getBucketDatabase().get(getBucketId())->getNode(node) != 0)
     {
         _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
         LOGBP(warning, "Join failed to find %s: %s",

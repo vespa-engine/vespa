@@ -13,6 +13,10 @@ ztsUrl                          string
 # Athenz domain for controller identity. The domain is also used for Athenz tenancy integration.
 domain                          string
 
+# Name of the internal user authentication passthru attribute
+userAuthenticationPassThruAttribute  string
+# TODO Remove once migrated to Okta
+
 # Athenz service name for controller identity
 service.name                    string
 

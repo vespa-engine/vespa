@@ -263,7 +263,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.FALSE, evaluate("test.content = 1 and true", put)); // BROKEN
         assertEquals(Result.INVALID, evaluate("test.content = 1 and true", upd));
 
-        assertEquals(Result.FALSE, evaluate("test.content = 1 or true", put)); // BROKEN
+        assertEquals(Result.TRUE, evaluate("test.content = 1 or true", put));
         assertEquals(Result.TRUE, evaluate("test.content = 1 or true", upd));
 
         assertEquals(Result.FALSE, evaluate("test.content = 1 and false",  put));
@@ -275,7 +275,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.FALSE, evaluate("true and test.content = 1",  put)); // BROKEN
         assertEquals(Result.INVALID, evaluate("true and test.content = 1",  upd));
 
-        assertEquals(Result.FALSE, evaluate("true or test.content = 1", put)); // BROKEN
+        assertEquals(Result.TRUE, evaluate("true or test.content = 1", put));
         assertEquals(Result.TRUE, evaluate("true or test.content = 1", upd));
 
         assertEquals(Result.FALSE, evaluate("false and test.content = 1",  put));
@@ -420,8 +420,10 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.TRUE, evaluate("30 != \"foo\"", documents.get(0)));
         assertEquals(Result.INVALID, evaluate("14.2 <= \"foo\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("null == null", documents.get(0)));
-        assertEquals(Result.TRUE, evaluate("null = null", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("null = null", documents.get(0))); // Glob operator falls back to == comparison
+        assertEquals(Result.FALSE, evaluate("null != null", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("\"bar\" == null", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("null == \"bar\"", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("14.3 == null", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("null = 0", documents.get(0)));
 
@@ -441,6 +443,20 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.FALSE, evaluate("test.hstring == test.content", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.hstring == test.content", documents.get(2)));
         assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", documents.get(1)));
+        // Case where field is not present (i.e. null) is defined for (in)equality comparisons, but
+        // not for other relations.
+        assertEquals(Result.TRUE, evaluate("test.hint != 1234", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("test.hint == 1234", documents.get(7)));
+        assertEquals(Result.INVALID, evaluate("test.hint < 1234", documents.get(7)));
+        // Propagation of Invalid through logical operators should match C++ implementation
+        assertEquals(Result.FALSE, evaluate("test.hint < 1234 and false", documents.get(7)));
+        assertEquals(Result.INVALID, evaluate("test.hint < 1234 and true", documents.get(7)));
+        assertEquals(Result.TRUE, evaluate("test.hint < 1234 or true", documents.get(7)));
+        assertEquals(Result.INVALID, evaluate("test.hint < 1234 or false", documents.get(7)));
+        // Must be possible to predicate a sub-expression on the presence of a field without
+        // propagating up an Invalid value from the comparison.
+        assertEquals(Result.FALSE, evaluate("test.hint and test.hint < 1234", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("test.hint != null and test.hint < 1234", documents.get(7)));
 
         // Document types.
         assertEquals(Result.TRUE, evaluate("test", documents.get(0)));
@@ -456,6 +472,19 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.FALSE, evaluate("test.hstring", documents.get(7)));
         assertEquals(Result.TRUE, evaluate("not test.hint", documents.get(7)));
         assertEquals(Result.TRUE, evaluate("not test.hstring", documents.get(7)));
+
+        assertEquals(Result.TRUE, evaluate("test.hint != null", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("null != test.hint", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.hint == null", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("null == test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("null == test.hint", documents.get(7)));
+        assertEquals(Result.TRUE, evaluate("test.hint == null", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("test.hint != null", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("null != test.hint", documents.get(7)));
+
+        assertEquals(Result.TRUE, evaluate("test.hint or true", documents.get(7)));
+        assertEquals(Result.TRUE, evaluate("not test.hint and true", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("not test.hint and false", documents.get(7)));
 
         // Id values.
         assertEquals(Result.TRUE, evaluate("id == \"doc:myspace:anything\"", documents.get(0)));
@@ -548,7 +577,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         assertEquals(Result.TRUE, evaluate("test.mystruct == test.mystruct", documents.get(1)));
         assertEquals(Result.FALSE, evaluate("test.mystruct != test.mystruct", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("test.mystruct != test.mystruct", documents.get(1)));
-        //assertEquals(Result.INVALID, evaluate("test.mystruct < test.mystruct", documents.get(0)));
+        assertEquals(Result.INVALID, evaluate("test.mystruct < test.mystruct", documents.get(0)));
         //assertEquals(Result.FALSE, evaluate("test.mystruct < test.mystruct", documents.get(1)));
         //assertEquals(Result.INVALID, evaluate("test.mystruct < 5", documents.get(1)));
         //assertEquals(Result.INVALID, evaluate("test.mystruct == \"foo\"", documents.get(1)));
@@ -584,7 +613,7 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         // Globbing/regexp of struct fields
         assertEquals(Result.FALSE, evaluate("test.mystruct.value = \"struc?val\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.mystruct.value = \"struc?val\"", documents.get(1)));
-        assertEquals(Result.FALSE, evaluate("test.mystruct.value =~ \"struct.*\"", documents.get(0)));
+        assertEquals(Result.INVALID, evaluate("test.mystruct.value =~ \"struct.*\"", documents.get(0))); // Invalid since lhs is null
         assertEquals(Result.TRUE, evaluate("test.mystruct.value =~ \"struct.*\"", documents.get(1)));
 
         assertEquals(Result.FALSE, evaluate("test.intarray < 5", documents.get(0)));

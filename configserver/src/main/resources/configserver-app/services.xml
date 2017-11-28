@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0" xmlns:preprocess="properties">
-  <preprocess:include file='controller/admin.xml' required='false' />
   <jdisc id="configserver" jetty="true" version="1.0">
     <config name="container.handler.threadpool">
       <maxthreads>100</maxthreads> <!-- Reduced thread count to minimize memory consumption -->
     </config>
 
     <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="access.log" />
+    <preprocess:include file='access-logging.xml' required='false' />
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
     <component id="com.yahoo.vespa.zookeeper.ZooKeeperServer" bundle="zkfacade" />
@@ -34,6 +34,7 @@
     <component id="com.yahoo.config.provision.Zone" bundle="config-provisioning" />
     <component id="com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.HttpProxy" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.filedistribution.FileServer" bundle="configserver" />
 
     <component id="com.yahoo.vespa.serviceview.ConfigServerLocation" bundle="configserver" />
 
@@ -44,6 +45,7 @@
     <preprocess:include file='config-models.xml' required='false' />
     <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
+    <preprocess:include file='hosted-vespa/scoreboard.xml' required='false' />
     <preprocess:include file='controller/container.xml' required='false' />
     <component id="com.yahoo.vespa.service.monitor.internal.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.monitor.internal.ServiceMonitorImpl" bundle="service-monitor" />

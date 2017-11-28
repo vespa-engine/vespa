@@ -1,0 +1,5 @@
+{
+  "nodes": [
+    @include(node4.json)
+  ]
+}

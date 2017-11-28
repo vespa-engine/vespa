@@ -2,7 +2,10 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +21,7 @@ public class DeployProperties {
     private final boolean multitenant;
     private final ApplicationId applicationId;
     private final List<ConfigServerSpec> serverSpecs = new ArrayList<>();
+    private final HostName loadBalancerName;
     private final boolean hostedVespa;
     private final Version vespaVersion;
     private final Zone zone;
@@ -25,7 +29,11 @@ public class DeployProperties {
     private DeployProperties(boolean multitenant,
                              ApplicationId applicationId,
                              List<ConfigServerSpec> configServerSpecs,
-                             boolean hostedVespa, Version vespaVersion, Zone zone) {
+                             HostName loadBalancerName,
+                             boolean hostedVespa,
+                             Version vespaVersion,
+                             Zone zone) {
+        this.loadBalancerName = loadBalancerName;
         this.vespaVersion = vespaVersion;
         this.zone = zone;
         this.multitenant = multitenant || hostedVespa || Boolean.getBoolean("multitenant");
@@ -47,6 +55,10 @@ public class DeployProperties {
         return serverSpecs;
     }
 
+    public HostName loadBalancerName() {
+        return loadBalancerName;
+    }
+
     public boolean hostedVespa() {
         return hostedVespa;
     }
@@ -63,6 +75,7 @@ public class DeployProperties {
         private ApplicationId applicationId = ApplicationId.defaultId();
         private boolean multitenant = false;
         private List<ConfigServerSpec> configServerSpecs = new ArrayList<>();
+        private HostName loadBalancerName;
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
         private Zone zone = Zone.defaultZone();
@@ -82,6 +95,11 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder loadBalancerName(HostName loadBalancerName) {
+            this.loadBalancerName = loadBalancerName;
+            return this;
+        }
+
         public Builder vespaVersion(Version version) {
             this.vespaVersion = version;
             return this;
@@ -98,7 +116,7 @@ public class DeployProperties {
         }
 
         public DeployProperties build() {
-            return new DeployProperties(multitenant, applicationId, configServerSpecs, hostedVespa, vespaVersion, zone);
+            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, vespaVersion, zone);
         }
     }
 

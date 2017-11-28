@@ -19,6 +19,8 @@ using search::attribute::ImportedAttributeVector;
 
 namespace proton {
 
+using LidVector = LidVectorContext::LidVector;
+
 AttributeWriter::WriteContext::WriteContext(uint32_t executorId)
     : _executorId(executorId),
       _fieldPaths(),
@@ -143,7 +145,15 @@ applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum,
                      AttributeVector &attr)
 {
     if (attr.getStatus().getLastSyncToken() < serialNum) {
-        attr.compactLidSpace(wantedLidLimit);
+        /*
+         * If the attribute is an empty placeholder attribute due to
+         * later config changes removing the attribute then it might
+         * be smaller than expected during transaction log replay.
+         */
+        attr.commit();
+        if (wantedLidLimit <= attr.getCommittedDocIdLimit()) {
+            attr.compactLidSpace(wantedLidLimit);
+        }
         attr.commit(serialNum, serialNum);
     }
 }
@@ -264,12 +274,47 @@ RemoveTask::run()
     const auto &attributes = _wc.getAttributes();
     for (auto &attrp : attributes) {
         AttributeVector &attr = *attrp;
-        // Must use <= due to batch remove
+        // Must use <= due to how move operations are handled
         if (attr.getStatus().getLastSyncToken() <= _serialNum) {
             applyRemoveToAttribute(_serialNum, _lid, _immediateCommit, attr, _onWriteDone);
         }
     }
 }
+
+class BatchRemoveTask : public vespalib::Executor::Task
+{
+private:
+    const AttributeWriter::WriteContext &_writeCtx;
+    const SerialNum _serialNum;
+    const LidVector _lidsToRemove;
+    const bool _immediateCommit;
+    std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
+public:
+    BatchRemoveTask(const AttributeWriter::WriteContext &writeCtx,
+                    SerialNum serialNum,
+                    const LidVector &lidsToRemove,
+                    bool immediateCommit,
+                    AttributeWriter::OnWriteDoneType onWriteDone)
+        : _writeCtx(writeCtx),
+          _serialNum(serialNum),
+          _lidsToRemove(lidsToRemove),
+          _immediateCommit(immediateCommit),
+          _onWriteDone(onWriteDone)
+    {}
+    virtual ~BatchRemoveTask() override {}
+    virtual void run() override {
+        for (auto attr : _writeCtx.getAttributes()) {
+            if (attr->getStatus().getLastSyncToken() < _serialNum) {
+                for (auto lidToRemove : _lidsToRemove) {
+                    applyRemoveToAttribute(_serialNum, lidToRemove, false, *attr, _onWriteDone);
+                }
+                if (_immediateCommit) {
+                    attr->commit(_serialNum, _serialNum);
+                }
+            }
+        }
+    }
+};
 
 class CommitTask : public vespalib::Executor::Task
 {
@@ -411,8 +456,9 @@ void
 AttributeWriter::remove(const LidVector &lidsToRemove, SerialNum serialNum,
                         bool immediateCommit, OnWriteDoneType onWriteDone)
 {
-    for (const auto &lid : lidsToRemove) {
-        internalRemove(serialNum, lid, immediateCommit, onWriteDone);
+    for (const auto &writeCtx : _writeContexts) {
+        auto removeTask = std::make_unique<BatchRemoveTask>(writeCtx, serialNum, lidsToRemove, immediateCommit, onWriteDone);
+        _attributeFieldWriter.executeTask(writeCtx.getExecutorId(), std::move(removeTask));
     }
 }
 

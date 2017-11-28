@@ -104,14 +104,14 @@ namespace {
         DistributorStateCache _state;
         std::unordered_map<uint16_t, ResultArray>& _result;
         const document::BucketIdFactory& _factory;
-        std::shared_ptr<lib::Distribution> _storageDistribution;
+        std::shared_ptr<const lib::Distribution> _storageDistribution;
 
     public:
         DistributorInfoGatherer(
                 const lib::ClusterState& systemState,
                 std::unordered_map<uint16_t, ResultArray>& result,
                 const document::BucketIdFactory& factory,
-                std::shared_ptr<lib::Distribution> distribution)
+                std::shared_ptr<const lib::Distribution> distribution)
             : _state(*distribution, systemState),
               _result(result),
               _factory(factory),
@@ -513,7 +513,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     typedef std::shared_ptr<api::RequestBucketInfoCommand> RBISP;
     std::map<uint16_t, RBISP> requests;
 
-    lib::Distribution::SP distribution(_component.getDistribution());
+    auto distribution(_component.getBucketSpaceRepo().get(bucketSpace).getDistribution());
     lib::ClusterState::CSP clusterState(
             _component.getStateUpdater().getSystemState());
     assert(clusterState.get());

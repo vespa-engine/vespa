@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -305,22 +306,28 @@ public class DistributorTest {
     private static class DocDef {
         public final String type;
         public final String mode;
+        public final boolean global;
 
-        private DocDef(String type, String mode) {
+        private DocDef(String type, String mode, boolean global) {
             this.type = type;
             this.mode = mode;
+            this.global = global;
         }
 
         public static DocDef storeOnly(String type) {
-            return new DocDef(type, "store-only");
+            return new DocDef(type, "store-only", false);
         }
 
         public static DocDef index(String type) {
-            return new DocDef(type, "index");
+            return new DocDef(type, "index", false);
+        }
+
+        public static DocDef indexGlobal(String type) {
+            return new DocDef(type, "index", true);
         }
 
         public static DocDef streaming(String type) {
-            return new DocDef(type, "streaming");
+            return new DocDef(type, "streaming", false);
         }
     }
 
@@ -328,7 +335,8 @@ public class DistributorTest {
         return "<content id='storage'>\n" +
                "  <documents>\n" +
                Arrays.stream(defs)
-                  .map(def -> String.format("    <document type='%s' mode='%s'/>", def.type, def.mode))
+                  .map(def -> String.format("    <document type='%s' mode='%s' global='%s'/>",
+                          def.type, def.mode, (def.global ? "true" : "false")))
                   .collect(Collectors.joining("\n")) +
                "\n  </documents>\n" +
                "</content>";
@@ -370,5 +378,25 @@ public class DistributorTest {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocDefs(DocDef.streaming("music")));
         assertThat(config.disable_bucket_activation(), is(true));
+    }
+
+    private BucketspacesConfig clusterXmlToBucketspacesConfig(String xml) {
+        BucketspacesConfig.Builder builder = new BucketspacesConfig.Builder();
+        parse(xml).getConfig(builder);
+        return new BucketspacesConfig(builder);
+    }
+
+    private void assertDocumentType(String expName, String expBucketSpace, BucketspacesConfig.Documenttype docType) {
+        assertEquals(expName, docType.name());
+        assertEquals(expBucketSpace, docType.bucketspace());
+    }
+
+    @Test
+    public void bucket_spaces_config_is_produced_for_distributor_cluster() {
+        BucketspacesConfig config = clusterXmlToBucketspacesConfig(
+                generateXmlForDocDefs(DocDef.index("music"), DocDef.indexGlobal("movies")));
+        assertEquals(2, config.documenttype().size());
+        assertDocumentType("movies", "global", config.documenttype(0));
+        assertDocumentType("music", "default", config.documenttype(1));
     }
 }

@@ -202,8 +202,9 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, name, hostName);
+    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
+                                                         ContainerName name, String hostName) {
+        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
     }
 
     @Override
@@ -369,6 +370,8 @@ public class DockerImpl implements Docker {
                         new Container(
                                 response.getConfig().getHostName(),
                                 new DockerImage(response.getConfig().getImage()),
+                                new ContainerResources(response.getHostConfig().getCpuShares(),
+                                        response.getHostConfig().getMemory()),
                                 new ContainerName(decode(response.getName())),
                                 Container.State.valueOf(response.getState().getStatus().toUpperCase()),
                                 response.getState().getPid()

@@ -36,4 +36,14 @@ ServiceLayerComponentRegisterImpl::setDiskCount(uint16_t count)
     }
 }
 
+void
+ServiceLayerComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
+{
+    // For now, copy distribution to all content bucket spaces
+    for (const auto &elem : _bucketSpaceRepo) {
+        elem.second->setDistribution(distribution);
+    }
+    StorageComponentRegisterImpl::setDistribution(distribution);
+}
+
 } // storage

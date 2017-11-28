@@ -3,44 +3,66 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>com.yahoo.vespa</groupId>
-    <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
-  </parent>
-  <artifactId>filedistribution</artifactId>
-  <version>6-SNAPSHOT</version>
-  <packaging>jar</packaging>
-  <name>${project.artifactId}</name>
-  <dependencies>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>config-lib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
         <groupId>com.yahoo.vespa</groupId>
-        <artifactId>config-class-plugin</artifactId>
-        <version>${project.version}</version>
-        <configuration>
-          <defFilesDirectories>
-            src/vespa/filedistribution/distributor,
-            src/vespa/filedistribution/model
-          </defFilesDirectories>
-        </configuration>
-        <executions>
-          <execution>
-            <id>config-gen</id>
-            <goals>
-              <goal>config-gen</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+        <artifactId>parent</artifactId>
+        <version>6-SNAPSHOT</version>
+   </parent>
+
+    <artifactId>filedistribution</artifactId>
+    <version>6-SNAPSHOT</version>
+    <packaging>container-plugin</packaging>
+    <name>${project.artifactId}</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>jrt</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespalog</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-lib</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

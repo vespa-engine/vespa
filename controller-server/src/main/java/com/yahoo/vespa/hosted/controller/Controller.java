@@ -156,8 +156,8 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public URI getElkUri(Environment environment, RegionName region, DeploymentId deploymentId) {
-        return elkUrl(zoneRegistry.getLogServerUri(environment, region), deploymentId);
+    public URI getElkUri(DeploymentId deploymentId) {
+        return elkUrl(zoneRegistry.getLogServerUri(deploymentId.zone().environment(), deploymentId.zone().region()), deploymentId);
     }
 
     public List<URI> getConfigServerUris(Environment environment, RegionName region) {
@@ -204,7 +204,7 @@ public class Controller extends AbstractComponent {
     }
 
     // TODO: Model the response properly
-    // TODO: What is this
+    // TODO: What is this -- I believe it fetches, and purges, errors from some log server
     public JsonNode grabLog(DeploymentId deploymentId) {
         return configServerClient.grabLog(deploymentId);
     }

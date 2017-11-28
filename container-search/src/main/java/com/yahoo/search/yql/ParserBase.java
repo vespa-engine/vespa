@@ -35,5 +35,5 @@ abstract class ParserBase extends Parser {
         }
         return name != null && arrayParameters.contains(name);
     }
-
+    
 }

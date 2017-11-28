@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc.athenz.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -10,6 +11,7 @@ import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.http.HttpStatus;
@@ -17,6 +19,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -33,18 +36,19 @@ import java.security.cert.X509Certificate;
  */
 public class AthenzService {
 
-    private static final String INSTANCE_API_PATH = "zts/v1/instance";
+    private static final String INSTANCE_API_PATH = "/zts/v1/instance";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpRequestRetryHandler retryHandler = new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true);
 
     /**
      * Send instance register request to ZTS, get InstanceIdentity
      */
      public InstanceIdentity sendInstanceRegisterRequest(InstanceRegisterInformation instanceRegisterInformation,
-                                                         String ztsEndpoint) {
-        try(CloseableHttpClient client = HttpClientBuilder.create().build()) {
+                                                         URI uri) {
+        try(CloseableHttpClient client = HttpClientBuilder.create().setRetryHandler(retryHandler).build()) {
             HttpUriRequest postRequest = RequestBuilder.post()
-                    .setUri(ztsEndpoint + INSTANCE_API_PATH)
+                    .setUri(uri.resolve(INSTANCE_API_PATH))
                     .setEntity(toJsonStringEntity(instanceRegisterInformation))
                     .build();
             return getInstanceIdentity(client, postRequest);
@@ -58,13 +62,16 @@ public class AthenzService {
                                                        String instanceServiceName,
                                                        String instanceId,
                                                        InstanceRefreshInformation instanceRefreshInformation,
-                                                       String ztsEndpoint,
+                                                       URI ztsEndpoint,
                                                        X509Certificate certicate,
                                                        PrivateKey privateKey) {
-        try (CloseableHttpClient client = createHttpClientWithTlsAuth(certicate, privateKey)) {
-            String uri = String.format("%s/%s/%s/%s/%s",
-                                       ztsEndpoint + INSTANCE_API_PATH,
-                                       providerService, instanceDomain, instanceServiceName, instanceId);
+        try (CloseableHttpClient client = createHttpClientWithTlsAuth(certicate, privateKey, retryHandler)) {
+            URI uri = ztsEndpoint
+                    .resolve(INSTANCE_API_PATH + '/')
+                    .resolve(providerService + '/')
+                    .resolve(instanceDomain + '/')
+                    .resolve(instanceServiceName + '/')
+                    .resolve(instanceId);
             HttpUriRequest postRequest = RequestBuilder.post()
                     .setUri(uri)
                     .setEntity(toJsonStringEntity(instanceRefreshInformation))
@@ -92,7 +99,9 @@ public class AthenzService {
         return new StringEntity(objectMapper.writeValueAsString(value), ContentType.APPLICATION_JSON);
     }
 
-    private static CloseableHttpClient createHttpClientWithTlsAuth(X509Certificate certificate, PrivateKey privateKey) {
+    private static CloseableHttpClient createHttpClientWithTlsAuth(X509Certificate certificate,
+                                                                   PrivateKey privateKey,
+                                                                   HttpRequestRetryHandler retryHandler) {
         try {
             String dummyPassword = "athenz";
             KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -102,6 +111,7 @@ public class AthenzService {
                     .loadKeyMaterial(keyStore, dummyPassword.toCharArray())
                     .build();
             return HttpClientBuilder.create()
+                    .setRetryHandler(retryHandler)
                     .setSslcontext(sslContext)
                     .build();
         } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException |

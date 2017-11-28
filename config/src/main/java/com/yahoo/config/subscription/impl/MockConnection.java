@@ -3,6 +3,7 @@ package com.yahoo.config.subscription.impl;
 
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
@@ -53,6 +54,12 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     @Override
+    public void invokeSync(Request request, double jrtTimeout) {
+        numberOfRequests++;
+        lastRequest = request;
+    }
+
+    @Override
     public void setError(int errorCode) {
         numberOfFailovers++;
     }
@@ -68,9 +75,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     @Override
-    public void close() {
-
-    }
+    public void close() {}
 
     @Override
     public void setError(Connection connection, int errorCode) {
@@ -92,6 +97,11 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
         return numSpecs;
     }
 
+    @Override
+    public Supervisor getSupervisor() {
+        return null;
+    }
+
     public int getNumberOfRequests() {
         return numberOfRequests;
     }
@@ -108,7 +118,6 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
             jrtReq.addOkResponse(payload, generation, ConfigUtils.getMd5(payload.getData()));
         }
     }
-
 
     public interface ResponseHandler extends Runnable {
 

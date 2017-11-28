@@ -25,6 +25,7 @@ public interface ZoneRegistry {
     List<URI> getConfigServerUris(Environment environment, RegionName region);
     Optional<URI> getLogServerUri(Environment environment, RegionName region);
     Optional<Duration> getDeploymentTimeToLive(Environment environment, RegionName region);
+    Optional<RegionName> getDefaultRegion(Environment environment);
     URI getMonitoringSystemUri(Environment environment, RegionName name, ApplicationId application);
     URI getDashboardUri();
 

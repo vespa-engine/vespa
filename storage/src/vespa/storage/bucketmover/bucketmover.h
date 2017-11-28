@@ -83,6 +83,7 @@ private:
     void run(framework::ThreadHandle&) override;
     bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
     void storageDistributionChanged() override;
+    lib::Distribution::DiskDistribution currentDiskDistribution() const;
 
     framework::SecondTime calculateWaitTimeOfNextRun() const;
 

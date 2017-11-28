@@ -7,7 +7,6 @@
   </config>
 
   <admin version="2.0">
-    <minSlobroksPerCluster>1</minSlobroksPerCluster>
     <adminserver hostalias="adminserver" />
     <logserver hostalias="logserver" />
     <slobroks>
@@ -36,10 +35,6 @@
   </config>
 
   <jdisc id='qrsCluster_1' version='1.0'>
-    <identity>
-      <domain>mydomain</domain>
-      <service>myservice</service>
-    </identity>
     <rest-api path="jersey1">
       <components bundle="my-bundle" />
       <components bundle="other-bundle">
@@ -111,7 +106,9 @@
         </request-chain>
       </filtering>
 
-      <server port="4080" id="myServer" />
+      <server port="4080" id="myServer">
+        <ssl-keystore-configurator class="com.yahoo.MySslKeyStoreConfigurator" bundle="mybundle" />
+      </server>
       <server port="4081" id="anotherServer">
         <config name="container.jdisc.config.http-server">
           <maxChunkSize>9999</maxChunkSize>

@@ -24,9 +24,9 @@ makeValueType(std::vector<eval::ValueType::Dimension> &&dimensions) {
 void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensor &tensor)
 {
-    stream.putInt1_4Bytes(tensor.type().dimensions().size());
+    stream.putInt1_4Bytes(tensor.fast_type().dimensions().size());
     size_t cellsSize = 1;
-    for (const auto &dimension : tensor.type().dimensions()) {
+    for (const auto &dimension : tensor.fast_type().dimensions()) {
         stream.writeSmallString(dimension.name);
         stream.putInt1_4Bytes(dimension.size);
         cellsSize *= dimension.size;

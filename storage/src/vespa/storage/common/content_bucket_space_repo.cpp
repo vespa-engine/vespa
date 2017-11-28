@@ -9,7 +9,7 @@ namespace storage {
 ContentBucketSpaceRepo::ContentBucketSpaceRepo()
     : _map()
 {
-    _map.emplace(BucketSpace::placeHolder(), std::make_unique<ContentBucketSpace>());
+    _map.emplace(BucketSpace::placeHolder(), std::make_unique<ContentBucketSpace>(BucketSpace::placeHolder()));
 }
 
 ContentBucketSpace &
@@ -19,6 +19,16 @@ ContentBucketSpaceRepo::get(BucketSpace bucketSpace) const
     auto itr = _map.find(bucketSpace);
     assert(itr != _map.end());
     return *itr->second;
+}
+
+ContentBucketSpaceRepo::BucketSpaces
+ContentBucketSpaceRepo::getBucketSpaces() const
+{
+    BucketSpaces result;
+    for (const auto &elem : _map) {
+        result.push_back(elem.first);
+    }
+    return result;
 }
 
 size_t

@@ -3,6 +3,7 @@
 #include "bucketownershipnotifier.h"
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/backtrace.h>
@@ -19,7 +20,8 @@ BucketOwnershipNotifier::getOwnerDistributorForBucket(
         const document::Bucket &bucket) const
 {
     try {
-        return (_component.getDistribution()->getIdealDistributorNode(
+        auto distribution(_component.getBucketSpaceRepo().get(bucket.getBucketSpace()).getDistribution());
+        return (distribution->getIdealDistributorNode(
                         *_component.getStateUpdater().getSystemState(), bucket.getBucketId()));
         // If we get exceptions there aren't any distributors, so they'll have
         // to explicitly fetch all bucket info eventually anyway.

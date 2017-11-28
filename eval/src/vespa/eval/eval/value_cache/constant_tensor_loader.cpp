@@ -68,17 +68,13 @@ void decode_json(const vespalib::string &path, Slime &slime) {
 
 } // namespace vespalib::eval::<unnamed>
 
-using ErrorConstant = SimpleConstantValue<ErrorValue>;
-using TensorConstant = SimpleConstantValue<TensorValue>;
-
 ConstantValue::UP
 ConstantTensorLoader::create(const vespalib::string &path, const vespalib::string &type) const
 {
     ValueType value_type = ValueType::from_spec(type);
     if (value_type.is_error()) {
         LOG(warning, "invalid type specification: %s", type.c_str());
-        auto tensor = _engine.create(TensorSpec("double"));
-        return std::make_unique<TensorConstant>(_engine.type_of(*tensor), std::move(tensor));
+        return std::make_unique<SimpleConstantValue>(_engine.from_spec(TensorSpec("double")));
     }
     Slime slime;
     decode_json(path, slime);
@@ -96,8 +92,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         cells[i]["address"].traverse(extractor);
         spec.add(address, cells[i]["value"].asDouble());
     }
-    auto tensor = _engine.create(spec);
-    return std::make_unique<TensorConstant>(_engine.type_of(*tensor), std::move(tensor));
+    return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
 }
 
 } // namespace vespalib::eval

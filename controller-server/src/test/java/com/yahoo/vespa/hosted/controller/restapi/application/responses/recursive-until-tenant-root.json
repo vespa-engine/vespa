@@ -1,0 +1,6 @@
+[
+  @include(tenant2.json),
+  @include(tenant3.json),
+  @include(tenant-with-application.json)
+]
+

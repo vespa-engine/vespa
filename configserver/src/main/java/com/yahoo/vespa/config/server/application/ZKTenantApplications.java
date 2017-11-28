@@ -18,11 +18,15 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -36,10 +40,13 @@ import java.util.logging.Logger;
 public class ZKTenantApplications implements TenantApplications, PathChildrenCacheListener {
 
     private static final Logger log = Logger.getLogger(ZKTenantApplications.class.getName());
+    private static final Duration checkForRemovedApplicationsInterval = Duration.ofMinutes(1);
+
     private final Curator curator;
     private final Path applicationsPath;
     private final ExecutorService pathChildrenExecutor =
             Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(ZKTenantApplications.class.getName()));
+    private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
@@ -47,16 +54,21 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     private ZKTenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
         this.curator = curator;
         this.applicationsPath = applicationsPath;
+        curator.create(applicationsPath);
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
+        checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeApplications,
+                                                                  checkForRemovedApplicationsInterval.getSeconds(),
+                                                                  checkForRemovedApplicationsInterval.getSeconds(),
+                                                                  TimeUnit.SECONDS);
     }
 
-    public static TenantApplications create(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
+    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
         try {
-            return new ZKTenantApplications(curator, applicationsPath, reloadHandler, tenant);
+            return new ZKTenantApplications(curator, Tenants.getApplicationsPath(tenant), reloadHandler, tenant);
         } catch (Exception e) {
             throw new RuntimeException(Tenants.logPre(tenant) + "Error creating application repo", e);
         }
@@ -118,6 +130,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     public void close() {
         directoryCache.close();
         pathChildrenExecutor.shutdown();
+        checkForRemovedApplicationsService.shutdown();
     }
 
     @Override
@@ -138,22 +151,22 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         }
         // We might have lost events and might need to remove applications (new applications are
         // not added by listening for events here, they are added when session is added, see RemoteSessionRepo)
-        removeApplications(event.getType());
+        removeApplications();
     }
 
     private void applicationRemoved(ApplicationId applicationId) {
         reloadHandler.removeApplication(applicationId);
-        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application removed: " + applicationId);
+        log.log(LogLevel.INFO, Tenants.logPre(applicationId) + "Application removed: " + applicationId);
     }
 
     private void applicationAdded(ApplicationId applicationId) {
         log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application added: " + applicationId);
     }
 
-    private void removeApplications(PathChildrenCacheEvent.Type eventType) {
+    private void removeApplications() {
         ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
-        log.log(LogLevel.DEBUG, "Got " + eventType + " event for tenant '" + tenant +
-                "', removing applications except these active applications: " + activeApplications);
+        log.log(LogLevel.DEBUG, "Removing stale applications for tenant '" + tenant +
+                "', not removing these active applications: " + activeApplications);
         reloadHandler.removeApplicationsExcept(activeApplications);
     }
 

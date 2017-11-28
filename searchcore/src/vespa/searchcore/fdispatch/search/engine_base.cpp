@@ -112,7 +112,7 @@ void
 FastS_EngineBase::SlowQuery(double limit, double secs, bool silent)
 {
     {
-        std::unique_lock<std::mutex> engineGuard(_lock);
+        std::lock_guard<std::mutex> engineGuard(_lock);
         _stats._slowQueryCnt++;
         _stats._slowQuerySecs += secs;
     }
@@ -127,7 +127,7 @@ void
 FastS_EngineBase::SlowDocsum(double limit, double secs)
 {
     {
-        std::unique_lock<std::mutex> engineGuard(_lock);
+        std::lock_guard<std::mutex> engineGuard(_lock);
         _stats._slowDocsumCnt++;
         _stats._slowDocsumSecs += secs;
     }
@@ -173,7 +173,7 @@ FastS_EngineBase::SampleQueueLens()
     double queueLen;
     double activecnt;
 
-    std::unique_lock<std::mutex> engineGuard(_lock);
+    std::lock_guard<std::mutex> engineGuard(_lock);
     if (_stats._queueLenSampleCnt > 0)
         queueLen = (double) _stats._queueLenSampleAcc / (double) _stats._queueLenSampleCnt;
     else
@@ -217,7 +217,7 @@ FastS_EngineBase::MarkBad(uint32_t badness)
     bool worse = false;
 
     {
-        std::unique_lock<std::mutex> engineGuard(_lock);
+        std::lock_guard<std::mutex> engineGuard(_lock);
         if (badness > _badness) {
             _badness = badness;
             worse = true;

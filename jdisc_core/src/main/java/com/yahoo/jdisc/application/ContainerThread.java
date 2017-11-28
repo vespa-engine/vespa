@@ -22,8 +22,8 @@ public class ContainerThread extends Thread {
      * Allocates a new ContainerThread object. This constructor calls the parent {@link Thread#Thread(Runnable)}
      * constructor.
      *
-     * @param target   The object whose <code>run</code> method is called.
-     * @param consumer The MetricConsumer of this thread.
+     * @param target   the object whose <code>run</code> method is called.
+     * @param consumer the MetricConsumer of this thread.
      */
     public ContainerThread(Runnable target, MetricConsumer consumer) {
         super(target);
@@ -56,6 +56,7 @@ public class ContainerThread extends Thread {
         public Thread newThread(Runnable target) {
             return new ContainerThread(target, provider.get());
         }
+
     }
 
 }

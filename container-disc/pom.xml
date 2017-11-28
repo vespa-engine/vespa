@@ -20,6 +20,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>testutil</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
@@ -184,7 +190,7 @@
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
-                <!-- jersey2 -->
+                <!-- Jersey 2 + Jackson 2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,
                 hk2-locator-${hk2.version}.jar,
@@ -193,6 +199,7 @@
                 jackson-core-${jackson2.version}.jar,
                 jackson-databind-${jackson2.version}.jar,
                 jackson-datatype-jdk8-${jackson2.version}.jar,
+                jackson-datatype-jsr310-${jackson2.version}.jar,
                 jackson-jaxrs-base-${jackson2.version}.jar,
                 jackson-jaxrs-json-provider-${jackson2.version}.jar,
                 jackson-module-jaxb-annotations-${jackson2.version}.jar,

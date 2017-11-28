@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.ComponentId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;

@@ -20,4 +20,9 @@ vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketSpace& 
               << ")";
 }
 
+std::ostream& operator<<(std::ostream& os, const BucketSpace& bucketSpace)
+{
+    return os << bucketSpace.toString();
+}
+
 }

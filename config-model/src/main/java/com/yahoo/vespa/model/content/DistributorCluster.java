@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.document.select.DocumentSelector;
@@ -18,10 +20,14 @@ import java.util.logging.Logger;
 /**
  * Generates distributor-specific configuration.
  */
-public class DistributorCluster extends AbstractConfigProducer<Distributor>
-        implements StorDistributormanagerConfig.Producer, StorServerConfig.Producer, MetricsmanagerConfig.Producer {
+public class DistributorCluster extends AbstractConfigProducer<Distributor> implements
+        StorDistributormanagerConfig.Producer,
+        StorServerConfig.Producer,
+        MetricsmanagerConfig.Producer,
+        BucketspacesConfig.Producer {
 
     public static final Logger log = Logger.getLogger(DistributorCluster.class.getPackage().toString());
+
 
     private static class GcOptions {
         public final int interval;
@@ -143,6 +149,20 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor>
         builder.root_folder("");
         builder.cluster_name(parent.getName());
         builder.is_distributor(true);
+    }
+
+    private static final String DEFAULT_BUCKET_SPACE = "default";
+    private static final String GLOBAL_BUCKET_SPACE = "global";
+
+    @Override
+    public void getConfig(BucketspacesConfig.Builder builder) {
+        for (NewDocumentType docType : parent.getDocumentDefinitions().values()) {
+            BucketspacesConfig.Documenttype.Builder docTypeBuilder = new BucketspacesConfig.Documenttype.Builder();
+            docTypeBuilder.name(docType.getName());
+            String bucketSpace = (parent.isGloballyDistributed(docType) ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
+            docTypeBuilder.bucketspace(bucketSpace);
+            builder.documenttype(docTypeBuilder);
+        }
     }
 
     public String getClusterName() {

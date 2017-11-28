@@ -8,6 +8,7 @@ namespace proton {
 using search::SerialNum;
 
 using Config = PrepareRestartFlushStrategy::Config;
+using TlsReplayCost = FlushTargetCandidates::TlsReplayCost;
 
 namespace {
 
@@ -25,7 +26,7 @@ calculateReplayStartSerial(const FlushContext::List &sortedFlushContexts,
     return sortedFlushContexts[numCandidates]->getTarget()->getFlushedSerialNum() + 1;
 }
 
-double
+TlsReplayCost
 calculateTlsReplayCost(const flushengine::TlsStats &tlsStats,
                        const Config &cfg,
                        SerialNum replayStartSerial)
@@ -33,13 +34,13 @@ calculateTlsReplayCost(const flushengine::TlsStats &tlsStats,
     SerialNum replayEndSerial = tlsStats.getLastSerial();
     SerialNum numTotalOperations = replayEndSerial - tlsStats.getFirstSerial() + 1;
     if (numTotalOperations == 0) {
-        return 0;
+        return TlsReplayCost(0.0, 0.0);
     }
     double numBytesPerOperation =
         (double)tlsStats.getNumBytes() / (double)numTotalOperations;
     SerialNum numOperationsToReplay = replayEndSerial + 1 - replayStartSerial;
     double numBytesToReplay = numBytesPerOperation * numOperationsToReplay;
-    return numBytesToReplay * cfg.tlsReplayCost;
+    return TlsReplayCost((numBytesToReplay * cfg.tlsReplayByteCost), (numOperationsToReplay * cfg.tlsReplayOperationCost));
 }
 
 double

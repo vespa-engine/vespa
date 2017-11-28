@@ -35,6 +35,7 @@ namespace mbus {
 }
 namespace storage {
 
+class BucketResolver;
 class VisitorMbusSession;
 class Visitor;
 class VisitorThread;
@@ -167,6 +168,7 @@ private:
 
     config::ConfigUri _configUri;
     std::atomic<bool> _closed;
+    std::unique_ptr<BucketResolver> _bucketResolver;
     DocumentApiConverter _docApiConverter;
     framework::Thread::UP _thread;
     MessageAllocationTypes _messageAllocTypes;

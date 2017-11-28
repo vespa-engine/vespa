@@ -67,7 +67,7 @@ public class DeploymentIssueReporter extends Maintainer {
             if (failingApplications.contains(application.id()))
                 fileDeploymentIssueFor(application.id());
             else
-                storeIssueId(application.id(), null);
+                store(application.id(), null);
     }
 
     /**
@@ -111,7 +111,7 @@ public class DeploymentIssueReporter extends Maintainer {
             IssueId issueId = tenant.tenantType() == TenantType.USER
                               ? deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, userFor(tenant))
                               : deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, propertyIdFor(tenant));
-            storeIssueId(applicationId, issueId);
+            store(applicationId, issueId);
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
             log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + applicationId, e);
@@ -130,12 +130,9 @@ public class DeploymentIssueReporter extends Maintainer {
         }));
     }
 
-    private void storeIssueId(ApplicationId id, IssueId issueId) {
-        try (Lock lock = controller().applications().lock(id)) {
-            controller().applications().get(id, lock).ifPresent(
-                    application -> controller().applications().store(application.with(issueId))
-            );
-        }
+    private void store(ApplicationId id, IssueId issueId) {
+        controller().applications().lockedIfPresent(id, application ->
+                controller().applications().store(application.withDeploymentIssueId(issueId)));
     }
 
 }

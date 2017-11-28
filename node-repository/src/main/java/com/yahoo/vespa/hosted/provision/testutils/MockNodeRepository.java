@@ -45,8 +45,12 @@ public class MockNodeRepository extends NodeRepository {
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) throws Exception {
         super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
-              new MockNameResolver().mockAnyLookup(), new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+              new MockNameResolver()
+                      .addRecord("test-container-1", "::2")
+                      .mockAnyLookup(),
+              new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         this.flavors = flavors;
+
         curator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
         populate();
     }

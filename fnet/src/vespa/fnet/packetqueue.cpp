@@ -192,7 +192,7 @@ void
 FNET_PacketQueue::QueuePacket(FNET_Packet *packet, FNET_Context context)
 {
     assert(packet != nullptr);
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     EnsureFree();
     _buf[_in_pos]._packet = packet;  // insert packet ref.
     _buf[_in_pos]._context = context;
@@ -257,7 +257,7 @@ FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
 void
 FNET_PacketQueue::Print(uint32_t indent)
 {
-    std::unique_lock<std::mutex> guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     uint32_t i   = _out_pos;
     uint32_t cnt = _bufused;
 

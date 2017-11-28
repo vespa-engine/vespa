@@ -37,7 +37,7 @@ public:
     SparseTensor(eval::ValueType &&type_in,
                     Cells &&cells_in, Stash &&stash_in);
     const Cells &cells() const { return _cells; }
-    const eval::ValueType &type() const { return _type; }
+    const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;
 

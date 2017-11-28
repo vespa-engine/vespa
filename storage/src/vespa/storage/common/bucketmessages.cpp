@@ -39,6 +39,12 @@ ReadBucketListReply::ReadBucketListReply(const ReadBucketList& cmd)
 
 ReadBucketListReply::~ReadBucketListReply() { }
 
+document::Bucket
+ReadBucketListReply::getBucket() const
+{
+    return document::Bucket(_bucketSpace, document::BucketId());
+}
+
 void
 ReadBucketListReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {

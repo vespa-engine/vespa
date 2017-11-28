@@ -1,0 +1,161 @@
+{
+  "application": "application1",
+  "instance": "default",
+  "deploying": {
+    "version": "6.1"
+  },
+  "deploymentJobs": [
+    {
+      "type": "system-test",
+      "success": true,
+      "lastTriggered": {
+        "id": -1,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "",
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "id": 42,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "",
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "id": 42,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "",
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "staging-test",
+      "success": true,
+      "lastTriggered": {
+        "id": -1,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "system-test completed",
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "id": 42,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "system-test completed",
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "id": 42,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "system-test completed",
+        "at": "(ignore)"
+      }
+    },
+    {
+      "type": "production-corp-us-east-1",
+      "success": false,
+      "lastTriggered": {
+        "id": -1,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Immediate retry on failure",
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "id": 42,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "staging-test completed",
+        "at": "(ignore)"
+      },
+      "firstFailing": {
+        "id": 42,
+        "version": "6.1.0",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "staging-test completed",
+        "at": "(ignore)"
+      }
+    }
+  ],
+  "compileVersion": "6.1.0",
+  "globalRotations": [
+    "http://fake-global-rotation-tenant1.application1"
+  ],
+  "instances": [
+    @include(dev-us-west-1.json),
+    @include(prod-corp-us-east-1.json)
+  ],
+  "metrics": {
+    "queryServiceQuality": 0.5,
+    "writeServiceQuality": 0.7
+  },
+  "ownershipIssueId": "321",
+  "deploymentIssueId": "123"
+}

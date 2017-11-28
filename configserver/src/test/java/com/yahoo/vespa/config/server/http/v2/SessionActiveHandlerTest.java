@@ -19,10 +19,8 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.path.Path;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
@@ -45,6 +43,7 @@ import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -83,7 +82,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private Curator curator;
     private RemoteSessionRepo remoteSessionRepo;
     private LocalSessionRepo localRepo;
-    private PathProvider pathProvider;
     private TenantApplications applicationRepo;
     private MockProvisioner hostProvisioner;
 
@@ -95,7 +93,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
-        pathProvider = new PathProvider(Path.createRoot());
         hostProvisioner = new MockProvisioner();
     }
 
@@ -213,7 +210,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient, Clock clock) throws IOException {
         zkClient.writeStatus(status);
-        ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, pathProvider.getSessionDirs().append(String.valueOf(sessionId)));
+        ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         zkC.write(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
@@ -318,7 +315,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         }
 
         ActivateRequest invoke(boolean createLocalSession) throws Exception {
-            SessionZooKeeperClient zkClient = new MockSessionZKClient(curator, pathProvider.getSessionDirs().append(String.valueOf(sessionId)),
+            SessionZooKeeperClient zkClient = new MockSessionZKClient(curator, tenant, sessionId,
                                                                       Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
             session = createRemoteSession(sessionId, initialStatus, zkClient, clock);
             if (createLocalSession) {

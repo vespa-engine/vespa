@@ -4,15 +4,14 @@ package com.yahoo.vespa.hosted.controller.maintenance;// Copyright 2017 Yahoo Ho
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,38 +32,31 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         boolean hasWarned = false;
-        for (Application application : controller().applications().asList()) {
-            for (Deployment deployment : application.deployments().values()) {
-                try {
-                    MetricsService.DeploymentMetrics metrics = controller().metricsService()
+        for (Application application : ApplicationList.from(controller().applications().asList()).notPullRequest().asList()) {
+            try {
+                controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                        controller().applications().store(lockedApplication.with(controller().metricsService().getApplicationMetrics(application.id()))));
+
+                for (Deployment deployment : application.deployments().values()) {
+                    MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
                             .getDeploymentMetrics(application.id(), deployment.zone());
-                    DeploymentMetrics appMetrics = new DeploymentMetrics(metrics.queriesPerSecond(), metrics.writesPerSecond(),
-                                                                         metrics.documentCount(), metrics.queryLatencyMillis(), metrics.writeLatencyMillis());
+                    DeploymentMetrics appMetrics = new DeploymentMetrics(deploymentMetrics.queriesPerSecond(),
+                                                                         deploymentMetrics.writesPerSecond(),
+                                                                         deploymentMetrics.documentCount(),
+                                                                         deploymentMetrics.queryLatencyMillis(),
+                                                                         deploymentMetrics.writeLatencyMillis());
 
-                    try (Lock lock = controller().applications().lock(application.id())) {
-
-                        // Deployment or application may have changed (or be gone) now:
-                        Optional<LockedApplication> lockedApplication = controller().applications()
-                                                                                    .get(application.id(), lock);
-                        if (!lockedApplication.isPresent()) continue;
-
-                        deployment = lockedApplication.get().deployments().get(deployment.zone());
-                        if (deployment == null) continue;
-
-                        controller().applications().store(lockedApplication.get()
-                                                                           .with(deployment.withMetrics(appMetrics)));
-                    }
-                }
-                catch (UncheckedIOException e) {
-                    if ( ! hasWarned) // produce only one warning per maintenance interval
-                        log.log(Level.WARNING, "Failed talking to YAMAS: " + Exceptions.toMessageString(e) +
-                                               ". Retrying in " + maintenanceInterval());
-                    hasWarned = true;
+                    controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                            controller().applications().store(lockedApplication.with(deployment.zone(), appMetrics)));
                 }
             }
+            catch (UncheckedIOException e) {
+                if (!hasWarned) // produce only one warning per maintenance interval
+                    log.log(Level.WARNING, "Failed talking to YAMAS: " + Exceptions.toMessageString(e) +
+                                           ". Retrying in " + maintenanceInterval());
+                hasWarned = true;
+            }
         }
-
     }
 
 }
-

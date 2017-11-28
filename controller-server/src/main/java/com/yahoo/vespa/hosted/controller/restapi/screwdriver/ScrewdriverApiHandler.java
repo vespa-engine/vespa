@@ -103,26 +103,26 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse trigger(HttpRequest request, String tenantName, String applicationName) {
+        JobType jobType = Optional.of(asString(request.getData()))
+                .filter(s -> !s.isEmpty())
+                .map(JobType::fromJobName)
+                .orElse(JobType.component);
+
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        try (Lock lock = controller.applications().lock(applicationId)) {
-            LockedApplication application = controller.applications().require(applicationId, lock);
-            JobType jobType = Optional.of(asString(request.getData()))
-                    .filter(s -> !s.isEmpty())
-                    .map(JobType::fromId)
-                    .orElse(JobType.component);
+        controller.applications().lockedOrThrow(applicationId, application -> {
             // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
             // front of the queue
             application = controller.applications().deploymentTrigger().triggerAllowParallel(
                     jobType, application, true, true,
-                    "Triggered from the screwdriver/v1 web service"
+                    "Triggered from screwdriver/v1"
             );
             controller.applications().store(application);
+        });
 
-            Slime slime = new Slime();
-            Cursor cursor = slime.setObject();
-            cursor.setString("message", "Triggered " + jobType.id() + " for " + applicationId);
-            return new SlimeJsonResponse(slime);
-        }
+        Slime slime = new Slime();
+        Cursor cursor = slime.setObject();
+        cursor.setString("message", "Triggered " + jobType.jobName() + " for " + applicationId);
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse vespaVersion() {
@@ -174,7 +174,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                         report.field("tenant").asString(),
                         report.field("application").asString(),
                         report.field("instance").asString()),
-                JobType.fromId(report.field("jobName").asString()),
+                JobType.fromJobName(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
                 jobError

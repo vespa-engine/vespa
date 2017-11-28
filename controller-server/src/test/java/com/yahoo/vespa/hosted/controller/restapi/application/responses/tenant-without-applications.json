@@ -1,4 +1,5 @@
 {
+  "tenant": "tenant1",
   "type": "ATHENS",
   "athensDomain": "domain1",
   "property": "property1",

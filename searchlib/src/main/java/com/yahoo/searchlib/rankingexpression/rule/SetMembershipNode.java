@@ -4,9 +4,14 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.Tensor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * A node which returns true or false depending on a set membership test
@@ -55,11 +60,30 @@ public class SetMembershipNode extends BooleanNode {
     @Override
     public Value evaluate(Context context) {
         Value value = testValue.evaluate(context);
-        for (ExpressionNode setValue : setValues) {
-            if (setValue.evaluate(context).equals(value))
-                return new BooleanValue(true);
+        if (value instanceof TensorValue) {
+            return evaluateTensor(((TensorValue) value).asTensor(), context);
         }
-        return new BooleanValue(false);
+        return evaluateValue(value, context);
+    }
+
+    private Value evaluateValue(Value value, Context context) {
+        return new BooleanValue(testMembership(value::equals, context));
+    }
+
+    private Value evaluateTensor(Tensor tensor, Context context) {
+        return new TensorValue(tensor.map((value) -> contains(value, context) ? 1.0 : 0.0));
+    }
+
+    private boolean contains(double value, Context context) {
+        return testMembership((setValue) -> setValue.asDouble() == value, context);
+    }
+
+    private boolean testMembership(Predicate<Value> test, Context context) {
+        for (ExpressionNode setValue : setValues) {
+            if (test.test(setValue.evaluate(context)))
+                return true;
+        }
+        return false;
     }
 
     @Override

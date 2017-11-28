@@ -51,6 +51,7 @@ struct Max { static double f(double a, double b); };
 struct IsNan { static double f(double a); };
 struct Relu { static double f(double a); };
 struct Sigmoid { static double f(double a); };
+struct Elu { static double f(double a); };
 } // namespace vespalib::eval::operation
 
 } // namespace vespalib::eval

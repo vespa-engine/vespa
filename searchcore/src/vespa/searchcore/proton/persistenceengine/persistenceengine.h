@@ -8,9 +8,9 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
-#include <vespa/vespalib/util/sync.h>
 #include <mutex>
 #include <shared_mutex>
+#include <unordered_map>
 
 namespace proton {
 
@@ -71,12 +71,12 @@ private:
     const ssize_t                           _defaultSerializedSize;
     const bool                              _ignoreMaxBytes;
     PersistenceHandlerMap                   _handlers;
-    vespalib::Lock                          _lock;
+    mutable std::mutex                      _lock;
     Iterators                               _iterators;
-    vespalib::Lock                          _iterators_lock;
+    mutable std::mutex                      _iterators_lock;
     IPersistenceEngineOwner                &_owner;
     const IResourceWriteFilter             &_writeFilter;
-    ClusterState::SP                        _clusterState;
+    std::unordered_map<BucketSpace, ClusterState::SP, BucketSpace::hash> _clusterStates;
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
     mutable std::shared_timed_mutex         _rwMutex;
 
@@ -87,8 +87,8 @@ private:
     HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace,
                                            const document::DocumentId &docId) const;
 
-    void saveClusterState(const ClusterState &calc);
-    ClusterState::SP savedClusterState() const;
+    void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
+    ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
 
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
@@ -108,7 +108,7 @@ public:
     virtual Result initialize() override;
     virtual PartitionStateListResult getPartitionStates() const override;
     virtual BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
-    virtual Result setClusterState(const ClusterState& calc) override;
+    virtual Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
     virtual Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     virtual BucketInfoResult getBucketInfo(const Bucket&) const override;
     virtual Result put(const Bucket&, Timestamp, const document::Document::SP&, Context&) override;
@@ -129,7 +129,7 @@ public:
     virtual Result maintain(const Bucket&, MaintenanceLevel) override;
 
     void destroyIterators();
-    void propagateSavedClusterState(IPersistenceHandler &handler);
+    void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void populateInitialBucketDB(BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
     std::unique_lock<std::shared_timed_mutex> getWLock() const;

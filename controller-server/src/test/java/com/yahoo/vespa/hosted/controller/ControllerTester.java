@@ -181,12 +181,9 @@ public final class ControllerTester {
     public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = applicationId(tenant.id(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
-        try (Lock lock = controller().applications().lock(applicationId)) {
-            LockedApplication lockedApplication = controller().applications().require(applicationId, lock)
-                    .withProjectId(projectId);
-            controller().applications().store(lockedApplication);
-            return lockedApplication;
-        }
+        controller().applications().lockedOrThrow(applicationId, lockedApplication ->
+                controller().applications().store(lockedApplication.withProjectId(projectId)));
+        return controller().applications().require(applicationId);
     }
 
     public void deploy(Application application, Zone zone) {

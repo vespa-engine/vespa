@@ -13,6 +13,7 @@ namespace storage {
 class ContentBucketSpaceRepo {
 public:
     using BucketSpaceMap = std::unordered_map<document::BucketSpace, ContentBucketSpace::UP, document::BucketSpace::hash>;
+    using BucketSpaces = std::vector<document::BucketSpace>;
 
 private:
     BucketSpaceMap _map;
@@ -23,6 +24,7 @@ public:
     BucketSpaceMap::const_iterator begin() const { return _map.begin(); }
     BucketSpaceMap::const_iterator end() const { return _map.end(); }
 
+    BucketSpaces getBucketSpaces() const;
     size_t getBucketMemoryUsage() const;
 
     template <typename Functor>

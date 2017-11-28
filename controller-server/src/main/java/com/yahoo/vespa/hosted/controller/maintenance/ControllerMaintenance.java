@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
@@ -25,34 +26,32 @@ public class ControllerMaintenance extends AbstractComponent {
     private final DeploymentExpirer deploymentExpirer;
     private final DeploymentIssueReporter deploymentIssueReporter;
     private final MetricsReporter metricsReporter;
-    private final FailureRedeployer failureRedeployer;
     private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final VersionStatusUpdater versionStatusUpdater;
     private final Upgrader upgrader;
-    private final DelayedDeployer delayedDeployer;
-    private final BlockedChangeDeployer blockedChangeDeployer;
+    private final ReadyJobsTrigger readyJobsTrigger;
     private final ClusterInfoMaintainer clusterInfoMaintainer;
     private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
+    private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric, Chef chefClient,
-                                 DeploymentIssues deploymentIssues) {
+                                 DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
         deploymentIssueReporter = new DeploymentIssueReporter(controller, deploymentIssues, maintenanceInterval, jobControl);
         metricsReporter = new MetricsReporter(controller, metric, chefClient, jobControl, controller.system());
-        failureRedeployer = new FailureRedeployer(controller, maintenanceInterval, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, maintenanceInterval, jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(3), jobControl);
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
-        delayedDeployer = new DelayedDeployer(controller, maintenanceInterval, jobControl);
-        blockedChangeDeployer = new BlockedChangeDeployer(controller, maintenanceInterval, jobControl);
+        readyJobsTrigger = new ReadyJobsTrigger(controller, maintenanceInterval, jobControl);
         clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
+        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -65,15 +64,14 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentExpirer.deconstruct();
         deploymentIssueReporter.deconstruct();
         metricsReporter.deconstruct();
-        failureRedeployer.deconstruct();
         outstandingChangeDeployer.deconstruct();
         versionStatusUpdater.deconstruct();
         upgrader.deconstruct();
-        delayedDeployer.deconstruct();
-        blockedChangeDeployer.deconstruct();
+        readyJobsTrigger.deconstruct();
         clusterUtilizationMaintainer.deconstruct();
         clusterInfoMaintainer.deconstruct();
         deploymentMetricsMaintainer.deconstruct();
+        applicationOwnershipConfirmer.deconstruct();
     }
 
 }

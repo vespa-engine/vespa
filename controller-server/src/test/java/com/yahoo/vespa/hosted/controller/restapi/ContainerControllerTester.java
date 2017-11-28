@@ -88,6 +88,12 @@ public class ContainerControllerTester {
     }
 
     public void notifyJobCompletion(ApplicationId applicationId, long projectId, boolean success, DeploymentJobs.JobType job) {
+        try {
+            Thread.sleep(1);
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId, job, projectId,
                                                                                      42,
                                                                                      success ? Optional.empty() : Optional.of(DeploymentJobs.JobError.unknown)

@@ -28,6 +28,7 @@ private:
     string _instanceId;
     string _controlDestination;
     string _dataDestination;
+    string _bucketSpace;
     string _docSelection;
     uint32_t _maxPendingReplyCount;
     std::vector<document::BucketId> _buckets;
@@ -68,6 +69,9 @@ public:
 
     const string& getDataDestination() const { return _dataDestination; }
     void setDataDestination(const string& value) { _dataDestination = value; }
+
+    const string& getBucketSpace() const { return _bucketSpace; }
+    void setBucketSpace(const string& value) { _bucketSpace = value; }
 
     const vdslib::Parameters& getParameters() const { return _params; }
     vdslib::Parameters& getParameters() { return _params; }

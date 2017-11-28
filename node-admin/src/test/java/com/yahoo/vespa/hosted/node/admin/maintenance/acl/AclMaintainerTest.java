@@ -141,7 +141,7 @@ public class AclMaintainerTest {
 
     private Container makeContainer(String hostname, Container.State state, int pid) {
         final ContainerName containerName = new ContainerName(hostname);
-        final Container container = new Container(hostname, new DockerImage("mock"),
+        final Container container = new Container(hostname, new DockerImage("mock"), null,
                 containerName, state, pid);
         containers.add(container);
         return container;

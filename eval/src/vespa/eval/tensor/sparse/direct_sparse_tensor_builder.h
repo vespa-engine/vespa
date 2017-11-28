@@ -127,7 +127,7 @@ public:
         insertCell(address.getAddressRef(), value, [](double, double) -> double { abort(); });
     }
 
-    eval::ValueType &type() { return _type; }
+    eval::ValueType &fast_type() { return _type; }
     Cells &cells() { return _cells; }
 };
 

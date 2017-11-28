@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class DockerProvisioningTest {
 
-    private static final String dockerFlavor = "docker1";
+    private static final String dockerFlavor = "dockerSmall";
 
     @Test
     public void docker_application_deployment() {

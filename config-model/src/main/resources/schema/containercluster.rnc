@@ -7,8 +7,7 @@ ContainerCluster = element container | jdisc {
     ContainerServices &    
     DocumentBinding* &
     Aliases? &
-    NodesOfContainerCluster? &
-    Identity?
+    NodesOfContainerCluster?
 }
 
 ContainerServices =
@@ -62,6 +61,7 @@ Filtering = element filtering {
 HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger } &
     ComponentId &
+    element ssl-keystore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
     GenericConfig*
 }
 
@@ -224,9 +224,4 @@ DocumentBinding = element document {
     attribute type { xsd:NCName } &
     attribute class { xsd:NCName } &
     attribute bundle { xsd:NCName }
-}
-
-Identity = element identity {
-   element domain { xsd:NCName } &
-   element service { xsd:NCName }
 }

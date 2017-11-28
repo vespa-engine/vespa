@@ -18,6 +18,7 @@ public class NoRetryJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private final int port;
     private final JaxRsClientFactory jaxRsClientFactory;
     private final Class<T> apiClass;
+    private final String scheme;
     private String pathPrefix;
 
     public NoRetryJaxRsStrategy(
@@ -25,7 +26,8 @@ public class NoRetryJaxRsStrategy<T> implements JaxRsStrategy<T> {
             final int port,
             final JaxRsClientFactory jaxRsClientFactory,
             final Class<T> apiClass,
-            final String pathPrefix) {
+            final String pathPrefix,
+            String scheme) {
         Objects.requireNonNull(hostName, "hostName argument may not be null");
         Objects.requireNonNull(jaxRsClientFactory, "jaxRsClientFactory argument may not be null");
         Objects.requireNonNull(apiClass, "apiClass argument may not be null");
@@ -35,11 +37,12 @@ public class NoRetryJaxRsStrategy<T> implements JaxRsStrategy<T> {
         this.jaxRsClientFactory = jaxRsClientFactory;
         this.apiClass = apiClass;
         this.pathPrefix = pathPrefix;
+        this.scheme = scheme;
     }
 
     @Override
     public <R> R apply(final Function<T, R> function) throws IOException {
-        final T jaxRsClient = jaxRsClientFactory.createClient(apiClass, hostName, port, pathPrefix);
+        final T jaxRsClient = jaxRsClientFactory.createClient(apiClass, hostName, port, pathPrefix, scheme);
         try {
             return function.apply(jaxRsClient);
         } catch (ProcessingException e) {

@@ -36,7 +36,7 @@ typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
 
 Tensor::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = DefaultTensorEngine::ref().create(spec);
+    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
     return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
 }
 

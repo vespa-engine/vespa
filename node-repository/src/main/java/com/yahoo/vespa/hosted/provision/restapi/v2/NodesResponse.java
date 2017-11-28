@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -13,6 +14,9 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
+import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -36,16 +40,19 @@ class NodesResponse extends HttpResponse {
 
     private final NodeFilter filter;
     private final boolean recursive;
+    private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
 
     private final Slime slime;
 
-    public NodesResponse(ResponseType responseType, HttpRequest request, NodeRepository nodeRepository) {
+    public NodesResponse(ResponseType responseType, HttpRequest request,  
+                         Orchestrator orchestrator, NodeRepository nodeRepository) {
         super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
         filter = NodesApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
+        this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
 
         slime = new Slime();
@@ -154,6 +161,11 @@ class NodesResponse extends HttpResponse {
             object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
             object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(node.allocation().get().membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", node.allocation().get().membership().cluster().vespaVersion().toFullString());
+            try {
+                object.setBool("allowedToBeDown", 
+                               orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN);
+            }
+            catch (HostNameNotFoundException e) {/* ok */ }
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());

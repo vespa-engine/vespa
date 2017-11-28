@@ -2,14 +2,15 @@
 #pragma once
 
 #include "documentmessage.h"
-#include <vespa/document/bucket/bucket.h>
+#include <vespa/document/bucket/bucketid.h>
 
 namespace documentapi {
 
 class StatBucketMessage : public DocumentMessage {
 private:
-    document::Bucket _bucket;
-    string        _documentSelection;
+    document::BucketId _bucketId;
+    string _documentSelection;
+    string _bucketSpace;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -23,9 +24,9 @@ public:
     /**
      * Constructs a new message with initial content.
      *
-     * @param bucket The bucket whose list to retrieve.
+     * @param bucketId The bucket whose list to retrieve.
      */
-    StatBucketMessage(document::Bucket bucket, const string& documentSelection);
+    StatBucketMessage(document::BucketId bucket, const string& documentSelection);
 
     ~StatBucketMessage();
 
@@ -34,14 +35,14 @@ public:
      *
      * @return The bucket id.
      */
-    document::Bucket getBucket() const { return _bucket; }
+    document::BucketId getBucketId() const { return _bucketId; }
 
     /**
      * Set the bucket to stat.
      *
-     * @param id The identifier to set.
+     * @param bucketId The identifier to set.
      */
-    void setBucket(document::Bucket bucket) { _bucket = bucket; };
+    void setBucketId(document::BucketId bucketId) { _bucketId = bucketId; };
 
     /**
      * Returns the document selection used to filter the documents
@@ -57,6 +58,9 @@ public:
      * @param value The selection string to set.
      */
     void setDocumentSelection(const string &value) { _documentSelection = value; };
+
+    const string &getBucketSpace() const { return _bucketSpace; }
+    void setBucketSpace(const string &value) { _bucketSpace = value; }
     uint32_t getType() const override;
     string toString() const override { return "statbucketmessage"; }
 };

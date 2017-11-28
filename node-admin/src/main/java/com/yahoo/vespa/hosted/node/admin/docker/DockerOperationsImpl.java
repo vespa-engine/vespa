@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
@@ -101,6 +102,7 @@ public class DockerOperationsImpl implements DockerOperations {
             String configServers = String.join(",", environment.getConfigServerHosts());
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
+                    ContainerResources.from(nodeSpec.minCpuCores, nodeSpec.minMainMemoryAvailableGb),
                     containerName,
                     nodeSpec.hostname)
                     .withManagedBy(MANAGER_NAME)
@@ -122,13 +124,10 @@ public class DockerOperationsImpl implements DockerOperations {
             // TODO: Enforce disk constraints
             long minMainMemoryAvailableMb = (long) (nodeSpec.minMainMemoryAvailableGb * 1024);
             if (minMainMemoryAvailableMb > 0) {
-                command.withMemoryInMb(minMainMemoryAvailableMb);
                 // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
                 // only has this much physical memory (overrides total memory reported by `free -m`).
                 command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
             }
-
-            command.withCpuShares((int) Math.round(10 * nodeSpec.minCpuCores));
 
             logger.info("Starting new container with args: " + command);
             command.create();

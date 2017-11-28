@@ -4,18 +4,22 @@ package com.yahoo.vespa.config.server.rpc;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Int64Value;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
@@ -27,6 +31,7 @@ import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.GetConfigContext;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.ReloadListener;
@@ -36,7 +41,10 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.Tenants;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -68,6 +76,18 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
+    private enum FileApiErrorCodes {
+        OK(0, "OK"),
+        NOT_FOUND(1, "Filereference not found");
+        private final int code;
+        private final String description;
+        FileApiErrorCodes(int code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+        int getCode() { return code; }
+        String getDescription() { return description; }
+    }
     private final Supervisor supervisor = new Supervisor(new Transport());
     private Spec spec = null;
     private final boolean useRequestVersion;
@@ -83,6 +103,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final MetricUpdater metrics;
     private final MetricUpdaterFactory metricUpdaterFactory;
     private final HostLivenessTracker hostLivenessTracker;
+    private final FileServer fileServer;
     
     private final ThreadPoolExecutor executorService;
     private volatile boolean allTenantsLoaded = false;
@@ -93,20 +114,23 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * @param config The config to use for setting up this server
      */
     @Inject
-    public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler, MetricUpdaterFactory metrics,
-                     HostRegistries hostRegistries, HostLivenessTracker hostLivenessTracker) {
+    public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
+                     MetricUpdaterFactory metrics, HostRegistries hostRegistries,
+                     HostLivenessTracker hostLivenessTracker, FileServer fileServer) {
         this.superModelRequestHandler = superModelRequestHandler;
-        this.metricUpdaterFactory = metrics;
-        this.supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
+        metricUpdaterFactory = metrics;
+        supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
-        executorService = new ThreadPoolExecutor(config.numthreads(), config.numthreads(), 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
+        executorService = new ThreadPoolExecutor(config.numthreads(), config.numthreads(),
+                0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
         spec = new Spec(null, config.rpcport());
         hostRegistry = hostRegistries.getTenantHostRegistry();
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
+        this.fileServer = fileServer;
         setUpHandlers();
     }
 
@@ -180,6 +204,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "s", "is", this, "serveFile"));
     }
 
     /**
@@ -223,7 +248,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
 
         for (int i = 0; i < responsesSent; i++) {
-
             try {
                 completionService.take();
             } catch (InterruptedException e) {
@@ -402,4 +426,56 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return useRequestVersion;
     }
 
+    class FileReceiver implements FileServer.Receiver {
+        Target target;
+        FileReceiver(Target target) {
+            this.target = target;
+        }
+
+        @Override
+        public String toString() {
+            return target.toString();
+        }
+
+        @Override
+        public void receive(FileReference reference, String filename, byte [] content, FileServer.ReplayStatus status) {
+            XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+            Request fileBlob = new Request("filedistribution.receiveFile");
+            fileBlob.parameters().add(new StringValue(reference.value()));
+            fileBlob.parameters().add(new StringValue(filename));
+            fileBlob.parameters().add(new DataValue(content));
+            fileBlob.parameters().add(new Int64Value(hasher.hash(ByteBuffer.wrap(content), 0)));
+            fileBlob.parameters().add(new Int32Value(status.getCode()));
+            fileBlob.parameters().add(new StringValue(status.getDescription()));
+            target.invokeSync(fileBlob, 600);
+            if (fileBlob.isError()) {
+                log.warning("Failed delivering reference '" + reference.value() + "' with file '" + filename + "' to " +
+                            target.toString() + " with error : '" + fileBlob.errorMessage() + "'.");
+            }
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public final void serveFile(Request request) {
+        String fileReference = request.parameters().get(0).asString();
+        FileApiErrorCodes result;
+        try {
+            // TODO remove once verified in system tests.
+            log.info("Received request for reference '" + fileReference + "'");
+            result = fileServer.hasFile(fileReference)
+                    ? FileApiErrorCodes.OK
+                    : FileApiErrorCodes.NOT_FOUND;
+            if (result == FileApiErrorCodes.OK) {
+                fileServer.startFileServing(fileReference, new FileReceiver(request.target()));
+            } else {
+                fileServer.download(new FileReference(fileReference));
+            }
+        } catch (IllegalArgumentException e) {
+            result = FileApiErrorCodes.NOT_FOUND;
+            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
+        }
+        request.returnValues()
+                .add(new Int32Value(result.getCode()))
+                .add(new StringValue(result.getDescription()));
+    }
 }

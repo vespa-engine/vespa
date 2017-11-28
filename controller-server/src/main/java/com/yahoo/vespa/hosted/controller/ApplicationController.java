@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -62,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -109,25 +111,13 @@ public class ApplicationController {
 
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
-        for (Application application : db.listApplications()) {
-            try (Lock lock = lock(application.id())) {
-                Optional<LockedApplication> lockedApplication = db.getApplication(application.id())
-                        .map(app -> new LockedApplication(app, lock));
-                if ( ! lockedApplication.isPresent()) continue; // was removed since listing; ok
-                store(lockedApplication.get()); // re-write all applications to update storage format
-            }
-        }
+        for (Application application : db.listApplications())
+            lockedIfPresent(application.id(), this::store);
     }
 
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Application> get(ApplicationId id) {
         return db.getApplication(id);
-    }
-
-
-    /** Returns an locked application with the given id that be updated and stored */
-    public Optional<LockedApplication> get(ApplicationId id, Lock lock) {
-        return db.getApplication(id).map(application -> new LockedApplication(application, lock));
     }
 
     /**
@@ -137,16 +127,6 @@ public class ApplicationController {
      */
     public Application require(ApplicationId id) {
         return get(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
-    }
-
-    /**
-     * Returns a locked application that be updated and stored
-     *
-     * @throws IllegalArgumentException if it does not exist
-     *
-     */
-    public LockedApplication require(ApplicationId id, Lock lock) {
-        return get(id, lock).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
     }
 
     /** Returns a snapshot of all applications */
@@ -251,6 +231,7 @@ public class ApplicationController {
         if ( ! (id.instance().value().equals("default") || id.instance().value().startsWith("default-pr"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
         try (Lock lock = lock(id)) {
+            // TODO: Throwing is duplicated below.
             if (get(id).isPresent())
                 throw new IllegalArgumentException("An application with id '" + id + "' already exists");
 
@@ -288,22 +269,23 @@ public class ApplicationController {
     public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
-            // Determine what we are doing
-            LockedApplication application = get(applicationId, lock).orElse(new LockedApplication(
+            // TODO: Shouldn't this go through the above method? Seems you can cheat the checks here ... ?
+            LockedApplication application = get(applicationId).map(application1 -> new LockedApplication(application1, lock)).orElse(new LockedApplication(
                     new Application(applicationId), lock)
-            );
+                                                                                                                                    );
 
+            // Determine what we are doing
             Version version;
             if (options.deployCurrentVersion)
-                version = application.currentVersion(controller, zone);
+                version = application.versionIn(zone, controller);
             else if (canDeployDirectlyTo(zone, options))
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
             else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
                 return unexpectedDeployment(applicationId, zone, applicationPackage);
             else
-                version = application.currentDeployVersion(controller, zone);
+                version = application.deployVersionIn(zone, controller);
 
-            DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
+            Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.system(), zone);
             ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
 
             if ( ! options.deployCurrentVersion) {
@@ -314,17 +296,17 @@ public class ApplicationController {
                     application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if ( ! canDeployDirectlyTo(zone, options) && jobType != null) {
-                    // Update with (potentially) missing information about what we triggered
-                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType);
-                    application = application.with(application.deploymentJobs()
-                                                           .withTriggering(jobType,
-                                                                           application.deploying(),
-                                                                           triggering.id(),
-                                                                           version,
-                                                                           Optional.of(revision),
-                                                                           triggering.reason(),
-                                                                           triggering.at()));
+                if ( ! canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
+                    // Update with (potentially) missing information about what we triggered:
+                    // * When someone else triggered the job, we need to store a stand-in triggering event.
+                    // * When this is the system test job, we need to record the new revision, for future use.
+                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
+                    application = application.withJobTriggering(jobType.get(),
+                                                                application.deploying(),
+                                                                triggering.at(),
+                                                                version,
+                                                                Optional.of(revision),
+                                                                triggering.reason());
                 }
 
                 // Delete zones not listed in DeploymentSpec, if allowed
@@ -357,14 +339,8 @@ public class ApplicationController {
                     configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), 
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
+            application = application.withNewDeployment(zone, revision, version, clock.instant());
 
-            // Use info from previous deployments is available
-            Deployment previousDeployment = application.deployments().getOrDefault(zone, new Deployment(zone, revision, version, clock.instant()));
-            Deployment newDeployment = new Deployment(zone, revision, version, clock.instant(),
-                                                      previousDeployment.clusterUtils(), 
-                                                      previousDeployment.clusterInfo(), previousDeployment.metrics());
-
-            application = application.with(newDeployment);
             store(application);
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
@@ -423,10 +399,9 @@ public class ApplicationController {
      * This is needed (only) in the case where some external entity triggers a job.
      */
     private JobStatus.JobRun getOrCreateTriggering(Application application, Version version, DeploymentJobs.JobType jobType) {
-        if (jobType == null) return incompleteTriggeringEvent(version);
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-        if (status == null) return  incompleteTriggeringEvent(version);
-        if ( ! status.lastTriggered().isPresent()) return  incompleteTriggeringEvent(version);
+        if (status == null) return incompleteTriggeringEvent(version);
+        if ( ! status.lastTriggered().isPresent()) return incompleteTriggeringEvent(version);
         return status.lastTriggered().get();
     }
 
@@ -501,7 +476,7 @@ public class ApplicationController {
             return Optional.of(new InstanceEndpoints(endPointUrls));
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId, e);
+            log.log(Level.FINE, "Failed to get endpoint information for " + deploymentId, e);
             return Optional.empty();
         }
     }
@@ -509,14 +484,15 @@ public class ApplicationController {
     /**
      * Deletes the application with this id
      * 
-     * @return the deleted application, or null if it did not exist
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
+     * @throws NotExistsException if the application does not exist
      */
-    public Application deleteApplication(ApplicationId id, Optional<NToken> token) {
-        try (Lock lock = lock(id)) {
-            Optional<Application> application = get(id);
-            if ( ! application.isPresent()) return null;
-            if ( ! application.get().deployments().isEmpty())
+    public void deleteApplication(ApplicationId id, Optional<NToken> token) {
+        if ( ! controller.applications().get(id).isPresent())
+            throw new NotExistsException("Could not delete application '" + id + "': Application not found");
+
+        lockedOrThrow(id, application -> {
+            if ( ! application.deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
             
             Tenant tenant = controller.tenants().tenant(new TenantId(id.tenant().value())).get();
@@ -529,9 +505,8 @@ public class ApplicationController {
                         .deleteApplication(tenant.getAthensDomain().get(), new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             db.deleteApplication(id);
 
-            log.info("Deleted " + application.get());
-            return application.get();
-        }
+            log.info("Deleted " + application);
+        });
     }
 
     /** 
@@ -541,6 +516,30 @@ public class ApplicationController {
      */
     public void store(LockedApplication application) {
         db.store(application);
+    }
+
+    /**
+     * Acquire a locked application to modify and store, if there is an application with the given id.
+     *
+     * @param applicationId Id of the application to lock and get.
+     * @param actions Things to do with the locked application.
+     */
+    public void lockedIfPresent(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+        try (Lock lock = lock(applicationId)) {
+            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(actions);
+        }
+    }
+
+    /**
+     * Acquire a locked application to modify and store, or throw an exception if no application has the given id.
+     *
+     * @param applicationId Id of the application to lock and require.
+     * @param actions Things to do with the locked application.
+     */
+    public void lockedOrThrow(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+        try (Lock lock = lock(applicationId)) {
+            actions.accept(new LockedApplication(require(applicationId), lock));
+        }
     }
 
     public void notifyJobCompletion(JobReport report) {
@@ -582,20 +581,17 @@ public class ApplicationController {
 
     private void deactivate(Application application, Zone zone, Optional<Deployment> deployment,
                             boolean requireThatDeploymentHasExpired) {
-        try (Lock lock = lock(application.id())) {
-            LockedApplication lockedApplication = controller.applications().require(application.id(), lock);
-            if (deployment.isPresent() && requireThatDeploymentHasExpired && 
-                ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant())) {
-                return;
-            }
-            lockedApplication = deactivate(lockedApplication, zone);
-            store(lockedApplication);
-        }
+        if (requireThatDeploymentHasExpired && deployment.isPresent()
+            && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
+            return;
+
+        lockedOrThrow(application.id(), lockedApplication ->
+                store(deactivate(lockedApplication, zone)));
     }
 
-    /** 
+    /**
      * Deactivates a locked application without storing it
-     * 
+     *
      * @return the application with the deployment in the given zone removed
      */
     private LockedApplication deactivate(LockedApplication application, Zone zone) {
@@ -611,19 +607,19 @@ public class ApplicationController {
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
 
     private ApplicationId dashToUnderscore(ApplicationId id) {
-        return ApplicationId.from(id.tenant().value(), 
+        return ApplicationId.from(id.tenant().value(),
                                   id.application().value().replaceAll("-", "_"),
                                   id.instance().value());
     }
-    
+
     public ConfigServerClient configserverClient() { return configserverClient; }
-    
-    /** 
+
+    /**
      * Returns a lock which provides exclusive rights to changing this application.
      * Any operation which stores an application need to first acquire this lock, then read, modify
      * and store the application, and finally release (close) the lock.
      */
-    public Lock lock(ApplicationId application) {
+    Lock lock(ApplicationId application) {
         return curator.lock(application, Duration.ofMinutes(10));
     }
 
@@ -634,19 +630,30 @@ public class ApplicationController {
                zone.environment().isManuallyDeployed();
     }
 
+    /** Verify that each of the production zones listed in the deployment spec exist in this system. */
+    public void validate(DeploymentSpec deploymentSpec) {
+        deploymentSpec.zones().stream()
+                .filter(zone -> zone.environment() == Environment.prod)
+                .forEach(zone -> {
+                    if ( ! controller.zoneRegistry().getZone(zone.environment(), zone.region().orElse(null)).isPresent())
+                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
+                });
+    }
+
+
     private static final class ApplicationRotation {
-        
+
         private final ImmutableSet<String> cnames;
         private final ImmutableSet<Rotation> rotations;
-        
+
         public ApplicationRotation(Set<String> cnames, Set<Rotation> rotations) {
             this.cnames = ImmutableSet.copyOf(cnames);
             this.rotations = ImmutableSet.copyOf(rotations);
         }
-        
+
         public Set<String> cnames() { return cnames; }
         public Set<Rotation> rotations() { return rotations; }
-        
+
     }
-    
+
 }

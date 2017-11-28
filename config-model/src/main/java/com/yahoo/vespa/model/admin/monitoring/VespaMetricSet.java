@@ -214,6 +214,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_fragmentation_factor.average"));
         metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_fragmentation_factor.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_fragmentation_factor.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_limit.last"));
+        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_limit.last"));
+        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_limit.last"));
 
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
@@ -303,11 +306,13 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.spi.put.success.average"));
         metrics.add(new Metric("vds.filestor.spi.remove.success.average"));
         metrics.add(new Metric("vds.filestor.spi.update.success.average"));
+        metrics.add(new Metric("vds.filestor.spi.deleteBucket.success.average"));
         metrics.add(new Metric("vds.filestor.spi.get.success.average"));
         metrics.add(new Metric("vds.filestor.spi.iterate.success.average"));
         metrics.add(new Metric("vds.filestor.spi.put.success.rate"));
         metrics.add(new Metric("vds.filestor.spi.remove.success.rate"));
         metrics.add(new Metric("vds.filestor.spi.update.success.rate"));
+        metrics.add(new Metric("vds.filestor.spi.deleteBucket.success.rate"));
         metrics.add(new Metric("vds.filestor.spi.get.success.rate"));
         metrics.add(new Metric("vds.filestor.spi.iterate.success.rate"));
 

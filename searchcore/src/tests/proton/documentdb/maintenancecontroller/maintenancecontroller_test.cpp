@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/persistence/spi/test.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
@@ -43,6 +43,7 @@ using namespace vespalib::slime;
 using document::BucketId;
 using document::Document;
 using document::DocumentId;
+using document::test::makeBucketSpace;
 using fastos::ClockSystem;
 using fastos::TimeStamp;
 using proton::bucketdb::BucketCreateNotifier;
@@ -54,7 +55,6 @@ using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
-using storage::spi::test::makeBucketSpace;
 using vespalib::Slime;
 using vespalib::makeClosure;
 using vespalib::makeTask;

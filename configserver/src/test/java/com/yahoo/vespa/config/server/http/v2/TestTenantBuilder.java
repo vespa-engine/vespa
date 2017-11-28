@@ -4,10 +4,9 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -19,7 +18,7 @@ import java.util.*;
 /**
  * Test utility for creating tenants used for testing and setup wiring of tenant stuff.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class TestTenantBuilder {
@@ -33,7 +32,7 @@ public class TestTenantBuilder {
 
     public TenantBuilder createTenant(TenantName tenantName) {
         MemoryTenantApplications applicationRepo = new MemoryTenantApplications();
-        TenantBuilder builder = TenantBuilder.create(componentRegistry, tenantName, Path.createRoot().append(tenantName.value()))
+        TenantBuilder builder = TenantBuilder.create(componentRegistry, tenantName)
                 .withSessionFactory(new SessionCreateHandlerTest.MockSessionFactory())
                 .withLocalSessionRepo(new LocalSessionRepo(componentRegistry.getClock()))
                 .withRemoteSessionRepo(new RemoteSessionRepo())
@@ -57,6 +56,6 @@ public class TestTenantBuilder {
                 }
             }
         });
-        return new Tenants(componentRegistry, Metrics.createTestMetrics(), tenantList);
+        return new Tenants(componentRegistry, tenantList);
     }
 }

@@ -40,6 +40,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
          String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
+            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -48,6 +49,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
+            "\"scheme\":null," +
+            "\"localport\":0," +
             "\"search\":{" +
             "\"totalhits\":1234," +
             "\"hits\":0" +
@@ -66,6 +69,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
+            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -74,6 +78,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
+            "\"scheme\":null," +
+            "\"localport\":0," +
             "\"search\":{" +
             "\"totalhits\":1234," +
             "\"hits\":0" +
@@ -96,6 +102,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
+            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -104,6 +111,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
+            "\"scheme\":null," +
+            "\"localport\":0," +
             "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
             "\"search\":{" +
             "\"totalhits\":1234," +
@@ -119,6 +128,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
+            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -127,6 +137,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
+            "\"scheme\":null," +
+            "\"localport\":0," +
             "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
             "\"remoteport\":1234," +
             "\"search\":{" +
@@ -163,6 +175,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
+            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -171,6 +184,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I; \\\"Best Browser Ever\\\")\"," +
             "\"host\":\"localhost\"," +
+            "\"scheme\":null," +
+            "\"localport\":0," +
             "\"search\":{" +
             "\"totalhits\":1234," +
             "\"hits\":0" +

@@ -34,7 +34,7 @@ public:
     void next();
     double cell() const { return _cells[_cellIdx]; }
     const std::vector<size_t> &address() const { return _address; }
-    const eval::ValueType &type() const { return _type; }
+    const eval::ValueType &fast_type() const { return _type; }
 };
 
 } // namespace vespalib::tensor

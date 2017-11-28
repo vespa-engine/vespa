@@ -431,7 +431,7 @@ bool
 MergeThrottler::isMergeAlreadyKnown(const api::StorageMessage::SP& msg) const
 {
     auto& mergeCmd = static_cast<const api::MergeBucketCommand&>(*msg);
-    return _merges.find(mergeCmd.getBucketId()) != _merges.end();
+    return _merges.find(mergeCmd.getBucket()) != _merges.end();
 }
 
 bool
@@ -830,10 +830,8 @@ MergeThrottler::processNewMergeCommand(
     // and that we can fit it into our window.
     // Register the merge now so that it will contribute to filling up our
     // merge throttling window.
-    assert(_merges.find(mergeCmd.getBucketId()) == _merges.end());
-    auto state = _merges.insert(
-            std::make_pair(mergeCmd.getBucketId(),
-                           ChainedMergeState(msg))).first;
+    assert(_merges.find(mergeCmd.getBucket()) == _merges.end());
+    auto state = _merges.emplace(mergeCmd.getBucket(), ChainedMergeState(msg)).first;
 
     LOG(debug, "Added merge %s to internal state",
         mergeCmd.toString().c_str());
@@ -911,7 +909,7 @@ MergeThrottler::processCycledMergeCommand(
 
     MergeNodeSequence nodeSeq(mergeCmd, _component.getIndex());
 
-    auto mergeIter = _merges.find(mergeCmd.getBucketId());
+    auto mergeIter = _merges.find(mergeCmd.getBucket());
     assert(mergeIter != _merges.end());
 
     if (mergeIter->second.isAborted()) {
@@ -964,7 +962,7 @@ MergeThrottler::processMergeReply(
 {
     auto& mergeReply = dynamic_cast<const api::MergeBucketReply&>(*msg);
 
-    auto mergeIter = _merges.find(mergeReply.getBucketId());
+    auto mergeIter = _merges.find(mergeReply.getBucket());
     if (mergeIter == _merges.end()) {
         LOG(warning, "Received %s, which has no command mapped "
             "for it. Cannot send chained reply!",
@@ -1075,7 +1073,7 @@ MergeThrottler::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     } else if (isDiffCommand(*msg)) {
         vespalib::LockGuard lock(_stateLock);
         auto& cmd = static_cast<api::StorageCommand&>(*msg);
-        if (bucketIsUnknownOrAborted(cmd.getBucketId())) {
+        if (bucketIsUnknownOrAborted(cmd.getBucket())) {
             sendUp(makeAbortReply(cmd, "no state recorded for bucket in merge "
                                   "throttler, source merge probably aborted earlier"));
             return true;
@@ -1104,7 +1102,7 @@ MergeThrottler::isMergeReply(const api::StorageMessage& msg) const
 }
 
 bool
-MergeThrottler::bucketIsUnknownOrAborted(const document::BucketId& bucket) const
+MergeThrottler::bucketIsUnknownOrAborted(const document::Bucket& bucket) const
 {
     auto it = _merges.find(bucket);
     if (it == _merges.end()) {

@@ -15,10 +15,9 @@ public class InstanceRefreshInformation {
     @JsonProperty("csr")
     private final String csr;
     @JsonProperty("token")
-    private final boolean requestServiceToken;
+    private final boolean requestServiceToken = true;
 
-    public InstanceRefreshInformation(String csr, boolean requestServiceToken) {
+    public InstanceRefreshInformation(String csr) {
         this.csr = csr;
-        this.requestServiceToken = requestServiceToken;
     }
 }

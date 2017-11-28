@@ -5,6 +5,7 @@ import com.google.common.base.Objects;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 
+import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -107,6 +109,12 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             accessLogEntry.setPeerPort(peerPort);
         }
         accessLogEntry.setHttpVersion(request.getProtocol());
+        accessLogEntry.setScheme(request.getScheme());
+        accessLogEntry.setLocalPort(request.getLocalPort());
+        Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
+        if (principal != null) {
+            accessLogEntry.setUserPrincipal(principal);
+        }
     }
 
     private static String getRemoteAddress(final HttpServletRequest request) {

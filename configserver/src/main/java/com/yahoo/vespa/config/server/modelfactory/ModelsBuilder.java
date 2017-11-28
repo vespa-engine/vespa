@@ -6,16 +6,19 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
@@ -24,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -96,7 +100,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             catch (RuntimeException e) {
                 boolean isOldestMajor = i == majorVersions.size() - 1;
                 if (isOldestMajor) {
-                    throw new IllegalArgumentException(applicationId + ": Error loading model", e);
+                    if (e instanceof NullPointerException || e instanceof NoSuchElementException) {
+                        log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
+                        throw new InternalServerException(applicationId + ": Error loading model", e);
+                    } else {
+                        throw new IllegalArgumentException(applicationId + ": Error loading model", e);
+                    }
                 } else {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
                 }
@@ -170,9 +179,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                    ConfigserverConfig configserverConfig,
                                                                    Zone zone,
                                                                    Set<Rotation> rotations) {
-        return new ModelContextImpl.Properties(applicationId, 
+        return new ModelContextImpl.Properties(applicationId,
                                                configserverConfig.multitenant(),
                                                ConfigServerSpec.fromConfig(configserverConfig),
+                                               HostName.from(configserverConfig.loadBalancerAddress()),
                                                configserverConfig.hostedVespa(),
                                                zone,
                                                rotations);

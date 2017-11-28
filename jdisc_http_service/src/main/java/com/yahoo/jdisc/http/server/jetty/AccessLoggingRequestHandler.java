@@ -54,24 +54,27 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         final HttpRequest httpRequest = (HttpRequest) request;
         httpRequest.context().put(CONTEXT_KEY_ACCESS_LOG_ENTRY, accessLogEntry);
-        final ResponseHandler accessLoggingResponseHandler = new AccessLoggingResponseHandler(handler, accessLogEntry);
+        final ResponseHandler accessLoggingResponseHandler = new AccessLoggingResponseHandler(httpRequest, handler, accessLogEntry);
         final ContentChannel requestContentChannel = delegate.handleRequest(request, accessLoggingResponseHandler);
         return requestContentChannel;
     }
 
     private static class AccessLoggingResponseHandler implements ResponseHandler {
+        private final HttpRequest request;
         private final ResponseHandler delegateHandler;
         private final AccessLogEntry accessLogEntry;
 
         public AccessLoggingResponseHandler(
-                final ResponseHandler delegateHandler,
+                HttpRequest request, final ResponseHandler delegateHandler,
                 final AccessLogEntry accessLogEntry) {
+            this.request = request;
             this.delegateHandler = delegateHandler;
             this.accessLogEntry = accessLogEntry;
         }
 
         @Override
         public ContentChannel handleResponse(Response response) {
+            accessLogEntry.setUserPrincipal(request.getUserPrincipal());
             return delegateHandler.handleResponse(response);
         }
 

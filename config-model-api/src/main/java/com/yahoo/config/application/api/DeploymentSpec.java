@@ -3,6 +3,8 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 
@@ -14,7 +16,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,28 +41,36 @@ public class DeploymentSpec {
                                                                   UpgradePolicy.defaultPolicy,
                                                                   Collections.emptyList(),
                                                                   Collections.emptyList(),
-                                                                  "<deployment version='1.0'/>");
+                                                                  "<deployment version='1.0'/>",
+                                                                  Optional.empty(),
+                                                                  Optional.empty());
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
     private final List<ChangeBlocker> changeBlockers;
     private final List<Step> steps;
     private final String xmlForm;
+    private final Optional<AthenzDomain> athenzDomain;
+    private final Optional<AthenzService> athenzService;
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
                           List<ChangeBlocker> changeBlockers, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, changeBlockers, steps, null);
+        this(globalServiceId, upgradePolicy, changeBlockers, steps, null, Optional.empty(), Optional.empty());
     }
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm) {
+                          List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
+                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
         this.changeBlockers = changeBlockers;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
+        this.athenzDomain = athenzDomain;
+        this.athenzService = athenzService;
         validateZones(this.steps);
+        validateAthenz();
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -82,7 +91,30 @@ public class DeploymentSpec {
             for (DeclaredZone zone : step.zones())
                 ensureUnique(zone, zones);
     }
-    
+
+    /*
+     * Throw an IllegalArgumentException if Athenz configuration violates:
+     * domain not configured -> no zone can configure service
+     * domain configured -> all zones must configure service
+     */
+    private void validateAthenz() {
+        // If athenz domain is not set, athenz service cannot be set on any level
+        if (! athenzDomain.isPresent()) {
+            for (DeclaredZone zone : zones()) {
+                if(zone.athenzService().isPresent()) {
+                    throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
+                }
+            }
+        // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
+        } else if(! athenzService.isPresent()) {
+            for (DeclaredZone zone : zones()) {
+                if(! zone.athenzService().isPresent()) {
+                    throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
+                }
+            }
+        }
+    }
+
     private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
         if ( ! zones.add(zone))
             throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
@@ -90,9 +122,6 @@ public class DeploymentSpec {
 
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<Step> completeSteps(List<Step> steps) {
-        // Ensure no duplicate deployments to the same zone
-        steps = new ArrayList<>(new LinkedHashSet<>(steps));
-        
         // Add staging if required and missing
         if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
             steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
@@ -216,6 +245,21 @@ public class DeploymentSpec {
         return b.toString();
     }
 
+    /** Returns the athenz domain if configured */
+    public Optional<AthenzDomain> athenzDomain() {
+        return athenzDomain;
+    }
+
+    /** Returns the athenz service for environment/region if configured */
+    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
+        AthenzService athenzService = zones().stream()
+                .filter(zone -> zone.deploysTo(environment, Optional.of(region)))
+                .findFirst()
+                .flatMap(DeclaredZone::athenzService)
+                .orElse(this.athenzService.orElse(null));
+        return Optional.ofNullable(athenzService);
+    }
+
     /** This may be invoked by a continuous build */
     public static void main(String[] args) {
         if (args.length != 2 && args.length != 3) {
@@ -280,11 +324,17 @@ public class DeploymentSpec {
 
         private final boolean active;
 
+        private Optional<AthenzService> athenzService;
+
         public DeclaredZone(Environment environment) {
             this(environment, Optional.empty(), false);
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active) {
+            this(environment, region, active, Optional.empty());
+        }
+
+        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<AthenzService> athenzService) {
             if (environment != Environment.prod && region.isPresent())
                 throw new IllegalArgumentException("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && ! region.isPresent())
@@ -292,6 +342,7 @@ public class DeploymentSpec {
             this.environment = environment;
             this.region = region;
             this.active = active;
+            this.athenzService = athenzService;
         }
 
         public Environment environment() { return environment; }
@@ -301,6 +352,8 @@ public class DeploymentSpec {
 
         /** Returns whether this zone should receive production traffic */
         public boolean active() { return active; }
+
+        public Optional<AthenzService> athenzService() { return athenzService; }
 
         @Override
         public List<DeclaredZone> zones() { return Collections.singletonList(this); }

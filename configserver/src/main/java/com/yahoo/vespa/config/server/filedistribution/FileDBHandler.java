@@ -31,11 +31,6 @@ public class FileDBHandler implements FileDistribution {
     }
 
     @Override
-    public void limitSendingOfDeployedFilesTo(Collection<String> hostNames) {
-        manager.limitSendingOfDeployedFilesTo(hostNames);
-    }
-
-    @Override
     public void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames) {
         manager.removeDeploymentsThatHaveDifferentApplicationId(targetHostnames);
     }

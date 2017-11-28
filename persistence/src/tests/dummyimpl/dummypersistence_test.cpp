@@ -4,6 +4,7 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
@@ -11,6 +12,7 @@
 
 using namespace storage::spi;
 using namespace storage;
+using document::test::makeBucketSpace;
 using dummy::BucketContent;
 
 namespace {
@@ -79,7 +81,7 @@ TEST_F("require that setClusterState sets the cluster state", Fixture) {
 
     document::DocumentTypeRepo::SP repo;
     dummy::DummyPersistence provider(repo);
-    provider.setClusterState(state);
+    provider.setClusterState(makeBucketSpace(), state);
 
     EXPECT_EQUAL(false, provider.getClusterState().nodeUp());
 }

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,9 +55,9 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()); 
     }
 
-    public JobStatus withTriggering(long runId, Version version, Optional<ApplicationRevision> revision,
+    public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision,
                                     boolean upgrade, String reason, Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(runId, version, revision, upgrade, reason, triggerTime)),
+        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, revision, upgrade, reason, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
@@ -75,7 +74,7 @@ public class JobStatus {
         }
         else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
-                                            ", but that has not been triggered nor deployed");
+                                            ", but that has neither been triggered nor deployed");
 
         }
         else {
@@ -103,14 +102,16 @@ public class JobStatus {
     public DeploymentJobs.JobType type() { return type; }
 
     /** Returns true unless this job last completed with a failure */
-    public boolean isSuccess() { return ! jobError.isPresent(); }
+    public boolean isSuccess() {
+        return lastCompleted().isPresent() && ! jobError.isPresent();
+    }
     
     /** Returns true if last triggered is newer than last completed and was started after timeoutLimit */
     public boolean isRunning(Instant timeoutLimit) {
         if ( ! lastTriggered.isPresent()) return false;
         if (lastTriggered.get().at().isBefore(timeoutLimit)) return false;
         if ( ! lastCompleted.isPresent()) return true;
-        return lastTriggered.get().at().isAfter(lastCompleted.get().at());
+        return ! lastTriggered.get().at().isBefore(lastCompleted.get().at());
     }
 
     /** The error of the last completion, or empty if the last run succeeded */
@@ -130,18 +131,6 @@ public class JobStatus {
 
     /** Returns the run when this last succeeded, or empty if it has never succeeded */
     public Optional<JobRun> lastSuccess() { return lastSuccess; }
-
-    /** Returns whether the job last completed for the given change */
-    public boolean lastCompletedFor(Change change) {
-        if (change instanceof Change.ApplicationChange) {
-            Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
-            return lastCompleted().isPresent() && lastCompleted().get().revision().equals(applicationChange.revision());
-        } else if (change instanceof Change.VersionChange) {
-            Change.VersionChange versionChange = (Change.VersionChange) change;
-            return lastCompleted().isPresent() && lastCompleted().get().version().equals(versionChange.version());
-        }
-        throw new IllegalArgumentException("Unexpected change: " + change.getClass());
-    }
 
     @Override
     public String toString() {
@@ -191,10 +180,12 @@ public class JobStatus {
             this.reason = reason;
             this.at = at;
         }
-        
+
+        // TODO: Replace with proper ID, and make the build number part optional, or something -- it's not there for lastTriggered!
         /** Returns the id of this run of this job, or -1 if not known */
         public long id() { return id; }
 
+        // TODO: Fix how this is set, and add an applicationChange() method as well, in the same vein.
         /** Returns whether this job run was a Vespa upgrade */
         public boolean upgrade() { return upgrade; }
         
@@ -210,6 +201,19 @@ public class JobStatus {
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
+        // TODO: Consider a version and revision for each JobStatus, to compare against a Target (instead of Change, which is, really, a Target).
+        /** Returns whether the job last completed for the given change */
+        public boolean lastCompletedWas(Change change) {
+            if (change instanceof Change.ApplicationChange) {
+                Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
+                return revision().equals(applicationChange.revision());
+            } else if (change instanceof Change.VersionChange) {
+                Change.VersionChange versionChange = (Change.VersionChange) change;
+                return version().equals(versionChange.version());
+            }
+            throw new IllegalArgumentException("Unexpected change: " + change.getClass());
+        }
+
         @Override
         public int hashCode() {
             return Objects.hash(version, revision, upgrade, at);
@@ -220,7 +224,7 @@ public class JobStatus {
             if (this == o) return true;
             if ( ! (o instanceof JobRun)) return false;
             JobRun jobRun = (JobRun) o;
-            return id == id &&
+            return id == jobRun.id &&
                    Objects.equals(version, jobRun.version) &&
                    Objects.equals(revision, jobRun.revision) &&
                    upgrade == jobRun.upgrade &&

@@ -18,32 +18,36 @@ public class BindingMatchTestCase {
     @Test
     public void requireThatAccessorsWork() {
         Object obj = new Object();
+        UriPattern pattern = new UriPattern("http://*/*");
         BindingMatch<Object> match = new BindingMatch<>(
-                new UriPattern("http://*/*").match(URI.create("http://localhost:69/status.html")),
-                obj);
+                pattern.match(URI.create("http://localhost:69/status.html")),
+                obj, pattern);
         assertSame(obj, match.target());
         assertEquals(3, match.groupCount());
         assertEquals("localhost", match.group(0));
         assertEquals("69", match.group(1));
         assertEquals("status.html", match.group(2));
+        assertEquals(pattern, match.matched());
     }
 
     @Test
     public void requireThatConstructorArgumentsCanNotBeNull() {
         try {
-            new BindingMatch<>(null, null);
+            new BindingMatch<>(null, null, null);
             fail();
         } catch (NullPointerException e) {
 
         }
         try {
-            new BindingMatch<>(new UriPattern("http://*/*").match(URI.create("http://localhost/")), null);
+            UriPattern pattern = new UriPattern("http://*/*");
+            new BindingMatch<>(pattern.match(URI.create("http://localhost/")), null, pattern);
             fail();
         } catch (NullPointerException e) {
 
         }
         try {
-            new BindingMatch<>(null, new Object());
+            UriPattern pattern = new UriPattern("http://*/*");
+            new BindingMatch<>(null, new Object(), pattern);
             fail();
         } catch (NullPointerException e) {
 

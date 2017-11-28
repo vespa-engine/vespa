@@ -6,6 +6,7 @@
 #include "idealstatemetricsset.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
@@ -72,12 +73,12 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
       _pendingMessageTracker(compReg),
-      _bucketDBUpdater(*this, *_bucketSpaceRepo, getDefaultBucketSpace(), *this, compReg),
+      _bucketDBUpdater(*this, *_bucketSpaceRepo, *this, compReg),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
-      _idealStateManager(*this, *_bucketSpaceRepo, getDefaultBucketSpace(), compReg,
+      _idealStateManager(*this, *_bucketSpaceRepo, compReg,
                          manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo, getDefaultBucketSpace(),
+      _externalOperationHandler(*this, *_bucketSpaceRepo,
                                 _idealStateManager, compReg),
       _threadPool(threadPool),
       _initializingIsUp(true),
@@ -87,7 +88,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _bucketPriorityDb(new SimpleBucketPriorityDatabase()),
       _scanner(new SimpleMaintenanceScanner(
             *_bucketPriorityDb, _idealStateManager,
-            getDefaultBucketSpace().getBucketDatabase())),
+            *_bucketSpaceRepo)),
       _throttlingStarter(new ThrottlingOperationStarter(
             _maintenanceOperationOwner)),
       _blockingStarter(new BlockingOperationStarter(_pendingMessageTracker,
@@ -154,7 +155,7 @@ const DistributorBucketSpace& Distributor::getDefaultBucketSpace() const noexcep
 BucketOwnership
 Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
 {
-    return _bucketDBUpdater.checkOwnershipInPendingState(b.getBucketId());
+    return _bucketDBUpdater.checkOwnershipInPendingState(b);
 }
 
 void
@@ -455,7 +456,7 @@ Distributor::storageDistributionChanged()
 
 void
 Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) {
-    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket.getBucketId());
+    _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket);
 }
 
 namespace {
@@ -527,23 +528,11 @@ Distributor::checkBucketForSplit(document::BucketSpace bucketSpace,
     }
 
     Operation::SP operation =
-        _idealStateManager.generateInterceptingSplit(e, priority);
+        _idealStateManager.generateInterceptingSplit(bucketSpace, e, priority);
 
     if (operation.get()) {
         _maintenanceOperationOwner.start(operation, priority);
     }
-}
-
-const lib::Distribution&
-Distributor::getDistribution() const
-{
-    // FIXME having _distribution be mutable for this is smelly. Is this only
-    // in place for the sake of tests?
-    if (!_distribution.get()) {
-        _distribution = _component.getDistribution();
-    }
-
-    return *_distribution;
 }
 
 void
@@ -553,13 +542,13 @@ Distributor::enableNextDistribution()
         _distribution = _nextDistribution;
         propagateDefaultDistribution(_distribution);
         _nextDistribution = std::shared_ptr<lib::Distribution>();
-        _bucketDBUpdater.storageDistributionChanged(getDistribution());
+        _bucketDBUpdater.storageDistributionChanged();
     }
 }
 
 void
 Distributor::propagateDefaultDistribution(
-        std::shared_ptr<lib::Distribution> distribution)
+        std::shared_ptr<const lib::Distribution> distribution)
 {
     _bucketSpaceRepo->setDefaultDistribution(std::move(distribution));
 }
@@ -684,9 +673,10 @@ Distributor::scanNextBucket()
         updateInternalMetricsForCompletedScan();
         _scanner->reset();
     } else {
+        const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
         _bucketDBMetricUpdater.visit(
                 scanResult.getEntry(),
-                _component.getDistribution()->getRedundancy());
+                distribution.getRedundancy());
     }
     return scanResult;
 }

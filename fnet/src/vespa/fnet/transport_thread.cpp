@@ -173,7 +173,7 @@ FNET_TransportThread::UpdateStats()
         comp->FlushDirectWriteStats();
     }
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _stats.Update(&_counters, ms / 1000.0);
     }
     _counters.Clear();
@@ -238,7 +238,7 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
 FNET_TransportThread::~FNET_TransportThread()
 {
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _deleted = true;
     }
     if (_started && !_finished) {
@@ -379,7 +379,7 @@ FNET_TransportThread::ShutDown(bool waitFinished)
 {
     bool wasEmpty = false;
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         if (!_shutdown) {
             _shutdown = true;
             wasEmpty  = _queue.IsEmpty_NoLock();
@@ -413,7 +413,7 @@ FNET_TransportThread::InitEventLoop()
     bool wasStarted;
     bool wasDeleted;
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         wasStarted = _started;
         wasDeleted = _deleted;
         if (!_started && !_deleted) {
@@ -440,7 +440,7 @@ void
 FNET_TransportThread::handle_wakeup()
 {
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         CountEvent(_queue.FlushPackets_NoLock(&_myQueue));
     }
 
@@ -590,7 +590,7 @@ FNET_TransportThread::EventLoopIteration()
 
     // flush event queue
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _queue.FlushPackets_NoLock(&_myQueue);
     }
 
@@ -623,7 +623,7 @@ FNET_TransportThread::EventLoopIteration()
            _myQueue.IsEmpty_NoLock());
 
     {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _finished = true;
         if (_waitFinished) {
             _cond.notify_all();

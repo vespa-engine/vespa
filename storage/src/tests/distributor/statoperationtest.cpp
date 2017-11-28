@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/operations/external/statbucketoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 using document::test::makeDocumentBucket;
 

@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -192,6 +193,11 @@ public class VespaModelFactoryTest {
                     @Override
                     public List<ConfigServerSpec> configServerSpecs() {
                         return Collections.emptyList();
+                    }
+
+                    @Override
+                    public HostName loadBalancerName() {
+                        return null;
                     }
                 };
             }

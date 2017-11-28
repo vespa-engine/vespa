@@ -69,7 +69,7 @@ mapAddress(const TensorAddress &address)
 {
     _addressBuilder.clear();
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _builder.type().dimensions()) {
+    for (const auto &dimension : _builder.fast_type().dimensions()) {
         if (addressIterator.skipToDimension(dimension.name)) {
             _addressBuilder.add(addressIterator.label());
             addressIterator.next();

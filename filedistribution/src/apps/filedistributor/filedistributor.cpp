@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/filedistribution/distributor/config-filedistributor.h>
-#include <vespa/filedistribution/model/config-filereferences.h>
+#include <vespa/config-filedistributor.h>
+#include <vespa/config-filereferences.h>
 
 #include <vespa/filedistribution/distributor/filedistributortrackerimpl.h>
 #include <vespa/filedistribution/distributor/filedownloadermanager.h>
