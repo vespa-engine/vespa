@@ -169,6 +169,8 @@ FlushEngine::Run(FastOS_ThreadInterface *thread, void *arg)
         }
         LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'", shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
     }
+    _executor.sync();
+    prune();
 }
 
 bool
@@ -299,6 +301,7 @@ FlushEngine::flushNextTarget(const vespalib::string & name)
         // Everything returned from a priority strategy should be flushed
         flushAll(lst.first);
         _executor.sync();
+        prune();
         _priorityStrategy.reset();
         _strategyCond.notify_all();
         return "";
