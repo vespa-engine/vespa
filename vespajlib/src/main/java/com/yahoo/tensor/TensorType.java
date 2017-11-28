@@ -52,6 +52,9 @@ public class TensorType {
     public static TensorType fromSpec(String specString) {
         return TensorTypeParser.fromSpec(specString);
     }
+    
+    /** Returns the number of dimensions of this: dimensions().size() */
+    public int rank() { return dimensions.size(); }
 
     /** Returns an immutable list of the dimensions of this */
     public List<Dimension> dimensions() { return dimensions; }

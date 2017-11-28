@@ -46,6 +46,30 @@ public class Join extends PrimitiveTensorFunction {
         this.combinator = combinator;
     }
 
+    /** Returns the type resulting from applying Join to the two given types */
+    public static TensorType resultType(TensorType a, TensorType b) {
+        TensorType.Builder typeBuilder = new TensorType.Builder();
+        for (int i = 0; i < a.dimensions().size(); ++i) {
+            TensorType.Dimension aDim = a.dimensions().get(i);
+            for (int j = 0; j < b.dimensions().size(); ++j) {
+                TensorType.Dimension bDim = b.dimensions().get(j);
+                if (aDim.name().equals(bDim.name())) { // include
+                    if (aDim.isIndexed() && bDim.isIndexed()) {
+                        if (aDim.size().isPresent() || bDim.size().isPresent())
+                            typeBuilder.indexed(aDim.name(), Math.min(aDim.size().orElse(Integer.MAX_VALUE), 
+                                                                      bDim.size().orElse(Integer.MAX_VALUE)));
+                        else
+                            typeBuilder.indexed(aDim.name());
+                    }
+                    else {
+                        typeBuilder.mapped(aDim.name());
+                    }
+                }
+            }
+        }
+        return typeBuilder.build();
+    }
+
     public TensorFunction argumentA() { return argumentA; }
     public TensorFunction argumentB() { return argumentB; }
     public DoubleBinaryOperator combinator() { return combinator; }

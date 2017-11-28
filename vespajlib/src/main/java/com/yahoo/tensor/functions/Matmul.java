@@ -3,6 +3,7 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.TensorType;
 
 import java.util.List;
 
@@ -19,6 +20,10 @@ public class Matmul extends CompositeTensorFunction {
         this.argument1 = argument1;
         this.argument2 = argument2;
         this.dimension = dimension;
+    }
+    
+    public static TensorType resultType(TensorType a, TensorType b, String dimension) {
+        return Reduce.resultType(Join.resultType(a, b), ImmutableList.of(dimension));
     }
 
     @Override

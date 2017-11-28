@@ -28,6 +28,10 @@ public class Rename extends PrimitiveTensorFunction {
     private final TensorFunction argument;
     private final List<String> fromDimensions;
     private final List<String> toDimensions;
+    
+    public Rename(TensorFunction argument, String fromDimension, String toDimension) {
+        this(argument, ImmutableList.of(fromDimension), ImmutableList.of(toDimension));
+    }
 
     public Rename(TensorFunction argument, List<String> fromDimensions, List<String> toDimensions) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");

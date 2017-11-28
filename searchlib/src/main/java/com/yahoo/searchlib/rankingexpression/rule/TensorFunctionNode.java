@@ -30,6 +30,9 @@ public class TensorFunctionNode extends CompositeNode {
         this.function = function;
     }
 
+    /** Returns the tensor function wrapped by this */
+    public TensorFunction function() { return function; }
+    
     @Override
     public List<ExpressionNode> children() {
         return function.functionArguments().stream()

@@ -2,6 +2,8 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +20,10 @@ public class Softmax extends CompositeTensorFunction {
     public Softmax(TensorFunction argument, String dimension) {
         this.argument = argument;
         this.dimension = dimension;
+    }
+    
+    public static TensorType resultType(TensorType type, String dimension) {
+        return Reduce.resultType(type, ImmutableList.of(dimension));
     }
 
     @Override
