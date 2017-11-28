@@ -19,55 +19,55 @@ import java.util.Set;
  * @author Stian Kristoffersen
  * @author bratseth
  */
-public abstract class ControllerDb {
+public interface ControllerDb {
 
     // --------- Tenants
 
-    public abstract void createTenant(Tenant tenant);
+    void createTenant(Tenant tenant);
 
-    public abstract void updateTenant(Tenant tenant) throws PersistenceException;
+    void updateTenant(Tenant tenant) throws PersistenceException;
 
-    public abstract void deleteTenant(TenantId tenantId) throws PersistenceException;
+    void deleteTenant(TenantId tenantId) throws PersistenceException;
 
-    public abstract Optional<Tenant> getTenant(TenantId tenantId) throws PersistenceException;
+    Optional<Tenant> getTenant(TenantId tenantId) throws PersistenceException;
 
-    public abstract List<Tenant> listTenants();
+    List<Tenant> listTenants();
 
     // --------- Applications
 
     // ONLY call this from ApplicationController.store()
-    public abstract void store(Application application);
+    void store(Application application);
 
-    public abstract void deleteApplication(ApplicationId applicationId);
+    void deleteApplication(ApplicationId applicationId);
 
-    public abstract Optional<Application> getApplication(ApplicationId applicationId);
+    Optional<Application> getApplication(ApplicationId applicationId);
 
     /** Returns all applications */
-    public abstract List<Application> listApplications();
+    List<Application> listApplications();
 
     /** Returns all applications of a tenant */
-    public abstract List<Application> listApplications(TenantId tenantId);
+    List<Application> listApplications(TenantId tenantId);
 
     // --------- Rotations
     
-    public abstract Set<RotationId> getRotations();
+    Set<RotationId> getRotations();
 
-    public abstract Set<RotationId> getRotations(ApplicationId applicationId);
+    Set<RotationId> getRotations(ApplicationId applicationId);
 
-    public abstract boolean assignRotation(RotationId rotationId, ApplicationId applicationId);
+    boolean assignRotation(RotationId rotationId, ApplicationId applicationId);
 
-    public abstract Set<RotationId> deleteRotations(ApplicationId applicationId);
+    Set<RotationId> deleteRotations(ApplicationId applicationId);
 
     /** Returns the given elements joined by dot "." */
-    protected String path(Identifier... elements) {
+    default String path(Identifier... elements) {
         return Joiner.on(".").join(elements);
     }
 
-    protected String path(String... elements) {
+    default String path(String... elements) {
         return Joiner.on(".").join(elements);
     }
     
-    protected String path(ApplicationId applicationId) {
+    default String path(ApplicationId applicationId) {
         return applicationId.tenant().value() + "." + applicationId.application().value() + "." + applicationId.instance().value();
     }
 
