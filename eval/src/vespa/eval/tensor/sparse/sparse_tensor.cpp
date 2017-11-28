@@ -33,27 +33,6 @@ copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
     }
 }
 
-void
-printAddress(std::ostream &out, const SparseTensorAddressRef &ref,
-             const eval::ValueType &type)
-{
-    out << "{";
-    bool first = true;
-    SparseTensorAddressDecoder addr(ref);
-    for (auto &dim : type.dimensions()) {
-        auto label = addr.decodeLabel();
-        if (label.size() != 0u) {
-            if (!first) {
-                out << ",";
-            }
-            out << dim.name << ":" << label;
-            first = false;
-        }
-    }
-    assert(!addr.valid());
-    out << "}";
-}
-
 }
 
 SparseTensor::SparseTensor(const eval::ValueType &type_in,
@@ -158,14 +137,6 @@ SparseTensor::equals(const Tensor &arg) const
     return *this == *rhs;
 }
 
-vespalib::string
-SparseTensor::toString() const
-{
-    std::ostringstream stream;
-    stream << *this;
-    return stream.str();
-}
-
 Tensor::UP
 SparseTensor::clone() const
 {
@@ -203,22 +174,6 @@ SparseTensor::toSpec() const
         result.add(address, 0.0);
     }
     return result;
-}
-
-void
-SparseTensor::print(std::ostream &out) const
-{
-    out << "{ ";
-    bool first = true;
-    for (const auto &cell : cells()) {
-        if (!first) {
-            out << ", ";
-        }
-        printAddress(out, cell.first, _type);
-        out << ":" << cell.second;
-        first = false;
-    }
-    out << " }";
 }
 
 void

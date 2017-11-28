@@ -53,8 +53,6 @@ public:
                               const std::vector<vespalib::string> &dimensions)
         const override;
     virtual bool equals(const Tensor &arg) const override;
-    virtual void print(std::ostream &out) const override;
-    virtual vespalib::string toString() const override;
     virtual Tensor::UP clone() const override;
     virtual eval::TensorSpec toSpec() const override;
     virtual void accept(TensorVisitor &visitor) const override;

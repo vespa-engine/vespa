@@ -17,12 +17,6 @@ WrappedSimpleTensor::equals(const Tensor &arg) const
     return (lhs_spec == rhs_spec);
 }
 
-vespalib::string
-WrappedSimpleTensor::toString() const
-{
-    return toSpec().to_string();
-}
-
 eval::TensorSpec
 WrappedSimpleTensor::toSpec() const
 {
@@ -51,12 +45,6 @@ WrappedSimpleTensor::accept(TensorVisitor &visitor) const
         }
         visitor.visit(addr.build(), cell.value);
     }
-}
-
-void
-WrappedSimpleTensor::print(std::ostream &out) const
-{
-    out << toString();
 }
 
 Tensor::UP

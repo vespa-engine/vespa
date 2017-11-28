@@ -207,14 +207,6 @@ DenseTensorView::equals(const Tensor &arg) const
     return false;
 }
 
-vespalib::string
-DenseTensorView::toString() const
-{
-    std::ostringstream stream;
-    stream << *this;
-    return stream.str();
-}
-
 Tensor::UP
 DenseTensorView::clone() const
 {
@@ -247,31 +239,6 @@ DenseTensorView::toSpec() const
         address.clear();
     }
     return result;
-}
-
-void
-DenseTensorView::print(std::ostream &out) const
-{
-    // TODO (geirst): print on common format.
-    out << "[ ";
-    bool first = true;
-    for (const auto &dim : _typeRef.dimensions()) {
-        if (!first) {
-            out << ", ";
-        }
-        out << dim.name << ":" << dim.size;
-        first = false;
-    }
-    out << " ] { ";
-    first = true;
-    for (const auto &cell : cellsRef()) {
-        if (!first) {
-            out << ", ";
-        }
-        out << cell;
-        first = false;
-    }
-    out << " }";
 }
 
 void
