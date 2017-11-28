@@ -75,7 +75,7 @@ SlimeBinaryFormatSerializer::visit(const TensorAddress &address,
 void
 SlimeBinaryFormatSerializer::serialize(const Tensor &tensor)
 {
-    eval::ValueType type(tensor.getType());
+    eval::ValueType type(tensor.type());
     for (const auto & dimension : type.dimensions()) {
         _dimensions.addString(Memory(dimension.name));
     }

@@ -30,13 +30,9 @@ WrappedSimpleTensor::toSpec() const
 }
 
 double
-WrappedSimpleTensor::sum() const
+WrappedSimpleTensor::as_double() const
 {
-    double result = 0.0;
-    for (const auto &cell: _tensor.cells()) {
-        result += cell.value;
-    }
-    return result;
+    return _tensor.as_double();
 }
 
 void

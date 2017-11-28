@@ -41,8 +41,8 @@ public:
     bool operator==(const SparseTensor &rhs) const;
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;
 
-    virtual const eval::ValueType &getType() const override;
-    virtual double sum() const override;
+    virtual const eval::ValueType &type() const override;
+    virtual double as_double() const override;
     virtual Tensor::UP add(const Tensor &arg) const override;
     virtual Tensor::UP subtract(const Tensor &arg) const override;
     virtual Tensor::UP multiply(const Tensor &arg) const override;

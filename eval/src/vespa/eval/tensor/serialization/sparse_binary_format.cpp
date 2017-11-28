@@ -77,7 +77,7 @@ void
 SparseBinaryFormatSerializer::serialize(nbostream &stream,
                                          const Tensor &tensor)
 {
-    _type = tensor.getType();
+    _type = tensor.type();
     tensor.accept(*this);
     stream.putInt1_4Bytes(_type.dimensions().size());
     for (const auto &dimension : _type.dimensions()) {

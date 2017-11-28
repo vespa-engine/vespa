@@ -98,13 +98,13 @@ SparseTensor::combineDimensionsWith(const SparseTensor &rhs) const
 }
 
 const eval::ValueType &
-SparseTensor::getType() const
+SparseTensor::type() const
 {
     return _type;
 }
 
 double
-SparseTensor::sum() const
+SparseTensor::as_double() const
 {
     double result = 0.0;
     for (const auto &cell : _cells) {
@@ -235,7 +235,7 @@ buildAddress(const eval::ValueType &type,
 TensorSpec
 SparseTensor::toSpec() const
 {
-    TensorSpec result(getType().to_spec());
+    TensorSpec result(type().to_spec());
     TensorSpec::Address address;
     for (const auto &cell : _cells) {
         SparseTensorAddressDecoder decoder(cell.first);

@@ -28,11 +28,11 @@ public:
         : _space(std::move(tensor)), _tensor(*_space) {}
     ~WrappedSimpleTensor() {}
     const eval::SimpleTensor &get() const { return _tensor; }
-    const eval::ValueType &getType() const override { return _tensor.type(); }
+    const eval::ValueType &type() const override { return _tensor.type(); }
     bool equals(const Tensor &arg) const override;
     vespalib::string toString() const override;
     eval::TensorSpec toSpec() const override;
-    double sum() const override;
+    double as_double() const override;
     void accept(TensorVisitor &visitor) const override;
     void print(std::ostream &out) const override;
     Tensor::UP clone() const override;

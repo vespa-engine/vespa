@@ -145,13 +145,13 @@ DenseTensorView::operator==(const DenseTensorView &rhs) const
 }
 
 const eval::ValueType &
-DenseTensorView::getType() const
+DenseTensorView::type() const
 {
     return _typeRef;
 }
 
 double
-DenseTensorView::sum() const
+DenseTensorView::as_double() const
 {
     double result = 0.0;
     for (const auto &cell : _cellsRef) {
@@ -271,7 +271,7 @@ buildAddress(const DenseTensorCellsIterator &itr, TensorSpec::Address &address)
 TensorSpec
 DenseTensorView::toSpec() const
 {
-    TensorSpec result(getType().to_spec());
+    TensorSpec result(type().to_spec());
     TensorSpec::Address address;
     for (CellsIterator itr(_typeRef, _cellsRef); itr.valid(); itr.next()) {
         buildAddress(itr, address);
