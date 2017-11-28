@@ -13,6 +13,7 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>vespa_feed_perf</artifactId>
     <version>6-SNAPSHOT</version>
