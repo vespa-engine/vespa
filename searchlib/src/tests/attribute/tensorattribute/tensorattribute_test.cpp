@@ -363,10 +363,10 @@ Fixture::testEmptyTensor()
     Tensor::UP emptyTensor = tensorAttr.getEmptyTensor();
     if (_denseTensors) {
         vespalib::string expSpec = expEmptyDenseTensorSpec();
-        EXPECT_EQUAL(emptyTensor->getType(), ValueType::from_spec(expSpec));
+        EXPECT_EQUAL(emptyTensor->type(), ValueType::from_spec(expSpec));
     } else {
-        EXPECT_EQUAL(emptyTensor->getType(), tensorAttr.getConfig().tensorType());
-        EXPECT_EQUAL(emptyTensor->getType(), ValueType::from_spec(_typeSpec));
+        EXPECT_EQUAL(emptyTensor->type(), tensorAttr.getConfig().tensorType());
+        EXPECT_EQUAL(emptyTensor->type(), ValueType::from_spec(_typeSpec));
     }
 }
 
