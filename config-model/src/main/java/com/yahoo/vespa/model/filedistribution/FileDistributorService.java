@@ -55,7 +55,7 @@ public class FileDistributorService extends AbstractService implements
     @Override
     public String getStartupCommand() {
         // If disabled config proxy should act as file distributor, so don't start this service
-        return (fileDistributionOptions.disabled())
+        return (fileDistributionOptions.disableFiledistributor())
                 ? null
                 : "exec $ROOT/sbin/vespa-filedistributor" + " --configid " + getConfigId();
     }
@@ -91,7 +91,7 @@ public class FileDistributorService extends AbstractService implements
     @Override
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
         // If disabled config proxy should act as file distributor, so use config proxy port
-        int port = (fileDistributionOptions.disabled()) ? 19090 : getRelativePort(0);
+        int port = (fileDistributionOptions.disableFiledistributor()) ? 19090 : getRelativePort(0);
         builder.connectionspec("tcp/" + getHostName() + ":" + port);
     }
 
