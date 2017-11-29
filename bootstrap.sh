@@ -44,16 +44,8 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 # The 'default' mode also builds some modules needed by C++ code.
 # The 'full' mode also builds modules needed by C++ tests.
 
-# must install parent poms first:
+# must install parent pom first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
-(
-  cd container-dependency-versions
-  mvn_install
-)
-(
-  cd parent
-  mvn_install
-)
 mvn_install -N
 
 # and build plugins first:
