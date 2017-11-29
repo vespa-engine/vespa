@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
+#include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -261,6 +262,7 @@ FeedHandler::performPrune(SerialNum flushedSerial)
         tlsPrune(flushedSerial);  // throws on error
         LOG(debug, "Pruned TLS to token %" PRIu64 ".", flushedSerial);
         _owner.onPerformPrune(flushedSerial);
+        EventLogger::transactionLogPruneComplete(_tlsMgr.getDomainName(), flushedSerial);
     } catch (const IllegalStateException & e) {
         LOG(warning, "FeedHandler::performPrune failed due to '%s'.", e.what());
     }
