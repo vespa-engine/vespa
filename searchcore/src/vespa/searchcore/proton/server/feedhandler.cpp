@@ -392,7 +392,7 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flu
 void
 FeedHandler::flushDone(SerialNum flushedSerial)
 {
-    // Called by flush worker thread after performing a flush task
+    // Called by flush scheduler thread after flush worker thread has completed a flush task
     _writeService.master().execute(makeLambdaTask([this, flushedSerial]() { performFlushDone(flushedSerial); }));
 
 }
