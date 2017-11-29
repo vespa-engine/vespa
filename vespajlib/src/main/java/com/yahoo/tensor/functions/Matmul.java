@@ -22,8 +22,8 @@ public class Matmul extends CompositeTensorFunction {
         this.dimension = dimension;
     }
     
-    public static TensorType resultType(TensorType a, TensorType b, String dimension) {
-        return Reduce.resultType(Join.resultType(a, b), ImmutableList.of(dimension));
+    public static TensorType outputType(TensorType a, TensorType b, String dimension) {
+        return Reduce.outputType(Join.outputType(a, b), ImmutableList.of(dimension));
     }
 
     @Override

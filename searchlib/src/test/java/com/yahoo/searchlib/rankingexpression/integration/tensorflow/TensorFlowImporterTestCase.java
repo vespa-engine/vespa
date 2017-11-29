@@ -23,7 +23,7 @@ public class TensorFlowImporterTestCase {
                      "softmax(join(rename(matmul(x, rename(x, (d1, d2), (d2, d3)), d2), d3, d2), " +
                                   "rename(matmul(x, rename(x, (d1, d2), (d2, d3)), d2), d3, d2), " +
                                   "f(a,b)(a + b)), " +
-                             "d0)",
+                             "d1)",
                      toNonPrimitiveString(expressions.get(0)));
     }
     

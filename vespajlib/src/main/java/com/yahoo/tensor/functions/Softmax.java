@@ -22,8 +22,8 @@ public class Softmax extends CompositeTensorFunction {
         this.dimension = dimension;
     }
     
-    public static TensorType resultType(TensorType type, String dimension) {
-        return Reduce.resultType(type, ImmutableList.of(dimension));
+    public static TensorType outputType(TensorType inputType, String dimension) {
+        return Reduce.outputType(inputType, ImmutableList.of(dimension));
     }
 
     @Override

@@ -47,7 +47,7 @@ public class Join extends PrimitiveTensorFunction {
     }
 
     /** Returns the type resulting from applying Join to the two given types */
-    public static TensorType resultType(TensorType a, TensorType b) {
+    public static TensorType outputType(TensorType a, TensorType b) {
         TensorType.Builder typeBuilder = new TensorType.Builder();
         for (int i = 0; i < a.dimensions().size(); ++i) {
             TensorType.Dimension aDim = a.dimensions().get(i);

@@ -61,9 +61,9 @@ public class Reduce extends PrimitiveTensorFunction {
         this.dimensions = ImmutableList.copyOf(dimensions);
     }
 
-    public static TensorType resultType(TensorType type, List<String> reduceDimensions) {
+    public static TensorType outputType(TensorType inputType, List<String> reduceDimensions) {
         TensorType.Builder b = new TensorType.Builder();
-        for (TensorType.Dimension dimension : type.dimensions()) {
+        for (TensorType.Dimension dimension : inputType.dimensions()) {
             if ( ! reduceDimensions.contains(dimension.name()))
                 b.dimension(dimension);
         }
