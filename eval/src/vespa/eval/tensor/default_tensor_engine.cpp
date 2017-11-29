@@ -307,9 +307,48 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
     }
 }
 
+size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
+    if (type.is_double()) {
+        return 1;
+    } else if ((type.dimensions().size() == 1) &&
+               (type.dimensions()[0].is_indexed()) &&
+               (type.dimensions()[0].name == dimension))
+    {
+        return type.dimensions()[0].size;
+    } else {
+        return 0;
+    }
+}
+
+void append_vector(double *&pos, const Value &value) {
+    const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&value);
+    if (view) {
+        for (double cell: view->cellsRef()) {
+            *pos++ = cell;
+        }
+    } else {
+        *pos++ = value.as_double();
+    }
+}
+
+const Value &concat_vectors(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
+    ArrayRef<double> cells = stash.create_array<double>(vector_size);
+    double *pos = cells.begin();
+    append_vector(pos, a);
+    append_vector(pos, b);
+    assert(pos == cells.end());
+    const ValueType &type = stash.create<ValueType>(ValueType::tensor_type({ValueType::Dimension(dimension, vector_size)}));
+    return stash.create<DenseTensorView>(type, cells);
+}
+
 const Value &
 DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
 {
+    size_t a_size = vector_size(a.type(), dimension);
+    size_t b_size = vector_size(b.type(), dimension);
+    if ((a_size > 0) && (b_size > 0)) {
+        return concat_vectors(a, b, dimension, a_size + b_size, stash);
+    }
     return to_default(simple_engine().concat(to_simple(a, stash), to_simple(b, stash), dimension, stash), stash);
 }
 
