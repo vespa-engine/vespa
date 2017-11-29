@@ -68,6 +68,11 @@ public class JSONFormatter {
                 generator.writeStringField("user-principal", principal.getName());
             }
 
+            Principal sslPrincipal = accessLogEntry.getSslPrincipal();
+            if (sslPrincipal != null) {
+                generator.writeStringField("ssl-principal", principal.getName());
+            }
+
             // Only add remote address/port fields if relevant
             if (remoteAddressDiffers(accessLogEntry.getIpV4Address(), accessLogEntry.getRemoteAddress())) {
                 generator.writeStringField("remoteaddr", accessLogEntry.getRemoteAddress());
