@@ -7,6 +7,7 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
+        <relativePath>../parent</relativePath>
     </parent>
     <artifactId>service-monitor</artifactId>
     <packaging>container-plugin</packaging>
@@ -66,6 +67,7 @@
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <scope>provided</scope>
+            <classifier>no_aop</classifier>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

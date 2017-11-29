@@ -6,6 +6,7 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
+    <relativePath>../parent</relativePath>
   </parent>
   <artifactId>configserver</artifactId>
   <packaging>container-plugin</packaging>
