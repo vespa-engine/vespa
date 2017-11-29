@@ -394,6 +394,7 @@ FeedHandler::flushDone(SerialNum flushedSerial)
 {
     // Called by flush scheduler thread after flush worker thread has completed a flush task
     _writeService.master().execute(makeLambdaTask([this, flushedSerial]() { performFlushDone(flushedSerial); }));
+    _writeService.master().sync();
 
 }
 

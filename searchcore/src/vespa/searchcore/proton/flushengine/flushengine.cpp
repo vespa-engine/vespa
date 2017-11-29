@@ -231,12 +231,12 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
 }
 
 std::pair<FlushContext::List,bool>
-FlushEngine::getSortedTargetList(const std::lock_guard<std::mutex> &strategyGuard) const
+FlushEngine::getSortedTargetList()
 {
-    (void) strategyGuard;
     FlushContext::List unsortedTargets = getTargetList(false);
-    std::pair<FlushContext::List, bool> ret;
     flushengine::TlsStatsMap tlsStatsMap(_tlsStatsFactory->create());
+    std::lock_guard<std::mutex> strategyGuard(_strategyLock);
+    std::pair<FlushContext::List, bool> ret;
     if (_priorityStrategy) {
         ret = std::make_pair(_priorityStrategy->getFlushTargets(unsortedTargets, tlsStatsMap), true);
     } else {
@@ -295,13 +295,13 @@ FlushEngine::flushAll(const FlushContext::List &lst)
 vespalib::string
 FlushEngine::flushNextTarget(const vespalib::string & name)
 {
-    std::lock_guard<std::mutex> strategyGuard(_strategyLock);
-    std::pair<FlushContext::List,bool> lst = getSortedTargetList(strategyGuard);
+    std::pair<FlushContext::List,bool> lst = getSortedTargetList();
     if (lst.second) {
         // Everything returned from a priority strategy should be flushed
         flushAll(lst.first);
         _executor.sync();
         prune();
+        std::lock_guard<std::mutex> strategyGuard(_strategyLock);
         _priorityStrategy.reset();
         _strategyCond.notify_all();
         return "";

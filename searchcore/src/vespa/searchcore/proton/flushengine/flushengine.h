@@ -65,7 +65,7 @@ private:
     std::set<IFlushHandler::SP>    _pendingPrune;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
-    std::pair<FlushContext::List,bool> getSortedTargetList(const std::lock_guard<std::mutex> &strategyGuard) const;
+    std::pair<FlushContext::List,bool> getSortedTargetList();
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
     vespalib::string flushNextTarget(const vespalib::string & name);
     void flushAll(const FlushContext::List &lst);
