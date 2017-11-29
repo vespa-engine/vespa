@@ -60,6 +60,7 @@ FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState
         LOG(spam, "new generation %ld for key %s", newState.generation, key.toString().c_str());
     }
     _latest = configValue;
+    _configState = newState;
 
 
     if (LOG_WOULD_LOG(spam)) {
@@ -67,7 +68,6 @@ FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState
     }
     _holder->handle(ConfigUpdate::UP(new ConfigUpdate(_latest, true, newState.generation)));
     _numConfigured++;
-    _configState = newState;
 }
 
 void
