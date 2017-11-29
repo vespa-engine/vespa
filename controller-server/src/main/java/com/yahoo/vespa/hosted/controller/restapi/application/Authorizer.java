@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.common.ContextAttributes;
@@ -19,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.restapi.filter.NTokenRequestFilter;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.SecurityContext;
-import java.security.Principal;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -68,13 +68,15 @@ public class Authorizer {
     }
 
     /** Returns the principal or throws forbidden */ // TODO: Avoid REST exceptions
-    public Principal getPrincipal(HttpRequest request) {
+    public AthenzPrincipal getPrincipal(HttpRequest request) {
         return getPrincipalIfAny(request).orElseThrow(() -> Authorizer.loggedForbiddenException("User is not authenticated"));
     }
 
     /** Returns the principal if there is any */
-    public Optional<Principal> getPrincipalIfAny(HttpRequest request) {
-        return securityContextOf(request).map(SecurityContext::getUserPrincipal);
+    public Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
+        return securityContextOf(request)
+                .map(SecurityContext::getUserPrincipal)
+                .map(AthenzPrincipal.class::cast);
     }
 
     public Optional<NToken> getNToken(HttpRequest request) {
