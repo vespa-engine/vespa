@@ -125,13 +125,10 @@ public class TenantsTestCase extends TestWithCurator {
     public void testTenantsChanged() throws Exception {
         tenants.close(); // close the Tenants instance created in setupSession, we do not want to use one with a PatchChildrenCache listener
         tenants = new Tenants(globalComponentRegistry, new ArrayList<>());
-        TenantName defaultTenant = TenantName.defaultName();
         tenants.addTenant(tenant2);
         tenants.createTenants();
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
-        assertEquals("default", defaultTenant.value());
-        assertTrue(allTenants.contains(defaultTenant));
         tenants.deleteTenant(tenant1);
         tenants.deleteTenant(tenant2);
         tenants.createTenants();
