@@ -24,15 +24,18 @@ public class DeployProperties {
     private final HostName loadBalancerName;
     private final boolean hostedVespa;
     private final Version vespaVersion;
+    private final Zone zone;
 
     private DeployProperties(boolean multitenant,
                              ApplicationId applicationId,
                              List<ConfigServerSpec> configServerSpecs,
                              HostName loadBalancerName,
                              boolean hostedVespa,
-                             Version vespaVersion) {
+                             Version vespaVersion,
+                             Zone zone) {
         this.loadBalancerName = loadBalancerName;
         this.vespaVersion = vespaVersion;
+        this.zone = zone;
         this.multitenant = multitenant || hostedVespa || Boolean.getBoolean("multitenant");
         this.applicationId = applicationId;
         this.serverSpecs.addAll(configServerSpecs);
@@ -65,6 +68,8 @@ public class DeployProperties {
         return vespaVersion;
     }
 
+    public Zone zone() { return zone; }
+
     public static class Builder {
 
         private ApplicationId applicationId = ApplicationId.defaultId();
@@ -73,6 +78,7 @@ public class DeployProperties {
         private HostName loadBalancerName;
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
+        private Zone zone = Zone.defaultZone();
 
         public Builder applicationId(ApplicationId applicationId) {
             this.applicationId = applicationId;
@@ -104,8 +110,13 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder zone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
         public DeployProperties build() {
-            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, vespaVersion);
+            return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa, vespaVersion, zone);
         }
     }
 

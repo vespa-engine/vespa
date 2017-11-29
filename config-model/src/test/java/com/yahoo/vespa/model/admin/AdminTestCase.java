@@ -41,9 +41,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class AdminTestCase {
 
-    private static final String TESTDIR = "src/test/cfg/admin/";
+    protected static final String TESTDIR = "src/test/cfg/admin/";
 
-    private VespaModel getVespaModel(String configPath) {
+    protected VespaModel getVespaModel(String configPath) {
         return new VespaModelCreatorWithFilePkg(configPath).create();
     }
 
@@ -146,9 +146,9 @@ public class AdminTestCase {
 
     @Test
     public void testTenantAndAppInSentinelConfig() {
-        DeployState state = new DeployState.Builder().zone(
-                        new Zone(Environment.dev, RegionName.from("baz"))).
-                        properties(new DeployProperties.Builder().
+        DeployState state = new DeployState.Builder().properties(
+                new DeployProperties.Builder().
+                        zone(new Zone(Environment.dev, RegionName.from("baz"))).
                 applicationId(new ApplicationId.Builder().
                         tenant("quux").
                         applicationName("foo").instanceName("bim").build()).build()).build();
@@ -309,9 +309,9 @@ public class AdminTestCase {
     public void testDisableFileDistributorForAllApps() {
         DeployState state = new DeployState.Builder()
                 .disableFiledistributor(true)
-                .zone(new Zone(Environment.dev, RegionName.from("baz")))
                 .properties(
                         new DeployProperties.Builder().
+                                zone(new Zone(Environment.dev, RegionName.from("baz"))).
                                 applicationId(new ApplicationId.Builder().
                                         tenant("quux").
                                         applicationName("foo").instanceName("bim").build()).build()).build();

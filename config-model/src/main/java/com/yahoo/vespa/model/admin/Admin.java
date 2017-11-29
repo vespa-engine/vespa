@@ -172,17 +172,17 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     /**
      * Adds services to all hosts in the system.
      */
-    public void addPerHostServices(List<HostResource> hosts, ApplicationId applicationId, Zone zone) {
+    public void addPerHostServices(List<HostResource> hosts, DeployProperties properties) {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup());
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
-                addCommonServices(host, applicationId, zone);
+                addCommonServices(host, properties);
             }
         }
     }
-    private void addCommonServices(HostResource host, ApplicationId applicationId, Zone zone) {
-        addConfigSentinel(host, applicationId, zone);
+    private void addCommonServices(HostResource host, DeployProperties properties) {
+        addConfigSentinel(host, properties.applicationId(), properties.zone());
         addLogd(host);
         addConfigProxy(host);
         addFileDistribution(host);

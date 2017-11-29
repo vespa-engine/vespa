@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -87,8 +88,10 @@ public class LbServicesProducerTest {
 
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) throws IOException, SAXException {
         final Zone zone = new Zone(Environment.prod, regionName);
-        Map<TenantName, Map<ApplicationId, ApplicationInfo>> model = createTestModel(new DeployState.Builder().zone(zone));
-        return getLbServicesConfig(new Zone(Environment.prod, regionName), model);
+        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
+                                                                                                 .properties(new DeployProperties.Builder().zone(zone).build())
+                                                                                                 .zone(zone));
+        return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 
     private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel) {
