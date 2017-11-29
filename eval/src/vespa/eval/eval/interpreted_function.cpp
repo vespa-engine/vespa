@@ -161,13 +161,25 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
+    bool is_mul_join(const Node &node) const {
+        if (auto join = as<TensorJoin>(node)) {
+            if (auto mul = as<Mul>(join->lambda().root())) {
+                auto sym1 = as<Symbol>(mul->lhs());
+                auto sym2 = as<Symbol>(mul->rhs());
+                return (sym1 && sym2 && (sym1->id() != sym2->id()));
+            }
+        }
+        return false;
+    }
+
+    bool is_mul(const Node &node) const {
+        auto mul = as<Mul>(node);
+        return (mul || is_mul_join(node));
+    }
+
     bool is_typed_tensor(const Node &node) const {
         const ValueType &type = types.get_type(node);
         return (type.is_tensor() && !type.dimensions().empty());
-    }
-
-    bool is_typed(const Node &node) const {
-        return (types.get_type(node).is_double() || is_typed_tensor(node));
     }
 
     bool is_typed_tensor_param(const Node &node) const {
@@ -176,10 +188,9 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     bool is_typed_tensor_product_of_params(const Node &node) const {
-        auto mul = as<Mul>(node);
-        return (mul && is_typed_tensor(*mul) &&
-                is_typed_tensor_param(mul->lhs()) &&
-                is_typed_tensor_param(mul->rhs()));
+        return (is_typed_tensor(node) && is_mul(node) &&
+                is_typed_tensor_param(node.get_child(0)) &&
+                is_typed_tensor_param(node.get_child(1)));
     }
 
     //-------------------------------------------------------------------------
@@ -260,7 +271,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         make_join_op(node, token.get()->get().get_function<2>());
     }
     void visit(const TensorReduce &node) override {
-        if ((node.aggr() == Aggr::SUM) && is_typed(node) && is_typed_tensor_product_of_params(node.get_child(0))) {
+        if ((node.aggr() == Aggr::SUM) && is_typed_tensor_product_of_params(node.get_child(0))) {
             assert(program.size() >= 3); // load,load,mul
             program.pop_back(); // mul
             program.pop_back(); // load
