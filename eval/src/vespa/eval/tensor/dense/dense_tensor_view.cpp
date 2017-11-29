@@ -241,16 +241,16 @@ DenseTensorView::accept(TensorVisitor &visitor) const
 Tensor::UP
 DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 {
-    if (function == eval::operation::Mul::f) {
-        if (fast_type() == arg.type()) {
-            return joinDenseTensors(*this, arg, "match",
-                                    [](double lhsValue, double rhsValue)
-                                    { return (lhsValue * rhsValue); });
-        } else {
-            return dense::apply(*this, arg,
-                                [](double lhsValue, double rhsValue)
-                                { return lhsValue * rhsValue; });
+    if (fast_type() == arg.type()) {
+        if (function == eval::operation::Mul::f) {
+            return joinDenseTensors(*this, arg, "mul",
+                                    [](double a, double b) { return (a * b); });
         }
+        if (function == eval::operation::Add::f) {
+            return joinDenseTensors(*this, arg, "add",
+                                    [](double a, double b) { return (a + b); });
+        }
+        return joinDenseTensors(*this, arg, "join", function);
     }
     return dense::apply(*this, arg, function);
 }
