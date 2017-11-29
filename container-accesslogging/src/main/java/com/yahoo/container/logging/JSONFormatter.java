@@ -65,10 +65,7 @@ public class JSONFormatter {
 
             Principal principal = accessLogEntry.getUserPrincipal();
             if (principal != null) {
-                generator.writeObjectFieldStart("user-principal");
-                generator.writeStringField("name", principal.getName());
-                generator.writeStringField("type", principal.getClass().getName());
-                generator.writeEndObject();
+                generator.writeStringField("user-principal", principal.getName());
             }
 
             // Only add remote address/port fields if relevant
