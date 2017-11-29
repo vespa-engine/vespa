@@ -61,13 +61,18 @@ import static com.yahoo.application.container.handler.Request.Method.PUT;
 public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
+
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
+            .globalServiceId("foo")
             .region("corp-us-east-1")
+            .region("us-east-3")
+            .region("us-west-1")
             .build();
-    private static final String athenzUserDomain = "domain1";
-    private static final String athenzScrewdriverDomain = AthenzUtils.SCREWDRIVER_DOMAIN.id();
 
+    private static final String athenzUserDomain = "domain1";
+
+    private static final String athenzScrewdriverDomain = AthenzUtils.SCREWDRIVER_DOMAIN.id();
 
     @Test
     public void testApplicationApi() throws Exception {
@@ -260,13 +265,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
 
-        // DELETE an application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE),
-                              "");
-        // DELETE a tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE),
-                              new File("tenant-without-applications.json"));
-
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
         tester.assertResponse(request("/application/v4/user?user=newuser&domain=by", PUT)
@@ -299,6 +297,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Successfully copied environment hosted-verified-prod to hosted-instance_tenant1_application1_placeholder_component_default\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", POST),
                               "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
+
+        // DELETE an application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE),
+                              "");
+        // DELETE a tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE),
+                              new File("tenant-without-applications.json"));
 
         controllerTester.controller().deconstruct();
     }
@@ -373,6 +378,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // New zone is added before us-east-3
         applicationPackage = new ApplicationPackageBuilder()
+                .globalServiceId("foo")
                 // These decides the ordering of deploymentJobs and instances in the response
                 .region("us-west-1")
                 .region("us-east-3")

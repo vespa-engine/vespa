@@ -49,7 +49,8 @@ public interface ControllerDb {
     List<Application> listApplications(TenantId tenantId);
 
     // --------- Rotations
-    
+
+    // TODO: Remove all rotation methods after December 2017
     Set<RotationId> getRotations();
 
     Set<RotationId> getRotations(ApplicationId applicationId);
@@ -57,6 +58,7 @@ public interface ControllerDb {
     boolean assignRotation(RotationId rotationId, ApplicationId applicationId);
 
     Set<RotationId> deleteRotations(ApplicationId applicationId);
+    // end TODO
 
     /** Returns the given elements joined by dot "." */
     default String path(Identifier... elements) {

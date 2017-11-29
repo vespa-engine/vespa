@@ -21,7 +21,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -53,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -93,7 +91,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
@@ -376,13 +373,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", application.oldestDeployedVersion().orElse(controller.systemVersion()).toFullString());
 
-        // Rotations
+        // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
-        Set<URI> rotations = controller.getRotationUris(application.id());
-        Map<String, RotationStatus> rotationHealthStatus =
-                rotations.isEmpty() ? Collections.emptyMap() : controller.getHealthStatus(rotations.iterator().next().getHost());
-        for (URI rotation : rotations)
-            globalRotationsArray.addString(rotation.toString());
+        Map<String, RotationStatus> rotationHealthStatus = application.rotation()
+                           .map(rotation -> controller.getHealthStatus(rotation.dnsName()))
+                           .orElse(Collections.emptyMap());
+        application.rotation().ifPresent(rotation -> globalRotationsArray.addString(rotation.url().toString()));
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
@@ -395,7 +391,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());
             deploymentObject.setString("instance", application.id().instance().value()); // pointless
-            if ( ! rotations.isEmpty())
+            if (application.rotation().isPresent())
                 setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -549,17 +545,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region) {
-
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        Set<URI> rotations = controller.getRotationUris(applicationId);
-        if (rotations.isEmpty())
+        Application application = controller.applications().require(applicationId);
+        if (!application.rotation().isPresent()) {
             throw new NotExistsException("global rotation does not exist for '" + environment + "." + region + "'");
+        }
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
 
-        Map<String, RotationStatus> rotationHealthStatus = controller.getHealthStatus(rotations.iterator().next().getHost());
-
+        Map<String, RotationStatus> rotationHealthStatus = controller.getHealthStatus(application.rotation().get().dnsName());
         for (String rotationEndpoint : rotationHealthStatus.keySet()) {
             if (rotationEndpoint.contains(toDns(environment)) && rotationEndpoint.contains(toDns(region))) {
                 Cursor bcpStatusObject = response.setObject("bcpStatus");

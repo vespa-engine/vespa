@@ -23,11 +23,14 @@ import java.util.Optional;
 
 /**
  * @author mortent
+ * @author mpolden
  */
 public class MetricsReporter extends Maintainer {
 
     public static final String convergeMetric = "seconds.since.last.chef.convergence";
     public static final String deploymentFailMetric = "deployment.failurePercentage";
+    public static final String remainingRotations = "remaining_rotations";
+
     private final Metric metric;
     private final Chef chefClient;
     private final Clock clock;
@@ -51,6 +54,12 @@ public class MetricsReporter extends Maintainer {
     public void maintain() {
         reportChefMetrics();
         reportDeploymentMetrics();
+        reportRemainingRotations();
+    }
+
+    private void reportRemainingRotations() {
+        int availableRotations = controller().applications().rotationRepository().availableRotations().size();
+        metric.set(remainingRotations, availableRotations, metric.createContext(Collections.emptyMap()));
     }
 
     private void reportChefMetrics() {

@@ -11,9 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -601,6 +599,7 @@ public class ControllerTest {
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
+                .globalServiceId("foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in DNS alias being registered once
                 .build();
@@ -610,7 +609,7 @@ public class ControllerTest {
         Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, "app1.tenant1.global.vespa.yahooapis.com");
         assertTrue(record.isPresent());
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name());
-        assertEquals("fake-global-rotation-tenant1.app1", record.get().value());
+        assertEquals("rotation-fqdn-01", record.get().value());
     }
 
     @Test
