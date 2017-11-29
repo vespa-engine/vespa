@@ -46,8 +46,14 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
-cd container-dependency-versions && mvn_install
-cd ../parent && mvn_install && cd ..
+(
+  cd container-dependency-versions
+  mvn_install
+)
+(
+  cd parent
+  mvn_install
+)
 mvn_install -N
 
 # and build plugins first:
