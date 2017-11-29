@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.server.http.*;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import org.apache.commons.lang.NullArgumentException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -148,7 +147,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
      * A mock remote session repo based on contents of local repo
      */
     private RemoteSessionRepo fromLocalSessionRepo(LocalSessionRepo localRepo, Clock clock) {
-        RemoteSessionRepo remoteRepo = new RemoteSessionRepo();
+        RemoteSessionRepo remoteRepo = new RemoteSessionRepo(tenant);
         for (LocalSession ls : localRepo.listSessions()) {
 
             zooKeeperClient = new MockSessionZKClient(curator, tenant, ls.getSessionId());
@@ -239,7 +238,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         // Need different repos for 'default' tenant as opposed to the 'test' tenant
         LocalSessionRepo localRepoDefault = new LocalSessionRepo(Clock.systemUTC());
         final TenantName defaultTenant = TenantName.defaultName();
-        addTenant(defaultTenant, localRepoDefault, new RemoteSessionRepo(), new MockSessionFactory());
+        addTenant(defaultTenant, localRepoDefault, new RemoteSessionRepo(tenant), new MockSessionFactory());
         addTestTenant();
         final SessionHandler handler = createHandler(builder);
 
@@ -379,7 +378,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private TestTenantBuilder addTestTenant() {
-        return addTenant(tenant, localRepo, new RemoteSessionRepo(), new MockSessionFactory());
+        return addTenant(tenant, localRepo, new RemoteSessionRepo(tenant), new MockSessionFactory());
     }
 
     private SessionHandler createHandler(TestTenantBuilder builder) {

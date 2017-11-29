@@ -84,16 +84,24 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private LocalSessionRepo localRepo;
     private TenantApplications applicationRepo;
     private MockProvisioner hostProvisioner;
+    private VespaModelFactory modelFactory;
+    private TestComponentRegistry componentRegistry;
 
     @Before
     public void setup() throws Exception {
-        remoteSessionRepo = new RemoteSessionRepo();
+        remoteSessionRepo = new RemoteSessionRepo(tenant);
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(Clock.systemUTC());
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         hostProvisioner = new MockProvisioner();
+        modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
+        componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configCurator(configCurator)
+                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
+                .build();
     }
 
     @Test
@@ -211,14 +219,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient, Clock clock) throws IOException {
         zkClient.writeStatus(status);
         ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, Tenants.getSessionsPath(tenant).append(String.valueOf(sessionId)));
-        VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         zkC.write(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
-                .configCurator(configCurator)
-                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
-                .build();
         RemoteSession session = new RemoteSession(TenantName.from("default"), sessionId, componentRegistry, zkClient, clock);
         remoteSessionRepo.addSession(session);
         return session;
@@ -246,7 +248,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         return activateRequest;
     }
 
-    private ActivateRequest activateAndAssertErrorPut(long sessionId, long previousSessionId, Clock clock,
+    private void activateAndAssertErrorPut(long sessionId, long previousSessionId, Clock clock,
                                                       int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
         ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "", clock);
         activateRequest.invoke();
@@ -256,7 +258,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         String message = getRenderedString(actResponse);
         assertThat(message, Is.is("{\"error-code\":\"" + errorCode.name() + "\",\"message\":\"" + expectedError + "\"}"));
         assertThat(session.getStatus(), Is.is(Session.Status.PREPARE));
-        return activateRequest;
     }
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {

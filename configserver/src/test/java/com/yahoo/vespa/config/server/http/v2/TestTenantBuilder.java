@@ -19,7 +19,6 @@ import java.util.*;
  * Test utility for creating tenants used for testing and setup wiring of tenant stuff.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class TestTenantBuilder {
 
@@ -35,7 +34,7 @@ public class TestTenantBuilder {
         TenantBuilder builder = TenantBuilder.create(componentRegistry, tenantName)
                 .withSessionFactory(new SessionCreateHandlerTest.MockSessionFactory())
                 .withLocalSessionRepo(new LocalSessionRepo(componentRegistry.getClock()))
-                .withRemoteSessionRepo(new RemoteSessionRepo())
+                .withRemoteSessionRepo(new RemoteSessionRepo(tenantName))
                 .withApplicationRepo(applicationRepo);
         tenantMap.put(tenantName, builder);
         return builder;
