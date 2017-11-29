@@ -8,7 +8,6 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
-        <relativePath>../parent</relativePath>
     </parent>
     <artifactId>vespa-hadoop</artifactId>
     <version>6-SNAPSHOT</version>
