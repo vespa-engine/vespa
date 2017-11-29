@@ -28,23 +28,14 @@ public:
         : _space(std::move(tensor)), _tensor(*_space) {}
     ~WrappedSimpleTensor() {}
     const eval::SimpleTensor &get() const { return _tensor; }
-    const eval::ValueType &getType() const override { return _tensor.type(); }
+    const eval::ValueType &type() const override { return _tensor.type(); }
     bool equals(const Tensor &arg) const override;
-    vespalib::string toString() const override;
     eval::TensorSpec toSpec() const override;
-    double sum() const override;
+    double as_double() const override;
     void accept(TensorVisitor &visitor) const override;
-    void print(std::ostream &out) const override;
     Tensor::UP clone() const override;
     // functions below should not be used for this implementation
-    Tensor::UP add(const Tensor &) const override;
-    Tensor::UP subtract(const Tensor &) const override;
-    Tensor::UP multiply(const Tensor &) const override;
-    Tensor::UP min(const Tensor &) const override;
-    Tensor::UP max(const Tensor &) const override;
-    Tensor::UP match(const Tensor &) const override;
     Tensor::UP apply(const CellFunction &) const override;
-    Tensor::UP sum(const vespalib::string &) const override;
     Tensor::UP join(join_fun_t, const Tensor &) const override;
     Tensor::UP reduce(join_fun_t, const std::vector<vespalib::string> &) const override;
 };

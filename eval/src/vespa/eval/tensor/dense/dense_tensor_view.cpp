@@ -145,67 +145,19 @@ DenseTensorView::operator==(const DenseTensorView &rhs) const
 }
 
 const eval::ValueType &
-DenseTensorView::getType() const
+DenseTensorView::type() const
 {
     return _typeRef;
 }
 
 double
-DenseTensorView::sum() const
+DenseTensorView::as_double() const
 {
     double result = 0.0;
     for (const auto &cell : _cellsRef) {
         result += cell;
     }
     return result;
-}
-
-Tensor::UP
-DenseTensorView::add(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue + rhsValue; });
-}
-
-Tensor::UP
-DenseTensorView::subtract(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue - rhsValue; });
-}
-
-Tensor::UP
-DenseTensorView::multiply(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue * rhsValue; });
-}
-
-Tensor::UP
-DenseTensorView::min(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return std::min(lhsValue, rhsValue); });
-}
-
-Tensor::UP
-DenseTensorView::max(const Tensor &arg) const
-{
-    return dense::apply(*this, arg,
-                        [](double lhsValue, double rhsValue)
-                        { return std::max(lhsValue, rhsValue); });
-}
-
-Tensor::UP
-DenseTensorView::match(const Tensor &arg) const
-{
-    return joinDenseTensors(*this, arg, "match",
-                            [](double lhsValue, double rhsValue)
-                            { return (lhsValue * rhsValue); });
 }
 
 Tensor::UP
@@ -221,14 +173,6 @@ DenseTensorView::apply(const CellFunction &func) const
     return std::make_unique<DenseTensor>(_typeRef, std::move(newCells));
 }
 
-Tensor::UP
-DenseTensorView::sum(const vespalib::string &dimension) const
-{
-    return dense::reduce(*this, { dimension },
-                          [](double lhsValue, double rhsValue)
-                          { return lhsValue + rhsValue; });
-}
-
 bool
 DenseTensorView::equals(const Tensor &arg) const
 {
@@ -237,14 +181,6 @@ DenseTensorView::equals(const Tensor &arg) const
         return *this == *view;
     }
     return false;
-}
-
-vespalib::string
-DenseTensorView::toString() const
-{
-    std::ostringstream stream;
-    stream << *this;
-    return stream.str();
 }
 
 Tensor::UP
@@ -271,7 +207,7 @@ buildAddress(const DenseTensorCellsIterator &itr, TensorSpec::Address &address)
 TensorSpec
 DenseTensorView::toSpec() const
 {
-    TensorSpec result(getType().to_spec());
+    TensorSpec result(type().to_spec());
     TensorSpec::Address address;
     for (CellsIterator itr(_typeRef, _cellsRef); itr.valid(); itr.next()) {
         buildAddress(itr, address);
@@ -279,31 +215,6 @@ DenseTensorView::toSpec() const
         address.clear();
     }
     return result;
-}
-
-void
-DenseTensorView::print(std::ostream &out) const
-{
-    // TODO (geirst): print on common format.
-    out << "[ ";
-    bool first = true;
-    for (const auto &dim : _typeRef.dimensions()) {
-        if (!first) {
-            out << ", ";
-        }
-        out << dim.name << ":" << dim.size;
-        first = false;
-    }
-    out << " ] { ";
-    first = true;
-    for (const auto &cell : cellsRef()) {
-        if (!first) {
-            out << ", ";
-        }
-        out << cell;
-        first = false;
-    }
-    out << " }";
 }
 
 void
@@ -330,6 +241,17 @@ DenseTensorView::accept(TensorVisitor &visitor) const
 Tensor::UP
 DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 {
+    if (function == eval::operation::Mul::f) {
+        if (fast_type() == arg.type()) {
+            return joinDenseTensors(*this, arg, "match",
+                                    [](double lhsValue, double rhsValue)
+                                    { return (lhsValue * rhsValue); });
+        } else {
+            return dense::apply(*this, arg,
+                                [](double lhsValue, double rhsValue)
+                                { return lhsValue * rhsValue; });
+        }
+    }
     return dense::apply(*this, arg, function);
 }
 

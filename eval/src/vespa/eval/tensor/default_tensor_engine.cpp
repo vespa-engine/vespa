@@ -70,7 +70,7 @@ const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
     if (!tensor) {
         return ErrorValue::instance;
     }
-    if (tensor->getType().is_tensor()) {
+    if (tensor->type().is_tensor()) {
         return *stash.create<Value::UP>(std::move(tensor));
     }
     return stash.create<DoubleValue>(tensor->as_double());
@@ -221,7 +221,7 @@ DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
     } else if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
-        if (!tensor::Tensor::supported({my_a.getType()})) {
+        if (!tensor::Tensor::supported({my_a.type()})) {
             return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
         }
         CellFunctionFunAdapter cell_function(function);
@@ -240,7 +240,7 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         } else if (auto tensor_b = b.as_tensor()) {
             assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
-            if (!tensor::Tensor::supported({my_b.getType()})) {
+            if (!tensor::Tensor::supported({my_b.type()})) {
                 return fallback_join(a, b, function, stash);
             }
             CellFunctionBindLeftAdapter cell_function(function, a.as_double());
@@ -252,7 +252,7 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         assert(&tensor_a->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
         if (b.is_double()) {
-            if (!tensor::Tensor::supported({my_a.getType()})) {
+            if (!tensor::Tensor::supported({my_a.type()})) {
                 return fallback_join(a, b, function, stash);
             }
             CellFunctionBindRightAdapter cell_function(function, b.as_double());
@@ -260,18 +260,10 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         } else if (auto tensor_b = b.as_tensor()) {
             assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
-            if (!tensor::Tensor::supported({my_a.getType(), my_b.getType()})) {
+            if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
                 return fallback_join(a, b, function, stash);
             }
-            if (function == eval::operation::Mul::f) {
-                if (my_a.getType() == my_b.getType()) {
-                    return to_value(my_a.match(my_b), stash);
-                } else {
-                    return to_value(my_a.multiply(my_b), stash);
-                }
-            } else {
-                return to_value(my_a.join(function, my_b), stash);
-            }
+            return to_value(my_a.join(function, my_b), stash);
         } else {
             return ErrorValue::instance;
         }
@@ -294,16 +286,14 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
     } else if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
-        if (!tensor::Tensor::supported({my_a.getType()})) {
+        if (!tensor::Tensor::supported({my_a.type()})) {
             return fallback_reduce(a, aggr, dimensions, stash);
         }
         switch (aggr) {
         case Aggr::PROD: return to_value(my_a.reduce(eval::operation::Mul::f, dimensions), stash);
         case Aggr::SUM:
             if (dimensions.empty()) {
-                return stash.create<eval::DoubleValue>(my_a.sum());
-            } else if (dimensions.size() == 1) {
-                return to_value(my_a.sum(dimensions[0]), stash);
+                return stash.create<eval::DoubleValue>(my_a.as_double());
             } else {
                 return to_value(my_a.reduce(eval::operation::Add::f, dimensions), stash);
             }

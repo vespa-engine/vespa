@@ -240,7 +240,7 @@ TEST_F("require that dimensions are sorted", Fixture)
     assertTensor({{"x", 5}, {"y", 3}},
                  {10, 11, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                  denseTensor);
-    EXPECT_EQUAL("tensor(x[5],y[3])", denseTensor.getType().to_spec());
+    EXPECT_EQUAL("tensor(x[5],y[3])", denseTensor.type().to_spec());
 }
 
 
