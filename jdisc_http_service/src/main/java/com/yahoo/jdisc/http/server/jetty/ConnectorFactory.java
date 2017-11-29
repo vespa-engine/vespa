@@ -2,12 +2,19 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.Inject;
+import com.yahoo.config.InnerNode;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl;
+import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ExcludeCipherSuite;
+import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ExcludeProtocol;
+import com.yahoo.jdisc.http.ConnectorConfig.Ssl.IncludeCipherSuite;
+import com.yahoo.jdisc.http.ConnectorConfig.Ssl.IncludeProtocol;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreContext;
+import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreContext;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
+import com.yahoo.jdisc.http.ssl.SslTrustStoreConfigurator;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -18,6 +25,10 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author Einar M R Rosenvinge
@@ -26,27 +37,16 @@ import java.nio.channels.ServerSocketChannel;
 public class ConnectorFactory {
 
     private final ConnectorConfig connectorConfig;
-    private final SecretStore secretStore;
     private final SslKeyStoreConfigurator sslKeyStoreConfigurator;
+    private final SslTrustStoreConfigurator sslTrustStoreConfigurator;
 
     @Inject
     public ConnectorFactory(ConnectorConfig connectorConfig,
-                            SecretStore secretStore,
-                            SslKeyStoreConfigurator sslKeyStoreConfigurator) {
+                            SslKeyStoreConfigurator sslKeyStoreConfigurator,
+                            SslTrustStoreConfigurator sslTrustStoreConfigurator) {
         this.connectorConfig = connectorConfig;
-        this.secretStore = secretStore;
         this.sslKeyStoreConfigurator = sslKeyStoreConfigurator;
-
-        if (connectorConfig.ssl().enabled())
-            validateSslConfig(connectorConfig);
-    }
-
-    // TODO: can be removed when we have dedicated SSL config in services.xml
-    private static void validateSslConfig(ConnectorConfig config) {
-        ConnectorConfig.Ssl ssl = config.ssl();
-        if (!ssl.trustStorePath().isEmpty() && ssl.useTrustStorePassword() && ssl.keyDbKey().isEmpty()) {
-            throw new IllegalArgumentException("Missing password for JKS truststore");
-        }
+        this.sslTrustStoreConfigurator = sslTrustStoreConfigurator;
     }
 
     public ConnectorConfig getConnectorConfig() {
@@ -93,13 +93,13 @@ public class ConnectorFactory {
         return new HttpConnectionFactory(httpConfig);
     }
 
-    //TODO: does not support loading non-yahoo readable JKS key stores.
     private SslConnectionFactory newSslConnectionFactory() {
         Ssl sslConfig = connectorConfig.ssl();
 
         SslContextFactory factory = new SslContextFactory();
 
         sslKeyStoreConfigurator.configure(new DefaultSslKeyStoreContext(factory));
+        sslTrustStoreConfigurator.configure(new DefaultSslTrustStoreContext(factory));
 
         switch (sslConfig.clientAuth()) {
             case NEED_AUTH:
@@ -114,49 +114,28 @@ public class ConnectorFactory {
             factory.setSecureRandomAlgorithm(sslConfig.prng());
         }
 
-        if (!sslConfig.excludeProtocol().isEmpty()) {
-            String[] prots = new String[sslConfig.excludeProtocol().size()];
-            for (int i = 0; i < prots.length; i++) {
-                prots[i] = sslConfig.excludeProtocol(i).name();
-            }
-            factory.setExcludeProtocols(prots);
-        }
-        if (!sslConfig.includeProtocol().isEmpty()) {
-            String[] prots = new String[sslConfig.includeProtocol().size()];
-            for (int i = 0; i < prots.length; i++) {
-                prots[i] = sslConfig.includeProtocol(i).name();
-            }
-            factory.setIncludeProtocols(prots);
-        }
-        if (!sslConfig.excludeCipherSuite().isEmpty()) {
-            String[] ciphs = new String[sslConfig.excludeCipherSuite().size()];
-            for (int i = 0; i < ciphs.length; i++) {
-                ciphs[i] = sslConfig.excludeCipherSuite(i).name();
-            }
-            factory.setExcludeCipherSuites(ciphs);
-
-        }
-        if (!sslConfig.includeCipherSuite().isEmpty()) {
-            String[] ciphs = new String[sslConfig.includeCipherSuite().size()];
-            for (int i = 0; i < ciphs.length; i++) {
-                ciphs[i] = sslConfig.includeCipherSuite(i).name();
-            }
-            factory.setIncludeCipherSuites(ciphs);
-        }
-
-        String keyDbPassword = sslConfig.keyDbKey();
-
-        if (!sslConfig.trustStorePath().isEmpty()) {
-            factory.setTrustStorePath(sslConfig.trustStorePath());
-            factory.setTrustStoreType(sslConfig.trustStoreType().toString());      
-            if (sslConfig.useTrustStorePassword()) {
-                factory.setTrustStorePassword(secretStore.getSecret(keyDbPassword));
-            }
-        }
+        setStringArrayParameter(
+                factory, sslConfig.excludeProtocol(), ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
+        setStringArrayParameter(
+                factory, sslConfig.includeProtocol(), IncludeProtocol::name, SslContextFactory::setIncludeProtocols);
+        setStringArrayParameter(
+                factory, sslConfig.excludeCipherSuite(), ExcludeCipherSuite::name, SslContextFactory::setExcludeCipherSuites);
+        setStringArrayParameter(
+                factory, sslConfig.includeCipherSuite(), IncludeCipherSuite::name, SslContextFactory::setIncludeCipherSuites);
 
         factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
         factory.setProtocol(sslConfig.protocol());
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
+    }
+
+    private static <T extends InnerNode> void setStringArrayParameter(SslContextFactory sslContextFactory,
+                                                                      List<T> configValues,
+                                                                      Function<T, String> nameProperty,
+                                                                      BiConsumer<SslContextFactory, String[]> setter) {
+        if (!configValues.isEmpty()) {
+            String[] nameArray = configValues.stream().map(nameProperty).toArray(String[]::new);
+            setter.accept(sslContextFactory, nameArray);
+        }
     }
 
 }

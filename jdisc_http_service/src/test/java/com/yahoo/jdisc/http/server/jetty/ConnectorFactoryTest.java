@@ -5,6 +5,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
+import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -107,7 +108,9 @@ public class ConnectorFactoryTest {
 
     private static ConnectorFactory createConnectorFactory(ConnectorConfig config) {
         ThrowingSecretStore secretStore = new ThrowingSecretStore();
-        return new ConnectorFactory(config, secretStore, new DefaultSslKeyStoreConfigurator(config, secretStore));
+        return new ConnectorFactory(config,
+                                    new DefaultSslKeyStoreConfigurator(config, secretStore),
+                                    new DefaultSslTrustStoreConfigurator(config, secretStore));
     }
 
     private static class HelloWorldHandler extends AbstractHandler {
