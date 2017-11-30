@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -86,7 +87,8 @@ public class ApplicationSerializerTest {
                                                Optional.of(new Change.VersionChange(Version.fromString("6.7"))),
                                                true,
                                                Optional.of(IssueId.from("1234")),
-                                               new MetricsService.ApplicationMetrics(0.5, 0.9));
+                                               new MetricsService.ApplicationMetrics(0.5, 0.9),
+                                               Optional.of(new RotationId("my-rotation")));
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -115,6 +117,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
 
         assertEquals(original.deploying(), serialized.deploying());
+        assertEquals(original.rotation().get().id(), serialized.rotation().get().id());
 
         // Test cluster utilization
         assertEquals(0, serialized.deployments().get(zone1).clusterUtils().size());

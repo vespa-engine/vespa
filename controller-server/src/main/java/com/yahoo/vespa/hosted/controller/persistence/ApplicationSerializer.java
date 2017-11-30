@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ public class ApplicationSerializer {
     private final String ownershipIssueIdField = "ownershipIssueId";
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
+    private final String rotationField = "rotation";
 
     // Deployment fields
     private final String zoneField = "zone";
@@ -114,7 +116,7 @@ public class ApplicationSerializer {
     private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
     private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
 
-    
+
     // ------------------ Serialization
     
     public Slime toSlime(Application application) {
@@ -130,6 +132,7 @@ public class ApplicationSerializer {
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
+        application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.id().asString()));
         return slime;
     }
 
@@ -267,9 +270,10 @@ public class ApplicationSerializer {
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
+        Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
 
-        return new Application(id, deploymentSpec, validationOverrides, deployments,
-                               deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics);
+        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
+                               outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -401,6 +405,10 @@ public class ApplicationSerializer {
                                                 object.field(upgradeField).asBool(),
                                                 optionalString(object.field(reasonField)).orElse(""), // TODO: Make non-optional after November 2017
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
+    }
+
+    private Optional<RotationId> rotationFromSlime(Inspector field) {
+        return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 
     private Optional<Long> optionalLong(Inspector field) {

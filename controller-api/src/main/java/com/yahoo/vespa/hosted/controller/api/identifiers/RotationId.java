@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.identifiers;
 /**
  * @author smorgrav
  */
+// TODO: Used in serialization (ConfigServerClient). Remove when no longer used by ControllerDb and ConfigServerClient
 public class RotationId extends Identifier {
 
     public RotationId(String id) {

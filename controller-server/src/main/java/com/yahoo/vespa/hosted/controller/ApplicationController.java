@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -11,7 +10,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.ApplicationAlias;
 import com.yahoo.vespa.hosted.controller.api.InstanceEndpoints;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -32,7 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -49,7 +47,10 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.io.IOException;
 import java.net.URI;
@@ -82,6 +83,7 @@ public class ApplicationController {
 
     /** For permanent storage */
     private final ControllerDb db;
+
     /** For working memory storage and sharing between controllers */
     private final CuratorDb curator;
 
@@ -93,26 +95,41 @@ public class ApplicationController {
     private final Clock clock;
 
     private final DeploymentTrigger deploymentTrigger;
+
+    private final Object monitor = new Object();
     
     ApplicationController(Controller controller, ControllerDb db, CuratorDb curator,
-                          RotationRepository rotationRepository,
-                          AthenzClientFactory zmsClientFactory,
+                          AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServerClient configserverClient,
                           RoutingGenerator routingGenerator, Clock clock) {
         this.controller = controller;
         this.db = db;
         this.curator = curator;
-        this.rotationRepository = rotationRepository;
         this.zmsClientFactory = zmsClientFactory;
         this.nameService = nameService;
         this.configserverClient = configserverClient;
         this.routingGenerator = routingGenerator;
         this.clock = clock;
 
+        this.rotationRepository = new RotationRepository(rotationsConfig, this);
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
-        for (Application application : db.listApplications())
-            lockedIfPresent(application.id(), this::store);
+        for (Application application : db.listApplications()) {
+            lockedIfPresent(application.id(), (app) -> {
+                // TODO: Remove after December 2017. Migrates rotations into application
+                if (!app.rotation().isPresent()) {
+                    Set<com.yahoo.vespa.hosted.controller.api.identifiers.RotationId> rotations = db.getRotations(application.id());
+                    if (rotations.size() > 1) {
+                        log.warning("Application " + application.id() + " has more than 1 rotation: "
+                                    + rotations.size());
+                    }
+                    if (!rotations.isEmpty()) {
+                        app = app.with(new RotationId(rotations.iterator().next().id()));
+                    }
+                }
+                store(app);
+            });
+        }
     }
 
     /** Returns the application with the given id, or null if it is not present */
@@ -328,15 +345,37 @@ public class ApplicationController {
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                        " as the requested version " + version + " is older than" +
                                                        " the current version " + existingDeployment.version());
-            }    
+            }
+
+            // Synchronize rotation assignment. Rotation can only be considered assigned once application has been
+            // persisted.
+            Optional<Rotation> rotation;
+            synchronized (monitor) {
+                rotation = getRotation(application, zone);
+                if (rotation.isPresent()) {
+                    application = application.with(rotation.get().id());
+                    store(application); // store assigned rotation even if deployment fails
+                    registerRotationInDns(application.rotation().get(), rotation.get());
+                }
+            }
+
+            // TODO: Improve config server client interface and simplify
+            Set<String> cnames = application.rotation()
+                                            .map(ApplicationRotation::dnsName)
+                                            .map(Collections::singleton)
+                                            .orElseGet(Collections::emptySet);
+
+            Set<com.yahoo.vespa.hosted.controller.api.rotation.Rotation> rotations = rotation
+                    .map(r -> new com.yahoo.vespa.hosted.controller.api.rotation.Rotation(
+                            new com.yahoo.vespa.hosted.controller.api.identifiers.RotationId(
+                                    r.id().asString()), r.name()))
+                    .map(Collections::singleton)
+                    .orElseGet(Collections::emptySet);
 
             // Carry out deployment
-            DeploymentId deploymentId = new DeploymentId(applicationId, zone);
-            ApplicationRotation rotationInDns = registerRotationInDns(deploymentId, getOrAssignRotation(deploymentId, 
-                                                                                                        applicationPackage));
-            options = withVersion(version, options);            
+            options = withVersion(version, options);
             ConfigServerClient.PreparedApplication preparedApplication = 
-                    configserverClient.prepare(deploymentId, options, rotationInDns.cnames(), rotationInDns.rotations(), 
+                    configserverClient.prepare(new DeploymentId(applicationId, zone), options, cnames, rotations,
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
             application = application.withNewDeployment(zone, revision, version, clock.instant());
@@ -430,35 +469,28 @@ public class ApplicationController {
                                                                                       gitRevision.commit.id()));
     }
 
-    private ApplicationRotation registerRotationInDns(DeploymentId deploymentId, ApplicationRotation applicationRotation) {
-        ApplicationAlias alias = new ApplicationAlias(deploymentId.applicationId());
-        if (applicationRotation.rotations().isEmpty()) return applicationRotation;
-
-        Rotation rotation = applicationRotation.rotations().iterator().next(); // at this time there should be only one rotation assigned
-        String endpointName = alias.toString();
+    /** Register a DNS name for rotation */
+    private void registerRotationInDns(ApplicationRotation applicationRotation, Rotation rotation) {
+        String dnsName = applicationRotation.dnsName();
         try {
-            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, endpointName);
+            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, dnsName);
             if (!record.isPresent()) {
-                RecordId recordId = nameService.createCname(endpointName, rotation.rotationName);
+                RecordId recordId = nameService.createCname(dnsName, rotation.name());
                 log.info("Registered mapping with record ID " + recordId.id() + ": " +
-                                 endpointName + " -> " + rotation.rotationName);
+                         dnsName + " -> " + rotation.name());
             }
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);
         }
-        return new ApplicationRotation(Collections.singleton(endpointName), Collections.singleton(rotation));
     }
 
-    private ApplicationRotation getOrAssignRotation(DeploymentId deploymentId, ApplicationPackage applicationPackage) {
-        if (deploymentId.zone().environment().equals(Environment.prod)) {
-            return new ApplicationRotation(Collections.emptySet(), 
-                                           rotationRepository.getOrAssignRotation(deploymentId.applicationId(), 
-                                                                                  applicationPackage.deploymentSpec()));
-        } else {
-            return new ApplicationRotation(Collections.emptySet(), 
-                                           Collections.emptySet());
+    /** Get an available rotation, if deploying to a production zone and a service ID is specified */
+    private Optional<Rotation> getRotation(Application application, Zone zone) {
+        if (zone.environment() != Environment.prod ||
+            !application.deploymentSpec().globalServiceId().isPresent()) {
+            return Optional.empty();
         }
+        return Optional.of(rotationRepository.getRotation(application));
     }
 
     /** Returns the endpoints of the deployment, or empty if obtaining them failed */
@@ -640,20 +672,8 @@ public class ApplicationController {
                 });
     }
 
-
-    private static final class ApplicationRotation {
-
-        private final ImmutableSet<String> cnames;
-        private final ImmutableSet<Rotation> rotations;
-
-        public ApplicationRotation(Set<String> cnames, Set<Rotation> rotations) {
-            this.cnames = ImmutableSet.copyOf(cnames);
-            this.rotations = ImmutableSet.copyOf(rotations);
-        }
-
-        public Set<String> cnames() { return cnames; }
-        public Set<Rotation> rotations() { return rotations; }
-
+    public RotationRepository rotationRepository() {
+        return rotationRepository;
     }
 
 }

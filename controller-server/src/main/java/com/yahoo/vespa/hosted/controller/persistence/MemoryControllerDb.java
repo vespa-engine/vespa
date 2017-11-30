@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * 
  * @author Stian Kristoffersen
  */
-public class MemoryControllerDb extends ControllerDb {
+public class MemoryControllerDb implements ControllerDb {
 
     private final Map<TenantId, Tenant> tenants = new HashMap<>();
     private final Map<String, Application> applications = new HashMap<>();

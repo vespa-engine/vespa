@@ -10,6 +10,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -18,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -34,12 +35,6 @@ import java.util.Optional;
  */
 public class LockedApplication extends Application {
 
-    private LockedApplication(Builder builder) {
-        super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides,
-              builder.deployments, builder.deploymentJobs, builder.deploying,
-              builder.hasOutstandingChange, builder.ownershipIssueId, builder.metrics);
-    }
-
     /**
      * Used to create a locked application
      *
@@ -48,6 +43,12 @@ public class LockedApplication extends Application {
      */
     LockedApplication(Application application, Lock lock) {
         this(new Builder(application));
+    }
+
+    private LockedApplication(Builder builder) {
+        super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides,
+              builder.deployments, builder.deploymentJobs, builder.deploying,
+              builder.hasOutstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
     }
 
     public LockedApplication withProjectId(long projectId) {
@@ -130,6 +131,10 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(metrics));
     }
 
+    public LockedApplication with(RotationId rotation) {
+        return new LockedApplication(new Builder(this).with(rotation));
+    }
+
     public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
                ? controller.systemVersion()
@@ -161,6 +166,7 @@ public class LockedApplication extends Application {
         private boolean hasOutstandingChange;
         private Optional<IssueId> ownershipIssueId;
         private ApplicationMetrics metrics;
+        private Optional<RotationId> rotation;
 
         private Builder(Application application) {
             this.applicationId = application.id();
@@ -172,16 +178,53 @@ public class LockedApplication extends Application {
             this.hasOutstandingChange = application.hasOutstandingChange();
             this.ownershipIssueId = application.ownershipIssueId();
             this.metrics = application.metrics();
+            this.rotation = application.rotation().map(ApplicationRotation::id);
         }
 
-        private Builder with(DeploymentSpec deploymentSpec) { this.deploymentSpec = deploymentSpec; return this; }
-        private Builder with(ValidationOverrides validationOverrides) { this.validationOverrides = validationOverrides; return this; }
-        private Builder with(Map<Zone, Deployment> deployments) { this.deployments = deployments; return this; }
-        private Builder with(DeploymentJobs deploymentJobs) { this.deploymentJobs = deploymentJobs; return this; }
-        private Builder withDeploying(Optional<Change> deploying) { this.deploying = deploying; return this; }
-        private Builder with(boolean hasOutstandingChange) { this.hasOutstandingChange = hasOutstandingChange; return this; }
-        private Builder withOwnershipIssueId(Optional<IssueId> ownershipIssueId) { this.ownershipIssueId = ownershipIssueId; return this; }
-        private Builder with(ApplicationMetrics metrics) { this.metrics = metrics; return this; }
+        private Builder with(DeploymentSpec deploymentSpec) {
+            this.deploymentSpec = deploymentSpec;
+            return this;
+        }
+
+        private Builder with(ValidationOverrides validationOverrides) {
+            this.validationOverrides = validationOverrides;
+            return this;
+        }
+
+        private Builder with(Map<Zone, Deployment> deployments) {
+            this.deployments = deployments;
+            return this;
+        }
+
+        private Builder with(DeploymentJobs deploymentJobs) {
+            this.deploymentJobs = deploymentJobs;
+            return this;
+        }
+
+        private Builder withDeploying(Optional<Change> deploying) {
+            this.deploying = deploying;
+            return this;
+        }
+
+        private Builder with(boolean hasOutstandingChange) {
+            this.hasOutstandingChange = hasOutstandingChange;
+            return this;
+        }
+
+        private Builder withOwnershipIssueId(Optional<IssueId> ownershipIssueId) {
+            this.ownershipIssueId = ownershipIssueId;
+            return this;
+        }
+
+        private Builder with(ApplicationMetrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        private Builder with(RotationId rotation) {
+            this.rotation = Optional.of(rotation);
+            return this;
+        }
 
     }
 

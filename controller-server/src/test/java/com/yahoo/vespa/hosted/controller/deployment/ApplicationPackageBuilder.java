@@ -28,6 +28,7 @@ public class ApplicationPackageBuilder {
 
     private String upgradePolicy = null;
     private Environment environment = Environment.prod;
+    private String globalServiceId = null;
     private final StringBuilder environmentBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
@@ -41,6 +42,11 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder environment(Environment environment) {
         this.environment = environment;
+        return this;
+    }
+
+    public ApplicationPackageBuilder globalServiceId(String globalServiceId) {
+        this.globalServiceId = globalServiceId;
         return this;
     }
 
@@ -112,6 +118,11 @@ public class ApplicationPackageBuilder {
         xml.append(blockChange);
         xml.append("  <");
         xml.append(environment.value());
+        if (globalServiceId != null) {
+            xml.append(" global-service-id='");
+            xml.append(globalServiceId);
+            xml.append("'");
+        }
         xml.append(">\n");
         xml.append(environmentBody);
         xml.append("  </");
