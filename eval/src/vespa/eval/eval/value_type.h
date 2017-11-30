@@ -45,6 +45,10 @@ private:
         : _type(type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
+    ValueType(ValueType &&) = default;
+    ValueType(const ValueType &) = default;
+    ValueType &operator=(ValueType &&) = default;
+    ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     Type type() const { return _type; }
     bool is_any() const { return (_type == Type::ANY); }
