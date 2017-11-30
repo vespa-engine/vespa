@@ -17,15 +17,16 @@ namespace metrics {
 // internal
 struct Bucket {
     size_t genCnt;
-    InternalTimeStamp startTime;
-    InternalTimeStamp endTime;
+    TimeStamp startTime;
+    TimeStamp endTime;
     std::vector<CounterAggregator> counters;
     std::vector<GaugeAggregator> gauges;
 
     void merge(const CurrentSamples &other);
     void merge(const Bucket &other);
+    void padMetrics(const Bucket &source);
 
-    Bucket(size_t generation, InternalTimeStamp started, InternalTimeStamp ended)
+    Bucket(size_t generation, TimeStamp started, TimeStamp ended)
         : genCnt(generation),
           startTime(started),
           endTime(ended),

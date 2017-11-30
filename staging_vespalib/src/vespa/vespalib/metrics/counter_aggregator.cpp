@@ -7,7 +7,7 @@ namespace vespalib {
 namespace metrics {
 
 CounterAggregator::CounterAggregator(const Counter::Increment &increment)
-  : idx(increment.idx), count(increment.value)
+    : idx(increment.idx), count(increment.value)
 {}
 
 void

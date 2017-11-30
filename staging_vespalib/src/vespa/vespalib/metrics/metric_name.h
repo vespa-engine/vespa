@@ -3,16 +3,13 @@
 
 #include "handle.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
+
+struct MetricNameTag {};
 
 /**
  * Opaque handle representing an uniquely named metric.
  **/
-class MetricName : public Handle<MetricName> {
-public:
-    explicit MetricName(size_t id) : Handle<MetricName>(id) {}
-};
+using MetricName = Handle<MetricNameTag>;
 
 } // namespace vespalib::metrics
-} // namespace vespalib

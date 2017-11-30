@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simple_metrics_manager.h"
+#include "simple_tick.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.metrics.simple_metrics_manager");
@@ -9,22 +10,23 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
-WallclockTimeSupplier timeSupplier;
-
-SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config)
+SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config,
+                                           Tick::UP tick_supplier)
     : _metricNames(),
       _dimensionNames(),
       _labelValues(),
       _pointMaps(),
-      _currentBucket(),
-      _startTime(timeSupplier.now_stamp()),
+      _currentSamples(),
+      _tickSupplier(std::move(tick_supplier)),
+      _startTime(_tickSupplier->first()),
       _curTime(_startTime),
       _collectCnt(0),
       _buckets(),
       _firstBucket(0),
       _maxBuckets(config.sliding_window_seconds),
       _totalsBucket(0, _startTime, _startTime),
-      _ticker(this)
+      _runFlag(true),
+      _thread(&SimpleMetricsManager::tickerLoop, this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
     Point empty = pointFrom(PointMap::BackingMap());
@@ -33,15 +35,23 @@ SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config)
 
 SimpleMetricsManager::~SimpleMetricsManager()
 {
-    _ticker.stop();
+    _tickSupplier->kill();
+    stopThread();
 }
-
 
 std::shared_ptr<MetricsManager>
 SimpleMetricsManager::create(const SimpleManagerConfig &config)
 {
     return std::shared_ptr<MetricsManager>(
-        new SimpleMetricsManager(config));
+            new SimpleMetricsManager(config, std::make_unique<SimpleTick>()));
+}
+
+std::shared_ptr<MetricsManager>
+SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
+                                    Tick::UP tick_supplier)
+{
+    return std::shared_ptr<MetricsManager>(
+            new SimpleMetricsManager(config, std::move(tick_supplier)));
 }
 
 Counter
@@ -49,7 +59,7 @@ SimpleMetricsManager::counter(const vespalib::string &name)
 {
     size_t id = _metricNames.resolve(name);
     _metricTypes.check(id, name, MetricTypes::MetricType::COUNTER);
-    LOG(debug, "counter with metric name %s -> %zd", name.c_str(), id);
+    LOG(debug, "counter with metric name %s -> %zu", name.c_str(), id);
     return Counter(shared_from_this(), MetricName(id));
 }
 
@@ -58,7 +68,7 @@ SimpleMetricsManager::gauge(const vespalib::string &name)
 {
     size_t id = _metricNames.resolve(name);
     _metricTypes.check(id, name, MetricTypes::MetricType::GAUGE);
-    LOG(debug, "gauge with metric name %s -> %zd", name.c_str(), id);
+    LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), id);
     return Gauge(shared_from_this(), MetricName(id));
 }
 
@@ -67,12 +77,13 @@ SimpleMetricsManager::mergeBuckets()
 {
     Guard bucketsGuard(_bucketsLock);
     if (_buckets.size() > 0) {
-        InternalTimeStamp startTime = _buckets[_firstBucket].startTime;
+        TimeStamp startTime = _buckets[_firstBucket].startTime;
         Bucket merger(0, startTime, startTime);
         for (size_t i = 0; i < _buckets.size(); i++) {
             size_t off = (_firstBucket + i) % _buckets.size();
             merger.merge(_buckets[off]);
         }
+        merger.padMetrics(_totalsBucket);
         return merger;
     }
     // no data
@@ -91,17 +102,17 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
 {
     std::vector<PointSnapshot> points;
 
-    double s = timeSupplier.stamp_to_s(bucket.startTime);
-    double e = timeSupplier.stamp_to_s(bucket.endTime);
+    double s = bucket.startTime.count();
+    double e = bucket.endTime.count();
     Snapshot snap(s, e);
     {
         for (size_t i = 0; i < _pointMaps.size(); ++i) {
-             const PointMap::BackingMap &map = _pointMaps.lookup(i).backingMap();
-             PointSnapshot point;
-             for (const PointMap::BackingMap::value_type &kv : map) {
-                 point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
-             }
-             snap.add(point);
+            const PointMap::BackingMap &map = _pointMaps.lookup(i).backingMap();
+            PointSnapshot point;
+            for (const PointMap::BackingMap::value_type &kv : map) {
+                point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
+            }
+            snap.add(point);
         }
     }
     for (const CounterAggregator& entry : bucket.counters) {
@@ -136,11 +147,11 @@ SimpleMetricsManager::totalSnapshot()
 }
 
 void
-SimpleMetricsManager::collectCurrentBucket(InternalTimeStamp prev,
-                                           InternalTimeStamp curr)
+SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
+                                            TimeStamp curr)
 {
     CurrentSamples samples;
-    _currentBucket.extract(samples);
+    _currentSamples.extract(samples);
     Bucket newBucket(++_collectCnt, prev, curr);
     newBucket.merge(samples);
 
@@ -158,7 +169,7 @@ Dimension
 SimpleMetricsManager::dimension(const vespalib::string &name)
 {
     size_t id = _dimensionNames.resolve(name);
-    LOG(debug, "dimension name %s -> %zd", name.c_str(), id);
+    LOG(debug, "dimension name %s -> %zu", name.c_str(), id);
     return Dimension(id);
 }
 
@@ -166,7 +177,7 @@ Label
 SimpleMetricsManager::label(const vespalib::string &value)
 {
     size_t id = _labelValues.resolve(value);
-    LOG(debug, "label value %s -> %zd", value.c_str(), id);
+    LOG(debug, "label value %s -> %zu", value.c_str(), id);
     return Label(id);
 }
 
@@ -184,14 +195,29 @@ SimpleMetricsManager::pointFrom(PointMap::BackingMap map)
     return Point(id);
 }
 
+
 void
-SimpleMetricsManager::tick()
+SimpleMetricsManager::tickerLoop()
 {
-    Guard guard(_tickLock);
-    InternalTimeStamp prev = _curTime;
-    InternalTimeStamp curr = timeSupplier.now_stamp();
-    collectCurrentBucket(prev, curr);
-    _curTime = curr;
+    while (_runFlag) {
+        TimeStamp now = _tickSupplier->next(_curTime);
+        tick(now);
+    }
+}
+
+void
+SimpleMetricsManager::stopThread()
+{
+    _runFlag.store(false);
+    _thread.join();
+}
+
+void
+SimpleMetricsManager::tick(TimeStamp now)
+{
+    TimeStamp prev = _curTime;
+    collectCurrentSamples(prev, now);
+    _curTime = now;
 }
 
 } // namespace vespalib::metrics

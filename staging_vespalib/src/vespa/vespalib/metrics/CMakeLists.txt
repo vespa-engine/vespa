@@ -8,7 +8,6 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     current_samples.cpp
     dimension.cpp
     dummy_metrics_manager.cpp
-    dummy_time_supplier.cpp
     gauge_aggregator.cpp
     gauge.cpp
     handle.cpp
@@ -18,6 +17,7 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     metric_name.cpp
     metrics_manager.cpp
     metric_types.cpp
+    mock_tick.cpp
     name_collection.cpp
     point_builder.cpp
     point.cpp
@@ -26,12 +26,9 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     producer.cpp
     simple_metrics.cpp
     simple_metrics_manager.cpp
+    simple_tick.cpp
     snapshots.cpp
     stable_store.cpp
-    test_time_supplier.cpp
-    ticker_thread.cpp
-    time_supplier.cpp
-    wallclock_time_supplier.cpp
 
     DEPENDS
 )

@@ -4,18 +4,15 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "handle.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 using LabelValue = vespalib::string;
+
+struct LabelTag {};
 
 /**
  * Opaque handle representing an uniquely named label.
  **/
-class Label : public Handle<Label> {
-public:
-    explicit Label(size_t id) : Handle<Label>(id) {}
-};
+using Label = Handle<LabelTag>;
 
 } // namespace vespalib::metrics
-} // namespace vespalib

@@ -4,18 +4,15 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "handle.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 using DimensionName = vespalib::string;
+
+struct DimensionTag {};
 
 /**
  * Opaque handle representing an uniquely named dimension.
  **/
-class Dimension : public Handle<Dimension> {
-public:
-    explicit Dimension(size_t id) : Handle<Dimension>(id) {}
-};
+using Dimension = Handle<DimensionTag>;
 
 } // namespace vespalib::metrics
-} // namespace vespalib

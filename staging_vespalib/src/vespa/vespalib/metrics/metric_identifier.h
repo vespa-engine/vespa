@@ -15,7 +15,7 @@ struct MetricIdentifier {
     MetricIdentifier() = delete;
 
     MetricIdentifier(MetricName name, Point point)
-      : _name(name), _point(point) {}
+        : _name(name), _point(point) {}
 
     bool operator< (const MetricIdentifier &other) const {
         if (_name != other._name) {

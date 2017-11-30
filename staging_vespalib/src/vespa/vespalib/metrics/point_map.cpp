@@ -30,16 +30,16 @@ PointMap::operator< (const PointMap &other) const
          m != _map.end();
          ++m, ++o)
     {
-         const Dimension& d1 = m->first;
-         const Dimension& d2 = o->first;
-         if (d1 != d2) {
-             return d1 < d2;
-         }
-         const Label &l1 = m->second;
-         const Label &l2 = o->second;
-         if (l1 != l2) {
-             return l1 < l2;
-         }
+        const Dimension& d1 = m->first;
+        const Dimension& d2 = o->first;
+        if (d1 != d2) {
+            return d1 < d2;
+        }
+        const Label &l1 = m->second;
+        const Label &l2 = o->second;
+        if (l1 != l2) {
+            return l1 < l2;
+        }
     }
     // equal
     return false;

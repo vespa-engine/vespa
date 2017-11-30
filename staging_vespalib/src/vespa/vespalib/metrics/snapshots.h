@@ -56,7 +56,7 @@ public:
         : _name(n),
           _point(p),
           _observedCount(c.observedCount),
-          _averageValue(c.sumValue / c.observedCount),
+          _averageValue(c.sumValue / (c.observedCount > 0 ? c.observedCount : 1)),
           _minValue(c.minValue),
           _maxValue(c.maxValue),
           _lastValue(c.lastValue)

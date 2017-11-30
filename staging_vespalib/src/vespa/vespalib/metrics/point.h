@@ -3,8 +3,7 @@
 
 #include "handle.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 /**
  * Opaque handle representing an unique N-dimensional point
@@ -16,4 +15,3 @@ public:
 };
 
 } // namespace vespalib::metrics
-} // namespace vespalib

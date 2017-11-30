@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <atomic>
+#include <mutex>
 #include <memory>
 #include <thread>
 #include <vespa/vespalib/stllike/string.h>
@@ -12,7 +14,6 @@
 #include "clock.h"
 #include "point_map_collection.h"
 #include "bucket.h"
-#include "ticker_thread.h"
 
 namespace vespalib {
 namespace metrics {
@@ -43,10 +44,11 @@ private:
     const vespalib::string& nameFor(Dimension dimension) { return _dimensionNames.lookup(dimension.id()); }
     const vespalib::string& valueFor(Label label) { return _labelValues.lookup(label.id()); }
 
-    CurrentSamples _currentBucket;
+    CurrentSamples _currentSamples;
 
-    InternalTimeStamp _startTime;
-    InternalTimeStamp _curTime;
+    Tick::UP _tickSupplier;
+    TimeStamp _startTime;
+    TimeStamp _curTime;
 
     std::mutex _bucketsLock;
     size_t _collectCnt;
@@ -55,18 +57,24 @@ private:
     size_t _maxBuckets;
     Bucket _totalsBucket;
 
-    std::mutex _tickLock;
-    TickerThread _ticker;
-    void collectCurrentBucket(InternalTimeStamp prev, InternalTimeStamp curr);
+    std::atomic<bool> _runFlag;
+    std::thread _thread;
+    void tickerLoop();
+    void stopThread();
+    void tick(TimeStamp now); // called once per second from another thread
+
+    void collectCurrentSamples(TimeStamp prev, TimeStamp curr);
     Bucket mergeBuckets();
     Bucket totalsBucket();
     Snapshot snapshotFrom(const Bucket &bucket);
 
-    SimpleMetricsManager(const SimpleManagerConfig &config);
+    SimpleMetricsManager(const SimpleManagerConfig &config,
+                         Tick::UP tick_supplier);
 public:
     ~SimpleMetricsManager();
     static std::shared_ptr<MetricsManager> create(const SimpleManagerConfig &config);
-
+    static std::shared_ptr<MetricsManager> createForTest(const SimpleManagerConfig &config,
+                                                         Tick::UP tick_supplier);
     Counter counter(const vespalib::string &name) override;
     Gauge gauge(const vespalib::string &name) override;
     Dimension dimension(const vespalib::string &name) override;
@@ -78,14 +86,12 @@ public:
 
     // for use from Counter only
     void add(Counter::Increment inc) override {
-        _currentBucket.add(inc);
+        _currentSamples.add(inc);
     }
     // for use from Gauge only
     void sample(Gauge::Measurement value) override {
-        _currentBucket.sample(value);
+        _currentSamples.sample(value);
     }
-
-    void tick(); // called once per second from another thread
 };
 
 } // namespace vespalib::metrics

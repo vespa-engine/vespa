@@ -67,6 +67,39 @@ mergeVectors(const std::vector<T> &a,
     return result;
 }
 
+template<typename T>
+std::vector<T>
+findMissing(const std::vector<T> &already,
+            const std::vector<T> &complete)
+{
+    std::vector<T> result;
+    auto a_iter = already.begin();
+    auto c_iter = complete.begin();
+    while (a_iter != already.end() &&
+           c_iter != complete.end())
+    {
+        if (a_iter->idx < c_iter->idx) {
+            // missing from "complete", should not happen
+            ++a_iter;
+        } else if (c_iter->idx < a_iter->idx) {
+            // missing this
+            result.push_back(*c_iter);
+            ++c_iter;
+        } else {
+            // already have this
+            ++a_iter;
+            ++c_iter;
+        }
+    }
+    while (c_iter != complete.end()) {
+        // missing this
+        result.push_back(*c_iter);
+        ++c_iter;
+    }
+    return result;
+}
+
+
 } // namespace <unnamed>
 
 void Bucket::merge(const CurrentSamples &samples)
@@ -87,6 +120,23 @@ void Bucket::merge(const Bucket &other)
 
     std::vector<GaugeAggregator> nextGauges = mergeVectors(gauges, other.gauges);
     gauges = std::move(nextGauges);
+}
+
+void Bucket::padMetrics(const Bucket &source)
+{
+    std::vector<CounterAggregator> missingC = findMissing(counters, source.counters);
+    for (CounterAggregator aggr : missingC) {
+        aggr.count = 0;
+        counters.push_back(aggr);
+    }
+    std::vector<GaugeAggregator> missingG = findMissing(gauges, source.gauges);
+    for (GaugeAggregator aggr : missingG) {
+        aggr.observedCount = 0;
+        aggr.sumValue = 0;
+        aggr.minValue = 0;
+        aggr.maxValue = 0;
+        gauges.push_back(aggr);
+    }
 }
 
 } // namespace vespalib::metrics

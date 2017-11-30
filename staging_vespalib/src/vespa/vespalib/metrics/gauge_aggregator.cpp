@@ -7,12 +7,12 @@ namespace vespalib {
 namespace metrics {
 
 GaugeAggregator::GaugeAggregator(const Gauge::Measurement &sample)
-  : idx(sample.idx),
-    observedCount(1),
-    sumValue(sample.value),
-    minValue(sample.value),
-    maxValue(sample.value),
-    lastValue(sample.value)
+    : idx(sample.idx),
+      observedCount(1),
+      sumValue(sample.value),
+      minValue(sample.value),
+      maxValue(sample.value),
+      lastValue(sample.value)
 {}
 
 void
