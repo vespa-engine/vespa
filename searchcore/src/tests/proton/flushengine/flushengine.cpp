@@ -13,6 +13,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <chrono>
 
 #include <vespa/log/log.h>
 LOG_SETUP("flushengine_test");
@@ -393,13 +394,12 @@ public:
     }
 };
 
-class ConstantFlushStrategy : public SimpleStrategy {
-public:
-    uint64_t _millis;
-
-public:
-    ConstantFlushStrategy(uint64_t millis) : SimpleStrategy(), _millis(millis) { }
-    typedef std::shared_ptr<ConstantFlushStrategy> SP;
+class NoFlushStrategy : public SimpleStrategy
+{
+    virtual FlushContext::List getFlushTargets(const FlushContext::List &,
+                                               const flushengine::TlsStatsMap &) const override {
+        return FlushContext::List();
+    }
 };
 
 // --------------------------------------------------------------------------------
@@ -437,11 +437,37 @@ struct Fixture
     SimpleStrategy::SP strategy;
     FlushEngine engine;
 
-    Fixture(uint32_t numThreads, uint32_t idleIntervalMS)
+    Fixture(uint32_t numThreads, uint32_t idleIntervalMS, SimpleStrategy::SP strategy_)
         : tlsStatsFactory(std::make_shared<SimpleTlsStatsFactory>()),
-          strategy(std::make_shared<SimpleStrategy>()),
+          strategy(strategy_),
           engine(tlsStatsFactory, strategy, numThreads, idleIntervalMS)
     {
+    }
+
+    Fixture(uint32_t numThreads, uint32_t idleIntervalMS)
+        : Fixture(numThreads, idleIntervalMS, std::make_shared<SimpleStrategy>())
+    {
+    }
+
+    std::shared_ptr<SimpleHandler>
+    addSimpleHandler(Targets targets)
+    {
+        auto handler = std::make_shared<SimpleHandler>(targets, "handler", 20);
+        engine.putFlushHandler(DocTypeName("handler"), handler);
+        engine.start();
+        return handler;
+    }
+
+    void assertOldestSerial(SimpleHandler &handler, search::SerialNum expOldestSerial)
+    {
+        using namespace std::chrono_literals;
+        for (int pass = 0; pass < 600; ++pass) {
+            std::this_thread::sleep_for(100ms);
+            if (handler._oldestSerial == expOldestSerial) {
+                break;
+            }
+        }
+        EXPECT_EQUAL(expOldestSerial, handler._oldestSerial);
     }
 };
 
@@ -716,6 +742,26 @@ TEST_F("require that state explorer can list flush targets", Fixture(1, 1))
     target->_proceed.countDown();
     target->_taskDone.await(LONG_TIMEOUT);
 }
+
+TEST_F("require that oldest serial is updated when closing engine", Fixture(1, 100))
+{
+    auto target1 = std::make_shared<SimpleTarget>("target1", 10, false);
+    auto handler = f.addSimpleHandler({ target1 });
+    TEST_DO(f.assertOldestSerial(*handler, 10));
+    target1->_proceed.countDown();
+    f.engine.close();
+    EXPECT_EQUAL(20u, handler->_oldestSerial);
+}
+
+TEST_F("require that oldest serial is updated when finishing priority flush strategy", Fixture(1, 100, std::make_shared<NoFlushStrategy>()))
+{
+    auto target1 = std::make_shared<SimpleTarget>("target1", 10, true);
+    auto handler = f.addSimpleHandler({ target1 });
+    TEST_DO(f.assertOldestSerial(*handler, 10));
+    f.engine.setStrategy(std::make_shared<SimpleStrategy>());
+    EXPECT_EQUAL(20u, handler->_oldestSerial);
+}
+
 
 TEST_MAIN()
 {
