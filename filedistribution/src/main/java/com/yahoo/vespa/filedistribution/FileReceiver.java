@@ -116,7 +116,7 @@ public class FileReceiver {
             log.log(LogLevel.INFO, "Data written to " + file.getAbsolutePath());
             downloader.completedDownloading(fileReference, file);
         } catch (IOException e) {
-            log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage());
+            log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
             throw new RuntimeException("Failed writing file: ", e);
         }
     }
