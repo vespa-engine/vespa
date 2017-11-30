@@ -18,11 +18,13 @@ import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -99,7 +101,9 @@ public class DockerOperationsImpl implements DockerOperations {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
             final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            String configServers = String.join(",", environment.getConfigServerHosts());
+            String configServers = environment.getConfigServerUris().stream()
+                    .map(URI::getHost)
+                    .collect(Collectors.joining(","));
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     ContainerResources.from(nodeSpec.minCpuCores, nodeSpec.minMainMemoryAvailableGb),

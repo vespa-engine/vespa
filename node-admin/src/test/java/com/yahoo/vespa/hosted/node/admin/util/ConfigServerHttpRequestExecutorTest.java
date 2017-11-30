@@ -3,19 +3,21 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.collections.ArraySet;
-import org.apache.http.HttpEntity;
-import org.apache.http.StatusLine;
+import org.apache.http.HttpVersion;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicStatusLine;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
@@ -38,11 +40,14 @@ public class ConfigServerHttpRequestExecutorTest {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TestPojo {
         @JsonProperty("foo")
-        public String foo;
+        String foo;
         @JsonProperty("error-code")
-        public Integer errorCode;
+        Integer errorCode;
     }
 
+    private final String uri1 = "http://host1:666";
+    private final String uri2 = "http://host2:666";
+    private final List<URI> configServers = Arrays.asList(URI.create(uri1), URI.create(uri2));
     private final StringBuilder mockLog = new StringBuilder();
     private int mockReturnCode = 200;
 
@@ -51,16 +56,18 @@ public class ConfigServerHttpRequestExecutorTest {
         when(httpMock.execute(any())).thenAnswer(invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
-            CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-            StatusLine statusLine = mock(StatusLine.class);
-            when(statusLine.getStatusCode()).thenReturn(mockReturnCode);
-            when(response.getStatusLine()).thenReturn(statusLine);
             if (mockReturnCode == 100000) throw new RuntimeException("FAIL");
-            HttpEntity entity = mock(HttpEntity.class);
-            when(response.getEntity()).thenReturn(entity);
+
+            BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, mockReturnCode, null);
+            BasicHttpEntity entity = new BasicHttpEntity();
             String returnMessage = "{\"foo\":\"bar\", \"no\":3, \"error-code\": " + mockReturnCode + "}";
             InputStream stream = new ByteArrayInputStream(returnMessage.getBytes(StandardCharsets.UTF_8));
-            when(entity.getContent()).thenReturn(stream);
+            entity.setContent(stream);
+
+            CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+            when(response.getEntity()).thenReturn(entity);
+            when(response.getStatusLine()).thenReturn(statusLine);
+
             return response;
         });
         doNothing().when(httpMock).close();
@@ -69,75 +76,61 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testBasicParsingSingleServer() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
-        TestPojo answer = executor.get("/path", 666, TestPojo.class);
+        TestPojo answer = executor.get("/path", TestPojo.class);
         assertThat(answer.foo, is("bar"));
         assertLogStringContainsGETForAHost();
     }
 
     @Test(expected = HttpException.class)
     public void testBasicFailure() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         // Server is returning 400, no retries.
         mockReturnCode = 400;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
 
-        TestPojo testPojo = executor.get("/path", 666, TestPojo.class);
+        TestPojo testPojo = executor.get("/path", TestPojo.class);
         assertEquals(testPojo.errorCode.intValue(), mockReturnCode);
         assertLogStringContainsGETForAHost();
     }
 
     @Test
     public void testBasicSuccessWithNoRetries() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         // Server is returning 201, no retries.
         mockReturnCode = 201;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
 
-        TestPojo testPojo = executor.get("/path", 666, TestPojo.class);
+        TestPojo testPojo = executor.get("/path", TestPojo.class);
         assertEquals(testPojo.errorCode.intValue(), mockReturnCode);
         assertLogStringContainsGETForAHost();
     }
 
     @Test
     public void testRetries() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         // Client is throwing exception, should be retries.
         mockReturnCode = 100000;
         ConfigServerHttpRequestExecutor executor =
                 new ConfigServerHttpRequestExecutor(configServers, createClientMock());
         try {
-            executor.get("/path", 666, TestPojo.class);
+            executor.get("/path", TestPojo.class);
             fail("Expected failure");
         } catch (Exception e) {
             // ignore
         }
 
         String[] log = mockLog.toString().split("  ");
+        System.out.println(Arrays.toString(log));
         assertThat(log, arrayContainingInAnyOrder("GET http://host1:666/path", "GET http://host2:666/path",
                                          "GET http://host1:666/path", "GET http://host2:666/path"));
     }
 
     @Test
     public void testRetriesOnBadHttpResponseCode() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         // Client is throwing exception, should be retries.
         mockReturnCode = 503;
         ConfigServerHttpRequestExecutor executor =
                 new ConfigServerHttpRequestExecutor(configServers, createClientMock());
         try {
-            executor.get("/path", 666, TestPojo.class);
+            executor.get("/path", TestPojo.class);
             fail("Expected failure");
         } catch (Exception e) {
             // ignore
@@ -151,14 +144,11 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testNotFound() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         // Server is returning 404, special exception is thrown.
         mockReturnCode = 404;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
         try {
-            executor.get("/path", 666, TestPojo.class);
+            executor.get("/path", TestPojo.class);
             fail("Expected exception");
         } catch (HttpException.NotFoundException e) {
             // ignore
@@ -168,14 +158,11 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testConflict() throws Exception {
-        Set<String> configServers = new ArraySet<>(2);
-        configServers.add("host1");
-        configServers.add("host2");
         // Server is returning 409, no exception is thrown.
         mockReturnCode = 409;
         ConfigServerHttpRequestExecutor executor =
                 new ConfigServerHttpRequestExecutor(configServers, createClientMock());
-        executor.get("/path", 666, TestPojo.class);
+        executor.get("/path", TestPojo.class);
         assertLogStringContainsGETForAHost();
     }
 

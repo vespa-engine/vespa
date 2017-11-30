@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -310,8 +311,8 @@ public class StorageMaintainer {
      * @throws RuntimeException if exit code != 0
      */
     public String getHardwareDivergence() {
-        String configServers = environment.getConfigServerHosts().stream()
-                .map(configServer -> "http://" +  configServer + ":" + 4080)
+        String configServers = environment.getConfigServerUris().stream()
+                .map(URI::getHost)
                 .collect(Collectors.joining(","));
         return executeMaintainer("com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier", configServers);
     }
