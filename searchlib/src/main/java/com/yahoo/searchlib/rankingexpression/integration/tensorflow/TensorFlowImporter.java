@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -37,11 +38,11 @@ public class TensorFlowImporter {
      * The model should be saved as a pbtxt file.
      * The name of the model is taken at the pbtxt file name (not including the .pbtxt ending).
      */
-    public List<RankingExpression> importModel(String modelDir) {
+    public List<RankingExpression> importModel(String modelDir, MessageLogger logger) {
         try {
             SavedModel.Builder builder = SavedModel.newBuilder();
             TextFormat.getParser().merge(IOUtils.createReader(modelDir + "/saved_model.pbtxt"), builder);
-            return importModel(builder.build());
+            return importModel(builder.build(), logger);
             
             // TODO: Support binary reading:
             //SavedModel.parseFrom(new FileInputStream(modelDir + "/saved_model.pbtxt"));
@@ -53,19 +54,16 @@ public class TensorFlowImporter {
     }
 
     /** Import all declared inputs in all the graphs in the given model */
-    private List<RankingExpression> importModel(SavedModel model) {
+    private List<RankingExpression> importModel(SavedModel model, MessageLogger logger) {
         // TODO: Handle name conflicts between output keys in different graphs?
         return model.getMetaGraphsList().stream()
-                                        .flatMap(graph -> importGraph(graph).stream())
+                                        .flatMap(graph -> importGraph(graph, logger).stream())
                                         .collect(Collectors.toList());
     }
 
-    private List<RankingExpression> importGraph(MetaGraphDef graph) {
-        System.out.println("Importing graph");
+    private List<RankingExpression> importGraph(MetaGraphDef graph, MessageLogger logger) {
         List<RankingExpression> expressions = new ArrayList<>();
         for (Map.Entry<String, SignatureDef> signatureEntry : graph.getSignatureDefMap().entrySet()) {
-            System.out.println("  Importing signature def " + signatureEntry.getKey() + 
-                               " with method name " + signatureEntry.getValue().getMethodName());
             Map<String, TensorType> inputs = importInputs(signatureEntry.getValue().getInputsMap());
             for (Map.Entry<String, TensorInfo> output : signatureEntry.getValue().getOutputsMap().entrySet()) {
                 try {
@@ -75,9 +73,9 @@ public class TensorFlowImporter {
                     expressions.add(new RankingExpression(output.getKey(), result));
                 }
                 catch (IllegalArgumentException e) {
-                    System.err.println("Skipping output '" + output.getValue().getName() + "' of signature '" + // TODO: Log, or ...
-                                       signatureEntry.getValue().getMethodName() +
-                                       "': " + Exceptions.toMessageString(e));
+                    logger.log(Level.INFO, "Skipping output '" + output.getValue().getName() + "' of signature '" +
+                                           signatureEntry.getValue().getMethodName() +
+                                           "': " + Exceptions.toMessageString(e));
                 }
             }
         }
@@ -104,14 +102,12 @@ public class TensorFlowImporter {
     }
 
     private ExpressionNode importOutput(TensorInfo output, Map<String, TensorType> inputs, GraphDef graph) {
-        System.out.println("    Importing output " + output.getName());
         NodeDef node = getNode(nameOf(output.getName()), graph);
         return new TensorFunctionNode(importNode(node, inputs, graph, "").function());
     }
 
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
     private TypedTensorFunction importNode(NodeDef tfNode, Map<String, TensorType> inputs, GraphDef graph, String indent) {
-        System.out.println("      " + indent + "Importing node " + tfNode.getName() + " with operation " + tfNode.getOp());
         return tensorFunctionOf(tfNode, inputs, graph, indent);
     }
     
@@ -151,5 +147,12 @@ public class TensorFlowImporter {
     private String nameOf(String name) {
         return name.split(":")[0];
     }
-    
+
+    /** An interface which can be implemented to receive messages emitted during import */
+    public interface MessageLogger {
+
+        void log(Level level, String message);
+
+    }
+
 }

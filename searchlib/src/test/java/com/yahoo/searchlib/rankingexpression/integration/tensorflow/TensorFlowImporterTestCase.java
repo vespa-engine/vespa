@@ -4,7 +4,9 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,8 +17,18 @@ public class TensorFlowImporterTestCase {
 
     @Test
     public void testModel1() {
-        List<RankingExpression> expressions = 
-                new TensorFlowImporter().importModel("src/test/files/integration/tensorflow/model1/");
+        TestLogger logger = new TestLogger();
+        List<RankingExpression> expressions =
+                new TensorFlowImporter().importModel("src/test/files/integration/tensorflow/model1/", logger);
+
+        // Check logged messages
+        assertEquals(2, logger.messages.size());
+        assertEquals("Skipping output 'index_to_string_Lookup:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'LookupTableFindV2' is not supported",
+                     logger.messages.get(0));
+        assertEquals("Skipping output 'TopKV2:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'TopKV2' is not supported",
+                     logger.messages.get(1));
+
+        // Check resulting Vespa expression
         assertEquals(1, expressions.size());
         assertEquals("scores", expressions.get(0).getName());
         assertEquals("" +
@@ -30,6 +42,17 @@ public class TensorFlowImporterTestCase {
     private String toNonPrimitiveString(RankingExpression expression) {
         // toString on the wrapping expression will map to primitives, which is harder to read
         return ((TensorFunctionNode)expression.getRoot()).function().toString();
+    }
+
+    private class TestLogger implements TensorFlowImporter.MessageLogger {
+
+        List<String> messages = new ArrayList<>();
+
+        @Override
+        public void log(Level level, String message) {
+            messages.add(message);
+        }
+
     }
 
 }
