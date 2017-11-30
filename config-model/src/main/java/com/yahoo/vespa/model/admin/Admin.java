@@ -59,12 +59,14 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                  Monitoring monitoring,
                  Metrics metrics,
                  Map<String, MetricsConsumer> legacyMetricsConsumers,
-                 boolean multitenant) {
+                 boolean multitenant,
+                 FileDistributionConfigProducer fileDistributionConfigProducer) {
         super(parent, "admin");
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.legacyMetricsConsumers = legacyMetricsConsumers;
         this.multitenant = multitenant;
+        this.fileDistribution = fileDistributionConfigProducer;
     }
 
     public Configserver getConfigserver() {
@@ -146,10 +148,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     public void getConfig(ZookeepersConfig.Builder builder) {
         zooKeepersConfigProvider.getConfig(builder);
-    }
-
-    public void setFileDistribution(FileDistributionConfigProducer fileDistribution) {
-        this.fileDistribution = fileDistribution;
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
