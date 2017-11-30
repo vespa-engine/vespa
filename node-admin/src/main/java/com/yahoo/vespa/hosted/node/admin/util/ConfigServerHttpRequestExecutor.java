@@ -24,7 +24,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
