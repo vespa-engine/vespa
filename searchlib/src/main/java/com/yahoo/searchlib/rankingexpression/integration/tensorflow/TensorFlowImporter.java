@@ -1,6 +1,5 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
-import com.google.protobuf.ProtocolStringList;
 import com.google.protobuf.TextFormat;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
@@ -12,7 +11,6 @@ import com.yahoo.yolean.Exceptions;
 import org.tensorflow.framework.GraphDef;
 import org.tensorflow.framework.MetaGraphDef;
 import org.tensorflow.framework.NodeDef;
-import org.tensorflow.framework.OpDef;
 import org.tensorflow.framework.SavedModel;
 import org.tensorflow.framework.SignatureDef;
 import org.tensorflow.framework.TensorInfo;
@@ -146,17 +144,6 @@ public class TensorFlowImporter {
                                   .orElseThrow(() -> new IllegalArgumentException("Could not find node '" + name + "'"));
     }
 
-    private void importOp(OpDef op, MetaGraphDef.MetaInfoDef graph) {
-        System.out.println("      Importing op " + op.getName());
-    }
-
-    private OpDef getOp(String name, MetaGraphDef.MetaInfoDef graph) {
-        return graph.getStrippedOpList().getOpList().stream()
-                .filter(op -> op.getName().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Could not find operation '" + name + "'"));
-    }
-
     /**
      * A method signature input and output has the form name:index.
      * This returns the name part without the index.
@@ -165,8 +152,4 @@ public class TensorFlowImporter {
         return name.split(":")[0];
     }
     
-    private boolean contains(String string, ProtocolStringList strings) {
-        return strings.asByteStringList().stream().anyMatch(s -> s.toStringUtf8().equals(string));
-    }
-
 }
