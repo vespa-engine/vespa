@@ -67,25 +67,26 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     @Override
     protected Admin doBuild(AbstractConfigProducer parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(getChildWithFallback(adminElement, "monitoring", "yamas"));
-
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
         Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
                 .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
+        FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent, adminElement);
 
-        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant);
-
+        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant, fileDistributionConfigProducer);
         doBuildAdmin(admin, adminElement);
-
         new ModelConfigProvider(admin);
 
+        return admin;
+    }
+
+    private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent, Element adminElement) {
         FileDistributionOptions fileDistributionOptions = FileDistributionOptions.defaultOptions();
         fileDistributionOptions.disableFiledistributor(disableFiledistributor);
         fileDistributionOptions = new DomFileDistributionOptionsBuilder(fileDistributionOptions).build(XML.getChild(adminElement, "filedistribution"));
-        admin.setFileDistribution(new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry));
-        return admin;
+        return new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry);
     }
-    
+
     private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {
         Element child = XML.getChild(parent, childName);
         if (child != null) return child;
