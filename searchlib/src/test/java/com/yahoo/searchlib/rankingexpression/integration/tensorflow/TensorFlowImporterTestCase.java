@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  */
 public class TensorFlowImporterTestCase {
-    
+
     @Test
     public void testModel1() {
         List<RankingExpression> expressions = 
@@ -26,10 +26,10 @@ public class TensorFlowImporterTestCase {
                              "d1)",
                      toNonPrimitiveString(expressions.get(0)));
     }
-    
+
     private String toNonPrimitiveString(RankingExpression expression) {
         // toString on the wrapping expression will map to primitives, which is harder to read
         return ((TensorFunctionNode)expression.getRoot()).function().toString();
     }
-    
+
 }
