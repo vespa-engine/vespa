@@ -165,7 +165,6 @@ public class Container extends AbstractService implements
         }
 
         tagServers();
-        monitorService();
     }
 
     private void tagServers() {

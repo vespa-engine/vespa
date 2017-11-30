@@ -46,7 +46,6 @@ public class Dispatch extends AbstractService implements SearchInterface,
         setProp("clustertype", "search")
                 .setProp("clustername", dispatchGroup.getClusterName())
                 .setProp("index", nodeSpec.groupIndex());
-        monitorService();
     }
 
     public static Dispatch createTld(DispatchGroup dispatchGroup, AbstractConfigProducer parent, int rowId) {

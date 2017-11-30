@@ -19,7 +19,6 @@ public class VespaSpoolerService extends AbstractService implements SpoolerConfi
     public VespaSpoolerService(AbstractConfigProducer parent, int index, VespaSpooler spooler) {
         super(parent, "spooler." + index);
         this.spooler = spooler;
-        monitorService("spooler");
     }
 
     public int getPortCount() {
