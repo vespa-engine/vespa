@@ -1,0 +1,92 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "dense_xw_product_function.h"
+#include "dense_tensor.h"
+#include "dense_tensor_view.h"
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <assert.h>
+
+namespace vespalib {
+namespace tensor {
+
+DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &resultType,
+                                               size_t vectorId,
+                                               size_t matrixId,
+                                               size_t vectorSize,
+                                               size_t resultSize,
+                                               bool matrixHasCommonDimensionInnermost)
+    : _resultType(resultType),
+      _vectorId(vectorId),
+      _matrixId(matrixId),
+      _vectorSize(vectorSize),
+      _resultSize(resultSize),
+      _commonDimensionInnermost(matrixHasCommonDimensionInnermost),
+      _hwAccelerator(hwaccelrated::IAccelrated::getAccelrator())
+{}
+
+void
+DenseXWProductFunction::multiDotProduct(const XWInput &vectorCells,
+                                        const XWInput &matrixCells,
+                                        XWOutput &result) const
+{
+    double *out = result.begin();
+    const double *matrixP = matrixCells.cbegin();
+    const double * const vectorP = vectorCells.cbegin();
+    for (size_t row = 0; row < _resultSize; ++row) {
+        double cell = _hwAccelerator->dotProduct(vectorP, matrixP, _vectorSize);
+        *out++ = cell;
+        matrixP += _vectorSize;
+    }
+    assert(out == result.end());
+    assert(matrixP == matrixCells.cend());
+}
+
+void
+DenseXWProductFunction::transposedProduct(const XWInput &vectorCells,
+                                          const XWInput &matrixCells,
+                                          XWOutput &result) const
+{
+    double *out = result.begin();
+    const double * const matrixP = matrixCells.cbegin();
+    const double * const vectorP = vectorCells.cbegin();
+    for (size_t row = 0; row < _resultSize; ++row) {
+        double cell = 0;
+        for (size_t col = 0; col < _vectorSize; ++col) {
+            cell += matrixP[col*_resultSize + row] * vectorP[col];
+        }
+        *out++ = cell;
+    }
+    assert(out == result.end());
+}
+
+namespace {
+
+DenseTensorView::CellsRef
+getCellsRef(const eval::Value &value)
+{
+    const Tensor *tensor = static_cast<const Tensor *>(value.as_tensor());
+    const DenseTensorView *denseTensor = static_cast<const DenseTensorView *>(tensor);
+    return denseTensor->cellsRef();
+}
+
+} // namespace <unnamed>
+
+const eval::Value &
+DenseXWProductFunction::eval(ConstArrayRef<eval::Value::CREF> params, Stash &stash) const
+{
+    DenseTensorView::CellsRef vectorCells = getCellsRef(params[_vectorId]);
+    DenseTensorView::CellsRef matrixCells = getCellsRef(params[_matrixId]);
+
+    ArrayRef<double> outputCells = stash.create_array<double>(_resultSize);
+    if (_commonDimensionInnermost) {
+        multiDotProduct(vectorCells, matrixCells, outputCells);
+    } else {
+        transposedProduct(vectorCells, matrixCells, outputCells);
+    }
+    return stash.create<DenseTensorView>(_resultType, outputCells);
+}
+
+} // namespace tensor
+} // namespace vespalib
