@@ -112,7 +112,6 @@ public class SearchNode extends AbstractService implements
         portsMeta.on(UNUSED_3).tag("unused");
         portsMeta.on(HEALTH_PORT).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
-        monitorService();
         this.tuning = tuning;
     }
 

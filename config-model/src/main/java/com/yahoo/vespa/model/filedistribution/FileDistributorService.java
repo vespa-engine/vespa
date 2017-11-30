@@ -14,7 +14,7 @@ import com.yahoo.vespa.model.admin.FileDistributionOptions;
 import java.util.Collection;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileDistributorService extends AbstractService implements
         FiledistributorConfig.Producer,
@@ -49,7 +49,6 @@ public class FileDistributorService extends AbstractService implements
         this.fileDistributor = fileDistributor;
         this.fileDistributionOptions = fileDistributionOptions;
         this.sendAllFiles = sendAllFiles;
-        monitorService();
     }
 
     @Override

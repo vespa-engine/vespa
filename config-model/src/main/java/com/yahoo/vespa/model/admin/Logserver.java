@@ -23,7 +23,6 @@ public class Logserver extends AbstractService {
         portsMeta.on(3).tag("logtp").tag("telnet").tag("replicator");
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
-        monitorService();
     }
 
     /**

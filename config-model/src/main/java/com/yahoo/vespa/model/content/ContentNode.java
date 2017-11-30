@@ -50,8 +50,6 @@ public abstract class ContentNode extends AbstractService
         portsMeta.on(0).tag("messaging");
         portsMeta.on(1).tag("rpc").tag("status");
         portsMeta.on(2).tag("http").tag("status").tag("state");
-
-        monitorService();
     }
 
     @Override
