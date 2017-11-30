@@ -10,7 +10,6 @@ import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ExcludeCipherSuite;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ExcludeProtocol;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.IncludeCipherSuite;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.IncludeProtocol;
-import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreContext;
 import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreContext;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
@@ -28,7 +27,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * @author Einar M R Rosenvinge
