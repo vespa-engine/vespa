@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host55.yahoo.com",
   "id": "host55.yahoo.com",
-  "state": "dirty",
+  "state": "ready",
   "type": "tenant",
   "hostname": "host55.yahoo.com",
   "openStackId": "node55",
@@ -17,8 +17,8 @@
   "currentRebootGeneration": 0,
   "failCount": 0,
   "hardwareFailure": false,
-  "wantToRetire": true,
-  "wantToDeprovision": true,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
   "history": [
     {
       "event": "provisioned",
@@ -26,7 +26,7 @@
       "agent": "system"
     },
     {
-      "event": "deallocated",
+      "event": "readied",
       "at": 123,
       "agent": "system"
     }
