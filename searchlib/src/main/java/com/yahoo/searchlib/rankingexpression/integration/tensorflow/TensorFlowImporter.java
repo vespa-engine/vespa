@@ -10,7 +10,6 @@ import org.tensorflow.SavedModelBundle;
 import org.tensorflow.framework.GraphDef;
 import org.tensorflow.framework.MetaGraphDef;
 import org.tensorflow.framework.NodeDef;
-import org.tensorflow.framework.SavedModel;
 import org.tensorflow.framework.SignatureDef;
 import org.tensorflow.framework.TensorInfo;
 import org.tensorflow.framework.TensorShapeProto;
@@ -40,7 +39,7 @@ public class TensorFlowImporter {
     public List<RankingExpression> importModel(String modelDir, MessageLogger logger) {
         try {
             SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
-            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), logger);
+            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model, logger);
 
         }
         catch (IOException e) {
@@ -49,15 +48,7 @@ public class TensorFlowImporter {
 
     }
 
-    /** Import all declared inputs in all the graphs in the given model */
-    private List<RankingExpression> importModel(SavedModel model, MessageLogger logger) {
-        // TODO: Handle name conflicts between output keys in different graphs?
-        return model.getMetaGraphsList().stream()
-                                        .flatMap(graph -> importGraph(graph, logger).stream())
-                                        .collect(Collectors.toList());
-    }
-
-    private List<RankingExpression> importGraph(MetaGraphDef graph, MessageLogger logger) {
+    private List<RankingExpression> importGraph(MetaGraphDef graph, SavedModelBundle model, MessageLogger logger) {
         List<RankingExpression> expressions = new ArrayList<>();
         for (Map.Entry<String, SignatureDef> signatureEntry : graph.getSignatureDefMap().entrySet()) {
             Map<String, TensorType> inputs = importInputs(signatureEntry.getValue().getInputsMap());
@@ -65,7 +56,8 @@ public class TensorFlowImporter {
                 try {
                     ExpressionNode result = importOutput(output.getValue(),
                                                          inputs,
-                                                         graph.getGraphDef());
+                                                         graph.getGraphDef(),
+                                                         model);
                     expressions.add(new RankingExpression(output.getKey(), result));
                 }
                 catch (IllegalArgumentException e) {
@@ -97,35 +89,38 @@ public class TensorFlowImporter {
         return b.build();
     }
 
-    private ExpressionNode importOutput(TensorInfo output, Map<String, TensorType> inputs, GraphDef graph) {
+    private ExpressionNode importOutput(TensorInfo output, Map<String, TensorType> inputs, GraphDef graph, SavedModelBundle model) {
         NodeDef node = getNode(nameOf(output.getName()), graph);
-        return new TensorFunctionNode(importNode(node, inputs, graph, "").function());
+        return new TensorFunctionNode(importNode(node, inputs, graph, model).function());
     }
 
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
-    private TypedTensorFunction importNode(NodeDef tfNode, Map<String, TensorType> inputs, GraphDef graph, String indent) {
-        return tensorFunctionOf(tfNode, inputs, graph, indent);
+    private TypedTensorFunction importNode(NodeDef tfNode, Map<String, TensorType> inputs, GraphDef graph, SavedModelBundle model) {
+        return tensorFunctionOf(tfNode, inputs, graph, model);
     }
 
     private TypedTensorFunction tensorFunctionOf(NodeDef tfNode,
                                                  Map<String, TensorType> inputs,
                                                  GraphDef graph,
-                                                 String indent) {
+                                                 SavedModelBundle model) {
         // Import arguments lazily below, as some nodes have arguments unused arguments leading to unsupported ops
         // TODO: Implement mapping of more functions from https://www.tensorflow.org/api_docs/python/
         switch (tfNode.getOp().toLowerCase()) {
-            case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, inputs, graph, indent), ScalarFunctions.add());
-            case "acos" : return operationMapper.map(importArguments(tfNode, inputs, graph, indent), ScalarFunctions.acos());
-            case "identity" : return operationMapper.identity(tfNode, inputs);
-            case "matmul" : return operationMapper.matmul(importArguments(tfNode, inputs, graph, indent));
-            case "softmax" : return operationMapper.softmax(importArguments(tfNode, inputs, graph, indent));
+            case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, inputs, graph, model), ScalarFunctions.add());
+            case "acos" : return operationMapper.map(importArguments(tfNode, inputs, graph, model), ScalarFunctions.acos());
+            case "identity" : return operationMapper.identity(tfNode, inputs, model);
+            case "matmul" : return operationMapper.matmul(importArguments(tfNode, inputs, graph, model));
+            case "softmax" : return operationMapper.softmax(importArguments(tfNode, inputs, graph, model));
             default : throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported");
         }
     }
 
-    private List<TypedTensorFunction> importArguments(NodeDef tfNode, Map<String, TensorType> inputs, GraphDef graph, String indent) {
+    private List<TypedTensorFunction> importArguments(NodeDef tfNode,
+                                                      Map<String, TensorType> inputs,
+                                                      GraphDef graph,
+                                                      SavedModelBundle model) {
         return tfNode.getInputList().stream()
-                                    .map(argNode -> importNode(getNode(nameOf(argNode), graph), inputs, graph, indent + "  "))
+                                    .map(argNode -> importNode(getNode(nameOf(argNode), graph), inputs, graph, model))
                                     .collect(Collectors.toList());
     }
 

@@ -1,12 +1,16 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.VariableTensor;
+import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Matmul;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
+import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Session;
 import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.NodeDef;
 
@@ -17,7 +21,7 @@ import java.util.function.DoubleUnaryOperator;
 
 /**
  * Contains mappings of TensorFlow operations to the corresponding Vespa tensor functions.
- * 
+ *
  * @author bratseth
  */
 class OperationMapper {
@@ -28,14 +32,16 @@ class OperationMapper {
        'the same' or not of some dimension in another tensor. Since TF lacks this, each operation
        comes with a built-in definition of sameness. We mirror this by wrapping the Vespa tensor operation
        around dimension renaming operations which mirrors those built into the TF operation definitions.
-       
+
        To do this we need a naming convention: We maintain a naming of each tensor where the 'outermost'
        dimension is named 'd0', the second outer most 'd1' and so on. Arguments are renamed to match the operation
        and the result is then renamed again (if necessary) to recover this convention across a full nested
        computation.
-       
+
        This requires us to track tensor types throughout the conversion.
      */
+
+    private TensorConverter tensorConverter = new TensorConverter();
 
     TypedTensorFunction join(List<TypedTensorFunction> arguments, DoubleBinaryOperator doubleFunction) {
         // Note that this generalizes the corresponding TF function as it does not verify that the tensor
@@ -59,11 +65,10 @@ class OperationMapper {
         return new TypedTensorFunction(resultType, function);
     }
 
-    TypedTensorFunction identity(NodeDef tfNode, Map<String, TensorType> inputs) {
-        // TODO: Verify with TF documentation
+    TypedTensorFunction identity(NodeDef tfNode, Map<String, TensorType> inputs, SavedModelBundle model) {
         String name;
         TensorType inputType;
-        if (tfNode.getName().endsWith("/read")) { // A node reading a variable supplied with this model TODO: We need to turn those into constants
+        if (tfNode.getName().endsWith("/read")) { // A node reading a variable supplied with this model
             if (tfNode.getInputList().size() != 1)
                 throw new IllegalArgumentException("A Variable/read node must have one input but has " +
                                                    tfNode.getInputList().size());
@@ -72,6 +77,12 @@ class OperationMapper {
             if (shapes == null)
                 throw new IllegalArgumentException("Referenced variable '" + name + " is missing a tensor output shape");
             inputType = TensorFlowImporter.importTensorType(shapes.getList().getShape(0));
+            Session.Runner fetched = model.session().runner().fetch("Variable");
+            List<org.tensorflow.Tensor<?>> result = fetched.run();
+            if ( result.size() != 1)
+                throw new IllegalStateException("Expected 1 tensor from reading Variable " + name + ", but got " + result.size());
+            Tensor constant = tensorConverter.toVespaTensor(result.get(0));
+            return new TypedTensorFunction(inputType, new ConstantTensor(constant));
         }
         else { // a referenced input (query or document tensor) TODO: How to map to attribute/query name
             name = tfNode.getName();
@@ -79,8 +90,8 @@ class OperationMapper {
             if (inputType == null)
                 throw new IllegalArgumentException("An identity operation node is referencing input '" + name +
                                                    "', but there is no such input");
+            return new TypedTensorFunction(inputType, new VariableTensor(name));
         }
-        return new TypedTensorFunction(inputType, new VariableTensor(name));
     }
 
     TypedTensorFunction matmul(List<TypedTensorFunction> arguments) {
@@ -93,7 +104,7 @@ class OperationMapper {
             throw new IllegalArgumentException("Tensors in matmul must have the same rank");
 
         // Let the second-to-last dimension of the second tensor be the same as the last dimension of the first
-        // and the last dimension of the second argument be not present in the first argument, while leaving the 
+        // and the last dimension of the second argument be not present in the first argument, while leaving the
         // rest of the dimensions the same. Such is the way of implicit dimension name tensor multiplication.
 
         // TODO: Check if transpose_a or transpose_b is set and rename differently accordingly

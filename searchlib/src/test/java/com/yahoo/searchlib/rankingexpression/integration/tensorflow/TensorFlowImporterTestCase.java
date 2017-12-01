@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,11 +23,11 @@ public class TensorFlowImporterTestCase {
                 new TensorFlowImporter().importModel("src/test/files/integration/tensorflow/model1/", logger);
 
         // Check logged messages
-        assertEquals(2, logger.messages.size());
+        assertEquals(2, logger.messages().size());
         assertEquals("Skipping output 'TopKV2:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'TopKV2' is not supported",
-                     logger.messages.get(0));
+                     logger.messages().get(0));
         assertEquals("Skipping output 'index_to_string_Lookup:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'LookupTableFindV2' is not supported",
-                     logger.messages.get(1));
+                     logger.messages().get(1));
 
         // Check resulting Vespa expression
         assertEquals(1, expressions.size());
@@ -46,7 +47,12 @@ public class TensorFlowImporterTestCase {
 
     private class TestLogger implements TensorFlowImporter.MessageLogger {
 
-        List<String> messages = new ArrayList<>();
+        private List<String> messages = new ArrayList<>();
+
+        /** Returns the messages in sorted order */
+        public List<String> messages() {
+            return messages.stream().sorted().collect(Collectors.toList());
+        }
 
         @Override
         public void log(Level level, String message) {
