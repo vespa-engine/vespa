@@ -66,9 +66,8 @@ namespace {
 DenseTensorView::CellsRef
 getCellsRef(const eval::Value &value)
 {
-    const Tensor *tensor = static_cast<const Tensor *>(value.as_tensor());
-    const DenseTensorView *denseTensor = static_cast<const DenseTensorView *>(tensor);
-    return denseTensor->cellsRef();
+    const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
+    return denseTensor.cellsRef();
 }
 
 } // namespace <unnamed>
