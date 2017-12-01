@@ -321,8 +321,8 @@ size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
 }
 
 void append_vector(double *&pos, const Value &value) {
-    const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&value);
-    if (view) {
+    if (auto tensor = value.as_tensor()) {
+        const DenseTensorView *view = static_cast<const DenseTensorView *>(tensor);
         for (double cell: view->cellsRef()) {
             *pos++ = cell;
         }
