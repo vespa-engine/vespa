@@ -86,6 +86,7 @@ vespa_define_module(
     src/tests/text/stringtokenizer
     src/tests/text/utf8
     src/tests/thread
+    src/tests/tick_abstraction
     src/tests/time
     src/tests/time_tracker
     src/tests/trace
