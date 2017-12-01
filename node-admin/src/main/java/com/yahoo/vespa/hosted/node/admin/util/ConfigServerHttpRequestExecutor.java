@@ -12,18 +12,27 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContextBuilder;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
@@ -33,11 +42,11 @@ import java.util.Set;
  */
 public class ConfigServerHttpRequestExecutor {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
+    private static final int MAX_LOOPS = 2;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final CloseableHttpClient client;
-    private final List<String> configServerHosts;
-    private final static int MAX_LOOPS = 2;
+    private final List<URI> configServerHosts;
 
     @Override
     public void finalize() throws Throwable {
@@ -50,31 +59,45 @@ public class ConfigServerHttpRequestExecutor {
         super.finalize();
     }
 
-    public static ConfigServerHttpRequestExecutor create(Set<String> configServerHosts) {
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
+    public static ConfigServerHttpRequestExecutor create(Collection<URI> configServerUris) {
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(getConnectionSocketFactoryRegistry());
+        cm.setMaxTotal(200); // Increase max total connections to 200, which should be enough
 
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        // Increase max total connections to 200, which should be enough
-        cm.setMaxTotal(200);
-        return new ConfigServerHttpRequestExecutor(configServerHosts,
-                                                   HttpClientBuilder.create().disableAutomaticRetries().setConnectionManager(cm).build());
+        return new ConfigServerHttpRequestExecutor(randomizeConfigServerUris(configServerUris),
+                                                   HttpClientBuilder.create()
+                                                           .disableAutomaticRetries()
+                                                           .setUserAgent("node-admin")
+                                                           .setConnectionManager(cm).build());
     }
 
-    ConfigServerHttpRequestExecutor(Set<String> configServerHosts, CloseableHttpClient client) {
-        this.configServerHosts = randomizeConfigServerHosts(configServerHosts);
+    private static Registry<ConnectionSocketFactory> getConnectionSocketFactoryRegistry() {
+        try {
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                    new SSLContextBuilder().loadTrustMaterial(null, (arg0, arg1) -> true).build(),
+                    NoopHostnameVerifier.INSTANCE);
+
+            return RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                    .register("https", sslSocketFactory)
+                    .build();
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException("Failed to create SSL context", e);
+        }
+    }
+
+    ConfigServerHttpRequestExecutor(List<URI> configServerHosts, CloseableHttpClient client) {
+        this.configServerHosts = configServerHosts;
         this.client = client;
     }
 
     public interface CreateRequest {
-        HttpUriRequest createRequest(String configserver) throws JsonProcessingException, UnsupportedEncodingException;
+        HttpUriRequest createRequest(URI configServerUri) throws JsonProcessingException, UnsupportedEncodingException;
     }
 
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
-            for (String configServer : configServerHosts) {
+            for (URI configServer : configServerHosts) {
                 final CloseableHttpResponse response;
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
@@ -118,9 +141,9 @@ public class ConfigServerHttpRequestExecutor {
                 + configServerHosts + ") failed, last as follows:", lastException);
     }
 
-    public <T> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            HttpPut put = new HttpPut("http://" + configServer + ":" + port + path);
+            HttpPut put = new HttpPut(configServer.resolve(path));
             setContentTypeToApplicationJson(put);
             if (bodyJsonPojo.isPresent()) {
                 put.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo.get())));
@@ -129,28 +152,28 @@ public class ConfigServerHttpRequestExecutor {
         }, wantedReturnType);
     }
 
-    public <T> T patch(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            HttpPatch patch = new HttpPatch("http://" + configServer + ":" + port + path);
+            HttpPatch patch = new HttpPatch(configServer.resolve(path));
             setContentTypeToApplicationJson(patch);
             patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return patch;
         }, wantedReturnType);
     }
 
-    public <T> T delete(String path, int port, Class<T> wantedReturnType) {
+    public <T> T delete(String path, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer ->
-                new HttpDelete("http://" + configServer + ":" + port + path), wantedReturnType);
+                new HttpDelete(configServer.resolve(path)), wantedReturnType);
     }
 
-    public <T> T get(String path, int port, Class<T> wantedReturnType) {
+    public <T> T get(String path, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer ->
-                new HttpGet("http://" + configServer + ":" + port + path), wantedReturnType);
+                new HttpGet(configServer.resolve(path)), wantedReturnType);
     }
 
-    public <T> T post(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            HttpPost post = new HttpPost("http://" + configServer + ":" + port + path);
+            HttpPost post = new HttpPost(configServer.resolve(path));
             setContentTypeToApplicationJson(post);
             post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return post;
@@ -161,9 +184,9 @@ public class ConfigServerHttpRequestExecutor {
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     }
 
-    // Shuffle config server hosts to balance load
-    private List<String> randomizeConfigServerHosts(Set<String> configServerHosts) {
-        List<String> shuffledConfigServerHosts = new ArrayList<>(configServerHosts);
+    // Shuffle config server URIs to balance load
+    private static List<URI> randomizeConfigServerUris(Collection<URI> configServerUris) {
+        List<URI> shuffledConfigServerHosts = new ArrayList<>(configServerUris);
         Collections.shuffle(shuffledConfigServerHosts);
         return shuffledConfigServerHosts;
     }

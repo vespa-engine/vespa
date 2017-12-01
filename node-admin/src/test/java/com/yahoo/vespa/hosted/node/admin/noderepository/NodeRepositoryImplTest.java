@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -35,9 +36,7 @@ import static org.junit.Assert.fail;
  */
 public class NodeRepositoryImplTest {
     private JDisc container;
-    private int port;
-    private final ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(
-            Collections.singleton("127.0.0.1"));
+    private ConfigServerHttpRequestExecutor requestExecutor;
 
 
     private int findRandomOpenPort() throws IOException {
@@ -56,14 +55,15 @@ public class NodeRepositoryImplTest {
      */
     @Before
     public void startContainer() throws Exception {
-        port = findRandomOpenPort();
-        System.err.println("PORT IS " + port);
+        final int port = findRandomOpenPort();
+        requestExecutor = ConfigServerHttpRequestExecutor.create(
+                Collections.singleton(URI.create("http://127.0.0.1:" + port)));
         container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
     }
 
     private void waitForJdiscContainerToServe() throws InterruptedException {
         Instant start = Instant.now();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
                 nodeRepositoryApi.getContainersToRun("foobar");
@@ -85,7 +85,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainersToRunApi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
         final List<ContainerNodeSpec> containersToRun = nodeRepositoryApi.getContainersToRun(dockerHostHostname);
@@ -104,7 +104,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainer() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         String hostname = "host4.yahoo.com";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertThat(nodeSpec.isPresent(), is(true));
@@ -114,7 +114,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainerForNonExistingNode() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         String hostname = "host-that-does-not-exist";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertFalse(nodeSpec.isPresent());
@@ -123,7 +123,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testUpdateNodeAttributes() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -136,7 +136,7 @@ public class NodeRepositoryImplTest {
     @Test(expected = RuntimeException.class)
     public void testUpdateNodeAttributesWithBadValue() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -148,7 +148,7 @@ public class NodeRepositoryImplTest {
 
     @Test
     public void testMarkAsReady() throws InterruptedException, IOException {
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port);
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         waitForJdiscContainerToServe();
 
         nodeRepositoryApi.markAsDirty("host5.yahoo.com");
