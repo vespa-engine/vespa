@@ -249,10 +249,6 @@ public class ApplicationController {
         if ( ! (id.instance().value().equals("default") || id.instance().value().startsWith("default-pr"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
         try (Lock lock = lock(id)) {
-            // TODO: Throwing is duplicated below.
-            if (get(id).isPresent())
-                throw new IllegalArgumentException("An application with id '" + id + "' already exists");
-
             com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
             
             Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(id.tenant().value()));
@@ -586,18 +582,14 @@ public class ApplicationController {
         deploymentTrigger.triggerFromCompletion(report);
     }
 
-    // TODO: Collapse this method and the next
-    public void restart(DeploymentId deploymentId) {
+    /**
+     * Tells config server to schedule a restart of all nodes in this deployment
+     *
+     * @param hostname If non-empty, restart will only be scheduled for this host
+     */
+    public void restart(DeploymentId deploymentId, Optional<Hostname> hostname) {
         try {
-            configserverClient.restart(deploymentId, Optional.empty());
-        }
-        catch (NoInstanceException e) {
-            throw new IllegalArgumentException("Could not restart " + deploymentId + ": No such deployment");
-        }
-    }
-    public void restartHost(DeploymentId deploymentId, Hostname hostname) {
-        try {
-            configserverClient.restart(deploymentId, Optional.of(hostname));
+            configserverClient.restart(deploymentId, hostname);
         }
         catch (NoInstanceException e) {
             throw new IllegalArgumentException("Could not restart " + deploymentId + ": No such deployment");

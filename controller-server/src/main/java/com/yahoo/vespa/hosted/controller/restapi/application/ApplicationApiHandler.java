@@ -739,10 +739,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      new Zone(Environment.from(environment), RegionName.from(region)));
         // TODO: Propagate all filters
-        if (request.getProperty("hostname") != null)
-            controller.applications().restartHost(deploymentId, new Hostname(request.getProperty("hostname")));
-        else
-            controller.applications().restart(deploymentId);
+        Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
+        controller.applications().restart(deploymentId, hostname);
 
         // TODO: Change to return JSON
         return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,

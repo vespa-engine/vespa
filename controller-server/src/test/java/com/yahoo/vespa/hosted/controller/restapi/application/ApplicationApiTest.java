@@ -485,7 +485,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create the same application again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"An application with id 'tenant1.application1' already exists\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1': Application already exists\"}",
                               400);
 
         ConfigServerClientMock configServer = (ConfigServerClientMock)container.components().getComponent("com.yahoo.vespa.hosted.controller.ConfigServerClientMock");
