@@ -10,11 +10,13 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author hmusum
+ * <p>
+ * File distribution config producer, delegates getting config to {@link DummyFileDistributionConfigProducer} (one per host)
  */
 public class FileDistributionConfigProducer extends AbstractConfigProducer {
 
-    private final Map<Host, FileDistributorService> fileDistributorServices = new IdentityHashMap<>();
+    private final Map<Host, AbstractConfigProducer> fileDistributionConfigProducers = new IdentityHashMap<>();
     private final FileDistributor fileDistributor;
     private final FileDistributionOptions options;
 
@@ -22,14 +24,6 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
         super(parent, "filedistribution");
         this.fileDistributor = fileDistributor;
         this.options = options;
-    }
-
-    public FileDistributorService getFileDistributorService(Host host) {
-        FileDistributorService service = fileDistributorServices.get(host);
-        if (service == null) {
-            throw new IllegalStateException("No file distribution service for host " + host);
-        }
-        return service;
     }
 
     public FileDistributor getFileDistributor() {
@@ -40,8 +34,8 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
         return options;
     }
 
-    public void addFileDistributionService(Host host, FileDistributorService fds) {
-        fileDistributorServices.put(host, fds);
+    public void addFileDistributionConfigProducer(Host host, AbstractConfigProducer fileDistributionConfigProducer) {
+        fileDistributionConfigProducers.put(host, fileDistributionConfigProducer);
     }
 
     public static class Builder {
@@ -56,6 +50,10 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
             FileDistributor fileDistributor = new FileDistributor(fileRegistry);
             return new FileDistributionConfigProducer(ancestor, fileDistributor, options);
         }
+    }
+
+    public AbstractConfigProducer getConfigProducer(Host host) {
+        return fileDistributionConfigProducers.get(host);
     }
 
 }
