@@ -30,9 +30,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -48,7 +48,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
@@ -116,20 +115,7 @@ public class ApplicationController {
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
         for (Application application : db.listApplications()) {
-            lockIfPresent(application.id(), (app) -> {
-                // TODO: Remove after December 2017. Migrates rotations into application
-                if (!app.rotation().isPresent()) {
-                    Set<com.yahoo.vespa.hosted.controller.api.identifiers.RotationId> rotations = db.getRotations(application.id());
-                    if (rotations.size() > 1) {
-                        log.warning("Application " + application.id() + " has more than 1 rotation: "
-                                    + rotations.size());
-                    }
-                    if (!rotations.isEmpty()) {
-                        app = app.with(new RotationId(rotations.iterator().next().id()));
-                    }
-                }
-                store(app);
-            });
+            lockIfPresent(application.id(), this::store);
         }
     }
 
