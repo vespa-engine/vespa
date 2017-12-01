@@ -222,10 +222,6 @@ public class CuratorDb {
 
     // -------------- Paths --------------------------------------------------
 
-    private Path systemVersionPath() {
-        return root.append("systemVersion");
-    }
-
     private Path lockPath(TenantId tenant) {
         Path lockPath = root.append("locks")
                 .append(tenant.id());
