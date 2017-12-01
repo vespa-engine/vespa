@@ -1,13 +1,12 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
-import com.google.protobuf.TextFormat;
-import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import com.yahoo.yolean.Exceptions;
+import org.tensorflow.SavedModelBundle;
 import org.tensorflow.framework.GraphDef;
 import org.tensorflow.framework.MetaGraphDef;
 import org.tensorflow.framework.NodeDef;
@@ -26,13 +25,13 @@ import java.util.stream.Collectors;
 
 /**
  * Converts a saved TensorFlow model into a ranking expression and set of constants.
- * 
+ *
  * @author bratseth
  */
 public class TensorFlowImporter {
 
     private final OperationMapper operationMapper = new OperationMapper();
-    
+
     /**
      * Imports a saved TensorFlow model from a directory.
      * The model should be saved as a pbtxt file.
@@ -40,17 +39,14 @@ public class TensorFlowImporter {
      */
     public List<RankingExpression> importModel(String modelDir, MessageLogger logger) {
         try {
-            SavedModel.Builder builder = SavedModel.newBuilder();
-            TextFormat.getParser().merge(IOUtils.createReader(modelDir + "/saved_model.pbtxt"), builder);
-            return importModel(builder.build(), logger);
-            
-            // TODO: Support binary reading:
-            //SavedModel.parseFrom(new FileInputStream(modelDir + "/saved_model.pbtxt"));
+            SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
+            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), logger);
+
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not open TensorFlow model directory '" + modelDir + "'", e);
         }
-        
+
     }
 
     /** Import all declared inputs in all the graphs in the given model */
@@ -84,11 +80,11 @@ public class TensorFlowImporter {
 
     private Map<String, TensorType> importInputs(Map<String, TensorInfo> inputInfoMap) {
         Map<String, TensorType> inputs = new HashMap<>();
-        inputInfoMap.forEach((key, value) -> inputs.put(nameOf(value.getName()), 
+        inputInfoMap.forEach((key, value) -> inputs.put(nameOf(value.getName()),
                                                         importTensorType(value.getTensorShape())));
         return inputs;
     }
-    
+
     static TensorType importTensorType(TensorShapeProto tensorShape) {
         TensorType.Builder b = new TensorType.Builder();
         for (int i = 0; i < tensorShape.getDimCount(); i++) {
@@ -110,7 +106,7 @@ public class TensorFlowImporter {
     private TypedTensorFunction importNode(NodeDef tfNode, Map<String, TensorType> inputs, GraphDef graph, String indent) {
         return tensorFunctionOf(tfNode, inputs, graph, indent);
     }
-    
+
     private TypedTensorFunction tensorFunctionOf(NodeDef tfNode,
                                                  Map<String, TensorType> inputs,
                                                  GraphDef graph,
@@ -126,13 +122,13 @@ public class TensorFlowImporter {
             default : throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported");
         }
     }
-    
+
     private List<TypedTensorFunction> importArguments(NodeDef tfNode, Map<String, TensorType> inputs, GraphDef graph, String indent) {
         return tfNode.getInputList().stream()
                                     .map(argNode -> importNode(getNode(nameOf(argNode), graph), inputs, graph, indent + "  "))
                                     .collect(Collectors.toList());
     }
-    
+
     private NodeDef getNode(String name, GraphDef graph) {
         return graph.getNodeList().stream()
                                   .filter(node -> node.getName().equals(name))

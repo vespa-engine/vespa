@@ -23,9 +23,9 @@ public class TensorFlowImporterTestCase {
 
         // Check logged messages
         assertEquals(2, logger.messages.size());
-        assertEquals("Skipping output 'index_to_string_Lookup:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'LookupTableFindV2' is not supported",
-                     logger.messages.get(0));
         assertEquals("Skipping output 'TopKV2:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'TopKV2' is not supported",
+                     logger.messages.get(0));
+        assertEquals("Skipping output 'index_to_string_Lookup:0' of signature 'tensorflow/serving/classify': Conversion of TensorFlow operation 'LookupTableFindV2' is not supported",
                      logger.messages.get(1));
 
         // Check resulting Vespa expression
