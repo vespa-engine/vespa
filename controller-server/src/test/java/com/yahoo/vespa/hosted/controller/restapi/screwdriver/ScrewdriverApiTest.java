@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
@@ -148,7 +147,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         tester.containerTester().updateSystemVersion();
 
         Application app = tester.createApplication();
-        tester.controller().applications().lockedOrThrow(app.id(), application ->
+        tester.controller().applications().lockOrThrow(app.id(), application ->
                 tester.controller().applications().store(application.withProjectId(1)));
 
         // Unknown application

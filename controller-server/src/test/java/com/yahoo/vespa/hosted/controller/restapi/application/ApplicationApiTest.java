@@ -326,7 +326,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
-        tester.controller().applications().lockedOrThrow(id, application ->
+        tester.controller().applications().lockOrThrow(id, application ->
                 tester.controller().applications().store(application
                                                                  .withDeploymentIssueId(IssueId.from("123"))
                                                                  .withOwnershipIssueId(IssueId.from("321"))));
@@ -836,7 +836,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
-            controllerTester.controller().applications().lockedOrThrow(application.id(), lockedApplication -> {
+            controllerTester.controller().applications().lockOrThrow(application.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
                 for (Deployment deployment : application.deployments().values()) {

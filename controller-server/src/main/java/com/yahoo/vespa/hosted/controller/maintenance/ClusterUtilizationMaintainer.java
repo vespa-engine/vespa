@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -50,7 +49,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
 
                 Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
 
-                controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                controller().applications().lockIfPresent(application.id(), lockedApplication ->
                     controller().applications().store(lockedApplication.withClusterUtilization(deployment.zone(), clusterUtilization)));
             }
         }

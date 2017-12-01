@@ -116,7 +116,7 @@ public class ApplicationController {
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
         for (Application application : db.listApplications()) {
-            lockedIfPresent(application.id(), (app) -> {
+            lockIfPresent(application.id(), (app) -> {
                 // TODO: Remove after December 2017. Migrates rotations into application
                 if (!app.rotation().isPresent()) {
                     Set<com.yahoo.vespa.hosted.controller.api.identifiers.RotationId> rotations = db.getRotations(application.id());
@@ -525,7 +525,7 @@ public class ApplicationController {
         if ( ! controller.applications().get(id).isPresent())
             throw new NotExistsException("Could not delete application '" + id + "': Application not found");
 
-        lockedOrThrow(id, application -> {
+        lockOrThrow(id, application -> {
             if ( ! application.deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
             
@@ -555,24 +555,25 @@ public class ApplicationController {
     /**
      * Acquire a locked application to modify and store, if there is an application with the given id.
      *
-     * @param applicationId Id of the application to lock and get.
-     * @param actions Things to do with the locked application.
+     * @param applicationId ID of the application to lock and get.
+     * @param action Function which acts on the locked application.
      */
-    public void lockedIfPresent(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+    public void lockIfPresent(ApplicationId applicationId, Consumer<LockedApplication> action) {
         try (Lock lock = lock(applicationId)) {
-            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(actions);
+            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
         }
     }
 
     /**
      * Acquire a locked application to modify and store, or throw an exception if no application has the given id.
      *
-     * @param applicationId Id of the application to lock and require.
-     * @param actions Things to do with the locked application.
+     * @param applicationId ID of the application to lock and require.
+     * @param action Function which acts on the locked application.
+     * @throws IllegalArgumentException when application does not exist.
      */
-    public void lockedOrThrow(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+    public void lockOrThrow(ApplicationId applicationId, Consumer<LockedApplication> action) {
         try (Lock lock = lock(applicationId)) {
-            actions.accept(new LockedApplication(require(applicationId), lock));
+            action.accept(new LockedApplication(require(applicationId), lock));
         }
     }
 
@@ -619,7 +620,7 @@ public class ApplicationController {
             && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
             return;
 
-        lockedOrThrow(application.id(), lockedApplication ->
+        lockOrThrow(application.id(), lockedApplication ->
                 store(deactivate(lockedApplication, zone)));
     }
 
