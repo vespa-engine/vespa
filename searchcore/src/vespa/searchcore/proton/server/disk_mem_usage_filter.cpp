@@ -209,18 +209,11 @@ DiskMemUsageFilter::getConfig() const
     return _config;
 }
 
-double
-DiskMemUsageFilter::getMemoryUsedRatio() const
+DiskMemUsageState
+DiskMemUsageFilter::usageState() const
 {
     Guard guard(_lock);
-    return getMemoryUsedRatio(guard);
-}
-
-double
-DiskMemUsageFilter::getDiskUsedRatio() const
-{
-    Guard guard(_lock);
-    return getDiskUsedRatio(guard);
+    return _dmstate;
 }
 
 bool

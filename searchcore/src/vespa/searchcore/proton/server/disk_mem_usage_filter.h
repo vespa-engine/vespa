@@ -64,8 +64,7 @@ public:
     uint64_t getDiskUsedSize() const;
     Config getConfig() const;
     const HwInfo &getHwInfo() const { return _hwInfo; }
-    double getMemoryUsedRatio() const;
-    double getDiskUsedRatio() const;
+    DiskMemUsageState usageState() const;
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
     void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
