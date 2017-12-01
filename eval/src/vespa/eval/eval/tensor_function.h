@@ -45,9 +45,13 @@ struct TensorFunction
     virtual ~TensorFunction() {}
 };
 
-//-----------------------------------------------------------------------------
+/**
+ * Simple typecasting utility.
+ */
+template <typename T>
+const T *as(const TensorFunction &node) { return dynamic_cast<const T *>(&node); }
 
-struct TensorFunctionVisitor;
+//-----------------------------------------------------------------------------
 
 namespace tensor_function {
 
@@ -76,12 +80,6 @@ struct Node : public TensorFunction
     Node(Node &&) = delete;
     Node &operator=(Node &&) = delete;
 };
-
-/**
- * Simple typecasting utility.
- */
-template <typename T>
-const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
 
 struct Inject : Node {
     const size_t tensor_id;
