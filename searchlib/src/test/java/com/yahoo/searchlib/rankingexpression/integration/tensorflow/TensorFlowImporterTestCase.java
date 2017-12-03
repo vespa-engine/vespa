@@ -2,6 +2,7 @@ package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -18,9 +19,23 @@ public class TensorFlowImporterTestCase {
 
     @Test
     public void testModel1() {
+        List<NamedTensor> constants = new ArrayList<>();
         TestLogger logger = new TestLogger();
         List<RankingExpression> expressions =
-                new TensorFlowImporter().importModel("src/test/files/integration/tensorflow/model1/", logger);
+                new TensorFlowImporter().importModel("src/test/files/integration/tensorflow/model1/", constants, logger);
+
+        // Check constants
+        assertEquals(2, constants.size());
+
+        assertEquals("Variable", constants.get(0).name());
+        assertEquals(new TensorType.Builder().indexed("d0", 784).indexed("d1", 10).build(),
+                     constants.get(0).tensor().type());
+        assertEquals(7840, constants.get(0).tensor().size());
+
+        assertEquals("Variable_1", constants.get(1).name());
+        assertEquals(new TensorType.Builder().indexed("d0", 10).build(),
+                     constants.get(1).tensor().type());
+        assertEquals(10, constants.get(1).tensor().size());
 
         // Check logged messages
         assertEquals(2, logger.messages().size());
@@ -33,10 +48,10 @@ public class TensorFlowImporterTestCase {
         assertEquals(1, expressions.size());
         assertEquals("scores", expressions.get(0).getName());
         assertEquals("" +
-                     "softmax(join(rename(matmul(x, rename(x, (d1, d2), (d2, d3)), d2), d3, d2), " +
-                                  "rename(matmul(x, rename(x, (d1, d2), (d2, d3)), d2), d3, d2), " +
+                     "softmax(join(rename(matmul(x, rename(constant(Variable), (d1, d2), (d2, d3)), d2), d3, d2), " +
+                                  "constant(Variable_1), " +
                                   "f(a,b)(a + b)), " +
-                             "d1)",
+                             "d0)",
                      toNonPrimitiveString(expressions.get(0)));
     }
 
