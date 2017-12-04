@@ -19,5 +19,5 @@
     <restartOnDeploy>true</restartOnDeploy>
   </config>
   
-  <nodes jvmargs="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5555 -Dvespa.freezedetector.disable=true" type="host"/>
+  <nodes type="host"/>
 </jdisc>

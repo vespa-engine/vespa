@@ -111,7 +111,6 @@
         <module>simplemetrics</module>
         <module>socket_test</module>
         <module>standalone-container</module>
-        <module>standalone-container-deps</module>
         <module>statistics</module>
         <module>storage</module>
         <module>testutil</module>
