@@ -7,7 +7,6 @@
 #include "storagemetricsset.h"
 #include "storagenodecontext.h"
 
-#include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
@@ -117,7 +116,6 @@ StorageNode::initialize()
     // and store them away, while having the config lock.
     subscribeToConfigs();
 
-    _context.getMemoryManager().setMaximumMemoryUsage(_serverConfig->memorytouse);
     updateUpgradeFlag(*_clusterConfig);
 
     // First update some basics that doesn't depend on anything else to be
@@ -156,11 +154,6 @@ StorageNode::initialize()
     vespalib::mkdir(_rootFolder);
 
     initializeNodeSpecific();
-
-    _memoryStatusViewer.reset(new MemoryStatusViewer(
-            _context.getMemoryManager(),
-            _context.getComponentRegister().getMetricManager(),
-            _context.getComponentRegister()));
 
     _statusMetrics.reset(new StatusMetricConsumer(
             _context.getComponentRegister(), _context.getComponentRegister().getMetricManager()));
@@ -259,14 +252,6 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         DIFFERWARN(clusterName, "Cannot alter cluster name of node live");
         DIFFERWARN(nodeIndex, "Cannot alter node index of node live");
         DIFFERWARN(isDistributor, "Cannot alter role of node live");
-        {
-            if (DIFFER(memorytouse)) {
-                LOG(info, "Live config update: Memory to use changed from %" PRId64 " to %" PRId64 ".",
-                    oldC.memorytouse, newC.memorytouse);
-                ASSIGN(memorytouse);
-                _context.getMemoryManager().setMaximumMemoryUsage(newC.memorytouse);
-            }
-        }
         _serverConfig.reset(new StorServerConfig(oldC));
         _newServerConfig.reset();
         (void)updated;
@@ -412,10 +397,6 @@ StorageNode::shutdown()
     if (_stateReporter) {
         LOG(debug, "Deleting state reporter");
         _stateReporter.reset();
-    }
-    if (_memoryStatusViewer) {
-        LOG(debug, "Deleting memory status viewer");
-        _memoryStatusViewer.reset();
     }
     if (_stateManager) {
         LOG(debug, "Deleting state manager");

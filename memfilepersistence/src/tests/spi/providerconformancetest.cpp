@@ -2,7 +2,6 @@
 
 #include "memfiletestutils.h"
 #include <vespa/persistence/conformancetest/conformancetest.h>
-#include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
 
 namespace storage {
 namespace memfile {
@@ -11,19 +10,13 @@ struct ProviderConformanceTest : public spi::ConformanceTest {
     struct Factory : public PersistenceFactory {
         framework::defaultimplementation::ComponentRegisterImpl _compRegister;
         framework::defaultimplementation::RealClock _clock;
-        framework::defaultimplementation::MemoryManager _memoryManager;
         std::unique_ptr<MemFileCache> cache;
 
         Factory()
             : _compRegister(),
-              _clock(),
-              _memoryManager(
-                    framework::defaultimplementation::AllocationLogic::UP(
-                        new framework::defaultimplementation::SimpleMemoryLogic(
-                            _clock, 1024 * 1024 * 1024)))
+              _clock()
         {
             _compRegister.setClock(_clock);
-            _compRegister.setMemoryManager(_memoryManager);
         }
 
         spi::PersistenceProvider::UP

@@ -13,7 +13,6 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageframework/generic/clock/timer.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <set>
 #include <deque>

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statusmetricconsumer.h"
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <boost/assign.hpp>
 #include <boost/lexical_cast.hpp>
@@ -26,17 +25,8 @@ StatusMetricConsumer::StatusMetricConsumer(
       _component(compReg, "statusmetricsconsumer"),
       _name(name),
       _startTime(_component.getClock().getTimeInSeconds()),
-      _processedTime(0),
-      _metricMemoryToken()
+      _processedTime(0)
 {
-    const framework::MemoryAllocationType& allocType(
-            _component.getMemoryManager().registerAllocationType(
-                framework::MemoryAllocationType(
-                    "METRICS", framework::MemoryAllocationType::FORCE_ALLOCATE)
-            ));
-    _metricMemoryToken = _component.getMemoryManager().allocate(
-            allocType, 0, 0, api::StorageMessage::HIGH);
-    assert(_metricMemoryToken.get() != 0);
     LOG(debug, "Started metrics consumer");
     setlocale(LC_NUMERIC, "");
     _component.registerMetricUpdateHook(*this, framework::SecondTime(3600));
@@ -51,8 +41,7 @@ void
 StatusMetricConsumer::updateMetrics(const MetricLockGuard & guard)
 {
     metrics::MemoryConsumption::UP mc(_manager.getMemoryConsumption(guard));
-    uint32_t usage = mc->getTotalMemoryUsage();
-    _metricMemoryToken->resize(usage, usage);
+    // TODO is this hook needed anymore?
 }
 
 vespalib::string

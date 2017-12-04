@@ -11,7 +11,6 @@
 #pragma once
 
 #include "communicationmanagermetrics.h"
-#include "messageallocationtypes.h"
 #include "documentapiconverter.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
@@ -171,10 +170,7 @@ private:
     std::unique_ptr<BucketResolver> _bucketResolver;
     DocumentApiConverter _docApiConverter;
     framework::Thread::UP _thread;
-    MessageAllocationTypes _messageAllocTypes;
 
-    const framework::MemoryAllocationType&
-    getAllocationType(api::StorageMessage& msg) const;
     void updateMetrics(const MetricLockGuard &) override;
 
     // Test needs access to configure() for live reconfig testing.

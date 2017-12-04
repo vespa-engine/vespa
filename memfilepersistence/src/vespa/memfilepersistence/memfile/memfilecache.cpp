@@ -31,7 +31,7 @@ MemFileCache::returnToCache(MemFileCache::Entry& entry)
 
     MemoryUsage newUsage = entry._file.getCacheSize();
 
-    if (_memoryToken->getSize() == 0 || newUsage.sum() == 0) {
+    if (_cacheLimit.sum() == 0 || newUsage.sum() == 0) {
         entry._file.flushToDisk();
         eraseNoLock(id);
         return;
@@ -155,10 +155,6 @@ MemFileCache::MemFileCache(framework::ComponentRegister& componentRegister,
                            MemFilePersistenceCacheMetrics& metrics)
     : Component(componentRegister, "memfilecache"),
       _lastUsedCounter(0),
-      _allocationType(getMemoryManager().registerAllocationType(
-            framework::MemoryAllocationType(
-                    "memfilecache", framework::MemoryAllocationType::CACHE))),
-      _memoryToken(getMemoryManager().allocate(_allocationType, 0, 0, 200)),
       _metrics(metrics),
       _bodyEvicter(_metrics.body_evictions),
       _headerEvicter(_metrics.header_evictions),
@@ -172,7 +168,6 @@ MemFileCache::setCacheSize(MemoryUsage cacheSize)
     vespalib::LockGuard lock(_cacheLock);
 
     _cacheLimit = cacheSize;
-    _memoryToken->resize(std::min(_memoryToken->getSize(), _cacheLimit.sum()), _cacheLimit.sum());
     evictWhileFull();
 }
 
@@ -491,7 +486,7 @@ MemFileCache::Statistics
 MemFileCache::getCacheStats() const
 {
     vespalib::LockGuard lock(_cacheLock);
-    return Statistics(_memoryUsage, _memoryToken->getSize(), _entries.size());
+    return Statistics(_memoryUsage, _cacheLimit.sum(), _entries.size());
 }
 
 void

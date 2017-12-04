@@ -34,7 +34,6 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
     : StorageLinkQueued("Bucket manager", compReg),
       framework::StatusReporter("bucketdb", "Bucket database"),
       _configUri(configUri),
-      _bucketDBMemoryToken(),
       _workerLock(),
       _workerCond(),
       _clusterStateLock(),
@@ -48,12 +47,6 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _requestsCurrentlyProcessing(0),
       _component(compReg, "bucketmanager")
 {
-    const framework::MemoryAllocationType& allocType(
-            _component.getMemoryManager().registerAllocationType(
-                framework::MemoryAllocationType("DATABASE")));
-    _bucketDBMemoryToken = _component.getMemoryManager().allocate(
-            allocType, 0, 0, api::StorageMessage::HIGH);
-    assert(_bucketDBMemoryToken.get() != 0);
     _metrics->setDisks(_component.getDiskCount());
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
@@ -222,8 +215,6 @@ BucketManager::updateMetrics(bool updateDocCount)
     LOG(debug, "Iterating bucket database to update metrics%s%s",
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
-    uint64_t dbMemSize = _component.getBucketSpaceRepo().getBucketMemoryUsage();
-    _bucketDBMemoryToken->resize(dbMemSize, dbMemSize);
 
     uint32_t diskCount = _component.getDiskCount();
     if (!updateDocCount || _doneInitialized) {

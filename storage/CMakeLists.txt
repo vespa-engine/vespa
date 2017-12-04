@@ -35,7 +35,6 @@ vespa_define_module(
     src/vespa/storage/distributor/operations/external
     src/vespa/storage/distributor/operations/idealstate
     src/vespa/storage/frameworkimpl/component
-    src/vespa/storage/frameworkimpl/memory
     src/vespa/storage/frameworkimpl/status
     src/vespa/storage/frameworkimpl/thread
     src/vespa/storage/persistence
@@ -60,12 +59,10 @@ vespa_define_module(
     src/tests/common
     src/tests/common/hostreporter
     src/tests/distributor
-    src/tests/frameworkimpl/memory
     src/tests/frameworkimpl/status
     src/tests/persistence
     src/tests/persistence/common
     src/tests/persistence/filestorage
     src/tests/storageserver
-    src/tests/storageutil
     src/tests/visiting
 )

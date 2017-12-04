@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
-#include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
 #include <tests/spi/memfiletestutils.h>
 
 
@@ -41,7 +40,6 @@ private:
     framework::defaultimplementation::ComponentRegisterImpl::UP _register;
     framework::Component::UP _component;
     FakeClock::UP _clock;
-    framework::defaultimplementation::MemoryManager::UP _memoryManager;
     std::unique_ptr<MemFilePersistenceMetrics> _metrics;
 
     std::unique_ptr<MemFileCache> _cache;
@@ -113,18 +111,10 @@ private:
                 new framework::defaultimplementation::ComponentRegisterImpl);
         _clock.reset(new FakeClock);
         _register->setClock(*_clock);
-        _memoryManager.reset(
-                new framework::defaultimplementation::MemoryManager(
-                    framework::defaultimplementation::AllocationLogic::UP(
-                        new framework::defaultimplementation::SimpleMemoryLogic(
-                            *_clock, maxMemory * 2))));
-        _register->setMemoryManager(*_memoryManager);
         _component.reset(new framework::Component(*_register, "testcomponent"));
         _metrics.reset(new MemFilePersistenceMetrics(*_component));
         _cache.reset(new MemFileCache(*_register, _metrics->_cache));
         setCacheSize(maxMemory);
-        _memoryManager->registerAllocationType(framework::MemoryAllocationType(
-                "steal", framework::MemoryAllocationType::FORCE_ALLOCATE));
     }
 
 public:
@@ -133,7 +123,6 @@ public:
         _metrics.reset(0);
         _component.reset(0);
         _register.reset(0);
-        _memoryManager.reset(0);
         _clock.reset(0);
     }
 };

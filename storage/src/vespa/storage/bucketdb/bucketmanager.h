@@ -20,7 +20,6 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 
@@ -47,7 +46,6 @@ private:
     config::ConfigUri _configUri;
 
     uint32_t _chunkLevel;
-    framework::MemoryToken::UP _bucketDBMemoryToken;
     BucketInfoRequestMap _bucketInfoRequests;
 
     /**

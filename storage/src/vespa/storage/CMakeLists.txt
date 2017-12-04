@@ -12,7 +12,6 @@ vespa_add_library(storage
     $<TARGET_OBJECTS:storage_bucketmover>
     $<TARGET_OBJECTS:storage_thread>
     $<TARGET_OBJECTS:storage_status>
-    $<TARGET_OBJECTS:storage_memory>
     $<TARGET_OBJECTS:storage_component>
     INSTALL lib64
     DEPENDS

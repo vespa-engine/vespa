@@ -7,7 +7,6 @@
 #include "countvisitor.h"
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
@@ -46,10 +45,6 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _enforceQueueUse(false),
       _visitorFactories(externalFactories)
 {
-    _component.getMemoryManager().registerAllocationType(
-            framework::MemoryAllocationType(
-                "VISITOR_BUFFER",
-                framework::MemoryAllocationType::EXTERNAL_LOAD));
     _configFetcher.subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
     _configFetcher.start();
     _component.registerMetric(*_metrics);

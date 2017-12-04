@@ -7,7 +7,6 @@
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/component/component.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/statusreportermap.h>

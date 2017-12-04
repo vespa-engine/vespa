@@ -8,7 +8,6 @@
 #include <vespa/storage/persistence/persistenceutil.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/base/testdocman.h>
