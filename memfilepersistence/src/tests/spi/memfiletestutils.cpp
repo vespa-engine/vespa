@@ -5,7 +5,6 @@
 #include <tests/spi/memfiletestutils.h>
 #include <tests/spi/simulatedfailurefile.h>
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
-#include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/persistence/spi/test.h>
@@ -72,12 +71,6 @@ MemFileTestUtils::setupDisks(uint32_t numDisks) {
             new framework::defaultimplementation::ComponentRegisterImpl);
     _clock.reset(new FakeClock);
     _componentRegister->setClock(*_clock);
-    _memoryManager.reset(
-            new framework::defaultimplementation::MemoryManager(
-                framework::defaultimplementation::AllocationLogic::UP(
-                    new framework::defaultimplementation::SimpleMemoryLogic(
-                        *_clock, 1024 * 1024 * 1024))));
-    _componentRegister->setMemoryManager(*_memoryManager);
     _env.reset(new MemFileTestEnvironment(numDisks,
                                           *_componentRegister,
                                           *getTypeRepo()));

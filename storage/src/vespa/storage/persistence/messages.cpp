@@ -6,17 +6,14 @@ using document::BucketSpace;
 
 namespace storage {
 
-GetIterCommand::GetIterCommand(framework::MemoryToken::UP token,
-                               const document::Bucket &bucket,
+GetIterCommand::GetIterCommand(const document::Bucket &bucket,
                                const spi::IteratorId iteratorId,
                                uint32_t maxByteSize)
     : api::InternalCommand(ID),
-      _token(std::move(token)),
       _bucket(bucket),
       _iteratorId(iteratorId),
       _maxByteSize(maxByteSize)
 {
-    assert(_token.get());
 }
 
 GetIterCommand::~GetIterCommand() { }
@@ -38,7 +35,6 @@ GetIterCommand::makeReply() {
 
 GetIterReply::GetIterReply(GetIterCommand& cmd)
     : api::InternalReply(ID, cmd),
-      _token(cmd.releaseMemoryToken()),
       _bucket(cmd.getBucket()),
       _completed(false)
 { }

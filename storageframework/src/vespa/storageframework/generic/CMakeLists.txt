@@ -4,7 +4,6 @@ vespa_add_library(storageframework_generic
     $<TARGET_OBJECTS:storageframework_component>
     $<TARGET_OBJECTS:storageframework_status>
     $<TARGET_OBJECTS:storageframework_thread>
-    $<TARGET_OBJECTS:storageframework_memory>
     $<TARGET_OBJECTS:storageframework_clock>
     INSTALL lib64
     DEPENDS

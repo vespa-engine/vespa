@@ -11,7 +11,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 using document::DocumentType;
-using storage::framework::defaultimplementation::AllocationLogic;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 

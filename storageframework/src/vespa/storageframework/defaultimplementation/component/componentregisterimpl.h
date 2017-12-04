@@ -71,7 +71,6 @@ public:
     void requestShutdown(vespalib::stringref reason) override;
 
     void setMetricManager(metrics::MetricManager&);
-    void setMemoryManager(MemoryManagerInterface&);
     void setClock(Clock&);
     void setThreadPool(ThreadPool&);
     void setUpgradeFlag(UpgradeFlags flag);

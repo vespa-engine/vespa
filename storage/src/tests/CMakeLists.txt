@@ -13,7 +13,6 @@ vespa_add_executable(storage_testrunner_app TEST
     storage_testdistributor
     storage_testpersistence
     storage_testfilestorage
-    storage_testmemory
     storage_teststatus
 )
 

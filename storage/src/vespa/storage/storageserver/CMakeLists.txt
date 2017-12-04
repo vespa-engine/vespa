@@ -11,7 +11,6 @@ vespa_add_library(storage_storageserver
     documentapiconverter.cpp
     fnetlistener.cpp
     mergethrottler.cpp
-    messageallocationtypes.cpp
     messagesink.cpp
     opslogger.cpp
     priorityconverter.cpp

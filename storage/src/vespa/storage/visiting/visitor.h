@@ -327,7 +327,6 @@ private:
 protected:
     // These variables should not be altered after visitor starts. This not
     // controlled by locks.
-    const framework::MemoryAllocationType* _memoryAllocType;
     VisitorMessageHandler* _messageHandler;
     VisitorMessageSession::UP _messageSession;
     documentapi::Priority::Value _documentPriority;
@@ -339,7 +338,6 @@ protected:
     std::string _documentSelectionString;
     std::unique_ptr<document::OrderingSpecification> _ordering;
     vdslib::VisitorStatistics _visitorStatistics;
-    framework::MemoryManagerInterface* _memoryManager;
 
     bool isCompletedCalled() const { return _calledCompletedVisitor; }
 
@@ -365,8 +363,6 @@ public:
     const api::StorageMessageAddress* getDataDestination() const
         { return _dataDestination.get(); }  // Can't be null if attached
 
-    void setAllocationType(const framework::MemoryAllocationType& mat)
-        { _memoryAllocType = &mat; }
     void setMaxPending(unsigned int maxPending)
         { _visitorOptions._maxPending = maxPending; }
 
@@ -384,8 +380,6 @@ public:
         { _docBlockTimeout = timeout; }
     void setVisitorInfoTimeout(framework::MilliSecTime timeout)
         { _visitorInfoTimeout = timeout; }
-    void setMemoryManager(framework::MemoryManagerInterface& mm)
-        { _memoryManager = &mm; }
     void setOwnNodeIndex(uint16_t nodeIndex) { _ownNodeIndex = nodeIndex; }
     void setBucketSpace(document::BucketSpace bucketSpace) { _bucketSpace = bucketSpace; }
 

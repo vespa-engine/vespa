@@ -6,7 +6,6 @@
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 
 namespace storage::distributor {
 
@@ -229,7 +228,6 @@ protected:
 
     bool _ok;
     api::StorageMessage::Priority _priority;
-    framework::MemoryToken::UP _memoryToken;
 
     /**
      * Checks if the given bucket is blocked by any pending messages to any

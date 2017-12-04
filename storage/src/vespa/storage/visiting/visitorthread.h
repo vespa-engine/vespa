@@ -90,7 +90,6 @@ class VisitorThread : public framework::Runnable,
     framework::Thread::UP _thread;
     VisitorMessageSessionFactory& _messageSessionFactory;
     VisitorFactory::Map& _visitorFactories;
-    const framework::MemoryAllocationType& _memoryBufferAlloc;
 
 public:
     VisitorThread(uint32_t threadIndex,

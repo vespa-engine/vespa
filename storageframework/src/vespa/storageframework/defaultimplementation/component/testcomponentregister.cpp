@@ -7,13 +7,9 @@ namespace storage::framework::defaultimplementation {
 TestComponentRegister::TestComponentRegister(ComponentRegisterImpl::UP compReg)
     : _compReg(std::move(compReg)),
       _clock(),
-      _threadPool(_clock),
-      _memoryManager()
+      _threadPool(_clock)
 {
     assert(_compReg.get() != 0);
-    // Set a memory manager, so users can register memory types and
-    // ask for memory.
-    _compReg->setMemoryManager(_memoryManager);
     // Set a fake clock, giving test control of clock
     _compReg->setClock(_clock);
     // Set a thread pool so components can make threads in tests.
