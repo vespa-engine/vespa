@@ -476,7 +476,7 @@ public class ApplicationController {
             Optional<Record> record = nameService.findRecord(Record.Type.CNAME, dnsName);
             if (!record.isPresent()) {
                 RecordId recordId = nameService.createCname(dnsName, rotation.name());
-                log.info("Registered mapping with record ID " + recordId.id() + ": " +
+                log.info("Registered mapping with record ID " + recordId.asString() + ": " +
                          dnsName + " -> " + rotation.name());
             }
         } catch (RuntimeException e) {

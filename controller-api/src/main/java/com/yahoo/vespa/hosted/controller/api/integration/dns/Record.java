@@ -4,34 +4,40 @@ package com.yahoo.vespa.hosted.controller.api.integration.dns;
 import java.util.Objects;
 
 /**
- * A basic representation of a DNS resource record, containing only the record type, name and value.
+ * A basic representation of a DNS resource record, containing the record id, type, name and value.
  *
  * @author mpolden
  */
 public class Record {
 
+    private final RecordId id;
     private final Type type;
     private final String name;
     private final String value;
 
-    public Record(Type type, String name, String value) {
+    public Record(RecordId id, Type type, String name, String value) {
+        this.id = id;
         this.type = type;
         this.name = name;
         this.value = value;
     }
 
-    public Record(String type, String name, String value) {
-        this(Type.valueOf(type), name, value);
+    /** Unique identifier for this */
+    public RecordId id() {
+        return id;
     }
 
+    /** DNS type of this */
     public Type type() {
         return type;
     }
 
+    /** Value for this, e.g. IP address for "A" record */
     public String value() {
         return value;
     }
 
+    /** Name of this, e.g. a FQDN for "A" record */
     public String name() {
         return name;
     }
@@ -51,24 +57,26 @@ public class Record {
     @Override
     public String toString() {
         return "Record{" +
-                "type=" + type +
-                ", name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                '}';
+               "id=" + id +
+               ", type=" + type +
+               ", name='" + name + '\'' +
+               ", value='" + value + '\'' +
+               '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Record)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Record record = (Record) o;
-        return type == record.type &&
-                Objects.equals(name, record.name);
+        return Objects.equals(id, record.id) &&
+               type == record.type &&
+               Objects.equals(name, record.name) &&
+               Objects.equals(value, record.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, name);
+        return Objects.hash(id, type, name, value);
     }
-
 }
