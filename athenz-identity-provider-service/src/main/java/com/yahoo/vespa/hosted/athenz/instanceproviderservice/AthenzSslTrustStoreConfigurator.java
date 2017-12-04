@@ -7,7 +7,6 @@ import com.yahoo.jdisc.http.ssl.SslTrustStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreContext;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -98,7 +97,7 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
                 new JcaX509v3CertificateBuilder(
                         x500Name, BigInteger.valueOf(now.toEpochMilli()), notBefore, notAfter, x500Name, keyPair.getPublic()
                 )
-                        .addExtension(new ASN1ObjectIdentifier("2.5.29.19"), true, new BasicConstraints(true))
+                        .addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
                         .addExtension(Extension.subjectAlternativeName, false, generalNames);
 
         return new JcaX509CertificateConverter()
