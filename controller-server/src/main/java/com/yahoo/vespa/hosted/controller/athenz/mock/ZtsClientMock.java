@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.athenz.ZtsClient;
 
 import java.util.List;
@@ -24,10 +24,10 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public List<AthenzDomain> getTenantDomainsForUser(AthenzPrincipal principal) {
-        log.log(Level.INFO, "getTenantDomainsForUser(principal='%s')", principal);
+    public List<AthenzDomain> getTenantDomainsForUser(AthenzIdentity identity) {
+        log.log(Level.INFO, "getTenantDomainsForUser(principal='%s')", identity);
         return athenz.domains.values().stream()
-                .filter(domain -> domain.tenantAdmins.contains(principal) || domain.admins.contains(principal))
+                .filter(domain -> domain.tenantAdmins.contains(identity) || domain.admins.contains(identity))
                 .map(domain -> domain.name)
                 .collect(toList());
     }

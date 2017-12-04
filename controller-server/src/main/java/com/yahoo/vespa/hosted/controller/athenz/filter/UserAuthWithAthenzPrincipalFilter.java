@@ -9,7 +9,7 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import com.yahoo.vespa.hosted.controller.restapi.application.Authorizer;
@@ -85,9 +85,9 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
         Principal userPrincipal = request.getUserPrincipal();
         log.log(LogLevel.DEBUG, () -> "Original user principal: " + userPrincipal.toString());
         UserId userId = new UserId(userPrincipal.getName());
-        AthenzPrincipal athenzPrincipal = AthenzUtils.createPrincipal(userId);
-        request.setUserPrincipal(athenzPrincipal);
-        request.setRemoteUser(athenzPrincipal.toYRN());
+        AthenzUser athenzIdentity = AthenzUser.fromUserId(userId);
+        request.setRemoteUser(athenzIdentity.getFullName());
+        request.setUserPrincipal(new AthenzPrincipal(athenzIdentity));
     }
 
     private enum UserAuthenticationResult {

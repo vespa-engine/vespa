@@ -2,13 +2,14 @@
 package com.yahoo.vespa.hosted.controller.athenz;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 
 import java.util.Objects;
 
 /**
  * @author bjorncs
  */
-public class AthenzService {
+public class AthenzService implements AthenzIdentity {
 
     private final AthenzDomain domain;
     private final String serviceName;
@@ -22,15 +23,17 @@ public class AthenzService {
         this(new AthenzDomain(domain), serviceName);
     }
 
-    public String toFullServiceName() {
-        return domain.id() + "." + serviceName;
+    public static AthenzService fromScrewdriverId(ScrewdriverId screwdriverId) {
+        return new AthenzService(AthenzUtils.SCREWDRIVER_DOMAIN, "sd" + screwdriverId.id());
     }
 
+    @Override
     public AthenzDomain getDomain() {
         return domain;
     }
 
-    public String getServiceName() {
+    @Override
+    public String getName() {
         return serviceName;
     }
 
@@ -50,6 +53,6 @@ public class AthenzService {
 
     @Override
     public String toString() {
-        return String.format("AthenzService(%s)", toFullServiceName());
+        return String.format("AthenzService(%s)", getFullName());
     }
 }

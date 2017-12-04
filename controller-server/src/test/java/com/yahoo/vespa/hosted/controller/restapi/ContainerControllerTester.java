@@ -20,11 +20,10 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
@@ -108,7 +107,7 @@ public class ContainerControllerTester {
         AthenzDomain athensDomain = new AthenzDomain(domainName);
         AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(new AthenzPrincipal(new AthenzDomain("domain"), new UserId(userName)));
+        domain.admin(AthenzUtils.createAthenzIdentity(new AthenzDomain("domain"), userName));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
@@ -133,6 +132,6 @@ public class ContainerControllerTester {
         mock.getSetup()
                 .domains.get(tenantDomain)
                 .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.id().application().value()))
-                .addRoleMember(action, AthenzUtils.createPrincipal(screwdriverId));
+                .addRoleMember(action, AthenzService.fromScrewdriverId(screwdriverId));
     }
 }

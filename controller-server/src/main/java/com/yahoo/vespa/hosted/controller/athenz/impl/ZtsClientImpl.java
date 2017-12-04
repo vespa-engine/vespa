@@ -6,7 +6,7 @@ import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.athenz.zts.ZTSClientException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
 import com.yahoo.vespa.hosted.controller.athenz.ZtsClient;
 import com.yahoo.vespa.hosted.controller.athenz.ZtsException;
@@ -33,13 +33,13 @@ public class ZtsClientImpl implements ZtsClient {
     }
 
     @Override
-    public List<AthenzDomain> getTenantDomainsForUser(AthenzPrincipal principal) {
+    public List<AthenzDomain> getTenantDomainsForUser(AthenzIdentity identity) {
         log.log(LogLevel.DEBUG, String.format(
-                "getTenantDomains(domain=%s, username=%s, rolename=admin, service=%s)",
-                service.getDomain().id(), principal, service.getServiceName()));
+                "getTenantDomains(domain=%s, identity=%s, rolename=admin, service=%s)",
+                service.getDomain().id(), identity.getFullName(), service.getFullName()));
         try {
             TenantDomains domains = ztsClient.getTenantDomains(
-                    service.getDomain().id(), principal.toYRN(), "admin", service.getServiceName());
+                    service.getDomain().id(), identity.getFullName(), "admin", service.getName());
             return domains.getTenantDomainNames().stream()
                     .map(AthenzDomain::new)
                     .collect(toList());

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.athenz;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 
 /**
@@ -16,13 +15,12 @@ public class AthenzUtils {
     public static final AthenzDomain SCREWDRIVER_DOMAIN = new AthenzDomain("cd.screwdriver.project");
     public static final AthenzService ZMS_ATHENZ_SERVICE = new AthenzService("sys.auth", "zms");
 
-    public static AthenzPrincipal createPrincipal(UserId userId) {
-        return new AthenzPrincipal(USER_PRINCIPAL_DOMAIN, userId);
+    public static AthenzIdentity createAthenzIdentity(AthenzDomain domain, String identityName) {
+        if (domain.equals(USER_PRINCIPAL_DOMAIN)) {
+            return AthenzUser.fromUserId(new UserId(identityName));
+        } else {
+            return new AthenzService(domain, identityName);
+        }
     }
-
-    public static AthenzPrincipal createPrincipal(ScrewdriverId screwdriverId) {
-        return new AthenzPrincipal(SCREWDRIVER_DOMAIN, new UserId("sd" + screwdriverId.id()));
-    }
-
 
 }

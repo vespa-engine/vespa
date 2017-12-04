@@ -11,8 +11,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.common.ContextAttributes;
 import com.yahoo.vespa.hosted.controller.restapi.filter.NTokenRequestFilter;
@@ -54,17 +55,14 @@ public class Authorizer {
         Optional<Tenant> tenant = controller.tenants().tenant(tenantId);
         if ( ! tenant.isPresent()) return;
 
-        UserId userId = getUserId(request);
-        if (isTenantAdmin(userId, tenant.get())) return;
+        AthenzIdentity identity = getIdentity(request);
+        if (isTenantAdmin(identity, tenant.get())) return;
 
-        throw loggedForbiddenException("User " + userId + " does not have write access to tenant " + tenantId);
+        throw loggedForbiddenException("User " + identity.getFullName() + " does not have write access to tenant " + tenantId);
     }
 
-    public UserId getUserId(HttpRequest request) {
-        String name = getPrincipal(request).getName();
-        if (name == null)
-            throw loggedForbiddenException("Not authorized: User name is null");
-        return new UserId(name);
+    public AthenzIdentity getIdentity(HttpRequest request) {
+        return getPrincipal(request).getIdentity();
     }
 
     /** Returns the principal or throws forbidden */ // TODO: Avoid REST exceptions
@@ -95,26 +93,36 @@ public class Authorizer {
         return new ForbiddenException(formattedMessage);
     }
 
-    private boolean isTenantAdmin(UserId userId, Tenant tenant) {
+    private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
         switch (tenant.tenantType()) {
             case ATHENS:
-                return isAthenzTenantAdmin(userId, tenant.getAthensDomain().get());
-            case OPSDB:
-                return isGroupMember(userId, tenant.getUserGroup().get());
-            case USER:
-                return isUserTenantOwner(tenant.getId(), userId);
+                return isAthenzTenantAdmin(identity, tenant.getAthensDomain().get());
+            case OPSDB: {
+                if (!(identity instanceof AthenzUser)) {
+                    return false;
+                }
+                AthenzUser user = (AthenzUser) identity;
+                return isGroupMember(user.getUserId(), tenant.getUserGroup().get());
+            }
+            case USER: {
+                if (!(identity instanceof AthenzUser)) {
+                    return false;
+                }
+                AthenzUser user = (AthenzUser) identity;
+                return isUserTenantOwner(tenant.getId(), user.getUserId());
+            }
         }
         throw new IllegalArgumentException("Unknown tenant type: " + tenant.tenantType());
     }
 
-    private boolean isAthenzTenantAdmin(UserId userId, AthenzDomain tenantDomain) {
+    private boolean isAthenzTenantAdmin(AthenzIdentity athenzIdentity, AthenzDomain tenantDomain) {
         return athenzClientFactory.createZmsClientWithServicePrincipal()
-                .hasTenantAdminAccess(AthenzUtils.createPrincipal(userId), tenantDomain);
+                .hasTenantAdminAccess(athenzIdentity, tenantDomain);
     }
 
-    public boolean isAthenzDomainAdmin(UserId userId, AthenzDomain tenantDomain) {
+    public boolean isAthenzDomainAdmin(AthenzIdentity identity, AthenzDomain tenantDomain) {
         return athenzClientFactory.createZmsClientWithServicePrincipal()
-                .isDomainAdmin(AthenzUtils.createPrincipal(userId), tenantDomain);
+                .isDomainAdmin(identity, tenantDomain);
     }
 
     public boolean isGroupMember(UserId userId, UserGroup userGroup) {

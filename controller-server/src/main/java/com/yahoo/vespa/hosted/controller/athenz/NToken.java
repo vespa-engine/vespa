@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.athenz;
 
 import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -38,11 +37,11 @@ public class NToken {
     }
 
     public AthenzPrincipal getPrincipal() {
-        return new AthenzPrincipal(getDomain(), getUser());
+        return new AthenzPrincipal(getAthenzIdentity());
     }
 
-    public UserId getUser() {
-        return new UserId(token.getName());
+    public AthenzIdentity getAthenzIdentity() {
+        return AthenzUtils.createAthenzIdentity(getDomain(), token.getName());
     }
 
     public AthenzDomain getDomain() {
@@ -85,7 +84,7 @@ public class NToken {
     public static class Builder {
 
         private final String version;
-        private final AthenzPrincipal principal;
+        private final AthenzIdentity identity;
         private final PrivateKey privateKey;
         private final String keyId;
         private Optional<String> salt = Optional.empty();
@@ -99,9 +98,9 @@ public class NToken {
          * {@link PrincipalToken#PrincipalToken(String)} only accepts signed token
          * (supplying an unsigned token to the constructor will result in inconsistent state)
          */
-        public Builder(String version, AthenzPrincipal principal, PrivateKey privateKey, String keyId) {
+        public Builder(String version, AthenzIdentity identity, PrivateKey privateKey, String keyId) {
             this.version = version;
-            this.principal = principal;
+            this.identity = identity;
             this.privateKey = privateKey;
             this.keyId = keyId;
         }
@@ -132,7 +131,7 @@ public class NToken {
         }
 
         public NToken build() {
-            PrincipalToken token = new PrincipalToken.Builder(version, principal.getDomain().id(), principal.getName())
+            PrincipalToken token = new PrincipalToken.Builder(version, identity.getDomain().id(), identity.getName())
                     .keyId(this.keyId)
                     .salt(this.salt.orElse(null))
                     .host(this.hostname.orElse(null))

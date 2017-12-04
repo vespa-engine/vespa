@@ -10,6 +10,6 @@ import java.util.List;
  */
 public interface ZtsClient {
 
-    List<AthenzDomain> getTenantDomainsForUser(AthenzPrincipal principal);
+    List<AthenzDomain> getTenantDomainsForUser(AthenzIdentity principal);
 
 }

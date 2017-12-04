@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
@@ -67,7 +67,7 @@ public class TenantController {
     public List<Tenant> asList(UserId user) {
         Set<UserGroup> userGroups = entityService.getUserGroups(user);
         Set<AthenzDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
-                                                              .getTenantDomainsForUser(AthenzUtils.createPrincipal(user)));
+                                                              .getTenantDomainsForUser(AthenzUser.fromUserId(user)));
 
         Predicate<Tenant> hasUsersGroup = (tenant) -> tenant.getUserGroup().isPresent() && userGroups.contains(tenant.getUserGroup().get());
         Predicate<Tenant> hasUsersDomain = (tenant) -> tenant.getAthensDomain().isPresent() && userDomains.contains(tenant.getAthensDomain().get());
