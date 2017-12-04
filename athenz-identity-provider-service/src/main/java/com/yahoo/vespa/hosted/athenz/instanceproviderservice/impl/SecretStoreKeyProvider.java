@@ -45,8 +45,7 @@ public class SecretStoreKeyProvider implements KeyProvider {
         return getKeyPair(version).getPublic();
     }
 
-    @Override
-    public KeyPair getKeyPair(int version) {
+    private KeyPair getKeyPair(int version) {
         synchronized (secrets) {
             KeyPair keyPair = secrets.get(version);
             if (keyPair == null) {
