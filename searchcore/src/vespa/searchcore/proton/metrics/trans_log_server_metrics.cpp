@@ -12,7 +12,8 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
     : metrics::MetricSet("transactionlog", {{"documenttype", documentType}},
             "Transaction log metrics for a document type", parent),
       entries("entries", "", "The current number of entries in the transaction log", this),
-      diskUsage("disk_usage", "", "The disk usage (in bytes) of the transaction log", this)
+      diskUsage("disk_usage", "", "The disk usage (in bytes) of the transaction log", this),
+      replayTime("replay_time", "", "The replay time (in seconds) of the transaction log during start-up", this)
 {
 }
 
@@ -23,6 +24,7 @@ TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
 {
     entries.set(stats.numEntries);
     diskUsage.set(stats.byteSize);
+    replayTime.set(stats.maxSessionRunTime.count());
 }
 
 void
