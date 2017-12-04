@@ -4,6 +4,7 @@ vespa_add_library(staging_vespalib
     $<TARGET_OBJECTS:staging_vespalib_vespalib_encoding>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_util>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_data>
+    $<TARGET_OBJECTS:staging_vespalib_vespalib_metrics>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_objects>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_net>
