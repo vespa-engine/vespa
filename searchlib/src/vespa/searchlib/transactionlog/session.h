@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/fnet/frt/invoker.h>
+#include <chrono>
 #include <deque>
 
 class FastOS_FileInterface;
@@ -18,7 +19,8 @@ using DomainSP = std::shared_ptr<Domain>;
 class Session : public FRT_IRequestWait
 {
 private:
-    typedef vespalib::Executor::Task Task;
+    using Task = vespalib::Executor::Task;
+    using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 public:
     typedef std::shared_ptr<Session> SP;
@@ -33,6 +35,8 @@ public:
     bool finished()  const;
     static void enQ(const SP & session, SerialNum serial, const Packet & packet);
     static Task::UP createTask(const Session::SP & session);
+    void setStartTime(time_point startTime) { _startTime = startTime; }
+    time_point getStartTime() const { return _startTime; }
 private:
     struct QPacket {
         QPacket() : _serial(0), _packet() {}
@@ -79,6 +83,7 @@ private:
     bool                      _ok;
     bool                      _finished;
     std::deque<QPacket>       _packetQ;
+    time_point                _startTime;
     vespalib::Lock            _lock;
 };
 

@@ -43,12 +43,12 @@ private:
     void checkFilledDomainTest(const TransLogClient::Session::UP &s1, size_t numEntries);
     bool visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, const vespalib::string & name);
     bool partialUpdateTest();
-    bool test1();
+    bool testVisitOverGeneratedDomain();
     bool testRemove();
     void createAndFillDomain(const vespalib::string & name, DomainPart::Crc crcMethod, size_t preExistingDomains);
     void verifyDomain(const vespalib::string & name);
     void testCrcVersions();
-    bool test2();
+    bool testVisitOverPreExistingDomain();
     void testMany();
     void testErase();
     void testSync();
@@ -480,7 +480,13 @@ bool Test::visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, c
     return retval;
 }
 
-bool Test::test1()
+double
+getMaxSessionRunTime(TransLogServer &tls, const vespalib::string &domain)
+{
+    return tls.getDomainStats()[domain].maxSessionRunTime.count();
+}
+
+bool Test::testVisitOverGeneratedDomain()
 {
     DummyFileHeaderContext fileHeaderContext;
     TransLogServer tlss("test7", 18377, ".", fileHeaderContext, 0x10000);
@@ -490,7 +496,11 @@ bool Test::test1()
     createDomainTest(tls, name);
     TransLogClient::Session::UP s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
+    EXPECT_EQUAL(0, getMaxSessionRunTime(tlss, "test1"));
     visitDomainTest(tls, s1.get(), name);
+    double maxSessionRunTime = getMaxSessionRunTime(tlss, "test1");
+    LOG(info, "testVisitOverGeneratedDomain(): maxSessionRunTime=%f", maxSessionRunTime);
+    EXPECT_GREATER(maxSessionRunTime, 0);
     return true;
 }
 
@@ -539,8 +549,9 @@ bool Test::testRemove()
     return true;
 }
 
-bool Test::test2()
+bool Test::testVisitOverPreExistingDomain()
 {
+    // Depends on Test::testVisitOverGeneratedDomain()
     DummyFileHeaderContext fileHeaderContext;
     TransLogServer tlss("test7", 18377, ".", fileHeaderContext, 0x10000);
     TransLogClient tls("tcp/localhost:18377");
@@ -868,8 +879,8 @@ int Test::Main()
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
-    test1();
-    test2();
+    testVisitOverGeneratedDomain();
+    testVisitOverPreExistingDomain();
     testMany();
     testErase();
     partialUpdateTest();
