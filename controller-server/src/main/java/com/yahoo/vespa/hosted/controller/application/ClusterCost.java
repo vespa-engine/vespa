@@ -24,6 +24,7 @@ import java.util.Objects;
  * @author smorgrav
  */
 public class ClusterCost {
+
     private final double tco;
     private final double waste;
     private final ClusterInfo clusterInfo;
@@ -32,8 +33,8 @@ public class ClusterCost {
     private final ClusterUtilization resultUtilization;
 
     /**
-     * @param clusterInfo       Value object with cluster info e.g. the TCO for the hardware used
-     * @param systemUtilization Utilization of system resources (as ratios)
+     * @param clusterInfo       value object with cluster info e.g. the TCO for the hardware used
+     * @param systemUtilization utilization of system resources (as ratios)
      */
     public ClusterCost(ClusterInfo clusterInfo,
                        ClusterUtilization systemUtilization) {
@@ -79,10 +80,10 @@ public class ClusterCost {
     }
 
     static ClusterUtilization calculateResultUtilization(ClusterUtilization system, ClusterUtilization target) {
-        double cpu = ratio(system.getCpu(),target.getCpu());
-        double mem = ratio(system.getMemory(),target.getMemory());
-        double disk = ratio(system.getDisk(),target.getDisk());
-        double diskbusy = ratio(system.getDiskBusy(),target.getDiskBusy());
+        double cpu = ratio(system.getCpu(), target.getCpu());
+        double mem = ratio(system.getMemory(), target.getMemory());
+        double disk = ratio(system.getDisk(), target.getDisk());
+        double diskbusy = ratio(system.getDiskBusy(), target.getDiskBusy());
 
         return new ClusterUtilization(mem, cpu, disk, diskbusy);
     }

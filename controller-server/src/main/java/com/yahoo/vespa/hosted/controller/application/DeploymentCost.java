@@ -44,17 +44,17 @@ public class DeploymentCost {
         return clusters;
     }
 
-    /** @return Total cost of ownership for the deployment (sum of all clusters) */
+    /** Returns the total monthly cost of ownership for the deployment (sum of all clusters) */
     public double getTco() {
         return tco;
     }
 
-    /** @return The utilization of clusters that wastes most money in this deployment */
+    /** Returns the utilization of clusters that wastes most money in this deployment */
     public double getUtilization() {
         return utilization;
     }
 
-    /** @return The amount of dollars spent and not utilized */
+    /** Returns the amount of dollars spent and not utilized */
     public double getWaste() {
         return waste;
     }
