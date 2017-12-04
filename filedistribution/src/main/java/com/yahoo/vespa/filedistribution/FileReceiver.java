@@ -14,8 +14,8 @@ import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -41,7 +41,7 @@ public class FileReceiver {
     }
 
     private void registerMethods() {
-        receiveFileMethod(this).forEach((method) -> supervisor.addMethod(method));
+        receiveFileMethod(this).forEach(supervisor::addMethod);
     }
 
     // Defined here so that it can be added to supervisor used by client (server will use same connection when calling
@@ -112,8 +112,7 @@ public class FileReceiver {
             Files.write(tempFile.toPath(), content);
             Files.createDirectories(fileReferenceDir.toPath());
             File file = new File(fileReferenceDir, filename);
-            Files.move(tempFile.toPath(), file.toPath());
-            log.log(LogLevel.INFO, "Data written to " + file.getAbsolutePath());
+            moveFileToDestination(tempFile, file);
             downloader.completedDownloading(fileReference, file);
         } catch (IOException e) {
             log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
@@ -121,7 +120,22 @@ public class FileReceiver {
         }
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
+    private void moveFileToDestination(File tempFile, File destination) {
+        try {
+            Files.move(tempFile.toPath(), destination.toPath());
+            log.log(LogLevel.INFO, "Data written to " + destination.getAbsolutePath());
+        } catch (FileAlreadyExistsException e) {
+            // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
+            // so it might be written already)
+            log.log(LogLevel.INFO, "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
+        } catch (IOException e) {
+            String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
+            log.log(LogLevel.ERROR, message, e);
+            throw new RuntimeException(message, e);
+        }
+    }
+
+        @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileMeta(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
     }
