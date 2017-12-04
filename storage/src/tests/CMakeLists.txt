@@ -5,7 +5,6 @@ vespa_add_executable(storage_testrunner_app TEST
     DEPENDS
     storage_teststorageserver
     storage_testbucketmover
-    storage_teststorageutil
     storage_testvisiting
     storage_testbucketdb
     storage_testcommon
