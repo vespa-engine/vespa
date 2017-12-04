@@ -704,8 +704,11 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         ContentProtonMetrics &metrics = _metricsEngine->root();
         metrics.transactionLog.update(_tls->getTransLogServer()->getDomainStats());
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
-        metrics.resourceUsage.disk.set(usageFilter.getDiskUsedRatio());
-        metrics.resourceUsage.memory.set(usageFilter.getMemoryUsedRatio());
+        DiskMemUsageState usageState = usageFilter.usageState();
+        metrics.resourceUsage.disk.set(usageState.diskState().usage());
+        metrics.resourceUsage.diskUtilization.set(usageState.diskState().utilization());
+        metrics.resourceUsage.memory.set(usageState.memoryState().usage());
+        metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(countOpenFiles());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));

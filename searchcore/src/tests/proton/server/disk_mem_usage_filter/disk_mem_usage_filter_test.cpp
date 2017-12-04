@@ -3,13 +3,11 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_filter.h>
+#include <vespa/searchcore/proton/server/resource_usage_state.h>
 
-using proton::DiskMemUsageFilter;
-using proton::HwInfo;
+using namespace proton;
 
 namespace fs = std::experimental::filesystem;
-
-namespace {
 
 struct Fixture
 {
@@ -18,13 +16,13 @@ struct Fixture
     using Config = DiskMemUsageFilter::Config;
 
     Fixture()
-        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(64 * 1024 * 1024), HwInfo::Cpu(0)))
+        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0)))
     {
-        _filter.setDiskUsedSize(0);
-        _filter.setMemoryStats(vespalib::ProcessMemoryStats(10000000,
-                                                            10000001,
-                                                            10000002,
-                                                            10000003,
+        _filter.setDiskUsedSize(20);
+        _filter.setMemoryStats(vespalib::ProcessMemoryStats(297,
+                                                            298,
+                                                            299,
+                                                            300,
                                                             42));
     }
 
@@ -48,15 +46,13 @@ struct Fixture
 
     void triggerMemoryLimit()
     {
-        _filter.setMemoryStats(vespalib::ProcessMemoryStats(58720259,
-                                                            58720258,
-                                                            58720257,
-                                                            58720256,
+        _filter.setMemoryStats(vespalib::ProcessMemoryStats(897,
+                                                            898,
+                                                            899,
+                                                            900,
                                                             43));
     }
 };
-
-}
 
 TEST_F("Check that default filter allows write", Fixture)
 {
@@ -70,28 +66,40 @@ TEST_F("Check that stats are wired through", Fixture)
     EXPECT_EQUAL(43u, f._filter.getMemoryStats().getMappingsCount());
 }
 
+void
+assertResourceUsage(double usage, double limit, double utilization, const ResourceUsageState &state)
+{
+    EXPECT_EQUAL(usage, state.usage());
+    EXPECT_EQUAL(limit, state.limit());
+    EXPECT_EQUAL(utilization, state.utilization());
+}
+
 TEST_F("Check that disk limit can be reached", Fixture)
 {
     f._filter.setConfig(Fixture::Config(1.0, 0.8));
+    TEST_DO(assertResourceUsage(0.2, 0.8, 0.25, f._filter.usageState().diskState()));
     f.triggerDiskLimit();
     f.testWrite("diskLimitReached: { "
                 "action: \"add more content nodes\", "
                 "reason: \"disk used (0.9) > disk limit (0.8)\", "
                 "stats: { "
                 "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
+    TEST_DO(assertResourceUsage(0.9, 0.8, 1.125, f._filter.usageState().diskState()));
 }
 
 TEST_F("Check that memory limit can be reached", Fixture)
 {
     f._filter.setConfig(Fixture::Config(0.8, 1.0));
+    TEST_DO(assertResourceUsage(0.3, 0.8, 0.375, f._filter.usageState().memoryState()));
     f.triggerMemoryLimit();
     f.testWrite("memoryLimitReached: { "
                 "action: \"add more content nodes\", "
-                "reason: \"memory used (0.875) > memory limit (0.8)\", "
+                "reason: \"memory used (0.9) > memory limit (0.8)\", "
                 "stats: { "
-                "mapped: { virt: 58720259, rss: 58720258}, "
-                "anonymous: { virt: 58720257, rss: 58720256}, "
-                "physicalMemory: 67108864, memoryUsed: 0.875, memoryLimit: 0.8}}");
+                "mapped: { virt: 897, rss: 898}, "
+                "anonymous: { virt: 899, rss: 900}, "
+                "physicalMemory: 1000, memoryUsed: 0.9, memoryLimit: 0.8}}");
+    TEST_DO(assertResourceUsage(0.9, 0.8, 1.125, f._filter.usageState().memoryState()));
 }
 
 TEST_F("Check that both disk limit and memory limit can be reached", Fixture)
@@ -101,11 +109,11 @@ TEST_F("Check that both disk limit and memory limit can be reached", Fixture)
     f.triggerDiskLimit();
     f.testWrite("memoryLimitReached: { "
                 "action: \"add more content nodes\", "
-                "reason: \"memory used (0.875) > memory limit (0.8)\", "
+                "reason: \"memory used (0.9) > memory limit (0.8)\", "
                 "stats: { "
-                "mapped: { virt: 58720259, rss: 58720258}, "
-                "anonymous: { virt: 58720257, rss: 58720256}, "
-                "physicalMemory: 67108864, memoryUsed: 0.875, memoryLimit: 0.8}}, "
+                "mapped: { virt: 897, rss: 898}, "
+                "anonymous: { virt: 899, rss: 900}, "
+                "physicalMemory: 1000, memoryUsed: 0.9, memoryLimit: 0.8}}, "
                 "diskLimitReached: { "
                 "action: \"add more content nodes\", "
                 "reason: \"disk used (0.9) > disk limit (0.8)\", "
