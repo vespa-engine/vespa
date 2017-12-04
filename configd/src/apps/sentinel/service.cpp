@@ -239,6 +239,7 @@ Service::start()
     // ensureChildRuns(pipes[0]); // This will wait until the execl goes through
     setState(RUNNING);
     _metrics.currentlyRunningServices++;
+    _metrics.sentinel_running.sample(_metrics.currentlyRunningServices);
     close(pipes[0]); // close reading end
 
     using ns_log::LLParser;
@@ -314,6 +315,7 @@ Service::youExited(int status)
         setState(FAILED);
     }
     _metrics.currentlyRunningServices--;
+    _metrics.sentinel_running.sample(_metrics.currentlyRunningServices);
 
     if (_state == TERMINATING) {
         setState(TERMINATED);
@@ -326,6 +328,7 @@ Service::youExited(int status)
         setState(READY);
         _metrics.totalRestartsCounter++;
         _metrics.totalRestartsLastPeriod++;
+        _metrics.sentinel_restarts.add();
         start();
     }
 }

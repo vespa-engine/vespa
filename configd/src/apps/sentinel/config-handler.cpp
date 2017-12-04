@@ -395,61 +395,12 @@ ConfigHandler::handleCommand(CommandConnection *c)
     }
 }
 
-namespace {
-
-void
-fillRestarts(vespalib::SimpleMetricSnapshot &snapshot, unsigned long restarts)
-{
-    snapshot.addCount("sentinel.restarts",
-                      "how many times sentinel restarted a service",
-                      restarts);
-}
-
-void
-fillTotalRestarts(vespalib::SimpleMetricSnapshot &snapshot,
-		  unsigned long totalRestarts)
-{
-    snapshot.addGauge("sentinel.totalRestarts",
-                      "how many times sentinel restarted a service since "
-		      "sentinel start",
-                      totalRestarts);
-}
-
-void
-fillRunning(vespalib::SimpleMetricSnapshot &snapshot, unsigned long running)
-{
-    snapshot.addGauge("sentinel.running",
-                      "how many services the sentinel has running currently",
-                      running);
-}
-
-void
-fillUptime(vespalib::SimpleMetricSnapshot &snapshot, long uptime)
-{
-    snapshot.addGauge("sentinel.uptime",
-                      "how many seconds has the sentinel been running",
-                      uptime);
-}
-
-} // namespace <unnamed>
-
 void
 ConfigHandler::updateMetrics()
 {
-    time_t now = time(nullptr);
-    vespalib::SimpleMetricSnapshot snapshot(_startMetrics.snapshotStart, _startMetrics.snapshotEnd);
-    fillRestarts(snapshot, _startMetrics.totalRestartsLastSnapshot);
-    fillTotalRestarts(snapshot, _startMetrics.totalRestartsCounter);
-    fillRunning(snapshot, _startMetrics.currentlyRunningServices);
-    fillUptime(snapshot, now - _startMetrics.startedTime);
-    _stateApi.myMetrics.setMetrics(snapshot.asString());
-
-    vespalib::SimpleMetricSnapshot totals(_startMetrics.startedTime, now);
-    fillRestarts(totals, _startMetrics.totalRestartsCounter);
-    fillRunning(totals, _startMetrics.currentlyRunningServices);
-    fillUptime(totals, now - _startMetrics.startedTime);
-    _stateApi.myMetrics.setTotalMetrics(totals.asString());
-
+    _startMetrics.maybeLog();
+    _stateApi.myMetrics.setMetrics(_startMetrics.producer.getMetrics(""));
+    _stateApi.myMetrics.setTotalMetrics(_startMetrics.producer.getTotalMetrics(""));
 }
 
 void
