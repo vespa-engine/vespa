@@ -12,6 +12,9 @@ class MetricsManager;
 class CounterAggregator;
 
 
+/**
+ * Represents a counter metric that can be incremented.
+ **/
 class Counter {
     std::shared_ptr<MetricsManager> _manager;
     MetricName _id;
@@ -30,8 +33,14 @@ public:
     void add(Point p) { add(1, p); }
     void add(size_t count) const { add(count, Point::empty); }
 
+    /**
+     * Increment the counter.
+     * @param count the amount to increment by (default 1)
+     * @param p the point representing labels for this increment (default empty)
+     **/
     void add(size_t count, Point p) const;
 
+    // internal
     struct Increment {
         MetricIdentifier idx;
         size_t value;

@@ -46,4 +46,11 @@ SimpleTick::kill()
     _cond.notify_all();
 }
 
+bool
+SimpleTick::alive()
+{
+    std::unique_lock<std::mutex> locker(_lock);
+    return _runFlag;
+}
+
 } // namespace vespalib::metrics

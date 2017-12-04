@@ -23,6 +23,7 @@ struct Tick {
     virtual TimeStamp next(TimeStamp prev) = 0;
     TimeStamp first() { return next(TimeStamp(0.0)); }
     virtual void kill() = 0;
+    virtual bool alive() = 0;
     virtual ~Tick() {}
 };
 

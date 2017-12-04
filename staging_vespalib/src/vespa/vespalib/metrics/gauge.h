@@ -11,6 +11,9 @@ namespace metrics {
 class MetricsManager;
 class GaugeAggregator;
 
+/**
+ * Represents a gauge metric that can be measured.
+ **/
 class Gauge {
 private:
     std::shared_ptr<MetricsManager> _manager;
@@ -20,8 +23,14 @@ public:
         : _manager(std::move(m)), _id(id)
     {}
 
+    /**
+     * Provide a sample for the gauge.
+     * @param value the measurement for this sample
+     * @param p the point representing labels for this sample (default empty)
+     **/
     void sample(double value, Point p = Point::empty) const;
 
+    // internal
     struct Measurement {
         MetricIdentifier idx;
         double value;

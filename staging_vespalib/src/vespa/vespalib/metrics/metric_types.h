@@ -8,6 +8,7 @@
 namespace vespalib {
 namespace metrics {
 
+// internal class for typechecking
 class MetricTypes {
     static const char *_typeNames[];
 public:

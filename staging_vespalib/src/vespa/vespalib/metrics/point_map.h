@@ -8,6 +8,7 @@
 namespace vespalib {
 namespace metrics {
 
+// internal
 class PointMap {
 public:
     using BackingMap = std::map<Dimension, Label>;

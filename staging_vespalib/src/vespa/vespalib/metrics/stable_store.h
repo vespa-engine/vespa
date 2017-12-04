@@ -8,6 +8,7 @@
 
 namespace vespalib {
 
+/** metrics-internal utility class */
 template <typename T>
 class StableStore
 {
