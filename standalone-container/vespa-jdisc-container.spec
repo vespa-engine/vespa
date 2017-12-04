@@ -36,30 +36,31 @@ for dir in "${dirs[@]}"; do
   cp "$dir"/* "$jars_dir"
 done
 
-declare -a files=(
-  component/target/component-jar-with-dependencies.jar
-  config-bundle/target/config-bundle-jar-with-dependencies.jar
-  config-model-api/target/config-model-api-jar-with-dependencies.jar
-  config-model/target/config-model-jar-with-dependencies.jar
-  config-provisioning/target/config-provisioning-jar-with-dependencies.jar
-  configdefinitions/target/configdefinitions-jar-with-dependencies.jar
-  container-disc/target/container-disc-jar-with-dependencies.jar
-  container-jersey2/target/container-jersey2-jar-with-dependencies.jar
-  container-search-and-docproc/target/container-search-and-docproc-jar-with-dependencies.jar
-  defaults/target/defaults-jar-with-dependencies.jar
-  docprocs/target/docprocs-jar-with-dependencies.jar
-  jdisc_core/target/dependency/vespajlib.jar
-  jdisc_core/target/jdisc_core-jar-with-dependencies.jar
-  jdisc_http_service/target/jdisc_http_service-jar-with-dependencies.jar
-  simplemetrics/target/simplemetrics-jar-with-dependencies.jar
-  standalone-container/target/standalone-container-jar-with-dependencies.jar
-  vespaclient-container-plugin/target/vespaclient-container-plugin-jar-with-dependencies.jar
-  vespajlib/target/vespajlib.jar
-  zkfacade/target/zkfacade-jar-with-dependencies.jar
+declare -a modules=(
+  component
+  config-bundle
+  config-model-api
+  config-model
+  config-provisioning
+  configdefinitions
+  container-disc
+  container-jersey2
+  container-search-and-docproc
+  defaults
+  docprocs
+  jdisc_core
+  jdisc_http_service
+  simplemetrics
+  standalone-container
+  vespaclient-container-plugin
+  zkfacade
 )
-for file in "${files[@]}"; do
-  cp "$file" "$jars_dir"
+for module in "${modules[@]}"; do
+    cp "$module"/target/"$module"-jar-with-dependencies.jar "$jars_dir"
 done
+
+# vespajlib must be installed _without_ dependencies.
+cp vespajlib/target/vespajlib.jar "$jars_dir"
 
 declare -a libexec_files=(
   vespabase/src/common-env.sh
