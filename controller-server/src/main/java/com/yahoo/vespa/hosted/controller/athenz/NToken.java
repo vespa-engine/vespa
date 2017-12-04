@@ -65,7 +65,7 @@ public class NToken {
 
     @Override
     public String toString() {
-        return String.format("NToken(%s)", getToken());
+        return String.format("NToken(%s)", token.getUnsignedToken());
     }
 
     @Override
