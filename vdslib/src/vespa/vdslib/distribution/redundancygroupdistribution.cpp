@@ -14,10 +14,10 @@ namespace {
     void verifyLegal(vespalib::StringTokenizer& st,
                      vespalib::stringref serialized)
     {
-            // First, verify sanity of the serialized string
-        uint32_t firstAsterix = st.size();
+        // First, verify sanity of the serialized string
+        uint32_t firstAsterisk = st.size();
         for (uint32_t i=0; i<st.size(); ++i) {
-            if (i > firstAsterix) {
+            if (i > firstAsterisk) {
                 if (st[i] != "*") {
                     throw vespalib::IllegalArgumentException(
                             "Illegal distribution spec \"" + serialized + "\". "
@@ -26,8 +26,8 @@ namespace {
                 }
                 continue;
             }
-            if (i < firstAsterix && st[i] == "*") {
-                firstAsterix = i;
+            if (i < firstAsterisk && st[i] == "*") {
+                firstAsterisk = i;
                 continue;
             }
             uint32_t number = atoi(st[i].c_str());
@@ -76,21 +76,21 @@ RedundancyGroupDistribution::RedundancyGroupDistribution(
         const RedundancyGroupDistribution& spec,
         uint16_t redundancy)
 {
-    uint16_t firstAsterix = spec.getFirstAsterixIndex();
-        // If redundancy is less than the group size, we only get one copy
-        // in redundancy groups.
+    uint16_t firstAsterisk = spec.getFirstAsteriskIndex();
+    // If redundancy is less than the group size, we only get one copy
+    // in redundancy groups.
     if (redundancy <= spec.size()) {
         _values = std::vector<uint16_t>(redundancy, 1);
         return;
     }
-        // If not we will have one copy at least for every wanted group.
+    // If not we will have one copy at least for every wanted group.
     _values = std::vector<uint16_t>(spec.size(), 1);
     redundancy -= spec.size();
-        // Distribute extra copies to non-asterix entries first
-    redundancy = divideSpecifiedCopies(0, firstAsterix, redundancy, spec._values);
-        // Distribute remaining copies to asterix entries
-    divideSpecifiedCopies(firstAsterix, spec.size(), redundancy, spec._values);
-        // Lastly sort, so the most copies will end up first in ideal state
+    // Distribute extra copies to non-asterisk entries first
+    redundancy = divideSpecifiedCopies(0, firstAsterisk, redundancy, spec._values);
+    // Distribute remaining copies to asterisk entries
+    divideSpecifiedCopies(firstAsterisk, spec.size(), redundancy, spec._values);
+    // Lastly sort, so the most copies will end up first in ideal state
     std::sort(_values.begin(), _values.end());
     std::reverse(_values.begin(), _values.end());
     assert(_values.front() >= _values.back());
@@ -111,18 +111,18 @@ RedundancyGroupDistribution::print(std::ostream& out,
 }
 
 uint16_t
-RedundancyGroupDistribution::getFirstAsterixIndex() const
+RedundancyGroupDistribution::getFirstAsteriskIndex() const
 {
     if (_values.empty() || _values.back() != 0) {
         throw vespalib::IllegalArgumentException(
                 "Invalid spec given. No asterisk entries found.",
                 VESPA_STRLOC);
     }
-    uint16_t firstAsterix = _values.size() - 1;
-    while (firstAsterix > 0 && _values[firstAsterix - 1] == 0) {
-        --firstAsterix;
+    uint16_t firstAsterisk = _values.size() - 1;
+    while (firstAsterisk > 0 && _values[firstAsterisk - 1] == 0) {
+        --firstAsterisk;
     }
-    return firstAsterix;
+    return firstAsterisk;
 }
 
 uint16_t

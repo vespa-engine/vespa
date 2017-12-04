@@ -2,6 +2,7 @@
 vespa_add_library(vdslib_distribution OBJECT
     SOURCES
     distribution.cpp
+    distribution_config_util.cpp
     group.cpp
     idealnodecalculatorimpl.cpp
     redundancygroupdistribution.cpp
