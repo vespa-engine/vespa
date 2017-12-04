@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "clock.h"
-
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <vespa/vespalib/metrics/clock.h>
 
 namespace vespalib::metrics {
 
@@ -27,6 +26,13 @@ public:
 
     void provide(TimeStamp value);
     TimeStamp waitUntilBlocked();
+};
+
+struct TickProxy : Tick {
+    std::shared_ptr<Tick> tick;
+    TickProxy(std::shared_ptr<Tick> tick_in) : tick(std::move(tick_in)) {}
+    TimeStamp next(TimeStamp prev) override { return tick->next(prev); }
+    void kill() override { tick->kill(); }
 };
 
 } // namespace vespalib::metrics

@@ -2,6 +2,7 @@
 vespa_add_executable(staging_vespalib_metrics_test_app TEST
     SOURCES
     simple_metrics_test.cpp
+    mock_tick.cpp
     DEPENDS
     staging_vespalib
 )

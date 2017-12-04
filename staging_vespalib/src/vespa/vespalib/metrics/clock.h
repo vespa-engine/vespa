@@ -26,11 +26,4 @@ struct Tick {
     virtual ~Tick() {}
 };
 
-struct TickProxy : Tick {
-    std::shared_ptr<Tick> tick;
-    TickProxy(std::shared_ptr<Tick> tick_in) : tick(std::move(tick_in)) {}
-    TimeStamp next(TimeStamp prev) override { return tick->next(prev); }
-    void kill() override { tick->kill(); }
-};
-
 } // namespace vespalib::metrics

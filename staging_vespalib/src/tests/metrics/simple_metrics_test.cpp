@@ -6,7 +6,7 @@
 #include <vespa/vespalib/metrics/simple_metrics_manager.h>
 #include <vespa/vespalib/metrics/stable_store.h>
 #include <vespa/vespalib/metrics/json_formatter.h>
-#include <vespa/vespalib/metrics/mock_tick.h>
+#include "mock_tick.h"
 #include <stdio.h>
 #include <unistd.h>
 

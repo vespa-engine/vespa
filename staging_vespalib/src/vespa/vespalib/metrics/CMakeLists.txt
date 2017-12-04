@@ -17,7 +17,6 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     metric_name.cpp
     metrics_manager.cpp
     metric_types.cpp
-    mock_tick.cpp
     name_collection.cpp
     point_builder.cpp
     point.cpp
