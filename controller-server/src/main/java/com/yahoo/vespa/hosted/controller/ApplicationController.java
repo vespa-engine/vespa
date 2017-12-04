@@ -508,7 +508,7 @@ public class ApplicationController {
             return Optional.of(new InstanceEndpoints(endPointUrls));
         }
         catch (RuntimeException e) {
-            log.log(Level.FINE, "Failed to get endpoint information for " + deploymentId, e);
+            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId, e);
             return Optional.empty();
         }
     }
