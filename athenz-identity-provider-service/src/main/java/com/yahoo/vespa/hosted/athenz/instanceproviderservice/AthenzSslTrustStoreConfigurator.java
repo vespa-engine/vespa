@@ -20,6 +20,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -35,7 +36,6 @@ import java.util.logging.Logger;
 /**
  * @author bjorncs
  */
-// TODO Add Athenz CA certificates to trust store
 public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurator {
 
     private static final Logger log = Logger.getLogger(AthenzSslTrustStoreConfigurator.class.getName());
@@ -64,7 +64,9 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
             X509Certificate selfSignedCertificate = createSelfSignedCertificate(keyPair, configserverConfig);
             log.log(LogLevel.FINE, "Generated self-signed certificate: " + selfSignedCertificate);
             KeyStore trustStore = KeyStore.getInstance("JKS");
-            trustStore.load(null);
+            try (FileInputStream in = new FileInputStream(athenzProviderServiceConfig.athenzCaTrustStore())) {
+                trustStore.load(in, "changeit".toCharArray());
+            }
             trustStore.setCertificateEntry("cfgselfsigned", selfSignedCertificate);
             return trustStore;
         } catch (Exception e) {
