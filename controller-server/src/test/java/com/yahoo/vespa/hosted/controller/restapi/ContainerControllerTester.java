@@ -45,18 +45,16 @@ import java.util.Optional;
 public class ContainerControllerTester {
 
     private final ContainerTester containerTester;
-    private final Controller controller;
     private final Upgrader upgrader;
 
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
-        controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
         CuratorDb curatorDb = new MockCuratorDb();
         curatorDb.writeUpgradesPerMinute(100);
-        upgrader = new Upgrader(controller, Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
+        upgrader = new Upgrader(controller(), Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
     }
 
-    public Controller controller() { return controller; }
+    public Controller controller() { return containerTester.controller(); }
 
     public Upgrader upgrader() { return upgrader; }
 
@@ -70,18 +68,18 @@ public class ContainerControllerTester {
 
     public Application createApplication(String athensDomain, String tenant, String application) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
-        controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
+        controller().tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
                                                                  new Property("property1"),
                                                                  Optional.of(new PropertyId("1234"))),
                                        Optional.of(TestIdentities.userNToken));
         ApplicationId app = ApplicationId.from(tenant, application, "default");
-        return controller.applications().createApplication(app, Optional.of(TestIdentities.userNToken));
+        return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
 
     public Application deploy(Application application, ApplicationPackage applicationPackage, Zone zone, long projectId) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(projectId));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller.applications().deployApplication(application.id(),
+        controller().applications().deployApplication(application.id(),
                                                     zone,
                                                     applicationPackage,
                                                     new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
