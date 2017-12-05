@@ -44,7 +44,7 @@ public class ZtsClientImpl implements ZtsClient {
                     .map(AthenzDomain::new)
                     .collect(toList());
         } catch (ZTSClientException e) {
-            throw new ZtsException(e);
+            throw new ZtsException(e.getCode(), e);
         }
     }
 

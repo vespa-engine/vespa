@@ -179,7 +179,7 @@ public class ZmsClientImpl implements ZmsClient {
             wrappedCode.run();
         } catch (ZMSClientException e) {
             logWarning(e);
-            throw new ZmsException(e);
+            throw new ZmsException(e.getCode(), e);
         }
     }
 
@@ -188,7 +188,7 @@ public class ZmsClientImpl implements ZmsClient {
             return wrappedCode.get();
         } catch (ZMSClientException e) {
             logWarning(e);
-            throw new ZmsException(e);
+            throw new ZmsException(e.getCode(), e);
         }
     }
 
