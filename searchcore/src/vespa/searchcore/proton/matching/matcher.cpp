@@ -270,6 +270,7 @@ Matcher::match(const SearchRequest &request,
         my_stats = MatchMaster::getStats(std::move(master));
 
         bool wasLimited = mtf->match_limiter().was_limited();
+        size_t spaceEstimate = mtf->match_limiter().getDocIdSpaceEstimate();
         uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
             SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
@@ -290,7 +291,6 @@ Matcher::match(const SearchRequest &request,
         uint32_t numActiveLids = metaStore.getNumActiveLids();
         // note: this is actually totalSpace+1, since 0 is reserved
         uint32_t totalSpace = metaStore.getCommittedDocIdLimit();
-        size_t spaceEstimate = mtf->match_limiter().getDocIdSpaceEstimate();
         LOG(debug, "docid limit = %d", totalSpace);
         LOG(debug, "num active lids = %d", numActiveLids);
         LOG(debug, "space Estimate = %zd", spaceEstimate);
