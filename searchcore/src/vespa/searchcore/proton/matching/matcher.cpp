@@ -268,9 +268,9 @@ Matcher::match(const SearchRequest &request,
         ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp,
                                                           _distributionKey, numSearchPartitions);
         my_stats = MatchMaster::getStats(std::move(master));
-        size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()),
-                                   mtf->match_limiter().getDocIdSpaceEstimate());
+
         bool wasLimited = mtf->match_limiter().was_limited();
+        size_t spaceEstimate = mtf->match_limiter().getDocIdSpaceEstimate();
         uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
             SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
@@ -281,16 +281,32 @@ Matcher::match(const SearchRequest &request,
         reply = std::move(result->_reply);
         SearchReply::Coverage & coverage = reply->coverage;
         if (wasLimited) {
+            LOG(debug, "was limited, degraded from match phase");
             coverage.degradeMatchPhase();
         }
         if (my_stats.softDoomed()) {
+            LOG(debug, "soft doomed, degraded from timeout");
             coverage.degradeTimeout();
         }
-        coverage.setActive(metaStore.getNumActiveLids());
+        uint32_t numActiveLids = metaStore.getNumActiveLids();
+        // note: this is actually totalSpace+1, since 0 is reserved
+        uint32_t totalSpace = metaStore.getCommittedDocIdLimit();
+        LOG(debug, "docid limit = %d", totalSpace);
+        LOG(debug, "num active lids = %d", numActiveLids);
+        LOG(debug, "space Estimate = %zd", spaceEstimate);
+        if (spaceEstimate >= totalSpace) {
+            // estimate is too high, clamp it
+            spaceEstimate = totalSpace;
+        } else {
+            // account for docid 0 reserved
+            spaceEstimate += 1;
+        }
+        size_t covered = (spaceEstimate *  numActiveLids) / totalSpace;
+        LOG(debug, "covered = %zd", covered);
+        coverage.setActive(numActiveLids);
         //TODO this should be calculated with ClusterState calculator.
-        coverage.setSoonActive(metaStore.getNumActiveLids());
-        coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
-                                     (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
+        coverage.setSoonActive(numActiveLids);
+        coverage.setCovered(covered);
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
