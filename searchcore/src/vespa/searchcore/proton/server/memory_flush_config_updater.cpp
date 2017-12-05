@@ -20,7 +20,7 @@ shouldUseConservativeMode(const ResourceUsageState &resourceState,
 }
 
 void
-MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &,
+MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard,
                                                           MemoryFlush::Config &newConfig)
 {
     if (shouldUseConservativeMode(_currState.diskState(), _useConservativeDiskMode,
@@ -30,6 +30,9 @@ MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &,
         _useConservativeDiskMode = true;
     } else {
         _useConservativeDiskMode = false;
+        if (_nodeRetired) {
+            considerUseRelaxedDiskMode(guard, newConfig);
+        }
     }
 }
 
@@ -45,6 +48,18 @@ MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &,
         _useConservativeMemoryMode = true;
     } else {
         _useConservativeMemoryMode = false;
+    }
+}
+
+void
+MemoryFlushConfigUpdater::considerUseRelaxedDiskMode(const LockGuard &, MemoryFlush::Config &newConfig)
+{
+    double utilization = _currState.diskState().utilization();
+    double bloatMargin = _currConfig.conservative.lowwatermarkfactor - utilization;
+    if (bloatMargin > 0.0) {
+        // Node retired and disk utiliation is below low mater mark factor.
+        newConfig.diskBloatFactor = 1.0;
+        newConfig.globalDiskBloatFactor = std::max(bloatMargin * 0.8, _currConfig.diskbloatfactor);
     }
 }
 
@@ -66,7 +81,8 @@ MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushS
       _memory(memory),
       _currState(),
       _useConservativeDiskMode(false),
-      _useConservativeMemoryMode(false)
+      _useConservativeMemoryMode(false),
+      _nodeRetired(false)
 {
 }
 
@@ -83,6 +99,14 @@ MemoryFlushConfigUpdater::notifyDiskMemUsage(DiskMemUsageState newState)
 {
     LockGuard guard(_mutex);
     _currState = newState;
+    updateFlushStrategy(guard);
+}
+
+void
+MemoryFlushConfigUpdater::setNodeRetired(bool nodeRetired)
+{
+    LockGuard guard(_mutex);
+    _nodeRetired = nodeRetired;
     updateFlushStrategy(guard);
 }
 
