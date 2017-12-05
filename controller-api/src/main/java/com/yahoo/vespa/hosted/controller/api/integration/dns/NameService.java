@@ -21,4 +21,7 @@ public interface NameService {
     /** Find record by type and name */
     Optional<Record> findRecord(Record.Type type, String name);
 
+    /** Remove record by ID */
+    void removeRecord(RecordId id);
+
 }

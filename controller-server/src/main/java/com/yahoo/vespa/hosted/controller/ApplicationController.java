@@ -51,6 +51,7 @@ import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.net.URI;
@@ -476,7 +477,7 @@ public class ApplicationController {
             Optional<Record> record = nameService.findRecord(Record.Type.CNAME, dnsName);
             if (!record.isPresent()) {
                 RecordId recordId = nameService.createCname(dnsName, rotation.name());
-                log.info("Registered mapping with record ID " + recordId.id() + ": " +
+                log.info("Registered mapping with record ID " + recordId.asString() + ": " +
                          dnsName + " -> " + rotation.name());
             }
         } catch (RuntimeException e) {
@@ -508,7 +509,8 @@ public class ApplicationController {
             return Optional.of(new InstanceEndpoints(endPointUrls));
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId, e);
+            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
+                                   + Exceptions.toMessageString(e));
             return Optional.empty();
         }
     }
