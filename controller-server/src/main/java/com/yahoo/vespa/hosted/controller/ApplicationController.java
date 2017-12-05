@@ -48,6 +48,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
@@ -96,8 +97,6 @@ public class ApplicationController {
 
     private final DeploymentTrigger deploymentTrigger;
 
-    private final Object monitor = new Object();
-    
     ApplicationController(Controller controller, ControllerDb db, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServerClient configserverClient,
@@ -111,7 +110,7 @@ public class ApplicationController {
         this.routingGenerator = routingGenerator;
         this.clock = clock;
 
-        this.rotationRepository = new RotationRepository(rotationsConfig, this);
+        this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
         for (Application application : db.listApplications()) {
@@ -330,15 +329,13 @@ public class ApplicationController {
                                                        " the current version " + existingDeployment.version());
             }
 
-            // Synchronize rotation assignment. Rotation can only be considered assigned once application has been
-            // persisted.
             Optional<Rotation> rotation;
-            synchronized (monitor) {
-                rotation = getRotation(application, zone);
+            try (RotationLock rotationLock = rotationRepository.lock()) {
+                rotation = getRotation(application, zone, rotationLock);
                 if (rotation.isPresent()) {
                     application = application.with(rotation.get().id());
                     store(application); // store assigned rotation even if deployment fails
-                    registerRotationInDns(application.rotation().get(), rotation.get());
+                    registerRotationInDns(rotation.get(), application.rotation().get().dnsName());
                 }
             }
 
@@ -453,14 +450,13 @@ public class ApplicationController {
     }
 
     /** Register a DNS name for rotation */
-    private void registerRotationInDns(ApplicationRotation applicationRotation, Rotation rotation) {
-        String dnsName = applicationRotation.dnsName();
+    private void registerRotationInDns(Rotation rotation, String dnsName) {
         try {
             Optional<Record> record = nameService.findRecord(Record.Type.CNAME, dnsName);
             if (!record.isPresent()) {
-                RecordId recordId = nameService.createCname(dnsName, rotation.name());
-                log.info("Registered mapping with record ID " + recordId.asString() + ": " +
-                         dnsName + " -> " + rotation.name());
+                RecordId id = nameService.createCname(dnsName, rotation.name());
+                log.info("Registered mapping with record ID " + id.asString() + ": " + dnsName + " -> "
+                         + rotation.name());
             }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);
@@ -468,12 +464,12 @@ public class ApplicationController {
     }
 
     /** Get an available rotation, if deploying to a production zone and a service ID is specified */
-    private Optional<Rotation> getRotation(Application application, Zone zone) {
+    private Optional<Rotation> getRotation(Application application, Zone zone, RotationLock lock) {
         if (zone.environment() != Environment.prod ||
             !application.deploymentSpec().globalServiceId().isPresent()) {
             return Optional.empty();
         }
-        return Optional.of(rotationRepository.getRotation(application));
+        return Optional.of(rotationRepository.getRotation(application, lock));
     }
 
     /** Returns the endpoints of the deployment, or empty if obtaining them failed */
