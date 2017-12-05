@@ -28,12 +28,15 @@ private:
     DiskMemUsageState _currState;
     bool _useConservativeDiskMode;
     bool _useConservativeMemoryMode;
+    bool _nodeRetired;
 
 
     void considerUseConservativeDiskMode(const LockGuard &guard,
                                          MemoryFlush::Config &newConfig);
     void considerUseConservativeMemoryMode(const LockGuard &guard,
                                            MemoryFlush::Config &newConfig);
+    void considerUseRelaxedDiskMode(const LockGuard &guard,
+                                    MemoryFlush::Config &newConfig);
     void updateFlushStrategy(const LockGuard &guard);
 
 public:
@@ -43,6 +46,7 @@ public:
                              const ProtonConfig::Flush::Memory &config,
                              const HwInfo::Memory &memory);
     void setConfig(const ProtonConfig::Flush::Memory &newConfig);
+    void setNodeRetired(bool nodeRetired);
     virtual void notifyDiskMemUsage(DiskMemUsageState newState) override;
 
     static MemoryFlush::Config convertConfig(const ProtonConfig::Flush::Memory &config,

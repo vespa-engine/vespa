@@ -777,7 +777,11 @@ Proton::setClusterState(const storage::spi::ClusterState &calc)
     // about whether node is supposed to be up or not.  Match engine
     // needs to know this in order to stop serving queries.
     bool nodeUp(calc.nodeUp());
+    bool nodeRetired(calc.nodeRetired());
     _matchEngine->setNodeUp(nodeUp);
+    if (_memoryFlushConfigUpdater) {
+        _memoryFlushConfigUpdater->setNodeRetired(nodeRetired);
+    }
 }
 
 namespace {
