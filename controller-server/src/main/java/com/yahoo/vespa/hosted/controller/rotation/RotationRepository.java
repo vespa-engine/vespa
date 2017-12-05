@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.ArrayList;
@@ -32,10 +33,17 @@ public class RotationRepository {
 
     private final Map<RotationId, Rotation> allRotations;
     private final ApplicationController applications;
+    private final CuratorDb curator;
 
-    public RotationRepository(RotationsConfig rotationsConfig, ApplicationController applications) {
+    public RotationRepository(RotationsConfig rotationsConfig, ApplicationController applications, CuratorDb curator) {
         this.allRotations = from(rotationsConfig);
         this.applications = applications;
+        this.curator = curator;
+    }
+
+    /** Acquire a exclusive lock for this */
+    public RotationLock lock() {
+        return new RotationLock(curator.lockRotations());
     }
 
     /**
@@ -44,9 +52,10 @@ public class RotationRepository {
      * If a rotation is already assigned to the application, that rotation will be returned.
      * If no rotation is assigned, return an available rotation. The caller is responsible for assigning the rotation.
      *
-     * @param application The application to get a rotation for
+     * @param application The application requesting a rotation
+     * @param lock Lock which must be acquired by the caller
      */
-    public Rotation getRotation(Application application) {
+    public Rotation getRotation(Application application, @SuppressWarnings("unused") RotationLock lock) {
         if (application.rotation().isPresent()) {
             return allRotations.get(application.rotation().get().id());
         }
@@ -54,10 +63,10 @@ public class RotationRepository {
             throw new IllegalArgumentException("global-service-id is not set in deployment spec");
         }
         long productionZones = application.deploymentSpec().zones().stream()
-                                              .filter(zone -> zone.deploysTo(Environment.prod))
-                                              // Global rotations don't work for nodes in corp network
-                                              .filter(zone -> !isCorp(zone))
-                                              .count();
+                                          .filter(zone -> zone.deploysTo(Environment.prod))
+                                          // Global rotations don't work for nodes in corp network
+                                          .filter(zone -> !isCorp(zone))
+                                          .count();
         if (productionZones < 2) {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
         }

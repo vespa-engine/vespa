@@ -22,7 +22,6 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,16 +42,14 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     private final Map<ApplicationId, Boolean> applicationActivated = new HashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final Map<URI, Version> versions = new HashMap<>();
-    private Version defaultVersion = new Version(6, 1, 0);
 
-    /** The exception to throw on the next prepare run, or null to continue normally */
+    private Version defaultVersion = new Version(6, 1, 0);
     private RuntimeException prepareException = null;
-    
-    private Optional<Version> lastPrepareVersion = Optional.empty();
+    private Version lastPrepareVersion = null;
 
     /** The version given in the previous prepare call, or empty if no call has been made */
     public Optional<Version> lastPrepareVersion() {
-        return lastPrepareVersion;
+        return Optional.ofNullable(lastPrepareVersion);
     }
 
     /** Return map of applications that may have been activated */
@@ -60,6 +57,7 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
         return Collections.unmodifiableMap(applicationActivated);
     }
 
+    /** The exception to throw on the next prepare run, or null to continue normally */
     public void throwOnNextPrepare(RuntimeException prepareException) {
         this.prepareException = prepareException;
     }
@@ -71,10 +69,16 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     public Map<URI, Version> versions() {
         return versions;
     }
+
+    /** Set the default config server version */
+    public void setDefaultVersion(Version version) {
+        this.defaultVersion = version;
+    }
     
     @Override
-    public PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<Rotation> rotations, byte[] content) {
-        lastPrepareVersion = deployOptions.vespaVersion.map(Version::new);
+    public PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
+                                       Set<Rotation> rotations, byte[] content) {
+        lastPrepareVersion = deployOptions.vespaVersion.map(Version::new).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
             this.prepareException = null;
@@ -108,23 +112,20 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
             public PrepareResponse prepareResponse() {
                 PrepareResponse prepareResponse = new PrepareResponse();
                 prepareResponse.message = "foo";
-                prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
+                prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(),
+                                                                              Collections.emptyList());
                 prepareResponse.tenant = new TenantId("tenant");
                 return prepareResponse;
             }
         };
     }
-
-    /** Set the default config server version */
-    public void setDefaultVersion(Version version) { this.defaultVersion = version; }
     
     @Override
     public List<String> getNodeQueryHost(DeploymentId deployment, String type) {
         if (applicationInstances.containsKey(deployment.applicationId())) {
             return Collections.singletonList(applicationInstances.get(deployment.applicationId()));
-        } else {
-            return Collections.emptyList();
         }
+        return Collections.emptyList();
     }
 
     @Override
@@ -151,7 +152,8 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
 
     // Returns a canned example response
     @Override
-    public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region) {
+    public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
+                                              String environment, String region) {
         ApplicationView applicationView = new ApplicationView();
         ClusterView cluster = new ClusterView();
         cluster.name = "cluster1";
@@ -172,7 +174,8 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
 
     // Returns a canned example response
     @Override
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath) {
+    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
+                                          String environment, String region, String serviceName, String restPath) {
         Map<String,List<?>> root = new HashMap<>();
         List<Map<?,?>> resources = new ArrayList<>();
         Map<String,String> resource = new HashMap<>();
@@ -199,7 +202,7 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     }
 
     @Override
-    public NodeList getNodeList(DeploymentId deployment) throws IOException {
+    public NodeList getNodeList(DeploymentId deployment) {
         NodeList list = new NodeList();
         list.nodes = new ArrayList<>();
         NodeList.Node hostA = new NodeList.Node();
