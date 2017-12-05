@@ -6,7 +6,7 @@
 # Hack to speed up jar packing for now. This does not affect the rpm size.
 %define __jar_repack %{nil}
 
-Name:           vespa-jdisc-container
+Name:           vespa-standalone-container
 Version:        %version
 BuildArch:      noarch
 Release:        1%{?dist}
@@ -64,7 +64,7 @@ cp vespajlib/target/vespajlib.jar "$jars_dir"
 
 declare -a libexec_files=(
   vespabase/src/common-env.sh
-  standalone-container/src/main/sh/jdisc-container
+  standalone-container/src/main/sh/standalone-container.sh
 )
 declare libexec_dir=%buildroot%_prefix/libexec/vespa
 mkdir -p "$libexec_dir"
@@ -85,8 +85,10 @@ echo "export VESPA_HOME=%_prefix" >> /etc/profile.d/vespa.sh
 chmod +x /etc/profile.d/vespa.sh
 
 %postun
-rm -f /etc/profile.d/vespa.sh
-userdel vespa
+if [ $1 -eq 0 ]; then # this is an uninstallation
+    rm -f /etc/profile.d/vespa.sh
+    userdel vespa
+fi
 
 %files
 %defattr(-,vespa,vespa,-)

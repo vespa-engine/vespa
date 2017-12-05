@@ -94,6 +94,11 @@ StartCommand() {
 	Fail "Too many arguments"
     fi
 
+    local service_regex='^[0-9a-zA-Z_-]+$'
+    if ! [[ "$service" =~ $service_regex ]]; then
+	Fail "Service must match regex '$service_regex'"
+    fi
+
     # common setup
     export VESPA_SERVICE_NAME="$service"
 
@@ -110,11 +115,11 @@ StartCommand() {
 
     local vespa_log="$VESPA_HOME/logs/vespa/vespa.log"
     export VESPA_LOG_TARGET="file:$vespa_log"
-    mkdir -p "$(dirname "$vespa_log")"
+    FixDataDirectory "$(dirname "$vespa_log")"
 
     export VESPA_LOG_CONTROL_FILE="$VESPA_HOME/var/db/vespa/logcontrol/$service.logcontrol"
     export VESPA_LOG_CONTROL_DIR="$(dirname "$VESPA_LOG_CONTROL_FILE")"
-    mkdir -p "$VESPA_LOG_CONTROL_DIR"
+    FixDataDirectory "$VESPA_LOG_CONTROL_DIR"
 
     # Does not need fast allocation
     export MALLOC_ARENA_MAX=1
@@ -125,7 +130,7 @@ StartCommand() {
     # class path
     CP="$VESPA_HOME/lib/jars/jdisc_core-jar-with-dependencies.jar"
 
-    mkdir -p "$(dirname "$cfpfile")"
+    FixDataDirectory "$(dirname "$cfpfile")"
     printenv > "$cfpfile"
     FixDataDirectory "$bundlecachedir"
 
@@ -151,18 +156,105 @@ StartCommand() {
         -Djdisc.logger.tag="jdisc/$service" \
         -Dfile.encoding=UTF-8 \
         -cp "$CP" \
-        com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar
+        com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar &
+
+    local pid="$!"
+    echo "$pid" > "$pidfile"
+}
+
+Kill() {
+    local force="$1"
+    local expected_user="$2"
+    local expected_comm="$3" # Executable name only
+    local pid="$4"
+
+    local -i now
+    if ! now=$(date +%s); then
+	Fail "Failed to get the current date in seconds since epoch"
+    fi
+    local -i timeout=$(( now + 300 ))
+
+    local has_killed=false
+
+    while true; do
+	local ps_output=""
+	if ! ps_output=$(ps -p "$pid" -o user= -o comm=); then
+	    # success
+	    return
+	fi
+
+	local user comm
+	read -r user comm <<< "$ps_output"
+
+	if test "$user" != "$expected_user"; then
+	    echo "Warning: Pid collision ($pid): Expected user $expected_user but found $user."
+	    echo "Will assume original process has died."
+	    return
+	fi
+
+	if test "$comm" != "$expected_comm"; then
+	    echo "Warning: Pid collision ($pid): Expected program $expected_comm but found $comm."
+	    echo "Will assume original process has died."
+	    return
+	fi
+
+	if ! "$has_killed"; then
+	    if $force; then
+		if ! kill -KILL "$pid"; then
+		    Fail "Failed to kill $pid"
+		fi
+	    else
+		if ! kill "$pid"; then
+		    Fail "Failed to kill $pid"
+		fi
+	    fi
+
+	    has_killed=true
+	fi
+
+	sleep 1
+
+	now=$(date +%s)
+	if (( now >= timeout )); then
+	    Fail "Process $pid still exists after $timeout seconds, giving up"
+	fi
+    done
 }
 
 StopCommand() {
-    local service="$1"
+    local user="$1"
     shift
 
-    if (( $# > 0 )); then
-	Fail "Too many arguments"
+    local force=false
+    while (( $# > 0 )); do
+	case "$1" in
+	    -f|--force)
+		force=true
+		shift
+		;;
+	    *) break ;;
+	esac
+    done
+
+    if (( $# != 1 )); then
+	Fail "Stop command takes exactly one argument"
     fi
 
-    Fail "Not implemented"
+    local service="$1"
+
+    local pidfile="$VESPA_HOME/var/run/$service.pid"
+    if ! test -r "$pidfile"; then
+	echo "$service is not running"
+	return
+    fi
+
+    local pid=$(< "$pidfile")
+    if ! [[ "$pid" =~ ^[0-9]+$ ]]; then
+	Fail "Pid file '$pidfile' does not contain a valid pid: $pid"
+    fi
+
+    Kill "$force" "$user" java "$pid"
+    rm -f "$pidfile"
 }
 
 Main() {
@@ -205,12 +297,11 @@ Main() {
     elif test "$(id -un)" != "$user"; then
 	Fail "${0##*/} must be started by $user"
     fi
-    export VESPA_USER="$user"
 
     case "$command" in
 	help) Usage ;;
 	start) StartCommand "$service" "$@" ;;
-	stop) StopCommand "$service" "$@" ;;
+	stop) StopCommand "$user" "$service" "$@" ;;
 	*) Fail "Unknown command '$command'" ;;
     esac
 }
