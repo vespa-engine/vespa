@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreContext;
@@ -41,7 +40,6 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     private final KeyProvider keyProvider;
     private final AthenzProviderServiceConfig.Zones zoneConfig;
     private final AtomicBoolean alreadyConfigured = new AtomicBoolean();
-    private final Zone zone;
 
     @Inject
     public AthenzSslKeyStoreConfigurator(KeyProvider keyProvider,
@@ -51,15 +49,10 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         this.certificateClient = new AthenzCertificateClient(config, zoneConfig);
         this.keyProvider = keyProvider;
         this.zoneConfig = zoneConfig;
-        this.zone = zone;
     }
 
     @Override
     public void configure(SslKeyStoreContext sslKeyStoreContext) {
-        // TODO Remove this when main is ready
-        if (zone.system() != SystemName.cd) {
-            return;
-        }
         if (alreadyConfigured.getAndSet(true)) { // For debugging purpose of SslKeyStoreConfigurator interface
             throw new IllegalStateException("Already configured. configure() can only be called once.");
         }
