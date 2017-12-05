@@ -21,6 +21,12 @@ SimpleTick::SimpleTick()
 {}
 
 TimeStamp
+SimpleTick::first()
+{
+    return now();
+}
+
+TimeStamp
 SimpleTick::next(TimeStamp prev)
 {
     std::unique_lock<std::mutex> locker(_lock);
@@ -28,8 +34,9 @@ SimpleTick::next(TimeStamp prev)
         TimeStamp curr = now();
         if (curr - prev >= oneSec) {
             return curr;
-        }
-        if (curr <= prev) {
+        } else if (curr < prev) {
+             // clock was adjusted backwards
+             prev = curr;
             _cond.wait_for(locker, oneSec);
         } else {
             _cond.wait_for(locker, oneSec - (curr - prev));
@@ -47,9 +54,8 @@ SimpleTick::kill()
 }
 
 bool
-SimpleTick::alive()
+SimpleTick::alive() const
 {
-    std::unique_lock<std::mutex> locker(_lock);
     return _runFlag;
 }
 

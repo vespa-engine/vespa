@@ -21,9 +21,9 @@ using TimeStamp = std::chrono::duration<double, std::ratio<1,1>>;
 struct Tick {
     using UP = std::unique_ptr<Tick>;
     virtual TimeStamp next(TimeStamp prev) = 0;
-    TimeStamp first() { return next(TimeStamp(0.0)); }
+    virtual TimeStamp first() = 0;
     virtual void kill() = 0;
-    virtual bool alive() = 0;
+    virtual bool alive() const = 0;
     virtual ~Tick() {}
 };
 

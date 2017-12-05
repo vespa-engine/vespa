@@ -17,9 +17,10 @@ private:
     std::condition_variable _cond;
 public:
     SimpleTick();
+    TimeStamp first() override;
     TimeStamp next(TimeStamp prev) override;
     void kill() override;
-    bool alive() override;
+    bool alive() const override;
 };
 
 } // namespace vespalib::metrics

@@ -119,10 +119,8 @@ TEST("use simple_metrics_collector")
     using namespace vespalib::metrics;
     SimpleManagerConfig cf;
     cf.sliding_window_seconds = 5;
-    std::shared_ptr<MockTick> ticker = std::make_shared<MockTick>();
-    ticker->provide(TimeStamp(1.0));
+    std::shared_ptr<MockTick> ticker = std::make_shared<MockTick>(TimeStamp(1.0));
     auto manager = SimpleMetricsManager::createForTest(cf, std::make_unique<TickProxy>(ticker));
-    EXPECT_EQUAL(1.0, ticker->waitUntilBlocked().count());
 
     Counter myCounter = manager->counter("foo");
     myCounter.add();
@@ -134,9 +132,7 @@ TEST("use simple_metrics_collector")
     myGauge.sample(43.0);
     myGauge.sample(42.0);
 
-    EXPECT_EQUAL(1.0, ticker->waitUntilBlocked().count());
-    ticker->provide(TimeStamp(2.0));
-    EXPECT_EQUAL(2.0, ticker->waitUntilBlocked().count());
+    EXPECT_EQUAL(1.0, ticker->give(TimeStamp(2.0)).count());
 
     Snapshot snap1 = manager->snapshot();
     EXPECT_EQUAL(1.0, snap1.startTime());
@@ -178,9 +174,7 @@ TEST("use simple_metrics_collector")
     myGauge.sample(14.0, two);
     myGauge.sample(11.0, three);
 
-    EXPECT_EQUAL(2.0, ticker->waitUntilBlocked().count());
-    ticker->provide(TimeStamp(4.5));
-    EXPECT_EQUAL(4.5, ticker->waitUntilBlocked().count());
+    EXPECT_EQUAL(2.0, ticker->give(TimeStamp(4.5)).count());
 
     Snapshot snap2 = manager->snapshot();
     EXPECT_EQUAL(1.0, snap2.startTime());
@@ -193,8 +187,7 @@ TEST("use simple_metrics_collector")
 
     // flush sliding window
     for (int i = 5; i <= 10; ++i) {
-        ticker->provide(TimeStamp(i));
-        ticker->waitUntilBlocked();
+        ticker->give(TimeStamp(i));
     }
     Snapshot snap3 = manager->snapshot();
     EXPECT_EQUAL(5.0, snap3.startTime());
