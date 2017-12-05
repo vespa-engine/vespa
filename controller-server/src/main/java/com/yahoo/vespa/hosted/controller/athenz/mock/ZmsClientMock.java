@@ -5,7 +5,7 @@ import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
@@ -61,28 +61,28 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName) {
+    public boolean hasApplicationAccess(AthenzIdentity identity, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName) {
         log("hasApplicationAccess(principal='%s', action='%s', tenantDomain='%s', applicationName='%s')",
-                 principal, action, tenantDomain, applicationName);
+            identity, action, tenantDomain, applicationName);
         AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
         AthenzDbMock.Application application = domain.applications.get(applicationName);
         if (application == null) {
             throw zmsException(400, "Application '%s' not found", applicationName);
         }
-        return domain.admins.contains(principal) || application.acl.get(action).contains(principal);
+        return domain.admins.contains(identity) || application.acl.get(action).contains(identity);
     }
 
     @Override
-    public boolean hasTenantAdminAccess(AthenzPrincipal principal, AthenzDomain tenantDomain) {
-        log("hasTenantAdminAccess(principal='%s', tenantDomain='%s')", principal, tenantDomain);
-        return isDomainAdmin(principal, tenantDomain) ||
-                getDomainOrThrow(tenantDomain, true).tenantAdmins.contains(principal);
+    public boolean hasTenantAdminAccess(AthenzIdentity identity, AthenzDomain tenantDomain) {
+        log("hasTenantAdminAccess(principal='%s', tenantDomain='%s')", identity, tenantDomain);
+        return isDomainAdmin(identity, tenantDomain) ||
+                getDomainOrThrow(tenantDomain, true).tenantAdmins.contains(identity);
     }
 
     @Override
-    public boolean isDomainAdmin(AthenzPrincipal principal, AthenzDomain domain) {
-        log("isDomainAdmin(principal='%s', domain='%s')", principal, domain);
-        return getDomainOrThrow(domain, false).admins.contains(principal);
+    public boolean isDomainAdmin(AthenzIdentity identity, AthenzDomain domain) {
+        log("isDomainAdmin(principal='%s', domain='%s')", identity, domain);
+        return getDomainOrThrow(domain, false).admins.contains(identity);
     }
 
     @Override

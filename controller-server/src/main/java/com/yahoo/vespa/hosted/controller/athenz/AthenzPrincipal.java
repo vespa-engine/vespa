@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.athenz;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 
 import java.security.Principal;
 import java.util.Objects;
@@ -12,36 +11,29 @@ import java.util.Objects;
  */
 public class AthenzPrincipal implements Principal {
 
-    private final AthenzDomain domain;
-    private final UserId userId;
+    private final AthenzIdentity athenzIdentity;
 
-    public AthenzPrincipal(AthenzDomain domain, UserId userId) {
-        this.domain = domain;
-        this.userId = userId;
+    public AthenzPrincipal(AthenzIdentity athenzIdentity) {
+        this.athenzIdentity = athenzIdentity;
     }
 
-    public UserId getUserId() {
-        return userId;
-    }
-
-    public AthenzDomain getDomain() {
-        return domain;
-    }
-
-    public String toYRN() {
-        return domain.id() + "." + userId.id();
+    public AthenzIdentity getIdentity() {
+        return athenzIdentity;
     }
 
     @Override
     public String getName() {
-        return userId.id();
+        return athenzIdentity.getFullName();
+    }
+
+    public AthenzDomain getDomain() {
+        return athenzIdentity.getDomain();
     }
 
     @Override
     public String toString() {
         return "AthenzPrincipal{" +
-                "domain=" + domain +
-                ", userId=" + userId +
+                "athenzIdentity=" + athenzIdentity +
                 '}';
     }
 
@@ -49,14 +41,12 @@ public class AthenzPrincipal implements Principal {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AthenzPrincipal that = (AthenzPrincipal) o;
-        return Objects.equals(domain, that.domain) &&
-                Objects.equals(userId, that.userId);
+        AthenzPrincipal principal = (AthenzPrincipal) o;
+        return Objects.equals(athenzIdentity, principal.athenzIdentity);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(domain, userId);
+        return Objects.hash(athenzIdentity);
     }
-
 }

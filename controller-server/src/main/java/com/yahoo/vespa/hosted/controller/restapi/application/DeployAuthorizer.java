@@ -86,7 +86,7 @@ public class DeployAuthorizer {
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
                         "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
                         "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        athenzPrincipal.toYRN(), applicationId, tenantDomain.id());
+                        athenzPrincipal.getIdentity().getFullName(), applicationId, tenantDomain.id());
             }
         }
     }
@@ -107,7 +107,7 @@ public class DeployAuthorizer {
         try {
             return athenzClientFactory.createZmsClientWithServicePrincipal()
                     .hasApplicationAccess(
-                            principal,
+                            principal.getIdentity(),
                             ApplicationAction.deploy,
                             domain,
                             new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationId.application().value()));

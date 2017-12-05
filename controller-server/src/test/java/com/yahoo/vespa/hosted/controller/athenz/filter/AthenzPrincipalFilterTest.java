@@ -8,7 +8,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import org.junit.Before;
@@ -44,7 +44,7 @@ public class AthenzPrincipalFilterTest {
     @Before
     public void before() {
         validator = mock(NTokenValidator.class);
-        principal = AthenzUtils.createPrincipal(new UserId("bob"));
+        principal = new AthenzPrincipal(AthenzUser.fromUserId(new UserId("bob")));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class AthenzPrincipalFilterTest {
 
     private static NToken createDummyToken() {
         return new NToken.Builder(
-                "U1", AthenzUtils.createPrincipal(new UserId("bob")), AthenzTestUtils.generateRsaKeypair().getPrivate(), "0")
+                "U1", AthenzUser.fromUserId(new UserId("bob")), AthenzTestUtils.generateRsaKeypair().getPrivate(), "0")
                 .build();
     }
 

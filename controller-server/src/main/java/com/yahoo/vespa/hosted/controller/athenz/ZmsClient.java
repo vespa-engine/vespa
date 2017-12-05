@@ -19,12 +19,12 @@ public interface ZmsClient {
 
     void deleteApplication(AthenzDomain tenantDomain, ApplicationId applicationName);
 
-    boolean hasApplicationAccess(AthenzPrincipal principal, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName);
+    boolean hasApplicationAccess(AthenzIdentity athenzIdentity, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName);
 
-    boolean hasTenantAdminAccess(AthenzPrincipal principal, AthenzDomain tenantDomain);
+    boolean hasTenantAdminAccess(AthenzIdentity athenzIdentity, AthenzDomain tenantDomain);
 
     // Used before vespa tenancy is established for the domain.
-    boolean isDomainAdmin(AthenzPrincipal principal, AthenzDomain domain);
+    boolean isDomainAdmin(AthenzIdentity athenzIdentity, AthenzDomain domain);
 
     List<AthenzDomain> getDomainList(String prefix);
 

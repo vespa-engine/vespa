@@ -65,6 +65,9 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -238,7 +241,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String userIdString = request.getProperty("userOverride");
         if (userIdString == null)
             userIdString = userFrom(request)
-                     .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
+                    .map(UserId::id)
+                    .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
         UserId userId = new UserId(userIdString);
         
         List<Tenant> tenants = controller.tenants().asList(userId);
@@ -503,7 +507,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector requestData = toSlime(request.getData()).get();
         String reason = mandatory("reason", requestData).asString();
-        String agent = authorizer.getUserId(request).toString();
+        String agent = authorizer.getIdentity(request).getFullName();
         long timestamp = controller.clock().instant().getEpochSecond();
         EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         EndpointStatus endPointStatus = new EndpointStatus(status, reason, agent, timestamp);
@@ -592,15 +596,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
     
     private HttpResponse createUser(HttpRequest request) {
-        Optional<String> username = userFrom(request);
-        if ( ! username.isPresent() ) throw new ForbiddenException("Not authenticated.");
+        Optional<UserId> user = userFrom(request);
+        if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated.");
 
         try {
-            controller.tenants().createUserTenant(username.get());
-            return new MessageResponse("Created user '" + username.get() + "'");
+            controller.tenants().createUserTenant(user.get().id());
+            return new MessageResponse("Created user '" + user.get() + "'");
         } catch (AlreadyExistsException e) {
             // Ok
-            return new MessageResponse("User '" + username + "' already exists");
+            return new MessageResponse("User '" + user + "' already exists");
         }
     }
 
@@ -868,8 +872,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private Optional<String> userFrom(HttpRequest request) {
-        return authorizer.getPrincipalIfAny(request).map(Principal::getName);
+    private Optional<UserId> userFrom(HttpRequest request) {
+        return authorizer.getPrincipalIfAny(request)
+                .map(AthenzPrincipal::getIdentity)
+                .filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast)
+                .map(AthenzUser::getUserId);
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
@@ -980,18 +988,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void throwIfNotSuperUserOrPartOfOpsDbGroup(UserGroup userGroup, HttpRequest request) {
-        UserId userId = authorizer.getUserId(request);
-        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(userId, userGroup) ) {
+        AthenzIdentity identity = authorizer.getIdentity(request);
+        if (!(identity instanceof AthenzUser)) {
+            throw new ForbiddenException("Identity not an user: " + identity.getFullName());
+        }
+        AthenzUser user = (AthenzUser) identity;
+        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(user.getUserId(), userGroup) ) {
             throw new ForbiddenException(String.format("User '%s' is not super user or part of the OpsDB user group '%s'",
-                                                       userId.id(), userGroup.id()));
+                                                       user.getUserId().id(), userGroup.id()));
         }
     }
 
     private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
-        UserId userId = authorizer.getUserId(request);
-        if ( ! authorizer.isAthenzDomainAdmin(userId, tenantDomain)) {
+        AthenzIdentity identity = authorizer.getIdentity(request);
+        if ( ! authorizer.isAthenzDomainAdmin(identity, tenantDomain)) {
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athenz domain '%s'", userId.id(), tenantDomain.id()));
+                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.id()));
         }
     }
 
