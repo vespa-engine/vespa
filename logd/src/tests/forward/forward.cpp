@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/metrics/dummy_metrics_manager.h>
 #include <logd/forward.h>
 #include <sstream>
 #include <fcntl.h>
@@ -49,14 +50,17 @@ struct ForwardFixture {
     }
 };
 
-TEST_FF("require that forwarder forwards if set", Forwarder(), ForwardFixture(f1, "forward.txt")) {
+std::shared_ptr<vespalib::metrics::MetricsManager> dummy = vespalib::metrics::DummyMetricsManager::create();
+Metrics m(dummy);
+
+TEST_FF("require that forwarder forwards if set", Forwarder(m), ForwardFixture(f1, "forward.txt")) {
     ForwardMap forwardMap;
     forwardMap[Logger::event] = true;
     f1.setForwardMap(forwardMap);
     f2.verifyForward(true);
 }
 
-TEST_FF("require that forwarder does not forward if not set", Forwarder(), ForwardFixture(f1, "forward.txt")) {
+TEST_FF("require that forwarder does not forward if not set", Forwarder(m), ForwardFixture(f1, "forward.txt")) {
     ForwardMap forwardMap;
     forwardMap[Logger::event] = false;
     f1.setForwardMap(forwardMap);

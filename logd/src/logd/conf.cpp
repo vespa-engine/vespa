@@ -35,12 +35,12 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
             return;
         }
         strcpy(_logServer, newconf.logserver.host.c_str());
-        _newConf = true;
+        _needToConnect = true;
     }
     if (newconf.logserver.use != _use_logserver)
     {
         _use_logserver = newconf.logserver.use;
-        _newConf = true;
+        _needToConnect = true;
     }
     _statePort = newconf.stateport;
 
@@ -57,7 +57,7 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
 
     if (newconf.logserver.port != _logPort) {
         _logPort = newconf.logserver.port;
-        _newConf = true;
+        _needToConnect = true;
     }
     if (newconf.rotate.size > 0) {
         _rotate_size = newconf.rotate.size;
@@ -85,12 +85,23 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
     }
 }
 
+bool
+ConfSub::checkAvailable()
+{
+    if (_subscriber.nextGeneration(0)) {
+        _hasAvailable = true;
+    }
+    return _hasAvailable;
+}
+
 void
 ConfSub::latch()
 {
-    if (_subscriber.nextConfig(0))
+    if (checkAvailable()) {
         configure(_handle->getConfig());
-    if (_newConf) {
+        _hasAvailable = false;
+    }
+    if (_needToConnect) {
         if (_use_logserver) {
             connectToLogserver();
         } else {
@@ -133,7 +144,7 @@ ConfSub::resetFileDescriptor(int newfd)
     }
     _logserverfd = newfd;
     _fw.setLogserverFD(newfd);
-    _newConf = false;
+    _needToConnect = false;
 }
 
 void
@@ -141,7 +152,7 @@ ConfSub::closeConn()
 {
     close(_logserverfd);
     _logserverfd = -1;
-    _newConf = true;
+    _needToConnect = true;
 }
 
 ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
@@ -156,7 +167,8 @@ ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
       _fw(fw),
       _subscriber(configUri.getContext()),
       _handle(),
-      _newConf(false)
+      _hasAvailable(false),
+      _needToConnect(true)
 {
     _logServer[0] = '\0';
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());

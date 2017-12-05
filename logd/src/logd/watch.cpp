@@ -332,7 +332,10 @@ Watcher::watchfile()
 
         dcf.saveState(already, _forwarder.knownServices);
 
-        _confsubscriber.latch();
+        if (_confsubscriber.checkAvailable()) {
+            LOG(debug, "new config available, doing reconfigure");
+            return;
+        }
 
         if (_confsubscriber.useLogserver()) {
             cmdbuf.maybeRead(_forwarder.getLogserverFD());
