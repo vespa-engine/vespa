@@ -195,13 +195,18 @@ exit 0
 %postun
 %systemd_postun_with_restart vespa.service
 %systemd_postun_with_restart vespa-configserver.service
-rm -f /etc/profile.d/vespa.sh
-userdel vespa
+if [ $1 -eq 0 ]; then # this is an uninstallation
+    rm -f /etc/profile.d/vespa.sh
+    userdel vespa
+fi
 
 %files
 %defattr(-,vespa,vespa,-)
 %doc
 %{_prefix}/*
+%config(noreplace) %{_prefix}/conf/logd/logd.cfg
+%config(noreplace) %{_prefix}/conf/vespa/default-env.txt
+%config(noreplace) %{_prefix}/etc/vespamalloc.conf
 %attr(644,root,root) /usr/lib/systemd/system/vespa.service
 %attr(644,root,root) /usr/lib/systemd/system/vespa-configserver.service
 
