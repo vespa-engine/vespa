@@ -26,9 +26,6 @@ public interface BuildService {
         public long projectId() { return projectId; }
         public String jobName() { return jobName; }
 
-        @Override
-        public String toString() { return jobName + "@" + projectId; }
-
     }
 
 }

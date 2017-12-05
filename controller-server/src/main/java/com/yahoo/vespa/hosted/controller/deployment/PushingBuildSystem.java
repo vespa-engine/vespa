@@ -15,11 +15,11 @@ import java.time.Duration;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * Stores and triggers build jobs in an external BuildService.
@@ -30,24 +30,23 @@ import java.util.logging.Logger;
  *
  * All triggering (constrained and otherwise) can be turned off in the given JobControl.
  *
- * Triggering is performed by an ExecutorService, as there is no guarantee the BuildService provides a timely response.
+ * Triggering is performed by an Executor, as there is no guarantee the BuildService provides a timely response.
  *
  * @author jvenstad
  */
 public class PushingBuildSystem extends Maintainer implements BuildSystem {
 
     private static final Logger log = Logger.getLogger(PushingBuildSystem.class.getName());
-    static final Duration triggeringInterval = Duration.ofSeconds(30);
     static final int triggeringRetries = 5;
 
-    private final ExecutorService executors;
+    private final Executor executor;
     private final BuildService buildService;
 
-    @SuppressWarnings("unused") // Used by DI.
-    public PushingBuildSystem(Controller controller, JobControl jobControl, BuildService buildService) {
+    public PushingBuildSystem(Controller controller, Duration triggeringInterval, JobControl jobControl,
+                              BuildService buildService, Executor executor) {
         super(controller, triggeringInterval, jobControl);
         this.buildService = buildService;
-        this.executors = Executors.newFixedThreadPool(20);
+        this.executor = executor;
     }
 
     @Override
@@ -102,7 +101,7 @@ public class PushingBuildSystem extends Maintainer implements BuildSystem {
 
     private void triggerWithRetries(ApplicationId applicationId, JobType jobType) {
         projectId(applicationId).ifPresent(projectId -> {
-            executors.submit(() -> {
+            executor.execute(() -> {
                 for (int i = 0; i < triggeringRetries; i++)
                     if (buildService.trigger(new BuildJob(projectId, jobType.jobName())))
                         return;

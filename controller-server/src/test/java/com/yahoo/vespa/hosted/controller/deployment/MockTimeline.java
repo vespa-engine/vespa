@@ -6,9 +6,23 @@ import com.yahoo.test.ManualClock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.PriorityQueue;
 
 /**
+ * Simulates concurrent series of events where time is a significant factor.
+ *
+ * Each event is modelled as a runnable and a time at which to run.
+ * A priority queue keeps all pending events, sorted on when they will run.
+ * A manual clock is used to keep the time, and is advanced to the point in
+ * time where an event will happen, right before running the event.
+ * For events with exactly the same time of happening, the order is undefined.
+ *
+ * An event may be added with a fixed time at which to run, or with a delay
+ * relative to the current time in the timeline. The latter can be used to
+ * chain several events together, by letting each event add its successor.
+ * The time may similarly be advanced to a given instant, or by a given duration.
+ *
  * @author jvenstad
  */
 public class MockTimeline {
@@ -17,31 +31,31 @@ public class MockTimeline {
     private final PriorityQueue<Event> events;
 
     public MockTimeline(ManualClock clock) {
-        this.events = new PriorityQueue<>();
+        this.events = new PriorityQueue<>(Comparator.comparing(Event::at));
         this.clock = clock;
     }
 
-    /** Make @event happen at time @at, as measured by the internal clock. */
-    public void at(Instant at, Runnable event) {
-        if (at.isBefore(now()))
+    /** Makes the given event happen at the given instant. */
+    public void at(Instant instant, Runnable event) {
+        if (instant.isBefore(now()))
             throw new IllegalArgumentException("The flow of time runs only one way, my friend.");
-        events.add(new Event(at, event));
+        events.add(new Event(instant, event));
     }
 
-    /** Make @event happen in @in time, as measured by the internal clock. */
-    public void in(Duration in, Runnable event) {
-        at(now().plus(in), event);
+    /** Makes the given event happen after the given delay. */
+    public void in(Duration delay, Runnable event) {
+        at(now().plus(delay), event);
     }
 
-    /** Make @event happen every @period time, starting @offset time from @now(), as measured by the internal clock. */
-    public void every(Duration period, Duration offset, Runnable event) {
-        in(offset, () -> {
+    /** Makes the given event happen with the given period, starting with the given delay from now. */
+    public void every(Duration period, Duration delay, Runnable event) {
+        in(delay, () -> {
             every(period, event);
             event.run();
         });
     }
 
-    /** Make @event happen every @period time, starting @period time from @now(), as measured by the internal clock. */
+    /** Makes the given event happen with the given period, starting with one period delay from now. */
     public void every(Duration period, Runnable event) {
         every(period, period, event);
     }
@@ -51,12 +65,12 @@ public class MockTimeline {
         return clock.instant();
     }
 
-    /** Returns whether there are more events in the timeline, or not. */
+    /** Returns whether pending events remain in the timeline. */
     public boolean hasNext() {
         return ! events.isEmpty();
     }
 
-    /** Advance time to the next event, let it happen, and return the time of this event. */
+    /** Advances time to the next event, let it happen, and return the time of this event. */
     public Instant next() {
         Event event = events.poll();
         clock.advance(Duration.ofMillis(now().until(event.at(), ChronoUnit.MILLIS)));
@@ -64,25 +78,19 @@ public class MockTimeline {
         return event.at();
     }
 
-    /** Advance the time until @until, letting all events from now to then happen. */
+    /** Advances the time until the given instant, letting all events from now to then happen. */
     public void advance(Instant until) {
         at(until, () -> {});
         while (next() != until);
     }
 
-    /** Advance the time by @duration, letting all events from now to then happen. */
+    /** Advances the time by the given duration, letting all events from now to then happen. */
     public void advance(Duration duration) {
         advance(now().plus(duration));
     }
 
-    /** Let the timeline unfold! Careful about those @every-s, though... */
-    public void unfold() {
-        while (hasNext())
-            next();
-    }
 
-
-    private static class Event implements Comparable<Event> {
+    private static class Event {
 
         private final Instant at;
         private final Runnable event;
@@ -94,12 +102,6 @@ public class MockTimeline {
 
         public Instant at() { return at; }
         public void happen() { event.run(); }
-
-
-        @Override
-        public int compareTo(Event other) {
-            return at().compareTo(other.at());
-        }
 
     }
 

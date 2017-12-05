@@ -50,13 +50,13 @@ public class DeploymentTrigger {
     private final BuildSystem buildSystem;
     private final DeploymentOrder order;
 
-    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock) {
+    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock, BuildSystem buildSystem) {
         Objects.requireNonNull(controller,"controller cannot be null");
         Objects.requireNonNull(curator,"curator cannot be null");
         Objects.requireNonNull(clock,"clock cannot be null");
         this.controller = controller;
         this.clock = clock;
-        this.buildSystem = new PolledBuildSystem(controller, curator);
+        this.buildSystem = buildSystem;
         this.order = new DeploymentOrder(controller);
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
