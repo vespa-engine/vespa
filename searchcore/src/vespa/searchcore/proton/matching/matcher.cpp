@@ -268,8 +268,7 @@ Matcher::match(const SearchRequest &request,
         ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp,
                                                           _distributionKey, numSearchPartitions);
         my_stats = MatchMaster::getStats(std::move(master));
-        size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()),
-                                   mtf->match_limiter().getDocIdSpaceEstimate());
+
         bool wasLimited = mtf->match_limiter().was_limited();
         uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
@@ -281,16 +280,28 @@ Matcher::match(const SearchRequest &request,
         reply = std::move(result->_reply);
         SearchReply::Coverage & coverage = reply->coverage;
         if (wasLimited) {
+            LOG(debug, "was limited, degraded from match phase");
             coverage.degradeMatchPhase();
         }
         if (my_stats.softDoomed()) {
+            LOG(debug, "soft doomed, degraded from timeout");
             coverage.degradeTimeout();
         }
-        coverage.setActive(metaStore.getNumActiveLids());
+        uint32_t numUsedLids = metaStore.getNumUsedLids();
+        uint32_t numActiveLids = metaStore.getNumActiveLids();
+        size_t spaceEstimate = mtf->match_limiter().getDocIdSpaceEstimate();
+        LOG(debug, "num used lids = %d", numUsedLids);
+        LOG(debug, "num active lids = %d", numActiveLids);
+        LOG(debug, "space Estimate = %zd", spaceEstimate);
+        size_t estimate = std::min(static_cast<size_t>(numActiveLids), spaceEstimate);
+        coverage.setActive(numActiveLids);
         //TODO this should be calculated with ClusterState calculator.
-        coverage.setSoonActive(metaStore.getNumActiveLids());
-        coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
-                                     (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
+        coverage.setSoonActive(numActiveLids); // XXX could we use "numUsedLids" here?
+        size_t covered = estimate;
+        if (numUsedLids > numActiveLids) {
+            covered = (estimate * numActiveLids) / numUsedLids;
+        }
+        coverage.setCovered(covered);
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
