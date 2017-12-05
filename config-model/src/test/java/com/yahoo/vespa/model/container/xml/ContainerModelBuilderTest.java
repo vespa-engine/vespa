@@ -16,6 +16,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.config.StatisticsRequestHandler;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
@@ -25,6 +26,7 @@ import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
+import com.yahoo.net.HostName;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
@@ -61,7 +63,6 @@ import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
- * @since 5.1.9
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
@@ -569,6 +570,41 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         VipStatusConfig vipStatusConfig = modelRoot.getConfig(VipStatusConfig.class, "jdisc/component/status.html-status-handler");
         assertTrue(vipStatusConfig.accessdisk());
         assertEquals(ContainerModelBuilder.HOSTED_VESPA_STATUS_FILE, vipStatusConfig.statusfile());
+    }
+
+    @Test
+    public void qrconfig_is_produced() throws IOException, SAXException {
+        String servicesXml =
+                "<services>" +
+                        "<admin version='3.0'>" +
+                        "    <nodes count='1'/>" +
+                        "</admin>" +
+                        "<jdisc id ='default' version='1.0'>" +
+                        "  <nodes>" +
+                        "    <node hostalias='node1' />" +
+                        "  </nodes>" +
+                        "</jdisc>" +
+                        "</services>";
+
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(servicesXml)
+                .build();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .properties(new DeployProperties.Builder().build())
+                .build());
+
+        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+
+        QrConfig config = model.getConfig(QrConfig.class, "default/container.0");
+        assertEquals("default.container.0", config.discriminator());
+        assertEquals(19102, config.rpc().port());
+        assertEquals("vespa/service/default/container.0", config.rpc().slobrokId());
+        assertEquals(true, config.rpc().enabled());
+        assertEquals("", config.rpc().host());
+        assertEquals(false, config.restartOnDeploy());
+        assertEquals(false, config.coveragereports());
+        assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
     }
 
     private Element generateContainerElementWithRenderer(String rendererId) {
