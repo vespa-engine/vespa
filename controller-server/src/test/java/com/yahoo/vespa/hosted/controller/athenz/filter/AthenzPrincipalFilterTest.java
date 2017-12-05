@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  */
 public class AthenzPrincipalFilterTest {
 
-    private static final NToken NTOKEN = createDummyToken();
+    private static final NToken NTOKEN = new NToken("dummy");
     private static final String ATHENZ_PRINCIPAL_HEADER = "Athenz-Principal-Auth";
 
     private NTokenValidator validator;
@@ -50,7 +50,7 @@ public class AthenzPrincipalFilterTest {
     @Test
     public void valid_ntoken_is_accepted() throws Exception {
         DiscFilterRequest request = mock(DiscFilterRequest.class);
-        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getToken());
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
 
         when(validator.validate(NTOKEN)).thenReturn(principal);
 
@@ -78,7 +78,7 @@ public class AthenzPrincipalFilterTest {
     @Test
     public void invalid_token_is_unauthorized() throws Exception {
         DiscFilterRequest request = mock(DiscFilterRequest.class);
-        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getToken());
+        when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
 
         when(validator.validate(NTOKEN)).thenThrow(new InvalidTokenException("Invalid token"));
 
@@ -90,12 +90,6 @@ public class AthenzPrincipalFilterTest {
         assertThat(responseHandler.response, notNullValue());
         assertThat(responseHandler.response.getStatus(), equalTo(UNAUTHORIZED));
         assertThat(responseHandler.getResponseContent(), containsString("Invalid token"));
-    }
-
-    private static NToken createDummyToken() {
-        return new NToken.Builder(
-                "U1", AthenzUser.fromUserId(new UserId("bob")), AthenzTestUtils.generateRsaKeypair().getPrivate(), "0")
-                .build();
     }
 
     private static class ResponseHandlerMock implements ResponseHandler {

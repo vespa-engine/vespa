@@ -59,7 +59,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZmsClient createZmsClientWithAuthorizedServiceToken(NToken authorizedServiceToken) {
-        PrincipalToken signedToken = new PrincipalToken(authorizedServiceToken.getToken());
+        PrincipalToken signedToken = new PrincipalToken(authorizedServiceToken.getRawToken());
         AthenzConfig.Service service = config.service();
         signedToken.signForAuthorizedService(
                 config.domain() + "." + service.name(), service.publicKeyId(), getServicePrivateKey());

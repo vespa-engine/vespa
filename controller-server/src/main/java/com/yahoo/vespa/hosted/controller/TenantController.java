@@ -200,8 +200,7 @@ public class TenantController {
         try (Lock lock = lock(tenantId)) {
             Tenant existing = tenant(tenantId).orElseThrow(() -> new NotExistsException(tenantId));
             if (existing.isAthensTenant()) return existing; // nothing to do
-            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.id() +
-                             " using " + nToken.getPrincipal());
+            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.id());
             if (tenantHaving(tenantDomain).isPresent())
                 throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
                                                    "This domain is already used by " + tenantHaving(tenantDomain).get());
