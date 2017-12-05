@@ -120,13 +120,6 @@ size_t
 computeGain(const IFlushTarget::DiskGain & gain) {
     return std::max(100000000l, std::max(gain.getBefore(), gain.getAfter()));
 }
-bool isDiskBloatToHigh(const IFlushTarget::DiskGain & totalDisk,
-                       const MemoryFlush::Config & config,
-                       const IFlushTarget::DiskGain & dgain)
-{
-    return (totalDisk.gain() > config.globalDiskBloatFactor * computeGain(totalDisk))
-           || (dgain.gain() > config.diskBloatFactor * computeGain(dgain));
-}
 
 }
 
@@ -167,9 +160,9 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
                 order = TLSSIZE;
             }
         }
-        if (((totalMemory >= config.maxGlobalMemory) || (mgain >= config.maxMemoryGain)) && (order < MEMORY)) {
+        if ((mgain >= config.maxMemoryGain) && (order < MEMORY)) {
             order = MEMORY;
-        } else if (isDiskBloatToHigh(totalDisk, config, dgain) && (order < DISKBLOAT)) {
+        } else if ((dgain.gain() > config.diskBloatFactor * computeGain(dgain)) && (order < DISKBLOAT)) {
             order = DISKBLOAT;
         } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE)) {
             order = MAXAGE;
@@ -194,6 +187,14 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             now.sec(),
             timeDiff.sec(),
             getOrderName(order).c_str());
+    }
+    if (!targetList.empty()) {
+        if ((totalMemory >= config.maxGlobalMemory) && (order < MEMORY)) {
+            order = MEMORY;
+        }
+        if ((totalDisk.gain() > config.globalDiskBloatFactor * computeGain(totalDisk)) && (order < DISKBLOAT)) {
+            order = DISKBLOAT;
+        }
     }
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget(order, tlsStatsMap));
