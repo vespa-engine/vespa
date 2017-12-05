@@ -30,9 +30,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -48,7 +48,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
@@ -116,20 +115,7 @@ public class ApplicationController {
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
         for (Application application : db.listApplications()) {
-            lockedIfPresent(application.id(), (app) -> {
-                // TODO: Remove after December 2017. Migrates rotations into application
-                if (!app.rotation().isPresent()) {
-                    Set<com.yahoo.vespa.hosted.controller.api.identifiers.RotationId> rotations = db.getRotations(application.id());
-                    if (rotations.size() > 1) {
-                        log.warning("Application " + application.id() + " has more than 1 rotation: "
-                                    + rotations.size());
-                    }
-                    if (!rotations.isEmpty()) {
-                        app = app.with(new RotationId(rotations.iterator().next().id()));
-                    }
-                }
-                store(app);
-            });
+            lockIfPresent(application.id(), this::store);
         }
     }
 
@@ -249,10 +235,6 @@ public class ApplicationController {
         if ( ! (id.instance().value().equals("default") || id.instance().value().startsWith("default-pr"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
         try (Lock lock = lock(id)) {
-            // TODO: Throwing is duplicated below.
-            if (get(id).isPresent())
-                throw new IllegalArgumentException("An application with id '" + id + "' already exists");
-
             com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
             
             Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(id.tenant().value()));
@@ -525,7 +507,7 @@ public class ApplicationController {
         if ( ! controller.applications().get(id).isPresent())
             throw new NotExistsException("Could not delete application '" + id + "': Application not found");
 
-        lockedOrThrow(id, application -> {
+        lockOrThrow(id, application -> {
             if ( ! application.deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
             
@@ -555,24 +537,25 @@ public class ApplicationController {
     /**
      * Acquire a locked application to modify and store, if there is an application with the given id.
      *
-     * @param applicationId Id of the application to lock and get.
-     * @param actions Things to do with the locked application.
+     * @param applicationId ID of the application to lock and get.
+     * @param action Function which acts on the locked application.
      */
-    public void lockedIfPresent(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+    public void lockIfPresent(ApplicationId applicationId, Consumer<LockedApplication> action) {
         try (Lock lock = lock(applicationId)) {
-            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(actions);
+            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
         }
     }
 
     /**
      * Acquire a locked application to modify and store, or throw an exception if no application has the given id.
      *
-     * @param applicationId Id of the application to lock and require.
-     * @param actions Things to do with the locked application.
+     * @param applicationId ID of the application to lock and require.
+     * @param action Function which acts on the locked application.
+     * @throws IllegalArgumentException when application does not exist.
      */
-    public void lockedOrThrow(ApplicationId applicationId, Consumer<LockedApplication> actions) {
+    public void lockOrThrow(ApplicationId applicationId, Consumer<LockedApplication> action) {
         try (Lock lock = lock(applicationId)) {
-            actions.accept(new LockedApplication(require(applicationId), lock));
+            action.accept(new LockedApplication(require(applicationId), lock));
         }
     }
 
@@ -585,18 +568,14 @@ public class ApplicationController {
         deploymentTrigger.triggerFromCompletion(report);
     }
 
-    // TODO: Collapse this method and the next
-    public void restart(DeploymentId deploymentId) {
+    /**
+     * Tells config server to schedule a restart of all nodes in this deployment
+     *
+     * @param hostname If non-empty, restart will only be scheduled for this host
+     */
+    public void restart(DeploymentId deploymentId, Optional<Hostname> hostname) {
         try {
-            configserverClient.restart(deploymentId, Optional.empty());
-        }
-        catch (NoInstanceException e) {
-            throw new IllegalArgumentException("Could not restart " + deploymentId + ": No such deployment");
-        }
-    }
-    public void restartHost(DeploymentId deploymentId, Hostname hostname) {
-        try {
-            configserverClient.restart(deploymentId, Optional.of(hostname));
+            configserverClient.restart(deploymentId, hostname);
         }
         catch (NoInstanceException e) {
             throw new IllegalArgumentException("Could not restart " + deploymentId + ": No such deployment");
@@ -619,7 +598,7 @@ public class ApplicationController {
             && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
             return;
 
-        lockedOrThrow(application.id(), lockedApplication ->
+        lockOrThrow(application.id(), lockedApplication ->
                 store(deactivate(lockedApplication, zone)));
     }
 

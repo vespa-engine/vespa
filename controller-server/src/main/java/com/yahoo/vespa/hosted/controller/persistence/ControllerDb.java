@@ -6,12 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
-import com.yahoo.vespa.hosted.controller.api.identifiers.RotationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Used to store the permanent data of the controller.
@@ -25,6 +23,7 @@ public interface ControllerDb {
 
     void createTenant(Tenant tenant);
 
+    // TODO: Remove exception from all signatures
     void updateTenant(Tenant tenant) throws PersistenceException;
 
     void deleteTenant(TenantId tenantId) throws PersistenceException;
@@ -47,18 +46,6 @@ public interface ControllerDb {
 
     /** Returns all applications of a tenant */
     List<Application> listApplications(TenantId tenantId);
-
-    // --------- Rotations
-
-    // TODO: Remove all rotation methods after December 2017
-    Set<RotationId> getRotations();
-
-    Set<RotationId> getRotations(ApplicationId applicationId);
-
-    boolean assignRotation(RotationId rotationId, ApplicationId applicationId);
-
-    Set<RotationId> deleteRotations(ApplicationId applicationId);
-    // end TODO
 
     /** Returns the given elements joined by dot "." */
     default String path(Identifier... elements) {

@@ -521,7 +521,7 @@ public class ControllerTest {
         TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
-        tester.controller().applications().lockedOrThrow(app.id(), application -> {
+        tester.controller().applications().lockOrThrow(app.id(), application -> {
             application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
             applications.store(application);
             try {

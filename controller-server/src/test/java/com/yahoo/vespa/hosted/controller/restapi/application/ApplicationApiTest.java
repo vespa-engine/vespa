@@ -326,7 +326,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
-        tester.controller().applications().lockedOrThrow(id, application ->
+        tester.controller().applications().lockOrThrow(id, application ->
                 tester.controller().applications().store(application
                                                                  .withDeploymentIssueId(IssueId.from("123"))
                                                                  .withOwnershipIssueId(IssueId.from("321"))));
@@ -485,7 +485,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create the same application again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"An application with id 'tenant1.application1' already exists\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1': Application already exists\"}",
                               400);
 
         ConfigServerClientMock configServer = (ConfigServerClientMock)container.components().getComponent("com.yahoo.vespa.hosted.controller.ConfigServerClientMock");
@@ -836,7 +836,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
-            controllerTester.controller().applications().lockedOrThrow(application.id(), lockedApplication -> {
+            controllerTester.controller().applications().lockOrThrow(application.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
                 for (Deployment deployment : application.deployments().values()) {

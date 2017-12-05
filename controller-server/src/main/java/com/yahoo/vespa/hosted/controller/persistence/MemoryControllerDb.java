@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.RotationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 
 import java.util.ArrayList;
@@ -14,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +24,6 @@ public class MemoryControllerDb implements ControllerDb {
 
     private final Map<TenantId, Tenant> tenants = new HashMap<>();
     private final Map<String, Application> applications = new HashMap<>();
-    private final Map<RotationId, ApplicationId> rotationAssignments = new HashMap<>();
 
     @Override
     public void createTenant(Tenant tenant) {
@@ -52,7 +49,7 @@ public class MemoryControllerDb implements ControllerDb {
     }
 
     @Override
-    public Optional<Tenant> getTenant(TenantId tenantId) throws PersistenceException {
+    public Optional<Tenant> getTenant(TenantId tenantId) {
         return Optional.ofNullable(tenants.get(tenantId));
     }
 
@@ -86,38 +83,6 @@ public class MemoryControllerDb implements ControllerDb {
         return applications.values().stream()
                                     .filter(a -> a.id().tenant().value().equals(tenantId.id()))
                                     .collect(Collectors.toList());
-    }
-
-    @Override
-    public Set<RotationId> getRotations() {
-        return rotationAssignments.keySet();
-    }
-
-    @Override
-    public Set<RotationId> getRotations(ApplicationId applicationId) {
-        return rotationAssignments.entrySet().stream()
-            .filter(entry -> entry.getValue().equals(applicationId))
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toSet());
-    }
-
-    @Override
-    public boolean assignRotation(RotationId rotationId, ApplicationId applicationId) {
-        if (rotationAssignments.containsKey(rotationId)) {
-            return false;
-        } else {
-            rotationAssignments.put(rotationId, applicationId);
-            return true;
-        }
-    }
-
-    @Override
-    public Set<RotationId> deleteRotations(ApplicationId applicationId) {
-        Set<RotationId> rotations = getRotations(applicationId);
-        for (RotationId rotation : rotations) {
-            rotationAssignments.remove(rotation);
-        }
-        return rotations;
     }
 
 }

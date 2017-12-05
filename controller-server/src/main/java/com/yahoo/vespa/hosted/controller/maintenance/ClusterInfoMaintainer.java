@@ -4,10 +4,8 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -93,7 +91,7 @@ public class ClusterInfoMaintainer extends Maintainer {
                 try {
                     NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
-                    controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                    controller().applications().lockIfPresent(application.id(), lockedApplication ->
                         controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));
                 }
                 catch (IOException | IllegalArgumentException e) {

@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -79,7 +77,7 @@ public class DeploymentTrigger {
      * @param report information about the job that just completed
      */
     public void triggerFromCompletion(JobReport report) {
-        applications().lockedOrThrow(report.applicationId(), application -> {
+        applications().lockOrThrow(report.applicationId(), application -> {
             application = application.withJobCompletion(report, clock.instant(), controller);
 
             // Handle successful starting and ending
@@ -132,7 +130,7 @@ public class DeploymentTrigger {
         ApplicationList applications = ApplicationList.from(applications().asList());
         applications = applications.notPullRequest();
         for (Application application : applications.asList())
-            applications().lockedIfPresent(application.id(), this::triggerReadyJobs);
+            applications().lockIfPresent(application.id(), this::triggerReadyJobs);
     }
 
     /** Find the next step to trigger if any, and triggers it */
@@ -219,7 +217,7 @@ public class DeploymentTrigger {
      * @throws IllegalArgumentException if this application already have an ongoing change
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
-        applications().lockedOrThrow(applicationId, application -> {
+        applications().lockOrThrow(applicationId, application -> {
             if (application.deploying().isPresent()  && ! application.deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.deploying().get() + " is already in progress");
@@ -238,7 +236,7 @@ public class DeploymentTrigger {
      * @param applicationId the application to trigger
      */
     public void cancelChange(ApplicationId applicationId) {
-        applications().lockedOrThrow(applicationId, application -> {
+        applications().lockOrThrow(applicationId, application -> {
             buildSystem.removeJobs(application.id());
             applications().store(application.withDeploying(Optional.empty()));
         });

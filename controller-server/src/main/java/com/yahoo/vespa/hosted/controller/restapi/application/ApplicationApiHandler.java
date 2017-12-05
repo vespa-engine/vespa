@@ -710,7 +710,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                        "Active versions: " + controller.versionStatus().versions());
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().lockedOrThrow(id, application -> {
+        controller.applications().lockOrThrow(id, application -> {
             if (application.deploying().isPresent())
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
                                                            application.deploying().get() + " is in progress");
@@ -728,7 +728,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if ( ! change.isPresent())
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
-        controller.applications().lockedOrThrow(id, lockedApplication ->
+        controller.applications().lockOrThrow(id, lockedApplication ->
             controller.applications().deploymentTrigger().cancelChange(id));
 
         return new MessageResponse("Cancelled " + change.get() + " for " + application);
@@ -739,10 +739,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      new Zone(Environment.from(environment), RegionName.from(region)));
         // TODO: Propagate all filters
-        if (request.getProperty("hostname") != null)
-            controller.applications().restartHost(deploymentId, new Hostname(request.getProperty("hostname")));
-        else
-            controller.applications().restart(deploymentId);
+        Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
+        controller.applications().restart(deploymentId, hostname);
 
         // TODO: Change to return JSON
         return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,
