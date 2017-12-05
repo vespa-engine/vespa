@@ -44,7 +44,7 @@ public class AthenzPrincipalFilterTest {
     @Before
     public void before() {
         validator = mock(NTokenValidator.class);
-        principal = new AthenzPrincipal(AthenzUser.fromUserId(new UserId("bob")));
+        principal = new AthenzPrincipal(AthenzUser.fromUserId(new UserId("bob")), NTOKEN);
     }
 
     @Test

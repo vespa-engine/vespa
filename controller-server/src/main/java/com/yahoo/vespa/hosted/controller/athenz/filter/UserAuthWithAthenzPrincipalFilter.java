@@ -10,11 +10,13 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import com.yahoo.vespa.hosted.controller.restapi.application.Authorizer;
 
 import java.security.Principal;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -34,11 +36,13 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     private static final Logger log = Logger.getLogger(UserAuthWithAthenzPrincipalFilter.class.getName());
 
     private final String userAuthenticationPassThruAttribute;
+    private final String principalHeaderName;
 
     @Inject
     public UserAuthWithAthenzPrincipalFilter(ZmsKeystore zmsKeystore, Executor executor, AthenzConfig config) {
         super(zmsKeystore, executor, config);
         this.userAuthenticationPassThruAttribute = config.userAuthenticationPassThruAttribute();
+        this.principalHeaderName = config.principalHeaderName();
     }
 
     @Override
@@ -81,13 +85,14 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
      * NOTE: The Bouncer user roles ({@link DiscFilterRequest#roles} are still intact as they are required
      * for {@link Authorizer#isMemberOfVespaBouncerGroup(HttpRequest)}.
      */
-    private static void rewriteUserPrincipalToAthenz(DiscFilterRequest request) {
+    private void rewriteUserPrincipalToAthenz(DiscFilterRequest request) {
         Principal userPrincipal = request.getUserPrincipal();
         log.log(LogLevel.DEBUG, () -> "Original user principal: " + userPrincipal.toString());
         UserId userId = new UserId(userPrincipal.getName());
         AthenzUser athenzIdentity = AthenzUser.fromUserId(userId);
         request.setRemoteUser(athenzIdentity.getFullName());
-        request.setUserPrincipal(new AthenzPrincipal(athenzIdentity));
+        NToken nToken = Optional.ofNullable(request.getHeader(principalHeaderName)).map(NToken::new).orElse(null);
+        request.setUserPrincipal(new AthenzPrincipal(athenzIdentity, nToken));
     }
 
     private enum UserAuthenticationResult {

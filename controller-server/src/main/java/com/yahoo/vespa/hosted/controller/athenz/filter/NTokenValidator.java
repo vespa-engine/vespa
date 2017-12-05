@@ -49,7 +49,8 @@ class NTokenValidator {
         return new AthenzPrincipal(
                 AthenzUtils.createAthenzIdentity(
                         new AthenzDomain(principalToken.getDomain()),
-                        principalToken.getName()));
+                        principalToken.getName()),
+                token);
     }
 
     private Optional<PublicKey> getPublicKey(String keyId) throws InvalidTokenException {

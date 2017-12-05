@@ -37,7 +37,8 @@ public class MockAuthorizer extends Authorizer {
         if (domain == null || name == null) return Optional.empty();
         return Optional.of(
                 new AthenzPrincipal(
-                        AthenzUtils.createAthenzIdentity(new AthenzDomain(domain), name)));
+                        AthenzUtils.createAthenzIdentity(new AthenzDomain(domain), name),
+                        new NToken("dummy")));
     }
 
     /** Returns the hardcoded NToken of {@link TestIdentities#userId} */

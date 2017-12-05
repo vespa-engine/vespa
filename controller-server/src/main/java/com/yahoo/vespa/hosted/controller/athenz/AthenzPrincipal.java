@@ -12,9 +12,12 @@ import java.util.Objects;
 public class AthenzPrincipal implements Principal {
 
     private final AthenzIdentity athenzIdentity;
+    private final NToken nToken;
 
-    public AthenzPrincipal(AthenzIdentity athenzIdentity) {
+    public AthenzPrincipal(AthenzIdentity athenzIdentity,
+                           NToken nToken) {
         this.athenzIdentity = athenzIdentity;
+        this.nToken = nToken;
     }
 
     public AthenzIdentity getIdentity() {
@@ -28,6 +31,10 @@ public class AthenzPrincipal implements Principal {
 
     public AthenzDomain getDomain() {
         return athenzIdentity.getDomain();
+    }
+
+    public NToken getNToken() {
+        return nToken;
     }
 
     @Override
