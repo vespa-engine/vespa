@@ -31,13 +31,13 @@ public:
      * Get or create a counter metric.
      * @param name the name of the metric.
      **/
-    virtual Counter counter(const vespalib::string &name) = 0;
+    virtual Counter counter(const vespalib::string &name, const vespalib::string &description) = 0;
 
     /**
      * Get or create a gauge metric.
      * @param name the name of the metric.
      **/
-    virtual Gauge gauge(const vespalib::string &name) = 0;
+    virtual Gauge gauge(const vespalib::string &name, const vespalib::string &description) = 0;
 
     /**
      * Get or create a dimension for labeling metrics.

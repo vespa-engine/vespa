@@ -74,8 +74,8 @@ public:
     static std::shared_ptr<MetricsManager> create(const SimpleManagerConfig &config);
     static std::shared_ptr<MetricsManager> createForTest(const SimpleManagerConfig &config,
                                                          Tick::UP tick_supplier);
-    Counter counter(const vespalib::string &name) override;
-    Gauge gauge(const vespalib::string &name) override;
+    Counter counter(const vespalib::string &name, const vespalib::string &description) override;
+    Gauge gauge(const vespalib::string &name, const vespalib::string &description) override;
     Dimension dimension(const vespalib::string &name) override;
     Label label(const vespalib::string &value) override;
     PointBuilder pointBuilder(Point from) override;

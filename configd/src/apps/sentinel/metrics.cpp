@@ -20,11 +20,16 @@ StartMetrics::StartMetrics()
       totalRestartsLastPeriod(1),
       startedTime(time(nullptr)),
       lastLoggedTime(startedTime - 55),
-      sentinel_restarts(metrics->counter("sentinel.restarts")),
-      sentinel_totalRestarts(metrics->gauge("sentinel.totalRestarts")),
-      sentinel_running(metrics->gauge("sentinel.running")),
-      sentinel_uptime(metrics->gauge("sentinel.uptime"))
+      sentinel_restarts(metrics->counter("sentinel.restarts",
+              "how many times sentinel restarted a service")),
+      sentinel_totalRestarts(metrics->gauge("sentinel.totalRestarts",
+              "how many times sentinel restarted a service since sentinel start")),
+      sentinel_running(metrics->gauge("sentinel.running",
+              "how many services the sentinel has running currently")),
+      sentinel_uptime(metrics->gauge("sentinel.uptime",
+              "how many seconds has the sentinel been running"))
 {
+    // account for the sentinel itself restarting
     sentinel_restarts.add();
 }
 

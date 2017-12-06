@@ -53,7 +53,7 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 }
 
 Counter
-SimpleMetricsManager::counter(const vespalib::string &name)
+SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
 {
     size_t id = _metricNames.resolve(name);
     _metricTypes.check(id, name, MetricTypes::MetricType::COUNTER);
@@ -62,7 +62,7 @@ SimpleMetricsManager::counter(const vespalib::string &name)
 }
 
 Gauge
-SimpleMetricsManager::gauge(const vespalib::string &name)
+SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
 {
     size_t id = _metricNames.resolve(name);
     _metricTypes.check(id, name, MetricTypes::MetricType::GAUGE);
