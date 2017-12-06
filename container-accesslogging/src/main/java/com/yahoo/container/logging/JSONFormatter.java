@@ -70,7 +70,7 @@ public class JSONFormatter {
 
             Principal sslPrincipal = accessLogEntry.getSslPrincipal();
             if (sslPrincipal != null) {
-                generator.writeStringField("ssl-principal", principal.getName());
+                generator.writeStringField("ssl-principal", sslPrincipal.getName());
             }
 
             // Only add remote address/port fields if relevant
