@@ -12,11 +12,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.PersistenceException;
@@ -200,8 +200,7 @@ public class TenantController {
         try (Lock lock = lock(tenantId)) {
             Tenant existing = tenant(tenantId).orElseThrow(() -> new NotExistsException(tenantId));
             if (existing.isAthensTenant()) return existing; // nothing to do
-            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.id() +
-                             " using " + nToken.getPrincipal());
+            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.id());
             if (tenantHaving(tenantDomain).isPresent())
                 throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
                                                    "This domain is already used by " + tenantHaving(tenantDomain).get());

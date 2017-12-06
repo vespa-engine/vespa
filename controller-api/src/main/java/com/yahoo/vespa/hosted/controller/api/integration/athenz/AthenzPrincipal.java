@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.athenz;
+package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 
@@ -12,9 +12,12 @@ import java.util.Objects;
 public class AthenzPrincipal implements Principal {
 
     private final AthenzIdentity athenzIdentity;
+    private final NToken nToken;
 
-    public AthenzPrincipal(AthenzIdentity athenzIdentity) {
+    public AthenzPrincipal(AthenzIdentity athenzIdentity,
+                           NToken nToken) {
         this.athenzIdentity = athenzIdentity;
+        this.nToken = nToken;
     }
 
     public AthenzIdentity getIdentity() {
@@ -28,6 +31,10 @@ public class AthenzPrincipal implements Principal {
 
     public AthenzDomain getDomain() {
         return athenzIdentity.getDomain();
+    }
+
+    public NToken getNToken() {
+        return nToken;
     }
 
     @Override

@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.ZtsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 
 import java.util.List;
 import java.util.logging.Level;

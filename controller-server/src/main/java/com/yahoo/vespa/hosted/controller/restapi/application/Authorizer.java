@@ -10,11 +10,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.common.ContextAttributes;
 import com.yahoo.vespa.hosted.controller.restapi.filter.NTokenRequestFilter;
 

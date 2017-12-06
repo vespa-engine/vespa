@@ -6,10 +6,10 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -37,7 +37,8 @@ public class MockAuthorizer extends Authorizer {
         if (domain == null || name == null) return Optional.empty();
         return Optional.of(
                 new AthenzPrincipal(
-                        AthenzUtils.createAthenzIdentity(new AthenzDomain(domain), name)));
+                        AthenzUtils.createAthenzIdentity(new AthenzDomain(domain), name),
+                        new NToken("dummy")));
     }
 
     /** Returns the hardcoded NToken of {@link TestIdentities#userId} */

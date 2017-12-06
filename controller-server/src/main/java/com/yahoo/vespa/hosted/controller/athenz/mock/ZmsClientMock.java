@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
-import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,7 +110,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     private static ZmsException zmsException(int code, String message, Object... args) {
-        return new ZmsException(new ZMSClientException(code, String.format(message, args)));
+        return new ZmsException(code, String.format(message, args));
     }
 
     private static void log(String format, Object... args) {

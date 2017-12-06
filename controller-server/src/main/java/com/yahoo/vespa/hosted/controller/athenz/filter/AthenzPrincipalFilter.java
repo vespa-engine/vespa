@@ -6,10 +6,10 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.util.concurrent.Executor;

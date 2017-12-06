@@ -13,12 +13,12 @@ import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.util.Arrays;
@@ -179,7 +179,7 @@ public class ZmsClientImpl implements ZmsClient {
             wrappedCode.run();
         } catch (ZMSClientException e) {
             logWarning(e);
-            throw new ZmsException(e);
+            throw new ZmsException(e.getCode(), e);
         }
     }
 
@@ -188,7 +188,7 @@ public class ZmsClientImpl implements ZmsClient {
             return wrappedCode.get();
         } catch (ZMSClientException e) {
             logWarning(e);
-            throw new ZmsException(e);
+            throw new ZmsException(e.getCode(), e);
         }
     }
 

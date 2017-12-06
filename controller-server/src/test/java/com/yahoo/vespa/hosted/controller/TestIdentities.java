@@ -9,9 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.filter.AthenzTestUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 
 /**
  * @author Tony Vaagenes
@@ -34,8 +32,6 @@ public class TestIdentities {
 
     public static Tenant tenant = Tenant.createOpsDbTenant(tenantId, userGroup1, property);
 
-    public static NToken userNToken = new NToken.Builder(
-            "U1", AthenzUser.fromUserId(userId), AthenzTestUtils.generateRsaKeypair().getPrivate(), "0")
-            .build();
+    public static NToken userNToken = new NToken("dummy");
 
 }
