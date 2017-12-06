@@ -57,9 +57,13 @@ void
 FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState & newState, const ConfigValue & configValue)
 {
     if (LOG_WOULD_LOG(spam)) {
-        LOG(spam, "new generation %ld for key %s", newState.generation, key.toString().c_str());
+        LOG(spam, "new generation %ld md5:%s for key %s", newState.generation, newState.md5.c_str(), key.toString().c_str());
+        LOG(spam, "Old config: md5:%s \n%s", _latest.getMd5().c_str(), _latest.asJson().c_str());
+        LOG(spam, "New config: md5:%s \n%s", configValue.getMd5().c_str(), configValue.asJson().c_str());
     }
-    _latest = configValue;
+    if (_latest.getMd5() != configValue.getMd5()) {
+        _latest = configValue;
+    }
     _configState = newState;
 
 
