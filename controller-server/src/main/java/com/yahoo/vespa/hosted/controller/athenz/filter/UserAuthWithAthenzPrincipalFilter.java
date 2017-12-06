@@ -8,10 +8,10 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 import com.yahoo.vespa.hosted.controller.restapi.application.Authorizer;
 

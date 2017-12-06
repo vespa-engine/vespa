@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -19,7 +19,7 @@ import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
+import static com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
 import static org.junit.Assert.assertEquals;
 
 /**

@@ -7,10 +7,10 @@ import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -6,10 +6,10 @@ import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.athenz.zts.ZTSClientException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.athenz.ZtsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZtsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsException;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.util.List;

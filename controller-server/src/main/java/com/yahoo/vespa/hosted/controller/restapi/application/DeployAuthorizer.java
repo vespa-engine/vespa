@@ -7,11 +7,11 @@ import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;

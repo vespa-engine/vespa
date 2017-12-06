@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 
 import java.util.ArrayList;
 import java.util.List;

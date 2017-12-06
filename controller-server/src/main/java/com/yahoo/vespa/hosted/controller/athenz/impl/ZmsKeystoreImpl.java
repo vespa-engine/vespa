@@ -3,11 +3,11 @@ package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 
 import java.security.PublicKey;
 import java.util.List;
