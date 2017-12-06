@@ -40,19 +40,10 @@ SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
 }
 
 bool
-SlimeConfigRequest::verifyKey(const ConfigKey & key) const
-{
-    return (key.getDefName().compare(_parameters[0]._string._str) == 0 &&
-            key.getDefNamespace().compare(_parameters[7]._string._str) == 0 &&
-            key.getConfigId().compare(_parameters[3]._string._str) == 0 &&
-            key.getDefMd5().compare(_parameters[2]._string._str) == 0);
-}
-
-bool
 SlimeConfigRequest::verifyState(const ConfigState & state) const
 {
-    return (state.md5.compare(_parameters[4]._string._str) == 0 &&
-            state.generation == static_cast<int64_t>(_parameters[5]._intval64));
+    return (state.md5.compare(_data[REQUEST_CONFIG_MD5].asString().make_stringref()) == 0 &&
+            state.generation == _data[REQUEST_CURRENT_GENERATION].asLong());
 }
 
 void
