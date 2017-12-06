@@ -22,17 +22,30 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
-    public RecordId createCname(String alias, String canonicalName) {
+    public RecordId createCname(RecordName alias, RecordData canonicalName) {
         RecordId id = new RecordId(UUID.randomUUID().toString());
         records.put(id, new Record(id, Record.Type.CNAME, alias, canonicalName));
         return id;
     }
 
     @Override
-    public Optional<Record> findRecord(Record.Type type, String name) {
+    public Optional<Record> findRecord(Record.Type type, RecordName name) {
         return records.values().stream()
                 .filter(record -> record.type() == type && record.name().equals(name))
                 .findFirst();
+    }
+
+    @Override
+    public Optional<Record> findRecord(Record.Type type, RecordData data) {
+        return records.values()
+                .stream()
+                .filter(record -> record.type() == type && record.value().equals(data))
+                .findFirst();
+    }
+
+    @Override
+    public void updateRecord(RecordId id, RecordData newData) {
+        records.computeIfPresent(id, (k, record) -> new Record(id, record.type(), record.name(), newData));
     }
 
     @Override

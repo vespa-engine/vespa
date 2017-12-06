@@ -27,7 +27,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstance
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -452,9 +454,9 @@ public class ApplicationController {
     /** Register a DNS name for rotation */
     private void registerRotationInDns(Rotation rotation, String dnsName) {
         try {
-            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, dnsName);
+            Optional<Record> record = nameService.findRecord(Record.Type.CNAME, RecordName.from(dnsName));
             if (!record.isPresent()) {
-                RecordId id = nameService.createCname(dnsName, rotation.name());
+                RecordId id = nameService.createCname(RecordName.from(dnsName), RecordData.from(rotation.name()));
                 log.info("Registered mapping with record ID " + id.asString() + ": " + dnsName + " -> "
                          + rotation.name());
             }

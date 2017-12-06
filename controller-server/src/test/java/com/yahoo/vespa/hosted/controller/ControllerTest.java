@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -606,10 +607,10 @@ public class ControllerTest {
 
         tester.deployCompletely(application, applicationPackage);
         assertEquals(1, tester.controllerTester().nameService().records().size());
-        Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, "app1.tenant1.global.vespa.yahooapis.com");
+        Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com"));
         assertTrue(record.isPresent());
-        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name());
-        assertEquals("rotation-fqdn-01", record.get().value());
+        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+        assertEquals("rotation-fqdn-01", record.get().value().asString());
     }
 
     @Test
