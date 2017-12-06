@@ -6,7 +6,8 @@
     <artifactId>container-dependency-versions</artifactId>
     <packaging>pom</packaging>
     <version>6-SNAPSHOT</version>
-    <description>Dependency versions for all Vespa maven projects.</description>
+    <name>container-dependency-versions</name>
+    <description>Versions for all 3rd party dependencies provided from the Vespa container.</description>
     <url>https://github.com/vespa-engine</url>
 
     <licenses>
@@ -15,33 +16,51 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+    <developers>
+        <developer>
+            <name>Vespa</name>
+            <url>https://github.com/vespa-engine</url>
+        </developer>
+    </developers>
+    <distributionManagement>
+        <repository>
+            <id>bintray-vespa-repo</id>
+            <url>https://api.bintray.com/maven/yahoo/maven/vespa;publish=1</url>
+        </repository>
+    </distributionManagement>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
 
-<!-- TODO: add pluginManagement for bundle-plugin and/or compiler-plugin?
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.6.1</version>
-                    <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
-                        <optimize>true</optimize>
-                   </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.yahoo.vespa</groupId>
-                    <artifactId>bundle-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <configuration>
-                        <configGenVersion>${project.version}</configGenVersion>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
--->
+
+    <!-- TODO: add pluginManagement for bundle-plugin and/or compiler-plugin?
+        <build>
+            <pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.6.1</version>
+                        <configuration>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                            <optimize>true</optimize>
+                       </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>bundle-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <configuration>
+                            <configGenVersion>${project.version}</configGenVersion>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </pluginManagement>
+        </build>
+    -->
     <dependencyManagement>
         <dependencies>
             <dependency>
