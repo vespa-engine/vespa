@@ -22,20 +22,23 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
-
     <developers>
         <developer>
             <name>Vespa</name>
             <url>https://github.com/vespa-engine</url>
         </developer>
     </developers>
-
     <distributionManagement>
         <repository>
             <id>bintray-vespa-repo</id>
             <url>https://api.bintray.com/maven/yahoo/maven/vespa;publish=1</url>
         </repository>
     </distributionManagement>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
 
     <repositories>
         <!-- Required for Athenz libraries -->
@@ -48,12 +51,6 @@
             <url>https://yahoo.bintray.com/maven</url>
         </repository>
     </repositories>
-
-    <scm>
-        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
-        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
-        <url>git@github.com:vespa-engine/vespa.git</url>
-    </scm>
 
     <build>
         <finalName>${project.artifactId}</finalName>
