@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigagent.h"
+#include "frtconfigrequestv3.h"
 #include <vespa/config/common/trace.h>
 
 #include <vespa/log/log.h>
@@ -29,14 +30,14 @@ FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP
         LOG(spam, "current state for %s: generation %ld md5 %s", key.toString().c_str(), _configState.generation, _configState.md5.c_str());
     }
     if (response->validateResponse() && !response->isError()) {
-        handleOKResponse(std::move(response));
+        handleOKResponse(request, std::move(response));
     } else {
         handleErrorResponse(request, std::move(response));
     }
 }
 
 void
-FRTConfigAgent::handleOKResponse(ConfigResponse::UP response)
+FRTConfigAgent::handleOKResponse(const ConfigRequest & request, ConfigResponse::UP response)
 {
     _failedRequests = 0;
     response->fill();
@@ -45,8 +46,7 @@ FRTConfigAgent::handleOKResponse(ConfigResponse::UP response)
     }
 
     ConfigState newState = response->getConfigState();
-    bool isNewGeneration = newState.isNewerGenerationThan(_configState);
-    if (isNewGeneration) {
+    if ( ! request.verifyState(newState)) {
         handleUpdatedGeneration(response->getKey(), newState, response->getValue());
     }
     setWaitTime(_timingValues.successDelay, 1);
@@ -57,22 +57,20 @@ void
 FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState & newState, const ConfigValue & configValue)
 {
     if (LOG_WOULD_LOG(spam)) {
-        LOG(spam, "new generation %ld for key %s", newState.generation, key.toString().c_str());
+        LOG(spam, "new generation %ld md5:%s for key %s", newState.generation, newState.md5.c_str(), key.toString().c_str());
+        LOG(spam, "Old config: md5:%s \n%s", _latest.getMd5().c_str(), _latest.asJson().c_str());
+        LOG(spam, "New config: md5:%s \n%s", configValue.getMd5().c_str(), configValue.asJson().c_str());
     }
-    _configState.generation = newState.generation;
-    bool hasDifferentPayload = newState.hasDifferentPayloadFrom(_configState);
-    if (hasDifferentPayload) {
-        if (LOG_WOULD_LOG(spam)) {
-            LOG(spam, "new payload for key %s, existing md5(%s), new md5(%s)", key.toString().c_str(), _configState.md5.c_str(), newState.md5.c_str());
-        }
-        _configState.md5 = newState.md5;
+    if (_latest.getMd5() != configValue.getMd5()) {
         _latest = configValue;
     }
+    _configState = newState;
+
 
     if (LOG_WOULD_LOG(spam)) {
-        LOG(spam, "updating holder for key %s, payload changed: %d", key.toString().c_str(), hasDifferentPayload ? 1 : 0);
+        LOG(spam, "updating holder for key %s,", key.toString().c_str());
     }
-    _holder->handle(ConfigUpdate::UP(new ConfigUpdate(_latest, hasDifferentPayload, _configState.generation)));
+    _holder->handle(ConfigUpdate::UP(new ConfigUpdate(_latest, true, newState.generation)));
     _numConfigured++;
 }
 

@@ -39,7 +39,7 @@ bool
 ConfigHolder::poll()
 {
     vespalib::MonitorGuard guard(_monitor);
-    return (_current.get() != NULL);
+    return static_cast<bool>(_current);
 }
 
 void

@@ -22,17 +22,17 @@ public:
     bool abort() override { return false; }
     bool isAborted() const override { return false; }
     void setError(int errorCode) override { (void) errorCode; }
+    bool verifyState(const ConfigState &) const override { return false; }
     const ConfigKey _key;
 };
 
 class MyConfigResponse : public ConfigResponse
 {
 public:
-    MyConfigResponse(const ConfigKey & key, const ConfigValue & value, bool isUpdated, bool valid,
-                     int64_t timestamp, const vespalib::string & md5, const std::string & errorMsg, int errorC0de, bool iserror)
+    MyConfigResponse(const ConfigKey & key, const ConfigValue & value, bool valid, int64_t timestamp,
+                     const vespalib::string & md5, const std::string & errorMsg, int errorC0de, bool iserror)
         : _key(key),
           _value(value),
-          _isUpdated(isUpdated),
           _fillCalled(false),
           _valid(valid),
           _state(md5, timestamp),
@@ -54,7 +54,6 @@ public:
 
     const ConfigKey _key;
     const ConfigValue _value;
-    bool _isUpdated;
     bool _fillCalled;
     bool _valid;
     const ConfigState _state;
@@ -64,24 +63,19 @@ public:
     Trace _trace;
 
 
-/**
-    MyConfigResponse(const ConfigKey & key, const ConfigValue & value, bool isUpdated, bool valid,
-                     int64_t timestamp, const vespalib::string & md5, int64_t prevTimestamp, const vespalib::string &prevMd5,
-                     const std::string & errorMsg, int errorC0de, bool iserror)
-*/
-    static ConfigResponse::UP createOKResponse(const ConfigKey & key, const ConfigValue & value)
+    static ConfigResponse::UP createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & md5 = "a")
     {
-        return ConfigResponse::UP(new MyConfigResponse(key, value, true, true, 10, "a", "", 0, false));
+        return ConfigResponse::UP(new MyConfigResponse(key, value, true, timestamp, md5, "", 0, false));
     }
 
     static ConfigResponse::UP createServerErrorResponse(const ConfigKey & key, const ConfigValue & value)
     {
-        return ConfigResponse::UP(new MyConfigResponse(key, value, false, true, 10, "a", "whinewhine", 2, true));
+        return ConfigResponse::UP(new MyConfigResponse(key, value, true, 10, "a", "whinewhine", 2, true));
     }
 
     static ConfigResponse::UP createConfigErrorResponse(const ConfigKey & key, const ConfigValue & value)
     {
-        return ConfigResponse::UP(new MyConfigResponse(key, value, false, false, 10, "a", "", 0, false));
+        return ConfigResponse::UP(new MyConfigResponse(key, value, false, 10, "a", "", 0, false));
     }
 };
 
@@ -154,10 +148,38 @@ TEST("require that successful request is delivered to holder") {
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
     ASSERT_TRUE(latch->poll());
     ConfigUpdate::UP update(latch->provide());
-    ASSERT_TRUE(update.get() != NULL);
+    ASSERT_TRUE(update);
     ASSERT_TRUE(update->hasChanged());
     MyConfig cfg(update->getValue());
     ASSERT_EQUAL("l33t", cfg.myField);
+}
+
+TEST("require that important(the change) request is delivered to holder even if it was not the last") {
+    const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
+    const ConfigValue testValue1(createValue("l33t", "a"));
+    const ConfigValue testValue2(createValue("l34t", "b"));
+    IConfigHolder::SP latch(new MyHolder());
+
+    FRTConfigAgent handler(latch, testTimingValues);
+    handler.handleResponse(MyConfigRequest(testKey),
+                           MyConfigResponse::createOKResponse(testKey, testValue1, 1, testValue1.getMd5()));
+    ASSERT_TRUE(latch->poll());
+    ConfigUpdate::UP update(latch->provide());
+    ASSERT_TRUE(update);
+    ASSERT_TRUE(update->hasChanged());
+    MyConfig cfg(update->getValue());
+    ASSERT_EQUAL("l33t", cfg.myField);
+
+    handler.handleResponse(MyConfigRequest(testKey),
+                           MyConfigResponse::createOKResponse(testKey, testValue2, 2, testValue2.getMd5()));
+    handler.handleResponse(MyConfigRequest(testKey),
+                           MyConfigResponse::createOKResponse(testKey, testValue2, 3, testValue2.getMd5()));
+    ASSERT_TRUE(latch->poll());
+    update = latch->provide();
+    ASSERT_TRUE(update);
+    ASSERT_TRUE(update->hasChanged());
+    MyConfig cfg2(update->getValue());
+    ASSERT_EQUAL("l34t", cfg2.myField);
 }
 
 TEST("require that successful request sets correct wait time") {
