@@ -64,7 +64,7 @@ bool
 ReconfigParams::shouldSubDbsChange() const
 {
     return shouldMatchersChange() || shouldAttributeManagerChange() || shouldSummaryManagerChange()
-           || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged;
+           || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged || _res.flushChanged;
 }
 
 bool

@@ -497,7 +497,8 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -514,7 +515,8 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -531,7 +533,8 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -546,7 +549,8 @@ public:
                            cfg,
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }

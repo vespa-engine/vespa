@@ -1085,9 +1085,9 @@ IndexMaintainer::getFusionStats() const
     {
         LockGuard lock(_new_search_lock);
         source_list = _source_list;
+        stats.maxFlushed = _maxFlushed;
     }
     stats.diskUsage = source_list->getSearchableStats().sizeOnDisk();
-    stats.maxFlushed = _maxFlushed;
     {
         LockGuard guard(_fusion_lock);
         stats.numUnfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);
@@ -1226,6 +1226,13 @@ IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
         LockGuard lock(_new_search_lock);
         _source_list = new_source_list;
     }
+}
+
+void
+IndexMaintainer::setMaxFlushed(uint32_t maxFlushed)
+{
+    LockGuard lock(_new_search_lock);
+    _maxFlushed = maxFlushed;
 }
 
 }  // namespace index

@@ -143,9 +143,15 @@ index.warmup.time double default=0.0 restart
 # Indicate if we also want warm up with full unpack, instead of only  cheaper seek.
 index.warmup.unpack bool default=false restart
 
-## How many flushed indexes there can be befor fusion is forced.
+## How many flushed indexes there can be befor fusion is forced while node is
+## not in retired state.
 ## Setting to 1 will force an immediate fusion.
-index.maxflushed int default=2 restart
+index.maxflushed int default=2
+
+## How many flushed indexes there can be befor fusion is forced while node is
+## in retired state.
+## Setting to 1 will force an immediate fusion.
+index.maxflushedretired int default=20
 
 ## How much memory is set aside for caching.
 ## Now only used for caching of dictionary lookups.

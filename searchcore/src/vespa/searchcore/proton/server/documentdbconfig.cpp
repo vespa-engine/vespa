@@ -42,7 +42,8 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       schemaChanged(false),
       maintenanceChanged(false),
       storeChanged(false),
-      visibilityDelayChanged(false)
+      visibilityDelayChanged(false),
+      flushChanged(false)
 { }
 
 DocumentDBConfig::DocumentDBConfig(
@@ -152,6 +153,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.maintenanceChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get());
     retval.storeChanged = (_storeConfig != rhs._storeConfig);
     retval.visibilityDelayChanged = (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
+    retval.flushChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get(), [](const auto &l, const auto &r) { return l.getFlushConfig() == r.getFlushConfig(); });
     return retval;
 }
 

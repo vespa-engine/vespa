@@ -12,7 +12,8 @@ DocumentSubDbInitializerResult::DocumentSubDbInitializerResult()
       _summaryManager(std::make_shared<SummaryManager::SP>()),
       _attributeManager(std::make_shared<AttributeManager::SP>()),
       _indexManager(std::make_shared<IIndexManager::SP>()),
-      _lidReuseDelayerConfig()
+      _lidReuseDelayerConfig(),
+      _flushConfig()
 {
 }
 
@@ -21,6 +22,13 @@ DocumentSubDbInitializerResult::
 setLidReuseDelayerConfig(LidReuseDelayerConfig lidReuseDelayerConfig_in)
 {
     _lidReuseDelayerConfig = lidReuseDelayerConfig_in;
+}
+
+void
+DocumentSubDbInitializerResult::
+setFlushConfig(const DocumentDBFlushConfig &flushConfig)
+{
+    _flushConfig = flushConfig;
 }
 
 } // namespace proton
