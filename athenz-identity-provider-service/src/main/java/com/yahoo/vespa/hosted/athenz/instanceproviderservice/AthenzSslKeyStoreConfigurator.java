@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
@@ -45,7 +44,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     private final KeyProvider keyProvider;
     private final AthenzProviderServiceConfig.Zones zoneConfig;
     private final AtomicBoolean alreadyConfigured = new AtomicBoolean();
-    private final AtomicReference<KeyStore> initialKeyStore = new AtomicReference<>();
+    private KeyStore initialKeyStore;
 
     @Inject
     public AthenzSslKeyStoreConfigurator(KeyProvider keyProvider,
@@ -55,7 +54,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         this.certificateClient = new AthenzCertificateClient(config, zoneConfig);
         this.keyProvider = keyProvider;
         this.zoneConfig = zoneConfig;
-        this.initialKeyStore.set(downloadCertificate(keyProvider, certificateClient, zoneConfig));
+        this.initialKeyStore = downloadCertificate(keyProvider, certificateClient, zoneConfig);
     }
 
     @Override
@@ -63,7 +62,8 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         if (alreadyConfigured.getAndSet(true)) { // For debugging purpose of SslKeyStoreConfigurator interface
             throw new IllegalStateException("Already configured. configure() can only be called once.");
         }
-        sslKeyStoreContext.updateKeyStore(initialKeyStore.getAndSet(null), DUMMY_PASSWORD);
+        sslKeyStoreContext.updateKeyStore(initialKeyStore, DUMMY_PASSWORD);
+        initialKeyStore = null;
         scheduler.scheduleAtFixedRate(new AthenzCertificateUpdater(sslKeyStoreContext),
                                       CERTIFICATE_UPDATE_PERIOD.toMinutes()/*initial delay*/,
                                       CERTIFICATE_UPDATE_PERIOD.toMinutes(),
