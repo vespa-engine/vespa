@@ -62,6 +62,9 @@ public class IdIdString extends IdString {
                     if (hasSetLocation) {
                         throw new IllegalArgumentException("Illegal key combination in " + keyValues);
                     }
+                    if (value.isEmpty()) {
+                        throw new IllegalArgumentException("ID location value for 'n=' key is empty");
+                    }
                     location = Long.parseLong(value);
                     hasSetLocation = true;
                     hasNumber = true;
@@ -69,6 +72,9 @@ public class IdIdString extends IdString {
                 case "g":
                     if (hasSetLocation) {
                         throw new IllegalArgumentException("Illegal key combination in " + keyValues);
+                    }
+                    if (value.isEmpty()) {
+                        throw new IllegalArgumentException("ID location value for 'g=' key is empty");
                     }
                     location = makeLocation(value);
                     hasSetLocation = true;
