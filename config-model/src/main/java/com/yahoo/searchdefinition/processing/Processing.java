@@ -73,6 +73,7 @@ public class Processing {
                 TensorFieldProcessor::new,
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
+                ImportedFieldsInSummayValidator::new,
                 FastAccessValidator::new,
                 ReservedMacroNames::new,
 
