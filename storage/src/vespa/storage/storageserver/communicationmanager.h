@@ -26,6 +26,7 @@
 #include <map>
 #include <queue>
 #include <atomic>
+#include <mutex>
 
 namespace mbus {
     class RPCMessageBus;
@@ -138,8 +139,10 @@ private:
     PriorityQueue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    typedef std::vector< std::pair<framework::SecondTime, mbus::IProtocol::SP> > Protocols;
-    Protocols _earlierGenerations;
+    using EarlierProtocol = std::pair<framework::SecondTime, mbus::IProtocol::SP>;
+    using EarlierProtocols = std::vector<EarlierProtocol>;
+    std::mutex       _earlierGenerationsLock;
+    EarlierProtocols _earlierGenerations;
 
     void onOpen() override;
     void onClose() override;

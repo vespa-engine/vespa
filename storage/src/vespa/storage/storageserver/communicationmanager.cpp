@@ -738,10 +738,11 @@ CommunicationManager::run(framework::ThreadHandle& thread)
         if (_eventQueue.getNext(msg, 100)) {
             process(msg);
         }
-        for (Protocols::iterator it(_earlierGenerations.begin());
+        std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
+        for (EarlierProtocols::iterator it(_earlierGenerations.begin());
              !_earlierGenerations.empty() &&
              ((it->first + TEN_MINUTES) < _component.getClock().getTimeInSeconds());
-             _earlierGenerations.begin())
+             it = _earlierGenerations.begin())
         {
             _earlierGenerations.erase(it);
         }
@@ -766,8 +767,8 @@ void CommunicationManager::updateMessagebusProtocol(
     if (_mbus.get()) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
         mbus::IProtocol::SP newDocumentProtocol(new documentapi::DocumentProtocol( *_component.getLoadTypes(), repo));
+        std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newDocumentProtocol)));
-
         mbus::IProtocol::SP newStorageProtocol(new mbusprot::StorageProtocol(repo, *_component.getLoadTypes()));
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newStorageProtocol)));
     }
