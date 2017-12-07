@@ -30,7 +30,7 @@ ConfigSubscription::nextUpdate(int64_t generation, uint64_t timeoutInMillis)
 {
     if (_closed || !_holder->poll())
         return false;
-    _next.reset(_holder->provide().release());
+    _next = _holder->provide();
     if (isGenerationNewer(_next->getGeneration(), generation)) {
         return true;
     }
