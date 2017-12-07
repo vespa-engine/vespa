@@ -9,6 +9,10 @@
 namespace vespalib {
 namespace metrics {
 
+/**
+ * utility for converting a snapshot to JSON format
+ * (which can be inserted into /state/v1/metrics page).
+ **/
 class JsonFormatter
 {
 private:

@@ -9,6 +9,7 @@
 namespace vespalib {
 namespace metrics {
 
+// internal
 class PointMapCollection {
 private:
     using PointMapMap = std::map<PointMap, size_t>;

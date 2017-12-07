@@ -5,3 +5,19 @@
 #include <chrono>
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
+
+#include "clock.h"
+#include "counter.h"
+#include "dimension.h"
+#include "dummy_metrics_manager.h"
+#include "gauge.h"
+#include "json_formatter.h"
+#include "label.h"
+#include "metric_identifier.h"
+#include "metric_name.h"
+#include "metrics_manager.h"
+#include "point_builder.h"
+#include "point.h"
+#include "producer.h"
+#include "simple_metrics_manager.h"
+#include "snapshots.h"

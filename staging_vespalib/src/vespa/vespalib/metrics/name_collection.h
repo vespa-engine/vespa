@@ -9,6 +9,7 @@
 namespace vespalib {
 namespace metrics {
 
+// internal
 class NameCollection {
 private:
     using Map = std::map<vespalib::string, size_t>;

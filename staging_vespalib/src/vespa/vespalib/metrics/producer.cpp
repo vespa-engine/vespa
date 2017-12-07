@@ -22,8 +22,9 @@ Producer::getMetrics(const vespalib::string &)
 vespalib::string
 Producer::getTotalMetrics(const vespalib::string &)
 {
-    // not implemented
-    return "";
+    Snapshot snap = _manager->totalSnapshot();
+    JsonFormatter fmt(snap);
+    return fmt.asString();
 }
 
 

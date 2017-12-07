@@ -8,6 +8,7 @@
 namespace vespalib {
 namespace metrics {
 
+// internal
 struct MetricIdentifier {
     const MetricName _name;
     const Point _point;

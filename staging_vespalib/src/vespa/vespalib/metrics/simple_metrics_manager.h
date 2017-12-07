@@ -57,7 +57,6 @@ private:
     size_t _maxBuckets;
     Bucket _totalsBucket;
 
-    std::atomic<bool> _runFlag;
     std::thread _thread;
     void tickerLoop();
     void stopThread();

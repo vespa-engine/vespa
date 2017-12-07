@@ -9,6 +9,9 @@ namespace metrics {
 
 class MetricsManager;
 
+/**
+ * Utility class for wiring a MetricsManager into a StateApi.
+ **/
 class Producer : public vespalib::MetricsProducer {
 private:
     std::shared_ptr<MetricsManager> _manager;
