@@ -41,10 +41,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import net.jpountz.xxhash.XXHash64;
-import net.jpountz.xxhash.XXHashFactory;
+import com.yahoo.vespa.filedistribution.FileReferenceData;
 
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -438,19 +436,19 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
 
         @Override
-        public void receive(FileReference reference, String filename, byte [] content, FileServer.ReplayStatus status) {
-            XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+        public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
             Request fileBlob = new Request("filedistribution.receiveFile");
-            fileBlob.parameters().add(new StringValue(reference.value()));
-            fileBlob.parameters().add(new StringValue(filename));
-            fileBlob.parameters().add(new DataValue(content));
-            fileBlob.parameters().add(new Int64Value(hasher.hash(ByteBuffer.wrap(content), 0)));
+            fileBlob.parameters().add(new StringValue(fileData.fileReference().value()));
+            fileBlob.parameters().add(new StringValue(fileData.filename()));
+            fileBlob.parameters().add(new StringValue(fileData.type().name()));
+            fileBlob.parameters().add(new DataValue(fileData.content()));
+            fileBlob.parameters().add(new Int64Value(fileData.xxhash()));
             fileBlob.parameters().add(new Int32Value(status.getCode()));
             fileBlob.parameters().add(new StringValue(status.getDescription()));
             target.invokeSync(fileBlob, 600);
             if (fileBlob.isError()) {
-                log.warning("Failed delivering reference '" + reference.value() + "' with file '" + filename + "' to " +
-                            target.toString() + " with error : '" + fileBlob.errorMessage() + "'.");
+                log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
+                            target.toString() + " with error: '" + fileBlob.errorMessage() + "'.");
             }
         }
     }

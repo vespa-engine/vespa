@@ -13,15 +13,13 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
-import net.jpountz.xxhash.XXHash64;
-import net.jpountz.xxhash.XXHashFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +32,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class FileDownloaderTest {
-
-    private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
 
     private MockConnection connection;
     private FileDownloader fileDownloader;
@@ -102,13 +98,47 @@ public class FileDownloaderTest {
 
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.jar";
-            receiveFile(fileReference, filename, "some other content");
+            receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
             Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
             File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
             assertEquals(downloadedFileFullPath.getAbsolutePath(), downloadedFile.get().getAbsolutePath());
             assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
+
+            // Verify download status when downloaded
+            assertDownloadStatus(fileDownloader, fileReference, 100.0);
+        }
+
+        {
+            // fileReference does not exist on disk, needs to be downloaded, is compressed data
+
+            FileReference fileReference = new FileReference("fileReferenceToDirWithManyFiles");
+            File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
+            assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
+
+            // Verify download status
+            assertDownloadStatus(fileDownloader, fileReference, 0.0);
+
+            // Receives fileReference, should return and make it available to caller
+            String filename = "abc.tar.gz";
+            Path tempPath = Files.createTempDirectory("dir");
+            File subdir = new File(tempPath.toFile(), "subdir");
+            File fooFile = new File(subdir, "foo");
+            IOUtils.writeFile(fooFile, "foo", false);
+            File barFile = new File(subdir, "bar");
+            IOUtils.writeFile(barFile, "bar", false);
+
+            File tarFile = CompressedFileReference.compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
+            byte[] tarredContent = IOUtils.readFileBytes(tarFile);
+            receiveFile(fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
+            Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
+
+            assertTrue(downloadedFile.isPresent());
+            File downloadedFoo = new File(fileReferenceFullPath, tempPath.relativize(fooFile.toPath()).toString());
+            File downloadedBar = new File(fileReferenceFullPath, tempPath.relativize(barFile.toPath()).toString());
+            assertEquals("foo", IOUtils.readFile(downloadedFoo));
+            assertEquals("bar", IOUtils.readFile(downloadedBar));
 
             // Verify download status when downloaded
             assertDownloadStatus(fileDownloader, fileReference, 100.0);
@@ -133,7 +163,7 @@ public class FileDownloaderTest {
 
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
-        receiveFile(fileReference, filename, "some other content");
+        receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
         Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
         assertTrue(downloadedFile.isPresent());
@@ -168,7 +198,7 @@ public class FileDownloaderTest {
     public void receiveFile() throws IOException {
         FileReference foo = new FileReference("foo");
         String filename = "foo.jar";
-        receiveFile(foo, filename, "content");
+        receiveFile(foo, filename, FileReferenceData.Type.file, "content");
         File downloadedFile = new File(fileReferenceFullPath(downloadDir, foo), filename);
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
@@ -187,10 +217,12 @@ public class FileDownloaderTest {
         assertEquals(expectedDownloadStatus, downloadStatus, 0.0001);
     }
 
-    private void receiveFile(FileReference fileReference, String filename, String content) {
-        byte[] contentBytes = Utf8.toBytes(content);
-        long xxHashFromContent = hasher.hash(ByteBuffer.wrap(contentBytes), 0);
-        fileDownloader.receiveFile(fileReference, filename, contentBytes, xxHashFromContent);
+    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, String content) {
+        receiveFile(fileReference, filename, type, Utf8.toBytes(content));
+    }
+
+    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, byte[] content) {
+        fileDownloader.receiveFile(new FileReferenceData(fileReference, filename, type, content));
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

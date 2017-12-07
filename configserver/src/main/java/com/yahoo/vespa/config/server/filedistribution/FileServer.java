@@ -14,7 +14,9 @@ import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
+import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceData;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 
 public class FileServer {
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
+
     private final FileDirectory root;
     private final ExecutorService executor;
     private final FileDownloader downloader;
@@ -43,7 +46,7 @@ public class FileServer {
     }
 
     public interface Receiver {
-        void receive(FileReference reference, String filename, byte [] content, ReplayStatus status);
+        void receive(FileReferenceData fileData, ReplayStatus status);
     }
 
     @Inject
@@ -87,20 +90,37 @@ public class FileServer {
         File file = root.getFile(reference);
         // TODO remove once verified in system tests.
         log.info("Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
-        byte [] blob = new byte [0];
         boolean success = false;
         String errorDescription = "OK";
+        FileReferenceData fileData = FileReferenceData.empty(reference, file.getName());
         try {
-            blob = IOUtils.readFileBytes(file);
+            fileData = readFileReferenceData(reference);
             success = true;
         } catch (IOException e) {
-            errorDescription = "For file reference '" + reference.value() + "' I failed reading file '" + file.getAbsolutePath() + "'";
-            log.warning(errorDescription + "for sending to '" + target.toString() + "'. " + e.toString());
+            errorDescription = "For file reference '" + reference.value() + "': failed reading file '" + file.getAbsolutePath() + "'";
+            log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.toString());
         }
-        target.receive(reference, file.getName(), blob,
-                new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
+
+        target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
         // TODO remove once verified in system tests.
         log.info("Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
+    }
+
+
+    private FileReferenceData readFileReferenceData(FileReference reference) throws IOException {
+        File file = root.getFile(reference);
+
+        byte[] blob;
+        FileReferenceData.Type type;
+        if (file.isDirectory()) {
+            type = FileReferenceData.Type.compressed;
+            blob = CompressedFileReference.compress(file.getParentFile());
+        } else {
+            type = FileReferenceData.Type.file;
+            blob = IOUtils.readFileBytes(file);
+        }
+
+        return new FileReferenceData(reference, file.getName(), type, blob);
     }
 
     public void download(FileReference fileReference) {
