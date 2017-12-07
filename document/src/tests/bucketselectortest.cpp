@@ -85,8 +85,6 @@ void BucketSelectorTest::testSimple()
     ASSERT_BUCKET_COUNT("id.bucket == 0x4000000000000258", 1u); // Bucket 600
     ASSERT_BUCKET_COUNT("(testdoctype1 and id.bucket=0)", 1u);
 
-    ASSERT_BUCKET_COUNT("searchcolumn.3 = 1", 21845u);
-
         // Check that the correct buckets is found
     ASSERT_BUCKET("id = \"userdoc:ns:123:foobar\"",
                   document::BucketId(58, 123));

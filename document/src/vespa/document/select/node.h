@@ -5,9 +5,8 @@
  *
  * @brief Base class for all nodes in the document selection tree.
  *
- * @author H�kon Humberset
+ * @author Håkon Humberset
  * @date 2005-06-07
- * @version $Id$
  */
 
 #pragma once

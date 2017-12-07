@@ -5,9 +5,8 @@
  *
  * @brief Class describing a constant in the select tree.
  *
- * @author H�kon Humberset
+ * @author Håkon Humberset
  * @date 2005-06-07
- * @version $Id$
  */
 
 #pragma once
@@ -23,7 +22,7 @@ private:
     bool _value;
 
 public:
-    explicit Constant(const vespalib::stringref & value);
+    explicit Constant(bool value);
 
     ResultList contains(const Context&) const override {
         return ResultList(Result::get(_value));
@@ -32,8 +31,8 @@ public:
     ResultList trace(const Context&, std::ostream& trace) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void visit(Visitor& v) const override;
-    bool getConstantValue() const { return _value; }
-    Node::UP clone() const override { return wrapParens(new Constant(_name)); }
+    bool getConstantValue() const noexcept { return _value; }
+    Node::UP clone() const override { return wrapParens(new Constant(_value)); }
 
 };
 

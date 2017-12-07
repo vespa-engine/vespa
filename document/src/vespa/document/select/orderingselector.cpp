@@ -137,7 +137,6 @@ namespace {
         void visitArithmeticValueNode(const ArithmeticValueNode &) override {}
         void visitFunctionValueNode(const FunctionValueNode &) override {}
         void visitIdValueNode(const IdValueNode &) override {}
-        void visitSearchColumnValueNode(const SearchColumnValueNode &) override {}
         void visitFieldValueNode(const FieldValueNode &) override {}
         void visitFloatValueNode(const FloatValueNode &) override {}
         void visitVariableValueNode(const VariableValueNode &) override {}

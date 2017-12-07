@@ -1070,9 +1070,8 @@ TwoPhaseUpdateOperationTest::testSafePathConditionParseFailureFailsWithIllegalPa
                          "timestamp 0, timestamp of updated doc: 0) "
                          "ReturnCode(ILLEGAL_PARAMETERS, "
                                      "Failed to parse test and set condition: "
-                                     "Unexpected token at position 16 "
-                                     "('==fran...c') in query 'testdoctype1."
-                                     "san==fran...cisco',)"s,
+                                     "syntax error, unexpected . at column 24 when "
+                                     "parsing selection 'testdoctype1.san==fran...cisco')"s,
             sender.getLastReply(true));
 }
 
@@ -1096,7 +1095,8 @@ TwoPhaseUpdateOperationTest::testSafePathConditonUnknownDocTypeFailsWithIllegalP
                          "timestamp 0, timestamp of updated doc: 0) "
                          "ReturnCode(ILLEGAL_PARAMETERS, "
                                     "Failed to parse test and set condition: "
-                                    "Document type langbein not found)"s,
+                                    "Document type 'langbein' not found at column 1 "
+                                    "when parsing selection 'langbein.headerval=1234')"s,
             sender.getLastReply(true));
 }
 

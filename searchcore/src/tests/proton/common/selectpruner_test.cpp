@@ -618,8 +618,6 @@ TEST_F("Test that multiplication has higher priority than addition",
 
 TEST_F("Test that toplevel functions are visited", TestFixture)
 {
-    f.testPrune("searchcolumn.15 == 4",
-                "searchcolumn.15 == 4");
     f.testPrune("id.scheme == \"doc\"",
                 "id.scheme == \"doc\"");
     f.testPrune("test.aa < now() - 7200",

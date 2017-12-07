@@ -21,7 +21,6 @@ using document::select::Or;
 using document::select::ArithmeticValueNode;
 using document::select::FunctionValueNode;
 using document::select::IdValueNode;
-using document::select::SearchColumnValueNode;
 using document::select::FieldValueNode;
 using document::select::FloatValueNode;
 using document::select::VariableValueNode;
@@ -235,7 +234,7 @@ SelectPruner::visitDocumentType(const DocType &expr)
         _inverted = true;
         res = !res;
     }
-    _node.reset(new Constant(res ? "true" : "false"));
+    _node.reset(new Constant(res));
     _resultSet.add(res ? Result::True : Result::False);
     _priority = DocumentTypePriority;
 }
@@ -411,7 +410,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     if (!_hasFields) {
         // If we're working on removed document sub db then we have no fields.
         _constVal = true;
-        _valueNode.reset(new NullValueNode("null"));
+        _valueNode.reset(new NullValueNode());
         _priority = NullValPriority;
         return;
     }
@@ -511,7 +510,7 @@ SelectPruner::setTernaryConst(bool val)
 {
     _constVal = true;
     _priority = ConstPriority;
-    _node.reset(new Constant(val ? "true" : "false"));
+    _node.reset(new Constant(val));
 }
 
 void

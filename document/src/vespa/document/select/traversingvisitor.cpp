@@ -73,12 +73,6 @@ TraversingVisitor::visitIdValueNode(const IdValueNode &)
 
 
 void
-TraversingVisitor::visitSearchColumnValueNode(const SearchColumnValueNode &)
-{
-}
-
-
-void
 TraversingVisitor::visitFieldValueNode(const FieldValueNode &)
 {
 }
