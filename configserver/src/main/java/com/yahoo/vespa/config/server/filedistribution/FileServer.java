@@ -33,7 +33,8 @@ public class FileServer {
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
 
     private final FileDirectory root;
-    private final ExecutorService executor;
+    private final ExecutorService pushExecutor;
+    private final ExecutorService pullExecutor;
     private final FileDownloader downloader;
 
     private enum FileApiErrorCodes {
@@ -78,7 +79,8 @@ public class FileServer {
     private FileServer(ConnectionPool connectionPool, File rootDir) {
         this.downloader = new FileDownloader(connectionPool);
         this.root = new FileDirectory(rootDir);
-        this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        this.pushExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        this.pullExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     public boolean hasFile(String fileName) {
@@ -97,7 +99,7 @@ public class FileServer {
         File file = root.getFile(reference);
 
         if (file.exists()) {
-            executor.execute(() -> serveFile(reference, target));
+            pushExecutor.execute(() -> serveFile(reference, target));
         }
         return false;
     }
@@ -139,7 +141,7 @@ public class FileServer {
         return new FileReferenceData(reference, file.getName(), type, blob);
     }
     public void serveFile(Request request, Receiver receiver) {
-        executor.execute(() -> serveFile(request.parameters().get(0).asString(), request, receiver));
+        pullExecutor.execute(() -> serveFile(request.parameters().get(0).asString(), request, receiver));
     }
     private void serveFile(String fileReference, Request request, Receiver receiver) {
         FileApiErrorCodes result;
