@@ -3,7 +3,9 @@ package com.yahoo.feedhandler;
 
 import java.util.Collections;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -16,8 +18,9 @@ public class VespaFeedHandlerVisit extends ThreadedHttpRequestHandler {
 
     private final SearchHandler searchHandler;
 
-    public VespaFeedHandlerVisit(SearchHandler searchHandler, Executor executor) {
-        super(executor, null, true);
+    @Inject
+    public VespaFeedHandlerVisit(SearchHandler searchHandler, Executor executor, Metric metric) {
+        super(executor, metric, true);
         this.searchHandler = searchHandler;
     }
 
