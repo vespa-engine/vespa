@@ -18,6 +18,8 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporaryImportedField;
 import com.yahoo.searchdefinition.document.TemporarySDField;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.documentmodel.DocumentSummary;
+import com.yahoo.vespa.documentmodel.SummaryField;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -107,7 +109,7 @@ public class ImportedFieldsResolverTestCase {
                 .resolve();
     }
 
-    private static class SearchModel {
+    static class SearchModel {
 
         private final ApplicationPackage app = MockApplicationPackage.createEmpty();
         public final Search grandParentSearch;
@@ -124,6 +126,7 @@ public class ImportedFieldsResolverTestCase {
             parentSearch.getDocument().addField(createField("attribute_and_index", DataType.INT, "{ attribute | index }"));
             parentSearch.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
             parentSearch.getDocument().addField(createField("tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[])")), "{ attribute }"));
+            parentSearch.getDocument().addField(createField("predicate_field", DataType.PREDICATE, "{ attribute }"));
             addRefField(parentSearch, grandParentSearch, "ref");
             addImportedField(parentSearch, "ancient_field", "ref", "ancient_field");
 
@@ -160,6 +163,16 @@ public class ImportedFieldsResolverTestCase {
 
         private SearchModel addImportedField(Search search, String fieldName, String referenceFieldName, String targetFieldName) {
             search.temporaryImportedFields().get().add(new TemporaryImportedField(fieldName, referenceFieldName, targetFieldName));
+            return this;
+        }
+
+        public SearchModel addSummaryField(String fieldName, DataType dataType) {
+            DocumentSummary summary = childSearch.getSummary("my_summary");
+            if (summary == null) {
+                summary = new DocumentSummary("my_summary");
+                childSearch.addSummary(summary);
+            }
+            summary.add(new SummaryField(fieldName, dataType));
             return this;
         }
 
