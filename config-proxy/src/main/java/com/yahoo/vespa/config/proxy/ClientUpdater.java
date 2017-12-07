@@ -72,7 +72,7 @@ class ClientUpdater {
                     }
                     rpcServer.returnOkResponse(request, config);
                 } else {
-                    log.log(LogLevel.ERROR, "Could not remove " + config.getKey() + " from delayed delayedResponses queue, already removed");
+                    log.log(LogLevel.INFO, "Could not remove " + config.getKey() + " from delayed delayedResponses queue, already removed");
                 }
             }
         }
