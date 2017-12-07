@@ -60,27 +60,21 @@ class ClientUpdater {
                 log.log(LogLevel.DEBUG, "Delayed response queue has " + responseDelayQueue.size() + " elements");
             }
         }
-        DelayedResponse[] responses = new DelayedResponse[1];
-        responses = responseDelayQueue.toArray(responses);
+        DelayedResponse[] responses = responseDelayQueue.toArray(new DelayedResponse[0]);
         boolean found = false;
-        if (responses.length > 0) {
-            for (DelayedResponse response : responses) {
-                JRTServerConfigRequest request = response.getRequest();
-                if (request.getConfigKey().equals(config.getKey())) {
-                    if (!delayedResponses.remove(response)) {
-                        if (log.isLoggable(LogLevel.DEBUG)) {
-                            log.log(LogLevel.DEBUG, "Could not remove " + config.getKey() + " from delayed delayedResponses queue, already removed");
-                        }
-                        continue;
-                    }
+        for (DelayedResponse response : responses) {
+            JRTServerConfigRequest request = response.getRequest();
+            if (request.getConfigKey().equals(config.getKey())) {
+                if (delayedResponses.remove(response)) {
                     found = true;
                     if (log.isLoggable(LogLevel.DEBUG)) {
                         log.log(LogLevel.DEBUG, "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
                     }
                     rpcServer.returnOkResponse(request, config);
+                } else {
+                    log.log(LogLevel.ERROR, "Could not remove " + config.getKey() + " from delayed delayedResponses queue, already removed");
                 }
             }
-
         }
         if (!found) {
             log.log(LogLevel.DEBUG, "Found no recipient for " + config.getKey() + " in delayed response queue");
