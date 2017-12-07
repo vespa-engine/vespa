@@ -2,9 +2,9 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.filedistribution.FileReferenceData;
 import org.junit.Test;
 
 import java.io.File;
@@ -35,7 +35,7 @@ public class FileServerTest {
     }
 
     @Test
-    public void requireThatExistingFileCanbeFound() throws IOException {
+    public void requireThatExistingFileCanBeFound() throws IOException {
         createCleanDir("123");
         IOUtils.writeFile("123/f1", "test", true);
         assertTrue(fs.hasFile("123"));
@@ -50,15 +50,13 @@ public class FileServerTest {
         cleanup();
     }
 
-    private static class FileReceiver implements FileServer.Receiver {
-        CompletableFuture<byte []> content;
-        FileReceiver(CompletableFuture<byte []> content) {
-            this.content = content;
-        }
-        @Override
-        public void receive(FileReference reference, String filename, byte[] content, FileServer.ReplayStatus status) {
-            this.content.complete(content);
-        }
+    @Test
+    public void requireThatFileReferenceWithDirectoryCanBeFound() throws IOException {
+        createCleanDir("124/subdir");
+        IOUtils.writeFile("124/subdir/f1", "test", false);
+        IOUtils.writeFile("124/subdir/f2", "test", false);
+        assertTrue(fs.hasFile("124/subdir"));
+        cleanup();
     }
 
     @Test
@@ -96,6 +94,17 @@ public class FileServerTest {
         builder.zookeeperserver(servers);
         fileServer = new FileServer(new ConfigserverConfig(builder));
         assertEquals(1, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
+    }
+
+    private static class FileReceiver implements FileServer.Receiver {
+        CompletableFuture<byte []> content;
+        FileReceiver(CompletableFuture<byte []> content) {
+            this.content = content;
+        }
+        @Override
+        public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
+            this.content.complete(fileData.content());
+        }
     }
 
     private void cleanup() {

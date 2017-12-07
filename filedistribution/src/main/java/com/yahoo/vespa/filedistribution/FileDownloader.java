@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -66,8 +65,8 @@ public class FileDownloader {
         fileReferences.forEach(this::queueForDownload);
     }
 
-    public void receiveFile(FileReference fileReference, String filename, byte[] content, long xxHash) {
-        fileReferenceDownloader.receiveFile(fileReference, filename, content, xxHash);
+    void receiveFile(FileReferenceData fileReferenceData) {
+        fileReferenceDownloader.receiveFile(fileReferenceData);
     }
 
     double downloadStatus(FileReference fileReference) {
@@ -85,10 +84,6 @@ public class FileDownloader {
     private Optional<File> getFileFromFileSystem(FileReference fileReference, File directory) {
         File[] files = directory.listFiles();
         if (directory.exists() && directory.isDirectory() && files != null && files.length > 0) {
-            if (files.length != 1) {
-                throw new RuntimeException("More than one file in  '" + fileReference.value() +
-                        "', expected only one, unable to proceed");
-            }
             File file = files[0];
             if (!file.exists()) {
                 throw new RuntimeException("File with reference '" + fileReference.value() +

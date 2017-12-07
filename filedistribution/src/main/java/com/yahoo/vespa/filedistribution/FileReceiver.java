@@ -1,4 +1,4 @@
-//  Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.filedistribution;
 
@@ -33,7 +33,7 @@ public class FileReceiver {
     private final File downloadDirectory;
     private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
 
-    public FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory) {
+    FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory) {
         this.supervisor = supervisor;
         this.downloader = downloader;
         this.downloadDirectory = downloadDirectory;
@@ -68,14 +68,15 @@ public class FileReceiver {
                 .paramDesc(4, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 if crc mismatch, 2 otherwise"));
         // Temporary method until we have chunking
-        methods.add(new Method(RECEIVE_METHOD, "ssxlis", "i", handler, "receiveFile")
+        methods.add(new Method(RECEIVE_METHOD, "sssxlis", "i", handler, "receiveFile")
                 .methodDesc("receive file reference content")
                 .paramDesc(0, "file reference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
-                .paramDesc(2, "content", "array of bytes")
-                .paramDesc(3, "hash", "xx64hash of the file content")
-                .paramDesc(4, "errorcode", "Error code. 0 if none")
-                .paramDesc(5, "error-description", "Error description.")
+                .paramDesc(2, "type", "'file' or 'compressed'")
+                .paramDesc(3, "content", "array of bytes")
+                .paramDesc(4, "hash", "xx64hash of the file content")
+                .paramDesc(5, "errorcode", "Error code. 0 if none")
+                .paramDesc(6, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
         return methods;
     }
@@ -84,15 +85,16 @@ public class FileReceiver {
     public final void receiveFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
         String filename = req.parameters().get(1).asString();
-        byte[] content = req.parameters().get(2).asData();
-        long xxhash = req.parameters().get(3).asInt64();
-        int errorCode = req.parameters().get(4).asInt32();
-        String errorDescription = req.parameters().get(5).asString();
+        String type = req.parameters().get(2).asString();
+        byte[] content = req.parameters().get(3).asData();
+        long xxhash = req.parameters().get(4).asInt64();
+        int errorCode = req.parameters().get(5).asInt32();
+        String errorDescription = req.parameters().get(6).asString();
 
         if (errorCode == 0) {
             // TODO: Remove when system test works
             log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
-            receiveFile(fileReference, filename, content, xxhash);
+            receiveFile(new FileReferenceData(fileReference, filename, FileReferenceData.Type.valueOf(type), content, xxhash));
             req.returnValues().add(new Int32Value(0));
         } else {
             log.log(LogLevel.WARNING, "Receiving file reference '" + fileReference.value() + "' failed: " + errorDescription);
@@ -101,19 +103,30 @@ public class FileReceiver {
         }
     }
 
-    void receiveFile(FileReference fileReference, String filename, byte[] content, long xxHash) {
-        long xxHashFromContent = hasher.hash(ByteBuffer.wrap(content), 0);
-        if (xxHashFromContent != xxHash)
-            throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + xxHash + ")");
+    void receiveFile(FileReferenceData fileReferenceData) {
+        long xxHashFromContent = hasher.hash(ByteBuffer.wrap(fileReferenceData.content()), 0);
+        if (xxHashFromContent != fileReferenceData.xxhash())
+            throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + fileReferenceData.xxhash()+ ")");
 
-        File fileReferenceDir = new File(downloadDirectory, fileReference.value());
+        File fileReferenceDir = new File(downloadDirectory, fileReferenceData.fileReference().value());
+        // file might be a directory (and then type is compressed)
+        File file = new File(fileReferenceDir, fileReferenceData.filename());
         try {
-            File tempFile = new File(Files.createTempDirectory("downloaded").toFile(), filename);
-            Files.write(tempFile.toPath(), content);
-            Files.createDirectories(fileReferenceDir.toPath());
-            File file = new File(fileReferenceDir, filename);
-            moveFileToDestination(tempFile, file);
-            downloader.completedDownloading(fileReference, file);
+            File tempFile = new File(Files.createTempDirectory("downloaded").toFile(), fileReferenceData.filename());
+            Files.write(tempFile.toPath(), fileReferenceData.content());
+
+            // Unpack if necessary
+            if (fileReferenceData.type() == FileReferenceData.Type.compressed) {
+                File decompressedDir = Files.createTempDirectory("decompressed").toFile();
+                log.log(LogLevel.DEBUG, "Compressed file, unpacking " + tempFile + " to " + decompressedDir);
+                CompressedFileReference.decompress(tempFile, decompressedDir);
+                moveFileToDestination(decompressedDir, fileReferenceDir);
+            } else {
+                log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
+                Files.createDirectories(fileReferenceDir.toPath());
+                moveFileToDestination(tempFile, file);
+            }
+            downloader.completedDownloading(fileReferenceData.fileReference(), file);
         } catch (IOException e) {
             log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
             throw new RuntimeException("Failed writing file: ", e);
@@ -123,7 +136,7 @@ public class FileReceiver {
     private void moveFileToDestination(File tempFile, File destination) {
         try {
             Files.move(tempFile.toPath(), destination.toPath());
-            log.log(LogLevel.INFO, "Data written to " + destination.getAbsolutePath());
+            log.log(LogLevel.INFO, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already)
@@ -135,14 +148,16 @@ public class FileReceiver {
         }
     }
 
-        @SuppressWarnings({"UnusedDeclaration"})
+    @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileMeta(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
     }
+
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFilePart(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
     }
+
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileEof(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
