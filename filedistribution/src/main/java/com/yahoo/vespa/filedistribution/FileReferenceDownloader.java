@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -44,10 +45,7 @@ public class FileReferenceDownloader {
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(10, new DaemonThreadFactory("filereference downloader"));
-    private ExecutorService readFromQueueExecutor =
-            Executors.newFixedThreadPool(1, new DaemonThreadFactory("filereference download queue"));
     private final ConnectionPool connectionPool;
-    private final ConcurrentLinkedQueue<FileReferenceDownload> downloadQueue = new ConcurrentLinkedQueue<>();
     private final Map<FileReference, FileReferenceDownload> downloads = new LinkedHashMap<>();
     private final Map<FileReference, Double> downloadStatus = new HashMap<>();
     private final Duration downloadTimeout;
@@ -56,67 +54,57 @@ public class FileReferenceDownloader {
     FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool, Duration timeout) {
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
-        readFromQueueExecutor.submit(this::readFromQueue);
         this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory);
     }
 
-    private synchronized Optional<File> startDownload(FileReference fileReference,
-                                                      Duration timeout,
-                                                      FileReferenceDownload fileReferenceDownload)
-            throws ExecutionException, InterruptedException, TimeoutException {
-        downloads.put(fileReference, fileReferenceDownload);
-        setDownloadStatus(fileReference.value(), 0.0);
-
-        int numAttempts = 0;
+    private void startDownload(FileReference fileReference, Duration timeout,
+                               FileReferenceDownload fileReferenceDownload)
+    {
+        synchronized (downloads) {
+            downloads.put(fileReference, fileReferenceDownload);
+            downloadStatus.put(fileReference, 0.0);
+        }
+        long end = System.currentTimeMillis() + timeout.toMillis();
         boolean downloadStarted = false;
-        do {
-            if (startDownloadRpc(fileReference))
-                downloadStarted = true;
-            else
-                Thread.sleep(100);
-        } while (!downloadStarted && ++numAttempts <= 10);  // TODO: How long/many times to retry?
+        while ((System.currentTimeMillis() < end) && !downloadStarted) {
+            try {
+                if (startDownloadRpc(fileReference)) {
+                    downloadStarted = true;
+                } else {
+                    Thread.sleep(10);
+                }
+            }
+            catch (InterruptedException | ExecutionException e) {}
+        }
 
-        if (downloadStarted) {
-            return fileReferenceDownload.future().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } else {
+        if ( !downloadStarted) {
             fileReferenceDownload.future().setException(new RuntimeException("Failed getting file reference '" + fileReference.value() + "'"));
-            downloads.remove(fileReference);
-            return Optional.empty();
+            synchronized (downloads) {
+                downloads.remove(fileReference);
+            }
         }
     }
 
-    synchronized void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
-        downloadQueue.add(fileReferenceDownload);
+    void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
+        log.log(LogLevel.DEBUG, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "'");
+        downloadExecutor.submit(() -> startDownload(fileReferenceDownload.fileReference(), downloadTimeout, fileReferenceDownload));
     }
 
     void receiveFile(FileReferenceData fileReferenceData) {
         fileReceiver.receiveFile(fileReferenceData);
     }
 
-    synchronized Set<FileReference> queuedDownloads() {
-        return downloadQueue.stream()
-                .map(FileReferenceDownload::fileReference)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    private void readFromQueue() {
-        do {
-            FileReferenceDownload fileReferenceDownload = downloadQueue.poll();
-            if (fileReferenceDownload == null) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) { /* ignore for now */}
-            } else {
-                log.log(LogLevel.DEBUG, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "'");
-                downloadExecutor.submit(() -> startDownload(fileReferenceDownload.fileReference(), downloadTimeout, fileReferenceDownload));
-            }
-        } while (true);
-    }
-
     void completedDownloading(FileReference fileReference, File file) {
-        if (downloads.containsKey(fileReference))
-            downloads.get(fileReference).future().set(Optional.of(file));
-        downloadStatus.put(fileReference, 100.0);
+        synchronized (downloads) {
+            FileReferenceDownload download = downloads.get(fileReference);
+            if (download != null) {
+                downloadStatus.put(fileReference, 1.0);
+                downloads.remove(fileReference);
+                download.future().set(Optional.of(file));
+            } else {
+                log.warning("Received a file " + fileReference + " I did not ask for. Impossible");
+            }
+        }
     }
 
     private boolean startDownloadRpc(FileReference fileReference) throws ExecutionException, InterruptedException {
@@ -146,14 +134,22 @@ public class FileReferenceDownloader {
         }
     }
 
-    synchronized boolean isDownloading(FileReference fileReference) {
-        return downloads.containsKey(fileReference);
+    boolean isDownloading(FileReference fileReference) {
+        synchronized (downloads) {
+            return downloads.containsKey(fileReference);
+        }
     }
 
-    synchronized ListenableFuture<Optional<File>> addDownloadListener(FileReference fileReference, Runnable runnable) {
-        FileReferenceDownload fileReferenceDownload = downloads.get(fileReference);
-        fileReferenceDownload.future().addListener(runnable, downloadExecutor);
-        return fileReferenceDownload.future();
+    ListenableFuture<Optional<File>> addDownloadListener(FileReference fileReference, Runnable runnable) {
+        synchronized (downloads) {
+            FileReferenceDownload download = downloads.get(fileReference);
+            if (download != null) {
+                download.future().addListener(runnable, downloadExecutor);
+                return download.future();
+            }
+        }
+        return null;
+
     }
 
     private void execute(Request request, Connection connection) {
@@ -173,15 +169,26 @@ public class FileReferenceDownloader {
     }
 
     double downloadStatus(String file) {
-        return downloadStatus.getOrDefault(new FileReference(file), 0.0);
+        double status = 0.0;
+        synchronized (downloads) {
+            Double download = downloadStatus.get(new FileReference(file));
+            if (download != null) {
+                status = download;
+            }
+        }
+        return status;
     }
 
-    void setDownloadStatus(String file, double percentageDownloaded) {
-        downloadStatus.put(new FileReference(file), percentageDownloaded);
+    void setDownloadStatus(String file, double completeness) {
+        synchronized (downloads) {
+            downloadStatus.put(new FileReference(file), completeness);
+        }
     }
 
     Map<FileReference, Double> downloadStatus() {
-        return ImmutableMap.copyOf(downloadStatus);
+        synchronized (downloads) {
+            return ImmutableMap.copyOf(downloadStatus);
+        }
     }
 
     public ConnectionPool connectionPool() {
