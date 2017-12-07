@@ -163,6 +163,7 @@ public class FileServer {
         request.returnValues()
                 .add(new Int32Value(result.getCode()))
                 .add(new StringValue(result.getDescription()));
+        request.returnRequest();
     }
 
     public void download(FileReference fileReference) {
