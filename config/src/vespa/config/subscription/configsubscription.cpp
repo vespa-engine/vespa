@@ -28,8 +28,9 @@ ConfigSubscription::~ConfigSubscription()
 bool
 ConfigSubscription::nextUpdate(int64_t generation, uint64_t timeoutInMillis)
 {
-    if (_closed || !_holder->poll())
+    if (_closed || !_holder->poll()) {
         return false;
+    }
     _next = _holder->provide();
     if (isGenerationNewer(_next->getGeneration(), generation)) {
         return true;
@@ -38,9 +39,15 @@ ConfigSubscription::nextUpdate(int64_t generation, uint64_t timeoutInMillis)
 }
 
 bool
+ConfigSubscription::hasGenerationChanged() const
+{
+    return (!_closed && _next && ((_current && (_current->getGeneration() != _next->getGeneration())) || ! _current));
+}
+
+bool
 ConfigSubscription::hasChanged() const
 {
-    return (!_closed && (_next->hasChanged() || _current.get() == NULL));
+    return (!_closed && _next && ((_next->hasChanged() && _current && (_current->getValue() != _next->getValue())) || ! _current));
 }
 
 int64_t
@@ -88,7 +95,7 @@ ConfigSubscription::flip()
 {
     bool change = hasChanged();
     if (change) {
-        _current.reset(_next.release());
+        _current = std::move(_next);
         _lastGenerationChanged = _current->getGeneration();
     } else {
         _current.reset(new ConfigUpdate(_current->getValue(), false, _next->getGeneration()));
@@ -96,13 +103,15 @@ ConfigSubscription::flip()
     _isChanged = change;
 }
 
-ConfigValue
+const ConfigValue &
 ConfigSubscription::getConfig() const
 {
-    if (_closed)
+    if (_closed) {
         throw ConfigRuntimeException("Subscription is closed, config no longer available");
-    if (_current.get() == NULL)
+    }
+    if ( ! _current) {
         throw ConfigRuntimeException("No configuration available");
+    }
     return _current->getValue();
 }
 
