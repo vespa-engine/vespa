@@ -9,6 +9,7 @@ search child {
   import field b_ref.string_field as my_string_field {}
   import field a_ref.int_array_field as my_int_array_field {}
   import field a_ref.int_wset_field as my_int_wset_field {}
+  import field a_ref.predicate_field as my_predicate_field {}
 
   fieldset myfieldset {
     fields: my_int_field, my_string_field
