@@ -56,7 +56,8 @@ ConfigHandler::ConfigHandler()
       _outputConnections(),
       _boundPort(0),
       _commandSocket(listen(0)),
-      _startMetrics()
+      _startMetrics(),
+      _stateApi(_startMetrics.producer)
 {
     _startMetrics.startedTime = time(nullptr);
 }
@@ -399,8 +400,6 @@ void
 ConfigHandler::updateMetrics()
 {
     _startMetrics.maybeLog();
-    _stateApi.myMetrics.setMetrics(_startMetrics.producer.getMetrics(""));
-    _stateApi.myMetrics.setTotalMetrics(_startMetrics.producer.getTotalMetrics(""));
 }
 
 void
