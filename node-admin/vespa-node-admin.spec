@@ -28,7 +28,7 @@ Vespa nodes.
 %install
 app_dir=%?buildroot%_prefix/conf/node-admin-app
 mkdir -p "$app_dir"/components
-cp node-admin/src/main/resources/services.xml "$app_dir"
+cp node-admin/src/main/application/services.xml "$app_dir"
 
 declare -a jar_components=(
   node-admin/target/node-admin-jar-with-dependencies.jar
@@ -39,7 +39,7 @@ for path in "${jar_components[@]}"; do
 done
 
 mkdir -p %buildroot%_prefix/libexec/vespa
-cp node-admin/src/main/sh/node-admin %buildroot%_prefix/libexec/vespa
+cp node-admin/src/main/sh/node-admin.sh %buildroot%_prefix/libexec/vespa
 
 %clean
 rm -rf %buildroot
