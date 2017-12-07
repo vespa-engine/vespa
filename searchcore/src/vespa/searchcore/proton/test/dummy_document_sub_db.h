@@ -55,6 +55,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     {
         return IReprocessingTask::List();
     }
+    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &) override { }
     ISearchHandler::SP getSearchView() const override { return ISearchHandler::SP(); }
     IFeedView::SP getFeedView() const override { return IFeedView::SP(); }
     void clearViews() override {}

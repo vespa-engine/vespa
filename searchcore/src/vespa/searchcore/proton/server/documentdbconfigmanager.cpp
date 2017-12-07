@@ -136,7 +136,10 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
             proton.writefilter.sampleinterval,
             BlockableMaintenanceJobConfig(
                     proton.maintenancejobs.resourcelimitfactor,
-                    proton.maintenancejobs.maxoutstandingmoveops));
+                    proton.maintenancejobs.maxoutstandingmoveops),
+            DocumentDBFlushConfig(
+                    proton.index.maxflushed,
+                    proton.index.maxflushedretired));
 }
 
 template<typename T>

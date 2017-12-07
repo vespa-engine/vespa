@@ -215,6 +215,7 @@ public:
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
     IFeedView::SP getFeedView() const override { return _iFeedView.get(); }

@@ -94,9 +94,7 @@ public:
             const HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
-    void setBucketStateCalculator(const IBucketStateCalculatorSP &calc) {
-        _calc = calc;
-    }
+    void setBucketStateCalculator(const IBucketStateCalculatorSP &calc);
 
     void createRetrievers();
     void maintenanceSync(MaintenanceController &mc, ICommitable &commit);

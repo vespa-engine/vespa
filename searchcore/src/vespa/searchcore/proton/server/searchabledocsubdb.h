@@ -85,6 +85,8 @@ private:
     const size_t                                _numSearcherThreads;
     vespalib::ThreadExecutor                   &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
+    DocumentDBFlushConfig                       _flushConfig;
+    bool                                        _nodeRetired;
 
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>
@@ -100,6 +102,8 @@ private:
     bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
     void reconfigureIndexSearchable();
     void syncViews();
+    void applyFlushConfig(const DocumentDBFlushConfig &flushConfig);
+    void propagateFlushConfig();
 protected:
     IFlushTargetList getFlushTargetsInternal() override;
 
@@ -120,6 +124,7 @@ public:
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
 
     void clearViews() override;
 
