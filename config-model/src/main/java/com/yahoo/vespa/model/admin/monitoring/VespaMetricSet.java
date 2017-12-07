@@ -52,6 +52,7 @@ public class VespaMetricSet {
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
         metrics.add(new Metric("slobrok.heartbeats.failed.count", "slobrok.heartbeats.failed"));
+        metrics.add(new Metric("logd.processed.lines.count", "logd.processed.lines"));
         return metrics;
     }
 
