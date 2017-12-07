@@ -74,20 +74,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
-    private enum FileApiErrorCodes {
-        OK(0, "OK"),
-        NOT_FOUND(1, "Filereference not found");
-        private final int code;
-        private final String description;
-        FileApiErrorCodes(int code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-        int getCode() { return code; }
-        String getDescription() { return description; }
-    }
+
     private final Supervisor supervisor = new Supervisor(new Transport());
-    private Spec spec = null;
+    private Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
 
@@ -455,25 +444,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
-        String fileReference = request.parameters().get(0).asString();
-        FileApiErrorCodes result;
-        try {
-            // TODO remove once verified in system tests.
-            log.info("Received request for reference '" + fileReference + "'");
-            result = fileServer.hasFile(fileReference)
-                    ? FileApiErrorCodes.OK
-                    : FileApiErrorCodes.NOT_FOUND;
-            if (result == FileApiErrorCodes.OK) {
-                fileServer.startFileServing(fileReference, new FileReceiver(request.target()));
-            } else {
-                fileServer.download(new FileReference(fileReference));
-            }
-        } catch (IllegalArgumentException e) {
-            result = FileApiErrorCodes.NOT_FOUND;
-            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
-        }
-        request.returnValues()
-                .add(new Int32Value(result.getCode()))
-                .add(new StringValue(result.getDescription()));
+        request.detach();
+        fileServer.serveFile(request, new FileReceiver(request.target()));
     }
 }

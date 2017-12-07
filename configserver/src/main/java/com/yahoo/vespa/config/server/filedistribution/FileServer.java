@@ -7,6 +7,9 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
@@ -32,6 +35,19 @@ public class FileServer {
     private final FileDirectory root;
     private final ExecutorService executor;
     private final FileDownloader downloader;
+
+    private enum FileApiErrorCodes {
+        OK(0, "OK"),
+        NOT_FOUND(1, "Filereference not found");
+        private final int code;
+        private final String description;
+        FileApiErrorCodes(int code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+        int getCode() { return code; }
+        String getDescription() { return description; }
+    }
 
     public static class ReplayStatus {
         private final int code;
@@ -121,6 +137,30 @@ public class FileServer {
         }
 
         return new FileReferenceData(reference, file.getName(), type, blob);
+    }
+    public void serveFile(Request request, Receiver receiver) {
+        executor.execute(() -> serveFile(request.parameters().get(0).asString(), request, receiver));
+    }
+    private void serveFile(String fileReference, Request request, Receiver receiver) {
+        FileApiErrorCodes result;
+        try {
+            // TODO remove once verified in system tests.
+            log.info("Received request for reference '" + fileReference + "'");
+            result = hasFile(fileReference)
+                    ? FileApiErrorCodes.OK
+                    : FileApiErrorCodes.NOT_FOUND;
+            if (result == FileApiErrorCodes.OK) {
+                startFileServing(fileReference, receiver);
+            } else {
+                download(new FileReference(fileReference));
+            }
+        } catch (IllegalArgumentException e) {
+            result = FileApiErrorCodes.NOT_FOUND;
+            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
+        }
+        request.returnValues()
+                .add(new Int32Value(result.getCode()))
+                .add(new StringValue(result.getDescription()));
     }
 
     public void download(FileReference fileReference) {

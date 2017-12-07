@@ -1,13 +1,11 @@
 //  Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.config.FileReference;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.time.Duration;
@@ -17,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
@@ -47,17 +46,28 @@ public class FileDownloader {
     }
 
     public Optional<File> getFile(FileReference fileReference) {
+        try {
+            return getFutureFile(fileReference).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            return Optional.empty();
+        }
+    }
+
+    public Future<Optional<File>> getFutureFile(FileReference fileReference) {
         Objects.requireNonNull(fileReference, "file reference cannot be null");
         File directory = new File(downloadDirectory, fileReference.value());
         log.log(LogLevel.DEBUG, "Checking if there is a file in '" + directory.getAbsolutePath() + "' ");
 
         Optional<File> file = getFileFromFileSystem(fileReference, directory);
         if (file.isPresent()) {
-            return file;
+            SettableFuture<Optional<File>> future = SettableFuture.create();
+            future.set(file);
+            return future;
         } else {
             log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found in " +
                     directory.getAbsolutePath() + ", starting download");
             return queueForDownload(fileReference, timeout);
+
         }
     }
 
@@ -86,11 +96,9 @@ public class FileDownloader {
         if (directory.exists() && directory.isDirectory() && files != null && files.length > 0) {
             File file = files[0];
             if (!file.exists()) {
-                throw new RuntimeException("File with reference '" + fileReference.value() +
-                        "' does not exist");
+                throw new RuntimeException("File with reference '" + fileReference.value() + "' does not exist");
             } else if (!file.canRead()) {
-                throw new RuntimeException("File with reference '" + fileReference.value() +
-                        "'exists, but unable to read it");
+                throw new RuntimeException("File with reference '" + fileReference.value() + "'exists, but unable to read it");
             } else {
                 fileReferenceDownloader.setDownloadStatus(fileReference.value(), 100.0);
                 return Optional.of(file);
@@ -99,46 +107,26 @@ public class FileDownloader {
         return Optional.empty();
     }
 
-    private synchronized Optional<File> queueForDownload(FileReference fileReference, Duration timeout) {
-        if (fileReferenceDownloader.isDownloading(fileReference)) {
+    private synchronized Future<Optional<File>> queueForDownload(FileReference fileReference, Duration timeout) {
+        Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReference));
+        if (inProgress != null) {
             log.log(LogLevel.INFO, "Already downloading '" + fileReference.value() + "'");
-            ListenableFuture<Optional<File>> future =
-                    fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReference));
-            try {
-                return future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException("Failed downloading file reference '" + fileReference.value() + "': " +
-                        Exceptions.toMessageString(e));
-            }
+            return inProgress;
         }
 
-        SettableFuture<Optional<File>> future = SettableFuture.create();
-        queueForDownload(new FileReferenceDownload(fileReference, future));
+        Future<Optional<File>> future = queueForDownload(fileReference);
         log.log(LogLevel.INFO, "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
-
-        try {
-            Optional<File> fileDownloaded;
-            try {
-                log.log(LogLevel.INFO, "Waiting for '" + fileReference.value() + "' to download");
-                fileDownloaded = future.get(timeout.getSeconds() - 1, TimeUnit.SECONDS);
-                log.log(LogLevel.INFO, "'" + fileReference.value() + "' downloaded");
-            } catch (TimeoutException e) {
-                log.log(LogLevel.WARNING, "Downloading '" + fileReference.value() + "' timed out");
-                return Optional.empty();
-            }
-            return fileDownloaded;
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Could not download '" + fileReference.value() + "'");
-        }
+        return future;
     }
 
     // We don't care about the future in this call
-    private synchronized void queueForDownload(FileReference fileReference) {
-        queueForDownload(new FileReferenceDownload(fileReference, SettableFuture.create()));
+    private Future<Optional<File>> queueForDownload(FileReference fileReference) {
+        return queueForDownload(new FileReferenceDownload(fileReference, SettableFuture.create()));
     }
 
-    private synchronized void queueForDownload(FileReferenceDownload fileReferenceDownload) {
+    private Future<Optional<File>> queueForDownload(FileReferenceDownload fileReferenceDownload) {
         fileReferenceDownloader.addToDownloadQueue(fileReferenceDownload);
+        return fileReferenceDownload.future();
     }
 
     public FileReferenceDownloader fileReferenceDownloader() {
