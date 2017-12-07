@@ -17,6 +17,9 @@ domain                          string
 userAuthenticationPassThruAttribute  string
 # TODO Remove once migrated to Okta
 
+# Certificate DNS domain
+certDnsDomain                   string
+
 # Athenz service name for controller identity
 service.name                    string
 
