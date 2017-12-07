@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
@@ -119,15 +120,16 @@ public class VersionStatus {
 
     private static ListMap<Version, String> findConfigServerVersions(Controller controller) {
         List<URI> configServers = controller.zoneRegistry().zones().stream()
-                                                                       .flatMap(zone -> controller.getConfigServerUris(zone.environment(), zone.region()).stream())
-                                                                       .collect(Collectors.toList());
+                .filter(zone -> ! zone.region().equals(RegionName.from("us-east-2a")))
+                .flatMap(zone -> controller.getConfigServerUris(zone.environment(), zone.region()).stream())
+                .collect(Collectors.toList());
 
         ListMap<Version, String> versions = new ListMap<>();
         for (URI configServer : configServers)
             versions.put(controller.applications().configserverClient().version(configServer), configServer.getHost());
         return versions;
     }
-    
+
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
                                                                                 List<Application> applications,
                                                                                 Instant jobTimeoutLimit) {
