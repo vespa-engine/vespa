@@ -15,8 +15,6 @@ public class FileReferenceData {
 
     public enum Type {file, compressed}
 
-
-
     private final FileReference fileReference;
     private final String filename;
     private final Type type;

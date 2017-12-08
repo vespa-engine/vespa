@@ -8,6 +8,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.log.LogLevel;
+import net.jpountz.xxhash.StreamingXXHash64;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -16,8 +17,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public class FileReceiver {
@@ -32,6 +38,92 @@ public class FileReceiver {
     private final FileReferenceDownloader downloader;
     private final File downloadDirectory;
     private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+    private final AtomicInteger nextSessionId = new AtomicInteger(1);
+    private final Map<Integer, Session> sessions = new HashMap<>();
+
+    final static class Session {
+        private final StreamingXXHash64 hasher;
+        private final int sessionId;
+        private final FileReference reference;
+        private final FileReferenceData.Type fileType;
+        private final String fileName;
+        private final long fileSize;
+        private long currentFileSize;
+        private long currentPartId;
+        private long currentHash;
+        private final File fileReferenceDir;
+        private final File inprogressFile;
+
+        Session(File downloadDirectory, int sessionId, FileReference reference,
+                FileReferenceData.Type fileType, String fileName, long fileSize)
+        {
+            this.hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
+            this.sessionId = sessionId;
+            this.reference = reference;
+            this.fileType = fileType;
+            this.fileName = fileName;
+            this.fileSize = fileSize;
+            currentFileSize = 0;
+            currentPartId = 0;
+            currentHash = 0;
+            fileReferenceDir = new File(downloadDirectory, reference.value());
+            try {
+                Files.createDirectories(fileReferenceDir.toPath());
+            } catch (IOException e) {
+                log.log(LogLevel.ERROR, "Failed creating directory(" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
+                throw new RuntimeException("Failed creating directory(" + fileReferenceDir.toPath() + "): ", e);
+            }
+
+            try {
+                inprogressFile = Files.createTempFile(fileReferenceDir.toPath(), fileName, ".inprogress").toFile();
+            } catch (IOException e) {
+                String msg = "Failed creating tempfile for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
+                log.log(LogLevel.ERROR, msg + e.getMessage(), e);
+                throw new RuntimeException(msg, e);
+            }
+        }
+
+        void addPart(int partId, byte [] part) {
+            if (partId != currentPartId) {
+                throw new IllegalStateException("Received partid " + partId + " while expecting " + currentPartId);
+            }
+            if (fileSize < currentFileSize + part.length) {
+                throw new IllegalStateException("Received part would extend the file from " + currentFileSize + " to " +
+                                                (currentFileSize + part.length) + ", but " + fileSize + " is max.");
+            }
+            try {
+                Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                log.log(LogLevel.ERROR, "Failed writing to file(" + inprogressFile.toPath() + "): " + e.getMessage(), e);
+                throw new RuntimeException("Failed writing to file(" + inprogressFile.toPath() + "): ", e);
+            }
+            currentFileSize += part.length;
+            currentPartId++;
+            hasher.update(part, 0, part.length);
+        }
+        File close(long hash) {
+            if (hasher.getValue() != hash) {
+                throw new RuntimeException("xxhash from content (" + currentHash + ") is not equal to xxhash in request (" + hash + ")");
+            }
+            File file = new File(fileReferenceDir, fileName);
+            try {
+                // Unpack if necessary
+                if (fileType == FileReferenceData.Type.compressed) {
+                    File decompressedDir = Files.createTempDirectory("archive").toFile();
+                    log.log(LogLevel.DEBUG, "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
+                    CompressedFileReference.decompress(inprogressFile, decompressedDir);
+                    moveFileToDestination(decompressedDir, fileReferenceDir);
+                } else {
+                    log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
+                    moveFileToDestination(inprogressFile, file);
+                }
+            } catch (IOException e) {
+                log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
+                throw new RuntimeException("Failed writing file: ", e);
+            }
+            return file;
+        }
+    }
 
     FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory) {
         this.supervisor = supervisor;
@@ -48,10 +140,11 @@ public class FileReceiver {
     // receiveFile after getting a serveFile method call). handler needs to implement receiveFile method
     private List<Method> receiveFileMethod(Object handler) {
         List<Method> methods = new ArrayList<>();
-        methods.add(new Method(RECEIVE_META_METHOD, "ssl", "ii", handler,"receiveFileMeta")
+        methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", handler,"receiveFileMeta")
                 .paramDesc(0, "filereference", "file reference to download")
-                .paramDesc(1, "filename", "filename")
-                .paramDesc(2, "filelength", "length in bytes of file")
+                .paramDesc(1, "type", "'file' or 'compressed'")
+                .paramDesc(2, "filename", "filename")
+                .paramDesc(3, "filelength", "length in bytes of file")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
         methods.add(new Method(RECEIVE_PART_METHOD, "siix", "i", handler,"receiveFilePart")
@@ -105,8 +198,9 @@ public class FileReceiver {
 
     void receiveFile(FileReferenceData fileReferenceData) {
         long xxHashFromContent = hasher.hash(ByteBuffer.wrap(fileReferenceData.content()), 0);
-        if (xxHashFromContent != fileReferenceData.xxhash())
-            throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + fileReferenceData.xxhash()+ ")");
+        if (xxHashFromContent != fileReferenceData.xxhash()) {
+            throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + fileReferenceData.xxhash() + ")");
+        }
 
         File fileReferenceDir = new File(downloadDirectory, fileReferenceData.fileReference().value());
         // file might be a directory (and then type is compressed)
@@ -133,7 +227,7 @@ public class FileReceiver {
         }
     }
 
-    private void moveFileToDestination(File tempFile, File destination) {
+    private static void moveFileToDestination(File tempFile, File destination) {
         try {
             Files.move(tempFile.toPath(), destination.toPath());
             log.log(LogLevel.INFO, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
@@ -151,15 +245,77 @@ public class FileReceiver {
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileMeta(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        FileReference reference = new FileReference(req.parameters().get(0).asString());
+        String type = req.parameters().get(1).asString();
+        String fileName = req.parameters().get(2).asString();
+        long fileSize = req.parameters().get(3).asInt64();
+        int sessionId = nextSessionId.getAndIncrement();
+        int retval = 0;
+        synchronized (sessions) {
+            if (sessions.containsKey(sessionId)) {
+                retval = 1;
+                log.severe("Session id " + sessionId + " already exist, impossible. Request from(" + req.target() + ")");
+            } else {
+                try {
+                    sessions.put(sessionId, new Session(downloadDirectory, sessionId, reference,
+                                                        FileReferenceData.Type.valueOf(type),fileName, fileSize));
+                } catch (Exception e) {
+                    retval = 1;
+                }
+            }
+        }
+        req.returnValues().add(new Int32Value(retval));
+        req.returnValues().add(new Int32Value(sessionId));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFilePart(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+
+        FileReference reference = new FileReference(req.parameters().get(0).asString());
+        int sessionId = req.parameters().get(1).asInt32();
+        int partId = req.parameters().get(2).asInt32();
+        byte [] part = req.parameters().get(3).asData();
+        Session session = getSession(sessionId);
+        int retval = verifySession(session, sessionId, reference);
+        try {
+            session.addPart(partId, part);
+        } catch (Exception e) {
+            log.severe("Got exception + " + e);
+            retval = 1;
+        }
+        req.returnValues().add(new Int32Value(retval));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileEof(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        FileReference reference = new FileReference(req.parameters().get(0).asString());
+        int sessionId = req.parameters().get(1).asInt32();
+        long xxhash = req.parameters().get(2).asInt64();
+        Session session = getSession(sessionId);
+        int retval = verifySession(session, sessionId, reference);
+        File file = session.close(xxhash);
+        downloader.completedDownloading(reference, file);
+        synchronized (sessions) {
+            sessions.remove(sessionId);
+        }
+    }
+
+    private final Session getSession(Integer sessionId) {
+        synchronized (sessions) {
+            return sessions.get(sessionId);
+        }
+    }
+    private static final int verifySession(Session session, int sessionId, FileReference reference) {
+        if (session == null) {
+            log.severe("session-id " + sessionId + " does not exist.");
+            return 1;
+        }
+        if (! session.reference.equals(reference)) {
+            log.severe("Session " + session.sessionId + " expects reference " + reference.value() + ", but was " + session.reference.value());
+            return 1;
+        }
+        return 0;
     }
 }
