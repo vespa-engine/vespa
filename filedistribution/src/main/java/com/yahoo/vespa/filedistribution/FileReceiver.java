@@ -29,10 +29,10 @@ import java.util.logging.Logger;
 public class FileReceiver {
 
     private final static Logger log = Logger.getLogger(FileReceiver.class.getName());
-    private final static String RECEIVE_METHOD = "filedistribution.receiveFile";
-    private final static String RECEIVE_META_METHOD = "filedistribution.receiveFileMeta";
-    private final static String RECEIVE_PART_METHOD = "filedistribution.receiveFilePart";
-    private final static String RECEIVE_EOF_METHOD = "filedistribution.receiveFileEof";
+    public final static String RECEIVE_METHOD = "filedistribution.receiveFile";
+    public final static String RECEIVE_META_METHOD = "filedistribution.receiveFileMeta";
+    public final static String RECEIVE_PART_METHOD = "filedistribution.receiveFilePart";
+    public final static String RECEIVE_EOF_METHOD = "filedistribution.receiveFileEof";
 
     private final Supervisor supervisor;
     private final FileReferenceDownloader downloader;
@@ -142,8 +142,8 @@ public class FileReceiver {
         List<Method> methods = new ArrayList<>();
         methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", handler,"receiveFileMeta")
                 .paramDesc(0, "filereference", "file reference to download")
-                .paramDesc(1, "type", "'file' or 'compressed'")
-                .paramDesc(2, "filename", "filename")
+                .paramDesc(1, "filename", "filename")
+                .paramDesc(2, "type", "'file' or 'compressed'")
                 .paramDesc(3, "filelength", "length in bytes of file")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
@@ -246,8 +246,8 @@ public class FileReceiver {
     public final void receiveFileMeta(Request req) {
         log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
-        String type = req.parameters().get(1).asString();
-        String fileName = req.parameters().get(2).asString();
+        String fileName = req.parameters().get(1).asString();
+        String type = req.parameters().get(2).asString();
         long fileSize = req.parameters().get(3).asInt64();
         int sessionId = nextSessionId.getAndIncrement();
         int retval = 0;
