@@ -12,14 +12,14 @@ public class Record {
 
     private final RecordId id;
     private final Type type;
-    private final String name;
-    private final String value;
+    private final RecordName name;
+    private final RecordData value;
 
-    public Record(RecordId id, Type type, String name, String value) {
-        this.id = id;
-        this.type = type;
-        this.name = name;
-        this.value = value;
+    public Record(RecordId id, Type type, RecordName name, RecordData value) {
+        this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.type = Objects.requireNonNull(type, "type cannot be null");
+        this.name = Objects.requireNonNull(name, "name cannot be null");
+        this.value = Objects.requireNonNull(value, "value cannot be null");
     }
 
     /** Unique identifier for this */
@@ -33,12 +33,12 @@ public class Record {
     }
 
     /** Value for this, e.g. IP address for "A" record */
-    public String value() {
+    public RecordData value() {
         return value;
     }
 
     /** Name of this, e.g. a FQDN for "A" record */
-    public String name() {
+    public RecordName name() {
         return name;
     }
 
