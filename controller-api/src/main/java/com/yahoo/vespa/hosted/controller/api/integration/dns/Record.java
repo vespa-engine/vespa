@@ -32,8 +32,8 @@ public class Record {
         return type;
     }
 
-    /** Value for this, e.g. IP address for "A" record */
-    public RecordData value() {
+    /** Data in this, e.g. IP address for "A" record */
+    public RecordData data() {
         return data;
     }
 

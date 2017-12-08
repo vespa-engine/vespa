@@ -614,7 +614,7 @@ public class ControllerTest {
         );
         assertTrue(record.isPresent());
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().value().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
     }
 
     @Test
@@ -638,7 +638,7 @@ public class ControllerTest {
             );
             assertTrue(record.isPresent());
             assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-            assertEquals("rotation-fqdn-01.", record.get().value().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
             // Application is deleted and rotation is unassigned
             applicationPackage = new ApplicationPackageBuilder()
@@ -679,7 +679,7 @@ public class ControllerTest {
             );
             assertTrue(record.isPresent());
             assertEquals("app2.tenant2.global.vespa.yahooapis.com", record.get().name().asString());
-            assertEquals("rotation-fqdn-01.", record.get().value().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
         }
 
         // Application 1 is recreated, deployed and assigned a new rotation
@@ -701,7 +701,7 @@ public class ControllerTest {
                     Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
             );
             assertTrue(record.isPresent());
-            assertEquals("rotation-fqdn-02.", record.get().value().asString());
+            assertEquals("rotation-fqdn-02.", record.get().data().asString());
         }
 
     }

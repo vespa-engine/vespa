@@ -458,7 +458,7 @@ public class ApplicationController {
             RecordData rotationName = RecordData.fqdn(rotation.name());
             if (record.isPresent()) {
                 // Ensure that the existing record points to the correct rotation
-                if (!record.get().value().equals(rotationName)) {
+                if (!record.get().data().equals(rotationName)) {
                     nameService.updateRecord(record.get().id(), rotationName);
                     log.info("Updated mapping for record ID " + record.get().id().asString() + ": " + dnsName
                              + " -> " + rotation.name());

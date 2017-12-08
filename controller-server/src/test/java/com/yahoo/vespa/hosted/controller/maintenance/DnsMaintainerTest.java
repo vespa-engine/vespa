@@ -51,7 +51,7 @@ public class DnsMaintainerTest {
         );
         assertTrue(record.isPresent());
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().value().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
         // Remove application
         applicationPackage = new ApplicationPackageBuilder()
