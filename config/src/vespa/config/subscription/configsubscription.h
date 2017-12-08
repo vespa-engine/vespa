@@ -28,7 +28,7 @@ public:
      *
      * @return the current ConfigValue.
      */
-    ConfigValue getConfig() const;
+    const ConfigValue & getConfig() const;
 
     /**
      * Checks whether or not the config has changed.
@@ -48,6 +48,7 @@ public:
     bool nextUpdate(int64_t generation, uint64_t timeoutInMillis);
     int64_t getGeneration() const;
     bool hasChanged() const;
+    bool hasGenerationChanged() const;
     void flip();
     void reset();
     void close();

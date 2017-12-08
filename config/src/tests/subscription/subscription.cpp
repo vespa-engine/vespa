@@ -101,11 +101,11 @@ TEST_MT_F("requireThatNextUpdateReturnsInterrupted", 2, SubscriptionFixture(Conf
 
 TEST_F("Require that isChanged takes generation into account", SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), true, 1)));
+    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(std::vector<vespalib::string>(), "a"), true, 1)));
     ASSERT_TRUE(f1.sub.nextUpdate(0, 0));
     f1.sub.flip();
     ASSERT_EQUAL(1, f1.sub.getLastGenerationChanged());
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), true, 2)));
+    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(std::vector<vespalib::string>(), "b"), true, 2)));
     ASSERT_TRUE(f1.sub.nextUpdate(1, 0));
     f1.sub.flip();
     ASSERT_EQUAL(2, f1.sub.getLastGenerationChanged());
