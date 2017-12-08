@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -649,9 +650,11 @@ public class ControllerTest {
             tester.applications().deactivate(app1, new Zone(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1, new Zone(Environment.staging, RegionName.from("us-east-3")));
             tester.applications().deleteApplication(app1.id(), Optional.of(new NToken("ntoken")));
-            assertTrue("Rotation is unassigned",
-                       tester.applications().rotationRepository().availableRotations()
-                             .contains(new RotationId("rotation-id-01")));
+            try (RotationLock lock = tester.applications().rotationRepository().lock()) {
+                assertTrue("Rotation is unassigned",
+                           tester.applications().rotationRepository().availableRotations(lock)
+                                 .containsKey(new RotationId("rotation-id-01")));
+            }
 
             // Record remains
             record = tester.controllerTester().nameService().findRecord(
