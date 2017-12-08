@@ -483,10 +483,10 @@ public class ClusterTest extends ContentBaseTest {
     public void testZoneDependentDistributionBits() throws Exception {
         String xml = new ContentClusterBuilder().docTypes("test").getXml();
 
-        ContentCluster prodWith16Bits = createWithZone(xml, Zone.from(Environment.prod, RegionName.from("us-east-3")));
+        ContentCluster prodWith16Bits = createWithZone(xml, new Zone(Environment.prod, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(prodWith16Bits, 16);
 
-        ContentCluster stagingNot16Bits = createWithZone(xml, Zone.from(Environment.staging, RegionName.from("us-east-3")));
+        ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(stagingNot16Bits, 8);
     }
     @Test

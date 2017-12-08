@@ -148,7 +148,7 @@ public class AdminTestCase {
     public void testTenantAndAppInSentinelConfig() {
         DeployState state = new DeployState.Builder().properties(
                 new DeployProperties.Builder().
-                        zone(Zone.from(Environment.dev, RegionName.from("baz"))).
+                        zone(new Zone(Environment.dev, RegionName.from("baz"))).
                 applicationId(new ApplicationId.Builder().
                         tenant("quux").
                         applicationName("foo").instanceName("bim").build()).build()).build();
@@ -311,7 +311,7 @@ public class AdminTestCase {
                 .disableFiledistributor(true)
                 .properties(
                         new DeployProperties.Builder().
-                                zone(Zone.from(Environment.dev, RegionName.from("baz"))).
+                                zone(new Zone(Environment.dev, RegionName.from("baz"))).
                                 applicationId(new ApplicationId.Builder().
                                         tenant("quux").
                                         applicationName("foo").instanceName("bim").build()).build()).build();

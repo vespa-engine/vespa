@@ -40,7 +40,7 @@ public class VirtualNodeProvisioningTest {
 
     @Before
     public void setup() {
-        tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         applicationId = tester.makeApplicationId();
     }
 

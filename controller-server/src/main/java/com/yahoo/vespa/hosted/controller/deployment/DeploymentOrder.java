@@ -107,7 +107,7 @@ public class DeploymentOrder {
     public List<Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Collection<Deployment> deployments) {
         List<Zone> productionZones = zones.stream()
                 .filter(z -> z.region().isPresent())
-                .map(z -> Zone.from(z.environment(), z.region().get()))
+                .map(z -> new Zone(z.environment(), z.region().get()))
                 .collect(toList());
         return deployments.stream()
                 .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))

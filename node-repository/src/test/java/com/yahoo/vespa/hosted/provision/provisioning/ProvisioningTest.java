@@ -56,7 +56,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_constant_application_size() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
         ApplicationId application2 = tester.makeApplicationId();
@@ -137,7 +137,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_variable_application_size() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -204,7 +204,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_multiple_flavors() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -233,7 +233,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_with_inplace_downsize() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -281,7 +281,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_multiple_flavors_with_replacement() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -324,7 +324,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_above_then_at_capacity_limit() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -349,7 +349,7 @@ public class ProvisioningTest {
 
     @Test
     public void dev_deployment_size() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.dev, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(4, "default");
@@ -360,7 +360,7 @@ public class ProvisioningTest {
 
     @Test
     public void deploy_specific_vespa_version() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.dev, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(4, "default");
@@ -371,7 +371,7 @@ public class ProvisioningTest {
 
     @Test
     public void test_deployment_size() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.test, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.test, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(4, "default");
@@ -383,7 +383,7 @@ public class ProvisioningTest {
     @Ignore // TODO: Re-activate when the check is reactivate in CapacityPolicies
     @Test(expected = IllegalArgumentException.class)
     public void prod_deployment_requires_redundancy() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(10, "default");
@@ -393,7 +393,7 @@ public class ProvisioningTest {
     /** Dev always uses the zone default flavor */
     @Test
     public void dev_deployment_flavor() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.dev, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(4, "default");
@@ -405,7 +405,7 @@ public class ProvisioningTest {
     /** Test always uses the zone default flavor */
     @Test
     public void test_deployment_flavor() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.test, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.test, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(4, "default");
@@ -416,7 +416,7 @@ public class ProvisioningTest {
 
     @Test
     public void staging_deployment_size() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.staging, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.staging, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(14, "default");
@@ -427,7 +427,7 @@ public class ProvisioningTest {
 
     @Test
     public void activate_after_reservation_timeout() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         tester.makeReadyNodes(10, "default");
         ApplicationId application = tester.makeApplicationId();
@@ -449,7 +449,7 @@ public class ProvisioningTest {
 
     @Test
     public void out_of_capacity() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         tester.makeReadyNodes(9, "default"); // need 2+2+3+3=10
         ApplicationId application = tester.makeApplicationId();
@@ -464,7 +464,7 @@ public class ProvisioningTest {
 
     @Test
     public void out_of_desired_flavor() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         tester.makeReadyNodes(10, "small"); // need 2+2+3+3=10
         tester.makeReadyNodes( 9, "large"); // need 2+2+3+3=10
@@ -489,7 +489,7 @@ public class ProvisioningTest {
                                                               Flavor.Type.BARE_METAL).cost(2);
         b.addReplaces(flavorToRetire, newDefault);
 
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")),
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
                                                            b.build());
         ApplicationId application = tester.makeApplicationId();
 
@@ -504,7 +504,7 @@ public class ProvisioningTest {
 
     @Test
     public void out_of_capacity_all_nodes_want_to_retire() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         // Flag all nodes for retirement
@@ -521,7 +521,7 @@ public class ProvisioningTest {
 
     @Test
     public void nonexisting_flavor() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         try {
@@ -535,7 +535,7 @@ public class ProvisioningTest {
 
     @Test
     public void highest_node_indexes_are_retired_first() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -586,7 +586,7 @@ public class ProvisioningTest {
             FlavorConfigBuilder b = new FlavorConfigBuilder();
             b.addFlavor("default", 1., 1., 10, Flavor.Type.BARE_METAL).cost(2);
 
-            ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")),
+            ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
                                                                b.build(), curator, nameResolver);
             tester.makeReadyNodes(4, flavorToRetire);
             SystemState state = prepare(application, 2, 0, 2, 0,
@@ -603,7 +603,7 @@ public class ProvisioningTest {
                                                                   Flavor.Type.BARE_METAL).cost(2);
             b.addReplaces(flavorToRetire, newDefault);
 
-            ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")),
+            ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
                                                                b.build(), curator, nameResolver);
 
             // Add nodes with "new-default" flavor
@@ -632,7 +632,7 @@ public class ProvisioningTest {
                                                               Flavor.Type.BARE_METAL).cost(2);
         b.addReplaces(flavorToRetire, newDefault);
 
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")),
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
                                                            b.build());
         ApplicationId application = tester.makeApplicationId();
 
@@ -652,7 +652,7 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_retires_nodes_that_want_to_retire() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
 
         ApplicationId application = tester.makeApplicationId();
         tester.makeReadyNodes(10, "default");
@@ -687,7 +687,7 @@ public class ProvisioningTest {
         FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
         b.addReplaces("large-variant", largeVariantVariant);
 
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")), b.build());
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), b.build());
         tester.makeReadyNodes(6, "large"); //cost = 10
         tester.makeReadyNodes(6, "large-variant"); //cost = 9
         tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11

@@ -48,8 +48,8 @@ public class ApplicationSerializerTest {
 
     private static final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
 
-    private static final Zone zone1 = Zone.from(Environment.from("prod"), RegionName.from("us-west-1"));
-    private static final Zone zone2 = Zone.from(Environment.from("prod"), RegionName.from("us-east-3"));
+    private static final Zone zone1 = new Zone(Environment.from("prod"), RegionName.from("us-west-1"));
+    private static final Zone zone2 = new Zone(Environment.from("prod"), RegionName.from("us-east-3"));
 
     @Test
     public void testSerialization() {

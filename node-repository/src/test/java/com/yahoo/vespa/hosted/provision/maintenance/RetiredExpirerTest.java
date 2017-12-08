@@ -54,7 +54,7 @@ public class RetiredExpirerTest {
     @Test
     public void ensure_retired_nodes_time_out() throws InterruptedException {
         ManualClock clock = new ManualClock();
-        Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                            new MockNameResolver().mockAnyLookup(),
@@ -94,7 +94,7 @@ public class RetiredExpirerTest {
     @Test
     public void ensure_retired_groups_time_out() throws InterruptedException {
         ManualClock clock = new ManualClock();
-        Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                            new MockNameResolver().mockAnyLookup(),
@@ -130,7 +130,7 @@ public class RetiredExpirerTest {
     @Test
     public void ensure_early_inactivation() throws OrchestrationException {
         ManualClock clock = new ManualClock();
-        Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                            new MockNameResolver().mockAnyLookup(),

@@ -87,11 +87,11 @@ public class LbServicesProducerTest {
     }
 
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) throws IOException, SAXException {
-        final Zone zone = Zone.from(Environment.prod, regionName);
+        final Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
                                                                                                  .properties(new DeployProperties.Builder().zone(zone).build())
                                                                                                  .zone(zone));
-        return getLbServicesConfig(Zone.from(Environment.prod, regionName), testModel);
+        return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 
     private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel) {
@@ -105,7 +105,7 @@ public class LbServicesProducerTest {
     public void testConfigAliasesWithRotations() throws IOException, SAXException {
         Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
         RegionName regionName = RegionName.from("us-east-1");
-        LbServicesConfig conf = getLbServicesConfig(Zone.from(Environment.prod, regionName), testModel);
+        LbServicesConfig conf = getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
         final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").hosts("foo.foo.yahoo.com").services("qrserver");
         assertThat(services.servicealiases().size(), is(1));
         assertThat(services.endpointaliases().size(), is(4));

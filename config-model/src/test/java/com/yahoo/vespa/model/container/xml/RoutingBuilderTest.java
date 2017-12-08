@@ -66,7 +66,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
     private Container getContainer(ApplicationPackage applicationPackage, String region, Element clusterElem) throws IOException, SAXException {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
-                .zone(Zone.from(Environment.prod, RegionName.from(region)))
+                .zone(new Zone(Environment.prod, RegionName.from(region)))
                 .build();
 
         root = new MockRoot("root", deployState);

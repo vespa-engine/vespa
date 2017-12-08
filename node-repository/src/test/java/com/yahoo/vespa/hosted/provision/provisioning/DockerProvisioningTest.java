@@ -28,7 +28,7 @@ public class DockerProvisioningTest {
 
     @Test
     public void docker_application_deployment() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         ApplicationId application1 = tester.makeApplicationId();
 
         for (int i = 1; i < 10; i++) {
@@ -61,7 +61,7 @@ public class DockerProvisioningTest {
     // In dev, test and staging you get nodes with default flavor, but we should get specified flavor for docker nodes
     @Test
     public void get_specified_flavor_not_default_flavor_for_docker() {
-        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.test, RegionName.from("corp-us-east-1")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.test, RegionName.from("corp-us-east-1")));
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost");
 

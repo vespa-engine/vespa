@@ -692,7 +692,7 @@ public class UpgraderTest {
 
         // Dev deployment which should be ignored
         Application dev0 = tester.createApplication("dev0", "tenant1", 7, 1L);
-        tester.controllerTester().deploy(dev0, Zone.from(Environment.dev, RegionName.from("dev-region")));
+        tester.controllerTester().deploy(dev0, new Zone(Environment.dev, RegionName.from("dev-region")));
 
         // New version is released and canaries upgrade
         version = Version.fromString("5.1");

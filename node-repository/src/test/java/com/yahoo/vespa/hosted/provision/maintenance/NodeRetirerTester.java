@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class NodeRetirerTester {
-    public static final Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
+    public static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
 
     // Components with state
     public final ManualClock clock = new ManualClock();

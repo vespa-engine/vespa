@@ -54,7 +54,7 @@ public class NodeFailTester {
     public static final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
     public static final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
     public static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "docker");
-    private static final Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
+    private static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private static final Duration downtimeLimitOneHour = Duration.ofMinutes(60);
 
     // Components with state

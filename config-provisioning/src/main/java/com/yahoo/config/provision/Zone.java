@@ -32,7 +32,7 @@ public class Zone {
     }
 
     /** Create from environment and region */
-    private Zone(Environment environment, RegionName region) {
+    public Zone(Environment environment, RegionName region) {
         this(SystemName.defaultSystem(), environment, region);
     }
 
@@ -51,10 +51,6 @@ public class Zone {
         this.flavorDefaults = flavorDefaults;
         this.systemName = systemName;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
-    }
-
-    public static Zone from(Environment environment, RegionName region) {
-        return new Zone(environment, region);
     }
 
     /** Returns the current environment */
