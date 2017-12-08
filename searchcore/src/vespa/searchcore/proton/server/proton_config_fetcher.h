@@ -9,6 +9,9 @@
 #include "bootstrapconfigmanager.h"
 #include "documentdbconfigmanager.h"
 #include "i_document_db_config_owner.h"
+#include <chrono>
+
+namespace document { class DocumentTypeRepo; }
 
 namespace proton {
 
@@ -47,6 +50,9 @@ public:
 
 private:
     typedef std::map<DocTypeName, DocumentDBConfigManager::SP> DBManagerMap;
+    using Clock = std::chrono::steady_clock;
+    using TimePoint = std::chrono::time_point<Clock>;
+    using OldDocumentTypeRepo = std::pair<TimePoint, std::shared_ptr<document::DocumentTypeRepo>>;
 
     BootstrapConfigManager _bootstrapConfigManager;
     config::ConfigRetriever _retriever;
@@ -57,11 +63,14 @@ private:
     DBManagerMap _dbManagerMap;
 
     FastOS_ThreadPool _threadPool;
+    std::deque<OldDocumentTypeRepo> _oldDocumentTypeRepos;
+    std::shared_ptr<document::DocumentTypeRepo> _currentDocumentTypeRepo;
 
     void fetchConfigs();
     void updateDocumentDBConfigs(const BootstrapConfigSP & config, const config::ConfigSnapshot & snapshot);
     void reconfigure();
     const config::ConfigKeySet pruneManagerMap(const BootstrapConfigSP & config);
+    void rememberDocumentTypeRepo(std::shared_ptr<document::DocumentTypeRepo> repo);
 };
 
 
