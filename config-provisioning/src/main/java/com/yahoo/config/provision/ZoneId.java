@@ -1,37 +1,68 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.Objects;
+
+/**
+ * Unique identifier for a Zone; use when referencing them.
+ *
+ * Serialised form is 'environment.region'.
+ *
+ * @author jvenstad
+ */
 public class ZoneId {
 
     protected final Environment environment;
     protected final RegionName region;
 
     public ZoneId(Environment environment, RegionName region) {
-        this.environment = environment;
-        this.region = region;
+        this.environment = Objects.requireNonNull(environment);
+        this.region = Objects.requireNonNull(region);
     }
 
-    /** Returns the current environment */
-    public Environment environment() { return environment; }
+    public static ZoneId from(Environment environment, RegionName region) {
+        return new ZoneId(environment, region);
+    }
 
-    /** Returns the current region */
-    public RegionName region() { return region; }
+    public static ZoneId from(String environment, String region) {
+        return from(Environment.from(environment), RegionName.from(region));
+    }
+
+    public static ZoneId from(String value) {
+        String[] parts = value.split("\\.");
+        return from(parts[0], parts[1]);
+    }
+
+    public Environment environment() {
+        return environment;
+    }
+
+    public RegionName region() {
+        return region;
+    }
+
+    public String value() {
+        return environment + "." + region;
+    }
 
     @Override
     public String toString() {
-        return "zone " + environment + "." + region;
+        return "zone " + value();
     }
-
-    @Override
-    public int hashCode() { return environment().hashCode() + 7 * region.hashCode();}
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof Zone)) return false;
-
-        ZoneId other = (ZoneId)o;
-        if ( this.environment() != other.environment()) return false;
-        if ( ! this.region.equals(other.region)) return false;
-        return true;
+        if (this == o) return true;
+        if ( ! (o instanceof ZoneId)) return false;
+        ZoneId id = (ZoneId) o;
+        return environment == id.environment &&
+               Objects.equals(region, id.region);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(environment, region);
+    }
+
 }
+
