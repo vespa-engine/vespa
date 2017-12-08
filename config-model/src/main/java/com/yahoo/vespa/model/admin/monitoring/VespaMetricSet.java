@@ -233,6 +233,7 @@ public class VespaMetricSet {
         // transaction log
         metrics.add(new Metric("content.proton.transactionlog.entries.average"));
         metrics.add(new Metric("content.proton.transactionlog.disk_usage.average"));
+        metrics.add(new Metric("content.proton.transactionlog.replay_time.last"));
 
         // document store
         metrics.add(new Metric("content.proton.documentdb.ready.document_store.disk_usage.average"));
