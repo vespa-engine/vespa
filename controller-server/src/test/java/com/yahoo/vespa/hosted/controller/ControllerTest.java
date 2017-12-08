@@ -494,7 +494,7 @@ public class ControllerTest {
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
-        ZoneId zone = Zone.defaultZone();
+        ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
         ApplicationId appId = tester.applicationId("tenant", "app1", "default");
         DeploymentId deployId = new DeploymentId(appId, zone);
 

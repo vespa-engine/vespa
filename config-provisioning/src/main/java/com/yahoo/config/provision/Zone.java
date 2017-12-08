@@ -5,6 +5,7 @@ import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -14,11 +15,12 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class Zone extends ZoneId {
+public class Zone {
 
     private final SystemName systemName;
     private final FlavorDefaults flavorDefaults;
     private final Optional<NodeFlavors> nodeFlavors;
+    private final ZoneId id;
 
     @Inject
     public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors) {
@@ -44,10 +46,25 @@ public class Zone extends ZoneId {
                  RegionName region,
                  FlavorDefaults flavorDefaults,
                  NodeFlavors nodeFlavors) {
-        super(environment, region);
+        this.id = new ZoneId(environment, region);
         this.flavorDefaults = flavorDefaults;
         this.systemName = systemName;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
+    }
+
+    /** Returns the id of this */
+    public ZoneId id() {
+        return id;
+    }
+
+    /** Returns the current environment */
+    public Environment environment() {
+        return id.environment();
+    }
+
+    /** Returns the current region */
+    public RegionName region() {
+        return id.region();
     }
 
     /** Returns the current system */
@@ -62,6 +79,22 @@ public class Zone extends ZoneId {
     /** Do not use */
     public static Zone defaultZone() {
         return new Zone(SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
+    }
+
+
+    public String toString() {
+        return id.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if ( ! (o instanceof Zone)) return false;
+        return Objects.equals(id, ((Zone) o).id);
+    }
+
+    public int hashCode() {
+        return id.hashCode();
     }
 
     private static class FlavorDefaults {
