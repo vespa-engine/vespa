@@ -103,7 +103,7 @@ public class FileServerTest {
         }
         @Override
         public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
-            this.content.complete(fileData.content());
+            this.content.complete(fileData.content().array());
         }
     }
 

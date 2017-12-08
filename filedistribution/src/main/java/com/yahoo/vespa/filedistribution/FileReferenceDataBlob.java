@@ -23,12 +23,13 @@ public class FileReferenceDataBlob extends FileReferenceData {
         return new FileReferenceDataBlob(fileReference, filename, FileReferenceData.Type.file, new byte[0], 0);
     }
 
-    public byte [] content() {
-        return content;
+    public ByteBuffer content() {
+        return ByteBuffer.wrap(content);
     }
     @Override
-    public byte[] nextContent(int desiredSize) {
-        return content;
+    public int nextContent(ByteBuffer bb) {
+        bb.put(content);
+        return content.length;
     }
 
     @Override

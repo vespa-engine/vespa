@@ -22,20 +22,16 @@ public class LazyFileReferenceData extends FileReferenceData {
     }
 
     @Override
-    public byte[] nextContent(int desiredSize) {
-        ByteBuffer bb = ByteBuffer.allocate(Math.min(desiredSize, 0x100000));
+    public int nextContent(ByteBuffer bb) {
+        int read = 0;
+        int pos = bb.position();
         try {
-            channel.read(bb);
+            read = channel.read(bb);
         } catch (IOException e) {
-            return null;
+            return -1;
         }
-        byte [] retval = bb.array();
-        if (bb.position() != bb.array().length) {
-            retval = new byte [bb.position()];
-            bb.get(retval);
-        }
-        hasher.update(retval, 0, retval.length);
-        return retval;
+        hasher.update(bb.array(), pos, read);
+        return read;
     }
 
     @Override

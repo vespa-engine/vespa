@@ -37,20 +37,20 @@ public abstract class FileReferenceData {
         return type;
     }
 
-    public byte [] content() {
+    public ByteBuffer content() {
         ByteBuffer bb = ByteBuffer.allocate((int)size());
-        for (byte [] part = nextContent(0); part != null && part.length > 0; part = nextContent(0)) {
-            bb.put(part);
+        while (bb.remaining() > 0) {
+            nextContent(bb);
         }
-        return bb.array();
+        return bb;
     }
     /**
      * Will provide the next part of the content.
      *
-     * @param desiredSize of the part
-     * @return The next part of the content. Empty when done.
+     * @param bb with some available space
+     * @return Number of bytes transferred.
      */
-    public abstract byte[] nextContent(int desiredSize);
+    public abstract int nextContent(ByteBuffer bb);
 
     /**
      * Only guaranteed to be valid after all content has been consumed.

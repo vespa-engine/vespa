@@ -197,7 +197,7 @@ public class FileReceiver {
     }
 
     void receiveFile(FileReferenceData fileReferenceData) {
-        long xxHashFromContent = hasher.hash(ByteBuffer.wrap(fileReferenceData.content()), 0);
+        long xxHashFromContent = fileReferenceData.xxhash();
         if (xxHashFromContent != fileReferenceData.xxhash()) {
             throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + fileReferenceData.xxhash() + ")");
         }
@@ -207,7 +207,7 @@ public class FileReceiver {
         File file = new File(fileReferenceDir, fileReferenceData.filename());
         try {
             File tempFile = new File(Files.createTempDirectory("downloaded").toFile(), fileReferenceData.filename());
-            Files.write(tempFile.toPath(), fileReferenceData.content());
+            Files.write(tempFile.toPath(), fileReferenceData.content().array());
 
             // Unpack if necessary
             if (fileReferenceData.type() == FileReferenceData.Type.compressed) {

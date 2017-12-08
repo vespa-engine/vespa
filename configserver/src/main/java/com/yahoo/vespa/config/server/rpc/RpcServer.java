@@ -430,7 +430,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             fileBlob.parameters().add(new StringValue(fileData.fileReference().value()));
             fileBlob.parameters().add(new StringValue(fileData.filename()));
             fileBlob.parameters().add(new StringValue(fileData.type().name()));
-            fileBlob.parameters().add(new DataValue(fileData.content()));
+            fileBlob.parameters().add(new DataValue(fileData.content().array()));
             fileBlob.parameters().add(new Int64Value(fileData.xxhash()));
             fileBlob.parameters().add(new Int32Value(status.getCode()));
             fileBlob.parameters().add(new StringValue(status.getDescription()));
