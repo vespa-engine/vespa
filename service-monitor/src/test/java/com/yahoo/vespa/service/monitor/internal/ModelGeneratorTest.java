@@ -38,7 +38,7 @@ public class ModelGeneratorTest {
                 ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
         ModelGenerator modelGenerator = new ModelGenerator();
 
-        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
+        Zone zone = Zone.from(Environment.from(ENVIRONMENT), RegionName.from(REGION));
 
         List<String> configServerHosts = Stream.of("cfg1", "cfg2", "cfg3")
                 .collect(Collectors.toList());
@@ -83,7 +83,7 @@ public class ModelGeneratorTest {
                 ExampleModel.createExampleSuperModelWithOneRpcPort(HOSTNAME, PORT);
         ModelGenerator modelGenerator = new ModelGenerator();
 
-        Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
+        Zone zone = Zone.from(Environment.from(ENVIRONMENT), RegionName.from(REGION));
 
         List<String> configServerHosts = Collections.emptyList();
 

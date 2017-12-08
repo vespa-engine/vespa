@@ -88,7 +88,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public Optional<Duration> getDeploymentTimeToLive(Environment environment, RegionName region) {
-        return Optional.ofNullable(deploymentTimeToLive.get(new Zone(environment, region)));
+        return Optional.ofNullable(deploymentTimeToLive.get(Zone.from(environment, region)));
     }
 
     @Override

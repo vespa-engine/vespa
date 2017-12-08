@@ -165,9 +165,9 @@ public final class ControllerTester {
 
     public Zone toZone(Environment environment) {
         switch (environment) {
-            case dev: case test: return new Zone(environment, RegionName.from("us-east-1"));
-            case staging: return new Zone(environment, RegionName.from("us-east-3"));
-            default: return new Zone(environment, RegionName.from("us-west-1"));
+            case dev: case test: return Zone.from(environment, RegionName.from("us-east-1"));
+            case staging: return Zone.from(environment, RegionName.from("us-east-3"));
+            default: return Zone.from(environment, RegionName.from("us-west-1"));
         }
     }
 

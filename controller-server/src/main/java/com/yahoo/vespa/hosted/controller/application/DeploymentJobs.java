@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -229,7 +228,7 @@ public class DeploymentJobs {
                 case test: return Optional.of(systemTest);
                 case staging: return Optional.of(stagingTest);
             }
-            return from(system, new Zone(environment, region));
+            return from(system, Zone.from(environment, region));
         }
 
         private static Zone zone(SystemName system, String environment, String region) {
@@ -237,7 +236,7 @@ public class DeploymentJobs {
         }
 
         private static Zone zone(String environment, String region) {
-            return new Zone(Environment.from(environment), RegionName.from(region));
+            return Zone.from(Environment.from(environment), RegionName.from(region));
         }
     }
 

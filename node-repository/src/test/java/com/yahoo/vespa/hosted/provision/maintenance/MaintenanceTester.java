@@ -30,7 +30,7 @@ public class MaintenanceTester {
 
     private final Curator curator = new MockCurator();
     public final ManualClock clock = new ManualClock(Instant.ofEpochMilli(0L)); // determinism
-    private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+    private final Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                     new MockNameResolver().mockAnyLookup(),

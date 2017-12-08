@@ -526,7 +526,7 @@ public class ControllerTest {
             application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
             applications.store(application);
             try {
-                tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
+                tester.deploy(app, Zone.from(Environment.prod, RegionName.from("us-east-3")));
                 fail("Expected exception");
             } catch (IllegalArgumentException e) {
                 assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
@@ -626,7 +626,7 @@ public class ControllerTest {
         Application app = tester.createApplication("app1", "tenant1", 1, 2L);
 
         // Direct deploy is allowed when project ID is missing
-        Zone zone = new Zone(Environment.prod, RegionName.from("cd-us-central-1"));
+        Zone zone = Zone.from(Environment.prod, RegionName.from("cd-us-central-1"));
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);

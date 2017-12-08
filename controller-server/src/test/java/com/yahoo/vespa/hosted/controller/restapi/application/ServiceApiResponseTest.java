@@ -32,10 +32,10 @@ public class ServiceApiResponseTest {
 
     @Test
     public void testServiceViewResponse() throws URISyntaxException, IOException {
-        ServiceApiResponse response = new ServiceApiResponse(new Zone(Environment.prod, RegionName.from("us-west-1")),
-                                                      ApplicationId.from("tenant1", "application1", "default"),
-                                                      Collections.singletonList(new URI("config-server1")),
-                                                      new URI("http://server1:4080/request/path?foo=bar"));
+        ServiceApiResponse response = new ServiceApiResponse(Zone.from(Environment.prod, RegionName.from("us-west-1")),
+                                                             ApplicationId.from("tenant1", "application1", "default"),
+                                                             Collections.singletonList(new URI("config-server1")),
+                                                             new URI("http://server1:4080/request/path?foo=bar"));
         ApplicationView applicationView = new ApplicationView();
         ClusterView clusterView = new ClusterView();
         clusterView.type = "container";
@@ -63,7 +63,7 @@ public class ServiceApiResponseTest {
 
     @Test
     public void testServiceViewResponseWithURLs() throws URISyntaxException, IOException {
-        ServiceApiResponse response = new ServiceApiResponse(new Zone(Environment.prod, RegionName.from("us-west-1")),
+        ServiceApiResponse response = new ServiceApiResponse(Zone.from(Environment.prod, RegionName.from("us-west-1")),
                                                              ApplicationId.from("tenant2", "application2", "default"),
                                                              Collections.singletonList(new URI("http://cfg1.test/")),
                                                              new URI("http://cfg1.test/serviceview/v1/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/service/searchnode-9dujk1pa0vufxrj6n4yvmi8uc/state/v1"));

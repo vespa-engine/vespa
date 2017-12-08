@@ -35,7 +35,7 @@ public class DeploymentExpirerTest {
     @Test
     public void testDeploymentExpiry() throws IOException, InterruptedException {
         tester.controllerTester().zoneRegistry().setDeploymentTimeToLive(
-                new Zone(Environment.dev, RegionName.from("us-east-1")),
+                Zone.from(Environment.dev, RegionName.from("us-east-1")),
                 Duration.ofDays(14)
         );
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),

@@ -42,7 +42,7 @@ public class ListApplicationsHandlerTest {
         handler = new ListApplicationsHandler(Runnable::run,
                                               AccessLog.voidAccessLog(),
                                               tenants,
-                                              new Zone(Environment.dev, RegionName.from("us-east")));
+                                              Zone.from(Environment.dev, RegionName.from("us-east")));
     }
 
     @Test

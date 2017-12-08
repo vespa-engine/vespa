@@ -53,7 +53,7 @@ public class OperatorChangeApplicationMaintainerTest {
     public void test_application_maintenance() throws InterruptedException {
         ManualClock clock = new ManualClock();
         Curator curator = new MockCurator();
-        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+        Zone zone = Zone.from(Environment.prod, RegionName.from("us-east"));
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                  new MockNameResolver().mockAnyLookup(),
                                                  new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));

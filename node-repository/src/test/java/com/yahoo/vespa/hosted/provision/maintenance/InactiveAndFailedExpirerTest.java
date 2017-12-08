@@ -41,7 +41,7 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void inactive_and_failed_times_out() throws InterruptedException {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate then deallocate 2 nodes
@@ -79,7 +79,7 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void reboot_generation_is_increased_when_node_moves_to_dirty() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
         List<Node> nodes = tester.makeReadyNodes(1, "default");
 
         // Allocate and deallocate a single node
@@ -110,7 +110,7 @@ public class InactiveAndFailedExpirerTest {
 
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
                                                   Version.fromString("6.42"));
         tester.makeReadyNodes(5, "default");

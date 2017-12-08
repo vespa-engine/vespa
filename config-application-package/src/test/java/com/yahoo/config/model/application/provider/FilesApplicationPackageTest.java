@@ -41,13 +41,13 @@ public class FilesApplicationPackageTest {
         assertTrue(new File(appDir, "hosts.xml").exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
 
-        ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
-                new RuleConfigDeriver() {
+        ApplicationPackage processed = app.preprocess(Zone.from(Environment.dev, RegionName.defaultName()),
+                                                      new RuleConfigDeriver() {
                     @Override
                     public void derive(String ruleBaseDir, String outputDir) throws Exception {
                     }
                 },
-                new BaseDeployLogger());
+                                                      new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());
         String expectedServices = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
                 "    <admin version=\"2.0\">\n" +

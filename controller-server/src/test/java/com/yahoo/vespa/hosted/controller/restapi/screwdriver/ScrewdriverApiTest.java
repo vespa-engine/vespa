@@ -39,8 +39,8 @@ import static org.junit.Assert.assertTrue;
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
-    private static final Zone testZone = new Zone(Environment.test, RegionName.from("us-east-1"));
-    private static final Zone stagingZone = new Zone(Environment.staging, RegionName.from("us-east-3"));
+    private static final Zone testZone = Zone.from(Environment.test, RegionName.from("us-east-1"));
+    private static final Zone stagingZone = Zone.from(Environment.staging, RegionName.from("us-east-3"));
 
     @Test
     public void testGetReleaseStatus() throws Exception {

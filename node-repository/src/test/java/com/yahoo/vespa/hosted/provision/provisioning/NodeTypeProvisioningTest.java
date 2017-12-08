@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,7 +29,7 @@ public class NodeTypeProvisioningTest {
 
     @Test
     public void proxy_deployment() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(Zone.from(Environment.prod, RegionName.from("us-east")));
 
         tester.makeReadyNodes( 1, "small", NodeType.proxy);
         tester.makeReadyNodes( 3, "small", NodeType.host);

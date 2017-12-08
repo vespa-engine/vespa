@@ -511,7 +511,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </nodes>",
                 "</jdisc>");
 
-        DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build();
+        DeployState deployState = new DeployState.Builder().zone(Zone.from(Environment.dev, RegionName.from("us-east-1"))).build();
         createModel(root, deployState, clusterElem);
         assertEquals(0, getContainerCluster("default").serviceAliases().size());
         assertEquals(0, getContainerCluster("default").endpointAliases().size());
