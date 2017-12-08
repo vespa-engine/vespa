@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
@@ -23,17 +24,19 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final Thread serverThread;
     private final Deployer deployer;
     private final VersionState versionState;
+    private final StateMonitor stateMonitor;
 
     // The tenants object is injected so that all initial requests handlers are
     // added to the rpc server before it starts answering rpc requests.
-    @SuppressWarnings("UnusedParameters")
+    @SuppressWarnings("WeakerAccess")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 Deployer deployer, VersionState versionState) {
+                                 Deployer deployer, VersionState versionState, StateMonitor stateMonitor) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.deployer = deployer;
         this.versionState = versionState;
+        this.stateMonitor = stateMonitor;
         this.serverThread = new Thread(this, "configserver main");
         serverThread.start();
     }
@@ -62,6 +65,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             log.log(LogLevel.INFO, "All applications redeployed");
         }
         versionState.saveNewVersion();
+        stateMonitor.status(StateMonitor.Status.up);
         log.log(LogLevel.DEBUG, "Starting RPC server");
         server.run();
         log.log(LogLevel.DEBUG, "RPC server stopped");
