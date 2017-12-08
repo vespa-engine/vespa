@@ -34,33 +34,43 @@
         <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.6.1</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                        <optimize>true</optimize>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                    <configuration>
+                        <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
+                        <systemPropertyVariables>
+                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                    <configuration>
+                        <alwaysGenerateSurefireReport>false</alwaysGenerateSurefireReport>
+                        <showSuccess>false</showSuccess>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
-    <!-- TODO: add pluginManagement for bundle-plugin and/or compiler-plugin?
-        <build>
-            <pluginManagement>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.6.1</version>
-                        <configuration>
-                            <source>1.8</source>
-                            <target>1.8</target>
-                            <optimize>true</optimize>
-                       </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.yahoo.vespa</groupId>
-                        <artifactId>bundle-plugin</artifactId>
-                        <version>${project.version}</version>
-                        <configuration>
-                            <configGenVersion>${project.version}</configGenVersion>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </pluginManagement>
-        </build>
-    -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -411,6 +421,20 @@
                 <version>${jetty.version}</version>
             </dependency>
 
+            <dependency>
+                <!-- NOT provided from jdisc runtime -->
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit4</artifactId>
+                <version>${surefire.version}</version>
+            </dependency>
+            <dependency>
+                <!-- NOT provided from jdisc runtime -->
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-providers</artifactId>
+                <version>${surefire.version}</version>
+                <type>pom</type>
+            </dependency>
+
             <!-- Please don't add deps here, but instead above the NOTE. -->
 
         </dependencies>
@@ -423,8 +447,9 @@
         <guice.version>3.0</guice.version>
         <jetty.version>9.4.6.v20170531</jetty.version>
         <slf4j.version>1.7.5</slf4j.version>
+        <surefire.version>2.19.1</surefire.version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
 
-        <!-- These must be kept in sync with version used by current jersey2.version. -->
+        <!-- NOTE: These must be kept in sync with version used by current jersey2.version. -->
         <!-- MUST be updated each time jersey2 is upgraded! -->
         <!-- Check versions by doing: ' ls -l vespa/vespa_jersey2/target/dependency' -->
         <hk2.version>2.5.0-b05</hk2.version>
@@ -436,6 +461,7 @@
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <jersey2.version>2.23.2</jersey2.version>
         <mimepull.version>1.9.6</mimepull.version>
+        <!-- Please don't add properties here, but instead above the jersey2 NOTE. -->
     </properties>
 
 </project>
