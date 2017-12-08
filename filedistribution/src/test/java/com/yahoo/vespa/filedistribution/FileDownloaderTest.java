@@ -222,7 +222,7 @@ public class FileDownloaderTest {
     }
 
     private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, byte[] content) {
-        fileDownloader.receiveFile(new FileReferenceData(fileReference, filename, type, content));
+        fileDownloader.receiveFile(new FileReferenceDataBlob(fileReference, filename, type, content));
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

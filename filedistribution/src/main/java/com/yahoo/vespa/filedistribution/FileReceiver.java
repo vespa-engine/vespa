@@ -187,7 +187,7 @@ public class FileReceiver {
         if (errorCode == 0) {
             // TODO: Remove when system test works
             log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
-            receiveFile(new FileReferenceData(fileReference, filename, FileReferenceData.Type.valueOf(type), content, xxhash));
+            receiveFile(new FileReferenceDataBlob(fileReference, filename, FileReferenceData.Type.valueOf(type), content, xxhash));
             req.returnValues().add(new Int32Value(0));
         } else {
             log.log(LogLevel.WARNING, "Receiving file reference '" + fileReference.value() + "' failed: " + errorDescription);
