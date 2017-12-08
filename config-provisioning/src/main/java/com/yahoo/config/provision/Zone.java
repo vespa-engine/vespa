@@ -33,17 +33,12 @@ public class Zone {
 
     /** Create from environment and region */
     public Zone(Environment environment, RegionName region) {
-        this(SystemName.defaultSystem(), environment, region, "default");
+        this(SystemName.defaultSystem(), environment, region);
     }
 
     /** Create from system, environment and region */
     public Zone(SystemName systemName, Environment environment, RegionName region) {
-        this(systemName, environment, region, "default");
-    }
-
-    /** Create from environment and region. Useful for testing. */
-    public Zone(SystemName system, Environment environment, RegionName region, String defaultFlavor) {
-        this(system, environment, region, new FlavorDefaults(defaultFlavor), null);
+        this(systemName, environment, region, new FlavorDefaults("default"), null);
     }
 
     private Zone(SystemName systemName,
