@@ -41,7 +41,6 @@ public class StateMonitor extends AbstractComponent {
         this.snapshotIntervalMs = (long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1));
         this.lastSnapshotTimeMs = timer.currentTimeMillis();
         this.status = Status.valueOf(config.initialStatus());
-        System.out.println("Initial status: " + status);
         thread = new Thread(StateMonitor.this::run, "StateMonitor");
         thread.setDaemon(true);
         thread.start();
