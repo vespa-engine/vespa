@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -39,8 +40,8 @@ import static org.junit.Assert.assertTrue;
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
-    private static final Zone testZone = new Zone(Environment.test, RegionName.from("us-east-1"));
-    private static final Zone stagingZone = new Zone(Environment.staging, RegionName.from("us-east-3"));
+    private static final ZoneId testZone = new ZoneId(Environment.test, RegionName.from("us-east-1"));
+    private static final ZoneId stagingZone = new ZoneId(Environment.staging, RegionName.from("us-east-3"));
 
     @Test
     public void testGetReleaseStatus() throws Exception {

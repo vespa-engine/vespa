@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -95,14 +96,14 @@ public class DeploymentApiTest extends ControllerContainerTest {
     private void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
                                   boolean success) {
         tester.notifyJobCompletion(application.id(), projectId, true, component);
-        tester.deploy(application, applicationPackage, new Zone(Environment.test,
-                                                                       RegionName.from("us-east-1")), projectId);
+        tester.deploy(application, applicationPackage, new ZoneId(Environment.test,
+                                                                  RegionName.from("us-east-1")), projectId);
         tester.notifyJobCompletion(application.id(), projectId, true, systemTest);
-        tester.deploy(application, applicationPackage, new Zone(Environment.staging,
+        tester.deploy(application, applicationPackage, new ZoneId(Environment.staging,
                                                                        RegionName.from("us-east-3")), projectId);
         tester.notifyJobCompletion(application.id(), projectId, success, stagingTest);
         if (success) {
-            tester.deploy(application, applicationPackage, new Zone(Environment.prod,RegionName.from("corp-us-east-1")),
+            tester.deploy(application, applicationPackage, new ZoneId(Environment.prod,RegionName.from("corp-us-east-1")),
                           projectId);
             tester.notifyJobCompletion(application.id(), projectId, true, productionCorpUsEast1);
         }

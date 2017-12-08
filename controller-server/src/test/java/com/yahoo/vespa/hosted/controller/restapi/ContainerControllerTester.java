@@ -5,6 +5,7 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
@@ -76,7 +77,7 @@ public class ContainerControllerTester {
         return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
 
-    public Application deploy(Application application, ApplicationPackage applicationPackage, Zone zone, long projectId) {
+    public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone, long projectId) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(projectId));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deployApplication(application.id(),
@@ -132,4 +133,5 @@ public class ContainerControllerTester {
                 .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.id().application().value()))
                 .addRoleMember(action, AthenzService.fromScrewdriverId(screwdriverId));
     }
+
 }

@@ -179,7 +179,7 @@ public class DeploymentJobs {
         private final String jobName;
         private final ImmutableMap<SystemName, ZoneId> zones;
 
-        JobType(String jobName, ZoneId... zones) {
+        JobType(String jobName, Zone... zones) {
             this.jobName = jobName;
             this.zones = ImmutableMap.copyOf(Stream.of(zones).collect(Collectors.toMap(zone -> zone.system(),
                                                                                        zone -> zone)));
@@ -232,11 +232,11 @@ public class DeploymentJobs {
             return from(system, new Zone(environment, region));
         }
 
-        private static ZoneId zone(SystemName system, String environment, String region) {
+        private static Zone zone(SystemName system, String environment, String region) {
             return new Zone(system, Environment.from(environment), RegionName.from(region));
         }
 
-        private static ZoneId zone(String environment, String region) {
+        private static Zone zone(String environment, String region) {
             return new Zone(Environment.from(environment), RegionName.from(region));
         }
     }

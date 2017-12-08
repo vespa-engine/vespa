@@ -147,7 +147,7 @@ public class IdentifierTest {
     @Test
     public void application_instance_id_dotted_string_is_subindentifers_concatinated_with_dots() {
         DeploymentId id = new DeploymentId(com.yahoo.config.provision.ApplicationId.from("tenant", "application", "instance"),
-                                           new Zone(Environment.prod, RegionName.from("region")));
+                                           new com.yahoo.config.provision.ZoneId(Environment.prod, RegionName.from("region")));
         assertEquals("tenant.application.prod.region.instance", id.dottedString());
     }
 }

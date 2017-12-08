@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -48,8 +49,8 @@ public class ApplicationSerializerTest {
 
     private static final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
 
-    private static final Zone zone1 = new Zone(Environment.from("prod"), RegionName.from("us-west-1"));
-    private static final Zone zone2 = new Zone(Environment.from("prod"), RegionName.from("us-east-3"));
+    private static final ZoneId zone1 = new ZoneId(Environment.from("prod"), RegionName.from("us-west-1"));
+    private static final ZoneId zone2 = new ZoneId(Environment.from("prod"), RegionName.from("us-east-3"));
 
     @Test
     public void testSerialization() {

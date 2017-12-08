@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Lock;
@@ -130,7 +130,7 @@ public final class ControllerTester {
 
     /** Creates the given tenant and application and deploys it */
     public Application createAndDeploy(String tenantName, String domainName, String applicationName,
-                                       String instanceName, Zone zone, long projectId, Long propertyId) {
+                                       String instanceName, ZoneId zone, long projectId, Long propertyId) {
         TenantId tenant = createTenant(tenantName, domainName, propertyId);
         Application application = createApplication(tenant, applicationName, instanceName, projectId);
         deploy(application, zone);
@@ -144,7 +144,7 @@ public final class ControllerTester {
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, Zone zone, long projectId, Long propertyId) {
+    public Application createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
         return createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
     }
 
@@ -163,11 +163,11 @@ public final class ControllerTester {
         return application;
     }
 
-    public Zone toZone(Environment environment) {
+    public ZoneId toZone(Environment environment) {
         switch (environment) {
-            case dev: case test: return new Zone(environment, RegionName.from("us-east-1"));
-            case staging: return new Zone(environment, RegionName.from("us-east-3"));
-            default: return new Zone(environment, RegionName.from("us-west-1"));
+            case dev: case test: return new ZoneId(environment, RegionName.from("us-east-1"));
+            case staging: return new ZoneId(environment, RegionName.from("us-east-3"));
+            default: return new ZoneId(environment, RegionName.from("us-west-1"));
         }
     }
 
@@ -197,15 +197,15 @@ public final class ControllerTester {
         return controller().applications().require(applicationId);
     }
 
-    public void deploy(Application application, Zone zone) {
+    public void deploy(Application application, ZoneId zone) {
         deploy(application, zone, new ApplicationPackage(new byte[0]));
     }
 
-    public void deploy(Application application, Zone zone, ApplicationPackage applicationPackage) {
+    public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage) {
         deploy(application, zone, applicationPackage, false);
     }
 
-    public void deploy(Application application, Zone zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
+    public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().get()));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deployApplication(application.id(),

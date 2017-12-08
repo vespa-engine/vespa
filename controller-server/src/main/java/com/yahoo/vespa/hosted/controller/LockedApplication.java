@@ -69,7 +69,7 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, revision, reason, triggerTime)));
     }
 
-    public LockedApplication withNewDeployment(Zone zone, ApplicationRevision revision, Version version, Instant instant) {
+    public LockedApplication withNewDeployment(ZoneId zone, ApplicationRevision revision, Version version, Instant instant) {
         // Use info from previous deployment if available, otherwise create a new one.
         Deployment previousDeployment = deployments().getOrDefault(zone, new Deployment(zone, revision, version, instant));
         Deployment newDeployment = new Deployment(zone, revision, version, instant,

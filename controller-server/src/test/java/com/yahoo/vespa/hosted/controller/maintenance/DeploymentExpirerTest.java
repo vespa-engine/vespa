@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -35,7 +36,7 @@ public class DeploymentExpirerTest {
     @Test
     public void testDeploymentExpiry() throws IOException, InterruptedException {
         tester.controllerTester().zoneRegistry().setDeploymentTimeToLive(
-                new Zone(Environment.dev, RegionName.from("us-east-1")),
+                new ZoneId(Environment.dev, RegionName.from("us-east-1")),
                 Duration.ofDays(14)
         );
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),

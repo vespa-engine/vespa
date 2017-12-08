@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -692,7 +693,7 @@ public class UpgraderTest {
 
         // Dev deployment which should be ignored
         Application dev0 = tester.createApplication("dev0", "tenant1", 7, 1L);
-        tester.controllerTester().deploy(dev0, new Zone(Environment.dev, RegionName.from("dev-region")));
+        tester.controllerTester().deploy(dev0, new ZoneId(Environment.dev, RegionName.from("dev-region")));
 
         // New version is released and canaries upgrade
         version = Version.fromString("5.1");

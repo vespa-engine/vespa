@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
@@ -23,10 +22,10 @@ public class ZoneApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/zone/v1/responses/";
     private static final List<ZoneId> zones = Arrays.asList(
-            new Zone(Environment.prod, RegionName.from("us-north-1")),
-            new Zone(Environment.dev, RegionName.from("us-north-2")),
-            new Zone(Environment.test, RegionName.from("us-north-3")),
-            new Zone(Environment.staging, RegionName.from("us-north-4"))
+            new ZoneId(Environment.prod, RegionName.from("us-north-1")),
+            new ZoneId(Environment.dev, RegionName.from("us-north-2")),
+            new ZoneId(Environment.test, RegionName.from("us-north-3")),
+            new ZoneId(Environment.staging, RegionName.from("us-north-4"))
                                                            );
 
     private ContainerControllerTester tester;

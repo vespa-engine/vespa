@@ -268,7 +268,7 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
+    public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // TODO: Shouldn't this go through the above method? Seems you can cheat the checks here ... ?

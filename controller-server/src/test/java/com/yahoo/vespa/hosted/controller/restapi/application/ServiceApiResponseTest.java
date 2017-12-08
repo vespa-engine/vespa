@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -32,7 +32,7 @@ public class ServiceApiResponseTest {
 
     @Test
     public void testServiceViewResponse() throws URISyntaxException, IOException {
-        ServiceApiResponse response = new ServiceApiResponse(new Zone(Environment.prod, RegionName.from("us-west-1")),
+        ServiceApiResponse response = new ServiceApiResponse(new ZoneId(Environment.prod, RegionName.from("us-west-1")),
                                                       ApplicationId.from("tenant1", "application1", "default"),
                                                       Collections.singletonList(new URI("config-server1")),
                                                       new URI("http://server1:4080/request/path?foo=bar"));
@@ -63,7 +63,7 @@ public class ServiceApiResponseTest {
 
     @Test
     public void testServiceViewResponseWithURLs() throws URISyntaxException, IOException {
-        ServiceApiResponse response = new ServiceApiResponse(new Zone(Environment.prod, RegionName.from("us-west-1")),
+        ServiceApiResponse response = new ServiceApiResponse(new ZoneId(Environment.prod, RegionName.from("us-west-1")),
                                                              ApplicationId.from("tenant2", "application2", "default"),
                                                              Collections.singletonList(new URI("http://cfg1.test/")),
                                                              new URI("http://cfg1.test/serviceview/v1/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/service/searchnode-9dujk1pa0vufxrj6n4yvmi8uc/state/v1"));
