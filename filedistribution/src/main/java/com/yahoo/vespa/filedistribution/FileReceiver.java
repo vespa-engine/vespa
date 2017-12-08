@@ -39,7 +39,7 @@ public class FileReceiver {
     private final File downloadDirectory;
     private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
     private final AtomicInteger nextSessionId = new AtomicInteger(1);
-    private final Map<Integer, Session> sessions = new HashMap();
+    private final Map<Integer, Session> sessions = new HashMap<>();
 
     final static class Session {
         private final StreamingXXHash64 hasher;
@@ -88,7 +88,7 @@ public class FileReceiver {
                 throw new IllegalStateException("Received partid " + partId + " while expecting " + currentPartId);
             }
             if (fileSize < currentFileSize + part.length) {
-                throw new IllegalStateException("Received part would extend the inprogressFile from " + currentFileSize + " to " +
+                throw new IllegalStateException("Received part would extend the file from " + currentFileSize + " to " +
                                                 (currentFileSize + part.length) + ", but " + fileSize + " is max.");
             }
             try {
@@ -110,16 +110,16 @@ public class FileReceiver {
                 // Unpack if necessary
                 if (fileType == FileReferenceData.Type.compressed) {
                     File decompressedDir = Files.createTempDirectory("archive").toFile();
-                    log.log(LogLevel.DEBUG, "Archived inprogressFile, unpacking " + inprogressFile + " to " + decompressedDir);
+                    log.log(LogLevel.DEBUG, "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
-                    log.log(LogLevel.DEBUG, "Uncompressed inprogressFile, moving to " + file.getAbsolutePath());
+                    log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
                     moveFileToDestination(inprogressFile, file);
                 }
             } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed writing inprogressFile: " + e.getMessage(), e);
-                throw new RuntimeException("Failed writing inprogressFile: ", e);
+                log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
+                throw new RuntimeException("Failed writing file: ", e);
             }
             return file;
         }
@@ -141,20 +141,20 @@ public class FileReceiver {
     private List<Method> receiveFileMethod(Object handler) {
         List<Method> methods = new ArrayList<>();
         methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", handler,"receiveFileMeta")
-                .paramDesc(0, "filereference", "inprogressFile reference to download")
-                .paramDesc(1, "type", "'inprogressFile' or 'compressed'")
+                .paramDesc(0, "filereference", "file reference to download")
+                .paramDesc(1, "type", "'file' or 'compressed'")
                 .paramDesc(2, "filename", "filename")
-                .paramDesc(3, "filelength", "length in bytes of inprogressFile")
+                .paramDesc(3, "filelength", "length in bytes of file")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
         methods.add(new Method(RECEIVE_PART_METHOD, "siix", "i", handler,"receiveFilePart")
-                .paramDesc(0, "filereference", "inprogressFile reference to download")
+                .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
                 .paramDesc(2, "partid", "relative part number starting at zero")
                 .paramDesc(3, "data", "bytes in this part")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
         methods.add(new Method(RECEIVE_EOF_METHOD, "silis", "i", handler,"receiveFileEof")
-                .paramDesc(0, "filereference", "inprogressFile reference to download")
+                .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
                 .paramDesc(2, "crc-code", "crc code (xxhash64)")
                 .paramDesc(3, "error-code", "Error code. 0 if none")
@@ -162,12 +162,12 @@ public class FileReceiver {
                 .returnDesc(0, "ret", "0 if success, 1 if crc mismatch, 2 otherwise"));
         // Temporary method until we have chunking
         methods.add(new Method(RECEIVE_METHOD, "sssxlis", "i", handler, "receiveFile")
-                .methodDesc("receive inprogressFile reference content")
-                .paramDesc(0, "inprogressFile reference", "inprogressFile reference to download")
+                .methodDesc("receive file reference content")
+                .paramDesc(0, "file reference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
-                .paramDesc(2, "type", "'inprogressFile' or 'compressed'")
+                .paramDesc(2, "type", "'file' or 'compressed'")
                 .paramDesc(3, "content", "array of bytes")
-                .paramDesc(4, "hash", "xx64hash of the inprogressFile content")
+                .paramDesc(4, "hash", "xx64hash of the file content")
                 .paramDesc(5, "errorcode", "Error code. 0 if none")
                 .paramDesc(6, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
@@ -186,11 +186,11 @@ public class FileReceiver {
 
         if (errorCode == 0) {
             // TODO: Remove when system test works
-            log.log(LogLevel.INFO, "Receiving inprogressFile reference '" + fileReference.value() + "'");
+            log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
             receiveFile(new FileReferenceData(fileReference, filename, FileReferenceData.Type.valueOf(type), content, xxhash));
             req.returnValues().add(new Int32Value(0));
         } else {
-            log.log(LogLevel.WARNING, "Receiving inprogressFile reference '" + fileReference.value() + "' failed: " + errorDescription);
+            log.log(LogLevel.WARNING, "Receiving file reference '" + fileReference.value() + "' failed: " + errorDescription);
             req.returnValues().add(new Int32Value(1));
             // TODO: Add error description return value here too?
         }
@@ -203,7 +203,7 @@ public class FileReceiver {
         }
 
         File fileReferenceDir = new File(downloadDirectory, fileReferenceData.fileReference().value());
-        // inprogressFile might be a directory (and then type is compressed)
+        // file might be a directory (and then type is compressed)
         File file = new File(fileReferenceDir, fileReferenceData.filename());
         try {
             File tempFile = new File(Files.createTempDirectory("downloaded").toFile(), fileReferenceData.filename());
@@ -212,18 +212,18 @@ public class FileReceiver {
             // Unpack if necessary
             if (fileReferenceData.type() == FileReferenceData.Type.compressed) {
                 File decompressedDir = Files.createTempDirectory("decompressed").toFile();
-                log.log(LogLevel.DEBUG, "Compressed inprogressFile, unpacking " + tempFile + " to " + decompressedDir);
+                log.log(LogLevel.DEBUG, "Compressed file, unpacking " + tempFile + " to " + decompressedDir);
                 CompressedFileReference.decompress(tempFile, decompressedDir);
                 moveFileToDestination(decompressedDir, fileReferenceDir);
             } else {
-                log.log(LogLevel.DEBUG, "Uncompressed inprogressFile, moving to " + file.getAbsolutePath());
+                log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
                 Files.createDirectories(fileReferenceDir.toPath());
                 moveFileToDestination(tempFile, file);
             }
             downloader.completedDownloading(fileReferenceData.fileReference(), file);
         } catch (IOException e) {
-            log.log(LogLevel.ERROR, "Failed writing inprogressFile: " + e.getMessage(), e);
-            throw new RuntimeException("Failed writing inprogressFile: ", e);
+            log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
+            throw new RuntimeException("Failed writing file: ", e);
         }
     }
 
@@ -232,11 +232,11 @@ public class FileReceiver {
             Files.move(tempFile.toPath(), destination.toPath());
             log.log(LogLevel.INFO, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
-            // Don't fail if it already exists (we might get the inprogressFile from several config servers when retrying, servers are down etc.
+            // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already)
             log.log(LogLevel.INFO, "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
         } catch (IOException e) {
-            String message = "Failed moving inprogressFile '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
+            String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
             log.log(LogLevel.ERROR, message, e);
             throw new RuntimeException(message, e);
         }
