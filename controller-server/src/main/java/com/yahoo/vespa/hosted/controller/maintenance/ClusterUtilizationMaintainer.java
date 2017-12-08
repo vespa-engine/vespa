@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -29,7 +29,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
         this.controller = controller;
     }
 
-    private Map<ClusterSpec.Id, ClusterUtilization> getUpdatedClusterUtilizations(ApplicationId app, Zone zone) {
+    private Map<ClusterSpec.Id, ClusterUtilization> getUpdatedClusterUtilizations(ApplicationId app, ZoneId zone) {
         Map<String, MetricsService.SystemMetrics> systemMetrics = controller.metricsService().getSystemMetrics(app, zone);
 
         Map<ClusterSpec.Id, ClusterUtilization> utilizationMap = new HashMap<>();

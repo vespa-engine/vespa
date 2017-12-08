@@ -11,6 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -493,7 +494,7 @@ public class ControllerTest {
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
-        Zone zone = Zone.defaultZone();
+        ZoneId zone = Zone.defaultZone();
         ApplicationId appId = tester.applicationId("tenant", "app1", "default");
         DeploymentId deployId = new DeploymentId(appId, zone);
 

@@ -14,10 +14,8 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class Zone {
+public class Zone extends ZoneId {
 
-    private final Environment environment;
-    private final RegionName region;
     private final SystemName systemName;
     private final FlavorDefaults flavorDefaults;
     private final Optional<NodeFlavors> nodeFlavors;
@@ -46,18 +44,11 @@ public class Zone {
                  RegionName region,
                  FlavorDefaults flavorDefaults,
                  NodeFlavors nodeFlavors) {
-        this.environment = environment;
-        this.region = region;
+        super(environment, region);
         this.flavorDefaults = flavorDefaults;
         this.systemName = systemName;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
     }
-
-    /** Returns the current environment */
-    public Environment environment() { return environment; }
-
-    /** Returns the current region */
-    public RegionName region() { return region; }
 
     /** Returns the current system */
     public SystemName system() { return systemName; }
@@ -71,25 +62,6 @@ public class Zone {
     /** Do not use */
     public static Zone defaultZone() {
         return new Zone(SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
-    }
-
-    @Override
-    public String toString() {
-        return "zone " + environment + "." + region;
-    }
-    
-    @Override
-    public int hashCode() { return environment().hashCode() + 7 * region.hashCode();}
-    
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof Zone)) return false;
-        
-        Zone other = (Zone)o;
-        if ( this.environment() != other.environment()) return false;
-        if ( ! this.region.equals(other.region)) return false;
-        return true;
     }
 
     private static class FlavorDefaults {

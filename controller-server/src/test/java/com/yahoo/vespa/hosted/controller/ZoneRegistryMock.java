@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
@@ -24,9 +25,9 @@ import java.util.Optional;
  */
 public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry {
 
-    private final Map<Zone, Duration> deploymentTimeToLive = new HashMap<>();
+    private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
-    private List<Zone> zones = new ArrayList<>();
+    private List<ZoneId> zones = new ArrayList<>();
     private SystemName system = SystemName.main;
 
     @Inject
@@ -36,7 +37,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         this.zones.add(new Zone(SystemName.main, Environment.from("prod"), RegionName.from("us-west-1")));
     }
 
-    public ZoneRegistryMock setDeploymentTimeToLive(Zone zone, Duration duration) {
+    public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
         deploymentTimeToLive.put(zone, duration);
         return this;
     }
@@ -46,7 +47,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock setZones(List<Zone> zones) {
+    public ZoneRegistryMock setZones(List<ZoneId> zones) {
         this.zones = zones;
         return this;
     }
@@ -62,12 +63,12 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public List<Zone> zones() {
+    public List<ZoneId> zones() {
         return Collections.unmodifiableList(zones);
     }
 
     @Override
-    public Optional<Zone> getZone(Environment environment, RegionName region) {
+    public Optional<ZoneId> getZone(Environment environment, RegionName region) {
         return zones().stream().filter(z -> z.environment().equals(environment) &&
                                             z.region().equals(region)).findFirst();
     }

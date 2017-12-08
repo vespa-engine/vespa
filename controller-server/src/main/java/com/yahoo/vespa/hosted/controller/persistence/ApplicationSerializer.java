@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -194,7 +195,7 @@ public class ApplicationSerializer {
         object.setDouble(clusterUtilsDiskBusyField, utils.getDiskBusy());
     }
 
-    private void zoneToSlime(Zone zone, Cursor object) {
+    private void zoneToSlime(ZoneId zone, Cursor object) {
         object.setString(environmentField, zone.environment().value());
         object.setString(regionField, zone.region().value());
     }

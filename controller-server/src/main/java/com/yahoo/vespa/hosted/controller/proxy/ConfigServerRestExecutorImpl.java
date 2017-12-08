@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -83,8 +83,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         ObjectMapper mapper = new ObjectMapper();
         DiscoveryResponseStructure responseStructure = new DiscoveryResponseStructure();
 
-        List<Zone> zones = zoneRegistry.zones();
-        for (Zone zone : zones) {
+        List<ZoneId> zones = zoneRegistry.zones();
+        for (ZoneId zone : zones) {
             if (!"".equals(proxyRequest.getEnvironment()) &&
                 !proxyRequest.getEnvironment().equals(zone.environment().value())) {
                 continue;

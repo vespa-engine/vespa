@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -821,7 +822,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
-        Zone zone = new Zone(Environment.from(environment), RegionName.from(region));
+        ZoneId zone = new Zone(Environment.from(environment), RegionName.from(region));
         Deployment deployment = application.deployments().get(zone);
         if (deployment == null) {
             // Attempt to deactivate application even if the deployment is not known by the controller

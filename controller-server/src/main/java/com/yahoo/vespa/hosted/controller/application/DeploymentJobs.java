@@ -8,12 +8,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -177,9 +177,9 @@ public class DeploymentJobs {
         productionCdUsCentral2 ("production-cd-us-central-2",                                                       zone(SystemName.cd, "prod", "cd-us-central-2"));
 
         private final String jobName;
-        private final ImmutableMap<SystemName, Zone> zones;
+        private final ImmutableMap<SystemName, ZoneId> zones;
 
-        JobType(String jobName, Zone... zones) {
+        JobType(String jobName, ZoneId... zones) {
             this.jobName = jobName;
             this.zones = ImmutableMap.copyOf(Stream.of(zones).collect(Collectors.toMap(zone -> zone.system(),
                                                                                        zone -> zone)));
@@ -188,7 +188,7 @@ public class DeploymentJobs {
         public String jobName() { return jobName; }
 
         /** Returns the zone for this job in the given system, or empty if this job does not have a zone */
-        public Optional<Zone> zone(SystemName system) {
+        public Optional<ZoneId> zone(SystemName system) {
             return Optional.ofNullable(zones.get(system));
         }
 
@@ -207,7 +207,7 @@ public class DeploymentJobs {
 
         /** Returns the region of this job type, or null if it does not have a region */
         public Optional<RegionName> region(SystemName system) {
-            return zone(system).map(Zone::region);
+            return zone(system).map(ZoneId::region);
         }
 
         public static JobType fromJobName(String jobName) {
@@ -217,7 +217,7 @@ public class DeploymentJobs {
         }
         
         /** Returns the job type for the given zone */
-        public static Optional<JobType> from(SystemName system, Zone zone) {
+        public static Optional<JobType> from(SystemName system, ZoneId zone) {
             return Stream.of(values())
                     .filter(job -> job.zone(system).filter(zone::equals).isPresent())
                     .findAny();
@@ -232,11 +232,11 @@ public class DeploymentJobs {
             return from(system, new Zone(environment, region));
         }
 
-        private static Zone zone(SystemName system, String environment, String region) {
+        private static ZoneId zone(SystemName system, String environment, String region) {
             return new Zone(system, Environment.from(environment), RegionName.from(region));
         }
 
-        private static Zone zone(String environment, String region) {
+        private static ZoneId zone(String environment, String region) {
             return new Zone(Environment.from(environment), RegionName.from(region));
         }
     }
