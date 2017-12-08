@@ -47,7 +47,7 @@ public class StandaloneMain {
             loader.destroy();
             System.out.println("debug\tStopped ok.");
             System.exit(0);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.print("debug\tUnexpected: ");
             e.printStackTrace();
             log.log(Level.SEVERE, "Unexpected: ", e);
