@@ -455,8 +455,16 @@ public class ApplicationController {
     private void registerRotationInDns(Rotation rotation, String dnsName) {
         try {
             Optional<Record> record = nameService.findRecord(Record.Type.CNAME, RecordName.from(dnsName));
-            if (!record.isPresent()) {
-                RecordId id = nameService.createCname(RecordName.from(dnsName), RecordData.from(rotation.name()));
+            RecordData rotationName = RecordData.fqdn(rotation.name());
+            if (record.isPresent()) {
+                // Ensure that the existing record points to the correct rotation
+                if (!record.get().value().equals(rotationName)) {
+                    nameService.updateRecord(record.get().id(), rotationName);
+                    log.info("Updated mapping for record ID " + record.get().id().asString() + ": " + dnsName
+                             + " -> " + rotation.name());
+                }
+            } else {
+                RecordId id = nameService.createCname(RecordName.from(dnsName), rotationName);
                 log.info("Registered mapping with record ID " + id.asString() + ": " + dnsName + " -> "
                          + rotation.name());
             }

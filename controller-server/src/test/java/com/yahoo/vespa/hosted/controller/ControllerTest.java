@@ -37,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -607,10 +608,99 @@ public class ControllerTest {
 
         tester.deployCompletely(application, applicationPackage);
         assertEquals(1, tester.controllerTester().nameService().records().size());
-        Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com"));
+        Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+        );
         assertTrue(record.isPresent());
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("rotation-fqdn-01", record.get().value().asString());
+        assertEquals("rotation-fqdn-01.", record.get().value().asString());
+    }
+
+    @Test
+    public void testUpdatesExistingDnsAlias() {
+        DeploymentTester tester = new DeploymentTester();
+
+        // Application 1 is deployed and deleted
+        {
+            Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .globalServiceId("foo")
+                    .region("us-west-1")
+                    .region("us-central-1") // Two deployments should result in DNS alias being registered once
+                    .build();
+
+            tester.deployCompletely(app1, applicationPackage);
+            assertEquals(1, tester.controllerTester().nameService().records().size());
+            Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+            assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().value().asString());
+
+            // Application is deleted and rotation is unassigned
+            applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .allow(ValidationId.deploymentRemoval)
+                    .build();
+            tester.notifyJobCompletion(component, app1, true);
+            tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+            tester.applications().deactivate(app1, new Zone(Environment.test, RegionName.from("us-east-1")));
+            tester.applications().deactivate(app1, new Zone(Environment.staging, RegionName.from("us-east-3")));
+            tester.applications().deleteApplication(app1.id(), Optional.of(new NToken("ntoken")));
+            assertTrue("Rotation is unassigned",
+                       tester.applications().rotationRepository().availableRotations()
+                             .contains(new RotationId("rotation-id-01")));
+
+            // Record remains
+            record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+        }
+
+        // Application 2 is deployed and assigned same rotation as application 1 had before deletion
+        {
+            Application app2 = tester.createApplication("app2", "tenant2", 1, 1L);
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .globalServiceId("foo")
+                    .region("us-west-1")
+                    .region("us-central-1")
+                    .build();
+            tester.deployCompletely(app2, applicationPackage);
+            assertEquals(2, tester.controllerTester().nameService().records().size());
+            Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app2.tenant2.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+            assertEquals("app2.tenant2.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().value().asString());
+        }
+
+        // Application 1 is recreated, deployed and assigned a new rotation
+        {
+            Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .globalServiceId("foo")
+                    .region("us-west-1")
+                    .region("us-central-1")
+                    .build();
+            tester.deployCompletely(app1, applicationPackage);
+            app1 = tester.applications().require(app1.id());
+            assertEquals("rotation-id-02", app1.rotation().get().id().asString());
+
+            // Existing DNS record is updated to point to the newly assigned rotation
+            assertEquals(2, tester.controllerTester().nameService().records().size());
+            Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+            assertEquals("rotation-fqdn-02.", record.get().value().asString());
+        }
+
     }
 
     @Test

@@ -13,13 +13,13 @@ public class Record {
     private final RecordId id;
     private final Type type;
     private final RecordName name;
-    private final RecordData value;
+    private final RecordData data;
 
-    public Record(RecordId id, Type type, RecordName name, RecordData value) {
+    public Record(RecordId id, Type type, RecordName name, RecordData data) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.type = Objects.requireNonNull(type, "type cannot be null");
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.value = Objects.requireNonNull(value, "value cannot be null");
+        this.data = Objects.requireNonNull(data, "data cannot be null");
     }
 
     /** Unique identifier for this */
@@ -34,7 +34,7 @@ public class Record {
 
     /** Value for this, e.g. IP address for "A" record */
     public RecordData value() {
-        return value;
+        return data;
     }
 
     /** Name of this, e.g. a FQDN for "A" record */
@@ -60,7 +60,7 @@ public class Record {
                "id=" + id +
                ", type=" + type +
                ", name='" + name + '\'' +
-               ", value='" + value + '\'' +
+               ", data='" + data + '\'' +
                '}';
     }
 
@@ -72,11 +72,11 @@ public class Record {
         return Objects.equals(id, record.id) &&
                type == record.type &&
                Objects.equals(name, record.name) &&
-               Objects.equals(value, record.value);
+               Objects.equals(data, record.data);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, type, name, value);
+        return Objects.hash(id, type, name, data);
     }
 }

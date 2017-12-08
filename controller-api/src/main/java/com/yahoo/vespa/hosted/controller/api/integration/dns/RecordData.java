@@ -42,8 +42,14 @@ public class RecordData {
                '}';
     }
 
+    /** Create a new record containing the given data */
     public static RecordData from(String data) {
         return new RecordData(data);
+    }
+
+    /** Create a new record and append a trailing dot to given data, if missing */
+    public static RecordData fqdn(String data) {
+        return from(data.endsWith(".") ? data : data + ".");
     }
 
 }
