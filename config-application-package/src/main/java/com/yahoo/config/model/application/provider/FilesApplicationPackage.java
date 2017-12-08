@@ -15,6 +15,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
@@ -649,7 +650,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return searchDefinitionContents();
     }
 
-    private void preprocessXML(File destination, File inputXml, Zone zone) throws ParserConfigurationException, TransformerException, SAXException, IOException {
+    private void preprocessXML(File destination, File inputXml, ZoneId zone) throws ParserConfigurationException, TransformerException, SAXException, IOException {
         Document document = new XmlPreProcessor(appDir, inputXml, zone.environment(), zone.region()).run();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         try (FileOutputStream outputStream = new FileOutputStream(destination)) {
@@ -658,7 +659,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ignored, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    public ApplicationPackage preprocess(ZoneId zone, RuleConfigDeriver ignored, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
         IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(".preprocessed") &&
                                                                           ! name.equals(SERVICES) &&

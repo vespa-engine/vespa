@@ -19,7 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -161,28 +160,30 @@ public class DeploymentJobs {
 
     /** Job types that exist in the build system */
     public enum JobType {
-
-        component              ("component"                 ),
-        systemTest             ("system-test"               , zone("test"   , "us-east-1"     ), zone(SystemName.cd, "test"   , "cd-us-central-1")),
-        stagingTest            ("staging-test"              , zone("staging", "us-east-3"     ), zone(SystemName.cd, "staging", "cd-us-central-1")),
-        productionCorpUsEast1  ("production-corp-us-east-1" , zone("prod"   , "corp-us-east-1")),
-        productionUsEast3      ("production-us-east-3"      , zone("prod"   , "us-east-3"     )),
-        productionUsWest1      ("production-us-west-1"      , zone("prod"   , "us-west-1"     )),
-        productionUsCentral1   ("production-us-central-1"   , zone("prod"   , "us-central-1"  )),
-        productionApNortheast1 ("production-ap-northeast-1" , zone("prod"   , "ap-northeast-1")),
-        productionApNortheast2 ("production-ap-northeast-2" , zone("prod"   , "ap-northeast-2")),
-        productionApSoutheast1 ("production-ap-southeast-1" , zone("prod"   , "ap-southeast-1")),
-        productionEuWest1      ("production-eu-west-1"      , zone("prod"   , "eu-west-1"     )),
-        productionCdUsCentral1 ("production-cd-us-central-1",                                                       zone(SystemName.cd, "prod", "cd-us-central-1")),
-        productionCdUsCentral2 ("production-cd-us-central-2",                                                       zone(SystemName.cd, "prod", "cd-us-central-2"));
+//     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
+        component              ("component"                 , null                                                       , null                                                        ),
+        systemTest             ("system-test"               , ZoneId.from("test"   , "us-east-1")      , ZoneId.from("test"   , "cd-us-central-1")),
+        stagingTest            ("staging-test"              , ZoneId.from("staging", "us-east-3")      , ZoneId.from("staging", "cd-us-central-1")),
+        productionCorpUsEast1  ("production-corp-us-east-1" , ZoneId.from("prod"   , "corp-us-east-1") , null                                                        ),
+        productionUsEast3      ("production-us-east-3"      , ZoneId.from("prod"   , "us-east-3")      , null                                                        ),
+        productionUsWest1      ("production-us-west-1"      , ZoneId.from("prod"   , "us-west-1")      , null                                                        ),
+        productionUsCentral1   ("production-us-central-1"   , ZoneId.from("prod"   , "us-central-1")   , null                                                        ),
+        productionApNortheast1 ("production-ap-northeast-1" , ZoneId.from("prod"   , "ap-northeast-1") , null                                                        ),
+        productionApNortheast2 ("production-ap-northeast-2" , ZoneId.from("prod"   , "ap-northeast-2") , null                                                        ),
+        productionApSoutheast1 ("production-ap-southeast-1" , ZoneId.from("prod"   , "ap-southeast-1") , null                                                        ),
+        productionEuWest1      ("production-eu-west-1"      , ZoneId.from("prod"   , "eu-west-1")      , null                                                        ),
+        productionCdUsCentral1 ("production-cd-us-central-1", null                                                       , ZoneId.from("prod"    , "cd-us-central-1")),
+        productionCdUsCentral2 ("production-cd-us-central-2", null                                                       , ZoneId.from("prod"    , "cd-us-central-2"));
 
         private final String jobName;
         private final ImmutableMap<SystemName, ZoneId> zones;
 
-        JobType(String jobName, Zone... zones) {
+        JobType(String jobName, ZoneId mainZone, ZoneId cdZone) {
             this.jobName = jobName;
-            this.zones = ImmutableMap.copyOf(Stream.of(zones).collect(Collectors.toMap(zone -> zone.system(),
-                                                                                       zone -> zone)));
+            ImmutableMap.Builder<SystemName, ZoneId> builder = ImmutableMap.builder();
+            if (mainZone != null) builder.put(SystemName.main, mainZone);
+            if (cdZone != null) builder.put(SystemName.cd, cdZone);
+            this.zones = builder.build();
         }
 
         public String jobName() { return jobName; }
@@ -229,16 +230,9 @@ public class DeploymentJobs {
                 case test: return Optional.of(systemTest);
                 case staging: return Optional.of(stagingTest);
             }
-            return from(system, new Zone(environment, region));
+            return from(system, new ZoneId(environment, region));
         }
 
-        private static Zone zone(SystemName system, String environment, String region) {
-            return new Zone(system, Environment.from(environment), RegionName.from(region));
-        }
-
-        private static Zone zone(String environment, String region) {
-            return new Zone(Environment.from(environment), RegionName.from(region));
-        }
     }
 
     /** A job report. This class is immutable. */

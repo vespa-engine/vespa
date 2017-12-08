@@ -8,7 +8,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import java.util.Optional;
 
 /**
- * The zone (environment + region) of this runtime.
+ * The zone (environment + region) of this runtime, and some other information.
  * An injected instance of this will return the correct current environment and region.
  * Components can use this to obtain information about which zone they are running in.
  *
@@ -29,12 +29,12 @@ public class Zone extends ZoneId {
              nodeFlavors);
     }
 
-    /** Create from environment and region */
+    /** Create from environment and region. Use for testing.  */
     public Zone(Environment environment, RegionName region) {
         this(SystemName.defaultSystem(), environment, region);
     }
 
-    /** Create from system, environment and region */
+    /** Create from system, environment and region. Use for testing. */
     public Zone(SystemName systemName, Environment environment, RegionName region) {
         this(systemName, environment, region, new FlavorDefaults("default"), null);
     }
