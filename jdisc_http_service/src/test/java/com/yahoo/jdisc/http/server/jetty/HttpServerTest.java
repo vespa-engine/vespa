@@ -371,6 +371,7 @@ public class HttpServerTest {
     }
 
     // Header with no value is disallowed by https://tools.ietf.org/html/rfc7230#section-3.2
+    // Details in https://github.com/eclipse/jetty.project/issues/1116
     @Test
     public void requireThatHeaderWithNullValueIsOmitted() throws Exception {
         final TestDriver driver = TestDrivers.newInstance(new EchoWithHeaderRequestHandler("X-Foo", null));
@@ -380,13 +381,14 @@ public class HttpServerTest {
         assertThat(driver.close(), is(true));
     }
 
-    // Header with no value is disallowed by https://tools.ietf.org/html/rfc7230#section-3.2
+    // Header with empty value is allowed by https://tools.ietf.org/html/rfc7230#section-3.2
+    // Details in https://github.com/eclipse/jetty.project/issues/1116
     @Test
-    public void requireThatHeaderWithEmptyValueIsOmitted() throws Exception {
+    public void requireThatHeaderWithEmptyValueIsAllowed() throws Exception {
         final TestDriver driver = TestDrivers.newInstance(new EchoWithHeaderRequestHandler("X-Foo", ""));
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
-                .expectNoHeader("X-Foo");
+                .expectHeader("X-Foo", is(""));
         assertThat(driver.close(), is(true));
     }
 
