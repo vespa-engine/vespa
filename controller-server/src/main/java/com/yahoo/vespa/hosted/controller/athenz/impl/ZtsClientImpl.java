@@ -32,18 +32,19 @@ import static java.util.stream.Collectors.toList;
 public class ZtsClientImpl implements ZtsClient {
 
     private static final Logger log = Logger.getLogger(ZtsClientImpl.class.getName());
-    private static final Duration CERTIFICATE_EXPIRY = Duration.ofHours(1);
 
     private final ZTSClient ztsClient;
     private final AthenzService service;
     private final PrivateKey privateKey;
     private final String certificateDnsDomain;
+    private final Duration certExpiry;
 
     public ZtsClientImpl(ZTSClient ztsClient, PrivateKey privateKey, AthenzConfig config) {
         this.ztsClient = ztsClient;
         this.service = new AthenzService(config.domain(), config.service().name());
         this.privateKey = privateKey;
         this.certificateDnsDomain = config.certDnsDomain();
+        this.certExpiry = Duration.ofMinutes(config.service().credentialsExpiryMinutes());
     }
 
     @Override
@@ -71,7 +72,7 @@ public class ZtsClientImpl implements ZtsClient {
                             service.getName(),
                             privateKey,
                             certificateDnsDomain,
-                            (int) CERTIFICATE_EXPIRY.getSeconds());
+                            (int) certExpiry.getSeconds());
             X509Certificate certificate = Crypto.loadX509Certificate(
                     ztsClient.postInstanceRefreshRequest(service.getDomain().id(), service.getName(), req)
                             .getCertificate());
@@ -93,7 +94,7 @@ public class ZtsClientImpl implements ZtsClient {
                             roleName,
                             privateKey,
                             certificateDnsDomain,
-                            (int)CERTIFICATE_EXPIRY.getSeconds());
+                            (int)certExpiry.getSeconds());
             X509Certificate roleCertificate = Crypto.loadX509Certificate(
                     ztsClient.postRoleCertificateRequest(roleDomain.id(), roleName, req)
                             .getToken());
