@@ -69,6 +69,33 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                        <optimize>true</optimize>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
+                        <systemPropertyVariables>
+                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <configuration>
+                        <alwaysGenerateSurefireReport>false</alwaysGenerateSurefireReport>
+                        <showSuccess>false</showSuccess>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr3-maven-plugin</artifactId>
                     <version>${antlr.version}</version>
