@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.identifiers;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -147,7 +147,7 @@ public class IdentifierTest {
     @Test
     public void application_instance_id_dotted_string_is_subindentifers_concatinated_with_dots() {
         DeploymentId id = new DeploymentId(com.yahoo.config.provision.ApplicationId.from("tenant", "application", "instance"),
-                                           new com.yahoo.config.provision.ZoneId(Environment.prod, RegionName.from("region")));
+                                           ZoneId.from("prod", "region"));
         assertEquals("tenant.application.prod.region.instance", id.dottedString());
     }
 }

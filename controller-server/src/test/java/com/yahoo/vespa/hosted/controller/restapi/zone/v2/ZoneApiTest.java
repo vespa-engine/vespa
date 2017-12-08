@@ -27,10 +27,10 @@ public class ZoneApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/zone/v2/responses/";
     private static final List<ZoneId> zones = Arrays.asList(
-            new ZoneId(Environment.prod, RegionName.from("us-north-1")),
-            new ZoneId(Environment.dev, RegionName.from("us-north-2")),
-            new ZoneId(Environment.test, RegionName.from("us-north-3")),
-            new ZoneId(Environment.staging, RegionName.from("us-north-4"))
+            ZoneId.from(Environment.prod, RegionName.from("us-north-1")),
+            ZoneId.from(Environment.dev, RegionName.from("us-north-2")),
+            ZoneId.from(Environment.test, RegionName.from("us-north-3")),
+            ZoneId.from(Environment.staging, RegionName.from("us-north-4"))
                                                            );
 
     private ContainerControllerTester tester;

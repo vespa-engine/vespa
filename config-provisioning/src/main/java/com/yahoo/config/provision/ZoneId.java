@@ -15,7 +15,7 @@ public class ZoneId {
     protected final Environment environment;
     protected final RegionName region;
 
-    public ZoneId(Environment environment, RegionName region) {
+    ZoneId(Environment environment, RegionName region) {
         this.environment = Objects.requireNonNull(environment);
         this.region = Objects.requireNonNull(region);
     }

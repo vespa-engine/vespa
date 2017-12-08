@@ -339,8 +339,7 @@ public class ApplicationSerializer {
     }
 
     private ZoneId zoneIdFromSlime(Inspector object) {
-        return new ZoneId(Environment.from(object.field(environmentField).asString()),
-                        RegionName.from(object.field(regionField).asString()));
+        return ZoneId.from(object.field(environmentField).asString(), object.field(regionField).asString());
     }
 
     private Optional<ApplicationRevision> applicationRevisionFromSlime(Inspector object) {

@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
@@ -32,9 +31,9 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Inject
     public ZoneRegistryMock() {
-        this.zones.add(new ZoneId(Environment.from("prod"), RegionName.from("corp-us-east-1")));
-        this.zones.add(new ZoneId(Environment.from("prod"), RegionName.from("us-east-3")));
-        this.zones.add(new ZoneId(Environment.from("prod"), RegionName.from("us-west-1")));
+        this.zones.add(ZoneId.from("prod", "corp-us-east-1"));
+        this.zones.add(ZoneId.from("prod", "us-east-3"));
+        this.zones.add(ZoneId.from("prod", "us-west-1"));
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -89,7 +88,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public Optional<Duration> getDeploymentTimeToLive(Environment environment, RegionName region) {
-        return Optional.ofNullable(deploymentTimeToLive.get(new ZoneId(environment, region)));
+        return Optional.ofNullable(deploymentTimeToLive.get(ZoneId.from(environment, region)));
     }
 
     @Override

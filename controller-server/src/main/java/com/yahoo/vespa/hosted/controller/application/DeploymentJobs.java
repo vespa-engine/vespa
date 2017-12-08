@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -230,7 +229,7 @@ public class DeploymentJobs {
                 case test: return Optional.of(systemTest);
                 case staging: return Optional.of(stagingTest);
             }
-            return from(system, new ZoneId(environment, region));
+            return from(system, ZoneId.from(environment, region));
         }
 
     }

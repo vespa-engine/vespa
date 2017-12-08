@@ -423,7 +423,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .orElseThrow(() -> new NotExistsException(id + " not found"));
 
         DeploymentId deploymentId = new DeploymentId(application.id(),
-                                                     new ZoneId(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
 
         Deployment deployment = application.deployments().get(deploymentId.zone());
         if (deployment == null)
@@ -514,7 +514,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // DeploymentId identifies the zone and application we are dealing with
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                new ZoneId(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
         try {
             List<String> rotations = controller.applications().setGlobalRotationStatus(deploymentId, endPointStatus);
             return new MessageResponse(String.format("Rotations %s successfully set to %s service", rotations.toString(), inService ? "in" : "out of"));
@@ -526,7 +526,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
 
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                new ZoneId(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
 
         Slime slime = new Slime();
         Cursor c1 = slime.setObject().setArray("globalrotationoverride");
@@ -571,13 +571,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse waitForConvergence(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         return new JacksonJsonResponse(controller.waitForConfigConvergence(new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                                                            new ZoneId(Environment.from(environment), RegionName.from(region))),
+                                                                                            ZoneId.from(environment, region)),
                                                                            asLong(request.getProperty("timeout"), 1000)));
     }
 
     private HttpResponse services(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationView applicationView = controller.getApplicationView(tenantName, applicationName, instanceName, environment, region);
-        ServiceApiResponse response = new ServiceApiResponse(new ZoneId(Environment.from(environment), RegionName.from(region)),
+        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
                                                              controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
                                                              request.getUri());
@@ -587,7 +587,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath, HttpRequest request) {
         Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
-        ServiceApiResponse response = new ServiceApiResponse(new ZoneId(Environment.from(environment), RegionName.from(region)),
+        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
                                                              controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
                                                              request.getUri());
@@ -737,7 +737,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Schedule restart of deployment, or specific host in a deployment */
     private HttpResponse restart(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                     new ZoneId(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
         // TODO: Propagate all filters
         Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
         controller.applications().restart(deploymentId, hostname);
@@ -758,7 +758,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse log(String tenantName, String applicationName, String instanceName, String environment, String region) {
         try {
             DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                         new ZoneId(Environment.from(environment), RegionName.from(region)));
+                                                         ZoneId.from(environment, region));
             return new JacksonJsonResponse(controller.grabLog(deploymentId));
         }
         catch (RuntimeException e) {
@@ -770,7 +770,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = new ZoneId(Environment.from(environment), RegionName.from(region));
+        ZoneId zone = ZoneId.from(environment, region);
 
         Map<String, byte[]> dataParts = new MultipartParser().parse(request);
         if ( ! dataParts.containsKey("deployOptions"))
@@ -821,7 +821,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
-        ZoneId zone = new ZoneId(Environment.from(environment), RegionName.from(region));
+        ZoneId zone = ZoneId.from(environment, region);
         Deployment deployment = application.deployments().get(zone);
         if (deployment == null) {
             // Attempt to deactivate application even if the deployment is not known by the controller
