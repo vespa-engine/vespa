@@ -29,10 +29,10 @@ public:
         return std::shared_ptr<MetricsManager>(new DummyMetricsManager());
     }
 
-    Counter counter(const vespalib::string &) override {
+    Counter counter(const vespalib::string &, const vespalib::string &) override {
         return Counter(shared_from_this(), MetricName(0));
     }
-    Gauge gauge(const vespalib::string &) override {
+    Gauge gauge(const vespalib::string &, const vespalib::string &) override {
         return Gauge(shared_from_this(), MetricName(0));
     }
 

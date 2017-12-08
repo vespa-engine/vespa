@@ -20,7 +20,8 @@ struct Metrics {
         : metrics(m),
           loglevel(metrics->dimension("loglevel")),
           servicename(metrics->dimension("service")),
-          loglines(metrics->counter("logd.processed.lines"))
+          loglines(metrics->counter("logd.processed.lines",
+                  "how many log lines have been processed"))
     {}
 
     ~Metrics() {}

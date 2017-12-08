@@ -122,11 +122,11 @@ TEST("use simple_metrics_collector")
     std::shared_ptr<MockTick> ticker = std::make_shared<MockTick>(TimeStamp(1.0));
     auto manager = SimpleMetricsManager::createForTest(cf, std::make_unique<TickProxy>(ticker));
 
-    Counter myCounter = manager->counter("foo");
+    Counter myCounter = manager->counter("foo", "no description");
     myCounter.add();
     myCounter.add(16);
 
-    Gauge myGauge = manager->gauge("bar");
+    Gauge myGauge = manager->gauge("bar", "dummy description");
     myGauge.sample(42.0);
     myGauge.sample(41.0);
     myGauge.sample(43.0);
