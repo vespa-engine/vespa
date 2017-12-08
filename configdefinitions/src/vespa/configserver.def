@@ -46,5 +46,6 @@ dockerVespaBaseImage string default=""
 # Athenz config
 loadBalancerAddress string default=""
 
-# File distributions
+# File distribution
 disableFiledistributor bool default=false
+usechunkedtransfer bool default=false

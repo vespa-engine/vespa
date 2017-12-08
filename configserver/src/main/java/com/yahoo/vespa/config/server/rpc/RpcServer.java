@@ -95,6 +95,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final FileServer fileServer;
     
     private final ThreadPoolExecutor executorService;
+    private final boolean useChunkedFileTransfer;
     private volatile boolean allTenantsLoaded = false;
 
     /**
@@ -120,6 +121,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
         this.fileServer = fileServer;
+        this.useChunkedFileTransfer = config.usechunkedtransfer();
         setUpHandlers();
     }
 
@@ -542,6 +544,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
         request.detach();
-        fileServer.serveFile(request, new WholeFileReceiver(request.target()));
+        FileServer.Receiver receiver = useChunkedFileTransfer
+                                       ? new ChunkedFileReceiver(request.target())
+                                       : new WholeFileReceiver(request.target());
+        fileServer.serveFile(request, receiver);
     }
 }
