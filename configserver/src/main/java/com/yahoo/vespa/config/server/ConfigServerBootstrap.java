@@ -69,6 +69,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         log.log(LogLevel.DEBUG, "Starting RPC server");
         server.run();
         log.log(LogLevel.DEBUG, "RPC server stopped");
+        stateMonitor.status(StateMonitor.Status.down);
     }
 
 }

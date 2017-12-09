@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.application.MetricConsumer;
+import com.yahoo.log.LogLevel;
 
 import java.util.Map;
 import java.util.TreeSet;
@@ -54,12 +55,11 @@ public class StateMonitor extends AbstractComponent {
     }
 
     public void status(Status status) {
+        log.log(LogLevel.INFO, "Changing health status code from '" + this.status + "' to '" + status.name() + "'");
         this.status = status;
-        }
-
-    public Status status() {
-        return status;
     }
+
+    public Status status() { return status; }
 
     /** Returns the last snapshot taken of the metrics in this system */
     public MetricSnapshot snapshot() {
