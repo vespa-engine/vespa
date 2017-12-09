@@ -4,3 +4,6 @@ namespace=container.jdisc.config
 
 # How far between snapshots. 5 minutes by default
 snapshot_interval double default=300
+
+# Initial status used in /state/v1/health API (value for 'code' in 'status'). See StateMonitor for valid values
+initialStatus string default="up"
