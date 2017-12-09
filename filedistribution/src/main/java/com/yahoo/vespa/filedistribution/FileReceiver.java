@@ -9,16 +9,13 @@ import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.log.LogLevel;
 import net.jpountz.xxhash.StreamingXXHash64;
-import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +34,6 @@ public class FileReceiver {
     private final Supervisor supervisor;
     private final FileReferenceDownloader downloader;
     private final File downloadDirectory;
-    private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
     private final AtomicInteger nextSessionId = new AtomicInteger(1);
     private final Map<Integer, Session> sessions = new HashMap<>();
 
@@ -161,7 +157,7 @@ public class FileReceiver {
                 .paramDesc(4, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 if crc mismatch, 2 otherwise"));
         // Temporary method until we have chunking
-        methods.add(new Method(RECEIVE_METHOD, "sssxlis", "i", handler, "receiveFile")
+        methods.add(new Method(RECEIVE_METHOD, "sssXlis", "i", handler, "receiveFile")
                 .methodDesc("receive file reference content")
                 .paramDesc(0, "file reference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
@@ -300,6 +296,7 @@ public class FileReceiver {
         synchronized (sessions) {
             sessions.remove(sessionId);
         }
+        req.returnValues().add(new Int32Value(retval));
     }
 
     private final Session getSession(Integer sessionId) {
