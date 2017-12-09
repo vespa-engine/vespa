@@ -20,6 +20,8 @@ import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
+import com.yahoo.vespa.filedistribution.FileReferenceDataBlob;
+import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 
 import java.io.File;
 import java.io.IOException;
@@ -110,7 +112,7 @@ public class FileServer {
         log.info("Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         boolean success = false;
         String errorDescription = "OK";
-        FileReferenceData fileData = FileReferenceData.empty(reference, file.getName());
+        FileReferenceData fileData = FileReferenceDataBlob.empty(reference, file.getName());
         try {
             fileData = readFileReferenceData(reference);
             success = true;
@@ -124,21 +126,16 @@ public class FileServer {
         log.info("Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
     }
 
-
     private FileReferenceData readFileReferenceData(FileReference reference) throws IOException {
         File file = root.getFile(reference);
 
-        byte[] blob;
-        FileReferenceData.Type type;
         if (file.isDirectory()) {
-            type = FileReferenceData.Type.compressed;
-            blob = CompressedFileReference.compress(file.getParentFile());
+            //TODO Here we should compress to file, but then we have to clean up too. Pending.
+            byte [] blob = CompressedFileReference.compress(file.getParentFile());
+            return new FileReferenceDataBlob(reference, file.getName(), FileReferenceData.Type.compressed, blob);
         } else {
-            type = FileReferenceData.Type.file;
-            blob = IOUtils.readFileBytes(file);
+            return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
         }
-
-        return new FileReferenceData(reference, file.getName(), type, blob);
     }
     public void serveFile(Request request, Receiver receiver) {
         pullExecutor.execute(() -> serveFile(request.parameters().get(0).asString(), request, receiver));
