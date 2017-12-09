@@ -467,9 +467,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             fileBlob.parameters().add(new StringValue(fileData.filename()));
             fileBlob.parameters().add(new StringValue(fileData.type().name()));
             fileBlob.parameters().add(new Int64Value(fileData.size()));
-            fileBlob.parameters().add(new Int64Value(fileData.xxhash()));
-            fileBlob.parameters().add(new Int32Value(status.getCode()));
-            fileBlob.parameters().add(new StringValue(status.getDescription()));
             target.invokeSync(fileBlob, 600);
             if (fileBlob.isError()) {
                 log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
@@ -502,12 +499,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
             int retCode = request.returnValues().get(0).asInt32();
             if (retCode != 0) {
-                throw new IllegalArgumentException("Unknow error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
             }
             return request.returnValues().get(1).asInt32();
         }
         private void sendPart(int session, FileReference ref, int partId, byte [] buf) {
-            Request request = new Request(FileReceiver.RECEIVE_EOF_METHOD);
+            Request request = new Request(FileReceiver.RECEIVE_PART_METHOD);
             request.parameters().add(new StringValue(ref.value()));
             request.parameters().add(new Int32Value(session));
             request.parameters().add(new Int32Value(partId));
@@ -519,7 +516,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
             int retCode = request.returnValues().get(0).asInt32();
             if (retCode != 0) {
-                throw new IllegalArgumentException("Unknow error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
             }
         }
         private void sendEof(int session, FileReferenceData fileData, FileServer.ReplayStatus status) {
@@ -536,7 +533,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
             int retCode = request.returnValues().get(0).asInt32();
             if (retCode != 0) {
-                throw new IllegalArgumentException("Unknow error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
             }
         }
     }
