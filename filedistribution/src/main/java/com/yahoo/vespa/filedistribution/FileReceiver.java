@@ -157,7 +157,7 @@ public class FileReceiver {
                 .paramDesc(4, "error-description", "Error description.")
                 .returnDesc(0, "ret", "0 if success, 1 if crc mismatch, 2 otherwise"));
         // Temporary method until we have chunking
-        methods.add(new Method(RECEIVE_METHOD, "sssXlis", "i", handler, "receiveFile")
+        methods.add(new Method(RECEIVE_METHOD, "sssxlis", "i", handler, "receiveFile")
                 .methodDesc("receive file reference content")
                 .paramDesc(0, "file reference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
