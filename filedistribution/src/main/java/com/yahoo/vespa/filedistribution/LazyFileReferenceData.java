@@ -30,7 +30,9 @@ public class LazyFileReferenceData extends FileReferenceData {
         } catch (IOException e) {
             return -1;
         }
-        hasher.update(bb.array(), pos, read);
+        if (read > 0) {
+            hasher.update(bb.array(), pos, read);
+        }
         return read;
     }
 
