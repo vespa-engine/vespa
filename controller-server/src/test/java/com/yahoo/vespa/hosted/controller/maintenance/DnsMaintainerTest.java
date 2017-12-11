@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -60,8 +61,8 @@ public class DnsMaintainerTest {
                 .build();
         tester.notifyJobCompletion(component, application, true);
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.applications().deactivate(application, new Zone(Environment.test, RegionName.from("us-east-1")));
-        tester.applications().deactivate(application, new Zone(Environment.staging, RegionName.from("us-east-3")));
+        tester.applications().deactivate(application, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
+        tester.applications().deactivate(application, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
         tester.applications().deleteApplication(application.id(), Optional.of(new NToken("ntoken")));
 
         // DnsMaintainer removes record

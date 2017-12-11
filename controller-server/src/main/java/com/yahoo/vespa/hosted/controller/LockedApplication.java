@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
@@ -68,7 +69,7 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, revision, reason, triggerTime)));
     }
 
-    public LockedApplication withNewDeployment(Zone zone, ApplicationRevision revision, Version version, Instant instant) {
+    public LockedApplication withNewDeployment(ZoneId zone, ApplicationRevision revision, Version version, Instant instant) {
         // Use info from previous deployment if available, otherwise create a new one.
         Deployment previousDeployment = deployments().getOrDefault(zone, new Deployment(zone, revision, version, instant));
         Deployment newDeployment = new Deployment(zone, revision, version, instant,
@@ -78,27 +79,27 @@ public class LockedApplication extends Application {
         return with(newDeployment);
     }
 
-    public LockedApplication withClusterUtilization(Zone zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
+    public LockedApplication withClusterUtilization(ZoneId zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
         Deployment deployment = deployments().get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withClusterUtils(clusterUtilization));
     }
 
-    public LockedApplication withClusterInfo(Zone zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
+    public LockedApplication withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
         Deployment deployment = deployments().get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withClusterInfo(clusterInfo));
 
     }
 
-    public LockedApplication with(Zone zone, DeploymentMetrics deploymentMetrics) {
+    public LockedApplication with(ZoneId zone, DeploymentMetrics deploymentMetrics) {
         Deployment deployment = deployments().get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withMetrics(deploymentMetrics));
     }
 
-    public LockedApplication withoutDeploymentIn(Zone zone) {
-        Map<Zone, Deployment> deployments = new LinkedHashMap<>(deployments());
+    public LockedApplication withoutDeploymentIn(ZoneId zone) {
+        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.remove(zone);
         return new LockedApplication(new Builder(this).with(deployments));
     }
@@ -149,7 +150,7 @@ public class LockedApplication extends Application {
 
     /** Don't expose non-leaf sub-objects. */
     private LockedApplication with(Deployment deployment) {
-        Map<Zone, Deployment> deployments = new LinkedHashMap<>(deployments());
+        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.put(deployment.zone(), deployment);
         return new LockedApplication(new Builder(this).with(deployments));
     }
@@ -160,7 +161,7 @@ public class LockedApplication extends Application {
         private final ApplicationId applicationId;
         private DeploymentSpec deploymentSpec;
         private ValidationOverrides validationOverrides;
-        private Map<Zone, Deployment> deployments;
+        private Map<ZoneId, Deployment> deployments;
         private DeploymentJobs deploymentJobs;
         private Optional<Change> deploying;
         private boolean hasOutstandingChange;
@@ -191,7 +192,7 @@ public class LockedApplication extends Application {
             return this;
         }
 
-        private Builder with(Map<Zone, Deployment> deployments) {
+        private Builder with(Map<ZoneId, Deployment> deployments) {
             this.deployments = deployments;
             return this;
         }

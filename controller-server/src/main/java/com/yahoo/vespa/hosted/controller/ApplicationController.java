@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.InstanceEndpoints;
@@ -267,7 +268,7 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
+    public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // TODO: Shouldn't this go through the above method? Seems you can cheat the checks here ... ?
@@ -368,7 +369,7 @@ public class ApplicationController {
         }
     }
 
-    private ActivateResult unexpectedDeployment(ApplicationId applicationId, Zone zone, ApplicationPackage applicationPackage) {
+    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone, ApplicationPackage applicationPackage) {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
@@ -405,9 +406,9 @@ public class ApplicationController {
 
     private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
         for (DeploymentJobs.JobType job : application.deploymentJobs().jobStatus().keySet()) {
-            Optional<Zone> zone = job.zone(controller.system());
+            Optional<ZoneId> zone = job.zone(controller.system());
 
-            if ( ! job.isProduction() || (zone.isPresent() && application.deploymentSpec().includes(zone.get().environment(), zone.map(Zone::region))))
+            if ( ! job.isProduction() || (zone.isPresent() && application.deploymentSpec().includes(zone.get().environment(), zone.map(ZoneId::region))))
                 continue;
             application = application.withoutDeploymentJob(job);
         }
@@ -475,7 +476,7 @@ public class ApplicationController {
     }
 
     /** Get an available rotation, if deploying to a production zone and a service ID is specified */
-    private Optional<Rotation> getRotation(Application application, Zone zone, RotationLock lock) {
+    private Optional<Rotation> getRotation(Application application, ZoneId zone, RotationLock lock) {
         if (zone.environment() != Environment.prod ||
             !application.deploymentSpec().globalServiceId().isPresent()) {
             return Optional.empty();
@@ -590,7 +591,7 @@ public class ApplicationController {
     }
 
     /** Deactivate application in the given zone */
-    public void deactivate(Application application, Zone zone) {
+    public void deactivate(Application application, ZoneId zone) {
         deactivate(application, zone, Optional.empty(), false);
     }
 
@@ -599,7 +600,7 @@ public class ApplicationController {
         deactivate(application, deployment.zone(), Optional.of(deployment), requireThatDeploymentHasExpired);
     }
 
-    private void deactivate(Application application, Zone zone, Optional<Deployment> deployment,
+    private void deactivate(Application application, ZoneId zone, Optional<Deployment> deployment,
                             boolean requireThatDeploymentHasExpired) {
         if (requireThatDeploymentHasExpired && deployment.isPresent()
             && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment.get(), clock.instant()))
@@ -614,7 +615,7 @@ public class ApplicationController {
      *
      * @return the application with the deployment in the given zone removed
      */
-    private LockedApplication deactivate(LockedApplication application, Zone zone) {
+    private LockedApplication deactivate(LockedApplication application, ZoneId zone) {
         try {
             configserverClient.deactivate(new DeploymentId(application.id(), zone));
         }
@@ -644,7 +645,7 @@ public class ApplicationController {
     }
 
     /** Returns whether a direct deployment to given zone is allowed */
-    private static boolean canDeployDirectlyTo(Zone zone, DeployOptions options) {
+    private static boolean canDeployDirectlyTo(ZoneId zone, DeployOptions options) {
         return ! options.screwdriverBuildJob.isPresent() ||
                options.screwdriverBuildJob.get().screwdriverId == null ||
                zone.environment().isManuallyDeployed();

@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,13 +42,9 @@ public class FilesApplicationPackageTest {
         assertTrue(new File(appDir, "hosts.xml").exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
 
-        ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
-                new RuleConfigDeriver() {
-                    @Override
-                    public void derive(String ruleBaseDir, String outputDir) throws Exception {
-                    }
-                },
-                new BaseDeployLogger());
+        ApplicationPackage processed = app.preprocess(ZoneId.from(Environment.dev, RegionName.defaultName()),
+                                                      (ruleBaseDir, outputDir) -> {},
+                                                      new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());
         String expectedServices = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
                 "    <admin version=\"2.0\">\n" +

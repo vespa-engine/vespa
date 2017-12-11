@@ -11,6 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -496,7 +497,7 @@ public class ControllerTest {
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
-        Zone zone = Zone.defaultZone();
+        ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
         ApplicationId appId = tester.applicationId("tenant", "app1", "default");
         DeploymentId deployId = new DeploymentId(appId, zone);
 
@@ -529,7 +530,7 @@ public class ControllerTest {
             application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
             applications.store(application);
             try {
-                tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
+                tester.deploy(app, ZoneId.from("prod", "us-east-3"));
                 fail("Expected exception");
             } catch (IllegalArgumentException e) {
                 assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
@@ -649,8 +650,8 @@ public class ControllerTest {
                     .build();
             tester.notifyJobCompletion(component, app1, true);
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-            tester.applications().deactivate(app1, new Zone(Environment.test, RegionName.from("us-east-1")));
-            tester.applications().deactivate(app1, new Zone(Environment.staging, RegionName.from("us-east-3")));
+            tester.applications().deactivate(app1, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
+            tester.applications().deactivate(app1, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
             tester.applications().deleteApplication(app1.id(), Optional.of(new NToken("ntoken")));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",
@@ -721,7 +722,7 @@ public class ControllerTest {
         Application app = tester.createApplication("app1", "tenant1", 1, 2L);
 
         // Direct deploy is allowed when project ID is missing
-        Zone zone = new Zone(Environment.prod, RegionName.from("cd-us-central-1"));
+        ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);

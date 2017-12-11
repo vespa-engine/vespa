@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
@@ -105,9 +105,9 @@ public class DeploymentOrder {
 
     /** Returns deployments sorted according to declared zones */
     public List<Deployment> sortBy(List<DeploymentSpec.DeclaredZone> zones, Collection<Deployment> deployments) {
-        List<Zone> productionZones = zones.stream()
+        List<ZoneId> productionZones = zones.stream()
                 .filter(z -> z.region().isPresent())
-                .map(z -> new Zone(z.environment(), z.region().get()))
+                .map(z -> ZoneId.from(z.environment(), z.region().get()))
                 .collect(toList());
         return deployments.stream()
                 .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))

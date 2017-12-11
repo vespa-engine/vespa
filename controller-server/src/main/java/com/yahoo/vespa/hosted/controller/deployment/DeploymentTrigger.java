@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -358,7 +358,7 @@ public class DeploymentTrigger {
      */
     private boolean isOnNewerVersionInProductionThan(Version version, Application application, JobType job) {
         if ( ! job.isProduction()) return false;
-        Optional<Zone> zone = job.zone(controller.system());
+        Optional<ZoneId> zone = job.zone(controller.system());
         if ( ! zone.isPresent()) return false;
         Deployment existingDeployment = application.deployments().get(zone.get());
         if (existingDeployment == null) return false;

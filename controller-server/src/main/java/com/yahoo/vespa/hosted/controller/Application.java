@@ -7,7 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
@@ -40,7 +40,7 @@ public class Application {
     private final ApplicationId id;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Map<Zone, Deployment> deployments;
+    private final Map<ZoneId, Deployment> deployments;
     private final DeploymentJobs deploymentJobs;
     private final Optional<Change> deploying;
     private final boolean outstandingChange;
@@ -67,7 +67,7 @@ public class Application {
     }
 
     Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                Map<Zone, Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
+                Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
                 boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                 Optional<RotationId> rotation) {
         Objects.requireNonNull(id, "id cannot be null");
@@ -106,13 +106,13 @@ public class Application {
     public ValidationOverrides validationOverrides() { return validationOverrides; }
     
     /** Returns an immutable map of the current deployments of this */
-    public Map<Zone, Deployment> deployments() { return deployments; }
+    public Map<ZoneId, Deployment> deployments() { return deployments; }
 
     /** 
      * Returns an immutable map of the current *production* deployments of this
      * (deployments also includes manually deployed environments)
      */
-    public Map<Zone, Deployment> productionDeployments() {
+    public Map<ZoneId, Deployment> productionDeployments() {
         return ImmutableMap.copyOf(deployments.values().stream()
                                            .filter(deployment -> deployment.zone().environment() == Environment.prod)
                                            .collect(Collectors.toMap(Deployment::zone, Function.identity())));
@@ -151,7 +151,7 @@ public class Application {
     }
 
     /** Returns the version a new deployment to this zone should use for this application */
-    public Version deployVersionIn(Zone zone, Controller controller) {
+    public Version deployVersionIn(ZoneId zone, Controller controller) {
         if (deploying().isPresent() && deploying().get() instanceof VersionChange)
             return ((Change.VersionChange) deploying().get()).version();
 
@@ -159,13 +159,13 @@ public class Application {
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
-    public Version versionIn(Zone zone, Controller controller) {
+    public Version versionIn(ZoneId zone, Controller controller) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
                 .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
     /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
-    public Optional<ApplicationRevision> deployRevisionIn(Zone zone) {
+    public Optional<ApplicationRevision> deployRevisionIn(ZoneId zone) {
         if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange)
             return ((Change.ApplicationChange) deploying().get()).revision();
 
@@ -173,7 +173,7 @@ public class Application {
     }
 
     /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
-    public Optional<ApplicationRevision> revisionIn(Zone zone) {
+    public Optional<ApplicationRevision> revisionIn(ZoneId zone) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
     }
 

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.identifiers;
 
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 
 /**
  * Application + zone. 
@@ -12,9 +12,9 @@ import com.yahoo.config.provision.Zone;
 public class DeploymentId {
 
     private final com.yahoo.config.provision.ApplicationId application;
-    private final Zone zone;
+    private final ZoneId zone;
 
-    public DeploymentId(com.yahoo.config.provision.ApplicationId application, Zone zone) {
+    public DeploymentId(com.yahoo.config.provision.ApplicationId application, ZoneId zone) {
         this.application = application;
         this.zone = zone;
     }
@@ -22,7 +22,7 @@ public class DeploymentId {
     public com.yahoo.config.provision.ApplicationId applicationId() {
         return application;
     }
-    public Zone zone() { return zone; }
+    public ZoneId zone() { return zone; }
 
 
     public String dottedString() {
