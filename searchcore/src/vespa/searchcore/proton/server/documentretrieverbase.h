@@ -7,7 +7,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/lrucache_map.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace proton {
 
@@ -20,7 +20,7 @@ class DocumentRetrieverBase : public IDocumentRetriever
     using SelectCache = vespalib::lrucache_map<vespalib::LruParam<vespalib::string, CachedSelect::SP>>;
 
     mutable SelectCache    _selectCache;
-    vespalib::Lock         _lock;
+    mutable std::mutex     _lock;
     document::Document::UP _emptyDoc;
     const bool             _hasFields;
 

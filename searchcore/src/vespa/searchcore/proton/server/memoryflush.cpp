@@ -90,14 +90,14 @@ MemoryFlush::~MemoryFlush() { }
 MemoryFlush::Config
 MemoryFlush::getConfig() const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _config;
 }
 
 void
 MemoryFlush::setConfig(const Config &config)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _config = config;
 }
 
