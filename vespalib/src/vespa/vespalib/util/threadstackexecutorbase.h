@@ -6,6 +6,7 @@
 #include "eventbarrier.hpp"
 #include "arrayqueue.hpp"
 #include "sync.h"
+#include "gate.h"
 #include "runnable.h"
 #include <memory>
 #include <vector>

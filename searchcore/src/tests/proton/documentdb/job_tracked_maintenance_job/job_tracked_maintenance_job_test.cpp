@@ -7,7 +7,7 @@ LOG_SETUP("job_tracked_maintenance_test");
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace proton;

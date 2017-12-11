@@ -2,6 +2,7 @@
 
 #include "messenger.h"
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messenger");
