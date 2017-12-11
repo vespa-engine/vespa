@@ -20,7 +20,7 @@ void
 TransportLatch::send(ResultUP result, bool documentWasFound)
 {
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         if (!_result) {
             _result = std::move(result);
         } else if (result->hasError()) {

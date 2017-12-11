@@ -3,6 +3,9 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 using namespace proton;
 using namespace search::engine;
@@ -34,23 +37,26 @@ public:
 
 class LocalSearchClient : public SearchClient {
 private:
-    vespalib::Monitor _monitor;
-    SearchReply::UP   _reply;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    SearchReply::UP         _reply;
 
 public:
     LocalSearchClient();
     ~LocalSearchClient();
     void searchDone(SearchReply::UP reply) override {
-        vespalib::MonitorGuard guard(_monitor);
+        std::lock_guard<std::mutex> guard(_lock);
         _reply = std::move(reply);
-        guard.broadcast();
+        _cond.notify_all();
     }
 
     SearchReply::UP getReply(uint32_t millis) {
-        vespalib::MonitorGuard guard(_monitor);
-        vespalib::TimedWaiter waiter(guard, millis);
-        while (_reply.get() == NULL && waiter.hasTime()) {
-            waiter.wait();
+        std::unique_lock<std::mutex> guard(_lock);
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+        while (!_reply) {
+            if (_cond.wait_until(guard, deadline) == std::cv_status::timeout) {
+                break;
+            }
         }
         return std::move(_reply);
     }

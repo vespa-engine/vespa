@@ -15,8 +15,8 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/closure.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <mutex>
 
 namespace search {
 namespace grouping {
@@ -52,7 +52,7 @@ private:
     search::fef::BlueprintFactory _blueprintFactory;
     search::fef::RankSetup::SP    _rankSetup;
     ViewResolver                  _viewResolver;
-    vespalib::Lock                _statsLock;
+    std::mutex                    _statsLock;
     MatchingStats                 _stats;
     const vespalib::Clock        &_clock;
     QueryLimiter                 &_queryLimiter;
