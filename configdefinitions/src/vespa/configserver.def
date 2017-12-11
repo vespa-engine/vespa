@@ -48,4 +48,4 @@ loadBalancerAddress string default=""
 
 # File distribution
 disableFiledistributor bool default=false
-usechunkedtransfer bool default=true
+usechunkedtransfer bool default=false
