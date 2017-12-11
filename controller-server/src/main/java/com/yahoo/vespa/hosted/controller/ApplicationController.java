@@ -462,11 +462,13 @@ public class ApplicationController {
                     nameService.updateRecord(record.get().id(), rotationName);
                     log.info("Updated mapping for record ID " + record.get().id().asString() + ": " + dnsName
                              + " -> " + rotation.name());
+                    log.info("Updated mapping for record ID " + record.get().id().asString() + ": '" + dnsName
+                             + "' -> '" + rotation.name() + "'");
                 }
             } else {
                 RecordId id = nameService.createCname(RecordName.from(dnsName), rotationName);
-                log.info("Registered mapping with record ID " + id.asString() + ": " + dnsName + " -> "
-                         + rotation.name());
+                log.info("Registered mapping with record ID " + id.asString() + ": '" + dnsName + "' -> '"
+                         + rotation.name() + "'");
             }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);
