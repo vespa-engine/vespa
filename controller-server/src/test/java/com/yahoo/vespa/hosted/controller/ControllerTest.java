@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -32,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
@@ -42,7 +42,6 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -619,7 +618,6 @@ public class ControllerTest {
     }
 
     @Test
-    @Ignore // TODO: Re-enable once verified
     public void testUpdatesExistingDnsAlias() {
         DeploymentTester tester = new DeploymentTester();
 
