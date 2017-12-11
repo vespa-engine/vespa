@@ -110,7 +110,7 @@ public class FileDownloader {
     private synchronized Future<Optional<File>> queueForDownload(FileReference fileReference, Duration timeout) {
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReference));
         if (inProgress != null) {
-            log.log(LogLevel.INFO, "Already downloading '" + fileReference.value() + "'");
+            log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
             return inProgress;
         }
 
