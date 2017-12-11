@@ -36,7 +36,6 @@ LOG_SETUP(".proton.server.proton");
 using document::DocumentTypeRepo;
 using vespalib::FileHeader;
 using vespalib::IllegalStateException;
-using vespalib::MonitorGuard;
 using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
@@ -195,7 +194,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
-      _configGenMonitor(),
       _configGen(0),
       _distributionKey(-1),
       _isInitializing(true),

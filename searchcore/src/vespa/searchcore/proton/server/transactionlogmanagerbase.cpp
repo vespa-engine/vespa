@@ -16,7 +16,8 @@ TransactionLogManagerBase::TransactionLogManagerBase(
     _tlc(tlsSpec),
     _tlcSession(),
     _domainName(domainName),
-    _replayMonitor(),
+    _replayLock(),
+    _replayCond(),
     _replayDone(false),
     _replayStarted(false),
     _replayStartTime(0)
@@ -65,7 +66,7 @@ TransactionLogManagerBase::init()
 void
 TransactionLogManagerBase::internalStartReplay()
 {
-    vespalib::MonitorGuard guard(_replayMonitor);
+    std::lock_guard<std::mutex> guard(_replayLock);
     _replayStarted = true;
     _replayDone = false;
     FastOS_Time timer;
@@ -76,23 +77,23 @@ TransactionLogManagerBase::internalStartReplay()
 void
 TransactionLogManagerBase::markReplayStarted()
 {
-    vespalib::MonitorGuard guard(_replayMonitor);
+    std::lock_guard<std::mutex> guard(_replayLock);
     _replayStarted = true;
 }
 
 void TransactionLogManagerBase::changeReplayDone()
 {
-    vespalib::MonitorGuard guard(_replayMonitor);
+    std::lock_guard<std::mutex> guard(_replayLock);
     _replayDone = true;
-    guard.broadcast();
+    _replayCond.notify_all();
 }
 
 void
 TransactionLogManagerBase::waitForReplayDone() const
 {
-    vespalib::MonitorGuard guard(_replayMonitor);
+    std::unique_lock<std::mutex> guard(_replayLock);
     while (_replayStarted && !_replayDone) {
-        guard.wait();
+        _replayCond.wait(guard);
     }
 }
 
@@ -115,12 +116,12 @@ TransLogClient::Visitor::UP TransactionLogManagerBase::createTlcVisitor(
 }
 
 bool TransactionLogManagerBase::getReplayDone() const {
-    vespalib::MonitorGuard guard(_replayMonitor);
+    std::lock_guard<std::mutex> guard(_replayLock);
     return _replayDone;
 }
 
 bool TransactionLogManagerBase::isDoingReplay() const {
-    vespalib::MonitorGuard guard(_replayMonitor);
+    std::lock_guard<std::mutex> guard(_replayLock);
     return _replayStarted && !_replayDone;
 }
 
