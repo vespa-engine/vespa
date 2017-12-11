@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.net.URI;
 import java.time.Duration;
@@ -26,7 +27,7 @@ public interface ZoneRegistry {
     Optional<URI> getLogServerUri(ZoneId zoneId);
     Duration getDeploymentTimeToLive(ZoneId zoneId);
     RegionName getDefaultRegion(Environment environment);
-    URI getMonitoringSystemUri(Environment environment, RegionName name, ApplicationId application);
+    URI getMonitoringSystemUri(DeploymentId deploymentId);
     URI getDashboardUri();
 
 }

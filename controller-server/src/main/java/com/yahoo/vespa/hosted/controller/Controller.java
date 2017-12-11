@@ -197,7 +197,9 @@ public class Controller extends AbstractComponent {
         return configServerClient.grabLog(deploymentId);
     }
 
-    public GitHub gitHub() { return gitHub; }
+    public GitHub gitHub() {
+        return gitHub;
+    }
 
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {
@@ -220,7 +222,9 @@ public class Controller extends AbstractComponent {
                 .orElse(Vtag.currentVersion);
     }
 
-    public MetricsService metricsService() { return metricsService; }
+    public MetricsService metricsService() {
+        return metricsService;
+    }
 
     public SystemName system() {
         return zoneRegistry.system();

@@ -488,9 +488,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {
-        return controller.zoneRegistry().getMonitoringSystemUri(deploymentId.zone().environment(),
-                                                                deploymentId.zone().region(),
-                                                                deploymentId.applicationId());
+        return controller.zoneRegistry().getMonitoringSystemUri(deploymentId);
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
