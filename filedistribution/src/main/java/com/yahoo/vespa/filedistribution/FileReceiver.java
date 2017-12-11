@@ -181,8 +181,7 @@ public class FileReceiver {
         String errorDescription = req.parameters().get(6).asString();
 
         if (errorCode == 0) {
-            // TODO: Remove when system test works
-            log.log(LogLevel.INFO, "Receiving file reference '" + fileReference.value() + "'");
+            log.log(LogLevel.DEBUG, "Receiving file reference '" + fileReference.value() + "'");
             receiveFile(new FileReferenceDataBlob(fileReference, filename, FileReferenceData.Type.valueOf(type), content, xxhash));
             req.returnValues().add(new Int32Value(0));
         } else {
@@ -226,11 +225,11 @@ public class FileReceiver {
     private static void moveFileToDestination(File tempFile, File destination) {
         try {
             Files.move(tempFile.toPath(), destination.toPath());
-            log.log(LogLevel.INFO, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
+            log.log(LogLevel.DEBUG, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already)
-            log.log(LogLevel.INFO, "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
+            log.log(LogLevel.DEBUG, "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
             log.log(LogLevel.ERROR, message, e);
@@ -240,7 +239,7 @@ public class FileReceiver {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileMeta(Request req) {
-        log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(LogLevel.DEBUG, "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
         String type = req.parameters().get(2).asString();
@@ -266,7 +265,7 @@ public class FileReceiver {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFilePart(Request req) {
-        log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(LogLevel.DEBUG, "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
 
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
@@ -285,7 +284,7 @@ public class FileReceiver {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileEof(Request req) {
-        log.info("Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(LogLevel.DEBUG, "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
         long xxhash = req.parameters().get(2).asInt64();
