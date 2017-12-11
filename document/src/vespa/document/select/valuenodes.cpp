@@ -1090,6 +1090,8 @@ ArithmeticValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
+FieldExprNode::~FieldExprNode() = default;
+
 std::unique_ptr<FieldValueNode> FieldExprNode::convert_to_field_value() const {
     const auto& doctype = resolve_doctype();
     // FIXME deprecate manual post-parsing of field expressions in favor of
