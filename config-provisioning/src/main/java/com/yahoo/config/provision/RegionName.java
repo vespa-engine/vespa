@@ -34,6 +34,7 @@ public class RegionName implements Comparable<RegionName> {
         return region;
     }
 
+    // TODO: Add verification of region name.
     public static RegionName from(String region) {
         return new RegionName(region);
     }

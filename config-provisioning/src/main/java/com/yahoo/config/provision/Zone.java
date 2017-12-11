@@ -46,7 +46,7 @@ public class Zone {
                  RegionName region,
                  FlavorDefaults flavorDefaults,
                  NodeFlavors nodeFlavors) {
-        this.id = new ZoneId(environment, region);
+        this.id = ZoneId.from(environment, region);
         this.flavorDefaults = flavorDefaults;
         this.systemName = systemName;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
@@ -81,7 +81,7 @@ public class Zone {
         return new Zone(SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
     }
 
-
+    @Override
     public String toString() {
         return id.toString();
     }
@@ -93,6 +93,7 @@ public class Zone {
         return Objects.equals(id, ((Zone) o).id);
     }
 
+    @Override
     public int hashCode() {
         return id.hashCode();
     }

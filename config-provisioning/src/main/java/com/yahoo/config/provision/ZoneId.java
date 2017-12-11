@@ -11,11 +11,12 @@ import java.util.Objects;
  * @author jvenstad
  */
 public class ZoneId {
+    // TODO: Replace usages of zone + region with usages of this.
 
-    protected final Environment environment;
-    protected final RegionName region;
+    private final Environment environment;
+    private final RegionName region;
 
-    ZoneId(Environment environment, RegionName region) {
+    private ZoneId(Environment environment, RegionName region) {
         this.environment = Objects.requireNonNull(environment);
         this.region = Objects.requireNonNull(region);
     }
@@ -27,7 +28,7 @@ public class ZoneId {
     public static ZoneId from(String environment, String region) {
         return from(Environment.from(environment), RegionName.from(region));
     }
-
+    /** Create from a serialised ZoneId. Inverse of {@code ZoneId.value()}. */
     public static ZoneId from(String value) {
         String[] parts = value.split("\\.");
         return from(parts[0], parts[1]);
@@ -41,6 +42,7 @@ public class ZoneId {
         return region;
     }
 
+    /** Returns the serialised value of this. Inverse of {@code ZoneId.from(String value)}. */
     public String value() {
         return environment + "." + region;
     }
