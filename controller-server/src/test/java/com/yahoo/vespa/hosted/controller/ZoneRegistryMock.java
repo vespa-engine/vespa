@@ -67,22 +67,21 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public Optional<ZoneId> getZone(Environment environment, RegionName region) {
-        return zones().stream().filter(z -> z.environment().equals(environment) &&
-                                            z.region().equals(region)).findFirst();
+    public boolean hasZone(ZoneId zoneId) {
+        return zones.contains(zoneId);
     }
 
     @Override
-    public List<URI> getConfigServerUris(Environment environment, RegionName region) {
-        return getZone(environment, region)
-                .map(z -> URI.create(String.format("http://cfg.%s.%s.test", environment.value(), region.value())))
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
+        return Optional.of(zoneId)
+                .map(z -> URI.create(String.format("http://cfg.%s.test", zoneId.value())))
                 .map(Collections::singletonList)
                 .orElse(Collections.emptyList());
     }
 
     @Override
     public Optional<URI> getLogServerUri(Environment environment, RegionName region) {
-        return getZone(environment, region)
+        return Optional.of(ZoneId.from(environment, region))
                 .map(z -> URI.create(String.format("http://log.%s.%s.test", environment.value(), region.value())));
     }
 

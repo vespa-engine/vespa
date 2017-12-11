@@ -21,8 +21,8 @@ public interface ZoneRegistry {
 
     SystemName system();
     List<ZoneId> zones();
-    Optional<ZoneId> getZone(Environment environment, RegionName region);
-    List<URI> getConfigServerUris(Environment environment, RegionName region);
+    boolean hasZone(ZoneId zoneId);
+    List<URI> getConfigServerUris(ZoneId zoneId);
     Optional<URI> getLogServerUri(Environment environment, RegionName region);
     Optional<Duration> getDeploymentTimeToLive(Environment environment, RegionName region);
     Optional<RegionName> getDefaultRegion(Environment environment);

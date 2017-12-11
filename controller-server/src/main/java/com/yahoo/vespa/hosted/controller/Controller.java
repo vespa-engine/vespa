@@ -9,6 +9,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -157,8 +158,8 @@ public class Controller extends AbstractComponent {
         return elkUrl(zoneRegistry.getLogServerUri(deploymentId.zone().environment(), deploymentId.zone().region()), deploymentId);
     }
 
-    public List<URI> getConfigServerUris(Environment environment, RegionName region) {
-        return zoneRegistry.getConfigServerUris(environment, region);
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
+        return zoneRegistry.getConfigServerUris(zoneId);
     }
     
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }

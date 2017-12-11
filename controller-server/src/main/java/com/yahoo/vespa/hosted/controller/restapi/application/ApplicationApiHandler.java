@@ -579,7 +579,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationView applicationView = controller.getApplicationView(tenantName, applicationName, instanceName, environment, region);
         ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
+                                                             controller.getConfigServerUris(ZoneId.from(environment, region)),
                                                              request.getUri());
         response.setResponse(applicationView);
         return response;
@@ -589,7 +589,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
         ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
+                                                             controller.getConfigServerUris(ZoneId.from(environment, region)),
                                                              request.getUri());
         response.setResponse(result, serviceName, restPath);
         return response;
