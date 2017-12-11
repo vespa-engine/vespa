@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.security.KeyService;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.security.PrivateKey;
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils.USER_PRINCIPAL_DOMAIN;
 
@@ -51,7 +51,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZtsClient createZtsClientWithServicePrincipal() {
-        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), createServicePrincipal()), getServicePrivateKey(), config);
+        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), createServicePrincipal()), config);
     }
 
     /**
@@ -75,12 +75,8 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
         // TODO bjorncs: Cache principal token
         SimpleServiceIdentityProvider identityProvider =
                 new SimpleServiceIdentityProvider(
-                        athenzPrincipalAuthority,
-                        config.domain(),
-                        service.name(),
-                        getServicePrivateKey(),
-                        service.publicKeyId(),
-                        Duration.ofMinutes(service.credentialsExpiryMinutes()).getSeconds());
+                        athenzPrincipalAuthority, config.domain(), service.name(),
+                        getServicePrivateKey(), service.publicKeyId(), /*tokenTimeout*/TimeUnit.HOURS.toSeconds(1));
         return identityProvider.getIdentity(config.domain(), service.name());
     }
 
