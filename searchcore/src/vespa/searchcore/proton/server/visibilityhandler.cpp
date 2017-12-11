@@ -26,7 +26,7 @@ void VisibilityHandler::commit()
         if (_writeService.master().isCurrentThread()) {
             performCommit(true);
         } else {
-            LockGuard guard(_lock);
+            std::lock_guard<std::mutex> guard(_lock);
             startCommit(guard, true);
         }
     }
@@ -38,7 +38,7 @@ void VisibilityHandler::commitAndWait()
         if (_writeService.master().isCurrentThread()) {
             performCommit(false);
         } else {
-            LockGuard guard(_lock);
+            std::lock_guard<std::mutex> guard(_lock);
             if (startCommit(guard, false)) {
                 _writeService.master().sync();
             }
@@ -50,7 +50,7 @@ void VisibilityHandler::commitAndWait()
     _writeService.summary().sync();
 }
 
-bool VisibilityHandler::startCommit(const LockGuard &unused, bool force)
+bool VisibilityHandler::startCommit(const std::lock_guard<std::mutex> &unused, bool force)
 {
     (void) unused;
     SerialNum current = _serial.getSerialNum();

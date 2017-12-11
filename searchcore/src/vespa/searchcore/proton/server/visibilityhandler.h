@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/server/igetserialnum.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <mutex>
 
 namespace proton {
 
@@ -16,11 +17,9 @@ namespace proton {
  **/
 class VisibilityHandler : public ICommitable
 {
-    typedef vespalib::LockGuard       LockGuard;
     typedef fastos::TimeStamp         TimeStamp;
     using IThreadingService = searchcorespi::index::IThreadingService;
     typedef vespalib::ThreadExecutor  ThreadExecutor;
-    typedef vespalib::Lock            Lock;
     typedef vespalib::VarHolder<IFeedView::SP> FeedViewHolder;
 public:
     typedef search::SerialNum         SerialNum;
@@ -32,14 +31,14 @@ public:
     void commit() override;
     virtual void commitAndWait() override;
 private:
-    bool startCommit(const LockGuard &unused, bool force);
+    bool startCommit(const std::lock_guard<std::mutex> &unused, bool force);
     void performCommit(bool force);
     const IGetSerialNum  & _serial;
     IThreadingService    & _writeService;
     const FeedViewHolder & _feedView;
     TimeStamp              _visibilityDelay;
     SerialNum              _lastCommitSerialNum;
-    Lock                   _lock;
+    std::mutex             _lock;
 };
 
 }
