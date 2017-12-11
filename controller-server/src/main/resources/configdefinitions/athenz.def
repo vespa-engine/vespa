@@ -17,6 +17,9 @@ domain                          string
 userAuthenticationPassThruAttribute  string
 # TODO Remove once migrated to Okta
 
+# Path to Athenz CA JKS trust store
+athenzCaTrustStore              string
+
 # Certificate DNS domain
 certDnsDomain                   string
 
