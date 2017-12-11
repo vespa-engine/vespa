@@ -59,7 +59,7 @@ AttributeLimiter::toString(DiversityCutoffStrategy strategy)
 SearchIterator::UP
 AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool strictSearch)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     const uint32_t my_field_id = 0;
     search::fef::MatchDataLayout layout;
     auto my_handle = layout.allocTermField(my_field_id);

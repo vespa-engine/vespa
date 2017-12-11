@@ -3,7 +3,7 @@
 #include "sessionmanager.h"
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -18,7 +18,7 @@ using Stats = SessionManager::Stats;
 struct SessionCacheBase {
 protected:
     Stats _stats;
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
 
     void entryDropped(const SessionId &id);
     ~SessionCacheBase() {}
@@ -32,7 +32,7 @@ struct SessionCache : SessionCacheBase {
     SessionCache(uint32_t max_size) : _cache(max_size) {}
 
     void insert(EntryUP session) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         const SessionId &id(session->getSessionId());
         if (_cache.size() >= _cache.capacity()) {
             entryDropped(id);
@@ -41,7 +41,7 @@ struct SessionCache : SessionCacheBase {
         _stats.numInsert++;
     }
     EntryUP pick(const SessionId & id) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         EntryUP ret;
         if (_cache.hasKey(id)) {
             _stats.numPick++;
@@ -56,7 +56,7 @@ struct SessionCache : SessionCacheBase {
     }
     std::vector<EntryUP> stealTimedOutSessions(fastos::TimeStamp currentTime) {
         std::vector<EntryUP> toDestruct;
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         toDestruct.reserve(_cache.size());
         for (auto it(_cache.begin()), mt(_cache.end()); it != mt;) {
             auto &session = *it;
@@ -71,14 +71,14 @@ struct SessionCache : SessionCacheBase {
         return toDestruct;
     }
     Stats getStats() {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         Stats stats = _stats;
         stats.numCached = _cache.size();
         _stats = Stats();
         return stats;
     }
     bool empty() const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         return _cache.empty();
     }
 };
@@ -89,13 +89,13 @@ struct SessionMap : SessionCacheBase {
     vespalib::hash_map<SessionId, EntrySP> _map;
 
     void insert(EntrySP session) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         const SessionId &id(session->getSessionId());
         _map.insert(std::make_pair(id, session));
         _stats.numInsert++;
     }
     EntrySP pick(const SessionId & id) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         auto it = _map.find(id);
         if (it != _map.end()) {
             _stats.numPick++;
@@ -110,7 +110,7 @@ struct SessionMap : SessionCacheBase {
     std::vector<EntrySP> stealTimedOutSessions(fastos::TimeStamp currentTime) {
         std::vector<EntrySP> toDestruct;
         std::vector<SessionId> keys;
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         keys.reserve(_map.size());
         toDestruct.reserve(_map.size());
         for (auto & it : _map) {
@@ -128,23 +128,23 @@ struct SessionMap : SessionCacheBase {
         return toDestruct;
     }
     Stats getStats() {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         Stats stats = _stats;
         stats.numCached = _map.size();
         _stats = Stats();
         return stats;
     }
     size_t size() const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         return _map.size();
     }
     bool empty() const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         return _map.empty();
     }
     template <typename F>
     void each(F f) const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         for (const auto &entry: _map) {
             f(*entry.second);
         }

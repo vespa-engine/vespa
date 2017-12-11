@@ -152,7 +152,7 @@ Matcher::Matcher(const search::index::Schema &schema,
 MatchingStats
 Matcher::getStats()
 {
-    vespalib::LockGuard guard(_statsLock);
+    std::lock_guard<std::mutex> guard(_statsLock);
     MatchingStats stats = std::move(_stats);
     _stats = std::move(MatchingStats());
     _stats.softDoomFactor(stats.softDoomFactor());
@@ -315,7 +315,7 @@ Matcher::match(const SearchRequest &request,
     {
         fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
         fastos::TimeStamp duration = request.getTimeUsed();
-        vespalib::LockGuard guard(_statsLock);
+        std::lock_guard<std::mutex> guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
             LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f", softLimit.sec(), duration.sec());

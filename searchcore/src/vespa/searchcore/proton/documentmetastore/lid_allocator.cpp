@@ -4,6 +4,8 @@
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
+#include <mutex>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
@@ -223,7 +225,7 @@ class BlackListBlueprint : public SimpleLeafBlueprint
 {
 private:
     AttributeVector::SearchContext::UP _searchCtx;
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
     virtual SearchIterator::UP
@@ -235,7 +237,7 @@ private:
         search::fef::TermFieldMatchData *tfmd =
             new search::fef::TermFieldMatchData;
         {
-            vespalib::LockGuard lock(_lock);
+            std::lock_guard<std::mutex> lock(_lock);
             _matchDataVector.push_back(tfmd);
         }
         return _searchCtx->createIterator(tfmd, strict);

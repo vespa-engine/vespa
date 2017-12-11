@@ -4,6 +4,7 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/vespalib/util/sequence.h>
+#include <mutex>
 
 namespace proton {
 
@@ -17,7 +18,7 @@ private:
     using UpdateResult = storage::spi::UpdateResult;
     using RemoveResult = storage::spi::RemoveResult;
     vespalib::CountDownLatch _latch;
-    vespalib::Lock           _lock;
+    std::mutex               _lock;
     ResultUP                 _result;
 
 public:

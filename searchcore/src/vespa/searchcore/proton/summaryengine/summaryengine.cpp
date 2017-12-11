@@ -51,7 +51,7 @@ SummaryEngine::close()
 {
     LOG(debug, "Closing summary engine");
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         _closed = true;
     }
     LOG(debug, "Handshaking with task manager");
@@ -61,21 +61,21 @@ SummaryEngine::close()
 ISearchHandler::SP
 SummaryEngine::putSearchHandler(const DocTypeName &docTypeName, const ISearchHandler::SP & searchHandler)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.putHandler(docTypeName, searchHandler);
 }
 
 ISearchHandler::SP
 SummaryEngine::getSearchHandler(const DocTypeName &docTypeName)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandler(docTypeName);
 }
 
 ISearchHandler::SP
 SummaryEngine::removeSearchHandler(const DocTypeName &docTypeName)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.removeHandler(docTypeName);
 }
 
@@ -107,7 +107,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         } else {
             vespalib::Sequence<ISearchHandler*>::UP snapshot;
             {
-                vespalib::LockGuard guard(_lock);
+                std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
             if (snapshot->valid()) {
