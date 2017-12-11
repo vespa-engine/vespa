@@ -4,7 +4,9 @@
 
 #include "ifrozenbuckethandler.h"
 #include "ibucketfreezer.h"
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
+#include <condition_variable>
+#include <cassert>
 #include <map>
 #include <vector>
 
@@ -66,8 +68,9 @@ private:
         bool    _notifyWriter;
     };
     typedef std::map<document::BucketId, FrozenBucket> Map;
-    vespalib::Monitor  _lock;
-    Map                _map;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    Map                     _map;
 };
 
 /**
