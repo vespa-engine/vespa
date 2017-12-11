@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -58,8 +59,10 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportRemainingRotations() {
-        int availableRotations = controller().applications().rotationRepository().availableRotations().size();
-        metric.set(remainingRotations, availableRotations, metric.createContext(Collections.emptyMap()));
+        try (RotationLock lock = controller().applications().rotationRepository().lock()) {
+            int availableRotations = controller().applications().rotationRepository().availableRotations(lock).size();
+            metric.set(remainingRotations, availableRotations, metric.createContext(Collections.emptyMap()));
+        }
     }
 
     private void reportChefMetrics() {

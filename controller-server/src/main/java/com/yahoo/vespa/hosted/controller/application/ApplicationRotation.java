@@ -13,7 +13,7 @@ import java.net.URI;
  */
 public class ApplicationRotation {
 
-    private static final String dnsSuffix = "global.vespa.yahooapis.com";
+    public static final String DNS_SUFFIX = "global.vespa.yahooapis.com";
     private static final int port = 4080;
 
     private final URI url;
@@ -23,7 +23,7 @@ public class ApplicationRotation {
         this.url = URI.create(String.format("http://%s.%s.%s:%d/",
                                             sanitize(application.application().value()),
                                             sanitize(application.tenant().value()),
-                                            dnsSuffix,
+                                            DNS_SUFFIX,
                                             port));
         this.id = id;
     }
