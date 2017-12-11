@@ -3,7 +3,6 @@
 
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 namespace proton {
