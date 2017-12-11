@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -55,7 +54,7 @@ public class RotationRepository {
      * @param application The application requesting a rotation
      * @param lock Lock which must be acquired by the caller
      */
-    public Rotation getRotation(Application application, @SuppressWarnings("unused") RotationLock lock) {
+    public Rotation getRotation(Application application, RotationLock lock) {
         if (application.rotation().isPresent()) {
             return allRotations.get(application.rotation().get().id());
         }
@@ -70,28 +69,31 @@ public class RotationRepository {
         if (productionZones < 2) {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
         }
-        return findAvailableRotation(application);
+        return findAvailableRotation(application, lock);
     }
 
-    /** Returns all unassigned rotations */
-    public List<RotationId> availableRotations() {
+    /**
+     * Returns all unassigned rotations
+     * @param lock Lock which must be acquired by the caller
+     */
+    public Map<RotationId, Rotation> availableRotations(@SuppressWarnings("unused") RotationLock lock) {
         List<RotationId> assignedRotations = applications.asList().stream()
                                                          .filter(application -> application.rotation().isPresent())
                                                          .map(application -> application.rotation().get().id())
                                                          .collect(Collectors.toList());
-        List<RotationId> allRotations = new ArrayList<>(this.allRotations.keySet());
-        allRotations.removeAll(assignedRotations);
-        return Collections.unmodifiableList(allRotations);
+        Map<RotationId, Rotation> unassignedRotations = new LinkedHashMap<>(this.allRotations);
+        assignedRotations.forEach(unassignedRotations::remove);
+        return Collections.unmodifiableMap(unassignedRotations);
     }
 
-    private Rotation findAvailableRotation(Application application) {
-        List<RotationId> availableRotations = availableRotations();
+    private Rotation findAvailableRotation(Application application, RotationLock lock) {
+        Map<RotationId, Rotation> availableRotations = availableRotations(lock);
         if (availableRotations.isEmpty()) {
             throw new IllegalStateException("Unable to assign global rotation to " + application.id()
                                             + " - no rotations available");
         }
         // Return first available rotation
-        RotationId rotation = availableRotations.get(0);
+        RotationId rotation = availableRotations.keySet().iterator().next();
         log.info(String.format("Offering %s to application %s", rotation, application.id()));
         return allRotations.get(rotation);
     }

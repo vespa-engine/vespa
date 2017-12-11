@@ -456,10 +456,19 @@ public class ApplicationController {
     private void registerRotationInDns(Rotation rotation, String dnsName) {
         try {
             Optional<Record> record = nameService.findRecord(Record.Type.CNAME, RecordName.from(dnsName));
-            if (!record.isPresent()) {
-                RecordId id = nameService.createCname(RecordName.from(dnsName), RecordData.from(rotation.name()));
-                log.info("Registered mapping with record ID " + id.asString() + ": " + dnsName + " -> "
-                         + rotation.name());
+            RecordData rotationName = RecordData.fqdn(rotation.name());
+            if (record.isPresent()) {
+                // Ensure that the existing record points to the correct rotation
+                if (!record.get().data().equals(rotationName)) {
+                    // TODO: Enable once verified
+                    //nameService.updateRecord(record.get().id(), rotationName);
+                    log.info("Updated mapping for record ID " + record.get().id().asString() + ": '" + dnsName
+                             + "' -> '" + rotation.name() + "'");
+                }
+            } else {
+                RecordId id = nameService.createCname(RecordName.from(dnsName), rotationName);
+                log.info("Registered mapping with record ID " + id.asString() + ": '" + dnsName + "' -> '"
+                         + rotation.name() + "'");
             }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);

@@ -455,6 +455,11 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
 
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/doesnotexist.yahoo.com",
+                                   Utf8.toBytes("{\"currentRestartGeneration\": 1}"),
+                                   Request.Method.PATCH),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node found with hostname doesnotexist.yahoo.com\"}");
+
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com",
                                    Utf8.toBytes("{\"currentRestartGeneration\": 1}"),
                                    Request.Method.PATCH),

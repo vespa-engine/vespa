@@ -6,6 +6,10 @@
       <maxthreads>100</maxthreads> <!-- Reduced thread count to minimize memory consumption -->
     </config>
 
+    <config name="container.jdisc.config.health-monitor">
+      <initialStatus>initializing</initialStatus>
+    </config>
+
     <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="access.log" />
     <preprocess:include file='access-logging.xml' required='false' />
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />

@@ -100,6 +100,9 @@ public:
 
     void handle(std::unique_ptr<ConfigUpdate> update) override
     {
+        if (_update) {
+            update->merge(*_update);
+        }
         _update = std::move(update);
     }
 

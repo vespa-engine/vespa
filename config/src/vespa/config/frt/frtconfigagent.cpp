@@ -61,16 +61,17 @@ FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState
         LOG(spam, "Old config: md5:%s \n%s", _latest.getMd5().c_str(), _latest.asJson().c_str());
         LOG(spam, "New config: md5:%s \n%s", configValue.getMd5().c_str(), configValue.asJson().c_str());
     }
+    bool changed = false;
     if (_latest.getMd5() != configValue.getMd5()) {
         _latest = configValue;
+        changed = true;
     }
     _configState = newState;
-
 
     if (LOG_WOULD_LOG(spam)) {
         LOG(spam, "updating holder for key %s,", key.toString().c_str());
     }
-    _holder->handle(ConfigUpdate::UP(new ConfigUpdate(_latest, true, newState.generation)));
+    _holder->handle(ConfigUpdate::UP(new ConfigUpdate(_latest, changed, newState.generation)));
     _numConfigured++;
 }
 

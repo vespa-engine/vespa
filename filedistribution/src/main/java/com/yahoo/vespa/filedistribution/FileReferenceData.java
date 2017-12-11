@@ -2,41 +2,27 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
-import net.jpountz.xxhash.XXHashFactory;
 
 import java.nio.ByteBuffer;
+
 
 /**
  * Utility class for a file reference with data and metadata
  *
  * @author hmusum
  */
-public class FileReferenceData {
+public abstract class FileReferenceData {
 
     public enum Type {file, compressed}
-
-
 
     private final FileReference fileReference;
     private final String filename;
     private final Type type;
-    private final byte[] content;
-    private final long xxhash;
 
-    public FileReferenceData(FileReference fileReference, String filename, Type type, byte[] content) {
-        this(fileReference, filename, type, content, XXHashFactory.fastestInstance().hash64().hash(ByteBuffer.wrap(content), 0));
-    }
-
-    public FileReferenceData(FileReference fileReference, String filename, Type type, byte[] content, long xxhash) {
+    public FileReferenceData(FileReference fileReference, String filename, Type type) {
         this.fileReference = fileReference;
         this.filename = filename;
         this.type = type;
-        this.content = content;
-        this.xxhash = xxhash;
-    }
-
-    public static FileReferenceData empty(FileReference fileReference, String filename) {
-        return new FileReferenceData(fileReference, filename, FileReferenceData.Type.file, new byte[0], 0);
     }
 
     public FileReference fileReference() {
@@ -51,11 +37,31 @@ public class FileReferenceData {
         return type;
     }
 
-    public byte[] content() {
-        return content;
+    public ByteBuffer content() {
+        ByteBuffer bb = ByteBuffer.allocate((int)size());
+        while (bb.remaining() > 0) {
+            nextContent(bb);
+        }
+        return bb;
     }
+    /**
+     * Will provide the next part of the content.
+     *
+     * @param bb with some available space
+     * @return Number of bytes transferred.
+     */
+    public abstract int nextContent(ByteBuffer bb);
 
-    public long xxhash() {
-        return xxhash;
-    }
+    /**
+     * Only guaranteed to be valid after all content has been consumed.
+     * @return xx64hash of content
+     */
+    public abstract long xxhash();
+
+    /**
+     * The size of the content in bytes
+     *
+     * @return number of bytes
+     */
+    public abstract long size();
 }

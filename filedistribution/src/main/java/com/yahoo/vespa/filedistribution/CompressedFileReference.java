@@ -39,6 +39,13 @@ public class CompressedFileReference {
         return outputFile;
     }
 
+    public static File compress(File directory, File outputFile) throws IOException {
+        return compress(directory, Files.find(Paths.get(directory.getAbsolutePath()),
+                recurseDepth,
+                (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
+                .map(Path::toFile).collect(Collectors.toList()), outputFile);
+    }
+
     public static byte[] compress(File directory) throws IOException {
         return compress(directory, Files.find(Paths.get(directory.getAbsolutePath()),
                                               recurseDepth,

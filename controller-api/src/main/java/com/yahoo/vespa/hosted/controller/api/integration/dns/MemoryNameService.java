@@ -39,7 +39,7 @@ public class MemoryNameService implements NameService {
     public Optional<Record> findRecord(Record.Type type, RecordData data) {
         return records.values()
                 .stream()
-                .filter(record -> record.type() == type && record.value().equals(data))
+                .filter(record -> record.type() == type && record.data().equals(data))
                 .findFirst();
     }
 
