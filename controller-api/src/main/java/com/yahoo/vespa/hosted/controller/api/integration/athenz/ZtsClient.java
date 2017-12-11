@@ -12,8 +12,4 @@ public interface ZtsClient {
 
     List<AthenzDomain> getTenantDomainsForUser(AthenzIdentity principal);
 
-    AthenzIdentityCertificate getIdentityCertificate();
-
-    AthenzRoleCertificate getRoleCertificate(AthenzDomain roleDomain, String roleName);
-
 }
