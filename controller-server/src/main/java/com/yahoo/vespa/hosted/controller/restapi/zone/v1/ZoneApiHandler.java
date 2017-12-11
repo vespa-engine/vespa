@@ -108,10 +108,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse defaultRegion(HttpRequest request, Environment environment) {
-        RegionName region = zoneRegistry.getDefaultRegion(environment)
-                                        .orElseThrow(() -> new IllegalArgumentException(
-                                                "No default region for environment: " + environment
-                                        ));
+        RegionName region = zoneRegistry.getDefaultRegion(environment);
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("name", region.value());

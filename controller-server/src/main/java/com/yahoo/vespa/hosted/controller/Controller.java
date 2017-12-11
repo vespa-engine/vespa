@@ -6,8 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
@@ -154,17 +152,7 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public URI getElkUri(DeploymentId deploymentId) {
-        return elkUrl(zoneRegistry.getLogServerUri(deploymentId.zone().environment(), deploymentId.zone().region()), deploymentId);
-    }
-
-    public List<URI> getConfigServerUris(ZoneId zoneId) {
-        return zoneRegistry.getConfigServerUris(zoneId);
-    }
-    
-    public ZoneRegistry zoneRegistry() { return zoneRegistry; }
-
-    private URI elkUrl(Optional<URI> kibanaHost, DeploymentId deploymentId) {
+    public Optional<URI> getLogServerUrl(DeploymentId deploymentId) {
         String kibanaQuery = "/#/discover?_g=()&_a=(columns:!(_source)," +
                              "index:'logstash-*',interval:auto," +
                              "query:(query_string:(analyze_wildcard:!t,query:'" +
@@ -176,8 +164,14 @@ public class Controller extends AbstractComponent {
                              "sort:!('@timestamp',desc))";
 
         URI kibanaPath = URI.create(kibanaQuery);
-        return kibanaHost.map(uri -> uri.resolve(kibanaPath)).orElse(null);
+        return zoneRegistry.getLogServerUri(deploymentId.zone()).map(uri -> uri.resolve(kibanaPath));
     }
+
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
+        return zoneRegistry.getConfigServerUris(zoneId);
+    }
+    
+    public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
     public Map<String, RotationStatus> getHealthStatus(String hostname) {
         return globalRoutingService.getHealthStatus(hostname);

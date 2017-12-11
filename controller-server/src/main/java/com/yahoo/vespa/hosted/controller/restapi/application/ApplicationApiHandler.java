@@ -445,16 +445,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zone().environment() + "/" + deploymentId.zone().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
 
-        URI elkUrl = controller.getElkUri(deploymentId);
-        if (elkUrl != null)
-            response.setString("elkUrl", elkUrl.toString());
+        controller.getLogServerUrl(deploymentId)
+                .ifPresent(elkUrl -> response.setString("elkUrl", elkUrl.toString()));
 
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.revision().id());
         response.setLong("deployTimeEpochMs", deployment.at().toEpochMilli());
-        Optional<Duration> deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zone().environment(), deploymentId.zone().region());
-        deploymentTimeToLive.ifPresent(duration -> response.setLong("expiryTimeEpochMs", deployment.at().plus(duration).toEpochMilli()));
+        Duration deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zone());
+        response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli());
 
         controller.applications().get(deploymentId.applicationId()).flatMap(application -> application.deploymentJobs().projectId())
                 .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
