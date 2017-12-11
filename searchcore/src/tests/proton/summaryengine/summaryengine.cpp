@@ -9,8 +9,11 @@
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/log/log.h>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
+#include <vespa/log/log.h>
 LOG_SETUP("summaryengine_test");
 
 using namespace search::engine;
@@ -81,8 +84,9 @@ public:
 
 class MyDocsumClient : public DocsumClient {
 private:
-    vespalib::Monitor _monitor;
-    DocsumReply::UP _reply;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    DocsumReply::UP         _reply;
 
 public:
     MyDocsumClient();
@@ -90,16 +94,18 @@ public:
     ~MyDocsumClient();
 
     void getDocsumsDone(DocsumReply::UP reply) override {
-        vespalib::MonitorGuard guard(_monitor);
+        std::lock_guard<std::mutex> guard(_lock);
         _reply = std::move(reply);
-        guard.broadcast();
+        _cond.notify_all();
     }
 
     DocsumReply::UP getReply(uint32_t millis) {
-        vespalib::MonitorGuard guard(_monitor);
-        vespalib::TimedWaiter waiter(guard, millis);
-        while (_reply.get() == NULL && waiter.hasTime()) {
-            waiter.wait();
+        std::unique_lock<std::mutex> guard(_lock);
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+        while (!_reply) {
+            if (_cond.wait_until(guard, deadline) == std::cv_status::timeout) {
+                break;
+            }
         }
         return std::move(_reply);
     }

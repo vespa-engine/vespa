@@ -3,8 +3,9 @@
 #pragma once
 
 #include <memory>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/doom.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace proton {
 namespace matching {
@@ -35,7 +36,8 @@ private:
     };
     void grabToken(const Doom & doom);
     void releaseToken();
-    vespalib::Monitor _monitor;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     volatile int _activeThreads;
 
     // These are updated asynchronously at reconfig.

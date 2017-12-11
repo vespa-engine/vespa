@@ -51,8 +51,6 @@ using std::set;
 using std::string;
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::Gate;
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using vespalib::ThreadStackExecutor;
 
 using namespace proton;
