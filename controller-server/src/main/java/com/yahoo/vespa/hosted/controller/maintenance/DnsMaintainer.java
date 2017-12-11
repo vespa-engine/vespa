@@ -49,18 +49,17 @@ public class DnsMaintainer extends Maintainer {
     private void removeDnsAlias(Rotation rotation) {
         // When looking up CNAME by data, the data must be a FQDN
         Optional<Record> record = nameService.findRecord(Record.Type.CNAME, RecordData.fqdn(rotation.name()));
-        record.filter(this::canUpdate)
+        record.filter(DnsMaintainer::canUpdate)
               .ifPresent(r -> {
-                  log.warning(String.format("Want to remove DNS record %s (%s) because it points to the unassigned " +
-                                            "rotation %s (%s)", record.get().id().asString(),
-                                            record.get().name().asString(), rotation.id().asString(), rotation.name()));
-                  // TODO: Actually remove the record
-                  //nameService.removeRecord(r.id());
+                  log.info(String.format("Removing DNS record %s (%s) because it points to the unassigned " +
+                                         "rotation %s (%s)", record.get().id().asString(),
+                                         record.get().name().asString(), rotation.id().asString(), rotation.name()));
+                  nameService.removeRecord(r.id());
               });
     }
 
     /** Returns whether we can update the given record */
-    private boolean canUpdate(Record record) {
+    private static boolean canUpdate(Record record) {
         return record.name().asString().endsWith(ApplicationRotation.DNS_SUFFIX);
     }
 
