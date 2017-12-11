@@ -71,7 +71,7 @@ public class FileReceiver {
             }
 
             try {
-                inprogressFile = Files.createTempFile(fileReferenceDir.toPath(), fileName, ".inprogress").toFile();
+                inprogressFile = Files.createTempFile(downloadDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
                 String msg = "Failed creating tempfile for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
                 log.log(LogLevel.ERROR, msg + e.getMessage(), e);
