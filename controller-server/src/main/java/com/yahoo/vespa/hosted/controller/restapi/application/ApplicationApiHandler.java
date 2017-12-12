@@ -425,9 +425,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(application.id(),
                                                      ZoneId.from(environment, region));
 
-        Deployment deployment = application.deployments().get(deploymentId.zone());
+        Deployment deployment = application.deployments().get(deploymentId.zoneId());
         if (deployment == null)
-            throw new NotExistsException(application + " is not deployed in " + deploymentId.zone());
+            throw new NotExistsException(application + " is not deployed in " + deploymentId.zoneId());
 
         Slime slime = new Slime();
         toSlime(slime.setObject(), deploymentId, deployment, request);
@@ -443,18 +443,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 serviceUrlArray.addString(uri.toString());
         }
 
-        response.setString("nodes", withPath("/zone/v2/" + deploymentId.zone().environment() + "/" + deploymentId.zone().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
+        response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
 
-        URI elkUrl = controller.getElkUri(deploymentId);
-        if (elkUrl != null)
-            response.setString("elkUrl", elkUrl.toString());
+        controller.getLogServerUrl(deploymentId)
+                .ifPresent(elkUrl -> response.setString("elkUrl", elkUrl.toString()));
 
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.revision().id());
         response.setLong("deployTimeEpochMs", deployment.at().toEpochMilli());
-        Optional<Duration> deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zone().environment(), deploymentId.zone().region());
-        deploymentTimeToLive.ifPresent(duration -> response.setLong("expiryTimeEpochMs", deployment.at().plus(duration).toEpochMilli()));
+        Duration deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId());
+        response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli());
 
         controller.applications().get(deploymentId.applicationId()).flatMap(application -> application.deploymentJobs().projectId())
                 .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
@@ -489,9 +488,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {
-        return controller.zoneRegistry().getMonitoringSystemUri(deploymentId.zone().environment(),
-                                                                deploymentId.zone().region(),
-                                                                deploymentId.applicationId());
+        return controller.zoneRegistry().getMonitoringSystemUri(deploymentId);
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
@@ -579,7 +576,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationView applicationView = controller.getApplicationView(tenantName, applicationName, instanceName, environment, region);
         ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
+                                                             controller.getConfigServerUris(ZoneId.from(environment, region)),
                                                              request.getUri());
         response.setResponse(applicationView);
         return response;
@@ -589,7 +586,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
         ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
+                                                             controller.getConfigServerUris(ZoneId.from(environment, region)),
                                                              request.getUri());
         response.setResponse(result, serviceName, restPath);
         return response;

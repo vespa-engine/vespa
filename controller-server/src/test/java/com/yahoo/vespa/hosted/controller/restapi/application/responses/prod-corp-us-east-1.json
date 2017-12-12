@@ -18,6 +18,7 @@
   "version": "6.1.0",
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
+  "expiryTimeEpochMs": "(ignore)",
   "screwdriverId": "123",
   "gitRepository": "repository1",
   "gitBranch": "master",
