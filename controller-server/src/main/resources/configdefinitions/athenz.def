@@ -17,12 +17,6 @@ domain                          string
 userAuthenticationPassThruAttribute  string
 # TODO Remove once migrated to Okta
 
-# Path to Athenz CA JKS trust store
-athenzCaTrustStore              string
-
-# Certificate DNS domain
-certDnsDomain                   string
-
 # Athenz service name for controller identity
 service.name                    string
 
@@ -34,6 +28,3 @@ service.privateKeyVersion       int
 
 # Name of Athenz service private key secret
 service.privateKeySecretName    string
-
-# Expiry of service principal token and certificate
-service.credentialsExpiryMinutes int   default=43200  # 30 days
