@@ -4,7 +4,11 @@ import com.yahoo.config.FileReference;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import static org.junit.Assert.assertEquals;
 
 
@@ -14,8 +18,19 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 
 public class FileReceiverTest {
-    private final File root = new File(".");
+    private File root;
+    private File tempDir;
     private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Before
+    public void setup() throws IOException {
+        root = temporaryFolder.newFolder("root");
+        tempDir = temporaryFolder.newFolder("tmp");
+    }
+
     @Test
     public void receiveMultiPartFile() throws IOException{
 
@@ -40,7 +55,7 @@ public class FileReceiverTest {
     private String transferParts(FileReference ref, String fileName, String all, int numParts) throws IOException {
         byte [] allContent = Utf8.toBytes(all);
 
-        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref,
+        FileReceiver.Session session = new FileReceiver.Session(root, tempDir, 1, ref,
                 FileReferenceData.Type.file, fileName, allContent.length);
         int partSize = (allContent.length+(numParts-1))/numParts;
         ByteBuffer bb = ByteBuffer.wrap(allContent);

@@ -36,13 +36,15 @@ public class FileDownloaderTest {
     private MockConnection connection;
     private FileDownloader fileDownloader;
     private File downloadDir;
+    private File tempDir;
 
     @Before
     public void setup() {
         try {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
+            tempDir = Files.createTempDirectory("download").toFile();
             connection = new MockConnection();
-            fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(2000));
+            fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofMillis(2000));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -147,7 +149,7 @@ public class FileDownloaderTest {
 
     @Test
     public void getFileWhenConnectionError() throws IOException {
-        fileDownloader = new FileDownloader(connection, downloadDir, Duration.ofMillis(3000));
+        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofMillis(3000));
         File downloadDir = fileDownloader.downloadDirectory();
 
         int timesToFail = 2;
@@ -183,7 +185,7 @@ public class FileDownloaderTest {
         File downloadDir = Files.createTempDirectory("filedistribution").toFile();
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
-        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, timeout);
+        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout);
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
         List<FileReference> fileReferences = Arrays.asList(foo, bar);

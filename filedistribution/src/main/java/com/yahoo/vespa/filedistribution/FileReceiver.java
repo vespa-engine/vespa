@@ -34,6 +34,9 @@ public class FileReceiver {
     private final Supervisor supervisor;
     private final FileReferenceDownloader downloader;
     private final File downloadDirectory;
+    // Should be on same partition as downloadDirectory to make sure moving files from tmpDirectory
+    // to downloadDirectory is atomic
+    private final File tmpDirectory;
     private final AtomicInteger nextSessionId = new AtomicInteger(1);
     private final Map<Integer, Session> sessions = new HashMap<>();
 
@@ -48,9 +51,10 @@ public class FileReceiver {
         private long currentPartId;
         private long currentHash;
         private final File fileReferenceDir;
+        private final File tmpDir;
         private final File inprogressFile;
 
-        Session(File downloadDirectory, int sessionId, FileReference reference,
+        Session(File downloadDirectory, File tmpDirectory, int sessionId, FileReference reference,
                 FileReferenceData.Type fileType, String fileName, long fileSize)
         {
             this.hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
@@ -63,6 +67,7 @@ public class FileReceiver {
             currentPartId = 0;
             currentHash = 0;
             fileReferenceDir = new File(downloadDirectory, reference.value());
+            this.tmpDir = tmpDirectory;
             try {
                 Files.createDirectories(fileReferenceDir.toPath());
             } catch (IOException e) {
@@ -71,7 +76,7 @@ public class FileReceiver {
             }
 
             try {
-                inprogressFile = Files.createTempFile(downloadDirectory.toPath(), fileName, ".inprogress").toFile();
+                inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
                 String msg = "Failed creating tempfile for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
                 log.log(LogLevel.ERROR, msg + e.getMessage(), e);
@@ -97,6 +102,7 @@ public class FileReceiver {
             currentPartId++;
             hasher.update(part, 0, part.length);
         }
+
         File close(long hash) {
             if (hasher.getValue() != hash) {
                 throw new RuntimeException("xxhash from content (" + currentHash + ") is not equal to xxhash in request (" + hash + ")");
@@ -105,7 +111,7 @@ public class FileReceiver {
             try {
                 // Unpack if necessary
                 if (fileType == FileReferenceData.Type.compressed) {
-                    File decompressedDir = Files.createTempDirectory("archive").toFile();
+                    File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                     log.log(LogLevel.DEBUG, "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
@@ -121,10 +127,11 @@ public class FileReceiver {
         }
     }
 
-    FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory) {
+    FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory, File tmpDirectory) {
         this.supervisor = supervisor;
         this.downloader = downloader;
         this.downloadDirectory = downloadDirectory;
+        this.tmpDirectory = tmpDirectory;
         registerMethods();
     }
 
@@ -201,12 +208,13 @@ public class FileReceiver {
         // file might be a directory (and then type is compressed)
         File file = new File(fileReferenceDir, fileReferenceData.filename());
         try {
-            File tempFile = new File(Files.createTempDirectory("downloaded").toFile(), fileReferenceData.filename());
+            File tempDownloadedDir = Files.createTempDirectory(tmpDirectory.toPath(), "downloaded").toFile();
+            File tempFile = new File(tempDownloadedDir, fileReferenceData.filename());
             Files.write(tempFile.toPath(), fileReferenceData.content().array());
 
             // Unpack if necessary
             if (fileReferenceData.type() == FileReferenceData.Type.compressed) {
-                File decompressedDir = Files.createTempDirectory("decompressed").toFile();
+                File decompressedDir = Files.createTempDirectory(tempDownloadedDir.toPath(), "decompressed").toFile();
                 log.log(LogLevel.DEBUG, "Compressed file, unpacking " + tempFile + " to " + decompressedDir);
                 CompressedFileReference.decompress(tempFile, decompressedDir);
                 moveFileToDestination(decompressedDir, fileReferenceDir);
@@ -252,7 +260,7 @@ public class FileReceiver {
                 log.severe("Session id " + sessionId + " already exist, impossible. Request from(" + req.target() + ")");
             } else {
                 try {
-                    sessions.put(sessionId, new Session(downloadDirectory, sessionId, reference,
+                    sessions.put(sessionId, new Session(downloadDirectory, tmpDirectory, sessionId, reference,
                                                         FileReferenceData.Type.valueOf(type),fileName, fileSize));
                 } catch (Exception e) {
                     retval = 1;

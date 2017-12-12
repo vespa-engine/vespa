@@ -44,10 +44,10 @@ public class FileReferenceDownloader {
     private final Duration downloadTimeout;
     private final FileReceiver fileReceiver;
 
-    FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool, Duration timeout) {
+    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool, Duration timeout) {
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
-        this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory);
+        this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
     private void startDownload(FileReference fileReference, Duration timeout,
