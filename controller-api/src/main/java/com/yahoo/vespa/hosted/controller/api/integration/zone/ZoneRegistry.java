@@ -31,7 +31,7 @@ public interface ZoneRegistry {
 
     /** Returns a list with all known config servers in the given zone.
      *
-     * @deprecated See {@link ZoneRegistry#getConfigServerUris(ZoneId)}
+     * @deprecated Use {@link #getConfigServerSecureUris(ZoneId)} instead (requires that client trusts Athenz CA)
      */
     @Deprecated
     List<URI> getConfigServerUris(ZoneId zoneId);
