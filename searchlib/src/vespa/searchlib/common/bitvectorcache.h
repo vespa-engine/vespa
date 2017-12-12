@@ -2,9 +2,9 @@
 #pragma once
 
 #include "condensedbitvectors.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/fastos/dynamiclibrary.h>
+#include <mutex>
 
 namespace search {
 
@@ -74,11 +74,11 @@ private:
 
     VESPA_DLL_LOCAL static SortedKeyMeta getSorted(Key2Index & keys);
     VESPA_DLL_LOCAL static void populate(Key2Index & newKeys, CondensedBitVector & chunk, const PopulateInterface & lookup);
-    VESPA_DLL_LOCAL bool hasCostChanged(const vespalib::LockGuard &);
+    VESPA_DLL_LOCAL bool hasCostChanged(const std::lock_guard<std::mutex> &);
 
     uint64_t       _lookupCount;
     bool           _needPopulation;
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
     Key2Index      _keys;
     ChunkV         _chunks;
     GenerationHolder &_genHolder;

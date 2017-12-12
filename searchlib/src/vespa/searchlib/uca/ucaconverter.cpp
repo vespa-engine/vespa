@@ -2,8 +2,8 @@
 
 #include "ucaconverter.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <mutex>
 #include <vespa/log/log.h>
 LOG_SETUP(".search.common.sortspec");
 
@@ -14,7 +14,7 @@ using vespalib::ConstBufferRef;
 using vespalib::make_string;
 
 namespace {
-    vespalib::Lock _GlobalDirtyICUThreadSafeLock;
+std::mutex _GlobalDirtyICUThreadSafeLock;
 }
 
 BlobConverter::UP
@@ -30,7 +30,7 @@ UcaConverter::UcaConverter(vespalib::stringref locale, vespalib::stringref stren
     UErrorCode status = U_ZERO_ERROR;
     Collator *coll(NULL);
     {
-        vespalib::LockGuard guard(_GlobalDirtyICUThreadSafeLock);
+        std::lock_guard<std::mutex> guard(_GlobalDirtyICUThreadSafeLock);
         coll = Collator::createInstance(icu::Locale(locale.c_str()), status);
     }
     if(U_SUCCESS(status)) {
