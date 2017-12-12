@@ -29,8 +29,15 @@ public interface ZoneRegistry {
     /** Returns the default region for the given environment, if one is configured. */
     Optional<RegionName> getDefaultRegion(Environment environment);
 
-    /** Returns a list with all known config servers in the given zone. */
+    /** Returns a list with all known config servers in the given zone.
+     *
+     * @deprecated See {@link ZoneRegistry#getConfigServerUris(ZoneId)}
+     */
+    @Deprecated
     List<URI> getConfigServerUris(ZoneId zoneId);
+
+    /** Returns a list with all known config servers in the given zone, with a secure connection URL. */
+    List<URI> getConfigServerSecureUris(ZoneId zoneId);
 
     /** Returns a URL with the logs for the given deployment, if loggin is configured for its zone. */
     Optional<URI> getLogServerUri(DeploymentId deploymentId);
