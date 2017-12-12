@@ -153,18 +153,7 @@ public class Controller extends AbstractComponent {
     public Clock clock() { return clock; }
 
     public Optional<URI> getLogServerUrl(DeploymentId deploymentId) {
-        String kibanaQuery = "/#/discover?_g=()&_a=(columns:!(_source)," +
-                             "index:'logstash-*',interval:auto," +
-                             "query:(query_string:(analyze_wildcard:!t,query:'" +
-                             "HV-tenant:%22" + deploymentId.applicationId().tenant().value() + "%22%20" +
-                             "AND%20HV-application:%22" + deploymentId.applicationId().application().value() + "%22%20" +
-                             "AND%20HV-region:%22" + deploymentId.zone().region().value() + "%22%20" +
-                             "AND%20HV-instance:%22" + deploymentId.applicationId().instance().value() + "%22%20" +
-                             "AND%20HV-environment:%22" + deploymentId.zone().environment().value() + "%22'))," +
-                             "sort:!('@timestamp',desc))";
-
-        URI kibanaPath = URI.create(kibanaQuery);
-        return zoneRegistry.getLogServerUri(deploymentId.zone()).map(uri -> uri.resolve(kibanaPath));
+        return zoneRegistry.getLogServerUri(deploymentId);
     }
 
     public List<URI> getConfigServerUris(ZoneId zoneId) {

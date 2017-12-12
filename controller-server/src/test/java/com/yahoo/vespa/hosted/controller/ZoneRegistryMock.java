@@ -3,11 +3,11 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
@@ -80,25 +80,25 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public Optional<URI> getLogServerUri(Environment environment, RegionName region) {
-        return Optional.of(ZoneId.from(environment, region))
-                .map(z -> URI.create(String.format("http://log.%s.%s.test", environment.value(), region.value())));
+    public Optional<URI> getLogServerUri(DeploymentId deploymentId) {
+        return Optional.of(deploymentId.zone())
+                .map(z -> URI.create(String.format("http://log.%s.test", deploymentId.zone().value())));
     }
 
     @Override
-    public Optional<Duration> getDeploymentTimeToLive(Environment environment, RegionName region) {
-        return Optional.ofNullable(deploymentTimeToLive.get(ZoneId.from(environment, region)));
+    public Duration getDeploymentTimeToLive(ZoneId zoneId) {
+        return deploymentTimeToLive.get(zoneId);
     }
 
     @Override
-    public Optional<RegionName> getDefaultRegion(Environment environment) {
-        return Optional.ofNullable(defaultRegionForEnvironment.get(environment));
+    public RegionName getDefaultRegion(Environment environment) {
+        return defaultRegionForEnvironment.get(environment);
     }
 
     @Override
-    public URI getMonitoringSystemUri(Environment environment, RegionName name, ApplicationId application) {
-        return URI.create("http://monitoring-system.test/?environment=" + environment.value() + "&region="
-                                  + name.value() + "&application=" + application.toShortString());
+    public URI getMonitoringSystemUri(DeploymentId deploymentId) {
+        return URI.create("http://monitoring-system.test/?environment=" + deploymentId.zone().environment().value() + "&region="
+                                  + deploymentId.zone().region().value() + "&application=" + deploymentId.applicationId().toShortString());
     }
 
     @Override
