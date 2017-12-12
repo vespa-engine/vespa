@@ -3,7 +3,6 @@
 
 #include "doctypename.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>

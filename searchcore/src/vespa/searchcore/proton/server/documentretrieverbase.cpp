@@ -72,7 +72,7 @@ CachedSelect::SP
 DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
 {
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         if (_selectCache.hasKey(selection))
             return _selectCache[selection];
     }
@@ -86,7 +86,7 @@ DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
                  getAttrMgr(),
                  _hasFields);
 
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     if (_selectCache.hasKey(selection))
         return _selectCache[selection];
     _selectCache.insert(selection, nselect);

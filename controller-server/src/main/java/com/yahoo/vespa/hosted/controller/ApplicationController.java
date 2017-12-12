@@ -460,8 +460,7 @@ public class ApplicationController {
             if (record.isPresent()) {
                 // Ensure that the existing record points to the correct rotation
                 if (!record.get().data().equals(rotationName)) {
-                    // TODO: Enable once verified
-                    //nameService.updateRecord(record.get().id(), rotationName);
+                    nameService.updateRecord(record.get().id(), rotationName);
                     log.info("Updated mapping for record ID " + record.get().id().asString() + ": '" + dnsName
                              + "' -> '" + rotation.name() + "'");
                 }

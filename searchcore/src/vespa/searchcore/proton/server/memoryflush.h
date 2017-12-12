@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/flushengine/iflushstrategy.h>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace proton {
 
@@ -39,7 +39,7 @@ public:
 
 private:
     /// Needed as flushDone is called in different context from the rest
-    vespalib::Lock     _lock;
+    mutable std::mutex _lock;
     Config             _config;
     /// The time when the strategy was started.
     fastos::TimeStamp  _startTime;

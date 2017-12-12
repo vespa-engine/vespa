@@ -4,7 +4,6 @@
 
 #include "isearchcontext.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 

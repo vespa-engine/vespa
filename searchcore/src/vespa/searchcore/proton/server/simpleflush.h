@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchcore/proton/flushengine/iflushstrategy.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace proton {
 

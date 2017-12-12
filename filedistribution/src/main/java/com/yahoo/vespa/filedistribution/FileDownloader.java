@@ -35,14 +35,15 @@ public class FileDownloader {
 
     public FileDownloader(ConnectionPool connectionPool) {
         this(connectionPool,
-                new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
-                Duration.ofMinutes(15));
+             new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
+             new File(Defaults.getDefaults().underVespaHome("tmp")),
+             Duration.ofMinutes(15));
     }
 
-    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Duration timeout) {
+    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, connectionPool, timeout);
+        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout);
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -67,7 +68,6 @@ public class FileDownloader {
             log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found in " +
                     directory.getAbsolutePath() + ", starting download");
             return queueForDownload(fileReference, timeout);
-
         }
     }
 
@@ -110,7 +110,7 @@ public class FileDownloader {
     private synchronized Future<Optional<File>> queueForDownload(FileReference fileReference, Duration timeout) {
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReference));
         if (inProgress != null) {
-            log.log(LogLevel.INFO, "Already downloading '" + fileReference.value() + "'");
+            log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
             return inProgress;
         }
 

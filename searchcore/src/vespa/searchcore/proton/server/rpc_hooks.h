@@ -8,6 +8,8 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/common/packets.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace proton {
 
@@ -61,7 +63,8 @@ private:
     std::unique_ptr<DocsumByRPC>     _docsumByRPC;
     std::unique_ptr<FRT_Supervisor>  _orb;
     slobrok::api::RegisterAPI        _regAPI;
-    vespalib::Monitor                _stateMonitor;
+    std::mutex                       _stateLock;
+    std::condition_variable          _stateCond;
     vespalib::ThreadStackExecutor    _executor;
 
     void initRPC();

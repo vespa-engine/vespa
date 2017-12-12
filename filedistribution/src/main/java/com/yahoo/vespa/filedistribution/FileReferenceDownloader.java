@@ -16,19 +16,12 @@ import java.io.File;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Downloads file reference using rpc requests to config server and keeps track of files being downloaded
@@ -51,10 +44,10 @@ public class FileReferenceDownloader {
     private final Duration downloadTimeout;
     private final FileReceiver fileReceiver;
 
-    FileReferenceDownloader(File downloadDirectory, ConnectionPool connectionPool, Duration timeout) {
+    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool, Duration timeout) {
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
-        this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory);
+        this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
     private void startDownload(FileReference fileReference, Duration timeout,
@@ -102,7 +95,7 @@ public class FileReferenceDownloader {
                 downloads.remove(fileReference);
                 download.future().set(Optional.of(file));
             } else {
-                log.warning("Received a file " + fileReference + " I did not ask for. Impossible");
+                log.log(LogLevel.WARNING, "Received a file " + fileReference + " I did not ask for. Impossible");
             }
         }
     }

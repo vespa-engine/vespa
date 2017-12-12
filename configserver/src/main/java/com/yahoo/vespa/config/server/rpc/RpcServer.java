@@ -462,16 +462,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             int session = sendMeta(fileData);
             sendParts(session, fileData);
             sendEof(session, fileData, status);
-            Request fileBlob = new Request(FileReceiver.RECEIVE_META_METHOD);
-            fileBlob.parameters().add(new StringValue(fileData.fileReference().value()));
-            fileBlob.parameters().add(new StringValue(fileData.filename()));
-            fileBlob.parameters().add(new StringValue(fileData.type().name()));
-            fileBlob.parameters().add(new Int64Value(fileData.size()));
-            target.invokeSync(fileBlob, 600);
-            if (fileBlob.isError()) {
-                log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
-                        target.toString() + " with error: '" + fileBlob.errorMessage() + "'.");
-            }
         }
         private void sendParts(int session, FileReferenceData fileData) {
             ByteBuffer bb = ByteBuffer.allocate(0x100000);

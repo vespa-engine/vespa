@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "querylimiter.h"
+#include <chrono>
 
 namespace proton {
 namespace matching {
@@ -18,11 +19,11 @@ QueryLimiter::LimitedToken::~LimitedToken()
 void
 QueryLimiter::grabToken(const Doom & doom)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock<std::mutex> guard(_lock);
     while ((_maxThreads > 0) && (_activeThreads >= _maxThreads) && !doom.doom()) {
         int left = doom.left().ms();
         if (left > 0) {
-            guard.wait(left);
+            _cond.wait_for(guard, std::chrono::milliseconds(left));
         }
     }
     _activeThreads++;
@@ -31,13 +32,14 @@ QueryLimiter::grabToken(const Doom & doom)
 void
 QueryLimiter::releaseToken()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     _activeThreads--;
-    guard.signal();
+    _cond.notify_one();
 }
 
 QueryLimiter::QueryLimiter() :
-    _monitor(),
+    _lock(),
+    _cond(),
     _activeThreads(0),
     _maxThreads(-1),
     _coverage(1.0),

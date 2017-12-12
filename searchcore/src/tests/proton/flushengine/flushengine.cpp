@@ -11,8 +11,8 @@
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <mutex>
 #include <chrono>
 
 #include <vespa/log/log.h>
@@ -123,7 +123,7 @@ public:
     search::SerialNum         _oldestSerial;
     search::SerialNum         _currentSerial;
     uint32_t                  _pendingDone;
-    vespalib::Lock            _lock;
+    std::mutex                _lock;
     vespalib::CountDownLatch  _done;
     FlushDoneHistory          _flushDoneHistory;
 
@@ -168,7 +168,7 @@ public:
     // Called once by flush engine slave thread for each task done
     void taskDone()
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         ++_pendingDone;
     }
 
@@ -178,7 +178,7 @@ public:
     void
     flushDone(search::SerialNum oldestSerial) override
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         LOG(info, "SimpleHandler(%s)::flushDone(%" PRIu64 ")",
             getName().c_str(), oldestSerial);
         _oldestSerial = std::max(_oldestSerial, oldestSerial);
@@ -191,7 +191,7 @@ public:
 
     FlushDoneHistory getFlushDoneHistory()
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         return _flushDoneHistory;
     }
 };

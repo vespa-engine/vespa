@@ -199,7 +199,7 @@ public:
     FieldExprNode & operator = (const FieldExprNode &) = delete;
     FieldExprNode(FieldExprNode &&) = default;
     FieldExprNode & operator = (FieldExprNode &&) = default;
-    ~FieldExprNode() = default;
+    ~FieldExprNode();
 
     std::unique_ptr<FieldValueNode> convert_to_field_value() const;
     std::unique_ptr<FunctionValueNode> convert_to_function_call() const;

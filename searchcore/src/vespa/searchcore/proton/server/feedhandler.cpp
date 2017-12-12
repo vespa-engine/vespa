@@ -33,8 +33,6 @@ using vespalib::Executor;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
 using vespalib::make_string;
-using vespalib::MonitorGuard;
-using vespalib::LockGuard;
 using std::make_unique;
 using std::make_shared;
 
@@ -81,7 +79,7 @@ void
 FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
 {
     assert(_writeService.master().isCurrentThread());
-    LockGuard guard(_feedLock);
+    std::lock_guard<std::mutex> guard(_feedLock);
     _feedState->handleOperation(std::move(token), std::move(op));
 }
 
@@ -284,7 +282,7 @@ FeedHandler::getFeedState() const
 {
     FeedState::SP state;
     {
-        LockGuard guard(_feedLock);
+        std::lock_guard<std::mutex> guard(_feedLock);
         state = _feedState;
     }
     return state;
@@ -294,13 +292,13 @@ FeedHandler::getFeedState() const
 void
 FeedHandler::changeFeedState(FeedState::SP newState)
 {
-    LockGuard guard(_feedLock);
+    std::lock_guard<std::mutex> guard(_feedLock);
     changeFeedState(std::move(newState), guard);
 }
 
 
 void
-FeedHandler::changeFeedState(FeedState::SP newState, const LockGuard &)
+FeedHandler::changeFeedState(FeedState::SP newState, const std::lock_guard<std::mutex> &)
 {
     LOG(debug, "Change feed state from '%s' -> '%s'", _feedState->getName().c_str(), newState->getName().c_str());
     _feedState = newState;
@@ -591,7 +589,7 @@ void
 FeedHandler::syncTls(SerialNum syncTo)
 {
     {
-        LockGuard guard(_syncLock);
+        std::lock_guard<std::mutex> guard(_syncLock);
         if (_syncedSerialNum >= syncTo)
             return;
     }
@@ -600,7 +598,7 @@ FeedHandler::syncTls(SerialNum syncTo)
     }
     SerialNum syncedTo(_tlsWriter.sync(syncTo));
     {
-        LockGuard guard(_syncLock);
+        std::lock_guard<std::mutex> guard(_syncLock);
         if (_syncedSerialNum < syncedTo) 
             _syncedSerialNum = syncedTo;
     }
