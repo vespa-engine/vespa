@@ -14,7 +14,12 @@ TEST("verify lock freeness of atomics"){
     {
         std::atomic<vespamalloc::TaggedPtr> taggedPtr;
         ASSERT_EQUAL(16u, sizeof(vespamalloc::TaggedPtr));
+#if __GNUC__ < 7
+        // See https://gcc.gnu.org/ml/gcc-patches/2017-01/msg02344.html for background
         ASSERT_TRUE(taggedPtr.is_lock_free());
+#else
+        ASSERT_FALSE(taggedPtr.is_lock_free());
+#endif
     }
 
 }
