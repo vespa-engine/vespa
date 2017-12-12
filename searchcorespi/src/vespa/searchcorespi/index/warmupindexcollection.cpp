@@ -117,7 +117,7 @@ WarmupIndexCollection::fireWarmup(Task::UP task)
     if (now < _warmupEndTime) {
         _executor.execute(std::move(task));
     } else {
-        vespalib::LockGuard guard(_lock);
+        std::unique_lock<std::mutex> guard(_lock);
         if (_warmupEndTime != 0) {
             _warmupEndTime = 0;
             guard.unlock();
@@ -133,7 +133,7 @@ WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
     const StringBase * sb(dynamic_cast<const StringBase *>(&term));
     if (sb != NULL) {
         const vespalib::string & s = sb->getTerm();
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         TermMap::insert_result found = (*_handledTerms)[fieldId].insert(s);
         return ! found.second;
     }

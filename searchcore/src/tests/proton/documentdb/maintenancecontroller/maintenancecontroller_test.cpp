@@ -34,6 +34,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("maintenancecontroller_test");

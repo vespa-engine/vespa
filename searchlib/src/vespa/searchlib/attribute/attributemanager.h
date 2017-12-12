@@ -7,7 +7,7 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace search {
 
@@ -56,7 +56,7 @@ public:
 protected:
     typedef vespalib::hash_map<string, VectorHolder> AttributeMap;
     AttributeMap   _attributes;
-    vespalib::Lock _loadLock;
+    mutable std::mutex _loadLock;
 private:
     const VectorHolder * findAndLoadAttribute(const string & name) const;
     string createBaseFileName(const string & name, bool useSnapshot) const;

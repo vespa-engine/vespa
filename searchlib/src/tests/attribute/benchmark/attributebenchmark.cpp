@@ -21,8 +21,6 @@ LOG_SETUP("attributebenchmark");
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using std::shared_ptr;
 
 typedef std::vector<uint32_t> NumVector;

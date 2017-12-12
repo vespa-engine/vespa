@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
+#include <condition_variable>
 #include <vespa/fastos/thread.h>
 
 namespace search {
@@ -10,31 +11,32 @@ namespace search {
 class Runnable : public FastOS_Runnable
 {
 protected:
-    uint32_t _id;
-    vespalib::Monitor _cond;
-    bool _done;
-    bool _stopped;
+    uint32_t                _id;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    bool                    _done;
+    bool                    _stopped;
 
 public:
     Runnable(uint32_t id) :
-        _id(id), _cond(), _done(false), _stopped(false)
+        _id(id), _lock(), _cond(), _done(false), _stopped(false)
     { }
     void Run(FastOS_ThreadInterface *, void *) override {
         doRun();
 
-        vespalib::MonitorGuard guard(_cond);
+        std::lock_guard<std::mutex> guard(_lock);
         _stopped = true;
-        guard.broadcast();
+        _cond.notify_all();
     }
     virtual void doRun() = 0;
     void stop() {
-        vespalib::MonitorGuard guard(_cond);
+        std::lock_guard<std::mutex> guard(_lock);
         _done = true;
     }
     void join() {
-        vespalib::MonitorGuard guard(_cond);
+        std::unique_lock<std::mutex> guard(_lock);
         while (!_stopped) {
-            guard.wait();
+            _cond.wait(guard);
         }
     }
 };
