@@ -63,5 +63,5 @@ public class DeploymentId {
     private static String unCapitalize(String str) {
         return str.toLowerCase().substring(0,1) + str.substring(1);
     }
-    
+
 }

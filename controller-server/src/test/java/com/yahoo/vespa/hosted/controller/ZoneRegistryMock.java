@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -81,18 +82,33 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public Optional<URI> getLogServerUri(DeploymentId deploymentId) {
-        return Optional.of(deploymentId.zoneId())
-                .map(z -> URI.create(String.format("http://log.%s.test", deploymentId.zoneId().value())));
+        if ( ! hasZone(deploymentId.zoneId()))
+            return Optional.empty();
+
+        String kibanaQuery = "/#/discover?_g=()&_a=(columns:!(_source)," +
+                             "index:'logstash-*',interval:auto," +
+                             "query:(query_string:(analyze_wildcard:!t,query:'" +
+                             "HV-tenant:%22" + deploymentId.applicationId().tenant().value() + "%22%20" +
+                             "AND%20HV-application:%22" + deploymentId.applicationId().application().value() + "%22%20" +
+                             "AND%20HV-region:%22" + deploymentId.zoneId().region().value() + "%22%20" +
+                             "AND%20HV-instance:%22" + deploymentId.applicationId().instance().value() + "%22%20" +
+                             "AND%20HV-environment:%22" + deploymentId.zoneId().environment().value() + "%22'))," +
+                             "sort:!('@timestamp',desc))";
+
+        URI kibanaPath = URI.create(kibanaQuery);
+        return Optional.of(URI.create(String.format("http://log.%s.test", deploymentId.zoneId().value())).resolve(kibanaPath));
     }
 
     @Override
     public Duration getDeploymentTimeToLive(ZoneId zoneId) {
-        return deploymentTimeToLive.get(zoneId);
+        return deploymentTimeToLive.containsKey(zoneId)
+                ? deploymentTimeToLive.get(zoneId)
+                : Duration.ofMillis(Long.MAX_VALUE / 2);
     }
 
     @Override
-    public RegionName getDefaultRegion(Environment environment) {
-        return defaultRegionForEnvironment.get(environment);
+    public Optional<RegionName> getDefaultRegion(Environment environment) {
+        return Optional.ofNullable(defaultRegionForEnvironment.get(environment));
     }
 
     @Override

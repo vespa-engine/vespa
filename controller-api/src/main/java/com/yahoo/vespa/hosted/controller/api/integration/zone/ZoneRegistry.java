@@ -26,8 +26,8 @@ public interface ZoneRegistry {
     /** Returns a list containing the id of all zones in this registry. */
     List<ZoneId> zones();
 
-    /** Returns the default region for the given environment. */
-    RegionName getDefaultRegion(Environment environment);
+    /** Returns the default region for the given environment, if one is configured. */
+    Optional<RegionName> getDefaultRegion(Environment environment);
 
     /** Returns a list with all known config servers in the given zone. */
     List<URI> getConfigServerUris(ZoneId zoneId);
