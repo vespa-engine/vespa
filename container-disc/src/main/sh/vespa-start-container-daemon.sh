@@ -187,7 +187,6 @@ exec_jsvc () {
     exec $numactlcmd $envcmd $jsvc_binary_name \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
         -XX:+PreserveFramePointer \
-        -XX:+UseRTMLocking \
         ${jsvc_opts} \
         ${memory_options} \
         ${jvm_gcopts} \
@@ -261,7 +260,6 @@ maybe_use_jsvc
 exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
         -XX:+PreserveFramePointer \
-        -XX:+UseRTMLocking \
         ${memory_options} \
         ${jvm_gcopts} \
         -XX:MaxJavaStackTraceDepth=-1 \
