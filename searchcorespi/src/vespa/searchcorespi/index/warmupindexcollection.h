@@ -99,7 +99,7 @@ private:
     vespalib::ThreadExecutor       & _executor;
     IWarmupDone                    & _warmupDone;
     fastos::TimeStamp                _warmupEndTime;
-    vespalib::Lock                   _lock;
+    std::mutex                       _lock;
     std::unique_ptr<FieldTermMap>    _handledTerms;
 };
 

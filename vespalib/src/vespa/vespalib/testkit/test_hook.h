@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/barrier.h>
 #include <string>
 #include <vector>

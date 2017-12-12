@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/metrics/i_job_tracker.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/count_down_latch.h>
 
 namespace proton {
 namespace test {

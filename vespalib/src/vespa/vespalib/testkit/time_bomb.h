@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 #include <thread>
 
 namespace vespalib {

@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include "iattributemanager.h"
+#include <mutex>
 
 namespace search {
 
@@ -21,7 +21,7 @@ private:
     const search::IAttributeManager & _manager;
     mutable AttributeMap              _attributes;
     mutable AttributeMap              _enumAttributes;
-    mutable vespalib::Lock            _cacheLock;
+    mutable std::mutex                _cacheLock;
 
     const attribute::IAttributeVector *
         getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
