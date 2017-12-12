@@ -3,55 +3,52 @@ package com.yahoo.vespa.hosted.controller.api.identifiers;
 
 import com.yahoo.config.provision.ZoneId;
 
+import java.util.Objects;
+
 /**
- * Application + zone. 
+ * ApplicationId x ZoneId.
  * 
  * @author smorgrav
  * @author bratseth
  */
 public class DeploymentId {
 
-    private final com.yahoo.config.provision.ApplicationId application;
-    private final ZoneId zone;
+    private final com.yahoo.config.provision.ApplicationId applicationId;
+    private final ZoneId zoneId;
 
-    public DeploymentId(com.yahoo.config.provision.ApplicationId application, ZoneId zone) {
-        this.application = application;
-        this.zone = zone;
+    public DeploymentId(com.yahoo.config.provision.ApplicationId applicationId, ZoneId zoneId) {
+        this.applicationId = applicationId;
+        this.zoneId = zoneId;
     }
 
     public com.yahoo.config.provision.ApplicationId applicationId() {
-        return application;
+        return applicationId;
     }
-    public ZoneId zone() { return zone; }
 
+    public ZoneId zoneId() {
+        return zoneId;
+    }
 
     public String dottedString() {
         return unCapitalize(applicationId().tenant().value()) + "."
-             + unCapitalize(applicationId().application().value()) + "."
-             + unCapitalize(zone.environment().value()) + "."
-             + unCapitalize(zone.region().value()) + "."
-             + unCapitalize(application.instance().value());
+               + unCapitalize(applicationId().application().value()) + "."
+               + unCapitalize(zoneId.environment().value()) + "."
+               + unCapitalize(zoneId.region().value()) + "."
+               + unCapitalize(applicationId.instance().value());
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DeploymentId other = (DeploymentId) o;
-        if ( ! this.application.equals(other.application)) return false;
-        // TODO: Simplify when Zone implements equals
-        if ( ! this.zone.environment().equals(other.zone.environment())) return false;
-        if ( ! this.zone.region().equals(other.zone.region())) return false;
-        return true;
+        if ( ! (o instanceof DeploymentId)) return false;
+        DeploymentId id = (DeploymentId) o;
+        return Objects.equals(applicationId, id.applicationId) &&
+               Objects.equals(zoneId, id.zoneId);
     }
 
     @Override
     public int hashCode() {
-        // TODO: Simplify when Zone implements hashCode
-        return application.hashCode() + 
-               7 * zone.environment().hashCode() +
-               31 * zone.region().hashCode();
+        return Objects.hash(applicationId, zoneId);
     }
 
     @Override
@@ -60,10 +57,11 @@ public class DeploymentId {
     }
 
     public String toUserFriendlyString() {
-        return application + " in " + zone;
+        return applicationId + " in " + zoneId;
     }
 
     private static String unCapitalize(String str) {
         return str.toLowerCase().substring(0,1) + str.substring(1);
     }
+    
 }

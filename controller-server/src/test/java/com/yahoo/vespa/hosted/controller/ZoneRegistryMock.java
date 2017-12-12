@@ -81,8 +81,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public Optional<URI> getLogServerUri(DeploymentId deploymentId) {
-        return Optional.of(deploymentId.zone())
-                .map(z -> URI.create(String.format("http://log.%s.test", deploymentId.zone().value())));
+        return Optional.of(deploymentId.zoneId())
+                .map(z -> URI.create(String.format("http://log.%s.test", deploymentId.zoneId().value())));
     }
 
     @Override
@@ -97,8 +97,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public URI getMonitoringSystemUri(DeploymentId deploymentId) {
-        return URI.create("http://monitoring-system.test/?environment=" + deploymentId.zone().environment().value() + "&region="
-                                  + deploymentId.zone().region().value() + "&application=" + deploymentId.applicationId().toShortString());
+        return URI.create("http://monitoring-system.test/?environment=" + deploymentId.zoneId().environment().value() + "&region="
+                          + deploymentId.zoneId().region().value() + "&application=" + deploymentId.applicationId().toShortString());
     }
 
     @Override

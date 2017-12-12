@@ -425,9 +425,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(application.id(),
                                                      ZoneId.from(environment, region));
 
-        Deployment deployment = application.deployments().get(deploymentId.zone());
+        Deployment deployment = application.deployments().get(deploymentId.zoneId());
         if (deployment == null)
-            throw new NotExistsException(application + " is not deployed in " + deploymentId.zone());
+            throw new NotExistsException(application + " is not deployed in " + deploymentId.zoneId());
 
         Slime slime = new Slime();
         toSlime(slime.setObject(), deploymentId, deployment, request);
@@ -443,7 +443,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 serviceUrlArray.addString(uri.toString());
         }
 
-        response.setString("nodes", withPath("/zone/v2/" + deploymentId.zone().environment() + "/" + deploymentId.zone().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
+        response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
 
         controller.getLogServerUrl(deploymentId)
                 .ifPresent(elkUrl -> response.setString("elkUrl", elkUrl.toString()));
@@ -452,7 +452,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.revision().id());
         response.setLong("deployTimeEpochMs", deployment.at().toEpochMilli());
-        Duration deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zone());
+        Duration deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId());
         response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli());
 
         controller.applications().get(deploymentId.applicationId()).flatMap(application -> application.deploymentJobs().projectId())
