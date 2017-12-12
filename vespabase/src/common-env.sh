@@ -112,6 +112,8 @@ populate_environment
 PATH=$VESPA_HOME/bin64:$VESPA_HOME/bin:/usr/local/bin:/usr/X11R6/bin:/sbin:/bin:/usr/sbin:/usr/bin
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
 export MALLOC_ARENA_MAX=1
+export GLIBC_TUNABLES=glibc.elision.enable=1
+export RHEL_GLIBC_TUNABLES=glibc.elision.enable=1
 
 # how to find the "java" program?
 # should be available in $VESPA_HOME/bin or JAVA_HOME
