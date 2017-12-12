@@ -18,11 +18,11 @@ Source0:        vespa-%{version}.tar.gz
 %if 0%{?centos}
 BuildRequires: epel-release
 BuildRequires: centos-release-scl
-BuildRequires: devtoolset-6-gcc-c++
-BuildRequires: devtoolset-6-libatomic-devel
-BuildRequires: devtoolset-6-binutils
+BuildRequires: devtoolset-7-gcc-c++
+BuildRequires: devtoolset-7-libatomic-devel
+BuildRequires: devtoolset-7-binutils
 BuildRequires: rh-maven33
-%define _devtoolset_enable /opt/rh/devtoolset-6/enable
+%define _devtoolset_enable /opt/rh/devtoolset-7/enable
 %define _rhmaven33_enable /opt/rh/rh-maven33/enable
 %endif
 %if 0%{?fedora}
