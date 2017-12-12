@@ -5,6 +5,8 @@
 #include "fnet_dataset.h"
 #include "fnet_search.h"
 #include <vespa/searchcore/util/stlishheap.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fdispatch.mergehits");
@@ -65,10 +67,16 @@ FastS_MergeCopyHit(typename T::HitType *src,
     dst->setDistributionKey(src->getDistributionKey());
 }
 
+struct GlobalIdHasher {
+    vespalib::hash_set<document::GlobalId, document::GlobalId::hash> seenSet;
+    bool insert(const document::GlobalId & g_id) {
+        return seenSet.insert(g_id).second;
+    }
+};
 
 
 template <typename T, typename F>
-void
+size_t
 FastS_InternalMergeHits(FastS_HitMerger<T> *merger)
 {
     typename T::SearchType *search   = merger->GetSearch();
@@ -89,28 +97,40 @@ FastS_InternalMergeHits(FastS_HitMerger<T> *merger)
         sortItr = sortRef;
     }
 
+    GlobalIdHasher seenGids;
+
     FastS_make_heap(heap, heapSize, FastS_MergeCompare<T, F>);
 
     while (pt < end) {
         node = *heap;
         FastS_assert(heapSize > 0);
+        bool useHit = seenGids.insert(node->NT_GetHit()->HT_GetGlobalID());
         if (F::UseSortData()) {
-            if (!F::DropSortData()) {
+            if (!F::DropSortData() && useHit) {
                 FastS_MergeCopySortData<T>(node, sortItr++, sortDataLen);
             }
             node->NT_GetSortDataIterator()->Next();
         }
-        FastS_MergeCopyHit<T>(node->NT_GetHit(), pt++);
+        if (useHit) {
+            FastS_MergeCopyHit<T>(node->NT_GetHit(), pt++);
+        }
         node->NT_NextHit();
         if (node->NT_GetNumHitsLeft() > 0) {
             FastS_pop_push_heap(heap, heapSize, node, FastS_MergeCompare<T, F>);
         } else {
             FastS_pop_heap(heap, heapSize--, FastS_MergeCompare<T, F>);
+            if (heapSize == 0) {
+                break;
+            }
         }
+    }
+    if (pt != end) {
+        LOG(warning, "Duplicate removal lead to %zd missing hits (wanted %zd, got %zd)",
+            end - pt, end - beg, pt - beg);
     }
     merger->SetLastNode(node); // source of last hit
     if (F::UseSortData()) {
-        FastS_assert(F::DropSortData() || sortItr == sortRef + (end - beg));
+        FastS_assert(F::DropSortData() || sortItr == sortRef + (pt - beg));
     }
 
     // generate merged sort data
@@ -124,16 +144,17 @@ FastS_InternalMergeHits(FastS_HitMerger<T> *merger)
         char     *sortData = search->ST_GetSortData();
 
         sortItr = sortRef;
-        for (uint32_t residue = (end - beg); residue > 0; residue--) {
+        for (uint32_t residue = (pt - beg); residue > 0; residue--) {
             *sortIdx++ = offset;
             memcpy(sortData + offset, sortItr->_buf, sortItr->_len);
             offset += sortItr->_len;
             sortItr++;
         }
         *sortIdx = offset;
-        FastS_assert(sortItr == sortRef + (end - beg));
+        FastS_assert(sortItr == sortRef + (pt - beg));
         FastS_assert(offset == sortDataLen);
     }
+    return (pt - beg);
 }
 
 //-----------------------------------------------------------------------------
@@ -219,16 +240,17 @@ FastS_HitMerger<T>::MergeHits()
     // do actual merging by invoking templated function
     if (useSortData) {
         if (dropSortData) {
-            FastS_InternalMergeHits
+            numDocs = FastS_InternalMergeHits
                 <T, FastS_MergeFeatures<true, true> >(this);
         } else {
-            FastS_InternalMergeHits
+            numDocs = FastS_InternalMergeHits
                 <T, FastS_MergeFeatures<true, false> >(this);
         }
     } else {
-        FastS_InternalMergeHits
+        numDocs = FastS_InternalMergeHits
             <T, FastS_MergeFeatures<false, false> >(this);
     }
+    _search->ST_AdjustNumHits(numDocs);
 
     // detect incomplete/fuzzy results
     if (_search->ST_ShouldLimitHitsPerNode()) {
