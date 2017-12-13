@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
@@ -71,7 +70,7 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
         VersionState versionState = new VersionState(versionFile);
         assertTrue(versionState.isUpgraded());
         ConfigServerBootstrap bootstrap =
-                new ConfigServerBootstrap(applicationRepository, rpc,  (application, timeout) -> Optional.empty(), versionState,
+                new ConfigServerBootstrap(applicationRepository, rpc,  new MockDeployer(), versionState,
                                           new StateMonitor(new HealthMonitorConfig(new HealthMonitorConfig.Builder()), new SystemTimer()));
         waitUntilStarted(rpc, 60000);
         assertFalse(versionState.isUpgraded());
