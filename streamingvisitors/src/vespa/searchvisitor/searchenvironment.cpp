@@ -15,9 +15,7 @@ __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap=0;
 
 SearchEnvironment::Env::Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf) :
     _configId(configUri.getConfigId()),
-    _configurer(config::SimpleConfigRetriever::UP(
-                    new config::SimpleConfigRetriever(createKeySet(configUri.getConfigId()), configUri.getContext())),
-                this),
+    _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
     _vsmAdapter(new VSMAdapter(muffens, _configId, wf)),
     _rankManager(new RankManager(_vsmAdapter.get()))
 {
@@ -63,13 +61,15 @@ SearchEnvironment::~SearchEnvironment()
     _threadLocals.clear();
 }
 
-SearchEnvironment::Env & SearchEnvironment::getEnv(const vespalib::string & searchCluster)
+SearchEnvironment::Env &
+SearchEnvironment::getEnv(const vespalib::string & searchCluster)
 {
     config::ConfigUri searchClusterUri(_configUri.createWithNewId(searchCluster));
     if (_localEnvMap == NULL) {
-        _localEnvMap = new EnvMap;
+        EnvMapUP envMap = std::make_unique<EnvMap>();
+        _localEnvMap = envMap.get();
         vespalib::LockGuard guard(_lock);
-        _threadLocals.push_back(EnvMapUP(_localEnvMap));
+        _threadLocals.emplace_back(std::move(envMap));
     }
     EnvMap::iterator localFound = _localEnvMap->find(searchCluster);
     if (localFound == _localEnvMap->end()) {
@@ -77,7 +77,8 @@ SearchEnvironment::Env & SearchEnvironment::getEnv(const vespalib::string & sear
         EnvMap::iterator found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
             LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
-            _envMap[searchCluster].reset(new Env("*", searchClusterUri, _wordFolder));
+            Env::SP env = std::make_shared<Env>("*", searchClusterUri, _wordFolder);
+            _envMap[searchCluster] = std::move(env);
             found = _envMap.find(searchCluster);
         }
         _localEnvMap->insert(*found);
