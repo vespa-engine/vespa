@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
@@ -113,6 +114,25 @@ public class ContentSearchClusterTest {
                 DocType.indexGlobal("b"),
                 DocType.indexGlobal("c"))).getXml(),
                 searchDefinitions);
+    }
+
+    private static BucketspacesConfig getBucketspacesConfig(ContentCluster cluster) {
+        BucketspacesConfig.Builder builder = new BucketspacesConfig.Builder();
+        cluster.getConfig(builder);
+        return new BucketspacesConfig(builder);
+    }
+
+    private static void assertDocumentType(String expName, String expBucketSpace, BucketspacesConfig.Documenttype docType) {
+        assertEquals(expName, docType.name());
+        assertEquals(expBucketSpace, docType.bucketspace());
+    }
+
+    @Test
+    public void require_that_bucket_spaces_config_is_produced_for_content_cluster() throws Exception {
+        BucketspacesConfig config = getBucketspacesConfig(createClusterWithGlobalType());
+        assertEquals(2, config.documenttype().size());
+        assertDocumentType("global", "global", config.documenttype(0));
+        assertDocumentType("regular", "default", config.documenttype(1));
     }
 
 }

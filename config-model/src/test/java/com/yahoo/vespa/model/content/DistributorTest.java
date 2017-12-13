@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -17,6 +16,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
+
 /**
  * Test for content DistributorCluster.
  */
@@ -346,23 +346,4 @@ public class DistributorTest {
         assertThat(config.disable_bucket_activation(), is(true));
     }
 
-    private BucketspacesConfig clusterXmlToBucketspacesConfig(String xml) {
-        BucketspacesConfig.Builder builder = new BucketspacesConfig.Builder();
-        parse(xml).getConfig(builder);
-        return new BucketspacesConfig(builder);
-    }
-
-    private void assertDocumentType(String expName, String expBucketSpace, BucketspacesConfig.Documenttype docType) {
-        assertEquals(expName, docType.name());
-        assertEquals(expBucketSpace, docType.bucketspace());
-    }
-
-    @Test
-    public void bucket_spaces_config_is_produced_for_distributor_cluster() {
-        BucketspacesConfig config = clusterXmlToBucketspacesConfig(
-                generateXmlForDocTypes(DocType.index("music"), DocType.indexGlobal("movies")));
-        assertEquals(2, config.documenttype().size());
-        assertDocumentType("movies", "global", config.documenttype(0));
-        assertDocumentType("music", "default", config.documenttype(1));
-    }
 }
