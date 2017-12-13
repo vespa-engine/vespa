@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -50,9 +49,8 @@ public class FileReferenceDownloader {
         this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
-    private void startDownload(FileReference fileReference, Duration timeout,
-                               FileReferenceDownload fileReferenceDownload)
-    {
+    private void startDownload(Duration timeout, FileReferenceDownload fileReferenceDownload) {
+        FileReference fileReference = fileReferenceDownload.fileReference();
         synchronized (downloads) {
             downloads.put(fileReference, fileReferenceDownload);
             downloadStatus.put(fileReference, 0.0);
@@ -67,7 +65,7 @@ public class FileReferenceDownloader {
                     Thread.sleep(10);
                 }
             }
-            catch (InterruptedException | ExecutionException e) {}
+            catch (InterruptedException e) {}
         }
 
         if ( !downloadStarted) {
@@ -80,7 +78,7 @@ public class FileReferenceDownloader {
 
     void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
         log.log(LogLevel.DEBUG, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "'");
-        downloadExecutor.submit(() -> startDownload(fileReferenceDownload.fileReference(), downloadTimeout, fileReferenceDownload));
+        downloadExecutor.submit(() -> startDownload(downloadTimeout, fileReferenceDownload));
     }
 
     void receiveFile(FileReferenceData fileReferenceData) {
@@ -100,7 +98,7 @@ public class FileReferenceDownloader {
         }
     }
 
-    private boolean startDownloadRpc(FileReference fileReference) throws ExecutionException, InterruptedException {
+    private boolean startDownloadRpc(FileReference fileReference) {
         Connection connection = connectionPool.getCurrent();
         Request request = new Request("filedistribution.serveFile");
         request.parameters().add(new StringValue(fileReference.value()));
@@ -173,8 +171,12 @@ public class FileReferenceDownloader {
     }
 
     void setDownloadStatus(String file, double completeness) {
+        setDownloadStatus(new FileReference(file), completeness);
+    }
+
+    void setDownloadStatus(FileReference fileReference, double completeness) {
         synchronized (downloads) {
-            downloadStatus.put(new FileReference(file), completeness);
+            downloadStatus.put(fileReference, completeness);
         }
     }
 

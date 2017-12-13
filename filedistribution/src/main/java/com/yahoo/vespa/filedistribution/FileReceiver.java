@@ -23,6 +23,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+/**
+ * When asking for a file reference, this handles RPC callbacks from config server with file data and metadata.
+ * Uses the same Supervisor as the original caller that requests files, so communication uses the same
+ * connection in both directions.
+ *
+ * @author baldersheim
+ */
 public class FileReceiver {
 
     private final static Logger log = Logger.getLogger(FileReceiver.class.getName());
@@ -124,6 +131,10 @@ public class FileReceiver {
                 throw new RuntimeException("Failed writing file: ", e);
             }
             return file;
+        }
+
+        double percentageReceived() {
+            return (double)currentFileSize/(double)fileSize;
         }
     }
 
@@ -287,6 +298,9 @@ public class FileReceiver {
             log.severe("Got exception + " + e);
             retval = 1;
         }
+        double completeness = (double) session.currentFileSize / (double) session.fileSize;
+        log.log(LogLevel.DEBUG, String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+        downloader.setDownloadStatus(reference, completeness);
         req.returnValues().add(new Int32Value(retval));
     }
 
@@ -306,12 +320,12 @@ public class FileReceiver {
         req.returnValues().add(new Int32Value(retval));
     }
 
-    private final Session getSession(Integer sessionId) {
+    private Session getSession(Integer sessionId) {
         synchronized (sessions) {
             return sessions.get(sessionId);
         }
     }
-    private static final int verifySession(Session session, int sessionId, FileReference reference) {
+    private static int verifySession(Session session, int sessionId, FileReference reference) {
         if (session == null) {
             log.severe("session-id " + sessionId + " does not exist.");
             return 1;

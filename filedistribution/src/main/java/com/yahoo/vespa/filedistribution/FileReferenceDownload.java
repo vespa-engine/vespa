@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.filedistribution;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.config.FileReference;
 
