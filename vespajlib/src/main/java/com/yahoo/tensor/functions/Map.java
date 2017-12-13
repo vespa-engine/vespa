@@ -32,7 +32,7 @@ public class Map extends PrimitiveTensorFunction {
         this.argument = argument;
         this.mapper = mapper;
     }
-    
+
     public static TensorType outputType(TensorType inputType) { return inputType; }
 
     public TensorFunction argument() { return argument; }

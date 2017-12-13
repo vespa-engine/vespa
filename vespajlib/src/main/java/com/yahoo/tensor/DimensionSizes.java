@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 /**
  * The sizes of a set of dimensions.
- * 
+ *
  * @author bratseth
  */
 @Beta
@@ -48,7 +48,7 @@ public final class DimensionSizes {
     @Override
     public int hashCode() { return Arrays.hashCode(sizes); }
 
-    /** 
+    /**
      * Builder of a set of dimension sizes.
      * Dimensions whose size is not set before building will get size 0.
      */

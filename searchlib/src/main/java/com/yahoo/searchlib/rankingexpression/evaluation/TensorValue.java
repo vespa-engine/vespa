@@ -2,14 +2,10 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.google.common.annotations.Beta;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
-import com.yahoo.tensor.TensorType;
-
-import java.util.Collections;
-import java.util.Optional;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 
 /**
  * A Value containing a tensor.
@@ -23,7 +19,7 @@ public class TensorValue extends Value {
 
     /** The tensor value of this */
     private final Tensor value;
-    
+
     public TensorValue(Tensor value) {
         this.value = value;
     }
@@ -131,7 +127,7 @@ public class TensorValue extends Value {
     public Value compare(TruthOperator operator, Value argument) {
         return new TensorValue(compareTensor(operator, asTensor(argument, operator.toString())));
     }
-    
+
     private Tensor compareTensor(TruthOperator operator, Tensor argument) {
         switch (operator) {
             case LARGER: return value.larger(argument);
@@ -152,7 +148,7 @@ public class TensorValue extends Value {
         else
             return new TensorValue(value.map((value) -> function.evaluate(value, arg.asDouble())));
     }
-        
+
     private Tensor functionOnTensor(Function function, Tensor argument) {
         switch (function) {
             case min: return value.min(argument);

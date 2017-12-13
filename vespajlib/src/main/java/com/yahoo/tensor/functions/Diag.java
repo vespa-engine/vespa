@@ -11,19 +11,19 @@ import java.util.stream.Stream;
 
 /**
  * A tensor generator which returns a tensor of any dimension filled with 1 in the diagonal and 0 elsewhere.
- * 
+ *
  * @author bratseth
  */
 public class Diag extends CompositeTensorFunction {
 
     private final TensorType type;
     private final Function<List<Integer>, Double> diagFunction;
-    
+
     public Diag(TensorType type) {
         this.type = type;
         this.diagFunction = ScalarFunctions.equal(dimensionNames().collect(Collectors.toList()));
     }
-    
+
     @Override
     public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
 
@@ -43,7 +43,7 @@ public class Diag extends CompositeTensorFunction {
     public String toString(ToStringContext context) {
         return "diag(" + dimensionNames().collect(Collectors.joining(",")) + ")" + diagFunction;
     }
-    
+
     private Stream<String> dimensionNames() {
         return type.dimensions().stream().map(TensorType.Dimension::name);
     }

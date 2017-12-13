@@ -22,11 +22,11 @@ import java.util.stream.Stream;
 public class Random extends CompositeTensorFunction {
 
     private final TensorType type;
-    
+
     public Random(TensorType type) {
         this.type = type;
     }
-    
+
     @Override
     public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
 
@@ -46,7 +46,7 @@ public class Random extends CompositeTensorFunction {
     public String toString(ToStringContext context) {
         return "random(" + dimensionNames().collect(Collectors.joining(",")) + ")";
     }
-    
+
     private Stream<String> dimensionNames() {
         return type.dimensions().stream().map(TensorType.Dimension::toString);
     }

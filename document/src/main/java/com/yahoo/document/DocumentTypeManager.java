@@ -38,7 +38,7 @@ public class DocumentTypeManager {
     // *Configured data types* (not built-in/primitive) indexed by their id
     //
     // *Primitive* data types are always available and have a single id.
-    // 
+    //
     // *Built-in dynamic* types: The tensor type.
     // Any tensor type has the same id and is always available just like primitive types.
     // However, unlike primitive types, each tensor type is a separate DataType instance
@@ -112,7 +112,7 @@ public class DocumentTypeManager {
     public DataType getDataType(String name) {
         if (name.startsWith("tensor(")) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(name));
-        
+
         List<DataType> foundTypes = new ArrayList<>();
         for (DataType type : dataTypes.values()) {
             if (type.getName().equalsIgnoreCase(name)) {
@@ -141,10 +141,10 @@ public class DocumentTypeManager {
     }
 
     public DataType getDataType(int code) { return getDataType(code, ""); }
-    
+
     /**
      * Return a data type instance
-     * 
+     *
      * @param code the code of the data type to return, which must be either built in or present in this manager
      * @param detailedType detailed type information, or the empty string if none
      * @return the appropriate DataType instance
@@ -183,7 +183,7 @@ public class DocumentTypeManager {
 
     /**
      * Register a single datatype. Re-registering an existing, but equal, datatype is ok.
-     * 
+     *
      * @param type The datatype to register
      */
     void registerSingleType(DataType type) {
@@ -280,7 +280,7 @@ public class DocumentTypeManager {
 
     /**
      * Returns a read only view of the registered data types
-     * 
+     *
      * @return collection of types
      */
     public Collection<DataType> getDataTypes() {

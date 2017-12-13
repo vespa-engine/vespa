@@ -10,13 +10,14 @@ import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Matmul;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
+import com.yahoo.tensor.functions.TensorFunction;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
 import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.NodeDef;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
@@ -45,16 +46,35 @@ class OperationMapper {
     private TensorConverter tensorConverter = new TensorConverter();
 
     TypedTensorFunction join(List<TypedTensorFunction> arguments, DoubleBinaryOperator doubleFunction) {
-        // Note that this generalizes the corresponding TF function as it does not verify that the tensor
-        // types are the same, with the assumption that this already happened on the TF side
-        // (and if not, this should do the right thing anyway)
         ensureArguments(2, arguments, "join");
         TypedTensorFunction a = arguments.get(0);
         TypedTensorFunction b = arguments.get(1);
+        if (a.type().rank() < b.type().rank())
+            throw new IllegalArgumentException("Attempt to join " + a.type() + " and " + b.type() + ", " +
+                                               "but this is not supported when the second argument has a higher rank");
 
-        TensorType resultType = Join.outputType(a.type(), b.type());
-        Join function = new Join(a.function(), b.function(), doubleFunction);
-        return new TypedTensorFunction(resultType, function);
+        TensorFunction bFunction = b.function();
+
+        if (a.type().rank() > b.type().rank()) {
+            // Well now we have entered the wonderful world of "broadcasting"
+            // https://docs.scipy.org/doc/numpy/user/basics.broadcasting.html
+            // I'm not able to extract from that any unambiguous specification of which dimensions
+            // should be "stretched" when the tensor do not have the same number of dimensions.
+            // From trying this with TensorFlow it appears that the second tensor is matched to the
+            // "end" (highest numbered) dimensions of the first, but I'm not sure whether this is generally true.
+            // Anyway, we move the dimensions of b to the last dimensions of a (instead of by default, the first).
+            List<String> renameFrom = new ArrayList<>();
+            List<String> renameTo = new ArrayList<>();
+            int sizeDifference = a.type().rank() - b.type().rank();
+            for (int i = 0; i < b.type().rank(); i++) {
+                renameFrom.add(b.type().dimensions().get(i).name());
+                renameTo.add("d" + (sizeDifference + i));
+            }
+            bFunction = new Rename(bFunction, renameFrom, renameTo);
+        }
+
+        Join function = new Join(a.function(), bFunction, doubleFunction);
+        return new TypedTensorFunction(a.type(), function); // output type is a type by TF definition and a.rank>=b.rank
     }
 
     TypedTensorFunction map(List<TypedTensorFunction> arguments, DoubleUnaryOperator doubleFunction) {
@@ -66,35 +86,37 @@ class OperationMapper {
         return new TypedTensorFunction(resultType, function);
     }
 
-    TypedTensorFunction identity(NodeDef tfNode, Map<String, TensorType> inputs, SavedModelBundle model,
-                                 List<NamedTensor> constants) {
-        String name;
-        TensorType type;
-        if (tfNode.getName().endsWith("/read")) { // A node reading a variable supplied with this model
-            if (tfNode.getInputList().size() != 1)
-                throw new IllegalArgumentException("A Variable/read node must have one input but has " +
-                                                   tfNode.getInputList().size());
-            name = tfNode.getInput(0);
-            AttrValue shapes = tfNode.getAttrMap().get("_output_shapes");
-            if (shapes == null)
-                throw new IllegalArgumentException("Referenced variable '" + name + "' is missing a tensor output shape");
-            Session.Runner fetched = model.session().runner().fetch(name);
-            List<org.tensorflow.Tensor<?>> result = fetched.run();
-            if ( result.size() != 1)
-                throw new IllegalStateException("Expected 1 tensor from reading Variable " + name + ", but got " + result.size());
-            Tensor constant = tensorConverter.toVespaTensor(result.get(0));
-            constants.add(new NamedTensor(name, constant));
-            return new TypedTensorFunction(constant.type(),
-                                           new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant(" + name + ")")));
-        }
-        else { // a referenced input (query or document tensor) TODO: How to map to attribute/query name
-            name = tfNode.getName();
-            type = inputs.get(name);
-            if (type == null)
-                throw new IllegalArgumentException("An identity operation node is referencing input '" + name +
-                                                   "', but there is no such input");
-            return new TypedTensorFunction(type, new VariableTensor(name));
-        }
+    TypedTensorFunction placeholder(NodeDef tfNode, ImportResult result) {
+        String name = tfNode.getName();
+        TensorType type = result.arguments().get(name);
+        if (type == null)
+            throw new IllegalArgumentException("An placeholder operation node is referencing input '" + name +
+                                               "', but there is no such input");
+        // Included literally in the expression and so must be produced by a separate macro in the rank profile
+        return new TypedTensorFunction(type, new VariableTensor(name));
+    }
+
+    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, ImportResult result) {
+        if ( ! tfNode.getName().endsWith("/read"))
+            throw new IllegalArgumentException("Encountered identity node " + tfNode.getName() + ", but identify " +
+                                               "nodes are only supported when reading variables");
+        if (tfNode.getInputList().size() != 1)
+            throw new IllegalArgumentException("A Variable/read node must have one input but has " +
+                                               tfNode.getInputList().size());
+
+        String name = tfNode.getInput(0);
+        AttrValue shapes = tfNode.getAttrMap().get("_output_shapes");
+        if (shapes == null)
+            throw new IllegalArgumentException("Referenced variable '" + name + "' is missing a tensor output shape");
+        Session.Runner fetched = model.session().runner().fetch(name);
+        List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
+        if ( importedTensors.size() != 1)
+            throw new IllegalStateException("Expected 1 tensor from reading Variable " + name + ", but got " +
+                                            importedTensors.size());
+        Tensor constant = tensorConverter.toVespaTensor(importedTensors.get(0));
+        result.set(name, constant);
+        return new TypedTensorFunction(constant.type(),
+                                       new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant(" + name + ")")));
     }
 
     TypedTensorFunction matmul(List<TypedTensorFunction> arguments) {
@@ -106,21 +128,18 @@ class OperationMapper {
         if (a.type().rank() != b.type().rank())
             throw new IllegalArgumentException("Tensors in matmul must have the same rank");
 
-        // Let the second-to-last dimension of the second tensor be the same as the last dimension of the first
-        // and the last dimension of the second argument be not present in the first argument, while leaving the
+        String afterLastDim = "d" + (a.type().rank() + 1);
+        // Let the first dimension of the second tensor be the same as the second dimension of the first
+        // and the second dimension of the second argument be not present in the first argument, while leaving the
         // rest of the dimensions the same. Such is the way of implicit dimension name tensor multiplication.
 
-        // TODO: Check if transpose_a or transpose_b is set and rename differently accordingly
+        // TODO: Check if transpose_a or transpose_b is set true and rename differently accordingly
 
-        String beforeLastDim = "d" + (a.type().rank() - 1);
-        String lastDim = "d" + a.type().rank();
-        String afterLastDim = "d" + (a.type().rank() + 1);
-
-        Rename renamedB = new Rename(b.function(), ImmutableList.of(beforeLastDim, lastDim),
-                                     ImmutableList.of(lastDim, afterLastDim));
-        Matmul matmul = new Matmul(a.function(), renamedB, lastDim);
-        return new TypedTensorFunction(Matmul.outputType(a.type(), b.type(), lastDim),
-                                       new Rename(matmul, afterLastDim, lastDim));
+        Rename renamedB = new Rename(b.function(), ImmutableList.of("d0", "d1"),
+                                     ImmutableList.of("d1", afterLastDim));
+        Matmul matmul = new Matmul(a.function(), renamedB, "d1");
+        return new TypedTensorFunction(Matmul.outputType(a.type(), b.type(), "d1"),
+                                       new Rename(matmul, afterLastDim, "d1"));
     }
 
     TypedTensorFunction softmax(List<TypedTensorFunction> arguments) {

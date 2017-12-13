@@ -29,7 +29,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public <T extends Expression> boolean containsExpression(Class<T> searchFor) {
-        throw createUnsupportedException();
+        throw createUnsupportedException(searchFor.getSimpleName());
     }
 
     @Override
@@ -79,7 +79,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Index getIndex(String name) {
-        throw createUnsupportedException();
+        throw createUnsupportedException("index");
     }
 
     @Override
@@ -99,7 +99,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public ScriptExpression getIndexingScript() {
-        throw createUnsupportedException();
+        throw createUnsupportedException("indexing");
     }
 
     @Override
@@ -114,12 +114,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public ImmutableSDField getStructField(String name) {
-        throw createUnsupportedException();
+        throw createUnsupportedException("struct");
     }
 
     @Override
     public Collection<? extends ImmutableSDField> getStructFields() {
-        throw createUnsupportedException();
+        throw createUnsupportedException("struct");
     }
 
     @Override
@@ -129,12 +129,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Stemming getStemming(Search search) {
-        throw createUnsupportedException();
+        throw createUnsupportedException("stemming");
     }
 
     @Override
     public Ranking getRanking() {
-        throw createUnsupportedException();
+        throw createUnsupportedException("ranking");
     }
 
     @Override
@@ -153,8 +153,8 @@ public class ImmutableImportedSDField implements ImmutableSDField {
                 importedField.targetField().getDataType());
     }
 
-    private static UnsupportedOperationException createUnsupportedException() {
-        return new UnsupportedOperationException("This aspect is not meaningful or relevant for an imported field.");
+    private static UnsupportedOperationException createUnsupportedException(String aspect) {
+        return new UnsupportedOperationException("'" + aspect + "' is not meaningful or relevant for an imported field.");
     }
 
 }

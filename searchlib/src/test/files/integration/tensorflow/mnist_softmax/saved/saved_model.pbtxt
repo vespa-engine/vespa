@@ -237,6 +237,45 @@ meta_graphs {
         }
       }
       op {
+        name: "ConcatV2"
+        input_arg {
+          name: "values"
+          type_attr: "T"
+          number_attr: "N"
+        }
+        input_arg {
+          name: "axis"
+          type_attr: "Tidx"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "N"
+          type: "int"
+          has_minimum: true
+          minimum: 2
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "Tidx"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
         name: "Const"
         output_arg {
           name: "output"
@@ -291,6 +330,38 @@ meta_graphs {
         is_commutative: true
       }
       op {
+        name: "ExpandDims"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "dim"
+          type_attr: "Tdim"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "Tdim"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
         name: "Fill"
         input_arg {
           name: "dims"
@@ -310,41 +381,38 @@ meta_graphs {
         }
       }
       op {
-        name: "HashTableV2"
+        name: "FloorDiv"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
         output_arg {
-          name: "table_handle"
-          type: DT_RESOURCE
+          name: "z"
+          type_attr: "T"
         }
         attr {
-          name: "container"
-          type: "string"
-          default_value {
-            s: ""
-          }
-        }
-        attr {
-          name: "shared_name"
-          type: "string"
-          default_value {
-            s: ""
-          }
-        }
-        attr {
-          name: "use_node_name_sharing"
-          type: "bool"
-          default_value {
-            b: false
-          }
-        }
-        attr {
-          name: "key_dtype"
+          name: "T"
           type: "type"
+          allowed_values {
+            list {
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
         }
-        attr {
-          name: "value_dtype"
-          type: "type"
-        }
-        is_stateful: true
       }
       op {
         name: "Identity"
@@ -360,82 +428,6 @@ meta_graphs {
           name: "T"
           type: "type"
         }
-      }
-      op {
-        name: "InitializeTableV2"
-        input_arg {
-          name: "table_handle"
-          type: DT_RESOURCE
-        }
-        input_arg {
-          name: "keys"
-          type_attr: "Tkey"
-        }
-        input_arg {
-          name: "values"
-          type_attr: "Tval"
-        }
-        attr {
-          name: "Tkey"
-          type: "type"
-        }
-        attr {
-          name: "Tval"
-          type: "type"
-        }
-        is_stateful: true
-      }
-      op {
-        name: "Log"
-        input_arg {
-          name: "x"
-          type_attr: "T"
-        }
-        output_arg {
-          name: "y"
-          type_attr: "T"
-        }
-        attr {
-          name: "T"
-          type: "type"
-          allowed_values {
-            list {
-              type: DT_HALF
-              type: DT_FLOAT
-              type: DT_DOUBLE
-              type: DT_COMPLEX64
-              type: DT_COMPLEX128
-            }
-          }
-        }
-      }
-      op {
-        name: "LookupTableFindV2"
-        input_arg {
-          name: "table_handle"
-          type: DT_RESOURCE
-        }
-        input_arg {
-          name: "keys"
-          type_attr: "Tin"
-        }
-        input_arg {
-          name: "default_value"
-          type_attr: "Tout"
-        }
-        output_arg {
-          name: "values"
-          type_attr: "Tout"
-        }
-        attr {
-          name: "Tin"
-          type: "type"
-        }
-        attr {
-          name: "Tout"
-          type: "type"
-        }
-        is_stateful: true
       }
       op {
         name: "MatMul"
@@ -479,6 +471,35 @@ meta_graphs {
             }
           }
         }
+      }
+      op {
+        name: "Maximum"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+        is_commutative: true
       }
       op {
         name: "Mean"
@@ -592,32 +613,6 @@ meta_graphs {
         is_commutative: true
       }
       op {
-        name: "Neg"
-        input_arg {
-          name: "x"
-          type_attr: "T"
-        }
-        output_arg {
-          name: "y"
-          type_attr: "T"
-        }
-        attr {
-          name: "T"
-          type: "type"
-          allowed_values {
-            list {
-              type: DT_HALF
-              type: DT_FLOAT
-              type: DT_DOUBLE
-              type: DT_INT32
-              type: DT_INT64
-              type: DT_COMPLEX64
-              type: DT_COMPLEX128
-            }
-          }
-        }
-      }
-      op {
         name: "NoOp"
       }
       op {
@@ -650,88 +645,6 @@ meta_graphs {
         }
       }
       op {
-        name: "ParseExample"
-        input_arg {
-          name: "serialized"
-          type: DT_STRING
-        }
-        input_arg {
-          name: "names"
-          type: DT_STRING
-        }
-        input_arg {
-          name: "sparse_keys"
-          type: DT_STRING
-          number_attr: "Nsparse"
-        }
-        input_arg {
-          name: "dense_keys"
-          type: DT_STRING
-          number_attr: "Ndense"
-        }
-        input_arg {
-          name: "dense_defaults"
-          type_list_attr: "Tdense"
-        }
-        output_arg {
-          name: "sparse_indices"
-          type: DT_INT64
-          number_attr: "Nsparse"
-        }
-        output_arg {
-          name: "sparse_values"
-          type_list_attr: "sparse_types"
-        }
-        output_arg {
-          name: "sparse_shapes"
-          type: DT_INT64
-          number_attr: "Nsparse"
-        }
-        output_arg {
-          name: "dense_values"
-          type_list_attr: "Tdense"
-        }
-        attr {
-          name: "Nsparse"
-          type: "int"
-          has_minimum: true
-        }
-        attr {
-          name: "Ndense"
-          type: "int"
-          has_minimum: true
-        }
-        attr {
-          name: "sparse_types"
-          type: "list(type)"
-          has_minimum: true
-          allowed_values {
-            list {
-              type: DT_FLOAT
-              type: DT_INT64
-              type: DT_STRING
-            }
-          }
-        }
-        attr {
-          name: "Tdense"
-          type: "list(type)"
-          has_minimum: true
-          allowed_values {
-            list {
-              type: DT_FLOAT
-              type: DT_INT64
-              type: DT_STRING
-            }
-          }
-        }
-        attr {
-          name: "dense_shapes"
-          type: "list(shape)"
-          has_minimum: true
-        }
-      }
-      op {
         name: "Placeholder"
         output_arg {
           name: "output"
@@ -752,22 +665,47 @@ meta_graphs {
         }
       }
       op {
-        name: "Range"
+        name: "Prod"
         input_arg {
-          name: "start"
-          type_attr: "Tidx"
+          name: "input"
+          type_attr: "T"
         }
         input_arg {
-          name: "limit"
-          type_attr: "Tidx"
-        }
-        input_arg {
-          name: "delta"
+          name: "reduction_indices"
           type_attr: "Tidx"
         }
         output_arg {
           name: "output"
-          type_attr: "Tidx"
+          type_attr: "T"
+        }
+        attr {
+          name: "keep_dims"
+          type: "bool"
+          default_value {
+            b: false
+          }
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT64
+              type: DT_INT32
+              type: DT_UINT8
+              type: DT_UINT16
+              type: DT_INT16
+              type: DT_INT8
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+              type: DT_QINT8
+              type: DT_QUINT8
+              type: DT_QINT32
+              type: DT_HALF
+            }
+          }
         }
         attr {
           name: "Tidx"
@@ -777,8 +715,6 @@ meta_graphs {
           }
           allowed_values {
             list {
-              type: DT_FLOAT
-              type: DT_DOUBLE
               type: DT_INT32
               type: DT_INT64
             }
@@ -786,13 +722,17 @@ meta_graphs {
         }
       }
       op {
-        name: "Reciprocal"
+        name: "RealDiv"
         input_arg {
           name: "x"
           type_attr: "T"
         }
-        output_arg {
+        input_arg {
           name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
           type_attr: "T"
         }
         attr {
@@ -803,6 +743,10 @@ meta_graphs {
               type: DT_HALF
               type: DT_FLOAT
               type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
               type: DT_INT32
               type: DT_INT64
               type: DT_COMPLEX64
@@ -943,13 +887,54 @@ meta_graphs {
         }
       }
       op {
-        name: "Softmax"
+        name: "Slice"
         input_arg {
-          name: "logits"
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "begin"
+          type_attr: "Index"
+        }
+        input_arg {
+          name: "size"
+          type_attr: "Index"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "Index"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "SoftmaxCrossEntropyWithLogits"
+        input_arg {
+          name: "features"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "labels"
           type_attr: "T"
         }
         output_arg {
-          name: "softmax"
+          name: "loss"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "backprop"
           type_attr: "T"
         }
         attr {
@@ -1011,6 +996,10 @@ meta_graphs {
               type: DT_HALF
               type: DT_FLOAT
               type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
               type: DT_INT32
               type: DT_INT64
               type: DT_COMPLEX64
@@ -1109,49 +1098,6 @@ meta_graphs {
         }
       }
       op {
-        name: "TopKV2"
-        input_arg {
-          name: "input"
-          type_attr: "T"
-        }
-        input_arg {
-          name: "k"
-          type: DT_INT32
-        }
-        output_arg {
-          name: "values"
-          type_attr: "T"
-        }
-        output_arg {
-          name: "indices"
-          type: DT_INT32
-        }
-        attr {
-          name: "sorted"
-          type: "bool"
-          default_value {
-            b: true
-          }
-        }
-        attr {
-          name: "T"
-          type: "type"
-          allowed_values {
-            list {
-              type: DT_FLOAT
-              type: DT_DOUBLE
-              type: DT_INT32
-              type: DT_INT64
-              type: DT_UINT8
-              type: DT_INT16
-              type: DT_INT8
-              type: DT_UINT16
-              type: DT_HALF
-            }
-          }
-        }
-      }
-      op {
         name: "VariableV2"
         output_arg {
           name: "ref"
@@ -1182,224 +1128,27 @@ meta_graphs {
         }
         is_stateful: true
       }
+      op {
+        name: "ZerosLike"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+      }
     }
     tags: "serve"
-    tensorflow_version: "1.3.0"
-    tensorflow_git_version: "v1.3.0-rc2-20-g0787eee"
+    tensorflow_version: "1.4.1"
+    tensorflow_git_version: "v1.4.0-19-ga52c8d9b01"
   }
   graph_def {
-    node {
-      name: "tf_example"
-      op: "Placeholder"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              unknown_rank: true
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_STRING
-        }
-      }
-      attr {
-        key: "shape"
-        value {
-          shape {
-            unknown_rank: true
-          }
-        }
-      }
-    }
-    node {
-      name: "ParseExample/Const"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_FLOAT
-            tensor_shape {
-              dim {
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "ParseExample/ParseExample/names"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_STRING
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_STRING
-            tensor_shape {
-              dim {
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "ParseExample/ParseExample/dense_keys_0"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_STRING
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_STRING
-            tensor_shape {
-            }
-            string_val: "x"
-          }
-        }
-      }
-    }
-    node {
-      name: "ParseExample/ParseExample"
-      op: "ParseExample"
-      input: "tf_example"
-      input: "ParseExample/ParseExample/names"
-      input: "ParseExample/ParseExample/dense_keys_0"
-      input: "ParseExample/Const"
-      attr {
-        key: "Ndense"
-        value {
-          i: 1
-        }
-      }
-      attr {
-        key: "Nsparse"
-        value {
-          i: 0
-        }
-      }
-      attr {
-        key: "Tdense"
-        value {
-          list {
-            type: DT_FLOAT
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 784
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dense_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 784
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "sparse_types"
-        value {
-          list {
-          }
-        }
-      }
-    }
-    node {
-      name: "x"
-      op: "Identity"
-      input: "ParseExample/ParseExample"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 784
-              }
-            }
-          }
-        }
-      }
-    }
     node {
       name: "Placeholder"
       op: "Placeholder"
@@ -1412,7 +1161,7 @@ meta_graphs {
                 size: -1
               }
               dim {
-                size: 10
+                size: 784
               }
             }
           }
@@ -1432,7 +1181,7 @@ meta_graphs {
               size: -1
             }
             dim {
-              size: 10
+              size: 784
             }
           }
         }
@@ -1767,15 +1516,9 @@ meta_graphs {
       }
     }
     node {
-      name: "init"
-      op: "NoOp"
-      input: "^Variable/Assign"
-      input: "^Variable_1/Assign"
-    }
-    node {
       name: "MatMul"
       op: "MatMul"
-      input: "x"
+      input: "Placeholder"
       input: "Variable/read"
       attr {
         key: "T"
@@ -1839,8 +1582,76 @@ meta_graphs {
       }
     }
     node {
-      name: "y"
-      op: "Softmax"
+      name: "Placeholder_1"
+      op: "Placeholder"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 10
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Rank"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 2
+          }
+        }
+      }
+    }
+    node {
+      name: "Shape"
+      op: "Shape"
       input: "add"
       attr {
         key: "T"
@@ -1854,72 +1665,59 @@ meta_graphs {
           list {
             shape {
               dim {
-                size: -1
-              }
-              dim {
-                size: 10
+                size: 2
               }
             }
           }
         }
       }
-    }
-    node {
-      name: "Log"
-      op: "Log"
-      input: "y"
       attr {
-        key: "T"
+        key: "out_type"
         value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
+          type: DT_INT32
         }
       }
     }
     node {
-      name: "mul"
-      op: "Mul"
-      input: "Placeholder"
-      input: "Log"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "Const"
+      name: "Rank_1"
       op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 2
+          }
+        }
+      }
+    }
+    node {
+      name: "Shape_1"
+      op: "Shape"
+      input: "add"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
       attr {
         key: "_output_shapes"
         value {
@@ -1927,6 +1725,114 @@ meta_graphs {
             shape {
               dim {
                 size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "Sub/y"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "Sub"
+      op: "Sub"
+      input: "Rank_1"
+      input: "Sub/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Slice/begin"
+      op: "Pack"
+      input: "Sub"
+      attr {
+        key: "N"
+        value {
+          i: 1
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "axis"
+        value {
+          i: 0
+        }
+      }
+    }
+    node {
+      name: "Slice/size"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
               }
             }
           }
@@ -1945,18 +1851,784 @@ meta_graphs {
             dtype: DT_INT32
             tensor_shape {
               dim {
-                size: 2
+                size: 1
               }
             }
-            tensor_content: "\000\000\000\000\001\000\000\000"
+            int_val: 1
           }
         }
       }
     }
     node {
-      name: "Sum"
-      op: "Sum"
-      input: "mul"
+      name: "Slice"
+      op: "Slice"
+      input: "Shape_1"
+      input: "Slice/begin"
+      input: "Slice/size"
+      attr {
+        key: "Index"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "concat/values_0"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "concat/axis"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "concat"
+      op: "ConcatV2"
+      input: "concat/values_0"
+      input: "Slice"
+      input: "concat/axis"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Reshape"
+      op: "Reshape"
+      input: "add"
+      input: "concat"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Rank_2"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 2
+          }
+        }
+      }
+    }
+    node {
+      name: "Shape_2"
+      op: "Shape"
+      input: "Placeholder_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "Sub_1/y"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "Sub_1"
+      op: "Sub"
+      input: "Rank_2"
+      input: "Sub_1/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Slice_1/begin"
+      op: "Pack"
+      input: "Sub_1"
+      attr {
+        key: "N"
+        value {
+          i: 1
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "axis"
+        value {
+          i: 0
+        }
+      }
+    }
+    node {
+      name: "Slice_1/size"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "Slice_1"
+      op: "Slice"
+      input: "Shape_2"
+      input: "Slice_1/begin"
+      input: "Slice_1/size"
+      attr {
+        key: "Index"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "concat_1/values_0"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "concat_1/axis"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "concat_1"
+      op: "ConcatV2"
+      input: "concat_1/values_0"
+      input: "Slice_1"
+      input: "concat_1/axis"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Reshape_1"
+      op: "Reshape"
+      input: "Placeholder_1"
+      input: "concat_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "SoftmaxCrossEntropyWithLogits"
+      op: "SoftmaxCrossEntropyWithLogits"
+      input: "Reshape"
+      input: "Reshape_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Sub_2/y"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "Sub_2"
+      op: "Sub"
+      input: "Rank"
+      input: "Sub_2/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Slice_2/begin"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "Slice_2/size"
+      op: "Pack"
+      input: "Sub_2"
+      attr {
+        key: "N"
+        value {
+          i: 1
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "axis"
+        value {
+          i: 0
+        }
+      }
+    }
+    node {
+      name: "Slice_2"
+      op: "Slice"
+      input: "Shape"
+      input: "Slice_2/begin"
+      input: "Slice_2/size"
+      attr {
+        key: "Index"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Reshape_2"
+      op: "Reshape"
+      input: "SoftmaxCrossEntropyWithLogits"
+      input: "Slice_2"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "Mean"
+      op: "Mean"
+      input: "Reshape_2"
       input: "Const"
       attr {
         key: "T"
@@ -1983,26 +2655,6 @@ meta_graphs {
         key: "keep_dims"
         value {
           b: false
-        }
-      }
-    }
-    node {
-      name: "Neg"
-      op: "Neg"
-      input: "Sum"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
         }
       }
     }
@@ -2091,590 +2743,7 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/Neg_grad/Neg"
-      op: "Neg"
-      input: "gradients/Fill"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/Sum_grad/Reshape/shape"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 2
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_INT32
-            tensor_shape {
-              dim {
-                size: 2
-              }
-            }
-            tensor_content: "\001\000\000\000\001\000\000\000"
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/Sum_grad/Reshape"
-      op: "Reshape"
-      input: "gradients/Neg_grad/Neg"
-      input: "gradients/Sum_grad/Reshape/shape"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "Tshape"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 1
-              }
-              dim {
-                size: 1
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/Sum_grad/Shape"
-      op: "Shape"
-      input: "mul"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 2
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "out_type"
-        value {
-          type: DT_INT32
-        }
-      }
-    }
-    node {
-      name: "gradients/Sum_grad/Tile"
-      op: "Tile"
-      input: "gradients/Sum_grad/Reshape"
-      input: "gradients/Sum_grad/Shape"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "Tmultiples"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/Shape"
-      op: "Shape"
-      input: "Placeholder"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 2
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "out_type"
-        value {
-          type: DT_INT32
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/Shape_1"
-      op: "Shape"
-      input: "Log"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 2
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "out_type"
-        value {
-          type: DT_INT32
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/BroadcastGradientArgs"
-      op: "BroadcastGradientArgs"
-      input: "gradients/mul_grad/Shape"
-      input: "gradients/mul_grad/Shape_1"
-      attr {
-        key: "T"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-            }
-            shape {
-              dim {
-                size: -1
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/mul"
-      op: "Mul"
-      input: "gradients/Sum_grad/Tile"
-      input: "Log"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/Sum"
-      op: "Sum"
-      input: "gradients/mul_grad/mul"
-      input: "gradients/mul_grad/BroadcastGradientArgs"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "Tidx"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              unknown_rank: true
-            }
-          }
-        }
-      }
-      attr {
-        key: "keep_dims"
-        value {
-          b: false
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/Reshape"
-      op: "Reshape"
-      input: "gradients/mul_grad/Sum"
-      input: "gradients/mul_grad/Shape"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "Tshape"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/mul_1"
-      op: "Mul"
-      input: "Placeholder"
-      input: "gradients/Sum_grad/Tile"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/Sum_1"
-      op: "Sum"
-      input: "gradients/mul_grad/mul_1"
-      input: "gradients/mul_grad/BroadcastGradientArgs:1"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "Tidx"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              unknown_rank: true
-            }
-          }
-        }
-      }
-      attr {
-        key: "keep_dims"
-        value {
-          b: false
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/Reshape_1"
-      op: "Reshape"
-      input: "gradients/mul_grad/Sum_1"
-      input: "gradients/mul_grad/Shape_1"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "Tshape"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/tuple/group_deps"
-      op: "NoOp"
-      input: "^gradients/mul_grad/Reshape"
-      input: "^gradients/mul_grad/Reshape_1"
-    }
-    node {
-      name: "gradients/mul_grad/tuple/control_dependency"
-      op: "Identity"
-      input: "gradients/mul_grad/Reshape"
-      input: "^gradients/mul_grad/tuple/group_deps"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_class"
-        value {
-          list {
-            s: "loc:@gradients/mul_grad/Reshape"
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/mul_grad/tuple/control_dependency_1"
-      op: "Identity"
-      input: "gradients/mul_grad/Reshape_1"
-      input: "^gradients/mul_grad/tuple/group_deps"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_class"
-        value {
-          list {
-            s: "loc:@gradients/mul_grad/Reshape_1"
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/Log_grad/Reciprocal"
-      op: "Reciprocal"
-      input: "y"
-      input: "^gradients/mul_grad/tuple/control_dependency_1"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/Log_grad/mul"
-      op: "Mul"
-      input: "gradients/mul_grad/tuple/control_dependency_1"
-      input: "gradients/Log_grad/Reciprocal"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/y_grad/mul"
-      op: "Mul"
-      input: "gradients/Log_grad/mul"
-      input: "y"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "gradients/y_grad/Sum/reduction_indices"
+      name: "gradients/Mean_grad/Reshape/shape"
       op: "Const"
       attr {
         key: "_output_shapes"
@@ -2710,10 +2779,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/y_grad/Sum"
-      op: "Sum"
-      input: "gradients/y_grad/mul"
-      input: "gradients/y_grad/Sum/reduction_indices"
+      name: "gradients/Mean_grad/Reshape"
+      op: "Reshape"
+      input: "gradients/Fill"
+      input: "gradients/Mean_grad/Reshape/shape"
       attr {
         key: "T"
         value {
@@ -2721,7 +2790,66 @@ meta_graphs {
         }
       }
       attr {
-        key: "Tidx"
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Shape"
+      op: "Shape"
+      input: "Reshape_2"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Tile"
+      op: "Tile"
+      input: "gradients/Mean_grad/Reshape"
+      input: "gradients/Mean_grad/Shape"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tmultiples"
         value {
           type: DT_INT32
         }
@@ -2738,15 +2866,38 @@ meta_graphs {
           }
         }
       }
+    }
+    node {
+      name: "gradients/Mean_grad/Shape_1"
+      op: "Shape"
+      input: "Reshape_2"
       attr {
-        key: "keep_dims"
+        key: "T"
         value {
-          b: false
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
         }
       }
     }
     node {
-      name: "gradients/y_grad/Reshape/shape"
+      name: "gradients/Mean_grad/Shape_2"
       op: "Const"
       attr {
         key: "_output_shapes"
@@ -2754,7 +2905,6 @@ meta_graphs {
           list {
             shape {
               dim {
-                size: 2
               }
             }
           }
@@ -2773,19 +2923,362 @@ meta_graphs {
             dtype: DT_INT32
             tensor_shape {
               dim {
-                size: 2
               }
             }
-            tensor_content: "\377\377\377\377\001\000\000\000"
           }
         }
       }
     }
     node {
-      name: "gradients/y_grad/Reshape"
+      name: "gradients/Mean_grad/Const"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Prod"
+      op: "Prod"
+      input: "gradients/Mean_grad/Shape_1"
+      input: "gradients/Mean_grad/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Const_1"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Prod_1"
+      op: "Prod"
+      input: "gradients/Mean_grad/Shape_2"
+      input: "gradients/Mean_grad/Const_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Maximum/y"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Maximum"
+      op: "Maximum"
+      input: "gradients/Mean_grad/Prod_1"
+      input: "gradients/Mean_grad/Maximum/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/floordiv"
+      op: "FloorDiv"
+      input: "gradients/Mean_grad/Prod"
+      input: "gradients/Mean_grad/Maximum"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@gradients/Mean_grad/Shape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/Cast"
+      op: "Cast"
+      input: "gradients/Mean_grad/floordiv"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Mean_grad/truediv"
+      op: "RealDiv"
+      input: "gradients/Mean_grad/Tile"
+      input: "gradients/Mean_grad/Cast"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/Reshape_2_grad/Shape"
+      op: "Shape"
+      input: "SoftmaxCrossEntropyWithLogits"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "gradients/Reshape_2_grad/Reshape"
       op: "Reshape"
-      input: "gradients/y_grad/Sum"
-      input: "gradients/y_grad/Reshape/shape"
+      input: "gradients/Mean_grad/truediv"
+      input: "gradients/Reshape_2_grad/Shape"
       attr {
         key: "T"
         value {
@@ -2794,6 +3287,92 @@ meta_graphs {
       }
       attr {
         key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/zeros_like"
+      op: "ZerosLike"
+      input: "SoftmaxCrossEntropyWithLogits:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/SoftmaxCrossEntropyWithLogits_grad/ExpandDims/dim"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "gradients/SoftmaxCrossEntropyWithLogits_grad/ExpandDims"
+      op: "ExpandDims"
+      input: "gradients/Reshape_2_grad/Reshape"
+      input: "gradients/SoftmaxCrossEntropyWithLogits_grad/ExpandDims/dim"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tdim"
         value {
           type: DT_INT32
         }
@@ -2815,10 +3394,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/y_grad/sub"
-      op: "Sub"
-      input: "gradients/Log_grad/mul"
-      input: "gradients/y_grad/Reshape"
+      name: "gradients/SoftmaxCrossEntropyWithLogits_grad/mul"
+      op: "Mul"
+      input: "gradients/SoftmaxCrossEntropyWithLogits_grad/ExpandDims"
+      input: "SoftmaxCrossEntropyWithLogits:1"
       attr {
         key: "T"
         value {
@@ -2834,7 +3413,7 @@ meta_graphs {
                 size: -1
               }
               dim {
-                size: 10
+                size: -1
               }
             }
           }
@@ -2842,14 +3421,49 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/y_grad/mul_1"
-      op: "Mul"
-      input: "gradients/y_grad/sub"
-      input: "y"
+      name: "gradients/Reshape_grad/Shape"
+      op: "Shape"
+      input: "add"
       attr {
         key: "T"
         value {
           type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "gradients/Reshape_grad/Reshape"
+      op: "Reshape"
+      input: "gradients/SoftmaxCrossEntropyWithLogits_grad/mul"
+      input: "gradients/Reshape_grad/Shape"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
         }
       }
       attr {
@@ -2965,7 +3579,7 @@ meta_graphs {
     node {
       name: "gradients/add_grad/Sum"
       op: "Sum"
-      input: "gradients/y_grad/mul_1"
+      input: "gradients/Reshape_grad/Reshape"
       input: "gradients/add_grad/BroadcastGradientArgs"
       attr {
         key: "T"
@@ -3032,7 +3646,7 @@ meta_graphs {
     node {
       name: "gradients/add_grad/Sum_1"
       op: "Sum"
-      input: "gradients/y_grad/mul_1"
+      input: "gradients/Reshape_grad/Reshape"
       input: "gradients/add_grad/BroadcastGradientArgs:1"
       attr {
         key: "T"
@@ -3208,7 +3822,7 @@ meta_graphs {
     node {
       name: "gradients/MatMul_grad/MatMul_1"
       op: "MatMul"
-      input: "x"
+      input: "Placeholder"
       input: "gradients/add_grad/tuple/control_dependency"
       attr {
         key: "T"
@@ -3345,7 +3959,7 @@ meta_graphs {
             dtype: DT_FLOAT
             tensor_shape {
             }
-            float_val: 0.00999999977648
+            float_val: 0.5
           }
         }
       }
@@ -3438,422 +4052,10 @@ meta_graphs {
       input: "^GradientDescent/update_Variable_1/ApplyGradientDescent"
     }
     node {
-      name: "TopKV2/k"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_INT32
-            tensor_shape {
-            }
-            int_val: 10
-          }
-        }
-      }
-    }
-    node {
-      name: "TopKV2"
-      op: "TopKV2"
-      input: "y"
-      input: "TopKV2/k"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "sorted"
-        value {
-          b: true
-        }
-      }
-    }
-    node {
-      name: "Const_1"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_STRING
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_STRING
-            tensor_shape {
-              dim {
-                size: 10
-              }
-            }
-            string_val: "0"
-            string_val: "1"
-            string_val: "2"
-            string_val: "3"
-            string_val: "4"
-            string_val: "5"
-            string_val: "6"
-            string_val: "7"
-            string_val: "8"
-            string_val: "9"
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string/Size"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_INT32
-            tensor_shape {
-            }
-            int_val: 10
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string/range/start"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_INT32
-            tensor_shape {
-            }
-            int_val: 0
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string/range/delta"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_INT32
-            tensor_shape {
-            }
-            int_val: 1
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string/range"
-      op: "Range"
-      input: "index_to_string/range/start"
-      input: "index_to_string/Size"
-      input: "index_to_string/range/delta"
-      attr {
-        key: "Tidx"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string/ToInt64"
-      op: "Cast"
-      input: "index_to_string/range"
-      attr {
-        key: "DstT"
-        value {
-          type: DT_INT64
-        }
-      }
-      attr {
-        key: "SrcT"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string"
-      op: "HashTableV2"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "container"
-        value {
-          s: ""
-        }
-      }
-      attr {
-        key: "key_dtype"
-        value {
-          type: DT_INT64
-        }
-      }
-      attr {
-        key: "shared_name"
-        value {
-          s: ""
-        }
-      }
-      attr {
-        key: "use_node_name_sharing"
-        value {
-          b: false
-        }
-      }
-      attr {
-        key: "value_dtype"
-        value {
-          type: DT_STRING
-        }
-      }
-    }
-    node {
-      name: "index_to_string/Const"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_STRING
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_STRING
-            tensor_shape {
-            }
-            string_val: "UNK"
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string/table_init"
-      op: "InitializeTableV2"
-      input: "index_to_string"
-      input: "index_to_string/ToInt64"
-      input: "Const_1"
-      attr {
-        key: "Tkey"
-        value {
-          type: DT_INT64
-        }
-      }
-      attr {
-        key: "Tval"
-        value {
-          type: DT_STRING
-        }
-      }
-    }
-    node {
-      name: "ToInt64"
-      op: "Cast"
-      input: "TopKV2:1"
-      attr {
-        key: "DstT"
-        value {
-          type: DT_INT64
-        }
-      }
-      attr {
-        key: "SrcT"
-        value {
-          type: DT_INT32
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "index_to_string_Lookup"
-      op: "LookupTableFindV2"
-      input: "index_to_string"
-      input: "ToInt64"
-      input: "index_to_string/Const"
-      attr {
-        key: "Tin"
-        value {
-          type: DT_INT64
-        }
-      }
-      attr {
-        key: "Tout"
-        value {
-          type: DT_STRING
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
+      name: "init"
+      op: "NoOp"
+      input: "^Variable/Assign"
+      input: "^Variable_1/Assign"
     }
     node {
       name: "ArgMax/dimension"
@@ -3888,7 +4090,7 @@ meta_graphs {
     node {
       name: "ArgMax"
       op: "ArgMax"
-      input: "y"
+      input: "add"
       input: "ArgMax/dimension"
       attr {
         key: "T"
@@ -3954,7 +4156,7 @@ meta_graphs {
     node {
       name: "ArgMax_1"
       op: "ArgMax"
-      input: "Placeholder"
+      input: "Placeholder_1"
       input: "ArgMax_1/dimension"
       attr {
         key: "T"
@@ -4012,7 +4214,7 @@ meta_graphs {
       }
     }
     node {
-      name: "Cast"
+      name: "Cast_1"
       op: "Cast"
       input: "Equal"
       attr {
@@ -4041,7 +4243,7 @@ meta_graphs {
       }
     }
     node {
-      name: "Const_2"
+      name: "Const_1"
       op: "Const"
       attr {
         key: "_output_shapes"
@@ -4077,10 +4279,10 @@ meta_graphs {
       }
     }
     node {
-      name: "Mean"
+      name: "Mean_1"
       op: "Mean"
-      input: "Cast"
-      input: "Const_2"
+      input: "Cast_1"
+      input: "Const_1"
       attr {
         key: "T"
         value {
@@ -4108,16 +4310,6 @@ meta_graphs {
           b: false
         }
       }
-    }
-    node {
-      name: "init_all_tables"
-      op: "NoOp"
-      input: "^index_to_string/table_init"
-    }
-    node {
-      name: "legacy_init_op"
-      op: "NoOp"
-      input: "^init_all_tables"
     }
     node {
       name: "save/Const"
@@ -4174,7 +4366,7 @@ meta_graphs {
             dtype: DT_STRING
             tensor_shape {
             }
-            string_val: "_temp_8390c48b96834292ab57050d0ae6959e/part"
+            string_val: "_temp_6ca9fa5171ed4237a2fbcc27277e2864/part"
           }
         }
       }
@@ -4783,22 +4975,6 @@ meta_graphs {
     version: V2
   }
   collection_def {
-    key: "legacy_init_op"
-    value {
-      node_list {
-        value: "legacy_init_op"
-      }
-    }
-  }
-  collection_def {
-    key: "table_initializer"
-    value {
-      node_list {
-        value: "index_to_string/table_init"
-      }
-    }
-  }
-  collection_def {
     key: "train_op"
     value {
       node_list {
@@ -4810,8 +4986,8 @@ meta_graphs {
     key: "trainable_variables"
     value {
       bytes_list {
-        value: "\n\nVariable:0\022\017Variable/Assign\032\017Variable/read:0"
-        value: "\n\014Variable_1:0\022\021Variable_1/Assign\032\021Variable_1/read:0"
+        value: "\n\nVariable:0\022\017Variable/Assign\032\017Variable/read:02\007zeros:0"
+        value: "\n\014Variable_1:0\022\021Variable_1/Assign\032\021Variable_1/read:02\tzeros_1:0"
       }
     }
   }
@@ -4819,18 +4995,18 @@ meta_graphs {
     key: "variables"
     value {
       bytes_list {
-        value: "\n\nVariable:0\022\017Variable/Assign\032\017Variable/read:0"
-        value: "\n\014Variable_1:0\022\021Variable_1/Assign\032\021Variable_1/read:0"
+        value: "\n\nVariable:0\022\017Variable/Assign\032\017Variable/read:02\007zeros:0"
+        value: "\n\014Variable_1:0\022\021Variable_1/Assign\032\021Variable_1/read:02\tzeros_1:0"
       }
     }
   }
   signature_def {
-    key: "predict_images"
+    key: "serving_default"
     value {
       inputs {
-        key: "images"
+        key: "x"
         value {
-          name: "x:0"
+          name: "Placeholder:0"
           dtype: DT_FLOAT
           tensor_shape {
             dim {
@@ -4843,9 +5019,9 @@ meta_graphs {
         }
       }
       outputs {
-        key: "scores"
+        key: "y"
         value {
-          name: "y:0"
+          name: "add:0"
           dtype: DT_FLOAT
           tensor_shape {
             dim {
@@ -4858,52 +5034,6 @@ meta_graphs {
         }
       }
       method_name: "tensorflow/serving/predict"
-    }
-  }
-  signature_def {
-    key: "serving_default"
-    value {
-      inputs {
-        key: "inputs"
-        value {
-          name: "tf_example:0"
-          dtype: DT_STRING
-          tensor_shape {
-            unknown_rank: true
-          }
-        }
-      }
-      outputs {
-        key: "classes"
-        value {
-          name: "index_to_string_Lookup:0"
-          dtype: DT_STRING
-          tensor_shape {
-            dim {
-              size: -1
-            }
-            dim {
-              size: 10
-            }
-          }
-        }
-      }
-      outputs {
-        key: "scores"
-        value {
-          name: "TopKV2:0"
-          dtype: DT_FLOAT
-          tensor_shape {
-            dim {
-              size: -1
-            }
-            dim {
-              size: 10
-            }
-          }
-        }
-      }
-      method_name: "tensorflow/serving/classify"
     }
   }
 }

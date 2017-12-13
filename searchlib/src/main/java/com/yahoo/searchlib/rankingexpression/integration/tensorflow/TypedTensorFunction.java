@@ -3,9 +3,9 @@ package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
-/** 
+/**
  * A tensor function returning a specific tensor type
- * 
+ *
  * @author bratseth
  */
 final class TypedTensorFunction {

@@ -36,8 +36,15 @@ public class TensorFunctionNode extends CompositeNode {
     @Override
     public List<ExpressionNode> children() {
         return function.functionArguments().stream()
-                                           .map(f -> ((TensorFunctionExpressionNode)f).expression)
+                                           .map(this::toExpressionNode)
                                            .collect(Collectors.toList());
+    }
+
+    private ExpressionNode toExpressionNode(TensorFunction f) {
+        if (f instanceof TensorFunctionExpressionNode)
+            return ((TensorFunctionExpressionNode)f).expression;
+        else
+            return new TensorFunctionNode(f);
     }
 
     @Override

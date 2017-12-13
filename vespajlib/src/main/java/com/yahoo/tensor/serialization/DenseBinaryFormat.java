@@ -16,9 +16,9 @@ import java.util.Optional;
  *
  * Sorted dimensions = num_dimensions [dimension_str_len dimension_str_bytes dimension_size_int]*
  * Cell_values = [double, double, double, ...]*
- * where values are encoded in order of increasing indexes in each dimension, increasing 
+ * where values are encoded in order of increasing indexes in each dimension, increasing
  * indexes of later dimensions in the dimension type before earlier.
- * 
+ *
  * @author bratseth
  */
 @Beta
@@ -54,7 +54,7 @@ public class DenseBinaryFormat implements BinaryFormat {
             type = optionalType.get();
             TensorType serializedType = decodeType(buffer);
             if ( ! serializedType.isAssignableTo(type))
-                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType + 
+                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
                                                    " cannot be assigned to type " + type);
             sizes = sizesFromType(serializedType);
         }

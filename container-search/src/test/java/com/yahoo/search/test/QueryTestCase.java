@@ -2,8 +2,6 @@
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Language;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
@@ -28,7 +26,6 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-
 import com.yahoo.yolean.Exceptions;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,14 +42,14 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -69,7 +66,7 @@ public class QueryTestCase {
         assertEquals("", q.properties().get("aParameter"));
         assertNull(q.properties().get("notSetParameter"));
     }
-    
+
     // TODO: YQL work in progress (jon)
     @Ignore
     @Test
@@ -693,7 +690,7 @@ public class QueryTestCase {
         List<IndexedItem> l = QueryTree.getPositiveTerms(i);
         assertEquals(3, l.size());
     }
-    
+
     @Test
     public void testHeuristicLanguageDetectionTextExtraction() {
         assertDetectionText("b ", "a:b", "text:a", "text:default");
@@ -720,27 +717,27 @@ public class QueryTestCase {
         q.getModel().getQueryTree(); // cause parsing
         assertEquals(expectedDetectionText, mockLinguistics.detector.lastDetectionText);
     }
-    
+
     /** A linguistics instance which records the last language detection text passed to it */
     private static class MockLinguistics extends SimpleLinguistics {
 
         final MockDetector detector = new MockDetector();
-        
+
         @Override
         public Detector getDetector() { return detector; }
-        
+
     }
-    
+
     private static class MockDetector extends SimpleDetector {
 
         String lastDetectionText = null;
-        
+
         @Override
         public Detection detect(String input, Hint hint) {
             lastDetectionText = input;
             return super.detect(input, hint);
         }
-        
+
     }
 
     protected boolean contains(String lineSubstring,String[] lines) {

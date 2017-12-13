@@ -24,8 +24,10 @@ public class TensorConverter {
     private TensorType toVespaTensorType(long[] shape) {
         TensorType.Builder b = new TensorType.Builder();
         int dimensionIndex = 0;
-        for (long dimensionSize : shape)
-            b.indexed("d" + (dimensionIndex++), (int)dimensionSize);
+        for (long dimensionSize : shape) {
+            if (dimensionSize == 0) dimensionSize = 1; // TensorFlow ...
+            b.indexed("d" + (dimensionIndex++), (int) dimensionSize);
+        }
         return b.build();
     }
 
