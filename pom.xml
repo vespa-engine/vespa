@@ -23,7 +23,6 @@
         </developer>
     </developers>
 
-<<<<<<< HEAD
     <distributionManagement>
         <repository>
             <id>bintray-vespa-repo</id>
@@ -959,8 +958,6 @@
         <surefire.version>2.19.1</surefire.version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
     </properties>
 
-=======
->>>>>>> master
     <modules>
         <module>application</module>
         <module>application-deploy-plugin</module>
