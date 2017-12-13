@@ -17,6 +17,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder.createSearchDefinitions;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 
 /**
  * Unit tests for content search cluster.
@@ -133,6 +134,8 @@ public class ContentSearchClusterTest {
         assertEquals(2, config.documenttype().size());
         assertDocumentType("global", "global", config.documenttype(0));
         assertDocumentType("regular", "default", config.documenttype(1));
+        // Safeguard against flipping the switch
+        assertFalse(config.enable_multiple_bucket_spaces());
     }
 
 }
