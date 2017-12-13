@@ -204,27 +204,26 @@ void SearchVisitor::init(const Parameters & params)
     _attrMan.add(_rankAttributeBacking);
     Parameters::ValueRef valueRef;
     if ( params.get("summaryclass", valueRef) ) {
-        _summaryClass = vespalib::string(static_cast<const char *>(valueRef.data()),
-                                    static_cast<unsigned>(valueRef.size()));
+        _summaryClass = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Received summary class: %s", _summaryClass.c_str());
     }
 
     size_t wantedSummaryCount(10);
     if (params.get("summarycount", valueRef) ) {
-        vespalib::string tmp(static_cast<const char *>(valueRef.data()), valueRef.size());
+        vespalib::string tmp(valueRef.data(), valueRef.size());
         wantedSummaryCount = strtoul(tmp.c_str(), NULL, 0);
         LOG(debug, "Received summary count: %ld", wantedSummaryCount);
     }
     _queryResult->getSearchResult().setWantedHitCount(wantedSummaryCount);
 
     if (params.get("rankprofile", valueRef) ) {
-        vespalib::string tmp(static_cast<const char *>(valueRef.data()), valueRef.size());
+        vespalib::string tmp(valueRef.data(), valueRef.size());
         _rankController.setRankProfile(tmp);
         LOG(debug, "Received rank profile: %s", _rankController.getRankProfile().c_str());
     }
 
     if (params.get("queryflags", valueRef) ) {
-        vespalib::string tmp(static_cast<const char *>(valueRef.data()), valueRef.size());
+        vespalib::string tmp(valueRef.data(), valueRef.size());
         LOG(debug, "Received query flags: 0x%lx", strtoul(tmp.c_str(), NULL, 0));
         uint32_t queryFlags = strtoul(tmp.c_str(), NULL, 0);
         _rankController.setDumpFeatures((queryFlags & search::fs4transport::QFLAG_DUMP_FEATURES) != 0);
@@ -234,7 +233,7 @@ void SearchVisitor::init(const Parameters & params)
     if (params.get("rankproperties", valueRef) && valueRef.size() > 0) {
         LOG(spam, "Received rank properties of %zd bytes", valueRef.size());
         uint32_t len = static_cast<uint32_t>(valueRef.size());
-        char * data = const_cast<char *>(static_cast<const char *>(valueRef.data()));
+        char * data = const_cast<char *>(valueRef.data());
         FNET_DataBuffer src(data, len);
         uint32_t cnt = src.ReadInt32();
         len -= sizeof(uint32_t);
@@ -259,7 +258,7 @@ void SearchVisitor::init(const Parameters & params)
     }
 
     if (params.get("rankprofile", valueRef)) {
-        vespalib::string tmp(static_cast<const char *>(valueRef.data()), valueRef.size());
+        vespalib::string tmp(valueRef.data(), valueRef.size());
         _summaryGenerator.getDocsumState()._args.SetRankProfile(tmp);
     }
 
@@ -270,7 +269,7 @@ void SearchVisitor::init(const Parameters & params)
 
     vespalib::string location;
     if (params.get("location", valueRef)) {
-        location = vespalib::string(static_cast<const char *>(valueRef.data()), valueRef.size());
+        location = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Location = '%s'", location.c_str());
         _summaryGenerator.getDocsumState()._args.SetLocation(valueRef.size(), (const char*)valueRef.data());
     }
@@ -278,14 +277,12 @@ void SearchVisitor::init(const Parameters & params)
     Parameters::ValueRef searchClusterBlob;
     if (params.get("searchcluster", searchClusterBlob)) {
         LOG(spam, "Received searchcluster blob of %zd bytes", searchClusterBlob.size());
-        vespalib::string searchCluster(static_cast<const char *>(searchClusterBlob.data()), searchClusterBlob.size());
+        vespalib::string searchCluster(searchClusterBlob.data(), searchClusterBlob.size());
         _vsmAdapter = _env.getVSMAdapter(searchCluster);
 
         if ( params.get("sort", valueRef) ) {
             search::uca::UcaConverterFactory ucaFactory;
-            _sortSpec = search::common::SortSpec(vespalib::string(static_cast<const char *>(valueRef.data()),
-                                                            static_cast<unsigned>(valueRef.size())),
-                                                 ucaFactory);
+            _sortSpec = search::common::SortSpec(vespalib::string(valueRef.data(), valueRef.size()), ucaFactory);
             LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
         }
 
