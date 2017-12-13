@@ -379,10 +379,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
-        Map<String, RotationStatus> rotationHealthStatus = application.rotation()
-                           .map(rotation -> controller.getHealthStatus(rotation.dnsName()))
-                           .orElse(Collections.emptyMap());
-        application.rotation().ifPresent(rotation -> globalRotationsArray.addString(rotation.url().toString()));
+        application.rotation().ifPresent(rotation -> {
+            globalRotationsArray.addString(rotation.url().toString());
+            object.setString("rotationId", rotation.id().asString());
+        });
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
@@ -395,8 +395,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());
             deploymentObject.setString("instance", application.id().instance().value()); // pointless
-            if (application.rotation().isPresent())
+            if (application.rotation().isPresent()) {
+                Map<String, RotationStatus> rotationHealthStatus = application.rotation()
+                                                                              .map(rotation -> controller.getHealthStatus(rotation.dnsName()))
+                                                                              .orElse(Collections.emptyMap());
                 setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
+            }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
