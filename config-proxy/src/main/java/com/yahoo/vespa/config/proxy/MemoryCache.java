@@ -19,7 +19,6 @@ import java.util.logging.Logger;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class MemoryCache {
     private static final Logger log = Logger.getLogger(MemoryCache.class.getName());
@@ -41,9 +40,7 @@ public class MemoryCache {
     public void put(RawConfig config) {
         if (config.isError()) return;
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Putting '" + config + "' into memory cache");
-        }
+        log.log(LogLevel.DEBUG, () -> "Putting '" + config + "' into memory cache");
         cache.put(new ConfigCacheKey(config.getKey(), config.getDefMd5()), config);
     }
 

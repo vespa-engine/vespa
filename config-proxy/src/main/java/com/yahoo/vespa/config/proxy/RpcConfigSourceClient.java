@@ -23,7 +23,6 @@ import java.util.logging.Logger;
  * An Rpc client to a config source
  *
  * @author hmusum
- * @since 5.1.9
  */
 class RpcConfigSourceClient implements ConfigSourceClient {
 
@@ -83,7 +82,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                 Target target = supervisor.connect(spec);
                 target.invokeSync(req, 30.0);
                 if (target.isValid()) {
-                    log.log(LogLevel.DEBUG, "Created connection to config source at " + spec.toString());
+                    log.log(LogLevel.DEBUG, () -> "Created connection to config source at " + spec.toString());
                     return;
                 } else {
                     log.log(LogLevel.INFO, "Could not connect to config source at " + spec.toString());
@@ -123,13 +122,11 @@ class RpcConfigSourceClient implements ConfigSourceClient {
 
         RawConfig ret = null;
         if (cachedConfig != null) {
-            log.log(LogLevel.DEBUG, "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
+            log.log(LogLevel.DEBUG, () -> "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
                     ",configmd5=" + cachedConfig.getConfigMd5());
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "input config=" + input + ",cached config=" + cachedConfig);
-            }
+            log.log(LogLevel.SPAM, () -> "input config=" + input + ",cached config=" + cachedConfig);
             if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
-                log.log(LogLevel.SPAM, "Cached config is not equal to requested, will return it");
+                log.log(LogLevel.SPAM, () -> "Cached config is not equal to requested, will return it");
                 if (delayedResponses.remove(delayedResponse)) {
                     // unless another thread already did it
                     ret = cachedConfig;
@@ -148,9 +145,9 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private void subscribeToConfig(RawConfig input, ConfigCacheKey configCacheKey) {
         synchronized (activeSubscribersLock) {
             if (activeSubscribers.containsKey(configCacheKey)) {
-                log.log(LogLevel.DEBUG, "Already a subscriber running for: " + configCacheKey);
+                log.log(LogLevel.DEBUG, () -> "Already a subscriber running for: " + configCacheKey);
             } else {
-                log.log(LogLevel.DEBUG, "Could not find good config in cache, creating subscriber for: " + configCacheKey);
+                log.log(LogLevel.DEBUG, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
                 UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, clientUpdater, configSourceSet, timingValues, requesterPool, memoryCache);
                 try {
                     subscriber.subscribe();
