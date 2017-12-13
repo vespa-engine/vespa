@@ -11,12 +11,21 @@ import java.util.Set;
 /**
  * Interface for models towards filedistribution.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface FileDistribution {
 
     void sendDeployedFiles(String hostName, Set<FileReference> fileReferences);
+
+    /**
+     * Notifies client which file references to download. Used to start downloading early (while
+     * preparing application package).
+     *
+     * @param hostName       host which should be notified about file references to download
+     * @param fileReferences set of file references to start downloading
+     */
+    void startDownload(String hostName, Set<FileReference> fileReferences);
+
     void reloadDeployFileDistributor();
 
     void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames);

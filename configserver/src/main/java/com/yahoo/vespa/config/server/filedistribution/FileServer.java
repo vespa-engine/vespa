@@ -6,12 +6,12 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
+import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
@@ -108,8 +108,7 @@ public class FileServer {
 
     private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
-        // TODO remove once verified in system tests.
-        log.info("Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+        log.log(LogLevel.DEBUG, "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         boolean success = false;
         String errorDescription = "OK";
         FileReferenceData fileData = FileReferenceDataBlob.empty(reference, file.getName());
@@ -122,8 +121,7 @@ public class FileServer {
         }
 
         target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
-        // TODO remove once verified in system tests.
-        log.info("Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
+        log.log(LogLevel.DEBUG, "Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
     }
 
     private FileReferenceData readFileReferenceData(FileReference reference) throws IOException {
@@ -143,8 +141,7 @@ public class FileServer {
     private void serveFile(String fileReference, Request request, Receiver receiver) {
         FileApiErrorCodes result;
         try {
-            // TODO remove once verified in system tests.
-            log.info("Received request for reference '" + fileReference + "'");
+            log.log(LogLevel.DEBUG, "Received request for reference '" + fileReference + "'");
             result = hasFile(fileReference)
                     ? FileApiErrorCodes.OK
                     : FileApiErrorCodes.NOT_FOUND;
