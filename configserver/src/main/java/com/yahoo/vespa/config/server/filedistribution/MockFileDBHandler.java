@@ -8,8 +8,7 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class MockFileDBHandler implements FileDistribution {
     public int sendDeployedFilesCalled = 0;
@@ -20,6 +19,9 @@ public class MockFileDBHandler implements FileDistribution {
     public void sendDeployedFiles(String hostName, Set<FileReference> fileReferences) {
         sendDeployedFilesCalled++;
     }
+
+    @Override
+    public void startDownload(String hostName, Set<FileReference> fileReferences) { /* not implemented */ }
 
     @Override
     public void reloadDeployFileDistributor() {
